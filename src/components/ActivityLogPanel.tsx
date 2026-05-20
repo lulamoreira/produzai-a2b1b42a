@@ -1,7 +1,7 @@
 import { useActivityLogs } from "@/hooks/useActivityLogs";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { useFormatters } from "@/lib/formatters";
 import { ClipboardList } from "lucide-react";
 
 interface ActivityLogPanelProps {
@@ -14,6 +14,7 @@ interface ActivityLogPanelProps {
 }
 
 export default function ActivityLogPanel({ open, onOpenChange, campaignId, storeId, storeName, module }: ActivityLogPanelProps) {
+  const fmt = useFormatters();
   const { data: logs = [], isLoading } = useActivityLogs(campaignId, storeId, module);
 
   return (
@@ -37,7 +38,7 @@ export default function ActivityLogPanel({ open, onOpenChange, campaignId, store
                 <p className="text-[11px] text-muted-foreground whitespace-pre-wrap">{log.details}</p>
               )}
               <p className="text-[10px] text-muted-foreground">
-                {log.author_name} · {format(new Date(log.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                {log.author_name} · {fmt.dateTime(new Date(log.created_at))}
               </p>
             </div>
           ))}

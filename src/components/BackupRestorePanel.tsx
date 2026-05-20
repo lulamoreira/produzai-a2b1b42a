@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Download, Upload, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
@@ -9,6 +10,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const BackupRestorePanel = () => {
+  const { t } = useTranslation();
   const [downloading, setDownloading] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [confirmRestore, setConfirmRestore] = useState(false);
@@ -33,9 +35,9 @@ export const BackupRestorePanel = () => {
       a.download = `backup_${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success("Backup baixado com sucesso!");
+      toast.success(t("backup.downloadSuccess"));
     } catch (err: any) {
-      toast.error("Erro ao gerar backup: " + (err.message || "Erro desconhecido"));
+      toast.error(t("backup.downloadError", { message: err.message || "Erro desconhecido" }));
     } finally {
       setDownloading(false);
     }
@@ -72,9 +74,9 @@ export const BackupRestorePanel = () => {
       if (error) throw new Error(error.message);
 
       setLastResult(data.results);
-      toast.success("Restore concluído!");
+      toast.success(t("backup.restoreSuccess"));
     } catch (err: any) {
-      toast.error("Erro no restore: " + (err.message || "Erro desconhecido"));
+      toast.error(t("backup.restoreError", { message: err.message || "Erro desconhecido" }));
     } finally {
       setRestoring(false);
       setPendingFile(null);

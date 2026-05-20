@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -24,6 +25,7 @@ interface BulkDeletePiecesDialogProps {
 export default function BulkDeletePiecesDialog({
   open, onOpenChange, pieces, onDeletePieces,
 }: BulkDeletePiecesDialogProps) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -85,7 +87,7 @@ export default function BulkDeletePiecesDialog({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Trash2 className="w-5 h-5 text-destructive" />
-              Excluir peças em lote
+              {t("pieces.bulkDelete")}
             </DialogTitle>
             <DialogDescription>
               Selecione as peças que deseja excluir desta campanha. As peças originais em outras campanhas não serão afetadas.
@@ -173,7 +175,7 @@ export default function BulkDeletePiecesDialog({
 
           {/* Actions */}
           <div className="flex gap-2 pt-2">
-            <Button variant="outline" className="flex-1" onClick={handleClose}>Cancelar</Button>
+            <Button variant="outline" className="flex-1" onClick={handleClose}>{t("common.cancel")}</Button>
             <Button
               variant="destructive"
               className="flex-1 gap-1"
@@ -181,7 +183,7 @@ export default function BulkDeletePiecesDialog({
               onClick={() => setConfirmOpen(true)}
             >
               <Trash2 className="w-4 h-4" />
-              Excluir {selected.size} peça(s)
+              {t("common.delete")} {selected.size} peça(s)
             </Button>
           </div>
         </DialogContent>
@@ -198,13 +200,13 @@ export default function BulkDeletePiecesDialog({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleting}>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={handleConfirmDelete}
               disabled={deleting}
             >
-              {deleting ? "Excluindo..." : "SIM, excluir"}
+              {deleting ? t("common.loading") : t("common.yes") + ", " + t("common.delete").toLowerCase()}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

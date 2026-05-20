@@ -30,7 +30,7 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { useFormatters } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { buildRescheduleToggleUpdates } from "@/lib/scheduleHelpers";
 import { toast } from "sonner";
@@ -64,11 +64,11 @@ interface SchedulingTabProps {
   onInitialFilterApplied?: () => void;
 }
 
-function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null, messageTemplate?: string, storeName?: string) {
+function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null, messageTemplate?: string, storeName?: string, fmt?: any) {
   const firstName = contactName.split(" ")[0];
   const agencyFirst = agencyName.split(" ")[0];
   const clientFirst = clientName.split(" ")[0];
-  const dateStr = date ? format(new Date(date + "T12:00:00"), "dd/MM/yyyy") : "(data a definir)";
+  const dateStr = date ? (fmt ? fmt.dateShort(new Date(date + "T12:00:00")) : format(new Date(date + "T12:00:00"), "dd/MM/yyyy")) : "(data a definir)";
   const timeStr = time || "(horário a definir)";
 
   const message = messageTemplate
@@ -89,6 +89,7 @@ function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string
 
 const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, campaignName, clientId, agencyId, initialFilter, onInitialFilterApplied }: SchedulingTabProps) => {
   const { t } = useTranslation();
+  const fmt = useFormatters();
   const PREFERENCE_OPTIONS = useMemo(() => [
     { value: "not_informed", label: t("scheduling.notInformed"), icon: HelpCircle },
     { value: "morning", label: t("scheduling.morning"), icon: Sun },
@@ -1187,11 +1188,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                           <Popover>
                             <PopoverTrigger asChild>
                               <Button variant="outline" size="sm" disabled={!cardCanEdit} className={cn("w-full justify-start text-left text-xs font-normal h-8 overflow-hidden", !schedule?.reschedule_date && "text-muted-foreground")}>
-                                <span className="truncate">{schedule?.reschedule_date ? format(new Date(schedule.reschedule_date + "T12:00:00"), "dd/MM/yyyy") : "Selecionar"}</span>
+                                <span className="truncate">{schedule?.reschedule_date ? fmt.dateShort(new Date(schedule.reschedule_date + "T12:00:00")) : "Selecionar"}</span>
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar mode="single" selected={schedule?.reschedule_date ? new Date(schedule.reschedule_date + "T12:00:00") : undefined} onSelect={(date) => handleFieldChange(store.id, "reschedule_date", date ? format(date, "yyyy-MM-dd") : null)} locale={ptBR} className="p-3 pointer-events-auto" />
+                              <Calendar mode="single" selected={schedule?.reschedule_date ? new Date(schedule.reschedule_date + "T12:00:00") : undefined} onSelect={(date) => handleFieldChange(store.id, "reschedule_date", date ? format(date, "yyyy-MM-dd") : null)} className="p-3 pointer-events-auto" />
                               {schedule?.reschedule_date && (
                                 <div className="px-3 pb-3">
                                   <Button variant="ghost" size="sm" className="w-full text-xs text-destructive hover:text-destructive" onClick={() => handleFieldChange(store.id, "reschedule_date", null)}>Limpar data</Button>
@@ -1233,11 +1234,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button variant="outline" size="sm" disabled={!cardCanEdit} className={cn("w-full justify-start text-left text-xs font-normal h-8 overflow-hidden", !schedule?.scheduled_date && "text-muted-foreground")}>
-                              <span className="truncate">{selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Selecionar"}</span>
+                              <span className="truncate">{selectedDate ? fmt.dateShort(selectedDate) : "Selecionar"}</span>
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={selectedDate} onSelect={(date) => handleFieldChange(store.id, "scheduled_date", date ? format(date, "yyyy-MM-dd") : null)} locale={ptBR} className="p-3 pointer-events-auto" />
+                            <Calendar mode="single" selected={selectedDate} onSelect={(date) => handleFieldChange(store.id, "scheduled_date", date ? format(date, "yyyy-MM-dd") : null)} className="p-3 pointer-events-auto" />
                             {selectedDate && (
                               <div className="px-3 pb-3">
                                 <Button variant="ghost" size="sm" className="w-full text-xs text-destructive hover:text-destructive" onClick={() => handleFieldChange(store.id, "scheduled_date", null)}>Limpar data</Button>
@@ -1423,6 +1424,7 @@ interface ApprovalTogglesProps {
 
 function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTime, onMultiUpdate }: ApprovalTogglesProps) {
   const { t } = useTranslation();
+  const fmt = useFormatters();
   const { user } = useAuth();
   const dbStoreStatus = (schedule?.store_approval_status ?? "under_review") as ApprovalStatusValue;
   const dbTeamStatus = (schedule?.team_approval_status ?? "under_review") as ApprovalStatusValue;
@@ -1596,7 +1598,7 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
   const formatTimestamp = (ts: string | null) => {
     if (!ts) return null;
     try {
-      return format(new Date(ts), "dd/MM/yy HH:mm", { locale: ptBR });
+      return fmt.dateTime(new Date(ts));
     } catch {
       return null;
     }
@@ -1757,6 +1759,7 @@ interface RescheduleApprovalTogglesProps {
 
 function RescheduleApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTime, onMultiUpdate }: RescheduleApprovalTogglesProps) {
   const { t } = useTranslation();
+  const fmt = useFormatters();
   const { user } = useAuth();
   const dbStoreStatus = (schedule?.reschedule_store_approval_status ?? "under_review") as ApprovalStatusValue;
   const dbTeamStatus = (schedule?.reschedule_team_approval_status ?? "under_review") as ApprovalStatusValue;
@@ -1903,7 +1906,7 @@ function RescheduleApprovalToggles({ schedule, storeId, campaignId, canEdit, has
 
   const formatTimestamp = (ts: string | null) => {
     if (!ts) return null;
-    try { return format(new Date(ts), "dd/MM/yy HH:mm", { locale: ptBR }); } catch { return null; }
+    try { return fmt.dateTime(new Date(ts)); } catch { return null; }
   };
 
   const sectionDisabled = !canEdit || !hasDateAndTime;

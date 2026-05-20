@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +34,7 @@ function maskPhone(value: string): string {
 
 export default function EditProfileDialog({ open, onOpenChange }: EditProfileDialogProps) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -120,10 +122,10 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
       setForm(f => ({ ...f, avatar_url: publicUrl }));
       queryClient.invalidateQueries({ queryKey: ["profile_display"] });
       queryClient.invalidateQueries({ queryKey: ["profile_full"] });
-      toast.success("Foto atualizada!");
+      toast.success(t("imageUpload.uploadSuccess") || "Foto atualizada!");
     } catch (err: any) {
       console.error("Avatar upload error:", err);
-      toast.error("Erro ao enviar foto.");
+      toast.error(t("imageUpload.uploadError", { message: err.message }) || "Erro ao enviar foto.");
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
@@ -134,7 +136,7 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
     if (!user) return;
     const trimmedName = form.display_name.trim();
     if (!trimmedName) {
-      toast.error("O nome completo é obrigatório.");
+      toast.error(t("profile.nameRequired") || "O nome completo é obrigatório.");
       return;
     }
     if (trimmedName.length > 100) {
@@ -164,11 +166,11 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
     setSaving(false);
 
     if (error) {
-      toast.error("Erro ao salvar perfil.");
+      toast.error(t("profile.saveError"));
       return;
     }
 
-    toast.success("Perfil atualizado com sucesso!");
+    toast.success(t("profile.saveSuccess"));
     queryClient.invalidateQueries({ queryKey: ["profile_display"] });
     queryClient.invalidateQueries({ queryKey: ["profile_full"] });
     onOpenChange(false);
@@ -180,7 +182,7 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Editar Perfil</DialogTitle>
+          <DialogTitle>{t("profile.editProfile")}</DialogTitle>
           <DialogDescription>Atualize seus dados pessoais.</DialogDescription>
         </DialogHeader>
 
@@ -229,11 +231,11 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
             </div>
 
             <div>
-              <Label className="text-xs">Nome Completo *</Label>
+              <Label className="text-xs">{t("profile.displayName")} *</Label>
               <Input
                 value={form.display_name}
                 onChange={(e) => setForm(f => ({ ...f, display_name: e.target.value }))}
-                placeholder="Seu nome completo"
+                placeholder={t("profile.namePlaceholder")}
                 maxLength={100}
               />
             </div>
@@ -309,11 +311,11 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
 
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-                Cancelar
+                {t("common.cancel")}
               </Button>
               <Button size="sm" onClick={handleSave} disabled={saving}>
                 {saving && <Loader2 className="w-4 h-4 mr-1 animate-spin" />}
-                Salvar
+                {t("common.save")}
               </Button>
             </div>
           </div>
