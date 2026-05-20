@@ -1472,14 +1472,14 @@ const CampaignDetail = () => {
       const piecesData = pieces.map(p => ({
         id: p.id,
         name: p.name,
-        description: p.specification, // Using specification as description as per common patterns in this app
-        width: p.width || undefined,
-        height: p.height || undefined,
-        material: p.material || undefined,
+        description: p.specification,
+        width: undefined,
+        height: undefined,
+        material: undefined,
         quantity: stores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0),
         code: String(p.code),
         observations: p.installation_instructions || undefined,
-        status: p.status || undefined,
+        status: undefined,
         photo_url: p.image_url || undefined,
       }));
 
@@ -1490,10 +1490,10 @@ const CampaignDetail = () => {
         return {
           id: k.id,
           name: k.name,
-          description: k.description || undefined,
+          description: undefined,
           pieces_count: kpForKit.length,
           code: String(k.code),
-          observations: k.observations || undefined,
+          observations: undefined,
           photo_url: k.image_url || undefined,
           pieces: kitPieceDetails.map(p => ({
             name: p.name,
@@ -1507,7 +1507,7 @@ const CampaignDetail = () => {
           name: campaign.name,
           client_name: client?.name,
           agency_name: (client as any)?.agency_name,
-          status: campaign.status,
+          status: (campaign as any).status,
         },
         pieces: piecesData,
         kits: kitsData,
