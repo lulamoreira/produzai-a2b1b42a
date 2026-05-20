@@ -74,22 +74,22 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   const pptx = new pptxgen();
   pptx.layout = "LAYOUT_WIDE";
 
-  const totalSlides = 1 + 1 + pieces.length + kits.length + 1;
+  // Map piece name -> kit name(s) for badge display
+  const pieceToKits = new Map<string, string[]>();
+  kits.forEach(k => {
+    (k.pieces || []).forEach(kp => {
+      const arr = pieceToKits.get(kp.name) || [];
+      arr.push(k.name);
+      pieceToKits.set(kp.name, arr);
+    });
+  });
+
+  const totalSlides = 1 + 1 + pieces.length + 1;
   const exportDate = new Date().toLocaleDateString();
 
   // 1. Preload images
   const pieceImages = await Promise.all(
     pieces.map(p => p.photo_url ? urlToBase64(p.photo_url) : Promise.resolve(null))
-  );
-  const kitImages = await Promise.all(
-    kits.map(k => k.photo_url ? urlToBase64(k.photo_url) : Promise.resolve(null))
-  );
-  
-  // Preload kit piece thumbnails
-  const kitPiecesThumbnails = await Promise.all(
-    kits.map(k => 
-      Promise.all((k.pieces || []).slice(0, 5).map(kp => kp.photo_url ? urlToBase64(kp.photo_url) : Promise.resolve(null)))
-    )
   );
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
