@@ -337,7 +337,32 @@
     "editCampaign": "Edit Campaign",
     "campaignName": "Campaign Name",
     "campaignColor": "Color",
-    "notFound": "Campaign not found."
+    "notFound": "Campaign not found.",
+    "tabs": {
+      "pieces": "Pieces",
+      "kits": "Kits",
+      "occurrences": "Occurrences",
+      "scheduling": "Scheduling",
+      "installations": "Installations",
+      "budget": "Budget",
+      "approvals": "Approvals",
+      "summary": "Summary",
+      "files": "Files",
+      "history": "History"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "draft": "Draft",
+      "finished": "Finished",
+      "cancelled": "Cancelled",
+      "planning": "Planning"
+    },
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied!",
+    "rename": "Rename",
+    "renamedSuccess": "Campaign renamed",
+    "renamedError": "Error renaming"
   },
   "pieces": {
     "title": "Pieces",

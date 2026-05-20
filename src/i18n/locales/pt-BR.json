@@ -340,7 +340,32 @@
     "editCampaign": "Editar Campanha",
     "campaignName": "Nome da Campanha",
     "campaignColor": "Cor",
-    "notFound": "Campanha não encontrada."
+    "notFound": "Campanha não encontrada.",
+    "tabs": {
+      "pieces": "Peças",
+      "kits": "Kits",
+      "occurrences": "Ocorrências",
+      "scheduling": "Agendamentos",
+      "installations": "Instalações",
+      "budget": "Orçamentos",
+      "approvals": "Aprovações",
+      "summary": "Resumo",
+      "files": "Arquivos",
+      "history": "Histórico"
+    },
+    "status": {
+      "active": "Ativa",
+      "inactive": "Inativa",
+      "draft": "Rascunho",
+      "finished": "Finalizada",
+      "cancelled": "Cancelada",
+      "planning": "Planejamento"
+    },
+    "copyLink": "Copiar link",
+    "linkCopied": "Link copiado!",
+    "rename": "Renomear",
+    "renamedSuccess": "Campanha renomeada",
+    "renamedError": "Erro ao renomear"
   },
   "pieces": {
     "title": "Peças",
