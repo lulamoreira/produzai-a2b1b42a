@@ -18,6 +18,9 @@ interface Props {
   clientId: string;
   campaignName: string;
   clientName: string;
+  pieces?: any[];
+  kits?: any[];
+  agencyName?: string;
 }
 
 async function fetchReportData(campaignId: string, clientId: string, campaignName: string, clientName: string): Promise<ReportData> {
