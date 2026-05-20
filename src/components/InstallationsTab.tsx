@@ -691,7 +691,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); }}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[100px] max-w-[150px] h-9"
           >
-            <option value="">Todos estados</option>
+            <option value="">{t("filters.allStates")}</option>
             {states.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
           <select
@@ -853,7 +853,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                       if (done === total) toast.success(t("common.downloadComplete"));
                     }).catch(() => toast.error(t("common.errorDownloading")));
                   }}>
-                    <Camera className="w-3.5 h-3.5 mr-2" /> Baixar todas as fotos ({photos.length})
+                    <Camera className="w-3.5 h-3.5 mr-2" /> {t("installations.viewPhotos")} ({photos.length})
                   </DropdownMenuItem>
                 )}
                 {canLockCards && (
@@ -1210,7 +1210,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                   {selectedDate && (
                     <span className="flex items-center gap-1">
                       <CalendarIcon className="w-3 h-3 text-[var(--text-muted)]" />
-                      {format(selectedDate, "dd/MM/yyyy")}
+                      {fmt.date(selectedDate)}
                     </span>
                   )}
                   {effectiveTime && (
@@ -1228,7 +1228,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                   {/* Install code status indicator — admin/master only */}
                   {isAdminOrMaster && schedule && (() => {
                     if (schedule.checkin_timestamp) {
-                      const checkinDate = format(new Date(schedule.checkin_timestamp), "dd/MM HH:mm");
+                      const checkinDate = fmt.dateTimeShort(new Date(schedule.checkin_timestamp));
                       const hasGps = schedule.checkin_lat != null;
                       return (
                         <span className={`flex items-center gap-1 text-[10px] font-medium ${hasGps ? "text-[var(--s-success)]" : "text-[var(--s-warning)]"}`}>
@@ -1243,7 +1243,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                   })()}
                   {schedule?.manual_checkin_at && (
                     <span className="flex items-center gap-1 text-[10px] font-medium text-[var(--s-success)]">
-                      ✔ Check-in manual {format(new Date(schedule.manual_checkin_at), "dd/MM HH:mm")}
+                      ✔ Check-in manual {fmt.dateTimeShort(new Date(schedule.manual_checkin_at))}
                     </span>
                   )}
                   {schedule?.manual_checkout_at && (
@@ -1868,7 +1868,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                         }}
                       >
                         <Download className="w-3 h-3" />
-                        Baixar {storePhotos.length} foto(s) (.zip)
+                        {t("installations.export")} {storePhotos.length} {t("installations.photos")} (.zip)
                       </Button>
                     </div>
                   )}
