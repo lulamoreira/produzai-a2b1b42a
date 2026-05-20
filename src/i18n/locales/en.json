@@ -945,5 +945,26 @@
     "page": "Page",
     "perPage": "per page",
     "rowsPerPage": "Rows per page"
+  },
+  "homeV2": {
+    "greeting": {
+      "morning": "Good morning",
+      "afternoon": "Good afternoon",
+      "evening": "Good evening"
+    },
+    "kpis": {
+      "activeCampaigns": "Active campaigns",
+      "stores": "Registered stores",
+      "piecesInProduction": "Pieces in production",
+      "pendingInstallations": "Pending installations",
+      "updatedNow": "updated now"
+    },
+    "recentCampaigns": {
+      "title": "Recent Campaigns",
+      "viewAll": "View all"
+    },
+    "recentActivity": {
+      "title": "Recent Activity"
+    }
   }
 }

@@ -945,5 +945,26 @@
     "page": "Página",
     "perPage": "por página",
     "rowsPerPage": "Linhas por página"
+  },
+  "homeV2": {
+    "greeting": {
+      "morning": "Bom dia",
+      "afternoon": "Boa tarde",
+      "evening": "Boa noite"
+    },
+    "kpis": {
+      "activeCampaigns": "Campanhas ativas",
+      "stores": "Lojas cadastradas",
+      "piecesInProduction": "Peças em produção",
+      "pendingInstallations": "Instalações pendentes",
+      "updatedNow": "atualizado agora"
+    },
+    "recentCampaigns": {
+      "title": "Campanhas Recentes",
+      "viewAll": "Ver todas"
+    },
+    "recentActivity": {
+      "title": "Atividade Recente"
+    }
   }
 }
