@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -87,6 +88,7 @@ interface FilterGroupProps {
 }
 
 const FilterGroup = ({ label, filterKey, options, selected, onToggle }: FilterGroupProps) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const hasSelection = selected.size > 0;
@@ -116,7 +118,7 @@ const FilterGroup = ({ label, filterKey, options, selected, onToggle }: FilterGr
           <div className="relative mb-1.5">
             <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-muted-foreground" />
             <Input
-              placeholder="Buscar..."
+              placeholder={t("common.searchPlaceholder")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="h-7 text-[11px] pl-7 pr-6"
@@ -146,7 +148,7 @@ const FilterGroup = ({ label, filterKey, options, selected, onToggle }: FilterGr
             </label>
           ))}
           {filteredOptions.length === 0 && (
-            <p className="text-[10px] text-muted-foreground text-center py-2">Nenhum resultado</p>
+            <p className="text-[10px] text-muted-foreground text-center py-2">{t("common.noResults")}</p>
           )}
         </div>
       </CollapsibleContent>
@@ -186,6 +188,7 @@ const MatrixFilterSidebar = ({
   filterLogicMode,
   onFilterLogicModeChange,
 }: MatrixFilterSidebarProps) => {
+  const { t } = useTranslation();
   // Extract unique options from pieces for each field
   const filterOptions = useMemo(() => {
     const categories = [...new Set(pieces.map((p) => p.category).filter(Boolean))].sort();
@@ -194,8 +197,8 @@ const MatrixFilterSidebar = ({
     const sizes = [...new Set(pieces.map((p) => p.size).filter(Boolean))].sort();
     const specifications = [...new Set(pieces.map((p) => p.specification).filter(Boolean))].sort();
     const instructions = [...new Set(pieces.map((p) => p.installation_instructions).filter(Boolean))].sort();
-    const kitOnly = pieces.some((p) => p.kit_only) ? ["Sim", "Não"] : [];
-    const isMockup = pieces.some((p) => p.is_mockup) ? ["Sim", "Não"] : [];
+    const kitOnly = pieces.some((p) => p.kit_only) ? [t("common.yes"), t("common.no")] : [];
+    const isMockup = pieces.some((p) => p.is_mockup) ? [t("common.yes"), t("common.no")] : [];
 
     return {
       category: categories,
@@ -266,7 +269,7 @@ const MatrixFilterSidebar = ({
                 <SlidersHorizontal className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="right">Filtros</TooltipContent>
+            <TooltipContent side="right">{t("common.filter")}</TooltipContent>
           </Tooltip>
         </TooltipProvider>
         {activeFilterCount > 0 && (
@@ -306,7 +309,7 @@ const MatrixFilterSidebar = ({
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
         <div className="flex items-center gap-2">
           <Filter className="w-3.5 h-3.5 text-primary" />
-          <span className="text-xs font-bold text-foreground">Filtros</span>
+          <span className="text-xs font-bold text-foreground">{t("common.filter")}</span>
           {activeFilterCount > 0 && (
             <span className="bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
               {activeFilterCount}
@@ -318,7 +321,7 @@ const MatrixFilterSidebar = ({
           size="icon"
           className="h-7 w-7"
           onClick={() => onCollapsedChange(true)}
-          title="Recolher filtros"
+          title={t("filters.collapseFilters")}
         >
           <ChevronLeft className="w-3.5 h-3.5" />
         </Button>
@@ -333,19 +336,19 @@ const MatrixFilterSidebar = ({
             className="text-[10px] h-6 gap-1 text-destructive hover:text-destructive w-full justify-start"
             onClick={clearAll}
           >
-            <X className="w-3 h-3" /> Limpar todos os filtros
+            <X className="w-3 h-3" /> {t("filters.clearAllFilters")}
           </Button>
         </div>
       )}
 
       {/* Logic mode selector */}
       <div className="px-3 py-2 border-b border-border">
-        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">Lógica entre filtros</span>
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">{t("filters.filterLogic")}</span>
         <div className="flex rounded-md border border-border overflow-hidden">
           {([
-            { value: "and" as FilterLogicMode, label: "E" },
-            { value: "or" as FilterLogicMode, label: "OU" },
-            { value: "and_or" as FilterLogicMode, label: "E/OU" },
+            { value: "and" as FilterLogicMode, label: t("filters.logicAnd") },
+            { value: "or" as FilterLogicMode, label: t("filters.logicOr") },
+            { value: "and_or" as FilterLogicMode, label: t("filters.logicAndOr") },
           ]).map((opt) => (
             <button
               key={opt.value}
@@ -361,9 +364,9 @@ const MatrixFilterSidebar = ({
           ))}
         </div>
         <p className="text-[9px] text-muted-foreground mt-1">
-          {filterLogicMode === "and" && "Todos os filtros devem corresponder"}
-          {filterLogicMode === "or" && "Qualquer filtro pode corresponder"}
-          {filterLogicMode === "and_or" && "E entre grupos, OU dentro de cada grupo"}
+          {filterLogicMode === "and" && t("filters.logicAndDesc")}
+          {filterLogicMode === "or" && t("filters.logicOrDesc")}
+          {filterLogicMode === "and_or" && t("filters.logicAndOrDesc")}
         </p>
       </div>
 
@@ -372,36 +375,36 @@ const MatrixFilterSidebar = ({
         <div className="py-1">
           {/* Piece filters */}
           <div className="px-3 py-1.5">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Peças</span>
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t("modules.pieces")}</span>
           </div>
-          <FilterGroup label="Localização na Loja" filterKey="category" options={filterOptions.category} selected={filters.category} onToggle={handleToggle} />
-          <FilterGroup label="Nome" filterKey="name" options={filterOptions.name} selected={filters.name} onToggle={handleToggle} />
-          <FilterGroup label="Modelo de Loja" filterKey="store_category" options={filterOptions.store_category} selected={filters.store_category} onToggle={handleToggle} />
-          <FilterGroup label="Medidas" filterKey="size" options={filterOptions.size} selected={filters.size} onToggle={handleToggle} />
-          <FilterGroup label="Especificação" filterKey="specification" options={filterOptions.specification} selected={filters.specification} onToggle={handleToggle} />
-          <FilterGroup label="Instruções de Instalação" filterKey="installation_instructions" options={filterOptions.installation_instructions} selected={filters.installation_instructions} onToggle={handleToggle} />
+          <FilterGroup label={t("pieces.locationInStore")} filterKey="category" options={filterOptions.category} selected={filters.category} onToggle={handleToggle} />
+          <FilterGroup label={t("common.name")} filterKey="name" options={filterOptions.name} selected={filters.name} onToggle={handleToggle} />
+          <FilterGroup label={t("pieces.storeModelLabel")} filterKey="store_category" options={filterOptions.store_category} selected={filters.store_category} onToggle={handleToggle} />
+          <FilterGroup label={t("pieces.measures")} filterKey="size" options={filterOptions.size} selected={filters.size} onToggle={handleToggle} />
+          <FilterGroup label={t("pieces.specification")} filterKey="specification" options={filterOptions.specification} selected={filters.specification} onToggle={handleToggle} />
+          <FilterGroup label={t("pieces.installationInstructions")} filterKey="installation_instructions" options={filterOptions.installation_instructions} selected={filters.installation_instructions} onToggle={handleToggle} />
           {filterOptions.kit_only.length > 0 && (
-            <FilterGroup label="Peça para Kit" filterKey="kit_only" options={filterOptions.kit_only} selected={filters.kit_only} onToggle={handleToggle} />
+            <FilterGroup label={t("pieces.kitPiece")} filterKey="kit_only" options={filterOptions.kit_only} selected={filters.kit_only} onToggle={handleToggle} />
           )}
           {filterOptions.is_mockup.length > 0 && (
-            <FilterGroup label="Mockup" filterKey="is_mockup" options={filterOptions.is_mockup} selected={filters.is_mockup} onToggle={handleToggle} />
+            <FilterGroup label={t("common.mockup")} filterKey="is_mockup" options={filterOptions.is_mockup} selected={filters.is_mockup} onToggle={handleToggle} />
           )}
 
           {/* Store filters */}
           <div className="px-3 py-1.5 mt-2 border-t border-border">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Lojas</span>
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t("modules.stores")}</span>
           </div>
-          <FilterGroup label="Cidade" filterKey="city" options={storeFilterOptions.city} selected={storeFilters.city} onToggle={handleToggle} />
-          <FilterGroup label="Estado" filterKey="state" options={storeFilterOptions.state} selected={storeFilters.state} onToggle={handleToggle} />
+          <FilterGroup label={t("stores.city")} filterKey="city" options={storeFilterOptions.city} selected={storeFilters.city} onToggle={handleToggle} />
+          <FilterGroup label={t("stores.state")} filterKey="state" options={storeFilterOptions.state} selected={storeFilters.state} onToggle={handleToggle} />
           {storeFilterOptions.store_model.length > 0 && (
-            <FilterGroup label="Modelo de Loja" filterKey="store_model" options={storeFilterOptions.store_model} selected={storeFilters.store_model} onToggle={handleToggle} />
+            <FilterGroup label={t("pieces.storeModelLabel")} filterKey="store_model" options={storeFilterOptions.store_model} selected={storeFilters.store_model} onToggle={handleToggle} />
           )}
 
           {/* Custom field filters */}
           {customFieldGroups.length > 0 && (
             <>
               <div className="px-3 py-1.5 mt-2 border-t border-border">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Campos Personalizados</span>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">{t("stores.customFields")}</span>
               </div>
               {customFieldGroups}
             </>

@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -30,6 +31,7 @@ export function ResponsiveToolbar({
   secondaryActions,
   className,
 }: ResponsiveToolbarProps) {
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
 
   return (
@@ -49,7 +51,7 @@ export function ResponsiveToolbar({
               variant="outline"
               size="icon"
               className="ml-auto min-h-[44px] min-w-[44px]"
-              aria-label="Mais ações"
+              aria-label={t("common.moreActions")}
             >
               <MoreVertical className="w-4 h-4" />
             </Button>

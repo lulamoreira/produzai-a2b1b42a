@@ -2,6 +2,7 @@
 // Substituído pelo módulo de Ocorrências dentro de "Loja a Loja". Pode ser apagado.
 
 import { useState, useMemo, useCallback, lazy, Suspense } from "react";
+import { useTranslation } from "react-i18next";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { getStatusLabel as _getStatusLabel, getStatusColor as _getStatusColor, isOccurrenceOverdue, parseLocalDate } from "@/lib/occurrenceHelpers";
 import { format } from "date-fns";
@@ -115,6 +116,7 @@ export default function OccurrenceCard({
   onOpenLightbox, motiveColor, PRIORITY_OPTIONS, canLockCards, schedule,
   agencyId, clientId,
 }: OccurrenceCardProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const qc = useQueryClient();
   const updateFields = useUpdateOccurrenceFields();
@@ -171,21 +173,21 @@ export default function OccurrenceCard({
   const buildChangeLog = useCallback(() => {
     const lines: string[] = [];
     const fieldLabels: Record<string, string> = {
-      status: "Status",
-      priority: "Prioridade",
-      location_in_store: "Local do problema",
-      piece_id: "Peça",
-      agency_observation: "Obs. Agência",
-      actions_taken: "Ações Tomadas",
-      expected_resolution_date: "Previsão Resolução",
-      needs_reinstallation: "Precisa Reinstalação",
-      reinstallation_os: "OS Reinstalação",
-      reinstallation_datetime: "Data Reinstalação",
-      resolved_date: "Data Resolução",
-      reporter_name: "Nome Reclamante",
-      reporter_phone_ddd: "DDD Reclamante",
-      reporter_phone_number: "Telefone Reclamante",
-      reporter_email: "Email Reclamante",
+      status: t("common.status"),
+      priority: t("occurrences.priority"),
+      location_in_store: t("occurrences.problemLocation"),
+      piece_id: t("common.pieces"),
+      agency_observation: t("occurrences.agencyObservation"),
+      actions_taken: t("occurrences.actionsTaken"),
+      expected_resolution_date: t("occurrences.expectedResolutionDate"),
+      needs_reinstallation: t("occurrences.needsReinstallation"),
+      reinstallation_os: t("occurrences.reinstallationOs"),
+      reinstallation_datetime: t("occurrences.reinstallationDate"),
+      resolved_date: t("occurrences.resolvedDate"),
+      reporter_name: t("occurrences.reporterName"),
+      reporter_phone_ddd: t("occurrences.reporterDdd"),
+      reporter_phone_number: t("occurrences.reporterPhone"),
+      reporter_email: t("occurrences.reporterEmail"),
     };
 
     for (const [field, newVal] of Object.entries(draft)) {
@@ -214,9 +216,9 @@ export default function OccurrenceCard({
         };
         lines.push(`${label}: ${getLabel(oldVal)} → ${getLabel(newVal as string)}`);
       } else if (field === "needs_reinstallation") {
-        lines.push(`${label}: ${oldVal ? "Sim" : "Não"} → ${newVal ? "Sim" : "Não"}`);
+        lines.push(`${label}: ${oldVal ? t("common.yes") : t("common.no")} → ${newVal ? t("common.yes") : t("common.no")}`);
       } else if (typeof newVal === "string" && (newVal.length > 50 || (oldVal || "").length > 50)) {
-        lines.push(`${label}: alterado`);
+        lines.push(`${label}: ${t("common.changed")}`);
       } else {
         lines.push(`${label}: ${String(oldVal || "—")} → ${String(newVal || "—")}`);
       }
@@ -266,7 +268,7 @@ export default function OccurrenceCard({
           store_id: occ.id, // Use occurrence ID as reference
           user_id: user.id,
           module: "occurrences",
-          action: "Campos alterados",
+          action: t("occurrences.fieldsChanged"),
           details: changeLog,
         });
       }
@@ -284,8 +286,8 @@ export default function OccurrenceCard({
               store_id: occ.store_id || undefined,
               client_id: clientId,
               type: "ocorrencia_resolvida",
-              title: "Ocorrência resolvida",
-              body: `A ocorrência em ${storeName} foi marcada como resolvida`,
+              title: t("occurrences.occurrenceResolved"),
+              body: t("occurrences.resolvedBody", { store: storeName }),
               action_url: `/campanhas/${campaignId}/ocorrencias`,
             });
           } catch { /* silent */ }
@@ -295,9 +297,9 @@ export default function OccurrenceCard({
       setDraft({});
       qc.invalidateQueries({ queryKey: ["occurrences", campaignId] });
       qc.invalidateQueries({ queryKey: ["activity_logs", campaignId, occ.id, "occurrences"] });
-      toast.success("Alterações salvas!");
+      toast.success(t("common.saveSuccess"));
     } catch (err: any) {
-      toast.error(err.message || "Erro ao salvar.");
+      toast.error(err.message || t("common.errorSaving"));
     } finally {
       setSaving(false);
     }
@@ -387,7 +389,7 @@ export default function OccurrenceCard({
         });
       }
       qc.invalidateQueries({ queryKey: ["occurrences", campaignId] });
-      toast.success(newLocked ? "Card bloqueado!" : "Card desbloqueado!");
+      toast.success(newLocked ? t("common.cardBlocked") : t("common.cardUnblocked"));
     } catch (err: any) {
       toast.error(err.message || "Erro ao alterar bloqueio.");
     } finally {

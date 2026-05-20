@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import {
   DndContext,
@@ -63,6 +64,7 @@ function SortableRow({
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit,
   isDistributed, kitCategory,
 }: SortableRowProps) {
+  const { t } = useTranslation();
   const id = row.type === "piece" ? row.data.id : `kit-${row.data.id}`;
   const {
     attributes, listeners, setNodeRef, transform, transition, isDragging,
@@ -100,11 +102,11 @@ function SortableRow({
           >
             <span className="flex items-center gap-1.5">
               {kit.name}
-              {kit.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">MOCKUP</span>}
-              {(kit as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold">NOVO</span>}
+              {kit.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">{t("common.mockup")}</span>}
+              {(kit as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold">{t("common.new")}</span>}
             </span>
             <span className="text-[11px] text-muted-foreground block">
-              {kitPieceDetails.length} peça(s): {kitPieceDetails.map(p => p!.name).join(", ") || "Nenhuma"}
+              {kitPieceDetails.length} {t("pieces.pieceCountShort")}: {kitPieceDetails.map(p => p!.name).join(", ") || t("common.none")}
             </span>
           </button>
         </TableCell>
@@ -118,14 +120,14 @@ function SortableRow({
             <div className="flex items-center gap-1">
               {canEditPieces && (
                 <Button variant="ghost" size="icon" className="h-7 w-7"
-                  title={kit.is_mockup ? "Remover marcação de mockup" : "Marcar como mockup"}
+                  title={kit.is_mockup ? t("pieces.removeMockup") : t("pieces.markMockup")}
                   onClick={() => onToggleKitMockup(kit)}
                 >
                   <Palette className={`w-3.5 h-3.5 ${kit.is_mockup ? "text-amber-600" : "text-muted-foreground"}`} />
                 </Button>
               )}
               {canEditPieces && (
-                <Button variant="ghost" size="icon" className="h-7 w-7" title="Duplicar kit" onClick={() => onDuplicateKit(kit)}>
+                <Button variant="ghost" size="icon" className="h-7 w-7" title={t("pieces.duplicateKit")} onClick={() => onDuplicateKit(kit)}>
                   <Copy className="w-3.5 h-3.5" />
                 </Button>
               )}
@@ -143,12 +145,12 @@ function SortableRow({
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Excluir kit?</AlertDialogTitle>
-                      <AlertDialogDescription>O kit será removido. As peças componentes poderão ser mantidas ou excluídas.</AlertDialogDescription>
+                      <AlertDialogTitle>{t("pieces.deleteKitQuestion")}</AlertDialogTitle>
+                      <AlertDialogDescription>{t("pieces.deleteKitDesc")}</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => onDeleteKit(kit.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                      <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => onDeleteKit(kit.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.delete")}</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
@@ -185,8 +187,8 @@ function SortableRow({
         >
           <span className="flex items-center gap-1.5 flex-wrap">
             {piece.name}
-            {piece.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">MOCKUP</span>}
-            {(piece as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold">NOVO</span>}
+            {piece.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">{t("common.mockup")}</span>}
+            {(piece as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold">{t("common.new")}</span>}
           </span>
         </button>
       </TableCell>
@@ -207,14 +209,14 @@ function SortableRow({
             )}
             {canEditPieces && (
               <Button variant="ghost" size="icon" className="h-7 w-7"
-                title={isDistributed ? "Remover de todas as lojas" : "Distribuir para lojas compatíveis"}
+                title={isDistributed ? t("pieces.removeFromAllStores") : t("pieces.distributeToCompatible")}
                 onClick={() => onDistribute(piece)}
               >
                 <CheckSquare className={`w-3.5 h-3.5 ${isDistributed ? "text-primary" : "text-muted-foreground"}`} />
               </Button>
             )}
             {canEditPieces && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" title="Marcar como peça para kit"
+              <Button variant="ghost" size="icon" className="h-7 w-7" title={t("pieces.markKitOnly")}
                 onClick={() => onMarkKitOnly(piece)}
               >
                 <Package className="w-3.5 h-3.5 text-muted-foreground" />
@@ -222,14 +224,14 @@ function SortableRow({
             )}
             {canEditPieces && (
               <Button variant="ghost" size="icon" className="h-7 w-7"
-                title={piece.is_mockup ? "Remover marcação de mockup" : "Marcar como mockup"}
+                title={piece.is_mockup ? t("pieces.removeMockup") : t("pieces.markMockup")}
                 onClick={() => onToggleMockup(piece)}
               >
                 <Palette className={`w-3.5 h-3.5 ${piece.is_mockup ? "text-amber-600" : "text-muted-foreground"}`} />
               </Button>
             )}
             {canEditPieces && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" title="Duplicar peça" onClick={() => onDuplicate(piece)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7" title={t("pieces.duplicatePiece")} onClick={() => onDuplicate(piece)}>
                 <Copy className="w-3.5 h-3.5" />
               </Button>
             )}
@@ -247,12 +249,12 @@ function SortableRow({
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir peça?</AlertDialogTitle>
-                    <AlertDialogDescription>A peça será removida de todas as lojas desta campanha.</AlertDialogDescription>
+                    <AlertDialogTitle>{t("pieces.deletePieceQuestion")}</AlertDialogTitle>
+                    <AlertDialogDescription>{t("pieces.deletePieceDesc")}</AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onDelete(piece.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onDelete(piece.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.delete")}</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
@@ -291,6 +293,7 @@ export default function SortablePiecesTable({
   canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit, onReorder,
 }: SortablePiecesTableProps) {
+  const { t } = useTranslation();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -330,7 +333,7 @@ export default function SortablePiecesTable({
 
   const getIsDistributed = (piece: CampaignPiece) => {
     const autoStores = stores.filter(s => s.auto_distribute);
-    const targetStores = piece.store_category === "Todas" || !piece.store_category
+    const targetStores = piece.store_category === t("common.allFeminine") || !piece.store_category
       ? autoStores
       : autoStores.filter(s => s.store_model === piece.store_category);
     return targetStores.some(s => qtyMap[`${s.id}-${piece.id}`]);
@@ -362,15 +365,15 @@ export default function SortablePiecesTable({
           <TableHeader>
             <TableRow>
               {canEditPieces && <TableHead className="w-8" />}
-              <TableHead className="w-[70px]">Cód.</TableHead>
-              <TableHead className="hidden sm:table-cell">Localização</TableHead>
-              <TableHead>Nome</TableHead>
-              <TableHead className="hidden md:table-cell w-[140px] min-w-[140px]">Medidas</TableHead>
-              <TableHead className="hidden lg:table-cell">Modelo</TableHead>
-              <TableHead className="hidden lg:table-cell">Especificação</TableHead>
-              <TableHead className="hidden xl:table-cell">Instalação</TableHead>
-              <TableHead className="text-center w-[60px]">Total</TableHead>
-              {(canEditPieces || canDeletePieces) && <TableHead className="w-[80px]">Ações</TableHead>}
+              <TableHead className="w-[70px]">{t("common.code")}</TableHead>
+              <TableHead className="hidden sm:table-cell">{t("pieces.locationInStore")}</TableHead>
+              <TableHead>{t("common.name")}</TableHead>
+              <TableHead className="hidden md:table-cell w-[140px] min-w-[140px]">{t("pieces.measures")}</TableHead>
+              <TableHead className="hidden lg:table-cell">{t("common.model")}</TableHead>
+              <TableHead className="hidden lg:table-cell">{t("pieces.specification")}</TableHead>
+              <TableHead className="hidden xl:table-cell">{t("pieces.installationInstructions")}</TableHead>
+              <TableHead className="text-center w-[60px]">{t("common.total")}</TableHead>
+              {(canEditPieces || canDeletePieces) && <TableHead className="w-[80px]">{t("common.actions")}</TableHead>}
             </TableRow>
           </TableHeader>
           <SortableContext items={rowIds} strategy={verticalListSortingStrategy}>

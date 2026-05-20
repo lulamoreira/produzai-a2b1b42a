@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAddPiece, type Piece } from "@/hooks/useStoreData";
 import { supabase } from "@/integrations/supabase/client";
 import { compressImage } from "@/lib/compressImage";
@@ -19,8 +20,9 @@ interface AddPieceDialogProps {
 }
 
 const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ code: "", category: "", name: "", size: "", image_url: "", specification: "Vide Book/Manual", installation_instructions: "Sem informações específicas" });
+  const [form, setForm] = useState({ code: "", category: "", name: "", size: "", image_url: "", specification: t("pieces.videManual"), installation_instructions: t("pieces.noSpecificInfo") });
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const addPiece = useAddPiece();
@@ -45,9 +47,9 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
       const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
       setForm((f) => ({ ...f, image_url: urlData.publicUrl }));
       setPreviewUrl(urlData.publicUrl);
-      toast.success("Imagem enviada com sucesso");
+      toast.success(t("imageUpload.uploadSuccess"));
     } catch (err: any) {
-      toast.error("Erro ao enviar imagem: " + err.message);
+      toast.error(t("imageUpload.uploadError", { message: err.message }));
     } finally {
       setUploading(false);
     }
@@ -79,17 +81,17 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-          <Plus className="w-4 h-4 mr-1" /> Novo Item
+          <Plus className="w-4 h-4 mr-1" /> {t("pieces.newPiece")}
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-display">Adicionar Item à Campanha</DialogTitle>
+          <DialogTitle className="font-display">{t("pieces.addPieceTitle")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Código</label>
+              <label className="text-xs font-medium text-muted-foreground">{t("common.code")}</label>
               <Input
                 type="number"
                 placeholder={String(maxCode + 1)}
@@ -98,7 +100,7 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
               />
             </div>
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Categoria</label>
+              <label className="text-xs font-medium text-muted-foreground">{t("common.category")}</label>
               <Input
                 required
                 placeholder="Ex: CUBOS"
@@ -108,16 +110,16 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Nome</label>
+            <label className="text-xs font-medium text-muted-foreground">{t("common.name")}</label>
             <Input
               required
-              placeholder="Nome da peça"
+              placeholder={t("pieces.pieceNamePlaceholder")}
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Medida</label>
+            <label className="text-xs font-medium text-muted-foreground">{t("pieces.measures")}</label>
             <Input
               required
               placeholder="Ex: 90x60cm"
@@ -126,14 +128,14 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Especificação</label>
+            <label className="text-xs font-medium text-muted-foreground">{t("pieces.specification")}</label>
             <Input
               value={form.specification}
               onChange={(e) => setForm({ ...form, specification: e.target.value })}
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-muted-foreground">Instruções de Instalação</label>
+            <label className="text-xs font-medium text-muted-foreground">{t("pieces.installationInstructions")}</label>
             <Input
               value={form.installation_instructions}
               onChange={(e) => setForm({ ...form, installation_instructions: e.target.value })}
@@ -142,7 +144,7 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
 
           {/* Image upload section */}
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Foto da peça</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.piecePhoto")}</label>
             {previewUrl ? (
               <div className="relative">
                 <img
@@ -157,7 +159,7 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
                   className="absolute top-2 right-2 h-7 px-2"
                   onClick={handleRemoveImage}
                 >
-                  <X className="w-3 h-3 mr-1" /> Remover
+                  <X className="w-3 h-3 mr-1" /> {t("common.remove")}
                 </Button>
               </div>
             ) : (
@@ -172,7 +174,7 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
                 <div className="flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20">
                   <Upload className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
-                    {uploading ? "Comprimindo e enviando..." : "Clique ou arraste (será comprimida)"}
+                    {uploading ? t("common.sending") : t("common.clickOrDrag")}
                   </span>
                 </div>
               </div>
@@ -180,7 +182,7 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
           </div>
 
           <Button type="submit" className="w-full" disabled={addPiece.isPending || uploading}>
-            {addPiece.isPending ? "Adicionando..." : "Confirmar"}
+            {addPiece.isPending ? t("common.loading") : t("common.confirm")}
           </Button>
         </form>
       </DialogContent>

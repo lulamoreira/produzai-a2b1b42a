@@ -107,11 +107,12 @@ const PHASE_BADGE_STYLES: Record<BudgetPhase, string> = {
 };
 
 function BudgetSectionPhaseBadge({ campaignId }: { campaignId: string }) {
+  const { t } = useTranslation();
   const { currentPhase } = useBudgetPhase(campaignId);
   if (!currentPhase) return null;
   return (
     <div className="mb-3 flex items-center gap-2">
-      <h2 className="text-lg font-semibold text-foreground">Cotações</h2>
+      <h2 className="text-lg font-semibold text-foreground">{t("modules.budgets")}</h2>
       <span
         className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${PHASE_BADGE_STYLES[currentPhase]}`}
       >
@@ -137,6 +138,7 @@ const cleanCustomFieldLabel = (label: string) => label.split("|")[0]?.trim() || 
 const hasStoreDetailValue = (value: unknown) => value !== null && value !== undefined && String(value).trim() !== "";
 
 function StoreDetailsPopover({ store, customFieldLabels }: { store: ClientStore; customFieldLabels: StoreDetailCustomField[] }) {
+  const { t } = useTranslation();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const closeDetailsTimer = useRef<number | null>(null);
   const storeAny = store as any;
@@ -203,13 +205,13 @@ function StoreDetailsPopover({ store, customFieldLabels }: { store: ClientStore;
           </div>
           <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
             <span className="text-muted-foreground">Modelo</span>
-            <span className={hasStoreDetailValue(store.store_model) ? "" : "italic text-muted-foreground/70"}>{hasStoreDetailValue(store.store_model) ? store.store_model : "Modelo não informado"}</span>
+            <span className={hasStoreDetailValue(store.store_model) ? "" : "italic text-muted-foreground/70"}>{hasStoreDetailValue(store.store_model) ? store.store_model : t("stores.modelNotInformed")}</span>
             <span className="text-muted-foreground">Tipo</span>
-            <span className={hasStoreDetailValue(typeValue) ? "" : "italic text-muted-foreground/70"}>{hasStoreDetailValue(typeValue) ? String(typeValue) : "Tipo não informado"}</span>
+            <span className={hasStoreDetailValue(typeValue) ? "" : "italic text-muted-foreground/70"}>{hasStoreDetailValue(typeValue) ? String(typeValue) : t("stores.typeNotInformed")}</span>
             <span className="text-muted-foreground">Vitrines</span>
-            <span className={hasStoreDetailValue(storeAny.showcase_count) ? "" : "italic text-muted-foreground/70"}>{hasStoreDetailValue(storeAny.showcase_count) ? String(storeAny.showcase_count) : "Quantidade não informada"}</span>
+            <span className={hasStoreDetailValue(storeAny.showcase_count) ? "" : "italic text-muted-foreground/70"}>{hasStoreDetailValue(storeAny.showcase_count) ? String(storeAny.showcase_count) : t("stores.showcaseCountNotInformed")}</span>
             <span className="text-muted-foreground">Localização</span>
-            <span className={locationParts ? "" : "italic text-muted-foreground/70"}>{locationParts || "Localização não informada"}</span>
+            <span className={locationParts ? "" : "italic text-muted-foreground/70"}>{locationParts || t("stores.locationNotInformed")}</span>
             {filledCustomFields.length > 0 ? filledCustomFields.map((field) => (
               <Fragment key={field.label}>
                 <span className="text-muted-foreground">{field.label}</span>
@@ -218,7 +220,7 @@ function StoreDetailsPopover({ store, customFieldLabels }: { store: ClientStore;
             )) : (
               <>
                 <span className="text-muted-foreground">Campos personalizados</span>
-                <span className="italic text-muted-foreground/70">Nenhum preenchido</span>
+                <span className="italic text-muted-foreground/70">{t("stores.noCustomFields")}</span>
               </>
             )}
           </div>
@@ -533,8 +535,8 @@ const CampaignDetail = () => {
     code: "", category: "", sub_location: "", name: "",
     width: "", length: "", height: "",
     store_category: typeof window !== "undefined" ? localStorage.getItem("last_store_category") || "" : "",
-    specification: "Vide Book/Manual",
-    installation_instructions: "Sem informações específicas",
+    specification: t("pieces.videManual"),
+    installation_instructions: t("pieces.noSpecificInfo"),
     kit_only: false,
     is_mockup: false,
     is_new: false,
@@ -546,8 +548,8 @@ const CampaignDetail = () => {
     id: "", code: "", category: "", sub_location: "", name: "",
     width: "", length: "", height: "",
     store_category: "",
-    specification: "Vide Book/Manual",
-    installation_instructions: "Sem informações específicas",
+    specification: t("pieces.videManual"),
+    installation_instructions: t("pieces.noSpecificInfo"),
     kit_only: false,
     is_mockup: false,
     is_new: false,
@@ -1022,8 +1024,8 @@ const CampaignDetail = () => {
       code: "", category: "", sub_location: "", name: "",
       width: "", length: "", height: "",
       store_category: pieceForm.store_category,
-      specification: "Vide Book/Manual",
-      installation_instructions: "Sem informações específicas",
+      specification: t("pieces.videManual"),
+      installation_instructions: t("pieces.noSpecificInfo"),
       kit_only: false,
       is_mockup: false,
       is_new: false,
@@ -1044,8 +1046,8 @@ const CampaignDetail = () => {
       height: sizeParts[1] || "",
       length: sizeParts[2] || "",
       store_category: piece.store_category || "",
-      specification: piece.specification || "Vide Book/Manual",
-      installation_instructions: piece.installation_instructions || "Sem informações específicas",
+      specification: piece.specification || t("pieces.videManual"),
+      installation_instructions: piece.installation_instructions || t("pieces.noSpecificInfo"),
       kit_only: piece.kit_only || false,
       is_mockup: piece.is_mockup || false,
       is_new: (piece as any).is_new || false,
