@@ -155,6 +155,43 @@ export default function ExportReportDropdown({
     setLoading(true);
     const toastId = toast.loading("Gerando apresentação PPT...");
     try {
+      const piecesData = pieces.map(p => {
+        const sizeParts = (p.size || "").split(" x ");
+        return {
+          id: p.id,
+          name: p.name,
+          description: p.specification,
+          width: sizeParts[0] ? Number(sizeParts[0]) || undefined : undefined,
+          height: sizeParts[1] ? Number(sizeParts[1]) || undefined : undefined,
+          material: undefined,
+          quantity: undefined,
+          code: String(p.code ?? ""),
+          observations: p.installation_instructions || undefined,
+          status: undefined,
+          photo_url: p.image_url || undefined,
+        };
+      });
+
+      const kitsData = kits.map(k => {
+        const kpForKit = kitPieces.filter((kp: any) => kp.kit_id === k.id);
+        const kitPieceDetails = kpForKit
+          .map((kp: any) => pieces.find(p => p.id === kp.piece_id))
+          .filter(Boolean);
+        return {
+          id: k.id,
+          name: k.name,
+          description: undefined,
+          pieces_count: kpForKit.length,
+          code: String(k.code ?? ""),
+          observations: undefined,
+          photo_url: k.image_url || undefined,
+          pieces: kitPieceDetails.map((p: any) => ({
+            name: p.name,
+            photo_url: p.image_url || undefined,
+          })),
+        };
+      });
+
       const { exportCampaignPPT } = await import("@/lib/exportCampaignPPT");
       await exportCampaignPPT({
         campaign: {
@@ -163,11 +200,8 @@ export default function ExportReportDropdown({
           agency_name: agencyName,
           cover_image_url: imageUrl
         },
-        pieces: pieces.map(p => ({
-          ...p,
-          photo_url: p.image_url
-        })),
-        kits: kits
+        pieces: piecesData,
+        kits: kitsData,
       });
       toast.success("PPT exportado com sucesso!", { id: toastId });
     } catch (err) {
