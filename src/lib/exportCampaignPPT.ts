@@ -317,7 +317,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     x: 0, y: 3.0, w: 13.33, align: "center", color: COLORS.white, fontSize: 36, fontFace: "Calibri", bold: true
   });
   
-  slideFinal.addText(campaign.agency_name || "", {
+  slideFinal.addText(campaign.agency_name || "VIMER RETAIL EXPERIENCE", {
     x: 0, y: 3.8, w: 13.33, align: "center", color: COLORS.grayMuted, fontSize: 14, fontFace: "Calibri"
   });
   
