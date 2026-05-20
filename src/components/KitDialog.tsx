@@ -346,6 +346,7 @@ function SortableKitPieceRow({
   canDrag: boolean;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: kp.id, disabled: !canDrag });
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),

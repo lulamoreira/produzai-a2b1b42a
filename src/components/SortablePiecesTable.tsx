@@ -64,6 +64,7 @@ function SortableRow({
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit,
   isDistributed, kitCategory,
 }: SortableRowProps) {
+  const { t } = useTranslation();
   const id = row.type === "piece" ? row.data.id : `kit-${row.data.id}`;
   const {
     attributes, listeners, setNodeRef, transform, transition, isDragging,
