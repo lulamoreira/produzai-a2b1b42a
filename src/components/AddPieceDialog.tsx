@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { compressImage } from "@/lib/compressImage";
 import { Plus, Upload, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -129,16 +130,18 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">{t("pieces.specification")}</label>
-            <Input
+            <Textarea
               value={form.specification}
               onChange={(e) => setForm({ ...form, specification: e.target.value })}
+              className="min-h-[80px]"
             />
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">{t("pieces.installationInstructions")}</label>
-            <Input
+            <Textarea
               value={form.installation_instructions}
               onChange={(e) => setForm({ ...form, installation_instructions: e.target.value })}
+              className="min-h-[80px]"
             />
           </div>
 

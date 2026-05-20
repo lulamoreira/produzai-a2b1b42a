@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
@@ -769,11 +770,11 @@ export function KitDetailDialog({
                     </div>
                     <div>
                       <label className="text-[10px] text-muted-foreground">Especificação</label>
-                      <Input value={editForm.specification} onChange={(e) => setEditForm(f => ({ ...f, specification: e.target.value }))} className="h-7 text-xs" />
+                      <Textarea value={editForm.specification} onChange={(e) => setEditForm(f => ({ ...f, specification: e.target.value }))} className="min-h-[60px] text-xs" />
                     </div>
                     <div>
                       <label className="text-[10px] text-muted-foreground">Instruções de Instalação</label>
-                      <Input value={editForm.installation_instructions} onChange={(e) => setEditForm(f => ({ ...f, installation_instructions: e.target.value }))} className="h-7 text-xs" />
+                      <Textarea value={editForm.installation_instructions} onChange={(e) => setEditForm(f => ({ ...f, installation_instructions: e.target.value }))} className="min-h-[60px] text-xs" />
                     </div>
                     {/* Piece image in edit mode */}
                     <div
@@ -823,7 +824,7 @@ export function KitDetailDialog({
                         )}
                       </div>
                       <p className="text-[11px] text-muted-foreground">{p.category} · {p.size || "—"}</p>
-                      <p className="text-[10px] text-muted-foreground break-words">{p.specification}</p>
+                      <p className="text-[10px] text-muted-foreground break-words whitespace-pre-wrap">{p.specification}</p>
                     </div>
                   </div>
                   {/* Quantity control */}
