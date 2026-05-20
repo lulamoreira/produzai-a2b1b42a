@@ -134,6 +134,7 @@ async function buildTransposedSheet(
   locData: LocationData,
   kitSheetNames?: Map<string, string>, // id -> sheet name, for hyperlinks
   storeFields: StoreFieldDef[] = DEFAULT_STORE_FIELDS,
+  extraHiddenStoreFields: StoreFieldDef[] = [],
 ) {
   const { PRIMARY, SECONDARY, LIGHT, BORDER } = colors;
   const whiteFont: Partial<ExcelJS.Font> = { color: { argb: "FFFFFFFF" }, bold: true };
