@@ -454,8 +454,8 @@
     "deletedError": "Erro ao excluir ocorrência",
     "resolve": "Resolver",
     "reopen": "Reabrir",
-    "addComment": "Adicionar comentário"
-  },
+    "addComment": "Adicionar comentário",
+
     "statusesTab": "Status",
     "periodTab": "Período",
     "emailsHint": "Até 5 emails receberão notificação de novas ocorrências.",
