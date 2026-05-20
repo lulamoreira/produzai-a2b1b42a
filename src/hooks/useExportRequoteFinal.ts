@@ -173,6 +173,7 @@ export async function buildRequoteFinalPackage(params: {
     newInstallation,
     newFreight,
     generatedAt: new Date(),
+    extraHiddenStoreFields,
   });
 }
 
