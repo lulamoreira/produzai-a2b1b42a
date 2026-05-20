@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useLojaALojaTipos, useLojaALojaLojas, useToggleLojaAssignment, type LojaALojaTipo } from "@/hooks/useLojaALoja";
 import { useClientStores } from "@/hooks/useMultiClientData";
 import { supabase } from "@/integrations/supabase/client";
@@ -26,6 +27,7 @@ interface Props {
 }
 
 export default function LojasManager({ campaignId, clientId, permissions }: Props) {
+  const { t } = useTranslation();
   const canEdit = permissions.canEdit;
   // Treat canEdit as "isAdmin" for write controls (toggles, copy, bulk)
   const isAdmin = canEdit;
@@ -362,14 +364,14 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar por nome, código, cidade..."
+            placeholder={t("lojaAloja.searchPlaceholder", "Buscar por nome, código, cidade...")}
             className="h-8 text-xs pl-8"
           />
         </div>
         {isAdmin && (
           <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 shrink-0" onClick={handleOpenCopy}>
             <Copy className="h-3.5 w-3.5" />
-            Copiar da campanha anterior
+            {t("lojaAloja.compareStores")}
           </Button>
         )}
       </div>
@@ -404,10 +406,10 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
             </tr>
             {/* Individual letra headers */}
             <tr className="border-b border-border">
-              {renderSortTh("Código", "store_code", "w-[80px]")}
-              {renderSortTh("Loja", "name", "min-w-[200px]")}
-              {renderSortTh("Cidade", "city", "min-w-[100px]")}
-              {renderSortTh("UF", "state", "w-[60px]")}
+              {renderSortTh(t("common.code"), "store_code", "w-[80px]")}
+              {renderSortTh(t("common.store", "Loja"), "name", "min-w-[200px]")}
+              {renderSortTh(t("common.city"), "city", "min-w-[100px]")}
+              {renderSortTh(t("common.state"), "state", "w-[60px]")}
               {vitrinesTipos.map((t) => (
                 <th key={t.id} className="h-9 px-1 text-center text-xs font-bold w-10 border-l border-border" title={t.nome}>
                   {t.letra}

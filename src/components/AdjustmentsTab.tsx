@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2, Send, FileInput, RotateCcw, XCircle, ArrowLeft, FileSpreadsheet, Mail, Truck } from "lucide-react";
@@ -35,6 +35,7 @@ import {
 import { DeadlineCountdown } from "./Budget/DeadlineCountdown";
 import { ReviewRequoteDialog } from "./Budget/ReviewRequoteDialog";
 import { formatDistanceToNow } from "date-fns";
+import { useFormatters } from "@/lib/formatters";
 
 interface AdjustmentsTabProps {
   campaignId: string;
@@ -82,6 +83,8 @@ export default function AdjustmentsTab({
   onBackToBudgets,
   clientEmail,
 }: AdjustmentsTabProps) {
+  const { t } = useTranslation();
+  const fmt = useFormatters();
   const { data: adjustments = [], isLoading } = useCampaignAdjustments(campaignId);
   const { data: activeAdjustment } = useActiveAdjustment(campaignId);
   const createMut = useCreateAdjustment();
@@ -358,7 +361,7 @@ export default function AdjustmentsTab({
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2">
           <Layers className="w-5 h-5 text-primary" />
-          <h2 className="text-lg font-semibold">Ajustes de Mockup</h2>
+          <h2 className="text-lg font-semibold">{t("adjustments.title")}</h2>
         </div>
         <Button
           size="sm"
@@ -371,7 +374,7 @@ export default function AdjustmentsTab({
           disabled={hasDraft}
           title={hasDraft ? "Já existe um rascunho. Edite ou exclua antes de criar outro." : ""}
         >
-          <Plus className="w-4 h-4" /> Criar novo ajuste
+          <Plus className="w-4 h-4" /> {t("adjustments.new")}
         </Button>
       </div>
 
@@ -387,14 +390,13 @@ export default function AdjustmentsTab({
 
       {isLoading ? (
         <div className="flex items-center justify-center py-12 text-muted-foreground">
-          <Loader2 className="w-5 h-5 animate-spin mr-2" /> Carregando ajustes...
+          <Loader2 className="w-5 h-5 animate-spin mr-2" /> {t("lojaAloja.loading")}
         </div>
       ) : adjustments.length === 0 ? (
         <div className="text-center py-16 border border-dashed border-border rounded-lg">
           <Layers className="w-10 h-10 text-muted-foreground/40 mx-auto mb-3" />
           <p className="text-sm text-muted-foreground max-w-md mx-auto">
-            Nenhum ajuste criado. Crie um ajuste após a etapa de mockup para registrar
-            alterações nas peças sem perder a cotação original.
+            {t("adjustments.empty")}
           </p>
         </div>
       ) : (
@@ -429,11 +431,11 @@ export default function AdjustmentsTab({
                 </div>
                 <p className="text-[11px] text-muted-foreground">
                   Criado em{" "}
-                  {format(new Date(a.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                  {fmt.dateTime(new Date(a.created_at))}
                   {a.approved_at && a.status === "active" && (
                     <>
                       {" · "}Ativado em{" "}
-                      {format(new Date(a.approved_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      {fmt.dateTime(new Date(a.approved_at))}
                     </>
                   )}
                 </p>
@@ -546,10 +548,7 @@ export default function AdjustmentsTab({
                       {requote.status === "submitted" && requote.submitted_at && (
                         <span className="text-xs text-muted-foreground">
                           Recebido{" "}
-                          {formatDistanceToNow(new Date(requote.submitted_at), {
-                            locale: ptBR,
-                            addSuffix: true,
-                          })}
+                          {fmt.relative(new Date(requote.submitted_at))}
                         </span>
                       )}
                     </div>
@@ -565,7 +564,7 @@ export default function AdjustmentsTab({
                             {requote.submitted_at && (
                               <>
                                 Recebido{" "}
-                                {format(new Date(requote.submitted_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                {fmt.dateTime(new Date(requote.submitted_at))}
                               </>
                             )}
                           </div>
@@ -722,9 +721,7 @@ export default function AdjustmentsTab({
                                 {requote.response_received_at && (
                                   <>
                                     {" "}· Registrado em{" "}
-                                    {format(new Date(requote.response_received_at), "dd/MM/yyyy", {
-                                      locale: ptBR,
-                                    })}
+                                    {fmt.date(new Date(requote.response_received_at))}
                                   </>
                                 )}
                               </div>

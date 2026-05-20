@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import TiposManager from "@/components/LojaALoja/TiposManager";
 import LojasManager from "@/components/LojaALoja/LojasManager";
@@ -48,21 +49,21 @@ interface Props {
   initialTab?: string;
 }
 
-const TAB_META: Record<
+const TAB_META = (t: any): Record<
   string,
   { label: string; icon: React.ComponentType<{ className?: string }> }
-> = {
-  dashboard: { label: "Dashboard", icon: BarChart3 },
-  "portal-dashboard": { label: "Ocorrências", icon: LayoutDashboard },
-  "por-loja": { label: "Por Loja", icon: Building2 },
-  tipos: { label: "Loja a Loja", icon: LayoutGrid },
-  lojas: { label: "Classificação", icon: Store },
-  portais: { label: "Acessos", icon: Settings2 },
-  config: { label: "Config", icon: Settings },
-};
+> => ({
+  dashboard: { label: t("dashboard.title"), icon: BarChart3 },
+  "portal-dashboard": { label: t("occurrences.title"), icon: LayoutDashboard },
+  "por-loja": { label: t("lojaAloja.byStore", "Por Loja"), icon: Building2 },
+  tipos: { label: t("lojaAloja.title"), icon: LayoutGrid },
+  lojas: { label: t("lojaAloja.classification", "Classificação"), icon: Store },
+  portais: { label: t("lojaAloja.accesses", "Acessos"), icon: Settings2 },
+  config: { label: t("common.settings"), icon: Settings },
+});
 
-function SortableTab({ id }: { id: string }) {
-  const meta = TAB_META[id];
+function SortableTab({ id, t }: { id: string; t: any }) {
+  const meta = TAB_META(t)[id];
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id });
 
@@ -106,6 +107,7 @@ function SortableTab({ id }: { id: string }) {
 }
 
 export default function LojaALojaTab({ campaignId, clientId, permissions, initialTab }: Props) {
+  const { t } = useTranslation();
   const { order, saveOrder, loaded } = useLojaALojaTabOrder();
 
   // Filter tabs by per-area view permission
@@ -178,7 +180,7 @@ export default function LojaALojaTab({ campaignId, clientId, permissions, initia
         <SortableContext items={visibleTabs} strategy={horizontalListSortingStrategy}>
           <TabsList className="mb-4 flex-wrap h-auto gap-1">
             {visibleTabs.map((id) => (
-              <SortableTab key={id} id={id} />
+              <SortableTab key={id} id={id} t={t} />
             ))}
           </TabsList>
         </SortableContext>

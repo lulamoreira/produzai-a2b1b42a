@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { useHistory } from "@/lib/undo/useHistory";
 import { historyStore } from "@/lib/undo/historyStore";
 import { UndoRedoToolbar } from "@/components/UndoRedoToolbar";
@@ -451,6 +452,7 @@ function SortablePieceCard({
 }
 
 const TiposManager = ({ campaignId, clientId, permissions }: TiposManagerProps) => {
+  const { t } = useTranslation();
   const canEdit = permissions.canEdit;
   const canDelete = permissions.canDelete;
   const qc = useQueryClient();

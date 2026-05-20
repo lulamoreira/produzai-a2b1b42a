@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,6 +50,7 @@ function isStoreActiveForTipo(
 
 export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
   useRealtimeStoreOccurrences(campaignId);
+  const { t } = useTranslation();
   const { data: tipos, isLoading: loadingTipos } = useLojaALojaTipos(campaignId);
   const { data: allPecas, isLoading: loadingPecas } = useAllLojaALojaPecas(campaignId);
   const { data: lojas, isLoading: loadingLojas } = useLojaALojaLojas(campaignId);
@@ -185,16 +187,16 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
     <div className="space-y-6">
       {/* KPI Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={Store} label="Lojas cadastradas" value={totalStoreCount} />
-        <KpiCard icon={Layers} label="Tipos ativos" value={totalTipos} />
-        <KpiCard icon={Package} label="Peças cadastradas" value={totalPecas} />
-        <KpiCard icon={Trophy} label="Tipo mais utilizado" value={topTipo} />
+        <KpiCard icon={Store} label={t("dashboard.totalStores")} value={totalStoreCount} />
+        <KpiCard icon={Layers} label={t("lojaAloja.activeTypes", "Tipos ativos")} value={totalTipos} />
+        <KpiCard icon={Package} label={t("pieces.registered")} value={totalPecas} />
+        <KpiCard icon={Trophy} label={t("lojaAloja.topType", "Tipo mais utilizado")} value={topTipo} />
       </div>
 
       {/* Charts row */}
       <div className="grid md:grid-cols-2 gap-6">
         {/* Dist. por Tipo */}
-        <CollapsibleCard title="Distribuição por Tipo">
+        <CollapsibleCard title={t("lojaAloja.distributionByType", "Distribuição por Tipo")}>
           <div className="space-y-2">
             {tipoChartData.map((d) => (
               <div key={d.letra} className="flex items-center gap-2">
@@ -206,12 +208,12 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
                 <span className="text-sm font-medium w-8 text-right">{d.count}</span>
               </div>
             ))}
-            {tipoChartData.length === 0 && <p className="text-sm text-muted-foreground">Nenhum tipo cadastrado</p>}
+            {tipoChartData.length === 0 && <p className="text-sm text-muted-foreground">{t("lojaAloja.noData")}</p>}
           </div>
         </CollapsibleCard>
 
         {/* Dist. por Estado */}
-        <CollapsibleCard title="Distribuição por Estado">
+        <CollapsibleCard title={t("lojaAloja.distributionByState", "Distribuição por Estado")}>
           <div className="space-y-2">
             {ufChartData.map((d) => (
               <div key={d.uf} className="flex items-center gap-2">
@@ -228,7 +230,7 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
       </div>
 
       {/* Tipos x Lojas Table */}
-      <CollapsibleCard title="Tipos × Lojas">
+      <CollapsibleCard title={t("lojaAloja.typesVsStores", "Tipos × Lojas")}>
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -267,7 +269,7 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
       {/* Peças por Tipo */}
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Peças por Tipo</CardTitle>
+          <CardTitle className="text-base">{t("lojaAloja.piecesByType", "Peças por Tipo")}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {pecasByTipo.map(({ tipo, groups, total }) => (
