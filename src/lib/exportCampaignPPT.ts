@@ -44,6 +44,15 @@ const COLORS = {
   grayMuted: "#A8B0C0"
 };
 
+async function getImageSize(base64: string): Promise<{ width: number, height: number }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.width, height: img.height });
+    img.onerror = () => resolve({ width: 0, height: 0 });
+    img.src = base64;
+  });
+}
+
 async function urlToBase64(url: string): Promise<string | null> {
   if (!url) return null;
   try {
@@ -169,7 +178,8 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SLIDES DE PEÇA
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  pieces.forEach((piece, idx) => {
+  for (let idx = 0; idx < pieces.length; idx++) {
+    const piece = pieces[idx];
     const slide = pptx.addSlide();
     slide.background = { color: COLORS.bg };
     const pageNum = idx + 3;
@@ -188,7 +198,28 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     });
     const b64 = pieceImages[idx];
     if (b64) {
-      slide.addImage({ data: b64, x: 0.45, y: 0.95, sizing: { type: "contain", w: 6.0, h: 5.3 } });
+      const size = await getImageSize(b64);
+      const maxWidth = 6.0;
+      const maxHeight = 5.3;
+      let finalW = maxWidth;
+      let finalH = maxHeight;
+
+      if (size.width > 0 && size.height > 0) {
+        const ratio = size.width / size.height;
+        if (ratio > maxWidth / maxHeight) {
+          finalH = maxWidth / ratio;
+        } else {
+          finalW = maxHeight * ratio;
+        }
+      }
+
+      slide.addImage({ 
+        data: b64, 
+        x: 0.45 + (maxWidth - finalW) / 2, 
+        y: 0.95 + (maxHeight - finalH) / 2, 
+        w: finalW, 
+        h: finalH 
+      });
     } else {
       slide.addText("Sem foto", { x: 0.35, y: 0.85, w: 6.2, h: 5.5, align: "center", valign: "middle", color: COLORS.textSecondary, fontSize: 14 });
     }
@@ -227,16 +258,16 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
       slide.addText(piece.status.toUpperCase(), { x: infoX + 4.8, y: 6.0, w: 1.3, h: 0.3, align: "center", valign: "middle", color: COLORS.white, fontSize: 8, fontFace: "Calibri", bold: true });
     }
 
-    // Rodapé
     slide.addShape(pptx.ShapeType.line, { x: 0.4, y: 7.1, w: 12.53, line: { color: COLORS.border, width: 0.5 } });
     slide.addText(campaign.name, { x: 0.4, y: 7.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
     slide.addText(`Página ${pageNum} / ${totalSlides}`, { x: 10.0, y: 7.2, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri" });
-  });
+  }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SLIDES DE KIT
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  kits.forEach((kit, idx) => {
+  for (let idx = 0; idx < kits.length; idx++) {
+    const kit = kits[idx];
     const slide = pptx.addSlide();
     slide.background = { color: COLORS.bg };
     const pageNum = pieces.length + idx + 3;
@@ -255,7 +286,28 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     });
     const b64 = kitImages[idx];
     if (b64) {
-      slide.addImage({ data: b64, x: 0.45, y: 0.95, sizing: { type: "contain", w: 6.0, h: 4.0 } });
+      const size = await getImageSize(b64);
+      const maxWidth = 6.0;
+      const maxHeight = 4.0;
+      let finalW = maxWidth;
+      let finalH = maxHeight;
+
+      if (size.width > 0 && size.height > 0) {
+        const ratio = size.width / size.height;
+        if (ratio > maxWidth / maxHeight) {
+          finalH = maxWidth / ratio;
+        } else {
+          finalW = maxHeight * ratio;
+        }
+      }
+
+      slide.addImage({ 
+        data: b64, 
+        x: 0.45 + (maxWidth - finalW) / 2, 
+        y: 0.95 + (maxHeight - finalH) / 2, 
+        w: finalW, 
+        h: finalH 
+      });
     } else {
       slide.addText("Sem foto", { x: 0.35, y: 0.85, w: 6.2, h: 4.0, align: "center", valign: "middle", color: COLORS.textSecondary, fontSize: 14 });
     }
@@ -264,14 +316,36 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     if (kit.pieces && kit.pieces.length > 0) {
       slide.addText("PEÇAS DESTE KIT", { x: 0.45, y: 5.1, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
       const thumbs = kitPiecesThumbnails[idx];
-      thumbs.forEach((thumbB64, tIdx) => {
+      for (let tIdx = 0; tIdx < thumbs.length; tIdx++) {
+        const thumbB64 = thumbs[tIdx];
         const tX = 0.45 + (tIdx * 1.2);
         const tY = 5.3;
         slide.addShape(pptx.ShapeType.rect, { x: tX, y: tY, w: 1.1, h: 0.9, fill: { color: COLORS.white }, line: { color: COLORS.border, width: 0.3 } });
         if (thumbB64) {
-          slide.addImage({ data: thumbB64, x: tX + 0.05, y: tY + 0.05, sizing: { type: "contain", w: 1.0, h: 0.8 } });
+          const size = await getImageSize(thumbB64);
+          const maxWidth = 1.0;
+          const maxHeight = 0.8;
+          let finalW = maxWidth;
+          let finalH = maxHeight;
+
+          if (size.width > 0 && size.height > 0) {
+            const ratio = size.width / size.height;
+            if (ratio > maxWidth / maxHeight) {
+              finalH = maxWidth / ratio;
+            } else {
+              finalW = maxHeight * ratio;
+            }
+          }
+
+          slide.addImage({ 
+            data: thumbB64, 
+            x: tX + 0.05 + (maxWidth - finalW) / 2, 
+            y: tY + 0.05 + (maxHeight - finalH) / 2, 
+            w: finalW, 
+            h: finalH 
+          });
         }
-      });
+      }
     }
 
     // ÁREA DE INFORMAÇÕES
@@ -300,11 +374,10 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     addField("CÓDIGO / REF", kit.code);
     addField("OBSERVAÇÕES", kit.observations, true);
 
-    // Rodapé
     slide.addShape(pptx.ShapeType.line, { x: 0.4, y: 7.1, w: 12.53, line: { color: COLORS.border, width: 0.5 } });
     slide.addText(campaign.name, { x: 0.4, y: 7.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
     slide.addText(`Página ${pageNum} / ${totalSlides}`, { x: 10.0, y: 7.2, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri" });
-  });
+  }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SLIDE FINAL — ENCERRAMENTO
