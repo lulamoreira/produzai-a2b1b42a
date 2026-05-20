@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { CheckCircle2, AlertCircle, AlertTriangle } from "lucide-react";
 
 import {
@@ -44,6 +45,7 @@ export function ImportRequoteConfirmDialog({
   result,
   onConfirmSelected,
 }: Props) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   useEffect(() => {
@@ -203,7 +205,7 @@ export function ImportRequoteConfirmDialog({
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {t("budgets.cancel")}
             </Button>
             <Button
               onClick={() => {

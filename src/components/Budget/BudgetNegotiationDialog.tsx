@@ -1,9 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { TrendingDown, Send, Check, RotateCcw, Loader2, History, LayoutGrid, XCircle } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -117,6 +117,7 @@ export default function BudgetNegotiationDialog({
   open, onOpenChange, supplier, campaignId, campaignName,
   pieces, prices, extraCosts, pieceTotals, kitPieceTotals, settings, currencyCode, fmtCurrency, publicPortalUrl, frozenTotal, onNavigateToRateio,
 }: Props) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [target, setTarget] = useState<string>("");
   const [mode, setMode] = useState<"auto" | "manual">("manual");
@@ -746,7 +747,7 @@ export default function BudgetNegotiationDialog({
           {status && (
             <Button variant="outline" onClick={handleRevert} disabled={busy} className="gap-1.5 sm:mr-auto">
               <XCircle className="w-4 h-4" />
-              Cancelar negociação
+              {t("budgets.cancel")} negociação
             </Button>
           )}
           {onNavigateToRateio && (
@@ -768,7 +769,7 @@ export default function BudgetNegotiationDialog({
           {status === "submitted" && (
             <Button onClick={handleApprove} disabled={busy} className="gap-1 bg-emerald-600 hover:bg-emerald-700">
               <Check className="w-4 h-4" />
-              Aprovar proposta ajustada
+               {t("budgets.approve")} proposta ajustada
             </Button>
           )}
           {mode === "manual" && status !== "submitted" && (
