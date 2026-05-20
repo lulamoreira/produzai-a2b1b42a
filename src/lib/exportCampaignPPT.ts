@@ -94,7 +94,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     x: 0, y: 0, w: 0.15, h: 7.5, fill: { color: COLORS.accent } 
   });
   
-  slideCapa.addText(campaign.agency_name || "Agência", {
+  slideCapa.addText(campaign.agency_name || "VIMER RETAIL EXPERIENCE", {
     x: 1.0, y: 0.35, color: COLORS.grayMuted, fontSize: 11, fontFace: "Calibri"
   });
   
@@ -188,7 +188,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     });
     const b64 = pieceImages[idx];
     if (b64) {
-      slide.addImage({ data: b64, x: 0.45, y: 0.95, w: 6.0, h: 5.3, sizing: { type: "contain", w: 6.0, h: 5.3 } });
+      slide.addImage({ data: b64, x: 0.45, y: 0.95, sizing: { type: "contain", w: 6.0, h: 5.3 } });
     } else {
       slide.addText("Sem foto", { x: 0.35, y: 0.85, w: 6.2, h: 5.5, align: "center", valign: "middle", color: COLORS.textSecondary, fontSize: 14 });
     }
@@ -255,7 +255,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     });
     const b64 = kitImages[idx];
     if (b64) {
-      slide.addImage({ data: b64, x: 0.45, y: 0.95, w: 6.0, h: 4.0, sizing: { type: "contain", w: 6.0, h: 4.0 } });
+      slide.addImage({ data: b64, x: 0.45, y: 0.95, sizing: { type: "contain", w: 6.0, h: 4.0 } });
     } else {
       slide.addText("Sem foto", { x: 0.35, y: 0.85, w: 6.2, h: 4.0, align: "center", valign: "middle", color: COLORS.textSecondary, fontSize: 14 });
     }
@@ -269,7 +269,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
         const tY = 5.3;
         slide.addShape(pptx.ShapeType.rect, { x: tX, y: tY, w: 1.1, h: 0.9, fill: { color: COLORS.white }, line: { color: COLORS.border, width: 0.3 } });
         if (thumbB64) {
-          slide.addImage({ data: thumbB64, x: tX + 0.05, y: tY + 0.05, w: 1.0, h: 0.8, sizing: { type: "contain", w: 1.0, h: 0.8 } });
+          slide.addImage({ data: thumbB64, x: tX + 0.05, y: tY + 0.05, sizing: { type: "contain", w: 1.0, h: 0.8 } });
         }
       });
     }
@@ -317,7 +317,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     x: 0, y: 3.0, w: 13.33, align: "center", color: COLORS.white, fontSize: 36, fontFace: "Calibri", bold: true
   });
   
-  slideFinal.addText(campaign.agency_name || "", {
+  slideFinal.addText(campaign.agency_name || "VIMER RETAIL EXPERIENCE", {
     x: 0, y: 3.8, w: 13.33, align: "center", color: COLORS.grayMuted, fontSize: 14, fontFace: "Calibri"
   });
   
