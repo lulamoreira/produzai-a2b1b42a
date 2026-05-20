@@ -199,7 +199,7 @@ function SortableRow({
         ) : "—"}
       </TableCell>
       <TableCell className="text-sm text-muted-foreground hidden lg:table-cell whitespace-pre-wrap">{piece.specification}</TableCell>
-      <TableCell className="text-sm text-muted-foreground hidden xl:table-cell">{piece.installation_instructions}</TableCell>
+      <TableCell className="text-sm text-muted-foreground hidden xl:table-cell whitespace-pre-wrap">{piece.installation_instructions}</TableCell>
       <TableCell className="text-center font-semibold">{pieceTotal}</TableCell>
       {(canEditPieces || canDeletePieces) && (
         <TableCell>
