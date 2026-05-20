@@ -109,7 +109,18 @@ async function fetchReportData(campaignId: string, clientId: string, campaignNam
   };
 }
 
-export default function ExportReportDropdown({ campaignId, clientId, campaignName, clientName, pieces = [], kits = [], agencyName = "" }: Props) {
+export default function ExportReportDropdown({ 
+  campaignId, 
+  clientId, 
+  campaignName, 
+  clientName, 
+  pieces = [], 
+  kits = [], 
+  agencyName = "",
+  isOpen,
+  onOpenChange,
+  trigger
+}: Props) {
   const [loading, setLoading] = useState(false);
   const [pptDialogOpen, setPptDialogOpen] = useState(false);
   const { t } = useTranslation();
