@@ -155,7 +155,7 @@ const AgencySelect = () => {
       setLogoPreview(null);
       setDialogOpen(false);
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(t("agencySelect.error", { message: err.message }));
     } finally {
       setUploading(false);
     }
@@ -177,7 +177,7 @@ const AgencySelect = () => {
       setEditLogoPreview(null);
       setEditDialogOpen(false);
     } catch (err: any) {
-      toast.error(err.message);
+      toast.error(t("agencySelect.error", { message: err.message }));
     } finally {
       setUploading(false);
     }

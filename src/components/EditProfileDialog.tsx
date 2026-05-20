@@ -136,7 +136,7 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
     if (!user) return;
     const trimmedName = form.display_name.trim();
     if (!trimmedName) {
-      toast.error("O nome completo é obrigatório.");
+      toast.error(t("profile.nameRequired") || "O nome completo é obrigatório.");
       return;
     }
     if (trimmedName.length > 100) {

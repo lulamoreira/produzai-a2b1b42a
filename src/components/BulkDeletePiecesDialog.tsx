@@ -175,7 +175,7 @@ export default function BulkDeletePiecesDialog({
 
           {/* Actions */}
           <div className="flex gap-2 pt-2">
-            <Button variant="outline" className="flex-1" onClick={handleClose}>Cancelar</Button>
+            <Button variant="outline" className="flex-1" onClick={handleClose}>{t("common.cancel")}</Button>
             <Button
               variant="destructive"
               className="flex-1 gap-1"
@@ -183,7 +183,7 @@ export default function BulkDeletePiecesDialog({
               onClick={() => setConfirmOpen(true)}
             >
               <Trash2 className="w-4 h-4" />
-              Excluir {selected.size} peça(s)
+              {t("common.delete")} {selected.size} peça(s)
             </Button>
           </div>
         </DialogContent>
