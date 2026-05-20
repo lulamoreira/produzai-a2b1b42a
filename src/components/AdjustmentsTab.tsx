@@ -152,6 +152,7 @@ export default function AdjustmentsTab({
   const [reviewOpen, setReviewOpen] = useState(false);
   const [sendClientOpen, setSendClientOpen] = useState(false);
   const [sendSupplierOpen, setSendSupplierOpen] = useState(false);
+  const [finalExportOpen, setFinalExportOpen] = useState(false);
 
   const { data: requote } = useActiveAdjustmentRequest(campaignId);
   useRequoteRealtime(campaignId);
