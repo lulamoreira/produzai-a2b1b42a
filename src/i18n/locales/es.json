@@ -898,5 +898,8 @@
     "saved": "Anotación guardada",
     "saveError": "Error al guardar la anotación: {{message}}",
     "editingExisting": "Editando sobre una anotación existente"
+  },
+  "emptyState": {
+    "subtitle": "Intente ajustar los filtros o la búsqueda."
   }
 }
