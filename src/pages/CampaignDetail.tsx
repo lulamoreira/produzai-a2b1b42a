@@ -30,6 +30,7 @@ import { historyStore } from "@/lib/undo/historyStore";
 import { UndoRedoToolbar } from "@/components/UndoRedoToolbar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription,
@@ -1900,11 +1901,19 @@ const CampaignDetail = () => {
       </div>
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.specification")}</label>
-        <Input value={form.specification} onChange={(e) => setForm((f) => ({ ...f, specification: e.target.value }))} />
+        <Textarea 
+          value={form.specification} 
+          onChange={(e) => setForm((f) => ({ ...f, specification: e.target.value }))}
+          className="min-h-[80px]"
+        />
       </div>
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.installationInstructions")}</label>
-        <Input value={form.installation_instructions} onChange={(e) => setForm((f) => ({ ...f, installation_instructions: e.target.value }))} />
+        <Textarea 
+          value={form.installation_instructions} 
+          onChange={(e) => setForm((f) => ({ ...f, installation_instructions: e.target.value }))}
+          className="min-h-[80px]"
+        />
       </div>
     </>
   );

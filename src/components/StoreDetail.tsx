@@ -318,10 +318,10 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
                       {piece.name}
                     </p>
                     <p className="text-[10px] sm:text-xs text-muted-foreground">{piece.size}</p>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate hidden sm:block" title={piece.specification}>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground whitespace-pre-wrap hidden sm:block" title={piece.specification}>
                       📋 {piece.specification}
                     </p>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground truncate hidden sm:block" title={piece.installation_instructions}>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground whitespace-pre-wrap hidden sm:block" title={piece.installation_instructions}>
                       🔧 {piece.installation_instructions}
                     </p>
                   </div>
