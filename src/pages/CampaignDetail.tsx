@@ -2194,6 +2194,7 @@ const CampaignDetail = () => {
                     clientName={client?.name || ""}
                     pieces={pieces}
                     kits={kits}
+                    kitPieces={kitPieces}
                     agencyName={agency?.name}
                   />
                 )}
