@@ -187,6 +187,7 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <UIVersionProvider>
             <PreviewUserProvider>
             <SidebarStateProvider>
             <ErrorBoundary>
