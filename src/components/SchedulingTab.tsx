@@ -655,7 +655,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   };
 
   // Count active secondary filters
-  const secondaryFilterCount = [filterCity, filterPeriod, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, filterModel].filter(Boolean).length;
+  const secondaryFilterCount = [filterCity, filterPeriod, filterTeam, filterPreference, filterLocked, filterReschedule, filterModel].filter(Boolean).length;
 
   // Approval badge helper
   const approvalBadgeClass = (status: ApprovalStatusValue) => {
