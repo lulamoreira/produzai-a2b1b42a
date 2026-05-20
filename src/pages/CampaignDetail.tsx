@@ -107,6 +107,7 @@ const PHASE_BADGE_STYLES: Record<BudgetPhase, string> = {
 };
 
 function BudgetSectionPhaseBadge({ campaignId }: { campaignId: string }) {
+  const { t } = useTranslation();
   const { currentPhase } = useBudgetPhase(campaignId);
   if (!currentPhase) return null;
   return (
@@ -137,6 +138,7 @@ const cleanCustomFieldLabel = (label: string) => label.split("|")[0]?.trim() || 
 const hasStoreDetailValue = (value: unknown) => value !== null && value !== undefined && String(value).trim() !== "";
 
 function StoreDetailsPopover({ store, customFieldLabels }: { store: ClientStore; customFieldLabels: StoreDetailCustomField[] }) {
+  const { t } = useTranslation();
   const [detailsOpen, setDetailsOpen] = useState(false);
   const closeDetailsTimer = useRef<number | null>(null);
   const storeAny = store as any;

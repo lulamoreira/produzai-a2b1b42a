@@ -88,6 +88,7 @@ interface FilterGroupProps {
 }
 
 const FilterGroup = ({ label, filterKey, options, selected, onToggle }: FilterGroupProps) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const hasSelection = selected.size > 0;
