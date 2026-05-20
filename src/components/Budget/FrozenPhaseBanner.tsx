@@ -1,6 +1,6 @@
 import { Lock, Loader2, Unlock } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { BudgetPhase, PHASE_LABELS } from "@/hooks/useBudgetPhase";
 
@@ -21,6 +21,7 @@ export function FrozenPhaseBanner({
   onUnlock,
   isUnlocking,
 }: FrozenPhaseBannerProps) {
+  const { t } = useTranslation();
   return (
     <div className="flex items-start gap-3 rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3">
       <Lock className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
@@ -30,7 +31,7 @@ export function FrozenPhaseBanner({
         </p>
         <p className="text-[11px] text-amber-800 dark:text-amber-300 mt-0.5">
           {lockedAt
-            ? `Congelada em ${format(new Date(lockedAt), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })} — `
+            ? `Congelada em ${format(new Date(lockedAt), "dd 'de' MMMM 'de' yyyy")} — `
             : ""}
           Fase atual: {PHASE_LABELS[activePhase]}. Este conteúdo é somente leitura.
         </p>

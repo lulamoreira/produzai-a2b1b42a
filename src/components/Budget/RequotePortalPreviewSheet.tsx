@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { Eye, Lock, Loader2, Package } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -29,6 +29,7 @@ export function RequotePortalPreviewSheet({
   supplierId,
   requestId,
 }: Props) {
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const enabled = open && !!adjustmentId && !!supplierId;
 
@@ -142,11 +143,11 @@ export function RequotePortalPreviewSheet({
   const statusLabel = (() => {
     switch (request?.status) {
       case "submitted": return "Enviado pelo fornecedor";
-      case "approved":  return "Aprovado";
+      case "approved":  return t("budgets.approved");
       case "rejected":  return "Recusado";
       case "filling":   return "Fornecedor preenchendo";
       case "sent":      return "Aguardando resposta";
-      default:          return "Pendente";
+      default:          return t("budgets.pending");
     }
   })();
 
@@ -200,8 +201,7 @@ export function RequotePortalPreviewSheet({
                     <span className="font-medium">
                       {format(
                         new Date(request.token_expires_at),
-                        "dd/MM/yyyy 'às' HH:mm",
-                        { locale: ptBR },
+                        "dd/MM/yyyy 'às' HH:mm"
                       )}
                     </span>
                   </>

@@ -1,10 +1,10 @@
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { History } from "lucide-react";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 
@@ -32,6 +32,7 @@ interface Props {
 export default function BudgetSupplierHistorySheet({
   open, onOpenChange, supplierId, supplierName, currencyCode = "BRL", pieces, kits,
 }: Props) {
+  const { t } = useTranslation();
   const { data: entries = [], isLoading } = useQuery({
     queryKey: ["budget_price_history", supplierId],
     enabled: open && !!supplierId,
@@ -88,7 +89,7 @@ export default function BudgetSupplierHistorySheet({
                     <Badge className={`text-[10px] ${reasonColor}`}>{reasonLabel}</Badge>
                   </div>
                   <span className="text-[11px] text-muted-foreground">
-                    {format(new Date(e.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                    {format(new Date(e.created_at), "dd/MM/yyyy 'às' HH:mm")}
                   </span>
                 </div>
                 <div className="rounded-md border border-border/60 overflow-hidden">
