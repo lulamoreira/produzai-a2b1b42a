@@ -38,6 +38,7 @@ export type Campaign = {
   name: string;
   color: string | null;
   display_order: number;
+  cover_images?: Array<{ url: string; timestamp: string }>;
   created_at: string;
 };
 
@@ -316,7 +317,7 @@ export function useCampaigns(clientId: string | undefined) {
         .eq("client_id", clientId)
         .order("display_order").order("created_at", { ascending: false });
       if (error) throw error;
-      return data as Campaign[];
+      return data as unknown as Campaign[];
     },
     enabled: !!clientId,
   });
@@ -333,7 +334,7 @@ export function useCampaign(campaignId: string | undefined) {
         .eq("id", campaignId)
         .single();
       if (error) throw error;
-      return data as Campaign;
+      return data as unknown as Campaign;
     },
     enabled: !!campaignId,
   });
@@ -345,7 +346,7 @@ export function useAddCampaign() {
     mutationFn: async (campaign: { client_id: string; name: string }) => {
       const { data, error } = await supabase.from("campaigns").insert(campaign).select().single();
       if (error) throw error;
-      return data as Campaign;
+      return data as unknown as Campaign;
     },
     onMutate: async (newCampaign) => {
       await qc.cancelQueries({ queryKey: ["campaigns", newCampaign.client_id] });

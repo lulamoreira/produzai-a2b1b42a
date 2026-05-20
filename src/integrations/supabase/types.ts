@@ -1899,6 +1899,7 @@ export type Database = {
           access_ignore_time: boolean | null
           client_id: string
           color: string | null
+          cover_images: Json | null
           created_at: string
           display_order: number | null
           id: string
@@ -1915,6 +1916,7 @@ export type Database = {
           access_ignore_time?: boolean | null
           client_id: string
           color?: string | null
+          cover_images?: Json | null
           created_at?: string
           display_order?: number | null
           id?: string
@@ -1931,6 +1933,7 @@ export type Database = {
           access_ignore_time?: boolean | null
           client_id?: string
           color?: string | null
+          cover_images?: Json | null
           created_at?: string
           display_order?: number | null
           id?: string
