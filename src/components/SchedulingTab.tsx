@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import EmptyState from "@/components/EmptyState";
 import { CardSkeleton } from "@/components/CardSkeleton";
-import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Schedule, ApprovalStatusValue } from "@/types/schedule";
@@ -327,6 +327,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     });
   }, [filteredStores, summaryFilter, scheduleMap, storeOccurrenceStatus]);
 
+
   const fieldLabels: Record<string, string> = {
     scheduled_date: t("common.date"),
     scheduled_time: t("common.time"),
@@ -498,7 +499,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       return team?.name || `(${t("common.none")})`;
     }
     if ((field === "scheduled_date" || field === "suggested_date" || field === "suggested_date_2" || field === "reschedule_date" || field === "reschedule_suggested_date" || field === "reschedule_suggested_date_2") && value) {
-      try { return format(new Date(value + "T12:00:00"), "dd/MM/yyyy"); } catch { return String(value); }
+      try { return fmt.date(new Date(value + "T12:00:00")); } catch { return String(value); }
     }
     if (field === "store_approved" || field === "team_approved") return value ? t("common.yes") : t("common.no");
     if (field === "reschedule_enabled") return value ? t("common.yes") : t("common.no");
@@ -523,7 +524,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       if (!label) continue;
       const oldVal = existing ? (existing as any)[key] : null;
       if (oldVal === newVal) continue;
-      changedDetails.push(`${label}: ${formatFieldValue(key, oldVal)} → ${formatFieldValue(key, newVal)}`);
+        changedDetails.push(`${label}: ${formatFieldValue(key, oldVal)} → ${formatFieldValue(key, newVal)}`);
     }
     if (changedDetails.length > 0) {
       logActivity.mutate({
@@ -590,7 +591,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         [t("common.contact")]: store.manager_name || "",
         [t("common.phone")]: store.phone || "",
         "E-mail": store.email || "",
-        [t("scheduling.scheduledDate")]: schedule?.scheduled_date ? format(new Date(schedule.scheduled_date + "T12:00:00"), "dd/MM/yyyy") : "",
+        [t("scheduling.scheduledDate")]: schedule?.scheduled_date ? fmt.dateShort(new Date(schedule.scheduled_date + "T12:00:00")) : "",
         [t("common.time")]: schedule?.scheduled_time || "",
         "OS Instalação": schedule?.installation_os || "",
         [t("scheduling.preferenceLabel")]: prefLabel(schedule?.installation_preference ?? null),
@@ -1027,12 +1028,12 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       return (
                         <a href={occUrl} target="_blank" rel="noopener noreferrer" className="badge-base badge-danger no-underline hover:opacity-80" onClick={(e) => e.stopPropagation()}>
                           <AlertTriangle className="w-3 h-3" />
-                          Ocorrência ({occStatus!.count})
+                          {t("occurrences.title")} ({occStatus!.count})
                         </a>
                       );
                     })()}
-                    {isReschedule && <span className="badge-base badge-warning">REM</span>}
-                    {isCardLocked && <span className="badge-base badge-neutral"><Lock className="w-3 h-3" /> BLOQ</span>}
+                    {isReschedule && <span className="badge-base badge-warning">{t("scheduling.reschedule").slice(0, 3).toUpperCase()}</span>}
+                    {isCardLocked && <span className="badge-base badge-neutral"><Lock className="w-3 h-3" /> {t("common.locked").slice(0, 4).toUpperCase()}</span>}
                     {(reinstallsByStore[store.id] || []).map((r: any) => (
                       <span
                         key={r.id}
@@ -1040,7 +1041,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         title={r.reinstall_reason || ""}
                       >
                         <RefreshCw className="w-3 h-3" />
-                        Reinstalação #{r.reinstall_seq}
+                        {t("occurrences.needsReinstallation")} #{r.reinstall_seq}
                         {r.reinstall_reason ? ` — ${String(r.reinstall_reason).slice(0, 40)}${String(r.reinstall_reason).length > 40 ? "…" : ""}` : ""}
                       </span>
                     ))}

@@ -1,9 +1,9 @@
 import { useState, useMemo, useCallback, useEffect, useRef, lazy, Suspense } from "react";
+import { useTranslation } from "react-i18next";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import PhasePickerDialog, { type PhotoPhase } from "@/components/PhasePickerDialog";
 import EmptyState from "@/components/EmptyState";
 import { CardSkeleton } from "@/components/CardSkeleton";
-import { useTranslation } from "react-i18next";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Schedule } from "@/types/schedule";
@@ -52,7 +52,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { downloadPhotosAsZip, downloadAllCampaignPhotosAsZip } from "@/lib/downloadPhotosZip";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { useFormatters } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
@@ -96,6 +96,7 @@ const CATEGORY_OPTIONS = [
 
 const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId, agencyName = "", clientName = "", initialFilter, onInitialFilterApplied }: InstallationsTabProps) => {
   const { t } = useTranslation();
+  const fmt = useFormatters();
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
@@ -690,7 +691,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); }}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[100px] max-w-[150px] h-9"
           >
-            <option value="">Todos estados</option>
+            <option value="">{t("filters.allStates")}</option>
             {states.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
           <select
@@ -698,10 +699,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             onChange={(e) => setFilterStatus(e.target.value as any)}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[100px] max-w-[150px] h-9"
           >
-            <option value="">Todos status</option>
-            <option value="completed">✅ Concluídas</option>
-            <option value="pending">⏳ Pendentes</option>
-            <option value="no_photo">📷 Sem fotos</option>
+            <option value="">{t("installations.allStatuses")}</option>
+            <option value="completed">✅ {t("installations.completed")}</option>
+            <option value="pending">⏳ {t("installations.pending")}</option>
+            <option value="no_photo">📷 {t("installations.noPhotos")}</option>
           </select>
           <input
             type="date"
@@ -721,20 +722,20 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5">
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                Mais filtros
+                {t("filters.moreFilters")}
                 {secondaryFilterCount > 0 && (
                   <span className="badge-base badge-info ml-1">{secondaryFilterCount}</span>
                 )}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-72 p-4 space-y-3" align="start">
-              <p className="text-xs font-semibold text-foreground">Filtros avançados</p>
+              <p className="text-xs font-semibold text-foreground">{t("filters.advancedFilters")}</p>
               <select
                 value={filterCity}
                 onChange={(e) => setFilterCity(e.target.value)}
                 className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground"
               >
-                <option value="">Todas cidades</option>
+                <option value="">{t("filters.allCities")}</option>
                 {cities.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
               <select
@@ -742,10 +743,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                 onChange={(e) => setFilterPeriod(e.target.value)}
                 className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground"
               >
-                <option value="">Período</option>
-                <option value="morning">🌅 Manhã</option>
-                <option value="afternoon">☀️ Tarde</option>
-                <option value="night">🌙 Noite</option>
+                <option value="">{t("filters.period")}</option>
+                <option value="morning">{t("filters.periodMorning")}</option>
+                <option value="afternoon">{t("filters.periodAfternoon")}</option>
+                <option value="night">{t("filters.periodNight")}</option>
               </select>
               <select
                 value={filterTeam}
@@ -852,7 +853,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                       if (done === total) toast.success(t("common.downloadComplete"));
                     }).catch(() => toast.error(t("common.errorDownloading")));
                   }}>
-                    <Camera className="w-3.5 h-3.5 mr-2" /> Baixar todas as fotos ({photos.length})
+                    <Camera className="w-3.5 h-3.5 mr-2" /> {t("installations.viewPhotos")} ({photos.length})
                   </DropdownMenuItem>
                 )}
                 {canLockCards && (
@@ -909,13 +910,13 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       >
         {([
           { key: "total" as const, value: summaryMetrics.total, label: t("common.total"), isTotal: true, dangerWhenPositive: false },
-          { key: "completed" as const, value: summaryMetrics.completed, label: "Concluídas", isTotal: false, dangerWhenPositive: false },
-          { key: "pending" as const, value: summaryMetrics.pending, label: "Pendentes", isTotal: false, dangerWhenPositive: false },
-          { key: "withTeam" as const, value: summaryMetrics.withTeam, label: "Com equipe", isTotal: false, dangerWhenPositive: false },
-          { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: "Com fotos", isTotal: false, dangerWhenPositive: false },
-          { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: "Remarcação", isTotal: false, dangerWhenPositive: false },
-          { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: "Ocorrências", isTotal: false, dangerWhenPositive: true },
-          { key: "noCheckin" as const, value: summaryMetrics.noCheckin, label: "Sem Check-in", isTotal: false, dangerWhenPositive: true, visible: showPhotoCheckin },
+          { key: "completed" as const, value: summaryMetrics.completed, label: t("installations.completed"), isTotal: false, dangerWhenPositive: false },
+          { key: "pending" as const, value: summaryMetrics.pending, label: t("installations.pending"), isTotal: false, dangerWhenPositive: false },
+          { key: "withTeam" as const, value: summaryMetrics.withTeam, label: t("scheduling.withTeam"), isTotal: false, dangerWhenPositive: false },
+          { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: t("installations.photos"), isTotal: false, dangerWhenPositive: false },
+          { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: t("scheduling.reschedule"), isTotal: false, dangerWhenPositive: false },
+          { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: t("occurrences.title"), isTotal: false, dangerWhenPositive: true },
+          { key: "noCheckin" as const, value: summaryMetrics.noCheckin, label: t("installations.noPhotos"), isTotal: false, dangerWhenPositive: true, visible: showPhotoCheckin },
         ]).filter(m => m.visible !== false).map((m, idx, arr) => (
           <button
             key={m.key}
@@ -944,8 +945,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       </div>
       {summaryFilter && summaryFilter !== "total" && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>Filtrando por: <strong className="text-foreground">{
-            { completed: t("dashboard.completed"), pending: t("dashboard.pending"), withTeam: t("installations.withTeam"), withPhotos: t("installations.withPhotos"), withReschedule: t("installations.withReschedule"), withOccurrence: t("installations.withOccurrence"), noCheckin: t("installations.noCheckin") }[summaryFilter]
+          <span>{t("filters.filteringBy")} <strong className="text-foreground">{
+            { completed: t("dashboard.completed"), pending: t("dashboard.pending"), withTeam: t("scheduling.withTeam"), withPhotos: t("installations.photos"), withReschedule: t("scheduling.reschedule"), withOccurrence: t("occurrences.title"), noCheckin: t("installations.noPhotos") }[summaryFilter]
           }</strong> ({displayedStores.length})</span>
           <Button variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setSummaryFilter("")}>✕</Button>
         </div>
@@ -1054,6 +1055,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             setFilterPeriod(""); setFilterTeam(""); setFilterLocked(""); setFilterReschedule(""); setFilterModel("");
             setFilterCheckin(""); setSummaryFilter("");
           }}
+          title={t("installations.empty")}
+          subtitle={t("emptyState.subtitle")}
         />
       ) : (
       <div className="space-y-4">
@@ -1209,7 +1212,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                   {selectedDate && (
                     <span className="flex items-center gap-1">
                       <CalendarIcon className="w-3 h-3 text-[var(--text-muted)]" />
-                      {format(selectedDate, "dd/MM/yyyy")}
+                      {fmt.date(selectedDate)}
                     </span>
                   )}
                   {effectiveTime && (
@@ -1227,7 +1230,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                   {/* Install code status indicator — admin/master only */}
                   {isAdminOrMaster && schedule && (() => {
                     if (schedule.checkin_timestamp) {
-                      const checkinDate = format(new Date(schedule.checkin_timestamp), "dd/MM HH:mm");
+                      const checkinDate = fmt.dateShort(new Date(schedule.checkin_timestamp)) + " " + fmt.time(new Date(schedule.checkin_timestamp));
                       const hasGps = schedule.checkin_lat != null;
                       return (
                         <span className={`flex items-center gap-1 text-[10px] font-medium ${hasGps ? "text-[var(--s-success)]" : "text-[var(--s-warning)]"}`}>
@@ -1242,7 +1245,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                   })()}
                   {schedule?.manual_checkin_at && (
                     <span className="flex items-center gap-1 text-[10px] font-medium text-[var(--s-success)]">
-                      ✔ Check-in manual {format(new Date(schedule.manual_checkin_at), "dd/MM HH:mm")}
+                      ✔ Check-in manual {fmt.dateShort(new Date(schedule.manual_checkin_at)) + " " + fmt.time(new Date(schedule.manual_checkin_at))}
                     </span>
                   )}
                   {schedule?.manual_checkout_at && (
@@ -1396,8 +1399,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                       <CheckCircle className="w-3.5 h-3.5" />
                       <span className="font-medium">
                         {schedule.completed_by === "agency"
-                          ? `Marcada manualmente como concluída pela equipe da Agência, em: ${format(new Date(schedule.completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
-                          : `Concluída em ${format(new Date(schedule.completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
+                          ? `Marcada manualmente como concluída pela equipe da Agência, em: ${fmt.dateTime(new Date(schedule.completed_at))}`
+                          : `Concluída em ${fmt.dateTime(new Date(schedule.completed_at))}`
                         }
                       </span>
                     </div>
@@ -1440,7 +1443,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                         }}
                       >
                         {schedule.photo_checkin && schedule.photo_checkin_at ? (
-                          <><CheckCircle2 className="w-4 h-4" /> Fotos para ocorrências verificadas em: {format(new Date(schedule.photo_checkin_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</>
+                          <><CheckCircle2 className="w-4 h-4" /> Fotos para ocorrências verificadas em: {fmt.dateTime(new Date(schedule.photo_checkin_at))}</>
                         ) : (
                           <><AlertCircle className="w-4 h-4" /> Clique aqui para informar Check-in de fotos para ocorrências</>
                         )}
@@ -1644,14 +1647,14 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                           {gpsIn && !mIn && (
                             <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
                               <CheckCircle2 className="w-3.5 h-3.5 text-[var(--s-success)]" />
-                              <span>Check-in via app: {format(new Date(gpsIn), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                              <span>Check-in via app: {fmt.dateTime(new Date(gpsIn))}</span>
                             </div>
                           )}
                           {mIn && (
                             <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
                               <CheckCircle2 className="w-3.5 h-3.5 text-[var(--s-success)]" />
                               <span>
-                                Check-in manual: {format(new Date(mIn), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                Check-in manual: {fmt.dateTime(new Date(mIn))}
                                 {schedule.manual_checkin_by_name && ` por ${schedule.manual_checkin_by_name}`}
                               </span>
                               {isAdminOrMaster && (
@@ -1670,7 +1673,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                             <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
                               <CheckCircle2 className="w-3.5 h-3.5 text-[var(--s-success)]" />
                               <span>
-                                Check-out manual: {format(new Date(mOut), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                Check-out manual: {fmt.dateTime(new Date(mOut))}
                                 {schedule.manual_checkout_by_name && ` por ${schedule.manual_checkout_by_name}`}
                               </span>
                               {isAdminOrMaster && (
@@ -1775,7 +1778,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                       {schedule.checkin_timestamp && (
                         <div className="text-xs space-y-0.5 mt-2">
                           <p className="font-medium text-[var(--s-success)]">
-                            ✔ Check-in: {format(new Date(schedule.checkin_timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                            ✔ Check-in: {fmt.dateTime(new Date(schedule.checkin_timestamp))}
                           </p>
                           {schedule.checkin_lat != null ? (
                             <p className="text-[var(--text-muted)]">
@@ -1867,7 +1870,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                         }}
                       >
                         <Download className="w-3 h-3" />
-                        Baixar {storePhotos.length} foto(s) (.zip)
+                        {t("installations.export")} {storePhotos.length} {t("installations.photos")} (.zip)
                       </Button>
                     </div>
                   )}
