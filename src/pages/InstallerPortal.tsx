@@ -1094,7 +1094,7 @@ export default function InstallerPortal() {
               {selectedDate && (
                 <span className="flex items-center gap-1 text-foreground">
                   <CalendarIcon className="w-3 h-3 text-muted-foreground" />
-                  {fmt.format(selectedDate, "EEEE, dd 'de' MMMM 'de' yyyy")}
+                  {fmt.custom(selectedDate, "EEEE, dd 'de' MMMM 'de' yyyy")}
                 </span>
               )}
               {schedule?.scheduled_time && (
