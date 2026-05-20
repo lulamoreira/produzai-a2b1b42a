@@ -1,6 +1,7 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { withTranslation, type WithTranslation } from "react-i18next";
 
 interface Props {
   children: ReactNode;
@@ -13,7 +14,7 @@ interface State {
   errorInfo: ErrorInfo | null;
 }
 
-export class ErrorBoundary extends Component<Props, State> {
+class ErrorBoundaryComponent extends Component<Props & WithTranslation, State> {
   state: State = { hasError: false, error: null, errorInfo: null };
 
   static getDerivedStateFromError(error: Error): Partial<State> {
@@ -44,6 +45,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
     const isDev = import.meta.env.DEV;
     const { error, errorInfo } = this.state;
+    const { t } = this.props;
 
     return (
       <div className="min-h-screen bg-background flex items-center justify-center px-6 py-8">
@@ -52,15 +54,15 @@ export class ErrorBoundary extends Component<Props, State> {
             <AlertTriangle className="w-8 h-8 text-destructive" />
           </div>
           <h1 className="text-xl font-bold text-foreground mb-2">
-            Algo deu errado
+            {t("common.error")}
           </h1>
           <p className="text-muted-foreground text-sm mb-6">
-            Um erro inesperado ocorreu. Tente recarregar a página.
+            {t("common.loadError")}
           </p>
           <div className="flex flex-col sm:flex-row gap-2 justify-center">
-            <Button onClick={this.handleReload}>Recarregar</Button>
+            <Button onClick={this.handleReload}>{t("common.retry")}</Button>
             <Button variant="outline" onClick={this.handleGoHome}>
-              Voltar ao início
+              {t("common.back")}
             </Button>
           </div>
 
@@ -93,4 +95,5 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 }
 
+export const ErrorBoundary = withTranslation()(ErrorBoundaryComponent);
 export default ErrorBoundary;
