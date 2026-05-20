@@ -20,6 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 interface Props {
   open: boolean;
@@ -33,7 +34,6 @@ interface Props {
 }
 
 const NONE_KEY = "__none__";
-const NONE_LABEL = "Sem localização";
 
 function SortableLocation({ id, label, count }: { id: string; label: string; count: number }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
@@ -75,6 +75,9 @@ export function OrderByLocationDialog({
   countsByLocation,
   onApply,
 }: Props) {
+  const { t } = useTranslation();
+  const NONE_LABEL = t("common.noLocation") || "Sem localização";
+
   // Internal order (uses NONE_KEY for the "no location" bucket)
   const initialOrder = useMemo(() => {
     return locations.map((l) => (l ? l : NONE_KEY));
@@ -117,7 +120,7 @@ export function OrderByLocationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Ordenar por localização</DialogTitle>
+          <DialogTitle>{t("common.orderByLocation")}</DialogTitle>
           <DialogDescription>
             Arraste as localizações para definir a ordem. Peças e kits da mesma localização serão agrupados e ordenados alfabeticamente pelo nome. Ao confirmar, a nova ordem será aplicada às Peças e ao Rateio, e <strong>todos os códigos serão recodificados sequencialmente</strong>.
           </DialogDescription>
@@ -145,10 +148,10 @@ export function OrderByLocationDialog({
 
         <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={saving}>
-            Cancelar
+            {t("common.cancel")}
           </Button>
           <Button onClick={handleApply} disabled={saving || order.length === 0}>
-            {saving ? "Aplicando..." : "Confirmar e recodificar"}
+            {saving ? t("common.loading") : t("common.recode")}
           </Button>
         </DialogFooter>
       </DialogContent>
