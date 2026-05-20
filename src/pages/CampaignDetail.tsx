@@ -1900,11 +1900,19 @@ const CampaignDetail = () => {
       </div>
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.specification")}</label>
-        <Input value={form.specification} onChange={(e) => setForm((f) => ({ ...f, specification: e.target.value }))} />
+        <Textarea 
+          value={form.specification} 
+          onChange={(e) => setForm((f) => ({ ...f, specification: e.target.value }))}
+          className="min-h-[80px]"
+        />
       </div>
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.installationInstructions")}</label>
-        <Input value={form.installation_instructions} onChange={(e) => setForm((f) => ({ ...f, installation_instructions: e.target.value }))} />
+        <Textarea 
+          value={form.installation_instructions} 
+          onChange={(e) => setForm((f) => ({ ...f, installation_instructions: e.target.value }))}
+          className="min-h-[80px]"
+        />
       </div>
     </>
   );
