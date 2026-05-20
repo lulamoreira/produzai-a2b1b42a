@@ -33,15 +33,15 @@ interface ExportPPTParams {
 }
 
 const COLORS = {
-  bg: "#FAFAF9",
-  header: "#1C1917",
-  accent: "#C2714F",
-  textPrimary: "#292524",
-  textSecondary: "#78716C",
-  cardBg: "#F5F5F4",
-  border: "#E7E5E4",
+  bg: "#FFFFFF",
+  header: "#1A2238",       // Navy escuro Vimer
+  accent: "#E63946",       // Vermelho/coral Vimer
+  textPrimary: "#1A2238",
+  textSecondary: "#5A6B85",
+  cardBg: "#F4F5F8",
+  border: "#D8DCE5",
   white: "#FFFFFF",
-  grayMuted: "#A8A29E"
+  grayMuted: "#A8B0C0"
 };
 
 async function urlToBase64(url: string): Promise<string | null> {
