@@ -757,11 +757,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 <option value="">{t("filters.preference")}</option>
                 {PREFERENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
-              <select value={filterResponsibility} onChange={(e) => setFilterResponsibility(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
-                <option value="">{t("filters.responsible")}</option>
-                <option value="team">{t("scheduling.teamLabel")}</option>
-                <option value="client">{t("scheduling.client")}</option>
-              </select>
               <select value={filterLocked} onChange={(e) => setFilterLocked(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
                 <option value="">{t("filters.lock")}</option>
                 <option value="locked">{t("filters.locked")}</option>
