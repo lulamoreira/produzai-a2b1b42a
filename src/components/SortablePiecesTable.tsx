@@ -333,7 +333,7 @@ export default function SortablePiecesTable({
 
   const getIsDistributed = (piece: CampaignPiece) => {
     const autoStores = stores.filter(s => s.auto_distribute);
-    const targetStores = piece.store_category === "Todas" || !piece.store_category
+    const targetStores = piece.store_category === t("common.allFeminine") || !piece.store_category
       ? autoStores
       : autoStores.filter(s => s.store_model === piece.store_category);
     return targetStores.some(s => qtyMap[`${s.id}-${piece.id}`]);
