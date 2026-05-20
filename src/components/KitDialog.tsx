@@ -825,6 +825,7 @@ export function KitDetailDialog({
                       </div>
                       <p className="text-[11px] text-muted-foreground">{p.category} · {p.size || "—"}</p>
                       <p className="text-[10px] text-muted-foreground break-words whitespace-pre-wrap">{p.specification}</p>
+                      <p className="text-[10px] text-muted-foreground break-words whitespace-pre-wrap">{p.installation_instructions}</p>
                     </div>
                   </div>
                   {/* Quantity control */}
