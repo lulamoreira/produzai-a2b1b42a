@@ -346,7 +346,7 @@ export function useAddCampaign() {
     mutationFn: async (campaign: { client_id: string; name: string }) => {
       const { data, error } = await supabase.from("campaigns").insert(campaign).select().single();
       if (error) throw error;
-      return data as Campaign;
+      return data as unknown as Campaign;
     },
     onMutate: async (newCampaign) => {
       await qc.cancelQueries({ queryKey: ["campaigns", newCampaign.client_id] });
