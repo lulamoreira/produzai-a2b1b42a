@@ -111,7 +111,7 @@ function BudgetSectionPhaseBadge({ campaignId }: { campaignId: string }) {
   if (!currentPhase) return null;
   return (
     <div className="mb-3 flex items-center gap-2">
-      <h2 className="text-lg font-semibold text-foreground">Cotações</h2>
+      <h2 className="text-lg font-semibold text-foreground">{t("modules.budgets")}</h2>
       <span
         className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${PHASE_BADGE_STYLES[currentPhase]}`}
       >
@@ -203,13 +203,13 @@ function StoreDetailsPopover({ store, customFieldLabels }: { store: ClientStore;
           </div>
           <div className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1">
             <span className="text-muted-foreground">Modelo</span>
-            <span className={hasStoreDetailValue(store.store_model) ? "" : "italic text-muted-foreground/70"}>{hasStoreDetailValue(store.store_model) ? store.store_model : "Modelo não informado"}</span>
+            <span className={hasStoreDetailValue(store.store_model) ? "" : "italic text-muted-foreground/70"}>{hasStoreDetailValue(store.store_model) ? store.store_model : t("stores.modelNotInformed")}</span>
             <span className="text-muted-foreground">Tipo</span>
-            <span className={hasStoreDetailValue(typeValue) ? "" : "italic text-muted-foreground/70"}>{hasStoreDetailValue(typeValue) ? String(typeValue) : "Tipo não informado"}</span>
+            <span className={hasStoreDetailValue(typeValue) ? "" : "italic text-muted-foreground/70"}>{hasStoreDetailValue(typeValue) ? String(typeValue) : t("stores.typeNotInformed")}</span>
             <span className="text-muted-foreground">Vitrines</span>
-            <span className={hasStoreDetailValue(storeAny.showcase_count) ? "" : "italic text-muted-foreground/70"}>{hasStoreDetailValue(storeAny.showcase_count) ? String(storeAny.showcase_count) : "Quantidade não informada"}</span>
+            <span className={hasStoreDetailValue(storeAny.showcase_count) ? "" : "italic text-muted-foreground/70"}>{hasStoreDetailValue(storeAny.showcase_count) ? String(storeAny.showcase_count) : t("stores.showcaseCountNotInformed")}</span>
             <span className="text-muted-foreground">Localização</span>
-            <span className={locationParts ? "" : "italic text-muted-foreground/70"}>{locationParts || "Localização não informada"}</span>
+            <span className={locationParts ? "" : "italic text-muted-foreground/70"}>{locationParts || t("stores.locationNotInformed")}</span>
             {filledCustomFields.length > 0 ? filledCustomFields.map((field) => (
               <Fragment key={field.label}>
                 <span className="text-muted-foreground">{field.label}</span>
@@ -218,7 +218,7 @@ function StoreDetailsPopover({ store, customFieldLabels }: { store: ClientStore;
             )) : (
               <>
                 <span className="text-muted-foreground">Campos personalizados</span>
-                <span className="italic text-muted-foreground/70">Nenhum preenchido</span>
+                <span className="italic text-muted-foreground/70">{t("stores.noCustomFields")}</span>
               </>
             )}
           </div>

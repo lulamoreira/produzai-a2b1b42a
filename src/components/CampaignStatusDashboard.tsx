@@ -117,54 +117,54 @@ export default function CampaignStatusDashboard({
   const kpis: { valor: number; label: string; cor: KpiColor; section: string; filter?: DashboardFilter }[] = [
     {
       valor: stats.total_lojas,
-      label: "Lojas total",
+      label: t("stores.totalStores"),
       cor: "neutral",
       section: "installations",
     },
     {
       valor: stats.instalacoes_concluidas,
-      label: "Concluídas",
+      label: t("dashboard.completed"),
       cor: "success",
       section: "installations",
       filter: { type: "status", value: "completed" },
     },
     {
       valor: stats.instalacoes_pendentes,
-      label: "Pendentes",
+      label: t("dashboard.pending"),
       cor: stats.instalacoes_pendentes > 0 ? "warning" : "neutral",
       section: "installations",
       filter: { type: "status", value: "pending" },
     },
     {
       valor: stats.lojas_com_ocorrencia,
-      label: "Com ocorrência",
+      label: t("dashboard.occurrenceRegistered"),
       cor: stats.lojas_com_ocorrencia > 0 ? "danger" : "neutral",
       section: "occurrences",
     },
     {
       valor: stats.checkins_realizados,
-      label: "Com check-in",
+      label: t("filters.checkinDone"),
       cor: "success",
       section: "installations",
       filter: { type: "checkin", value: "checked" },
     },
     {
       valor: stats.sem_checkin,
-      label: "Sem check-in",
+      label: t("dashboard.withoutCheckin"),
       cor: stats.sem_checkin > 0 ? "danger" : "neutral",
       section: "installations",
       filter: { type: "checkin", value: "unchecked" },
     },
     {
       valor: stats.total_fotos,
-      label: "Fotos enviadas",
+      label: t("installations.photosSentShort"),
       cor: "neutral",
       section: "installations",
       filter: { type: "summary", value: "withPhotos" },
     },
     {
       valor: stats.agendamentos_confirmados,
-      label: "Agendadas",
+      label: t("scheduling.scheduled"),
       cor: "success",
       section: "scheduling",
       filter: { type: "summary", value: "scheduled" },
@@ -176,10 +176,10 @@ export default function CampaignStatusDashboard({
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <span className="text-sm font-semibold text-foreground">
-          Status da Campanha
+          {t("dashboard.campaignStatus")}
         </span>
         <span className="text-[11px] text-muted-foreground">
-          Atualiza a cada 30s
+          {t("dashboard.updateInterval")}
         </span>
       </div>
 
@@ -213,7 +213,7 @@ export default function CampaignStatusDashboard({
           />
         </div>
         <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-          {pct}% concluída
+          {pct}% {t("dashboard.completedPct")}
         </span>
       </div>
     </div>

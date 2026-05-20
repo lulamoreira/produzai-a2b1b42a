@@ -31,7 +31,7 @@ export default function EmptyState({
       </p>
       {hasActiveFilters && onClearFilters && (
         <Button variant="outline" size="sm" className="mt-4" onClick={onClearFilters}>
-          Limpar filtros
+          {t("filters.clearFilters")}
         </Button>
       )}
     </div>

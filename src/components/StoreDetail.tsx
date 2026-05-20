@@ -106,7 +106,7 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
       pieceId,
       oldQty,
       newQty: editQty,
-      description: `Quantidade alterada de ${oldQty} para ${editQty}`,
+      description: t("stores.quantityChanged", { old: oldQty, new: editQty }),
     });
     setEditingPiece(null);
   };
@@ -187,7 +187,7 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
             <MapPin className="w-4 h-4" />
             <span>{store.uf}</span>
             <span>·</span>
-            <span>Loja Nº {store.number}</span>
+            <span>{t("stores.storeNumber", { number: store.number })}</span>
           </div>
           <h2 className="text-2xl font-display font-bold text-foreground">
             {store.name}
@@ -202,7 +202,7 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
             variant={showLog ? "default" : "outline"}
             onClick={() => setShowLog(!showLog)}
           >
-            <Clock className="w-4 h-4 mr-1" /> Log
+            <Clock className="w-4 h-4 mr-1" /> {t("modules.history")}
             {showLog ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
           </Button>
         </div>
@@ -210,19 +210,19 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
 
       {/* Info cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <InfoCard icon={<Layers className="w-4 h-4" />} label="Tipo" value={store.type} />
-        <InfoCard icon={<Tag className="w-4 h-4" />} label="Modelo" value={store.model} />
-        <InfoCard icon={<Package className="w-4 h-4" />} label="Total Peças" value={String(totalPieces)} highlight />
-        <InfoCard icon={<Layers className="w-4 h-4" />} label="Categorias" value={String(Object.keys(grouped).length)} />
+        <InfoCard icon={<Layers className="w-4 h-4" />} label={t("common.type")} value={store.type} />
+        <InfoCard icon={<Tag className="w-4 h-4" />} label={t("common.model")} value={store.model} />
+        <InfoCard icon={<Package className="w-4 h-4" />} label={t("stores.totalPieces")} value={String(totalPieces)} highlight />
+        <InfoCard icon={<Layers className="w-4 h-4" />} label={t("common.category")} value={String(Object.keys(grouped).length)} />
       </div>
 
       {/* Mod info */}
       <div className="flex gap-3 flex-wrap">
         <span className="px-3 py-1 rounded-full text-xs font-medium bg-secondary/10 text-secondary border border-secondary/20">
-          Primário: {store.primary_mod}
+          {t("stores.primary")}: {store.primary_mod}
         </span>
         <span className="px-3 py-1 rounded-full text-xs font-medium bg-muted text-muted-foreground border border-border">
-          Secundário: {store.secondary_mod}
+          {t("stores.secondary")}: {store.secondary_mod}
         </span>
       </div>
 
@@ -231,7 +231,7 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
         <div className="rounded-xl border border-border bg-card p-4">
           <h3 className="font-display font-semibold text-foreground mb-3 flex items-center gap-2">
             <Clock className="w-4 h-4 text-primary" />
-            Histórico de Alterações
+            {t("modules.history")}
           </h3>
           <ChangeLogPanel storeId={store.id} pieces={pieces} />
         </div>
@@ -243,19 +243,19 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
           <Dialog open={addPieceOpen} onOpenChange={setAddPieceOpen}>
             <DialogTrigger asChild>
               <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-                <Plus className="w-4 h-4 mr-1" /> Adicionar Peça
+                <Plus className="w-4 h-4 mr-1" /> {t("pieces.addPiece")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle className="font-display">Adicionar Peça à Loja</DialogTitle>
+                <DialogTitle className="font-display">{t("pieces.addPieceToStoreTitle")}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Peça</label>
+                  <label className="text-sm font-medium mb-1 block">{t("common.pieces")}</label>
                   <Select value={addPieceId} onValueChange={setAddPieceId}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecionar peça..." />
+                      <SelectValue placeholder={t("pieces.selectPiecePlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
                       {availablePieces.map((p) => (
@@ -267,7 +267,7 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
                   </Select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Quantidade</label>
+                  <label className="text-sm font-medium mb-1 block">{t("common.quantity")}</label>
                   <Input
                     type="number"
                     min={1}
@@ -280,7 +280,7 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
                   disabled={!addPieceId || addPieceQty < 1 || addPieceToStore.isPending}
                   className="w-full"
                 >
-                  <Check className="w-4 h-4 mr-1" /> Confirmar
+                  <Check className="w-4 h-4 mr-1" /> {t("common.confirm")}
                 </Button>
               </div>
             </DialogContent>
@@ -302,7 +302,7 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
                 </span>
               </h3>
               <span className="text-xs text-muted-foreground font-medium">
-                {items.reduce((s, i) => s + i.qty, 0)} peça(s)
+                {items.reduce((s, i) => s + i.qty, 0)} {t("pieces.pieceCountShort")}
               </span>
             </div>
             <div className="divide-y divide-border/30">
@@ -405,7 +405,7 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
         {piecesWithQty.length === 0 && (
           <div className="text-center py-12 text-muted-foreground">
             <Package className="w-10 h-10 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">Nenhuma peça atribuída a esta loja</p>
+            <p className="text-sm">{t("pieces.noPieceAssigned")}</p>
           </div>
         )}
       </div>

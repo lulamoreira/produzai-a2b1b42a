@@ -51,7 +51,7 @@ export function ResponsiveToolbar({
               variant="outline"
               size="icon"
               className="ml-auto min-h-[44px] min-w-[44px]"
-              aria-label="Mais ações"
+              aria-label={t("common.moreActions")}
             >
               <MoreVertical className="w-4 h-4" />
             </Button>

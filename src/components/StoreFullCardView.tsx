@@ -120,7 +120,7 @@ const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFie
                         size="icon"
                         className="h-7 w-7 text-muted-foreground hover:text-primary"
                         onClick={() => onEditStore(store)}
-                        title="Editar loja"
+                        title={t("stores.editStore")}
                       >
                         <Edit3 className="w-3.5 h-3.5" />
                       </Button>

@@ -37,7 +37,7 @@ const StoreSelector = ({
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar loja..."
+          placeholder={t("stores.searchStore")}
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
           className="pl-10 bg-card border-border"
@@ -51,7 +51,7 @@ const StoreSelector = ({
           onChange={(e) => onStateChange(e.target.value)}
           className="px-3 py-1.5 text-sm rounded-md border border-border bg-card text-foreground"
         >
-          <option value="">Todos os estados</option>
+          <option value="">{t("filters.allStates")}</option>
           {states.map((s) => (
             <option key={s} value={s}>{s}</option>
           ))}
@@ -61,7 +61,7 @@ const StoreSelector = ({
           onChange={(e) => onTypeChange(e.target.value)}
           className="px-3 py-1.5 text-sm rounded-md border border-border bg-card text-foreground"
         >
-          <option value="">Todos os tipos</option>
+          <option value="">{t("filters.allTypes")}</option>
           {storeTypes.map((t) => (
             <option key={t} value={t}>{t}</option>
           ))}
@@ -70,7 +70,7 @@ const StoreSelector = ({
 
       {/* Store count */}
       <p className="text-xs text-muted-foreground px-1">
-        {stores.length} loja(s) encontrada(s)
+        {stores.length} {t("stores.storeCountFound")}
       </p>
 
       {/* Store List */}
@@ -110,7 +110,7 @@ const StoreSelector = ({
         ))}
         {stores.length === 0 && (
           <p className="text-center text-muted-foreground py-8 text-sm">
-            Nenhuma loja encontrada
+            {t("stores.noStoreFound")}
           </p>
         )}
       </div>
