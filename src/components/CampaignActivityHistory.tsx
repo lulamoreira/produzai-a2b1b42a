@@ -212,7 +212,7 @@ export default function CampaignActivityHistory({ campaignId }: Props) {
                       )}
                     </div>
                     <span className="text-[11px] text-muted-foreground whitespace-nowrap pt-0.5">
-                      {format(parseISO(activity.created_at), "HH:mm")}
+                      {fmt.time(parseISO(activity.created_at))}
                     </span>
                   </div>
                 );

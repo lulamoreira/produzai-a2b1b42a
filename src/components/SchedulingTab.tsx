@@ -64,11 +64,11 @@ interface SchedulingTabProps {
   onInitialFilterApplied?: () => void;
 }
 
-function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null, messageTemplate?: string, storeName?: string) {
+function buildWhatsAppUrl(phone: string, contactName: string, agencyName: string, clientName: string, campaignName: string, date: string | null, time: string | null, messageTemplate?: string, storeName?: string, fmt?: any) {
   const firstName = contactName.split(" ")[0];
   const agencyFirst = agencyName.split(" ")[0];
   const clientFirst = clientName.split(" ")[0];
-  const dateStr = date ? fmt.dateShort(new Date(date + "T12:00:00")) : "(data a definir)";
+  const dateStr = date ? (fmt ? fmt.dateShort(new Date(date + "T12:00:00")) : format(new Date(date + "T12:00:00"), "dd/MM/yyyy")) : "(data a definir)";
   const timeStr = time || "(horário a definir)";
 
   const message = messageTemplate
