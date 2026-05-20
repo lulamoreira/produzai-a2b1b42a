@@ -188,7 +188,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     });
     const b64 = pieceImages[idx];
     if (b64) {
-      slide.addImage({ data: b64, x: 0.45, y: 0.95, w: 6.0, h: 5.3, sizing: { type: "contain" } });
+      slide.addImage({ data: b64, x: 0.45, y: 0.95, w: 6.0, h: 5.3, sizing: { type: "contain", w: 6.0, h: 5.3 } });
     } else {
       slide.addText("Sem foto", { x: 0.35, y: 0.85, w: 6.2, h: 5.5, align: "center", valign: "middle", color: COLORS.textSecondary, fontSize: 14 });
     }
@@ -255,7 +255,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     });
     const b64 = kitImages[idx];
     if (b64) {
-      slide.addImage({ data: b64, x: 0.45, y: 0.95, w: 6.0, h: 4.0, sizing: { type: "contain" } });
+      slide.addImage({ data: b64, x: 0.45, y: 0.95, w: 6.0, h: 4.0, sizing: { type: "contain", w: 6.0, h: 4.0 } });
     } else {
       slide.addText("Sem foto", { x: 0.35, y: 0.85, w: 6.2, h: 4.0, align: "center", valign: "middle", color: COLORS.textSecondary, fontSize: 14 });
     }
@@ -269,7 +269,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
         const tY = 5.3;
         slide.addShape(pptx.ShapeType.rect, { x: tX, y: tY, w: 1.1, h: 0.9, fill: { color: COLORS.white }, line: { color: COLORS.border, width: 0.3 } });
         if (thumbB64) {
-          slide.addImage({ data: thumbB64, x: tX + 0.05, y: tY + 0.05, w: 1.0, h: 0.8, sizing: { type: "contain" } });
+          slide.addImage({ data: thumbB64, x: tX + 0.05, y: tY + 0.05, w: 1.0, h: 0.8, sizing: { type: "contain", w: 1.0, h: 0.8 } });
         }
       });
     }
