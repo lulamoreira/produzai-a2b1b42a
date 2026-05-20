@@ -1056,7 +1056,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             setFilterCheckin(""); setSummaryFilter("");
           }}
           title={t("installations.empty")}
-          description={t("emptyState.subtitle")}
+          subtitle={t("emptyState.subtitle")}
         />
       ) : (
       <div className="space-y-4">
