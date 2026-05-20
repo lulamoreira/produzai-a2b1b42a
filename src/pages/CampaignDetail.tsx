@@ -2194,6 +2194,7 @@ const CampaignDetail = () => {
                     clientName={client?.name || ""}
                     pieces={pieces}
                     kits={kits}
+                    kitPieces={kitPieces}
                     agencyName={agency?.name}
                   />
                 )}
@@ -3966,6 +3967,7 @@ const CampaignDetail = () => {
                   clientName={client?.name || ""}
                   pieces={pieces}
                   kits={kits}
+                  kitPieces={kitPieces}
                   agencyName={agency?.name}
                   isOpen={pptExportOpen}
                   onOpenChange={setPptExportOpen}
