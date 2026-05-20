@@ -451,8 +451,8 @@
     "deletedError": "Error deleting occurrence",
     "resolve": "Resolve",
     "reopen": "Reopen",
-    "addComment": "Add comment"
-  },
+    "addComment": "Add comment",
+
     "statusesTab": "Statuses",
     "periodTab": "Period",
     "emailsHint": "Up to 5 emails will receive notifications for new occurrences.",

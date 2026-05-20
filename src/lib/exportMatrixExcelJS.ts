@@ -144,6 +144,32 @@ async function buildTransposedSheet(
   const allBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
   const allWhiteBorders = { top: whiteBorder, bottom: whiteBorder, left: whiteBorder, right: whiteBorder };
 
+  // Merge visible storeFields with extra hidden fields. Hidden fields are
+  // inserted right after the `state` (UF) column when present, otherwise at
+  // the end of the meta columns — but BEFORE the items, so they stay grouped
+  // with the rest of the store info instead of being far to the right.
+  type MetaField = StoreFieldDef & { __hidden?: boolean };
+  const mergedStoreFields: MetaField[] = (() => {
+    if (!extraHiddenStoreFields.length) return storeFields.slice();
+    const out: MetaField[] = [];
+    let inserted = false;
+    for (const f of storeFields) {
+      out.push(f);
+      if (!inserted && f.key === "state") {
+        for (const h of extraHiddenStoreFields) out.push({ ...h, __hidden: true });
+        inserted = true;
+      }
+    }
+    if (!inserted) {
+      for (const h of extraHiddenStoreFields) out.push({ ...h, __hidden: true });
+    }
+    return out;
+  })();
+  const hiddenColSet = new Set<number>();
+  mergedStoreFields.forEach((f, i) => { if ((f as MetaField).__hidden) hiddenColSet.add(i + 1); });
+  // Use merged list for all rendering so hidden cols sit inside meta block.
+  storeFields = mergedStoreFields;
+
   const STORE_META_COLS = Math.max(storeFields.length, 1);
   const colCount = items.length + STORE_META_COLS;
   const IMAGE_ROW_HEIGHT = 120;
@@ -346,38 +372,11 @@ async function buildTransposedSheet(
     const nameLen = item?.name?.length || 10;
     ws.getColumn(i).width = Math.min(Math.max(nameLen + 4, 18), 30);
   }
-
-  // ─── Extra HIDDEN store info columns (appended to the right) ─────────
-  // These hold additional per-store info chosen by the user. They are
-  // populated only on the store rows + header row, and the columns are
-  // hidden by default so the visible layout matches the standard export.
-  if (extraHiddenStoreFields.length > 0) {
-    const extraStart = colCount + 1;
-    for (let i = 0; i < extraHiddenStoreFields.length; i++) {
-      const colNum = extraStart + i;
-      const f = extraHiddenStoreFields[i];
-      // Header row
-      const headerCell = ws.getCell(storesHeaderRowNum, colNum);
-      headerCell.value = f.label.toUpperCase();
-      headerCell.font = { ...whiteFont, size: 11 };
-      headerCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
-      headerCell.fill = gradientFill(SECONDARY, PRIMARY);
-      headerCell.border = allWhiteBorders;
-      // Store rows
-      for (let si = 0; si < stores.length; si++) {
-        const rowNum = firstStoreRowNum + si;
-        const isEven = si % 2 === 0;
-        const cell = ws.getCell(rowNum, colNum);
-        cell.value = getStoreFieldValue(stores[si], f.key);
-        cell.font = { ...darkFont, size: 10 };
-        cell.alignment = { horizontal: "left", vertical: "middle", wrapText: true };
-        cell.fill = isEven ? solidFill(LIGHT) : solidFill("FFFFFF");
-        cell.border = allBorders;
-      }
-      const col = ws.getColumn(colNum);
-      col.width = 20;
-      col.hidden = true;
-    }
+  // Hide the user-selected extra store-info columns (inserted right after the
+  // UF column inside the meta block). Their data is already written by the
+  // standard header / store-row loops above.
+  for (const colNum of hiddenColSet) {
+    ws.getColumn(colNum).hidden = true;
   }
 }
 
