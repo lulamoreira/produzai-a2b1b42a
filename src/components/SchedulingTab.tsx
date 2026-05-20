@@ -327,6 +327,36 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     });
   }, [filteredStores, summaryFilter, scheduleMap, storeOccurrenceStatus]);
 
+  const handleExport = async () => {
+    try {
+      const XLSX = await import("xlsx");
+      const exportData = displayedStores.map(s => {
+        const sch = scheduleMap[s.id];
+        const effDate = sch?.reschedule_enabled ? sch?.reschedule_date : sch?.scheduled_date;
+        const effTime = sch?.reschedule_enabled ? sch?.reschedule_time : sch?.scheduled_time;
+        const effOs = sch?.reschedule_enabled ? sch?.reschedule_os : sch?.installation_os;
+        return {
+          [t("installations.store")]: s.name,
+          [t("installations.store") + " (Apelido)"]: s.nickname || "",
+          [t("installations.store") + " (Código)"]: s.store_code || "",
+          [t("installations.date")]: effDate ? fmt.dateShort(new Date(effDate + "T12:00:00")) : "",
+          [t("common.time")]: effTime || "",
+          "OS": effOs || "",
+          [t("installations.status")]: sch?.completed_at ? t("installations.completed") : t("installations.pending"),
+          [t("installations.installer")]: sch?.team_id ? (teamMap[sch.team_id]?.name || "") : ""
+        };
+      });
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, t("scheduling.list"));
+      const fileName = buildExportFileName(clientName, campaignName, t("scheduling.title"));
+      XLSX.writeFile(wb, `${fileName}.xlsx`);
+      toast.success(t("common.downloadComplete"));
+    } catch (err) {
+      toast.error(t("common.errorDownloading"));
+    }
+  };
+
   const fieldLabels: Record<string, string> = {
     scheduled_date: t("common.date"),
     scheduled_time: t("common.time"),
@@ -498,7 +528,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       return team?.name || `(${t("common.none")})`;
     }
     if ((field === "scheduled_date" || field === "suggested_date" || field === "suggested_date_2" || field === "reschedule_date" || field === "reschedule_suggested_date" || field === "reschedule_suggested_date_2") && value) {
-      try { return format(new Date(value + "T12:00:00"), "dd/MM/yyyy"); } catch { return String(value); }
+      try { return fmt.date(new Date(value + "T12:00:00")); } catch { return String(value); }
     }
     if (field === "store_approved" || field === "team_approved") return value ? t("common.yes") : t("common.no");
     if (field === "reschedule_enabled") return value ? t("common.yes") : t("common.no");
@@ -1027,12 +1057,12 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       return (
                         <a href={occUrl} target="_blank" rel="noopener noreferrer" className="badge-base badge-danger no-underline hover:opacity-80" onClick={(e) => e.stopPropagation()}>
                           <AlertTriangle className="w-3 h-3" />
-                          Ocorrência ({occStatus!.count})
+                          {t("occurrences.title")} ({occStatus!.count})
                         </a>
                       );
                     })()}
-                    {isReschedule && <span className="badge-base badge-warning">REM</span>}
-                    {isCardLocked && <span className="badge-base badge-neutral"><Lock className="w-3 h-3" /> BLOQ</span>}
+                    {isReschedule && <span className="badge-base badge-warning">{t("scheduling.reschedule").slice(0, 3).toUpperCase()}</span>}
+                    {isCardLocked && <span className="badge-base badge-neutral"><Lock className="w-3 h-3" /> {t("common.locked").slice(0, 4).toUpperCase()}</span>}
                     {(reinstallsByStore[store.id] || []).map((r: any) => (
                       <span
                         key={r.id}
@@ -1040,7 +1070,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         title={r.reinstall_reason || ""}
                       >
                         <RefreshCw className="w-3 h-3" />
-                        Reinstalação #{r.reinstall_seq}
+                        {t("occurrences.needsReinstallation")} #{r.reinstall_seq}
                         {r.reinstall_reason ? ` — ${String(r.reinstall_reason).slice(0, 40)}${String(r.reinstall_reason).length > 40 ? "…" : ""}` : ""}
                       </span>
                     ))}

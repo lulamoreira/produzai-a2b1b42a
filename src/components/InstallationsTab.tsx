@@ -1228,7 +1228,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                   {/* Install code status indicator — admin/master only */}
                   {isAdminOrMaster && schedule && (() => {
                     if (schedule.checkin_timestamp) {
-                      const checkinDate = fmt.dateTimeShort(new Date(schedule.checkin_timestamp));
+                      const checkinDate = fmt.dateShort(new Date(schedule.checkin_timestamp)) + " " + fmt.time(new Date(schedule.checkin_timestamp));
                       const hasGps = schedule.checkin_lat != null;
                       return (
                         <span className={`flex items-center gap-1 text-[10px] font-medium ${hasGps ? "text-[var(--s-success)]" : "text-[var(--s-warning)]"}`}>
@@ -1243,7 +1243,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                   })()}
                   {schedule?.manual_checkin_at && (
                     <span className="flex items-center gap-1 text-[10px] font-medium text-[var(--s-success)]">
-                      ✔ Check-in manual {fmt.dateTimeShort(new Date(schedule.manual_checkin_at))}
+                      ✔ Check-in manual {fmt.dateShort(new Date(schedule.manual_checkin_at)) + " " + fmt.time(new Date(schedule.manual_checkin_at))}
                     </span>
                   )}
                   {schedule?.manual_checkout_at && (
