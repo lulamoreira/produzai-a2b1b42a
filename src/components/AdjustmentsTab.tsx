@@ -431,11 +431,11 @@ export default function AdjustmentsTab({
                 </div>
                 <p className="text-[11px] text-muted-foreground">
                   Criado em{" "}
-                  {fmt.format(new Date(a.created_at), "dd/MM/yyyy 'às' HH:mm")}
+                  {fmt.dateTime(new Date(a.created_at))}
                   {a.approved_at && a.status === "active" && (
                     <>
                       {" · "}Ativado em{" "}
-                      {fmt.format(new Date(a.approved_at), "dd/MM/yyyy 'às' HH:mm")}
+                      {fmt.dateTime(new Date(a.approved_at))}
                     </>
                   )}
                 </p>
