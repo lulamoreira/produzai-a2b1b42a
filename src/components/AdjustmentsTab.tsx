@@ -1006,6 +1006,11 @@ export default function AdjustmentsTab({
           />
         </>
       )}
+      <RequoteFinalExportDialog
+        open={finalExportOpen}
+        onOpenChange={setFinalExportOpen}
+        onExport={(extraFields) => exportFinal(extraFields)}
+      />
     </div>
   );
 }
