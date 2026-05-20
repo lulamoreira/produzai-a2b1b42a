@@ -554,7 +554,8 @@
     "usersPermissionHint": "Haga clic en un usuario para ver y editar todos los permisos. Admin/Master tienen acceso automático a todo.",
     "noUserFound": "No se encontraron usuarios.",
     "noUserRegistered": "No hay usuarios registrados.",
-    "messages": "Mensajes"
+    "messages": "Mensajes",
+    "appearance": "Apariencia"
   },
   "languages": {
     "pt-BR": "Português (Brasil)",
