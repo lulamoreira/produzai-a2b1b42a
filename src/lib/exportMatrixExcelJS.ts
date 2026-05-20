@@ -346,6 +346,39 @@ async function buildTransposedSheet(
     const nameLen = item?.name?.length || 10;
     ws.getColumn(i).width = Math.min(Math.max(nameLen + 4, 18), 30);
   }
+
+  // ─── Extra HIDDEN store info columns (appended to the right) ─────────
+  // These hold additional per-store info chosen by the user. They are
+  // populated only on the store rows + header row, and the columns are
+  // hidden by default so the visible layout matches the standard export.
+  if (extraHiddenStoreFields.length > 0) {
+    const extraStart = colCount + 1;
+    for (let i = 0; i < extraHiddenStoreFields.length; i++) {
+      const colNum = extraStart + i;
+      const f = extraHiddenStoreFields[i];
+      // Header row
+      const headerCell = ws.getCell(storesHeaderRowNum, colNum);
+      headerCell.value = f.label.toUpperCase();
+      headerCell.font = { ...whiteFont, size: 11 };
+      headerCell.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+      headerCell.fill = gradientFill(SECONDARY, PRIMARY);
+      headerCell.border = allWhiteBorders;
+      // Store rows
+      for (let si = 0; si < stores.length; si++) {
+        const rowNum = firstStoreRowNum + si;
+        const isEven = si % 2 === 0;
+        const cell = ws.getCell(rowNum, colNum);
+        cell.value = getStoreFieldValue(stores[si], f.key);
+        cell.font = { ...darkFont, size: 10 };
+        cell.alignment = { horizontal: "left", vertical: "middle", wrapText: true };
+        cell.fill = isEven ? solidFill(LIGHT) : solidFill("FFFFFF");
+        cell.border = allBorders;
+      }
+      const col = ws.getColumn(colNum);
+      col.width = 20;
+      col.hidden = true;
+    }
+  }
 }
 
 // ─── Main export ─────────────────────────────────────────
