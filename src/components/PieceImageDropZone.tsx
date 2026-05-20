@@ -25,7 +25,7 @@ const PieceImageDropZone = ({ piece, canEdit = false }: Props) => {
     const file = e.dataTransfer.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      toast.error("Arquivo inválido. Envie uma imagem.");
+      toast.error(t("imageUpload.invalidFile"));
       return;
     }
     setUploading(true);
@@ -43,9 +43,9 @@ const PieceImageDropZone = ({ piece, canEdit = false }: Props) => {
           image_hash: uploaded.image_hash,
         },
       });
-      toast.success("Imagem atualizada!", { id: toastId });
+      toast.success(t("imageUpload.uploadSuccess"), { id: toastId });
     } catch (err: any) {
-      toast.error("Erro ao enviar imagem: " + err.message, { id: toastId });
+      toast.error(t("imageUpload.uploadError", { message: err.message }), { id: toastId });
     } finally {
       setUploading(false);
     }

@@ -197,7 +197,7 @@ export default function MockupAnnotationEditor({
 
   const handleSave = async () => {
     if (!imgRef.current || !imgRect) {
-      toast.error("Imagem não pronta");
+      toast.error(t("annotation.imageNotReady"));
       return;
     }
     setSaving(true);
@@ -262,11 +262,11 @@ export default function MockupAnnotationEditor({
       if (upErr) throw upErr;
       const { data } = supabase.storage.from("campaign-assets").getPublicUrl(path);
       await onSave(data.publicUrl);
-      toast.success("Anotação salva");
+      toast.success(t("annotation.saved"));
       onOpenChange(false);
     } catch (e: any) {
       console.error(e);
-      toast.error("Erro ao salvar anotação: " + (e?.message || ""));
+      toast.error(t("annotation.saveError", { message: e?.message || "" }));
     } finally {
       setSaving(false);
     }
@@ -280,7 +280,7 @@ export default function MockupAnnotationEditor({
     <div className="fixed inset-0 z-[120] bg-background flex flex-col" style={{ paddingTop: "env(safe-area-inset-top)" }}>
       <div className="sticky top-0 z-10 bg-background border-b flex items-center gap-2 px-2 h-14">
         <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={saving} className="min-h-[44px]">
-          <X className="w-4 h-4 mr-1" /> Cancelar
+          <X className="w-4 h-4 mr-1" /> {t("common.cancel")}
         </Button>
         <div className="flex-1 flex items-center justify-center gap-1 flex-wrap">
           <ToolBtn active={tool === "pen"} onClick={() => setTool("pen")} title="Caneta">
@@ -307,7 +307,7 @@ export default function MockupAnnotationEditor({
         </div>
         <Button onClick={handleSave} disabled={saving} className="min-h-[44px] bg-green-600 hover:bg-green-700 text-white">
           {saving ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Save className="w-4 h-4 mr-1" />}
-          {saving ? "Salvando…" : "Salvar"}
+          {saving ? t("common.loading") : t("common.save")}
         </Button>
       </div>
 
@@ -337,7 +337,7 @@ export default function MockupAnnotationEditor({
           ))}
         </div>
         {existingAnnotationUrl && (
-          <span className="text-xs text-amber-700 ml-auto">Editando sobre anotação existente</span>
+          <span className="text-xs text-amber-700 ml-auto">{t("annotation.editingExisting")}</span>
         )}
       </div>
 

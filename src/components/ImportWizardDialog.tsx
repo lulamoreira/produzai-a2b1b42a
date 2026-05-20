@@ -261,7 +261,7 @@ export default function ImportWizardDialog({
       // The caller decides processing order. We just animate progress to 100%.
       await onImport(valid, { updateExisting });
       setProgress(100);
-      toast.success(`Importação concluída: ${valid.length} registro(s).`);
+      toast.success(t("common.import") + " concluída: " + valid.length + " registro(s).");
       onOpenChange(false);
     } catch (e: any) {
       console.error(e);
@@ -279,7 +279,7 @@ export default function ImportWizardDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Upload className="w-5 h-5" />
-            Importar {mode === "stores" ? "Lojas" : "Peças"}
+            {t("common.import")} {mode === "stores" ? t("modules.stores") : t("modules.pieces")}
             <span className="text-xs font-normal text-muted-foreground ml-2">
               Etapa {step} de 3
             </span>
@@ -520,7 +520,7 @@ export default function ImportWizardDialog({
             disabled={step === 1 || importing}
             onClick={() => setStep((s) => (s > 1 ? ((s - 1) as 1 | 2 | 3) : s))}
           >
-            <ArrowLeft className="w-3 h-3 mr-1" /> Voltar
+            <ArrowLeft className="w-3 h-3 mr-1" /> {t("common.back")}
           </Button>
           {step < 3 ? (
             <Button
@@ -532,7 +532,7 @@ export default function ImportWizardDialog({
               }
               onClick={() => setStep((s) => ((s + 1) as 1 | 2 | 3))}
             >
-              Próximo <ArrowRight className="w-3 h-3 ml-1" />
+              {t("common.next")} <ArrowRight className="w-3 h-3 ml-1" />
             </Button>
           ) : (
             <Button
@@ -542,10 +542,10 @@ export default function ImportWizardDialog({
             >
               {importing ? (
                 <>
-                  <Loader2 className="w-3 h-3 mr-1 animate-spin" /> Importando...
+                  <Loader2 className="w-3 h-3 mr-1 animate-spin" /> {t("common.loading")}
                 </>
               ) : (
-                <>Confirmar Importação</>
+                <>{t("common.confirm")} {t("common.import")}</>
               )}
             </Button>
           )}
