@@ -2244,6 +2244,9 @@ const CampaignDetail = () => {
                     clientId={clientId!}
                     campaignName={campaign?.name || ""}
                     clientName={client?.name || ""}
+                    pieces={pieces}
+                    kits={kits}
+                    agencyName={agency?.name}
                   />
                 )}
               </div>
