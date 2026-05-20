@@ -144,6 +144,32 @@ async function buildTransposedSheet(
   const allBorders = { top: thinBorder, bottom: thinBorder, left: thinBorder, right: thinBorder };
   const allWhiteBorders = { top: whiteBorder, bottom: whiteBorder, left: whiteBorder, right: whiteBorder };
 
+  // Merge visible storeFields with extra hidden fields. Hidden fields are
+  // inserted right after the `state` (UF) column when present, otherwise at
+  // the end of the meta columns — but BEFORE the items, so they stay grouped
+  // with the rest of the store info instead of being far to the right.
+  type MetaField = StoreFieldDef & { __hidden?: boolean };
+  const mergedStoreFields: MetaField[] = (() => {
+    if (!extraHiddenStoreFields.length) return storeFields.slice();
+    const out: MetaField[] = [];
+    let inserted = false;
+    for (const f of storeFields) {
+      out.push(f);
+      if (!inserted && f.key === "state") {
+        for (const h of extraHiddenStoreFields) out.push({ ...h, __hidden: true });
+        inserted = true;
+      }
+    }
+    if (!inserted) {
+      for (const h of extraHiddenStoreFields) out.push({ ...h, __hidden: true });
+    }
+    return out;
+  })();
+  const hiddenColSet = new Set<number>();
+  mergedStoreFields.forEach((f, i) => { if ((f as MetaField).__hidden) hiddenColSet.add(i + 1); });
+  // Use merged list for all rendering so hidden cols sit inside meta block.
+  storeFields = mergedStoreFields;
+
   const STORE_META_COLS = Math.max(storeFields.length, 1);
   const colCount = items.length + STORE_META_COLS;
   const IMAGE_ROW_HEIGHT = 120;
