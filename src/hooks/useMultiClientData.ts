@@ -334,7 +334,7 @@ export function useCampaign(campaignId: string | undefined) {
         .eq("id", campaignId)
         .single();
       if (error) throw error;
-      return data as Campaign;
+      return data as unknown as Campaign;
     },
     enabled: !!campaignId,
   });
