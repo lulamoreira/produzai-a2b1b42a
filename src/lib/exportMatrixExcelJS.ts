@@ -535,7 +535,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
 
   // ABA 1 – Main matrix
   const ws = wb.addWorksheet(mainSheetName);
-  await buildTransposedSheet(wb, ws, fullTitle, allColumns, stores, mainQtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames, effectiveStoreFields);
+  await buildTransposedSheet(wb, ws, fullTitle, allColumns, stores, mainQtyMap, (sId, pId) => `${sId}-${pId}`, colors, locData, kitSheetNames, effectiveStoreFields, extraHiddenStoreFields || []);
 
   // Apply change highlights to the main matrix columns (meta rows + store rows).
   if (changeMap && changeMap.size > 0) {
