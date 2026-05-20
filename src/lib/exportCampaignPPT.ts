@@ -135,11 +135,11 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   });
   
   slideIndice.addText("ÍNDICE DE PEÇAS", {
-    x: 0.4, y: 0.18, color: COLORS.white, fontSize: 12, fontFace: "Calibri", bold: true
+    x: 0.4, y: 0, w: 6, h: 0.7, valign: "middle", color: COLORS.white, fontSize: 12, fontFace: "Calibri", bold: true
   });
   
   slideIndice.addText(campaign.name, {
-    x: 9.33, y: 0.18, w: 3.6, align: "right", color: COLORS.accent, fontSize: 11, fontFace: "Calibri"
+    x: 7.0, y: 0, w: 5.93, h: 0.7, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri"
   });
 
   // Listagem - apenas peças
@@ -187,15 +187,18 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     slide.addShape(pptx.ShapeType.rect, {
       x: 0, y: 0, w: 13.33, h: 0.65, fill: { color: COLORS.header }
     });
-    slide.addText("PEÇA", { x: 0.4, y: 0.10, color: COLORS.white, fontSize: 8, fontFace: "Calibri" });
-    slide.addText(piece.name, { x: 0.4, y: 0.22, color: COLORS.white, fontSize: 13, fontFace: "Calibri", bold: true });
+    slide.addText([
+      { text: "PEÇA\n", options: { fontSize: 7 } },
+      { text: piece.name, options: { fontSize: 12, bold: true } }
+    ], { x: 0.4, y: 0, w: 5.5, h: 0.65, valign: "middle", color: COLORS.white, fontFace: "Calibri" });
+
     const kitNames = pieceToKits.get(piece.name);
     if (kitNames && kitNames.length > 0) {
       slide.addText(`COMPÕE O KIT: ${kitNames.join(", ").toUpperCase()}`, {
-        x: 6.0, y: 0.22, w: 5.8, color: COLORS.accent, fontSize: 9, fontFace: "Calibri", bold: true, align: "right"
+        x: 6.0, y: 0, w: 5.8, h: 0.65, color: COLORS.accent, fontSize: 9, fontFace: "Calibri", bold: true, align: "right", valign: "middle"
       });
     }
-    slide.addText(String(idx + 1).padStart(2, '0'), { x: 12.0, y: 0.22, w: 1.0, align: "right", color: COLORS.accent, fontSize: 11, fontFace: "Calibri" });
+    slide.addText(String(idx + 1).padStart(2, '0'), { x: 12.0, y: 0, w: 1.0, h: 0.65, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri" });
 
     // ÁREA DA FOTO (esquerda)
     slide.addShape(pptx.ShapeType.rect, {
@@ -236,22 +239,28 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     slide.addShape(pptx.ShapeType.rect, {
       x: infoX, y: currentY, w: 6.1, h: 0.75, fill: { color: COLORS.header }
     });
-    slide.addText(piece.name, { x: infoX + 0.2, y: currentY + 0.2, w: 5.7, color: COLORS.white, fontSize: 14, fontFace: "Calibri", bold: true });
+    slide.addText(piece.name, { x: infoX + 0.2, y: currentY, w: 5.7, h: 0.75, valign: "middle", color: COLORS.white, fontSize: 14, fontFace: "Calibri", bold: true });
     
-    currentY += 0.9;
+    currentY += 0.95;
 
     const addField = (label: string, value: string | number | undefined, italic = false) => {
       if (value === undefined || value === "" || value === 0) return;
       const str = String(value);
-      // Estimate height: ~75 chars per line at fontSize 10 within 6.1" width; honor explicit newlines
-      const lines = str.split("\n").reduce((acc, ln) => acc + Math.max(1, Math.ceil(ln.length / 75)), 0);
-      const valueH = Math.max(0.28, lines * 0.22);
-      slide.addText(label, { x: infoX, y: currentY, w: 6.1, h: 0.18, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
-      currentY += 0.2;
+      // Estimate height more conservatively: ~65 chars per line at fontSize 10 within 6.1" width
+      const lines = str.split("\n").reduce((acc, ln) => acc + Math.max(1, Math.ceil(ln.length / 65)), 0);
+      const valueH = Math.max(0.25, lines * 0.25);
+      
+      // Label text box
+      slide.addText(label, { x: infoX, y: currentY, w: 6.1, h: 0.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri", bold: true });
+      currentY += 0.25; // Increase gap between label and value
+      
+      // Value text box
       slide.addText(str, { x: infoX, y: currentY, w: 6.1, h: valueH, valign: "top", color: COLORS.textPrimary, fontSize: 10, fontFace: "Calibri", bold: !italic, italic });
-      currentY += valueH + 0.08;
-      slide.addShape(pptx.ShapeType.line, { x: infoX, y: currentY, w: 6.1, line: { color: COLORS.border, width: 0.3 } });
-      currentY += 0.12;
+      currentY += valueH + 0.1;
+      
+      // Separator line
+      slide.addShape(pptx.ShapeType.line, { x: infoX, y: currentY, w: 6.1, line: { color: COLORS.border, width: 0.4 } });
+      currentY += 0.15;
     };
 
     addField("DESCRIÇÃO", piece.description);
