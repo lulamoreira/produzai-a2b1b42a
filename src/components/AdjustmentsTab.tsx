@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Layers, Plus, Trash2, CheckCircle2, Eye, Copy, AlertTriangle, Loader2, Send, FileInput, RotateCcw, XCircle, ArrowLeft, FileSpreadsheet, Mail, Truck } from "lucide-react";
 import { useExportRequoteFinal } from "@/hooks/useExportRequoteFinal";
+import RequoteFinalExportDialog from "./RequoteFinalExportDialog";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import AdjustmentRegisterResponseDialog from "./AdjustmentRegisterResponseDialog";
 import SendAdjustmentToClientDialog from "./Adjustments/SendAdjustmentToClientDialog";
