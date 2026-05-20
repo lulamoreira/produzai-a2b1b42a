@@ -436,6 +436,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
     agencyName,
     clientName,
     storeFields,
+    extraHiddenStoreFields,
     reservedSheetNames,
     skipDashboard,
     skipKitTabs,
