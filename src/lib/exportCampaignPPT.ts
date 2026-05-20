@@ -135,11 +135,11 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   });
   
   slideIndice.addText("ÍNDICE DE PEÇAS", {
-    x: 0.4, y: 0.18, color: COLORS.white, fontSize: 12, fontFace: "Calibri", bold: true
+    x: 0.4, y: 0, w: 6, h: 0.7, valign: "middle", color: COLORS.white, fontSize: 12, fontFace: "Calibri", bold: true
   });
   
   slideIndice.addText(campaign.name, {
-    x: 9.33, y: 0.18, w: 3.6, align: "right", color: COLORS.accent, fontSize: 11, fontFace: "Calibri"
+    x: 7.0, y: 0, w: 5.93, h: 0.7, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri"
   });
 
   // Listagem - apenas peças
