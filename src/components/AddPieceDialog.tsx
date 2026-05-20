@@ -47,9 +47,9 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
       const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
       setForm((f) => ({ ...f, image_url: urlData.publicUrl }));
       setPreviewUrl(urlData.publicUrl);
-      toast.success("Imagem enviada com sucesso");
+      toast.success(t("imageUpload.uploadSuccess"));
     } catch (err: any) {
-      toast.error("Erro ao enviar imagem: " + err.message);
+      toast.error(t("imageUpload.uploadError", { message: err.message }));
     } finally {
       setUploading(false);
     }
@@ -144,7 +144,7 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
 
           {/* Image upload section */}
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">Foto da peça</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.piecePhoto")}</label>
             {previewUrl ? (
               <div className="relative">
                 <img
@@ -159,7 +159,7 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
                   className="absolute top-2 right-2 h-7 px-2"
                   onClick={handleRemoveImage}
                 >
-                  <X className="w-3 h-3 mr-1" /> Remover
+                  <X className="w-3 h-3 mr-1" /> {t("common.remove")}
                 </Button>
               </div>
             ) : (
@@ -174,7 +174,7 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
                 <div className="flex items-center gap-2 px-4 py-3 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20">
                   <Upload className="w-4 h-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">
-                    {uploading ? "Comprimindo e enviando..." : "Clique ou arraste (será comprimida)"}
+                    {uploading ? t("common.sending") : t("common.clickOrDrag")}
                   </span>
                 </div>
               </div>

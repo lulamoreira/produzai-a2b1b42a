@@ -40,12 +40,13 @@ function KitImageSection({
 }) {
   const [uploading, setUploading] = useState(false);
   const [urlInput, setUrlInput] = useState("");
+  const { t } = useTranslation();
   const [showUrlInput, setShowUrlInput] = useState(false);
   const [dragActive, setDragActive] = useState(false);
 
   const uploadFile = async (file: File) => {
     if (!file || !file.type.startsWith("image/")) {
-      toast.error("Arquivo inválido. Envie uma imagem.");
+      toast.error(t("imageUpload.invalidFile"));
       return;
     }
     setUploading(true);
@@ -58,9 +59,9 @@ function KitImageSection({
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
       onImageUpdated(urlData.publicUrl);
-      toast.success("Imagem do kit atualizada!");
+      toast.success(t("pieces.kitImageUpdated"));
     } catch (err: any) {
-      toast.error("Erro ao enviar imagem: " + err.message);
+      toast.error(t("imageUpload.uploadError", { message: err.message }));
     } finally {
       setUploading(false);
     }
@@ -101,10 +102,10 @@ function KitImageSection({
             <>
               <label className="absolute inset-0 cursor-pointer rounded-lg flex items-center justify-center bg-black/0 hover:bg-black/40 transition-colors text-white text-xs opacity-0 hover:opacity-100">
                 <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" disabled={uploading} />
-                <span className="flex items-center gap-1"><Upload className="w-3.5 h-3.5" /> {uploading ? "Enviando..." : "Trocar (clique ou arraste)"}</span>
+                <span className="flex items-center gap-1"><Upload className="w-3.5 h-3.5" /> {uploading ? t("common.sending") : t("common.change")}</span>
               </label>
               <Button size="sm" variant="destructive" className="absolute top-1 right-1 h-6 text-[10px] px-2" onClick={() => onImageUpdated(null)}>
-                <X className="w-3 h-3 mr-1" /> Remover
+                <X className="w-3 h-3 mr-1" /> {t("common.remove")}
               </Button>
             </>
           )}
@@ -116,7 +117,7 @@ function KitImageSection({
             <input type="file" accept="image/*" onChange={handleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" disabled={uploading} />
             <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-dashed transition-colors text-xs text-muted-foreground ${dragActive ? "border-primary bg-primary/10" : "border-border hover:border-primary/50 bg-muted/20"}`}>
               <Upload className="w-3.5 h-3.5" />
-              {uploading ? "Enviando..." : dragActive ? "Solte a imagem aqui" : "Foto do kit (clique ou arraste)"}
+              {uploading ? t("common.sending") : dragActive ? t("common.dropHere") : t("pieces.kitPhotoDesc")}
             </div>
           </div>
           {!showUrlInput ? (
@@ -281,7 +282,7 @@ export function CreateKitDialog({
 
             {selectedPieceIds.length > 0 && (
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Peças incluídas ({selectedPieceIds.length})</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("pieces.includedPieces")} ({selectedPieceIds.length})</label>
                 {selectedPieceIds.map(pid => {
                   const piece = kitOnlyPieces.find(p => p.id === pid);
                   if (!piece) return null;
@@ -298,7 +299,7 @@ export function CreateKitDialog({
 
             {filteredAvailablePieces.length > 0 ? (
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">Peças disponíveis para kit</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("pieces.availablePiecesForKit")}</label>
                 <div className="max-h-[250px] overflow-y-auto space-y-1.5 pr-1">
                   {filteredAvailablePieces.map(p => (
                     <div key={p.id} className="flex items-center gap-2 px-3 py-2 rounded-md border border-border hover:bg-muted/50 transition-colors">
@@ -306,7 +307,7 @@ export function CreateKitDialog({
                       <span className="text-xs font-bold text-primary shrink-0">#{p.code}</span>
                       <span className="text-sm flex-1 break-words min-w-0">{p.name}</span>
                       <Button size="sm" variant="outline" className="text-xs gap-1 shrink-0 ml-2" onClick={() => handleAddPiece(p.id)}>
-                        <Plus className="w-3 h-3" /> Incluir
+                        <Plus className="w-3 h-3" /> {t("common.include")}
                       </Button>
                     </div>
                   ))}
@@ -315,15 +316,15 @@ export function CreateKitDialog({
             ) : (
               <p className="text-sm text-muted-foreground text-center py-4">
                 {kitOnlyPieces.length === 0
-                  ? "Nenhuma peça marcada como 'para kit'. Crie peças com essa opção ativada primeiro."
+                  ? t("pieces.noKitOnlyPieces")
                   : createSearch.trim()
-                    ? "Nenhuma peça encontrada para essa busca."
-                    : "Todas as peças para kit já foram incluídas."}
+                    ? t("pieces.noPieceFound")
+                    : t("pieces.allKitPiecesIncluded")}
               </p>
             )}
 
             <Button onClick={handleClose} className="w-full">
-              Salvar e Sair
+              {t("common.saveAndExit")}
             </Button>
           </div>
         )}
@@ -357,7 +358,7 @@ function SortableKitPieceRow({
         <button
           type="button"
           className="absolute left-1 top-1/2 -translate-y-1/2 z-10 p-1 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
-          aria-label="Arrastar para reordenar"
+          aria-label={t("common.dragToReorder")}
           {...attributes}
           {...listeners}
         >
@@ -396,6 +397,7 @@ export function KitDetailDialog({
   pieceLocations = [], pieceSubLocations = [],
   onDeleteKitPiece, onDeleteKit, onAddKitPiece, onUpdateKit, onUpdatePiece, onDeletePiece, onUpdateKitPiece, onReorderKitPieces, onDuplicatePiece,
 }: KitDetailDialogProps) {
+  const { t } = useTranslation();
   const [editingPieceId, setEditingPieceId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Record<string, string>>({});
   const [showAddPieces, setShowAddPieces] = useState(false);

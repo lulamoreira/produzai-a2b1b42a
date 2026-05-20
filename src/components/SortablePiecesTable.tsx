@@ -101,11 +101,11 @@ function SortableRow({
           >
             <span className="flex items-center gap-1.5">
               {kit.name}
-              {kit.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">MOCKUP</span>}
-              {(kit as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold">NOVO</span>}
+              {kit.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">{t("common.mockup")}</span>}
+              {(kit as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold">{t("common.new")}</span>}
             </span>
             <span className="text-[11px] text-muted-foreground block">
-              {kitPieceDetails.length} peça(s): {kitPieceDetails.map(p => p!.name).join(", ") || "Nenhuma"}
+              {kitPieceDetails.length} {t("pieces.pieceCountShort")}: {kitPieceDetails.map(p => p!.name).join(", ") || t("common.none")}
             </span>
           </button>
         </TableCell>
@@ -119,14 +119,14 @@ function SortableRow({
             <div className="flex items-center gap-1">
               {canEditPieces && (
                 <Button variant="ghost" size="icon" className="h-7 w-7"
-                  title={kit.is_mockup ? "Remover marcação de mockup" : "Marcar como mockup"}
+                  title={kit.is_mockup ? t("pieces.removeMockup") : t("pieces.markMockup")}
                   onClick={() => onToggleKitMockup(kit)}
                 >
                   <Palette className={`w-3.5 h-3.5 ${kit.is_mockup ? "text-amber-600" : "text-muted-foreground"}`} />
                 </Button>
               )}
               {canEditPieces && (
-                <Button variant="ghost" size="icon" className="h-7 w-7" title="Duplicar kit" onClick={() => onDuplicateKit(kit)}>
+                <Button variant="ghost" size="icon" className="h-7 w-7" title={t("pieces.duplicateKit")} onClick={() => onDuplicateKit(kit)}>
                   <Copy className="w-3.5 h-3.5" />
                 </Button>
               )}
@@ -144,12 +144,12 @@ function SortableRow({
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Excluir kit?</AlertDialogTitle>
-                      <AlertDialogDescription>O kit será removido. As peças componentes poderão ser mantidas ou excluídas.</AlertDialogDescription>
+                      <AlertDialogTitle>{t("pieces.deleteKitQuestion")}</AlertDialogTitle>
+                      <AlertDialogDescription>{t("pieces.deleteKitDesc")}</AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => onDeleteKit(kit.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                      <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => onDeleteKit(kit.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.delete")}</AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
                 </AlertDialog>
@@ -186,8 +186,8 @@ function SortableRow({
         >
           <span className="flex items-center gap-1.5 flex-wrap">
             {piece.name}
-            {piece.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">MOCKUP</span>}
-            {(piece as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold">NOVO</span>}
+            {piece.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">{t("common.mockup")}</span>}
+            {(piece as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold">{t("common.new")}</span>}
           </span>
         </button>
       </TableCell>
@@ -208,14 +208,14 @@ function SortableRow({
             )}
             {canEditPieces && (
               <Button variant="ghost" size="icon" className="h-7 w-7"
-                title={isDistributed ? "Remover de todas as lojas" : "Distribuir para lojas compatíveis"}
+                title={isDistributed ? t("pieces.removeFromAllStores") : t("pieces.distributeToCompatible")}
                 onClick={() => onDistribute(piece)}
               >
                 <CheckSquare className={`w-3.5 h-3.5 ${isDistributed ? "text-primary" : "text-muted-foreground"}`} />
               </Button>
             )}
             {canEditPieces && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" title="Marcar como peça para kit"
+              <Button variant="ghost" size="icon" className="h-7 w-7" title={t("pieces.markKitOnly")}
                 onClick={() => onMarkKitOnly(piece)}
               >
                 <Package className="w-3.5 h-3.5 text-muted-foreground" />
@@ -223,14 +223,14 @@ function SortableRow({
             )}
             {canEditPieces && (
               <Button variant="ghost" size="icon" className="h-7 w-7"
-                title={piece.is_mockup ? "Remover marcação de mockup" : "Marcar como mockup"}
+                title={piece.is_mockup ? t("pieces.removeMockup") : t("pieces.markMockup")}
                 onClick={() => onToggleMockup(piece)}
               >
                 <Palette className={`w-3.5 h-3.5 ${piece.is_mockup ? "text-amber-600" : "text-muted-foreground"}`} />
               </Button>
             )}
             {canEditPieces && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" title="Duplicar peça" onClick={() => onDuplicate(piece)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7" title={t("pieces.duplicatePiece")} onClick={() => onDuplicate(piece)}>
                 <Copy className="w-3.5 h-3.5" />
               </Button>
             )}
@@ -248,12 +248,12 @@ function SortableRow({
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir peça?</AlertDialogTitle>
-                    <AlertDialogDescription>A peça será removida de todas as lojas desta campanha.</AlertDialogDescription>
+                    <AlertDialogTitle>{t("pieces.deletePieceQuestion")}</AlertDialogTitle>
+                    <AlertDialogDescription>{t("pieces.deletePieceDesc")}</AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onDelete(piece.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Excluir</AlertDialogAction>
+                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onDelete(piece.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.delete")}</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
