@@ -6,6 +6,7 @@ interface ExportPPTParams {
     client_name?: string; 
     agency_name?: string; 
     status?: string; 
+    cover_image_url?: string;
   };
   pieces: Array<{ 
     id: string; 
@@ -88,9 +89,10 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   const exportDate = new Date().toLocaleDateString();
 
   // 1. Preload images
-  const pieceImages = await Promise.all(
-    pieces.map(p => p.photo_url ? urlToBase64(p.photo_url) : Promise.resolve(null))
-  );
+  const [coverImageB64, ...pieceImages] = await Promise.all([
+    campaign.cover_image_url ? urlToBase64(campaign.cover_image_url) : Promise.resolve(null),
+    ...pieces.map(p => p.photo_url ? urlToBase64(p.photo_url) : Promise.resolve(null))
+  ]);
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SLIDE 1 — CAPA
@@ -98,6 +100,40 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   const slideCapa = pptx.addSlide();
   slideCapa.background = { color: COLORS.header };
   
+  if (coverImageB64) {
+    const size = await getImageSize(coverImageB64);
+    const maxWidth = 13.33;
+    const maxHeight = 7.5;
+    let finalW = maxWidth;
+    let finalH = maxHeight;
+
+    if (size.width > 0 && size.height > 0) {
+      const ratio = size.width / size.height;
+      if (ratio > maxWidth / maxHeight) {
+        // Image is wider than slide ratio
+        finalH = maxWidth / ratio;
+      } else {
+        // Image is taller than slide ratio
+        finalW = maxHeight * ratio;
+      }
+    }
+
+    slideCapa.addImage({
+      data: coverImageB64,
+      x: (maxWidth - finalW) / 2,
+      y: (maxHeight - finalH) / 2,
+      w: finalW,
+      h: finalH,
+      sizing: { type: 'contain', w: finalW, h: finalH }
+    });
+
+    // Add a slight overlay to ensure text readability if needed, 
+    // but the user wants it to fit perfectly, so let's keep text clean
+    slideCapa.addShape(pptx.ShapeType.rect, {
+      x: 0, y: 0, w: 13.33, h: 7.5, fill: { color: "#000000", transparency: 40 }
+    });
+  }
+
   // Barra vertical esquerda
   slideCapa.addShape(pptx.ShapeType.rect, { 
     x: 0, y: 0, w: 0.15, h: 7.5, fill: { color: COLORS.accent } 
