@@ -85,7 +85,7 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
           <Plus className="w-4 h-4 mr-1" /> {t("pieces.newPiece")}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display">{t("pieces.addPieceTitle")}</DialogTitle>
         </DialogHeader>
@@ -133,7 +133,7 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
             <Textarea
               value={form.specification}
               onChange={(e) => setForm({ ...form, specification: e.target.value })}
-              className="min-h-[80px]"
+              className="min-h-[100px]"
             />
           </div>
           <div>
@@ -141,7 +141,7 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
             <Textarea
               value={form.installation_instructions}
               onChange={(e) => setForm({ ...form, installation_instructions: e.target.value })}
-              className="min-h-[80px]"
+              className="min-h-[100px]"
             />
           </div>
 
