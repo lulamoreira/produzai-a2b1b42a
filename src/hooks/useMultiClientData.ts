@@ -317,7 +317,7 @@ export function useCampaigns(clientId: string | undefined) {
         .eq("client_id", clientId)
         .order("display_order").order("created_at", { ascending: false });
       if (error) throw error;
-      return data as Campaign[];
+      return data as unknown as Campaign[];
     },
     enabled: !!clientId,
   });
