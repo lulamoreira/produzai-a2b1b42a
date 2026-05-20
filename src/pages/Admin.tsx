@@ -167,6 +167,11 @@ const Admin = () => {
           </TabsContent>
 
           {isAdmin && (
+            <TabsContent value="appearance">
+              <AppearancePanel />
+            </TabsContent>
+          )}
+          {isAdmin && (
             <TabsContent value="images">
               <RegeneratePieceImagesPanel />
             </TabsContent>
