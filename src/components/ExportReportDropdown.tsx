@@ -217,15 +217,19 @@ export default function ExportReportDropdown({
     }
   };
 
+  const dropdownTrigger = trigger || (
+    <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" disabled={loading}>
+      <FileSpreadsheet className="w-3.5 h-3.5" />
+      {t("Exportar Relatório")}
+      <ChevronDown className="w-3 h-3 opacity-60" />
+    </Button>
+  );
+
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5" disabled={loading}>
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            {t("Exportar Relatório")}
-            <ChevronDown className="w-3 h-3 opacity-60" />
-          </Button>
+          {dropdownTrigger}
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => handleExport("excel")} className="gap-2 cursor-pointer">
