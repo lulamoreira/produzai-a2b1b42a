@@ -223,6 +223,7 @@ const App = () => (
             </ErrorBoundary>
             </SidebarStateProvider>
             </PreviewUserProvider>
+            </UIVersionProvider>
           </AuthProvider>
         </BrowserRouter>
         </HistoryShortcutProvider>
