@@ -1,6 +1,4 @@
 import { createRoot } from "react-dom/client";
-import "geist/dist/fonts/geist-sans/style.css";
-import "geist/dist/fonts/geist-mono/style.css";
 import App from "./App.tsx";
 import "./index.css";
 import "./styles/aqua-theme.css";
