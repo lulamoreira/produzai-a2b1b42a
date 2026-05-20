@@ -44,6 +44,15 @@ const COLORS = {
   grayMuted: "#A8B0C0"
 };
 
+async function getImageSize(base64: string): Promise<{ width: number, height: number }> {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.width, height: img.height });
+    img.onerror = () => resolve({ width: 0, height: 0 });
+    img.src = base64;
+  });
+}
+
 async function urlToBase64(url: string): Promise<string | null> {
   if (!url) return null;
   try {
@@ -188,7 +197,28 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     });
     const b64 = pieceImages[idx];
     if (b64) {
-      slide.addImage({ data: b64, x: 0.45, y: 0.95, sizing: { type: "contain", w: 6.0, h: 5.3 } });
+      const size = await getImageSize(b64);
+      const maxWidth = 6.0;
+      const maxHeight = 5.3;
+      let finalW = maxWidth;
+      let finalH = maxHeight;
+
+      if (size.width > 0 && size.height > 0) {
+        const ratio = size.width / size.height;
+        if (ratio > maxWidth / maxHeight) {
+          finalH = maxWidth / ratio;
+        } else {
+          finalW = maxHeight * ratio;
+        }
+      }
+
+      slide.addImage({ 
+        data: b64, 
+        x: 0.45 + (maxWidth - finalW) / 2, 
+        y: 0.95 + (maxHeight - finalH) / 2, 
+        w: finalW, 
+        h: finalH 
+      });
     } else {
       slide.addText("Sem foto", { x: 0.35, y: 0.85, w: 6.2, h: 5.5, align: "center", valign: "middle", color: COLORS.textSecondary, fontSize: 14 });
     }
@@ -255,7 +285,28 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     });
     const b64 = kitImages[idx];
     if (b64) {
-      slide.addImage({ data: b64, x: 0.45, y: 0.95, sizing: { type: "contain", w: 6.0, h: 4.0 } });
+      const size = await getImageSize(b64);
+      const maxWidth = 6.0;
+      const maxHeight = 4.0;
+      let finalW = maxWidth;
+      let finalH = maxHeight;
+
+      if (size.width > 0 && size.height > 0) {
+        const ratio = size.width / size.height;
+        if (ratio > maxWidth / maxHeight) {
+          finalH = maxWidth / ratio;
+        } else {
+          finalW = maxHeight * ratio;
+        }
+      }
+
+      slide.addImage({ 
+        data: b64, 
+        x: 0.45 + (maxWidth - finalW) / 2, 
+        y: 0.95 + (maxHeight - finalH) / 2, 
+        w: finalW, 
+        h: finalH 
+      });
     } else {
       slide.addText("Sem foto", { x: 0.35, y: 0.85, w: 6.2, h: 4.0, align: "center", valign: "middle", color: COLORS.textSecondary, fontSize: 14 });
     }
@@ -269,7 +320,28 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
         const tY = 5.3;
         slide.addShape(pptx.ShapeType.rect, { x: tX, y: tY, w: 1.1, h: 0.9, fill: { color: COLORS.white }, line: { color: COLORS.border, width: 0.3 } });
         if (thumbB64) {
-          slide.addImage({ data: thumbB64, x: tX + 0.05, y: tY + 0.05, sizing: { type: "contain", w: 1.0, h: 0.8 } });
+          const size = await getImageSize(thumbB64);
+          const maxWidth = 1.0;
+          const maxHeight = 0.8;
+          let finalW = maxWidth;
+          let finalH = maxHeight;
+
+          if (size.width > 0 && size.height > 0) {
+            const ratio = size.width / size.height;
+            if (ratio > maxWidth / maxHeight) {
+              finalH = maxWidth / ratio;
+            } else {
+              finalW = maxHeight * ratio;
+            }
+          }
+
+          slide.addImage({ 
+            data: thumbB64, 
+            x: tX + 0.05 + (maxWidth - finalW) / 2, 
+            y: tY + 0.05 + (maxHeight - finalH) / 2, 
+            w: finalW, 
+            h: finalH 
+          });
         }
       });
     }
