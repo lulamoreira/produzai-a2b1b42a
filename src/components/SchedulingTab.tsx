@@ -1424,6 +1424,7 @@ interface ApprovalTogglesProps {
 
 function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTime, onMultiUpdate }: ApprovalTogglesProps) {
   const { t } = useTranslation();
+  const fmt = useFormatters();
   const { user } = useAuth();
   const dbStoreStatus = (schedule?.store_approval_status ?? "under_review") as ApprovalStatusValue;
   const dbTeamStatus = (schedule?.team_approval_status ?? "under_review") as ApprovalStatusValue;
@@ -1758,6 +1759,7 @@ interface RescheduleApprovalTogglesProps {
 
 function RescheduleApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTime, onMultiUpdate }: RescheduleApprovalTogglesProps) {
   const { t } = useTranslation();
+  const fmt = useFormatters();
   const { user } = useAuth();
   const dbStoreStatus = (schedule?.reschedule_store_approval_status ?? "under_review") as ApprovalStatusValue;
   const dbTeamStatus = (schedule?.reschedule_team_approval_status ?? "under_review") as ApprovalStatusValue;

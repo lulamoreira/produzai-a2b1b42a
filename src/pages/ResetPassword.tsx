@@ -18,11 +18,11 @@ const ResetPassword = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      toast.error(t("resetPassword.confirmPasswordError") || "As senhas não coincidem.");
+      toast.error("As senhas não coincidem.");
       return;
     }
     if (password.length < 6) {
-      toast.error(t("resetPassword.minLengthError") || "A senha deve ter no mínimo 6 caracteres.");
+      toast.error("A senha deve ter no mínimo 6 caracteres.");
       return;
     }
 

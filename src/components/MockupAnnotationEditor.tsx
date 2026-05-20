@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { ReactSketchCanvas, type ReactSketchCanvasRef } from "react-sketch-canvas";
 import { Button } from "@/components/ui/button";
 import { Pencil, Eraser, Circle, ArrowUpRight, Square, Undo2, Trash2, X, Save, Loader2 } from "lucide-react";
@@ -43,6 +44,7 @@ export default function MockupAnnotationEditor({
   campaignId,
   mockupId,
 }: Props) {
+  const { t } = useTranslation();
   const canvasRef = useRef<ReactSketchCanvasRef>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);

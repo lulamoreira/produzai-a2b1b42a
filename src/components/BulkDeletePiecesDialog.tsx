@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
@@ -24,6 +25,7 @@ interface BulkDeletePiecesDialogProps {
 export default function BulkDeletePiecesDialog({
   open, onOpenChange, pieces, onDeletePieces,
 }: BulkDeletePiecesDialogProps) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [confirmOpen, setConfirmOpen] = useState(false);

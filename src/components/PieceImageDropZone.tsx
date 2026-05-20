@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import { useUpdateCampaignPieceImage } from "@/hooks/useMultiClientData";
@@ -11,6 +12,7 @@ interface Props {
 }
 
 const PieceImageDropZone = ({ piece, canEdit = false }: Props) => {
+  const { t } = useTranslation();
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const updateImage = useUpdateCampaignPieceImage();

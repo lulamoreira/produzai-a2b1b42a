@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Download, Upload, AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
@@ -9,6 +10,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const BackupRestorePanel = () => {
+  const { t } = useTranslation();
   const [downloading, setDownloading] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [confirmRestore, setConfirmRestore] = useState(false);

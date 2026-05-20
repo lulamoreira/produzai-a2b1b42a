@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import * as XLSX from "xlsx";
 import { Sparkles, Upload, ArrowRight, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -91,6 +92,7 @@ export default function ImportWizardDialog({
   onImport,
   trigger,
 }: ImportWizardDialogProps) {
+  const { t } = useTranslation();
   const systemFields = mode === "stores" ? STORE_FIELDS : PIECE_FIELDS;
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
