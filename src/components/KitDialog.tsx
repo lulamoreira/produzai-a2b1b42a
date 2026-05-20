@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -151,6 +152,7 @@ interface CreateKitDialogProps {
 export function CreateKitDialog({
   open, onOpenChange, campaignId, kitOnlyPieces, existingKits, existingPieces = [], onCreateKit, onAddKitPiece, onUpdateKit,
 }: CreateKitDialogProps) {
+  const { t } = useTranslation();
   const [step, setStep] = useState<"name" | "pieces">("name");
   const [kitName, setKitName] = useState("");
   const [kitIsNew, setKitIsNew] = useState(false);
@@ -220,35 +222,35 @@ export function CreateKitDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md overflow-hidden">
         <DialogHeader>
-          <DialogTitle>{step === "name" ? "Novo Kit" : `Kit: ${kitName}`}</DialogTitle>
+          <DialogTitle>{step === "name" ? t("pieces.newKit") : `${t("common.kit")}: ${kitName}`}</DialogTitle>
           <DialogDescription>
             {step === "name"
-              ? "Dê um nome ao kit de peças."
-              : "Selecione as peças e adicione uma foto ao kit."}
+              ? t("pieces.kitNameDesc")
+              : t("pieces.kitPiecesDesc")}
           </DialogDescription>
         </DialogHeader>
 
         {step === "name" ? (
           <div className="space-y-4">
             <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome do Kit *</label>
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.kitName")} *</label>
               <Input
                 value={kitName}
                 onChange={(e) => setKitName(e.target.value)}
-                placeholder="Ex: Kit Vitrine"
+                placeholder={t("pieces.kitNamePlaceholder")}
                 onKeyDown={(e) => { if (e.key === "Enter") handleCreateKit(); }}
                 autoFocus
               />
             </div>
             <div className="flex items-center justify-between p-3 rounded-lg border border-green-500/20 bg-green-500/5">
               <div>
-                <label className="text-xs font-medium text-foreground">Kit Novo</label>
-                <p className="text-[10px] text-muted-foreground">Marcar como kit novo na campanha</p>
+                <label className="text-xs font-medium text-foreground">{t("pieces.newKit")}</label>
+                <p className="text-[10px] text-muted-foreground">{t("pieces.newKitDesc")}</p>
               </div>
               <Switch checked={kitIsNew} onCheckedChange={setKitIsNew} />
             </div>
             <Button onClick={handleCreateKit} disabled={!kitName.trim() || saving} className="w-full">
-              {saving ? "Criando..." : "Avançar"}
+              {saving ? t("common.wait") : t("common.next")}
             </Button>
           </div>
         ) : (

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import {
   DndContext,
@@ -291,6 +292,7 @@ export default function SortablePiecesTable({
   canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit, onReorder,
 }: SortablePiecesTableProps) {
+  const { t } = useTranslation();
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -362,15 +364,15 @@ export default function SortablePiecesTable({
           <TableHeader>
             <TableRow>
               {canEditPieces && <TableHead className="w-8" />}
-              <TableHead className="w-[70px]">Cód.</TableHead>
-              <TableHead className="hidden sm:table-cell">Localização</TableHead>
-              <TableHead>Nome</TableHead>
-              <TableHead className="hidden md:table-cell w-[140px] min-w-[140px]">Medidas</TableHead>
-              <TableHead className="hidden lg:table-cell">Modelo</TableHead>
-              <TableHead className="hidden lg:table-cell">Especificação</TableHead>
-              <TableHead className="hidden xl:table-cell">Instalação</TableHead>
-              <TableHead className="text-center w-[60px]">Total</TableHead>
-              {(canEditPieces || canDeletePieces) && <TableHead className="w-[80px]">Ações</TableHead>}
+              <TableHead className="w-[70px]">{t("common.code")}</TableHead>
+              <TableHead className="hidden sm:table-cell">{t("pieces.locationInStore")}</TableHead>
+              <TableHead>{t("common.name")}</TableHead>
+              <TableHead className="hidden md:table-cell w-[140px] min-w-[140px]">{t("pieces.measures")}</TableHead>
+              <TableHead className="hidden lg:table-cell">{t("common.model")}</TableHead>
+              <TableHead className="hidden lg:table-cell">{t("pieces.specification")}</TableHead>
+              <TableHead className="hidden xl:table-cell">{t("pieces.installationInstructions")}</TableHead>
+              <TableHead className="text-center w-[60px]">{t("common.total")}</TableHead>
+              {(canEditPieces || canDeletePieces) && <TableHead className="w-[80px]">{t("common.actions")}</TableHead>}
             </TableRow>
           </TableHeader>
           <SortableContext items={rowIds} strategy={verticalListSortingStrategy}>
