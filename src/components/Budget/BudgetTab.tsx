@@ -2981,7 +2981,7 @@ function AdjustmentSummaryCard({
       )}
       {adjustment.approved_at && (
         <p className="text-[11px] text-muted-foreground">
-          Iniciado em {format(new Date(adjustment.approved_at), "dd/MM/yyyy", { locale: ptBR })}
+          Iniciado em {format(new Date(adjustment.approved_at), "dd/MM/yyyy")}
         </p>
       )}
 
