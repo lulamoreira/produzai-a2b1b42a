@@ -701,23 +701,19 @@ export async function buildRequoteFinalWorkbook(
   });
 
   const matrixStores = sortedStores.map((s) => ({
-    id: s.id,
     client_id: "",
+    auto_distribute: false,
+    show_in_scheduling: true,
+    created_at: "",
+    // Spread the full live row so all fields (cnpj, zip_code, street, phone,
+    // email, custom_field_*, etc.) flow through to the hidden columns.
+    ...(s as any),
     name: s.name,
     nickname: s.nickname || null,
     city: s.city || null,
     state: s.state || null,
-    cnpj: null, state_registration: null, zip_code: null, street: null,
-    number: null, complement: null, neighborhood: null, phone: null,
-    manager_name: null, store_model: s.store_model || null, country: null,
-    store_code: s.store_code || null, email: null,
-    custom_field_1: null, custom_field_2: null, custom_field_3: null,
-    custom_field_4: null, custom_field_5: null, custom_field_6: null,
-    custom_field_7: null, custom_field_8: null, custom_field_9: null,
-    custom_field_10: null, custom_field_11: null, custom_field_12: null,
-    custom_field_13: null, custom_field_14: null, custom_field_15: null,
-    observations: null, auto_distribute: false, show_in_scheduling: true,
-    created_at: "",
+    store_model: (s as any).store_model || null,
+    store_code: s.store_code || null,
     showcase_count: s.showcase_count || 0,
   } as any));
 
