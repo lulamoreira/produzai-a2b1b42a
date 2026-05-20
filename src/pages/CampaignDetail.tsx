@@ -1466,61 +1466,9 @@ const CampaignDetail = () => {
     }
   };
 
-  const handleExportPPT = async () => {
-    if (!campaign) return;
-    setExportingPPT(true);
-    try {
-      const piecesData = pieces.map(p => ({
-        id: p.id,
-        name: p.name,
-        description: p.specification,
-        width: undefined,
-        height: undefined,
-        material: undefined,
-        quantity: stores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0),
-        code: String(p.code),
-        observations: p.installation_instructions || undefined,
-        status: undefined,
-        photo_url: p.image_url || undefined,
-      }));
+  const [pptExportOpen, setPptExportOpen] = useState(false);
 
-      const kitsData = kits.map(k => {
-        const kpForKit = kitPieces.filter(kp => kp.kit_id === k.id);
-        const kitPieceDetails = kpForKit.map(kp => pieces.find(p => p.id === kp.piece_id)).filter(Boolean) as any[];
-        
-        return {
-          id: k.id,
-          name: k.name,
-          description: undefined,
-          pieces_count: kpForKit.length,
-          code: String(k.code),
-          observations: undefined,
-          photo_url: k.image_url || undefined,
-          pieces: kitPieceDetails.map(p => ({
-            name: p.name,
-            photo_url: p.image_url || undefined,
-          })),
-        };
-      });
-
-      await exportCampaignPPT({
-        campaign: {
-          name: campaign.name,
-          client_name: client?.name,
-          agency_name: (client as any)?.agency_name,
-          status: (campaign as any).status,
-        },
-        pieces: piecesData,
-        kits: kitsData,
-      });
-      toast.success("PPT exportado com sucesso!");
-    } catch (error) {
-      console.error("Error exporting PPT:", error);
-      toast.error("Erro ao exportar PPT");
-    } finally {
-      setExportingPPT(false);
-    }
-  };
+  // handleExportPPT function removed as it is now integrated into ExportReportDropdown
 
   // ─── Reorder pieces & kits (drag & drop) ───────────────
   const handleReorderUnified = useCallback(async (reorderedRows: UnifiedRow[]) => {
