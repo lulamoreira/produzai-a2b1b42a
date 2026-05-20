@@ -641,7 +641,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
 
     const sheetName = kitSheetNames.get(kit.id)!;
     const kitWs = wb.addWorksheet(sheetName);
-    await buildTransposedSheet(wb, kitWs, `${kit.name} (Kit ${kit.code})`, kitItems, stores, kitQtyMap, (sId, kpId) => `${sId}-${kpId}`, colors, locData, undefined, effectiveStoreFields);
+    await buildTransposedSheet(wb, kitWs, `${kit.name} (Kit ${kit.code})`, kitItems, stores, kitQtyMap, (sId, kpId) => `${sId}-${kpId}`, colors, locData, undefined, effectiveStoreFields, extraHiddenStoreFields || []);
   }
 
   if (skipDashboard || !dashboardSheetName) return mainSheetName;
