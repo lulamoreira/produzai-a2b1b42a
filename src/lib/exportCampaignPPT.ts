@@ -242,12 +242,16 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
 
     const addField = (label: string, value: string | number | undefined, italic = false) => {
       if (value === undefined || value === "" || value === 0) return;
-      slide.addText(label, { x: infoX, y: currentY, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
-      currentY += 0.15;
-      slide.addText(String(value), { x: infoX, y: currentY, w: 6.1, color: COLORS.textPrimary, fontSize: 10, fontFace: "Calibri", bold: !italic, italic });
-      currentY += 0.35;
-      slide.addShape(pptx.ShapeType.line, { x: infoX, y: currentY - 0.05, w: 6.1, line: { color: COLORS.border, width: 0.3 } });
-      currentY += 0.1;
+      const str = String(value);
+      // Estimate height: ~75 chars per line at fontSize 10 within 6.1" width; honor explicit newlines
+      const lines = str.split("\n").reduce((acc, ln) => acc + Math.max(1, Math.ceil(ln.length / 75)), 0);
+      const valueH = Math.max(0.28, lines * 0.22);
+      slide.addText(label, { x: infoX, y: currentY, w: 6.1, h: 0.18, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
+      currentY += 0.2;
+      slide.addText(str, { x: infoX, y: currentY, w: 6.1, h: valueH, valign: "top", color: COLORS.textPrimary, fontSize: 10, fontFace: "Calibri", bold: !italic, italic });
+      currentY += valueH + 0.08;
+      slide.addShape(pptx.ShapeType.line, { x: infoX, y: currentY, w: 6.1, line: { color: COLORS.border, width: 0.3 } });
+      currentY += 0.12;
     };
 
     addField("DESCRIÇÃO", piece.description);
