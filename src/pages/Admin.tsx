@@ -97,6 +97,11 @@ const Admin = () => {
               </TabsTrigger>
             )}
             {isAdmin && (
+              <TabsTrigger value="appearance" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+                <Paintbrush className="w-4 h-4" /> {t("admin.appearance")}
+              </TabsTrigger>
+            )}
+            {isAdmin && (
               <TabsTrigger value="backup" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
                 <Database className="w-4 h-4" /> {t("common.backup")}
               </TabsTrigger>
