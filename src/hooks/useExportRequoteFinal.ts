@@ -190,7 +190,7 @@ export function useExportRequoteFinal(
 ) {
   const [isExporting, setIsExporting] = useState(false);
 
-  const exportFinal = async () => {
+  const exportFinal = async (extraHiddenStoreFields?: StoreFieldDef[]) => {
     if (!campaignId || !adjustmentId || !supplierId) {
       toast.error("Faltam dados para gerar a planilha.");
       return;
@@ -201,6 +201,7 @@ export function useExportRequoteFinal(
         campaignId,
         adjustmentId,
         supplierId,
+        extraHiddenStoreFields,
       });
       saveBlobAs(blob, fileName);
       toast.success("Planilha final gerada com sucesso!");
