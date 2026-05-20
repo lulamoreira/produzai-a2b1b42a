@@ -1015,5 +1015,23 @@
     "recentActivity": {
       "title": "Recent Activity"
     }
+  },
+  "toolbar": {
+    "search": "Search...",
+    "filter": "Filter",
+    "clearFilters": "Clear filters",
+    "sort": "Sort",
+    "group": "Group",
+    "export": "Export",
+    "import": "Import",
+    "columns": "Columns",
+    "density": "Density",
+    "compact": "Compact",
+    "comfortable": "Comfortable",
+    "spacious": "Spacious",
+    "refresh": "Refresh",
+    "selectAll": "Select all",
+    "moreActions": "More actions",
+    "bulkActions": "Bulk actions"
   }
 }

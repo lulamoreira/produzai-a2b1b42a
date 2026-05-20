@@ -1018,5 +1018,23 @@
     "recentActivity": {
       "title": "Atividade Recente"
     }
+  },
+  "toolbar": {
+    "search": "Buscar...",
+    "filter": "Filtrar",
+    "clearFilters": "Limpar filtros",
+    "sort": "Ordenar",
+    "group": "Agrupar",
+    "export": "Exportar",
+    "import": "Importar",
+    "columns": "Colunas",
+    "density": "Densidade",
+    "compact": "Compacto",
+    "comfortable": "Confortável",
+    "spacious": "Espaçoso",
+    "refresh": "Atualizar",
+    "selectAll": "Selecionar todos",
+    "moreActions": "Mais ações",
+    "bulkActions": "Ações em lote"
   }
 }
