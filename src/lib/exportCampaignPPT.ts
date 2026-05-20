@@ -189,6 +189,12 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     });
     slide.addText("PEÇA", { x: 0.4, y: 0.10, color: COLORS.white, fontSize: 8, fontFace: "Calibri" });
     slide.addText(piece.name, { x: 0.4, y: 0.22, color: COLORS.white, fontSize: 13, fontFace: "Calibri", bold: true });
+    const kitNames = pieceToKits.get(piece.name);
+    if (kitNames && kitNames.length > 0) {
+      slide.addText(`COMPÕE O KIT: ${kitNames.join(", ").toUpperCase()}`, {
+        x: 6.0, y: 0.22, w: 5.8, color: COLORS.accent, fontSize: 9, fontFace: "Calibri", bold: true, align: "right"
+      });
+    }
     slide.addText(String(idx + 1).padStart(2, '0'), { x: 12.0, y: 0.22, w: 1.0, align: "right", color: COLORS.accent, fontSize: 11, fontFace: "Calibri" });
 
     // ÁREA DA FOTO (esquerda)
