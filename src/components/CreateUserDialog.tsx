@@ -99,7 +99,7 @@ export function CreateUserDialog() {
             O usuário será criado já aprovado. Você poderá configurar permissões e acessos depois.
           </p>
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? "Criando..." : "Criar Usuário"}
+            {loading ? t("common.loading") : t("admin_users.createUser", { defaultValue: "Criar Usuário" })}
           </Button>
         </form>
       </DialogContent>

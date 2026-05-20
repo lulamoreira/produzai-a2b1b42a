@@ -69,7 +69,7 @@ export const NameConfirmDialog = () => {
             />
           </div>
           <Button className="w-full" onClick={handleConfirm} disabled={!name.trim() || saving}>
-            {saving ? "Salvando..." : "Confirmar"}
+            {saving ? t("common.loading") : t("common.confirm")}
           </Button>
         </div>
       </DialogContent>
