@@ -813,7 +813,7 @@ export default function AdjustmentsTab({
                               <div className="mt-auto pt-3 flex flex-col gap-2">
                                 <Button
                                   size="sm"
-                                  onClick={exportFinal}
+                                  onClick={() => setFinalExportOpen(true)}
                                   disabled={isExporting}
                                   className="bg-emerald-600 hover:bg-emerald-700 text-white gap-2 w-full"
                                 >
