@@ -750,5 +750,23 @@
     "deleting": "Eliminando...",
     "collecting": "Recopilando fotos...",
     "processing": "Procesando..."
+  },
+  "appearance": {
+    "title": "Configuración de Apariencia",
+    "description": "Personalice la interfaz del sistema para todos los usuarios.",
+    "v2Label": "Interfaz Produzai v2 (BETA)",
+    "v2Description": "Una experiencia moderna, rápida e intuitiva rediseñada desde cero.",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "activatedToast": "¡Interfaz v2 activada con éxito!",
+    "deactivatedToast": "Interfaz v1 restaurada.",
+    "errorToast": "Error ao atualizar la versión de la interfaz.",
+    "activeWarning": "La interfaz v2 está em fase Beta. Algumas telas podem estar sendo migradas.",
+    "whatChangesTitle": "¿Qué cambia en la v2?",
+    "change1": "Sidebar y Header totalmente rediseñados para una mejor navegación",
+    "change2": "Nueva paleta de colores 'Warm Modern' con tipografía Geist",
+    "change3": "Dashboard Ejecutivo optimizado en la página de inicio",
+    "change4": "Barra inferior móvil inteligente que sustituye a los botones flotantes",
+    "change5": "Soporte completo para portugués, inglés y español en toda la interfaz"
   }
 }
