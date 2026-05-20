@@ -16,32 +16,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { format } from "date-fns";
-import { ptBR, enUS, es } from "date-fns/locale";
-import { useLanguage } from "@/hooks/useLanguage";
-
-// Custom hook to mimic useFormatters() if not available or for better control
-const useFormatters = () => {
-  const { currentLanguage } = useLanguage();
-  const locale = currentLanguage === "pt-BR" ? ptBR : currentLanguage === "es" ? es : enUS;
-
-  return {
-    custom: (date: Date, pattern: string) => format(date, pattern, { locale }),
-    dateShort: (date: Date) => format(date, "dd/MM/yy", { locale }),
-    relative: (date: Date) => {
-      const now = new Date();
-      const diff = now.getTime() - date.getTime();
-      const mins = Math.floor(diff / 60000);
-      const hours = Math.floor(mins / 60);
-      const days = Math.floor(hours / 24);
-
-      if (mins < 1) return "agora";
-      if (mins < 60) return `${mins}m`;
-      if (hours < 24) return `${hours}h`;
-      return `${days}d`;
-    }
-  };
-};
+import { useFormatters } from "@/lib/formatters";
 
 export function HomeV2() {
   const { t } = useTranslation();
