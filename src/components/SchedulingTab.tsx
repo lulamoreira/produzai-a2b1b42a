@@ -327,35 +327,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     });
   }, [filteredStores, summaryFilter, scheduleMap, storeOccurrenceStatus]);
 
-  const handleExport = async () => {
-    try {
-      const XLSX = await import("xlsx");
-      const exportData = displayedStores.map(s => {
-        const sch = scheduleMap[s.id];
-        const effDate = sch?.reschedule_enabled ? sch?.reschedule_date : sch?.scheduled_date;
-        const effTime = sch?.reschedule_enabled ? sch?.reschedule_time : sch?.scheduled_time;
-        const effOs = sch?.reschedule_enabled ? sch?.reschedule_os : sch?.installation_os;
-        return {
-          [t("installations.store")]: s.name,
-          [t("installations.store") + " (Apelido)"]: s.nickname || "",
-          [t("installations.store") + " (Código)"]: s.store_code || "",
-          [t("installations.date")]: effDate ? fmt.dateShort(new Date(effDate + "T12:00:00")) : "",
-          [t("common.time")]: effTime || "",
-          "OS": effOs || "",
-          [t("installations.status")]: sch?.completed_at ? t("installations.completed") : t("installations.pending"),
-          [t("installations.installer")]: sch?.team_id ? (teamMap[sch.team_id]?.name || "") : ""
-        };
-      });
-      const ws = XLSX.utils.json_to_sheet(exportData);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, t("scheduling.list"));
-      const fileName = buildExportFileName(clientName, campaignName, t("scheduling.title"));
-      XLSX.writeFile(wb, `${fileName}.xlsx`);
-      toast.success(t("common.downloadComplete"));
-    } catch (err) {
-      toast.error(t("common.errorDownloading"));
-    }
-  };
 
   const fieldLabels: Record<string, string> = {
     scheduled_date: t("common.date"),
@@ -620,7 +591,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         [t("common.contact")]: store.manager_name || "",
         [t("common.phone")]: store.phone || "",
         "E-mail": store.email || "",
-        [t("scheduling.scheduledDate")]: schedule?.scheduled_date ? format(new Date(schedule.scheduled_date + "T12:00:00"), "dd/MM/yyyy") : "",
+        [t("scheduling.scheduledDate")]: schedule?.scheduled_date ? fmt.dateShort(new Date(schedule.scheduled_date + "T12:00:00")) : "",
         [t("common.time")]: schedule?.scheduled_time || "",
         "OS Instalação": schedule?.installation_os || "",
         [t("scheduling.preferenceLabel")]: prefLabel(schedule?.installation_preference ?? null),
