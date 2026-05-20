@@ -451,8 +451,8 @@
     "deletedError": "Error al eliminar ocurrencia",
     "resolve": "Resolver",
     "reopen": "Reabrir",
-    "addComment": "Agregar comentario"
-  },
+    "addComment": "Agregar comentario",
+
     "until": "hasta",
     "noPeriodConfigured": "Ningún período configurado.",
     "inclusionBlocked": "La inclusión de ocurrencias está bloqueada.",
