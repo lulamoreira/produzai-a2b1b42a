@@ -30,6 +30,7 @@ interface Props {
   clientName: string;
   pieces?: any[];
   kits?: any[];
+  kitPieces?: any[];
   agencyName?: string;
   isOpen?: boolean;
   onOpenChange?: (open: boolean) => void;
