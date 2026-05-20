@@ -188,7 +188,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     });
     const b64 = pieceImages[idx];
     if (b64) {
-      slide.addImage({ data: b64, x: 0.45, y: 0.95, w: 6.0, h: 5.3, sizing: { type: "contain", w: 6.0, h: 5.3 } });
+      slide.addImage({ data: b64, x: 0.45, y: 0.95, sizing: { type: "contain", w: 6.0, h: 5.3 } });
     } else {
       slide.addText("Sem foto", { x: 0.35, y: 0.85, w: 6.2, h: 5.5, align: "center", valign: "middle", color: COLORS.textSecondary, fontSize: 14 });
     }
