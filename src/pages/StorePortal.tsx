@@ -204,7 +204,7 @@ export default function StorePortal() {
                       <h2 className="text-lg font-semibold text-foreground mb-1">{t("storePortal.pendencies")}</h2>
                       <p className="text-sm text-muted-foreground">
                         {t("storePortal.materialReceived")} em{" "}
-                        {fmt.format(deadlineStatus.deadline!, "dd/MM/yyyy HH:mm")}
+                        {fmt.custom(deadlineStatus.deadline!, "dd/MM/yyyy HH:mm")}
                       </p>
                     </div>
                   ) : (
