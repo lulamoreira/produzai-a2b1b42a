@@ -122,6 +122,62 @@ export default function ExportReportDropdown({ campaignId, clientId, campaignNam
     }
   };
 
+  const handlePPTExport = async () => {
+    setLoading(true);
+    const toastId = toast.loading("Gerando apresentação PPT...");
+    try {
+      // Create a hidden file input to pick the cover image
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      
+      const coverImageUrl = await new Promise<string | undefined>((resolve) => {
+        input.onchange = async (e: any) => {
+          const file = e.target.files?.[0];
+          if (!file) {
+            resolve(undefined);
+            return;
+          }
+          
+          // Upload to temporary storage or just use as data URL
+          const reader = new FileReader();
+          reader.onload = (event) => resolve(event.target?.result as string);
+          reader.onerror = () => resolve(undefined);
+          reader.readAsDataURL(file);
+        };
+        
+        // If user cancels the file dialog, we'll continue without a cover image
+        // but detecting cancel is tricky, so we'll just wait for the change event
+        // or provide an alternative button in a dialog if this was more complex.
+        input.click();
+        
+        // Small timeout to resolve if no file is selected within 30s
+        setTimeout(() => resolve(undefined), 30000);
+      });
+
+      const { exportCampaignPPT } = await import("@/lib/exportCampaignPPT");
+      await exportCampaignPPT({
+        campaign: {
+          name: campaignName,
+          client_name: clientName,
+          agency_name: agencyName,
+          cover_image_url: coverImageUrl
+        },
+        pieces: pieces.map(p => ({
+          ...p,
+          photo_url: p.image_url
+        })),
+        kits: kits
+      });
+      toast.success("PPT exportado com sucesso!", { id: toastId });
+    } catch (err) {
+      console.error("PPT Export error:", err);
+      toast.error("Erro ao exportar PPT", { id: toastId });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -139,6 +195,10 @@ export default function ExportReportDropdown({ campaignId, clientId, campaignNam
         <DropdownMenuItem onClick={() => handleExport("pdf")} className="gap-2 cursor-pointer">
           <FileText className="w-4 h-4" />
           Relatório PDF (.pdf)
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handlePPTExport} className="gap-2 cursor-pointer">
+          <Presentation className="w-4 h-4" />
+          Apresentação PPT (.pptx)
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
