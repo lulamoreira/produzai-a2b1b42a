@@ -2,6 +2,7 @@
 // Substituído pelo módulo de Ocorrências dentro de "Loja a Loja". Pode ser apagado.
 
 import { useState, useMemo, useCallback, lazy, Suspense } from "react";
+import { useTranslation } from "react-i18next";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { getStatusLabel as _getStatusLabel, getStatusColor as _getStatusColor, isOccurrenceOverdue, parseLocalDate } from "@/lib/occurrenceHelpers";
 import { format } from "date-fns";
@@ -115,6 +116,7 @@ export default function OccurrenceCard({
   onOpenLightbox, motiveColor, PRIORITY_OPTIONS, canLockCards, schedule,
   agencyId, clientId,
 }: OccurrenceCardProps) {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const qc = useQueryClient();
   const updateFields = useUpdateOccurrenceFields();

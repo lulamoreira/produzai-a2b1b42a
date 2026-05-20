@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   type Store,
   type Piece,
@@ -53,6 +54,7 @@ interface StoreDetailProps {
 }
 
 const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDetailProps) => {
+  const { t } = useTranslation();
   const { data: storePieces = [], isLoading } = useStorePieces(store.id);
   const updateQuantity = useUpdateQuantity();
   const addPieceToStore = useAddPieceToStore();

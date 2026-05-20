@@ -1,4 +1,5 @@
 import * as React from "react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -30,6 +31,7 @@ export function ResponsiveToolbar({
   secondaryActions,
   className,
 }: ResponsiveToolbarProps) {
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
 
   return (

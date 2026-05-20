@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useStoreContactsByClient, useStoreContactRoles } from "@/hooks/useStoreContacts";
 import { Search, UserPlus, MapPin, Phone, Mail, Building2, Hash, FileText, Edit3 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -18,6 +19,7 @@ interface Props {
 }
 
 const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFields = [], canEdit = false, onEditStore, countryCode }: Props) => {
+  const { t } = useTranslation();
   const { data: allContacts = [] } = useStoreContactsByClient(clientId);
   const { data: roles = [] } = useStoreContactRoles(clientId);
   const [search, setSearch] = useState("");

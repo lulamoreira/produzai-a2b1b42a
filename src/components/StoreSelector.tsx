@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { type Store } from "@/hooks/useStoreData";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -29,6 +30,7 @@ const StoreSelector = ({
   states,
   storeTypes,
 }: StoreSelectorProps) => {
+  const { t } = useTranslation();
   return (
     <div className="flex flex-col gap-4">
       {/* Search */}

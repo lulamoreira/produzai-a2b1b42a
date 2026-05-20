@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
@@ -186,6 +187,7 @@ const MatrixFilterSidebar = ({
   filterLogicMode,
   onFilterLogicModeChange,
 }: MatrixFilterSidebarProps) => {
+  const { t } = useTranslation();
   // Extract unique options from pieces for each field
   const filterOptions = useMemo(() => {
     const categories = [...new Set(pieces.map((p) => p.category).filter(Boolean))].sort();

@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useStoreContactsByClient, useStoreContactRoles } from "@/hooks/useStoreContacts";
@@ -20,6 +21,7 @@ interface Props {
 }
 
 const StoreContactsCardView = ({ clientId, stores, agencyName, clientName, canEdit = false, onEditStore, countryCode }: Props) => {
+  const { t } = useTranslation();
   const { data: contacts = [] } = useStoreContactsByClient(clientId);
   const { data: roles = [] } = useStoreContactRoles(clientId);
   const [search, setSearch] = useState("");

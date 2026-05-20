@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -84,6 +85,7 @@ export default function CampaignStatusDashboard({
   campaignId,
   onNavigate,
 }: CampaignStatusDashboardProps) {
+  const { t } = useTranslation();
   const { data: stats, isLoading } = useCampaignStats(campaignId);
   useRealtimeStoreOccurrences(campaignId);
 

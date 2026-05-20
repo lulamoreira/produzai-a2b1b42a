@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { type LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -11,11 +12,14 @@ interface EmptyStateProps {
 
 export default function EmptyState({
   icon: Icon,
-  title = "Nenhum resultado encontrado",
-  subtitle = "Tente ajustar os filtros ou a busca.",
+  title,
+  subtitle,
   hasActiveFilters = false,
   onClearFilters,
 }: EmptyStateProps) {
+  const { t } = useTranslation();
+  const displayTitle = title || t("common.noResults");
+  const displaySubtitle = subtitle || t("emptyState.subtitle");
   return (
     <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
       <Icon className="w-12 h-12 mb-4" style={{ color: "var(--text-muted)" }} />
