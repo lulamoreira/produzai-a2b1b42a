@@ -399,6 +399,8 @@ export type AppendMatrixParams = {
   agencyName?: string;
   clientName?: string;
   storeFields?: StoreFieldDef[];
+  /** Extra store info columns appended to the right of every transposed sheet and hidden by default. */
+  extraHiddenStoreFields?: StoreFieldDef[];
   /** When provided, sheet names already used in the workbook (lowercased) — to avoid collisions. */
   reservedSheetNames?: Set<string>;
   /** When true, skip the Dashboard tab. Useful when appending to another workbook. */
