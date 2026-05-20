@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 export const NameConfirmDialog = () => {
+  const { t } = useTranslation();
   const { user } = useAuth();
   const qc = useQueryClient();
   const [name, setName] = useState("");
@@ -38,9 +40,9 @@ export const NameConfirmDialog = () => {
       .eq("user_id", user.id);
     setSaving(false);
     if (error) {
-      toast.error("Erro ao salvar nome.");
+      toast.error(t("common.error"));
     } else {
-      toast.success("Nome salvo com sucesso!");
+      toast.success(t("common.success"));
       qc.invalidateQueries({ queryKey: ["profile_name_confirm"] });
     }
   };
