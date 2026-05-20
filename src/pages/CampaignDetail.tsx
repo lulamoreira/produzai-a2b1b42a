@@ -49,7 +49,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, ChevronDown, ChevronUp, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle, Database, Layers, Palette } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, Search, Package, Edit3, Store, Grid3X3, LayoutList, LayoutGrid, MapPin, Download, Upload, Sparkles, Hash, X, Minus, ChevronRight, ChevronDown, ChevronUp, CheckSquare, AlertTriangle, CalendarDays, Copy, RefreshCw, Home, DollarSign, Filter, Camera, MessageSquare, Users, FileSpreadsheet, FileText, MoreHorizontal, History, ArrowDownAZ, HelpCircle, Database, Layers, Palette, Presentation, Loader2 } from "lucide-react";
 import AdjustmentsTab from "@/components/AdjustmentsTab";
 import MockupTab from "@/components/MockupTab";
 import { useActiveAdjustment, useAdjustmentStorePieces, useUpdateAdjustmentStorePiece, useAdjustmentPieces, useAdjustmentKits, useAdjustmentKitPieces, useCampaignAdjustments } from "@/hooks/useAdjustments";
@@ -98,6 +98,7 @@ import LojaALojaTab from "@/components/LojaALoja/LojaALojaTab";
 const PendingOccurrencesDashboard = lazy(() => import("@/components/PendingOccurrencesDashboard"));
 import BudgetTab from "@/components/Budget/BudgetTab";
 import { useBudgetPhase, PHASE_LABELS, type BudgetPhase } from "@/hooks/useBudgetPhase";
+import { exportCampaignPPT } from "@/lib/exportCampaignPPT";
 
 const PHASE_BADGE_STYLES: Record<BudgetPhase, string> = {
   rateio: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
@@ -298,6 +299,7 @@ const CampaignDetail = () => {
   const [renameOpen, setRenameOpen] = useState(false);
   const [renameDraft, setRenameDraft] = useState("");
   const updateCampaignMut = useUpdateCampaign();
+  const [exportingPPT, setExportingPPT] = useState(false);
 
   // ─── Negotiation rateio (isolated distribution for the winning supplier) ───
   const [rateioSource, setRateioSource] = useState<"original" | "negotiation" | "adjustment">("original");
@@ -1460,6 +1462,62 @@ const CampaignDetail = () => {
         });
       }
       toast.success(`Peça distribuída para ${targetStores.length} loja(s)!`);
+    }
+  };
+
+  const handleExportPPT = async () => {
+    if (!campaign) return;
+    setExportingPPT(true);
+    try {
+      const piecesData = pieces.map(p => ({
+        id: p.id,
+        name: p.name,
+        description: p.specification,
+        width: undefined,
+        height: undefined,
+        material: undefined,
+        quantity: stores.reduce((s, st) => s + (qtyMap[`${st.id}-${p.id}`] || 0), 0),
+        code: String(p.code),
+        observations: p.installation_instructions || undefined,
+        status: undefined,
+        photo_url: p.image_url || undefined,
+      }));
+
+      const kitsData = kits.map(k => {
+        const kpForKit = kitPieces.filter(kp => kp.kit_id === k.id);
+        const kitPieceDetails = kpForKit.map(kp => pieces.find(p => p.id === kp.piece_id)).filter(Boolean) as any[];
+        
+        return {
+          id: k.id,
+          name: k.name,
+          description: undefined,
+          pieces_count: kpForKit.length,
+          code: String(k.code),
+          observations: undefined,
+          photo_url: k.image_url || undefined,
+          pieces: kitPieceDetails.map(p => ({
+            name: p.name,
+            photo_url: p.image_url || undefined,
+          })),
+        };
+      });
+
+      await exportCampaignPPT({
+        campaign: {
+          name: campaign.name,
+          client_name: client?.name,
+          agency_name: (client as any)?.agency_name,
+          status: (campaign as any).status,
+        },
+        pieces: piecesData,
+        kits: kitsData,
+      });
+      toast.success("PPT exportado com sucesso!");
+    } catch (error) {
+      console.error("Error exporting PPT:", error);
+      toast.error("Erro ao exportar PPT");
+    } finally {
+      setExportingPPT(false);
     }
   };
 
@@ -3939,6 +3997,19 @@ const CampaignDetail = () => {
                 </Dialog>
                 <Button size="sm" className="text-[10px] sm:text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setCreateKitDialogOpen(true)}>
                   <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.newKit")}
+                </Button>
+                <Button variant="outline" size="sm" onClick={handleExportPPT} disabled={exportingPPT} className="text-[10px] sm:text-xs gap-1">
+                  {exportingPPT ? (
+                    <>
+                      <Loader2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 animate-spin" />
+                      Exportando...
+                    </>
+                  ) : (
+                    <>
+                      <Presentation className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      Exportar PPT
+                    </>
+                  )}
                 </Button>
                 </>
               )}
