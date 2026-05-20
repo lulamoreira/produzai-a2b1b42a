@@ -44,6 +44,9 @@ const SupplierPortal = lazy(() => import("./pages/SupplierPortal"));
 const AdjustmentRequotePortal = lazy(() => import("./pages/AdjustmentRequotePortal"));
 const StorePortal = lazy(() => import("./pages/StorePortal"));
 const OccurrencesPortal = lazy(() => import("./pages/OccurrencesPortal"));
+const HomeV2 = lazy(() => import("./pages/v2/HomeV2").then(m => ({ default: m.HomeV2 })));
+import { useUIVersion } from "@/hooks/useUIVersion";
+import AppLayout from "@/components/AppLayout";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -120,6 +123,7 @@ const HomeRedirect = () => {
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
   const { isLimited, campaigns, isLoading: directLoading } = useUserDirectAccess();
+  const { version } = useUIVersion();
   const { data: hasFavorites, isLoading: favLoading } = useQuery({
     queryKey: ["has_favorites", user?.id],
     enabled: !!user,
@@ -146,6 +150,16 @@ const HomeRedirect = () => {
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
+    );
+  }
+
+  if (version === "v2") {
+    return (
+      <AppLayout>
+        <Suspense fallback={<RouteFallback />}>
+          <HomeV2 />
+        </Suspense>
+      </AppLayout>
     );
   }
 
