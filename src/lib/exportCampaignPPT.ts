@@ -142,30 +142,29 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     x: 9.33, y: 0.18, w: 3.6, align: "right", color: COLORS.accent, fontSize: 11, fontFace: "Calibri"
   });
 
-  // Listagem
-  const combinedItems = [
-    ...pieces.map(p => ({ type: "piece", name: p.name })),
-    ...kits.map(k => ({ type: "kit", name: k.name }))
-  ];
+  // Listagem - apenas peças
+  const combinedItems = pieces.map(p => ({ name: p.name, kit: pieceToKits.get(p.name)?.[0] }));
 
-  const col1 = combinedItems.slice(0, Math.ceil(combinedItems.length / 2));
-  const col2 = combinedItems.slice(Math.ceil(combinedItems.length / 2));
+  const half = Math.ceil(combinedItems.length / 2);
+  const col1 = combinedItems.slice(0, half);
+  const col2 = combinedItems.slice(half);
 
-  const renderIndexCol = (items: typeof combinedItems, startX: number) => {
+  const renderIndexCol = (items: typeof combinedItems, startX: number, offset: number) => {
     items.forEach((item, idx) => {
       const y = 1.0 + (idx * 0.3);
-      const num = String(idx + 1 + (startX > 1 ? col1.length : 0)).padStart(2, '0');
-      const prefix = item.type === "kit" ? "KIT " : "";
-      
+      const num = String(idx + 1 + offset).padStart(2, '0');
+      const suffix = item.kit ? `  (${item.kit})` : "";
+
       slideIndice.addText([
         { text: num, options: { color: COLORS.accent, bold: true } },
-        { text: `  ${prefix}${item.name}`, options: { color: COLORS.textPrimary } }
+        { text: `  ${item.name}`, options: { color: COLORS.textPrimary } },
+        { text: suffix, options: { color: COLORS.textSecondary, italic: true } }
       ], { x: startX, y, fontSize: 10, fontFace: "Calibri" });
     });
   };
 
-  renderIndexCol(col1, 0.5);
-  renderIndexCol(col2, 6.85);
+  renderIndexCol(col1, 0.5, 0);
+  renderIndexCol(col2, 6.85, col1.length);
 
   // Rodapé índice
   slideIndice.addShape(pptx.ShapeType.line, {
