@@ -187,15 +187,18 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     slide.addShape(pptx.ShapeType.rect, {
       x: 0, y: 0, w: 13.33, h: 0.65, fill: { color: COLORS.header }
     });
-    slide.addText("PEÇA", { x: 0.4, y: 0.10, color: COLORS.white, fontSize: 8, fontFace: "Calibri" });
-    slide.addText(piece.name, { x: 0.4, y: 0.22, color: COLORS.white, fontSize: 13, fontFace: "Calibri", bold: true });
+    slide.addText([
+      { text: "PEÇA\n", options: { fontSize: 7 } },
+      { text: piece.name, options: { fontSize: 12, bold: true } }
+    ], { x: 0.4, y: 0, w: 5.5, h: 0.65, valign: "middle", color: COLORS.white, fontFace: "Calibri" });
+
     const kitNames = pieceToKits.get(piece.name);
     if (kitNames && kitNames.length > 0) {
       slide.addText(`COMPÕE O KIT: ${kitNames.join(", ").toUpperCase()}`, {
-        x: 6.0, y: 0.22, w: 5.8, color: COLORS.accent, fontSize: 9, fontFace: "Calibri", bold: true, align: "right"
+        x: 6.0, y: 0, w: 5.8, h: 0.65, color: COLORS.accent, fontSize: 9, fontFace: "Calibri", bold: true, align: "right", valign: "middle"
       });
     }
-    slide.addText(String(idx + 1).padStart(2, '0'), { x: 12.0, y: 0.22, w: 1.0, align: "right", color: COLORS.accent, fontSize: 11, fontFace: "Calibri" });
+    slide.addText(String(idx + 1).padStart(2, '0'), { x: 12.0, y: 0, w: 1.0, h: 0.65, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri" });
 
     // ÁREA DA FOTO (esquerda)
     slide.addShape(pptx.ShapeType.rect, {
