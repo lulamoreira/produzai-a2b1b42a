@@ -90,6 +90,7 @@ export function HomeV2() {
           id, 
           name, 
           created_at,
+          client_id,
           clients (name)
         `)
         .order("created_at", { ascending: false })
@@ -212,7 +213,7 @@ export function HomeV2() {
                 <Card 
                   key={camp.id}
                   className="bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition-shadow cursor-pointer group"
-                  onClick={() => navigate(`/agency/default/clients/default/campaigns/${camp.id}`)}
+                  onClick={() => navigate(`/agency/default/clients/${camp.client_id}/campaigns/${camp.id}`)}
                 >
                   <div className="flex justify-between items-center mb-2">
                     <Badge variant="outline" className="text-[10px] font-semibold uppercase">
