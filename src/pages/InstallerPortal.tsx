@@ -9,8 +9,9 @@ import {
   Loader2, X, Leaf, RefreshCw,
 } from "lucide-react";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
+import { useFormatters } from "@/lib/formatters";
 import { compressImage } from "@/lib/compressImage";
 import { getCompressionProfile } from "@/lib/deviceProfile";
 import { getThumbnailUrl } from "@/lib/imageUrl";
@@ -78,6 +79,8 @@ export default function InstallerPortal() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<PortalData | null>(null);
   const [error, setError] = useState("");
+  const { t } = useTranslation();
+  const fmt = useFormatters();
   const [uploadCategory, setUploadCategory] = useState("before");
   const [localPhotos, setLocalPhotos] = useState<any[]>([]);
   const [checkinDone, setCheckinDone] = useState(false);
@@ -947,9 +950,9 @@ export default function InstallerPortal() {
             >
               <KeyRound className="w-7 h-7 text-white" />
             </div>
-            <h1 className="text-xl font-bold text-foreground">Acesso de Instalador</h1>
+            <h1 className="text-xl font-bold text-foreground">{t("installerPortal.title")}</h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Digite o código da sua instalação
+              {t("installerPortal.loading")}
             </p>
           </div>
 
@@ -990,7 +993,7 @@ export default function InstallerPortal() {
                 : { background: "var(--brand-500)", color: "#FFFFFF" }
               }
             >
-              {loading ? "Validando..." : "Acessar instalação"}
+              {loading ? t("installerPortal.loading") : t("storePortal.viewDetails")}
             </Button>
 
             <p className="text-[11px] text-center text-muted-foreground">
@@ -1030,7 +1033,7 @@ export default function InstallerPortal() {
           <div className="min-w-0 flex-1 flex items-center gap-2">
             <Building2 className="w-4 h-4 flex-shrink-0" style={{ color: "#F5EFE6" }} />
             <p className="text-sm font-semibold truncate" style={{ color: "#F5EFE6" }}>
-              {campaign?.name || "Campanha"}
+              {campaign?.name || t("installerPortal.myInstallations")}
             </p>
           </div>
         </div>
@@ -1091,7 +1094,7 @@ export default function InstallerPortal() {
               {selectedDate && (
                 <span className="flex items-center gap-1 text-foreground">
                   <CalendarIcon className="w-3 h-3 text-muted-foreground" />
-                  {format(selectedDate, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                  {fmt.format(selectedDate, "EEEE, dd 'de' MMMM 'de' yyyy")}
                 </span>
               )}
               {schedule?.scheduled_time && (
@@ -1119,7 +1122,7 @@ export default function InstallerPortal() {
             <p className="text-xs font-semibold text-foreground uppercase tracking-wide">Check-in</p>
             <Button className="w-full h-12 text-sm gap-2" onClick={handleCheckin}>
               <CheckCircle className="w-5 h-5" />
-              Fazer Check-in
+              {t("installerPortal.start")}
             </Button>
             <p className="text-[11px] text-muted-foreground text-center">
               Registra sua chegada na loja.
@@ -1216,7 +1219,7 @@ export default function InstallerPortal() {
                 setPhasePickerOpen(true);
               }}
             >
-              <Camera className="w-6 h-6" /> Tirar foto
+              <Camera className="w-6 h-6" /> {t("installerPortal.addPhoto")}
             </Button>
             <Button
               variant="outline"
@@ -1404,8 +1407,8 @@ export default function InstallerPortal() {
             {tentandoConcluir
               ? "Verificando..."
               : atingiuMinimo
-                ? "Instalação Concluída"
-                : `Instalação Concluída (${totalMidias}/${MINIMO_FOTOS} fotos)`
+                ? t("installerPortal.complete")
+                : `${t("installerPortal.complete")} (${totalMidias}/${MINIMO_FOTOS} ${t("storePortal.sentPhotos")})`
             }
           </Button>
         )}
