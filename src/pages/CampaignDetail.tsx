@@ -3958,19 +3958,24 @@ const CampaignDetail = () => {
                 <Button size="sm" className="text-[10px] sm:text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setCreateKitDialogOpen(true)}>
                   <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.newKit")}
                 </Button>
-                <Button variant="outline" size="sm" onClick={handleExportPPT} disabled={exportingPPT} className="text-[10px] sm:text-xs gap-1">
-                  {exportingPPT ? (
-                    <>
-                      <Loader2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 animate-spin" />
-                      Exportando...
-                    </>
-                  ) : (
-                    <>
+                
+                <ExportReportDropdown
+                  campaignId={campaignId!}
+                  clientId={clientId!}
+                  campaignName={campaign?.name || ""}
+                  clientName={client?.name || ""}
+                  pieces={pieces}
+                  kits={kits}
+                  agencyName={agency?.name}
+                  isOpen={pptExportOpen}
+                  onOpenChange={setPptExportOpen}
+                  trigger={
+                    <Button variant="outline" size="sm" className="text-[10px] sm:text-xs gap-1">
                       <Presentation className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                       Exportar PPT
-                    </>
-                  )}
-                </Button>
+                    </Button>
+                  }
+                />
                 </>
               )}
             </div>
