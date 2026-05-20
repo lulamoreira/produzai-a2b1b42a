@@ -101,6 +101,27 @@ export type Database = {
         }
         Relationships: []
       }
+      app_ui_settings: {
+        Row: {
+          id: number
+          ui_version: string
+          updated_at: string | null
+          updated_by: string | null
+        }
+        Insert: {
+          id?: number
+          ui_version?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Update: {
+          id?: number
+          ui_version?: string
+          updated_at?: string | null
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       automation_group_items: {
         Row: {
           created_at: string

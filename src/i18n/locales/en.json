@@ -554,7 +554,8 @@
     "usersPermissionHint": "Click on a user to view and edit all permissions. Admin/Master have automatic access to everything.",
     "noUserFound": "No users found.",
     "noUserRegistered": "No users registered.",
-    "messages": "Messages"
+    "messages": "Messages",
+    "appearance": "Appearance"
   },
   "languages": {
     "pt-BR": "Português (Brasil)",
@@ -749,5 +750,23 @@
     "deleting": "Deleting files...",
     "collecting": "Collecting photos...",
     "processing": "Processing..."
+  },
+  "appearance": {
+    "title": "Appearance Settings",
+    "description": "Customize the system interface for all users.",
+    "v2Label": "Produzai Interface v2 (BETA)",
+    "v2Description": "A modern, fast, and intuitive experience redesigned from scratch.",
+    "active": "Active",
+    "inactive": "Inactive",
+    "activatedToast": "v2 Interface successfully activated!",
+    "deactivatedToast": "v1 Interface restored.",
+    "errorToast": "Error updating interface version.",
+    "activeWarning": "The v2 interface is in Beta. Some screens might still be under migration.",
+    "whatChangesTitle": "What changes in v2?",
+    "change1": "Completely redesigned Sidebar and Header for better navigation",
+    "change2": "New 'Warm Modern' color palette with Geist typography",
+    "change3": "Optimized Executive Dashboard on the home page",
+    "change4": "Smart mobile bottom bar replacing floating buttons",
+    "change5": "Full support for Portuguese, English, and Spanish across the interface"
   }
 }

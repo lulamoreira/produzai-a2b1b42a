@@ -8,7 +8,7 @@ import { useUserClientAccess } from "@/hooks/useMultiClientData";
 import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { Users, Tags, Database, UserCheck, Search, MessageSquareText, Bell, Image as ImageIcon, Plus, Eye, Edit3, Trash2, Lock } from "lucide-react";
+import { Users, Tags, Database, UserCheck, Search, MessageSquareText, Bell, Image as ImageIcon, Plus, Eye, Edit3, Trash2, Lock, Paintbrush } from "lucide-react";
 import { CreateUserDialog } from "@/components/CreateUserDialog";
 import AppLayout from "@/components/AppLayout";
 import NotificationSettingsManager from "@/components/admin/NotificationSettingsManager";
@@ -28,6 +28,7 @@ import { useUserCountByCategory } from "@/hooks/usePermissionGrants";
 import { CATEGORY_COLORS } from "@/lib/permissionRegistry";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import AppearancePanel from "@/components/admin/AppearancePanel";
 
 const Admin = () => {
   const { t } = useTranslation();
@@ -96,6 +97,11 @@ const Admin = () => {
               </TabsTrigger>
             )}
             {isAdmin && (
+              <TabsTrigger value="appearance" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+                <Paintbrush className="w-4 h-4" /> {t("admin.appearance")}
+              </TabsTrigger>
+            )}
+            {isAdmin && (
               <TabsTrigger value="backup" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
                 <Database className="w-4 h-4" /> {t("common.backup")}
               </TabsTrigger>
@@ -160,6 +166,11 @@ const Admin = () => {
             <NotificationSettingsManager />
           </TabsContent>
 
+          {isAdmin && (
+            <TabsContent value="appearance">
+              <AppearancePanel />
+            </TabsContent>
+          )}
           {isAdmin && (
             <TabsContent value="images">
               <RegeneratePieceImagesPanel />
