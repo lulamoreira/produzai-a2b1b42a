@@ -195,9 +195,10 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       store_id: string;
       [key: string]: any;
     }) => {
+      const payloadWithSeq = { reinstall_seq: 0, ...payload };
       const { data, error } = await supabase
         .from("campaign_schedules")
-        .upsert(payload, { onConflict: "campaign_id,store_id" })
+        .upsert(payloadWithSeq, { onConflict: "campaign_id,store_id,reinstall_seq" })
         .select()
         .single();
       if (error) throw error;
