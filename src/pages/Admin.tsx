@@ -28,6 +28,7 @@ import { useUserCountByCategory } from "@/hooks/usePermissionGrants";
 import { CATEGORY_COLORS } from "@/lib/permissionRegistry";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import AppearancePanel from "@/components/admin/AppearancePanel";
 
 const Admin = () => {
   const { t } = useTranslation();
