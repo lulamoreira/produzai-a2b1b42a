@@ -178,7 +178,8 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SLIDES DE PEÇA
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  pieces.forEach((piece, idx) => {
+  for (let idx = 0; idx < pieces.length; idx++) {
+    const piece = pieces[idx];
     const slide = pptx.addSlide();
     slide.background = { color: COLORS.bg };
     const pageNum = idx + 3;
@@ -257,16 +258,16 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
       slide.addText(piece.status.toUpperCase(), { x: infoX + 4.8, y: 6.0, w: 1.3, h: 0.3, align: "center", valign: "middle", color: COLORS.white, fontSize: 8, fontFace: "Calibri", bold: true });
     }
 
-    // Rodapé
     slide.addShape(pptx.ShapeType.line, { x: 0.4, y: 7.1, w: 12.53, line: { color: COLORS.border, width: 0.5 } });
     slide.addText(campaign.name, { x: 0.4, y: 7.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
     slide.addText(`Página ${pageNum} / ${totalSlides}`, { x: 10.0, y: 7.2, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri" });
-  });
+  }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SLIDES DE KIT
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  kits.forEach((kit, idx) => {
+  for (let idx = 0; idx < kits.length; idx++) {
+    const kit = kits[idx];
     const slide = pptx.addSlide();
     slide.background = { color: COLORS.bg };
     const pageNum = pieces.length + idx + 3;
@@ -315,7 +316,8 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     if (kit.pieces && kit.pieces.length > 0) {
       slide.addText("PEÇAS DESTE KIT", { x: 0.45, y: 5.1, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
       const thumbs = kitPiecesThumbnails[idx];
-      thumbs.forEach((thumbB64, tIdx) => {
+      for (let tIdx = 0; tIdx < thumbs.length; tIdx++) {
+        const thumbB64 = thumbs[tIdx];
         const tX = 0.45 + (tIdx * 1.2);
         const tY = 5.3;
         slide.addShape(pptx.ShapeType.rect, { x: tX, y: tY, w: 1.1, h: 0.9, fill: { color: COLORS.white }, line: { color: COLORS.border, width: 0.3 } });
@@ -343,7 +345,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
             h: finalH 
           });
         }
-      });
+      }
     }
 
     // ÁREA DE INFORMAÇÕES
@@ -372,11 +374,10 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     addField("CÓDIGO / REF", kit.code);
     addField("OBSERVAÇÕES", kit.observations, true);
 
-    // Rodapé
     slide.addShape(pptx.ShapeType.line, { x: 0.4, y: 7.1, w: 12.53, line: { color: COLORS.border, width: 0.5 } });
     slide.addText(campaign.name, { x: 0.4, y: 7.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
     slide.addText(`Página ${pageNum} / ${totalSlides}`, { x: 10.0, y: 7.2, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri" });
-  });
+  }
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SLIDE FINAL — ENCERRAMENTO
