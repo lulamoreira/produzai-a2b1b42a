@@ -1,6 +1,6 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Loader2, AlertTriangle, MessageSquare } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ function formatCurrency(v: number) {
 }
 
 export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits, baselinePrices }: Props) {
+  const { t } = useTranslation();
   const [rejectionNotes, setRejectionNotes] = useState("");
   const [showRejectForm, setShowRejectForm] = useState(false);
   const approveRequote = useApproveRequote();
@@ -92,7 +93,7 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
             Confira os preços enviados pelo fornecedor antes de aprovar.
             {requote.submitted_at && (
               <span className="block mt-0.5 text-xs">
-                Enviado em {format(new Date(requote.submitted_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                Enviado em {format(new Date(requote.submitted_at), "dd/MM/yyyy 'às' HH:mm")}
               </span>
             )}
           </DialogDescription>
@@ -237,7 +238,7 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
                 onClick={() => setShowRejectForm(true)}
                 className="text-red-600 border-red-300 hover:bg-red-50"
               >
-                Recusar
+                {t("budgets.reject")}
               </Button>
             )}
             {showRejectForm ? (
@@ -256,7 +257,7 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
                 {approveRequote.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Aprovar recotação
+                {t("budgets.approve")} recotação
               </Button>
             )}
           </div>

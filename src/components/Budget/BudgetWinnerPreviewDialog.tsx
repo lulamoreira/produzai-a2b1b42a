@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { Loader2, Send, X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +21,7 @@ interface BudgetWinnerPreviewDialogProps {
 export default function BudgetWinnerPreviewDialog({
   open, onOpenChange, to, cc, subject, html, sending, onConfirm, onEditRecipients,
 }: BudgetWinnerPreviewDialogProps) {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onOpenChange={(o) => !sending && onOpenChange(o)}>
       <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
@@ -56,7 +58,7 @@ export default function BudgetWinnerPreviewDialog({
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
-            <X className="w-4 h-4 mr-1" /> Cancelar
+            <X className="w-4 h-4 mr-1" /> {t("budgets.cancel")}
           </Button>
           <Button variant="secondary" onClick={onEditRecipients} disabled={sending}>
             <Pencil className="w-4 h-4 mr-1" /> Modificar destinatários

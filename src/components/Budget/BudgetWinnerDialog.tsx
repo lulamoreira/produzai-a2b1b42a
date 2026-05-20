@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Trophy, Loader2, X, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -42,6 +42,7 @@ export default function BudgetWinnerDialog({
   open, onOpenChange, campaignId, campaignName, agencyName, supplier,
   defaultMockupUrl = "", defaultBookUrl = "", defaultCcEmail = "",
 }: BudgetWinnerDialogProps) {
+  const { t } = useTranslation();
   const { data: timelineEntries = [] } = useBudgetTimeline(campaignId);
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
@@ -111,7 +112,7 @@ export default function BudgetWinnerDialog({
     const timeline = [...timelineEntries]
       .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
       .map((e) => ({
-        date: format(new Date(e.entry_date + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR }),
+        date: format(new Date(e.entry_date + "T00:00:00"), "dd/MM/yyyy"),
         description: e.description,
       }));
 
@@ -292,7 +293,7 @@ export default function BudgetWinnerDialog({
                     .map((e) => (
                       <li key={e.id}>
                         <span className="font-medium text-foreground">
-                          {format(new Date(e.entry_date + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR })}
+                          {format(new Date(e.entry_date + "T00:00:00"), "dd/MM/yyyy")}
                         </span>{" "}
                         — {e.description}
                       </li>
@@ -307,7 +308,7 @@ export default function BudgetWinnerDialog({
 
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
-              <X className="w-4 h-4 mr-1" /> Cancelar
+              <X className="w-4 h-4 mr-1" /> {t("budgets.cancel")}
             </Button>
             <Button onClick={handleOpenPreview} disabled={busy || !supplier}>
               {previewLoading ? (

@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
-import { Store, AlertTriangle, Loader2, Clock } from "lucide-react";
+import { Store, AlertTriangle, Loader2, Clock, LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import OcorrenciasTab from "@/components/StorePortal/OcorrenciasTab";
@@ -8,6 +8,9 @@ import ManutencaoTab from "@/components/StorePortal/ManutencaoTab";
 import ReposicoesTab from "@/components/StorePortal/ReposicoesTab";
 import ConformidadeTab from "@/components/StorePortal/ConformidadeTab";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
+import { useFormatters } from "@/lib/formatters";
 
 export interface PortalData {
   token_id: string;
@@ -99,6 +102,8 @@ export default function StorePortal() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<PortalData | null>(null);
+  const { t } = useTranslation();
+  const fmt = useFormatters();
 
   useEffect(() => {
     if (!token) { setError("Token não informado"); setLoading(false); return; }
@@ -177,7 +182,7 @@ export default function StorePortal() {
       <div className="max-w-4xl mx-auto px-4 py-4">
         {enabledTabs.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground text-sm">
-            Nenhum módulo habilitado para esta loja.
+            {t("storePortal.noActiveCampaigns")}
           </div>
         ) : (
           <Tabs defaultValue={defaultTab}>
@@ -196,10 +201,10 @@ export default function StorePortal() {
                   {deadlineStatus.expired ? (
                     <div className="text-center py-12">
                       <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                      <h2 className="text-lg font-semibold text-foreground mb-1">Prazo encerrado</h2>
+                      <h2 className="text-lg font-semibold text-foreground mb-1">{t("storePortal.pendencies")}</h2>
                       <p className="text-sm text-muted-foreground">
-                        O prazo para {tab.label.toLowerCase()} encerrou em{" "}
-                        {deadlineStatus.deadline?.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        {t("storePortal.materialReceived")} em{" "}
+                        {fmt.custom(deadlineStatus.deadline!, "dd/MM/yyyy HH:mm")}
                       </p>
                     </div>
                   ) : (

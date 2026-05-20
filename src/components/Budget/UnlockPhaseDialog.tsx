@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Loader2 } from "lucide-react";
 import {
   AlertDialog,
@@ -26,6 +27,7 @@ export function UnlockPhaseDialog({
   onConfirm,
   isUnlocking,
 }: Props) {
+  const { t } = useTranslation();
   if (!phaseToUnlock) return null;
 
   return (
@@ -43,7 +45,7 @@ export function UnlockPhaseDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isUnlocking}>Cancelar</AlertDialogCancel>
+          <AlertDialogCancel disabled={isUnlocking}>{t("budgets.cancel")}</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm} disabled={isUnlocking}>
             {isUnlocking ? (
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
