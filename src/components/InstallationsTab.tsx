@@ -699,10 +699,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             onChange={(e) => setFilterStatus(e.target.value as any)}
             className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[100px] max-w-[150px] h-9"
           >
-            <option value="">Todos status</option>
-            <option value="completed">✅ Concluídas</option>
-            <option value="pending">⏳ Pendentes</option>
-            <option value="no_photo">📷 Sem fotos</option>
+            <option value="">{t("installations.allStatuses")}</option>
+            <option value="completed">✅ {t("installations.completed")}</option>
+            <option value="pending">⏳ {t("installations.pending")}</option>
+            <option value="no_photo">📷 {t("installations.noPhotos")}</option>
           </select>
           <input
             type="date"
@@ -722,20 +722,20 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5">
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                Mais filtros
+                {t("filters.moreFilters")}
                 {secondaryFilterCount > 0 && (
                   <span className="badge-base badge-info ml-1">{secondaryFilterCount}</span>
                 )}
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-72 p-4 space-y-3" align="start">
-              <p className="text-xs font-semibold text-foreground">Filtros avançados</p>
+              <p className="text-xs font-semibold text-foreground">{t("filters.advancedFilters")}</p>
               <select
                 value={filterCity}
                 onChange={(e) => setFilterCity(e.target.value)}
                 className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground"
               >
-                <option value="">Todas cidades</option>
+                <option value="">{t("filters.allCities")}</option>
                 {cities.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
               <select
@@ -743,10 +743,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                 onChange={(e) => setFilterPeriod(e.target.value)}
                 className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground"
               >
-                <option value="">Período</option>
-                <option value="morning">🌅 Manhã</option>
-                <option value="afternoon">☀️ Tarde</option>
-                <option value="night">🌙 Noite</option>
+                <option value="">{t("filters.period")}</option>
+                <option value="morning">{t("filters.periodMorning")}</option>
+                <option value="afternoon">{t("filters.periodAfternoon")}</option>
+                <option value="night">{t("filters.periodNight")}</option>
               </select>
               <select
                 value={filterTeam}
@@ -910,13 +910,13 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       >
         {([
           { key: "total" as const, value: summaryMetrics.total, label: t("common.total"), isTotal: true, dangerWhenPositive: false },
-          { key: "completed" as const, value: summaryMetrics.completed, label: "Concluídas", isTotal: false, dangerWhenPositive: false },
-          { key: "pending" as const, value: summaryMetrics.pending, label: "Pendentes", isTotal: false, dangerWhenPositive: false },
-          { key: "withTeam" as const, value: summaryMetrics.withTeam, label: "Com equipe", isTotal: false, dangerWhenPositive: false },
-          { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: "Com fotos", isTotal: false, dangerWhenPositive: false },
-          { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: "Remarcação", isTotal: false, dangerWhenPositive: false },
-          { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: "Ocorrências", isTotal: false, dangerWhenPositive: true },
-          { key: "noCheckin" as const, value: summaryMetrics.noCheckin, label: "Sem Check-in", isTotal: false, dangerWhenPositive: true, visible: showPhotoCheckin },
+          { key: "completed" as const, value: summaryMetrics.completed, label: t("installations.completed"), isTotal: false, dangerWhenPositive: false },
+          { key: "pending" as const, value: summaryMetrics.pending, label: t("installations.pending"), isTotal: false, dangerWhenPositive: false },
+          { key: "withTeam" as const, value: summaryMetrics.withTeam, label: t("scheduling.withTeam"), isTotal: false, dangerWhenPositive: false },
+          { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: t("installations.photos"), isTotal: false, dangerWhenPositive: false },
+          { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: t("scheduling.reschedule"), isTotal: false, dangerWhenPositive: false },
+          { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: t("occurrences.title"), isTotal: false, dangerWhenPositive: true },
+          { key: "noCheckin" as const, value: summaryMetrics.noCheckin, label: t("installations.noPhotos"), isTotal: false, dangerWhenPositive: true, visible: showPhotoCheckin },
         ]).filter(m => m.visible !== false).map((m, idx, arr) => (
           <button
             key={m.key}
@@ -945,7 +945,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       </div>
       {summaryFilter && summaryFilter !== "total" && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <span>Filtrando por: <strong className="text-foreground">{
+          <span>{t("filters.filteringBy")} <strong className="text-foreground">{
             { completed: t("dashboard.completed"), pending: t("dashboard.pending"), withTeam: t("installations.withTeam"), withPhotos: t("installations.withPhotos"), withReschedule: t("installations.withReschedule"), withOccurrence: t("installations.withOccurrence"), noCheckin: t("installations.noCheckin") }[summaryFilter]
           }</strong> ({displayedStores.length})</span>
           <Button variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setSummaryFilter("")}>✕</Button>
