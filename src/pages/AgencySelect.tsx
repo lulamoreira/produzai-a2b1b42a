@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { useTranslation } from "react-i18next";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,6 +43,7 @@ const getGreeting = () => {
 
 const AgencySelect = () => {
   const { user, signOut } = useAuth();
+  const { t } = useTranslation();
   const { isAdmin } = useUserRole();
   const navigate = useNavigate();
   const { isLimited, campaigns: limitedCampaigns, isLoading: loadingDirectAccess } = useUserDirectAccess();
@@ -338,7 +340,7 @@ const AgencySelect = () => {
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-primary text-primary-foreground hover:bg-primary/90 gap-1">
-                  <Plus className="w-4 h-4" /> Nova Agência
+                  <Plus className="w-4 h-4" /> {t("agencySelect.newAgency")}
                 </Button>
               </DialogTrigger>
               <DialogContent>

@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { capitalizeName } from "@/lib/utils";
 import { useAllUsersApproval, useUpdateApprovalStatus, type ApprovalStatus } from "@/hooks/useUserApproval";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -78,6 +79,7 @@ function useCurrentUserAccessScope() {
 
 const UserApprovals = () => {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const { isAdmin, isAdminOrMaster, isLoading: loadingRole } = useUserRole();
   const { data: users = [], isLoading } = useAllUsersApproval();
   const updateStatus = useUpdateApprovalStatus();
@@ -96,9 +98,9 @@ const UserApprovals = () => {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["all_users_approval"] });
       qc.invalidateQueries({ queryKey: ["pending_users_count"] });
-      toast.success("Usuário excluído!");
+      toast.success(t("approvals.deleteSuccess"));
     },
-    onError: (e) => toast.error("Erro: " + e.message),
+    onError: (e) => toast.error(t("approvals.error", { message: e.message })),
   });
 
   const filteredUsers = useMemo(() => {

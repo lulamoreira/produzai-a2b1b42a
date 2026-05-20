@@ -1188,11 +1188,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                           <Popover>
                             <PopoverTrigger asChild>
                               <Button variant="outline" size="sm" disabled={!cardCanEdit} className={cn("w-full justify-start text-left text-xs font-normal h-8 overflow-hidden", !schedule?.reschedule_date && "text-muted-foreground")}>
-                                <span className="truncate">{schedule?.reschedule_date ? format(new Date(schedule.reschedule_date + "T12:00:00"), "dd/MM/yyyy") : "Selecionar"}</span>
+                                <span className="truncate">{schedule?.reschedule_date ? fmt.dateShort(new Date(schedule.reschedule_date + "T12:00:00")) : "Selecionar"}</span>
                               </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar mode="single" selected={schedule?.reschedule_date ? new Date(schedule.reschedule_date + "T12:00:00") : undefined} onSelect={(date) => handleFieldChange(store.id, "reschedule_date", date ? format(date, "yyyy-MM-dd") : null)} locale={ptBR} className="p-3 pointer-events-auto" />
+                              <Calendar mode="single" selected={schedule?.reschedule_date ? new Date(schedule.reschedule_date + "T12:00:00") : undefined} onSelect={(date) => handleFieldChange(store.id, "reschedule_date", date ? format(date, "yyyy-MM-dd") : null)} className="p-3 pointer-events-auto" />
                               {schedule?.reschedule_date && (
                                 <div className="px-3 pb-3">
                                   <Button variant="ghost" size="sm" className="w-full text-xs text-destructive hover:text-destructive" onClick={() => handleFieldChange(store.id, "reschedule_date", null)}>Limpar data</Button>
@@ -1234,11 +1234,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button variant="outline" size="sm" disabled={!cardCanEdit} className={cn("w-full justify-start text-left text-xs font-normal h-8 overflow-hidden", !schedule?.scheduled_date && "text-muted-foreground")}>
-                              <span className="truncate">{selectedDate ? format(selectedDate, "dd/MM/yyyy") : "Selecionar"}</span>
+                              <span className="truncate">{selectedDate ? fmt.dateShort(selectedDate) : "Selecionar"}</span>
                             </Button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar mode="single" selected={selectedDate} onSelect={(date) => handleFieldChange(store.id, "scheduled_date", date ? format(date, "yyyy-MM-dd") : null)} locale={ptBR} className="p-3 pointer-events-auto" />
+                            <Calendar mode="single" selected={selectedDate} onSelect={(date) => handleFieldChange(store.id, "scheduled_date", date ? format(date, "yyyy-MM-dd") : null)} className="p-3 pointer-events-auto" />
                             {selectedDate && (
                               <div className="px-3 pb-3">
                                 <Button variant="ghost" size="sm" className="w-full text-xs text-destructive hover:text-destructive" onClick={() => handleFieldChange(store.id, "scheduled_date", null)}>Limpar data</Button>
@@ -1597,7 +1597,7 @@ function ApprovalToggles({ schedule, storeId, campaignId, canEdit, hasDateAndTim
   const formatTimestamp = (ts: string | null) => {
     if (!ts) return null;
     try {
-      return format(new Date(ts), "dd/MM/yy HH:mm", { locale: ptBR });
+      return fmt.dateTime(new Date(ts));
     } catch {
       return null;
     }
@@ -1904,7 +1904,7 @@ function RescheduleApprovalToggles({ schedule, storeId, campaignId, canEdit, has
 
   const formatTimestamp = (ts: string | null) => {
     if (!ts) return null;
-    try { return format(new Date(ts), "dd/MM/yy HH:mm", { locale: ptBR }); } catch { return null; }
+    try { return fmt.dateTime(new Date(ts)); } catch { return null; }
   };
 
   const sectionDisabled = !canEdit || !hasDateAndTime;

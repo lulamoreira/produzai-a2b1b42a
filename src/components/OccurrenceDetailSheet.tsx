@@ -381,7 +381,7 @@ export function OccurrenceDetailSheet({
                   </Popover>
                 ) : (
                   <span className="text-xs font-semibold">
-                    {merged.expected_resolution_date ? format(parseLocalDate(merged.expected_resolution_date) || new Date(), "dd/MM/yyyy", { locale: ptBR }) : "—"}
+                    {merged.expected_resolution_date ? fmt.date(parseLocalDate(merged.expected_resolution_date) || new Date()) : "—"}
                   </span>
                 )}
               </div>
@@ -431,7 +431,7 @@ export function OccurrenceDetailSheet({
                         <Button variant="outline" className="h-7 text-xs w-full justify-start">
                           <CalendarIcon className="w-3 h-3 mr-1.5" />
                           {merged.resolved_date
-                            ? format(new Date(merged.resolved_date), "dd/MM/yyyy HH:mm", { locale: ptBR })
+                            ? fmt.dateTime(new Date(merged.resolved_date))
                             : "Selecione uma data"}
                         </Button>
                       </PopoverTrigger>
@@ -468,7 +468,7 @@ export function OccurrenceDetailSheet({
                     </Popover>
                   ) : (
                     <span className="text-xs font-semibold">
-                      {merged.resolved_date ? format(new Date(merged.resolved_date), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR }) : "—"}
+                      {merged.resolved_date ? fmt.dateTime(new Date(merged.resolved_date)) : "—"}
                     </span>
                   )}
                 </div>

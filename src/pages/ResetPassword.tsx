@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
 const ResetPassword = () => {
+  const { t } = useTranslation();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -16,11 +18,11 @@ const ResetPassword = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (password !== confirmPassword) {
-      toast.error("As senhas não coincidem.");
+      toast.error(t("resetPassword.confirmPasswordError") || "As senhas não coincidem.");
       return;
     }
     if (password.length < 6) {
-      toast.error("A senha deve ter no mínimo 6 caracteres.");
+      toast.error(t("resetPassword.minLengthError") || "A senha deve ter no mínimo 6 caracteres.");
       return;
     }
 
@@ -29,9 +31,9 @@ const ResetPassword = () => {
     setLoading(false);
 
     if (error) {
-      toast.error(error.message);
+      toast.error(t("resetPassword.error", { message: error.message }));
     } else {
-      toast.success("Senha atualizada com sucesso!");
+      toast.success(t("resetPassword.success"));
       navigate("/");
     }
   };
@@ -43,7 +45,7 @@ const ResetPassword = () => {
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-primary/20">
             <Package className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-2xl font-display font-bold text-foreground">Nova Senha</h1>
+          <h1 className="text-2xl font-display font-bold text-foreground">{t("resetPassword.title")}</h1>
         </div>
 
         <div className="bg-card border border-border rounded-2xl p-6 shadow-lg">
@@ -52,7 +54,7 @@ const ResetPassword = () => {
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type={showPassword ? "text" : "password"}
-                placeholder="Nova senha"
+                placeholder={t("resetPassword.newPassword")}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="pl-10 pr-10"
@@ -71,7 +73,7 @@ const ResetPassword = () => {
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 type={showPassword ? "text" : "password"}
-                placeholder="Confirmar nova senha"
+                placeholder={t("resetPassword.confirmPassword")}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 className="pl-10"
@@ -80,7 +82,7 @@ const ResetPassword = () => {
               />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Atualizando..." : "Atualizar Senha"}
+              {loading ? t("common.loading") : t("resetPassword.submit")}
             </Button>
           </form>
         </div>
