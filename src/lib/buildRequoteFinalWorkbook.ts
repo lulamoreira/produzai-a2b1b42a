@@ -148,6 +148,12 @@ export interface RequoteFinalParams {
   newFreight: number;
 
   generatedAt: Date;
+
+  /** Extra store info fields chosen by the user. Appended as HIDDEN columns
+   * to the right of the Matriz Lojas x Peças sheet (and kit tabs). The
+   * default 5 fields (name/city/state/store_model/showcase_count) are kept
+   * visible and are NOT exposed for customization. */
+  extraHiddenStoreFields?: StoreFieldDef[];
 }
 
 export async function buildRequoteFinalWorkbook(
