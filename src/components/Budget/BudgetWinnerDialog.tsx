@@ -293,7 +293,7 @@ export default function BudgetWinnerDialog({
                     .map((e) => (
                       <li key={e.id}>
                         <span className="font-medium text-foreground">
-                          {format(new Date(e.entry_date + "T00:00:00"), "dd/MM/yyyy", { locale: ptBR })}
+                          {format(new Date(e.entry_date + "T00:00:00"), "dd/MM/yyyy")}
                         </span>{" "}
                         — {e.description}
                       </li>

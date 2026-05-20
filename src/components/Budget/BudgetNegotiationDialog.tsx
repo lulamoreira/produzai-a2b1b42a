@@ -732,7 +732,7 @@ export default function BudgetNegotiationDialog({
                     <div className="flex items-center justify-between">
                       <Badge variant="outline">v{h.version}</Badge>
                       <span className="text-xs text-muted-foreground">
-                        {format(new Date(h.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                        {format(new Date(h.created_at), "dd/MM/yyyy HH:mm")}
                       </span>
                     </div>
                     <div className="mt-1 text-xs text-muted-foreground">{reasonLabel(h.reason)}</div>
