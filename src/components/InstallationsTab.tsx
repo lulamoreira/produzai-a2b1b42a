@@ -1055,6 +1055,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
             setFilterPeriod(""); setFilterTeam(""); setFilterLocked(""); setFilterReschedule(""); setFilterModel("");
             setFilterCheckin(""); setSummaryFilter("");
           }}
+          title={t("installations.empty")}
+          description={t("emptyState.subtitle")}
         />
       ) : (
       <div className="space-y-4">

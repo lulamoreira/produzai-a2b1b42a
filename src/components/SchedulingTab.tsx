@@ -524,7 +524,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       if (!label) continue;
       const oldVal = existing ? (existing as any)[key] : null;
       if (oldVal === newVal) continue;
-      changedDetails.push(`${label}: ${formatFieldValue(key, oldVal)} → ${formatFieldValue(key, newVal)}`);
+        changedDetails.push(`${label}: ${formatFieldValue(key, oldVal)} → ${formatFieldValue(key, newVal)}`);
     }
     if (changedDetails.length > 0) {
       logActivity.mutate({
