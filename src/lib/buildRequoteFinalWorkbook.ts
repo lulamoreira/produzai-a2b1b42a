@@ -22,6 +22,7 @@
 //     to previousPrice when not present (i.e. unchanged piece).
 
 import { appendMatrixSheets } from "@/lib/exportMatrixExcelJS";
+import type { StoreFieldDef } from "@/components/RateioExportColorDialog";
 
 const XLSX_MIME =
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
