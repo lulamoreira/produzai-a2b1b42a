@@ -239,22 +239,28 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     slide.addShape(pptx.ShapeType.rect, {
       x: infoX, y: currentY, w: 6.1, h: 0.75, fill: { color: COLORS.header }
     });
-    slide.addText(piece.name, { x: infoX + 0.2, y: currentY + 0.2, w: 5.7, color: COLORS.white, fontSize: 14, fontFace: "Calibri", bold: true });
+    slide.addText(piece.name, { x: infoX + 0.2, y: currentY, w: 5.7, h: 0.75, valign: "middle", color: COLORS.white, fontSize: 14, fontFace: "Calibri", bold: true });
     
-    currentY += 0.9;
+    currentY += 0.95;
 
     const addField = (label: string, value: string | number | undefined, italic = false) => {
       if (value === undefined || value === "" || value === 0) return;
       const str = String(value);
-      // Estimate height: ~75 chars per line at fontSize 10 within 6.1" width; honor explicit newlines
-      const lines = str.split("\n").reduce((acc, ln) => acc + Math.max(1, Math.ceil(ln.length / 75)), 0);
-      const valueH = Math.max(0.28, lines * 0.22);
-      slide.addText(label, { x: infoX, y: currentY, w: 6.1, h: 0.18, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
-      currentY += 0.2;
+      // Estimate height more conservatively: ~65 chars per line at fontSize 10 within 6.1" width
+      const lines = str.split("\n").reduce((acc, ln) => acc + Math.max(1, Math.ceil(ln.length / 65)), 0);
+      const valueH = Math.max(0.25, lines * 0.25);
+      
+      // Label text box
+      slide.addText(label, { x: infoX, y: currentY, w: 6.1, h: 0.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri", bold: true });
+      currentY += 0.25; // Increase gap between label and value
+      
+      // Value text box
       slide.addText(str, { x: infoX, y: currentY, w: 6.1, h: valueH, valign: "top", color: COLORS.textPrimary, fontSize: 10, fontFace: "Calibri", bold: !italic, italic });
-      currentY += valueH + 0.08;
-      slide.addShape(pptx.ShapeType.line, { x: infoX, y: currentY, w: 6.1, line: { color: COLORS.border, width: 0.3 } });
-      currentY += 0.12;
+      currentY += valueH + 0.1;
+      
+      // Separator line
+      slide.addShape(pptx.ShapeType.line, { x: infoX, y: currentY, w: 6.1, line: { color: COLORS.border, width: 0.4 } });
+      currentY += 0.15;
     };
 
     addField("DESCRIÇÃO", piece.description);
