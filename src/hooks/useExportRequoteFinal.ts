@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { buildRequoteFinalWorkbook } from "@/lib/buildRequoteFinalWorkbook";
+import type { StoreFieldDef } from "@/components/RateioExportColorDialog";
 
 /**
  * Pure data fetch + workbook build for the post-approval requote.
@@ -14,8 +15,9 @@ export async function buildRequoteFinalPackage(params: {
   campaignId: string;
   adjustmentId: string;
   supplierId: string;
+  extraHiddenStoreFields?: StoreFieldDef[];
 }): Promise<{ blob: Blob; fileName: string }> {
-  const { campaignId, adjustmentId, supplierId } = params;
+  const { campaignId, adjustmentId, supplierId, extraHiddenStoreFields } = params;
   const [
     campaignRes,
     adjustmentRes,
