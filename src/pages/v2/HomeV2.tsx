@@ -85,7 +85,7 @@ export function HomeV2() {
     queryFn: async () => {
       const [campaigns, schedules, occurrences] = await Promise.all([
         supabase.from("campaigns").select("id, name, created_at").order("created_at", { ascending: false }).limit(4),
-        supabase.from("campaign_schedules").select("id, created_at, stores(name)").order("created_at", { ascending: false }).limit(4),
+        supabase.from("campaign_schedules").select("id, created_at, client_stores(name)").order("created_at", { ascending: false }).limit(4),
         supabase.from("occurrences").select("id, description, created_at").order("created_at", { ascending: false }).limit(4)
       ]);
 
@@ -101,7 +101,7 @@ export function HomeV2() {
         ...(schedules.data || []).map(item => ({
           id: `inst-${item.id}`,
           type: "installation",
-          title: (item as any).stores?.name || "Instalação",
+          title: (item as any).client_stores?.name || "Instalação",
           description: `Agendada`,
           time: new Date(item.created_at),
           icon: Wrench
