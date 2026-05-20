@@ -548,10 +548,7 @@ export default function AdjustmentsTab({
                       {requote.status === "submitted" && requote.submitted_at && (
                         <span className="text-xs text-muted-foreground">
                           Recebido{" "}
-                          {formatDistanceToNow(new Date(requote.submitted_at), {
-                            locale: ptBR,
-                            addSuffix: true,
-                          })}
+                          {fmt.relative(new Date(requote.submitted_at))}
                         </span>
                       )}
                     </div>
@@ -567,7 +564,7 @@ export default function AdjustmentsTab({
                             {requote.submitted_at && (
                               <>
                                 Recebido{" "}
-                                {format(new Date(requote.submitted_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                {fmt.dateTime(new Date(requote.submitted_at))}
                               </>
                             )}
                           </div>
@@ -724,9 +721,7 @@ export default function AdjustmentsTab({
                                 {requote.response_received_at && (
                                   <>
                                     {" "}· Registrado em{" "}
-                                    {format(new Date(requote.response_received_at), "dd/MM/yyyy", {
-                                      locale: ptBR,
-                                    })}
+                                    {fmt.date(new Date(requote.response_received_at))}
                                   </>
                                 )}
                               </div>
