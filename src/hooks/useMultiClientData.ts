@@ -38,6 +38,7 @@ export type Campaign = {
   name: string;
   color: string | null;
   display_order: number;
+  cover_images?: Array<{ url: string; timestamp: string }>;
   created_at: string;
 };
 
