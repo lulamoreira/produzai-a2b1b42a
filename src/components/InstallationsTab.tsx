@@ -1397,8 +1397,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                       <CheckCircle className="w-3.5 h-3.5" />
                       <span className="font-medium">
                         {schedule.completed_by === "agency"
-                          ? `Marcada manualmente como concluída pela equipe da Agência, em: ${format(new Date(schedule.completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
-                          : `Concluída em ${format(new Date(schedule.completed_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}`
+                          ? `Marcada manualmente como concluída pela equipe da Agência, em: ${fmt.dateTime(new Date(schedule.completed_at))}`
+                          : `Concluída em ${fmt.dateTime(new Date(schedule.completed_at))}`
                         }
                       </span>
                     </div>
@@ -1441,7 +1441,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                         }}
                       >
                         {schedule.photo_checkin && schedule.photo_checkin_at ? (
-                          <><CheckCircle2 className="w-4 h-4" /> Fotos para ocorrências verificadas em: {format(new Date(schedule.photo_checkin_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</>
+                          <><CheckCircle2 className="w-4 h-4" /> Fotos para ocorrências verificadas em: {fmt.dateTime(new Date(schedule.photo_checkin_at))}</>
                         ) : (
                           <><AlertCircle className="w-4 h-4" /> Clique aqui para informar Check-in de fotos para ocorrências</>
                         )}
@@ -1645,14 +1645,14 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                           {gpsIn && !mIn && (
                             <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
                               <CheckCircle2 className="w-3.5 h-3.5 text-[var(--s-success)]" />
-                              <span>Check-in via app: {format(new Date(gpsIn), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</span>
+                              <span>Check-in via app: {fmt.dateTime(new Date(gpsIn))}</span>
                             </div>
                           )}
                           {mIn && (
                             <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
                               <CheckCircle2 className="w-3.5 h-3.5 text-[var(--s-success)]" />
                               <span>
-                                Check-in manual: {format(new Date(mIn), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                Check-in manual: {fmt.dateTime(new Date(mIn))}
                                 {schedule.manual_checkin_by_name && ` por ${schedule.manual_checkin_by_name}`}
                               </span>
                               {isAdminOrMaster && (
@@ -1671,7 +1671,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                             <div className="flex items-center gap-1.5 text-[var(--text-secondary)]">
                               <CheckCircle2 className="w-3.5 h-3.5 text-[var(--s-success)]" />
                               <span>
-                                Check-out manual: {format(new Date(mOut), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                Check-out manual: {fmt.dateTime(new Date(mOut))}
                                 {schedule.manual_checkout_by_name && ` por ${schedule.manual_checkout_by_name}`}
                               </span>
                               {isAdminOrMaster && (
@@ -1776,7 +1776,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                       {schedule.checkin_timestamp && (
                         <div className="text-xs space-y-0.5 mt-2">
                           <p className="font-medium text-[var(--s-success)]">
-                            ✔ Check-in: {format(new Date(schedule.checkin_timestamp), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                            ✔ Check-in: {fmt.dateTime(new Date(schedule.checkin_timestamp))}
                           </p>
                           {schedule.checkin_lat != null ? (
                             <p className="text-[var(--text-muted)]">
