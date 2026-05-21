@@ -1269,6 +1269,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         <select disabled={!cardCanEdit} value={schedule?.installation_preference || "not_informed"} onChange={(e) => handleFieldChange(store.id, "installation_preference", e.target.value)} className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2">
                           {PREFERENCE_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
                         </select>
+                        {(!schedule?.installation_preference || schedule?.installation_preference === "not_informed") && (
+                          <p className="text-[10px] text-muted-foreground italic">{t("scheduling.inheritedHint")}</p>
+                        )}
                       </div>
                     </div>
                   )}

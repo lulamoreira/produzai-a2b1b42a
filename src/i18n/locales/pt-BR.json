@@ -546,6 +546,7 @@
     "installationOs": "OS Instalação",
     "osNumber": "Nº OS",
     "preferenceLabel": "Preferência",
+    "inheritedHint": "Herdado da campanha anterior quando disponível",
     "approvalStatus": "Status de aprovação da instalação",
     "fillDateTime": "(preencha data e horário)",
     "storeowner": "Lojista",

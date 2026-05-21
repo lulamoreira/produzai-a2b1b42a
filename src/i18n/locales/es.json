@@ -553,6 +553,7 @@
     "installationOs": "OT Instalación",
     "osNumber": "Nº OT",
     "preferenceLabel": "Preferencia",
+    "inheritedHint": "Heredado de la campaña anterior cuando esté disponible",
     "approvalStatus": "Estado de aprobación de la instalación",
     "fillDateTime": "(complete fecha y hora)",
     "storeowner": "Encargado",
