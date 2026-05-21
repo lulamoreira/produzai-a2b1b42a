@@ -233,15 +233,27 @@ export default function MatrixTab({
     const qty = parseInt(value, 10);
     if (isNaN(qty)) return;
     
-    // Optimistic update logic would go here if needed, 
-    // but the hook usually handles it.
+    if (pieceId.startsWith("kit-")) {
+      const kitId = pieceId.replace("kit-", "");
+      const rows = kitPieces.filter((kp) => kp.kit_id === kitId);
+      bulkUpdateStorePieces.mutate({
+        campaignId,
+        storeId,
+        updates: rows.map(r => ({
+          pieceId: r.piece_id,
+          quantity: (r.quantity || 0) * qty
+        }))
+      });
+      return;
+    }
+
     updateStorePiece.mutate({
-      store_id: storeId,
-      piece_id: pieceId.startsWith("kit-") ? undefined : pieceId,
-      kit_id: pieceId.startsWith("kit-") ? pieceId.replace("kit-", "") : undefined,
+      campaignId,
+      storeId,
+      pieceId,
       quantity: qty
     });
-  }, [updateStorePiece]);
+  }, [campaignId, kitPieces, updateStorePiece, bulkUpdateStorePieces]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
