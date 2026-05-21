@@ -604,7 +604,7 @@ export default function RateioTabV2({
                   </thead>
                   <tbody className="bg-white">
                     {filteredStores.map(store => (
-                      <tr key={store.id} className="group even:bg-stone-50/80 odd:bg-white hover:bg-[#C2714F]/[0.06] transition-colors">
+                      <tr key={store.id} className="group even:bg-stone-100/80 odd:bg-white hover:bg-[#C2714F]/[0.08] transition-colors">
                         <td className="sticky left-0 z-20 bg-white group-hover:bg-stone-50/50 border-r border-b border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">
                           <div className="flex items-center gap-3">
                             <div 
