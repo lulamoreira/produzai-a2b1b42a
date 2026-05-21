@@ -253,6 +253,7 @@ const CampaignDetail = () => {
                   currencyCode="BRL" isAdminOrMaster={isAdminOrMaster}
                   winnerSupplierId={winnerSupplierId}
                   hasNegotiationRateio={hasNegotiationRateio}
+                  onBackToBudgets={() => setActiveSection("budgets")}
                 />
               </Suspense>
             </TabsContent>
