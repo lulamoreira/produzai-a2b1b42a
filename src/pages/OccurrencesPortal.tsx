@@ -36,7 +36,10 @@ export default function OccurrencesPortal() {
         .select("occurrences_portal_title, occurrences_portal_subtitle, module_ocorrencias, deadline_ocorrencias")
         .eq("campaign_id", campaignId!)
         .maybeSingle();
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase Error [occ-portal-config]:", error);
+        throw error;
+      }
       return data;
     },
   });
@@ -52,7 +55,10 @@ export default function OccurrencesPortal() {
         .eq("campaign_id", campaignId!)
         .eq("ativo", true);
       
-      if (lojasErr) throw lojasErr;
+      if (lojasErr) {
+        console.error("Supabase Error [occ-portal-lojas]:", lojasErr);
+        throw lojasErr;
+      }
 
       // Fetch existing tokens
       const { data: existingTokens, error: tokensErr } = await supabase
