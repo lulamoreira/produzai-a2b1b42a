@@ -1033,5 +1033,13 @@
     "selectAll": "Select all",
     "moreActions": "More actions",
     "bulkActions": "Bulk actions"
+  },
+  "clients": {
+    "title": "Clients",
+    "subtitle": "Manage the clients of this agency",
+    "newClient": "New Client",
+    "emptyTitle": "No clients found",
+    "emptyDescription": "Add the first client of this agency to get started.",
+    "campaigns": "campaigns"
   }
 }
