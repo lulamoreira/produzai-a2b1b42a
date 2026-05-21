@@ -11,12 +11,15 @@ import {
   Wrench, 
   ArrowRight,
   ChevronRight,
-  Clock
+  Clock,
+  Inbox
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { useFormatters } from "@/lib/formatters";
+import { SkeletonCard } from "@/components/v2/ui/SkeletonCard";
+import { EmptyStateV2 } from "@/components/v2/ui/EmptyStateV2";
 
 export function HomeV2() {
   const { t } = useTranslation();
@@ -58,7 +61,6 @@ export function HomeV2() {
   const { data: recentCampaigns, isLoading: loadingCampaigns } = useQuery({
     queryKey: ["v2-recent-campaigns"],
     queryFn: async () => {
-      // Use maybeSingle or select with limit but avoid complex typing issues
       const { data, error } = await supabase
         .from("campaigns")
         .select(`
@@ -123,7 +125,7 @@ export function HomeV2() {
   const userName = user?.email?.split("@")[0] || "Usuário";
 
   return (
-    <div className="max-w-7xl mx-auto animate-fade-in">
+    <div className="max-w-7xl mx-auto animate-in fade-in duration-500">
       {/* Greeting Section */}
       <section>
         <h2 className="text-2xl font-semibold text-stone-800 dark:text-stone-100">
@@ -181,10 +183,10 @@ export function HomeV2() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {loadingCampaigns ? (
               Array(4).fill(0).map((_, i) => (
-                <div key={i} className="h-32 bg-stone-100 dark:bg-stone-800 animate-pulse rounded-xl" />
+                <SkeletonCard key={i} />
               ))
-            ) : (
-              recentCampaigns?.map((camp) => (
+            ) : recentCampaigns && recentCampaigns.length > 0 ? (
+              recentCampaigns.map((camp) => (
                 <Card 
                   key={camp.id}
                   className="bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition-shadow cursor-pointer group"
@@ -209,6 +211,14 @@ export function HomeV2() {
                   </div>
                 </Card>
               ))
+            ) : (
+              <div className="md:col-span-2 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl">
+                <EmptyStateV2 
+                  icon={Megaphone}
+                  title="Nenhuma campanha encontrada"
+                  description="Você ainda não possui campanhas recentes."
+                />
+              </div>
             )}
           </div>
         </section>
@@ -224,8 +234,8 @@ export function HomeV2() {
                 Array(5).fill(0).map((_, i) => (
                   <div key={i} className="p-4 h-14 bg-stone-50 dark:bg-stone-800/50 animate-pulse" />
                 ))
-              ) : (
-                recentActivity?.map((activity) => (
+              ) : recentActivity && recentActivity.length > 0 ? (
+                recentActivity.map((activity) => (
                   <div key={activity.id} className="flex gap-3 p-4 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors">
                     <div className="w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center flex-shrink-0">
                       <activity.icon className="w-4 h-4 text-stone-500" />
@@ -245,6 +255,12 @@ export function HomeV2() {
                     </div>
                   </div>
                 ))
+              ) : (
+                <EmptyStateV2 
+                  icon={Inbox}
+                  title="Nenhuma atividade"
+                  description="Ainda não há registros de atividade recente."
+                />
               )}
             </div>
           </div>
