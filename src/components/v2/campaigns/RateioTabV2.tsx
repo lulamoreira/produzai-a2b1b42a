@@ -517,7 +517,29 @@ export default function RateioTabV2({
                     {/* Piece Headers Row */}
                     <tr>
                       <th className="w-[300px] sticky left-0 z-40 bg-white p-4 border-r border-b border-stone-200 text-left align-top">
-                        <div className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">Loja</div>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-xs font-bold text-stone-400 uppercase tracking-widest">Loja</div>
+                          <div className="flex items-center gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className={cn("h-6 w-6 rounded-md", sortConfig?.key === 'state' && "bg-stone-100 text-[#C2714F]")}
+                              onClick={() => toggleSort('state')}
+                              title="Ordenar por Estado"
+                            >
+                              <MapPin className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className={cn("h-6 w-6 rounded-md", sortConfig?.key === 'name' && "bg-stone-100 text-[#C2714F]")}
+                              onClick={() => toggleSort('name')}
+                              title="Ordenar por Nome"
+                            >
+                              <Tag className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
                         <div className="text-[10px] text-stone-400 font-medium leading-tight">Total de peças distribuídas por ponto de venda</div>
                       </th>
                       {columns.map((col) => {
