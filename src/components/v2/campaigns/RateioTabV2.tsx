@@ -1,11 +1,11 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
-  Search, Filter, Download, Sparkles, RefreshCw, Layers, 
-  Undo2, Redo2, Copy, MoreHorizontal, Lock, CheckCircle2
+  Search, Filter, Download, Sparkles, Copy, MoreHorizontal, Lock, CheckCircle2,
+  Undo2, Redo2, Store as StoreIcon, MapPin, Tag
 } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -14,10 +14,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters, type FilterLogicMode } from "@/components/MatrixFilterSidebar";
-import StoresMatrixTable from "@/components/StoresMatrixTable";
 import MatrixDistributionDashboard from "@/components/Matrix/MatrixDistributionDashboard";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { useUserRole } from "@/hooks/useUserRole";
+import { getStateColor } from "@/lib/stateColors";
+import { useUpdateCampaignStorePiece } from "@/hooks/useMultiClientData";
+import { toast } from "sonner";
 
 interface RateioTabV2Props {
   campaignId: string;
@@ -74,10 +76,10 @@ export default function RateioTabV2({
 }: RateioTabV2Props) {
   const { t } = useTranslation();
   const { isAdminOrMaster } = useUserRole();
+  const updatePieceQty = useUpdateCampaignStorePiece();
   
   const [rateioView, setRateioView] = useState("planilha");
   const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(true);
-  const [matrixToolbarCollapsed, setMatrixToolbarCollapsed] = useState(false);
   const [storeSearch, setStoreSearch] = useState("");
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
@@ -92,24 +94,21 @@ export default function RateioTabV2({
   // Sync state with local storage
   useEffect(() => {
     localStorage.setItem(storageKey, activeVersionTab);
-    setRateioSource(activeVersionTab as any);
-  }, [activeVersionTab, storageKey, setRateioSource]);
+    if (activeVersionTab !== rateioSource) {
+      setRateioSource(activeVersionTab as any);
+    }
+  }, [activeVersionTab, storageKey, setRateioSource, rateioSource]);
 
   // Persist source from props if it changes externally
   useEffect(() => {
     if (rateioSource !== activeVersionTab) {
       setActiveVersionTab(rateioSource);
     }
-  }, [rateioSource]);
+  }, [rateioSource, activeVersionTab]);
 
-  const customFieldLabels = useMemo(() => {
-    return Array.from({ length: 15 }, (_, idx) => {
-      const i = idx + 1;
-      const label = (client as any)?.[`custom_field_${i}_label`];
-      return label ? { index: i, label } : null;
-    }).filter((x): x is { index: number; label: string } => x !== null);
-  }, [client]);
+  const isLatestTab = activeVersionTab === vigenteSource;
 
+  // Filter stores
   const filteredStores = useMemo(() => {
     return stores.filter(s => {
       const q = storeSearch.toLowerCase();
@@ -119,25 +118,82 @@ export default function RateioTabV2({
         s.city?.toLowerCase().includes(q) || 
         s.store_code?.toLowerCase().includes(q);
       
-      // Basic city/state filtering logic (can be expanded based on MatrixFilterSidebar)
+      // Apply sidebar filters
+      if (storeFilters.city.size > 0 && !storeFilters.city.has(s.city)) return false;
+      if (storeFilters.state.size > 0 && !storeFilters.state.has(s.state?.trim())) return false;
+      if (storeFilters.store_model.size > 0 && !storeFilters.store_model.has(s.store_model)) return false;
+      
       return matchesSearch;
     });
-  }, [stores, storeSearch]);
+  }, [stores, storeSearch, storeFilters]);
 
-  const isLatestTab = activeVersionTab === vigenteSource;
+  // Filter pieces
+  const filteredPieces = useMemo(() => {
+    return pieces.filter(p => {
+      if (p.kit_only) return false; // Usually matrix doesn't show kit-only pieces as columns
+      
+      if (pieceFilters.category.size > 0 && !pieceFilters.category.has(p.category)) return false;
+      if (pieceFilters.name.size > 0 && !pieceFilters.name.has(p.name)) return false;
+      if (pieceFilters.store_category.size > 0 && !pieceFilters.store_category.has(p.store_category)) return false;
+      
+      return true;
+    }).sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
+  }, [pieces, pieceFilters]);
 
-  // Tabs for the excel-like navigation
+  // Group pieces for headers
+  const pieceGroups = useMemo(() => {
+    const groups: { label: string; pieces: any[] }[] = [];
+    filteredPieces.forEach(p => {
+      const label = !p.store_category || p.store_category === "TODAS" ? "TODAS" : "ÚNICA";
+      let group = groups.find(g => g.label === label);
+      if (!group) {
+        group = { label, pieces: [] };
+        groups.push(group);
+      }
+      group.pieces.push(p);
+    });
+    // Ensure "TODAS" is first
+    return groups.sort((a, b) => (a.label === "TODAS" ? -1 : 1));
+  }, [filteredPieces]);
+
+  // Cell editing state
+  const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
+  const [editValue, setEditValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const startEditing = (storeId: string, pieceId: string, currentVal: number) => {
+    if (!canEditCampaignStores || !isLatestTab) return;
+    setEditingCell({ storeId, pieceId });
+    setEditValue(currentVal === 0 ? "" : String(currentVal));
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
+
+  const saveEdit = async () => {
+    if (!editingCell) return;
+    const { storeId, pieceId } = editingCell;
+    const qty = parseInt(editValue, 10) || 0;
+    
+    try {
+      await updatePieceQty.mutateAsync({ campaignId, storeId, pieceId, quantity: qty });
+    } catch (err) {
+      toast.error("Erro ao atualizar quantidade");
+    }
+    setEditingCell(null);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") saveEdit();
+    if (e.key === "Escape") setEditingCell(null);
+  };
+
   const versionTabs = useMemo(() => {
     const tabs = [{ id: "original", label: "Rateio Original" }];
-    
     if (hasNegotiationRateio && winnerSupplierId) {
       tabs.push({ id: "negotiation", label: `Negociação · ${winnerSupplierName}` });
     }
-    
     if (activeAdjustment) {
       tabs.push({ id: "adjustment", label: `Ajuste · ${activeAdjustment.name}` });
     }
-    
     return tabs;
   }, [hasNegotiationRateio, winnerSupplierId, winnerSupplierName, activeAdjustment]);
 
@@ -181,7 +237,6 @@ export default function RateioTabV2({
           onFiltersChange={setPieceFilters}
           storeFilters={storeFilters}
           onStoreFiltersChange={setStoreFilters}
-          customFieldLabels={customFieldLabels.map(cf => ({ key: `custom_field_${cf.index}` as any, label: cf.label }))}
           filterLogicMode={filterLogicMode}
           onFilterLogicModeChange={setFilterLogicMode}
         />
@@ -247,33 +302,8 @@ export default function RateioTabV2({
                   </div>
                 </div>
 
-                {/* Filters and Actions Bar */}
+                {/* Action Buttons */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
-                    <Input 
-                      value={storeSearch} 
-                      onChange={(e) => setStoreSearch(e.target.value)} 
-                      placeholder={t("rateio.searchStore", "Buscar loja...")} 
-                      className="pl-8 h-9 text-xs bg-white border-stone-200 rounded-lg shadow-sm focus:ring-1 focus:ring-stone-200"
-                    />
-                  </div>
-
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className={cn(
-                      "h-9 text-xs gap-2 rounded-lg border-stone-200 shadow-sm transition-all",
-                      !filterSidebarCollapsed && "bg-stone-100 border-stone-300"
-                    )}
-                    onClick={() => setFilterSidebarCollapsed(!filterSidebarCollapsed)}
-                  >
-                    <Filter className="w-3.5 h-3.5" />
-                    {t("common.filters", "Filtros")}
-                  </Button>
-
-                  <div className="h-6 w-px bg-stone-200 mx-1 hidden sm:block" />
-
                   {isLatestTab && (
                     <>
                       <div className="flex items-center bg-stone-100 rounded-lg p-0.5">
@@ -319,22 +349,179 @@ export default function RateioTabV2({
                 </div>
               </div>
 
-              <div className="flex-1 overflow-hidden relative border-t border-stone-200">
-                <StoresMatrixTable 
-                  clientId={clientId}
-                  stores={filteredStores}
-                  customFieldLabels={customFieldLabels}
-                  canEdit={canEditCampaignStores && isLatestTab}
-                  onUpdateStore={async () => {}} // Metadata updates handled elsewhere
-                  storeSearch={storeSearch}
-                  storeStateFilter=""
-                />
+              {/* Filters Row */}
+              <div className="px-6 py-2 border-b border-stone-100 bg-white flex items-center gap-3">
+                <div className="relative flex-1 max-w-xs">
+                  <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
+                  <Input 
+                    value={storeSearch} 
+                    onChange={(e) => setStoreSearch(e.target.value)} 
+                    placeholder={t("rateio.searchStore", "Buscar loja...")} 
+                    className="pl-8 h-8 text-xs bg-stone-50 border-none rounded-md"
+                  />
+                </div>
+                
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className={cn("h-8 text-[11px] font-bold uppercase tracking-wider gap-2 px-3", !filterSidebarCollapsed && "bg-stone-100")}
+                  onClick={() => setFilterSidebarCollapsed(!filterSidebarCollapsed)}
+                >
+                  <Filter className="w-3 h-3" />
+                  {t("common.filters", "Filtros")}
+                </Button>
+
+                <div className="h-4 w-px bg-stone-200" />
+                
+                <div className="text-[11px] font-medium text-stone-400 uppercase tracking-widest">
+                  ESTADO
+                </div>
+                <div className="text-[11px] font-medium text-stone-400 uppercase tracking-widest">
+                  CIDADE
+                </div>
+                <div className="text-[11px] font-medium text-stone-400 uppercase tracking-widest">
+                  CATEGORIA DE LOJA
+                </div>
+                
+                <div className="flex-1" />
+                
+                <div className="text-[11px] text-stone-500 font-bold">
+                  {filteredStores.length} {t("rateio.stores", "loja(s)")}
+                </div>
+              </div>
+
+              {/* Spreadsheet Table */}
+              <div className="flex-1 overflow-auto relative custom-scrollbar">
+                <table className="border-collapse table-fixed min-w-full">
+                  <thead className="sticky top-0 z-30 bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
+                    {/* Group Labels Row */}
+                    <tr>
+                      <th className="w-[300px] sticky left-0 z-40 bg-white border-r border-stone-200" />
+                      {pieceGroups.map((group, gIdx) => (
+                        <th 
+                          key={gIdx} 
+                          colSpan={group.pieces.length} 
+                          className="bg-stone-50 border-b border-r border-stone-200 text-[10px] font-bold text-stone-500 py-1 text-center uppercase tracking-widest"
+                        >
+                          {group.label}
+                        </th>
+                      ))}
+                    </tr>
+                    {/* Piece Headers Row */}
+                    <tr>
+                      <th className="w-[300px] sticky left-0 z-40 bg-white p-4 border-r border-b border-stone-200 text-left align-top">
+                        <div className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">Loja</div>
+                        <div className="text-[10px] text-stone-400 font-medium leading-tight">Total de peças distribuídas por ponto de venda</div>
+                      </th>
+                      {filteredPieces.map(piece => {
+                        const isKit = pieces.some(p => p.kit_only && kitPieces.some(kp => kp.piece_id === piece.id && kits.some(k => k.id === kp.kit_id)));
+                        return (
+                          <th key={piece.id} className="w-[100px] p-2 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50">
+                            <div className="flex flex-col items-center gap-1.5">
+                              {piece.image_url ? (
+                                <img 
+                                  src={piece.image_url} 
+                                  alt={piece.name} 
+                                  className="w-12 h-12 rounded-lg object-cover border border-stone-100 shadow-sm" 
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-stone-100 flex items-center justify-center">
+                                  <Table2 className="w-4 h-4 text-stone-300" />
+                                </div>
+                              )}
+                              <div className="text-sm font-black text-stone-900 leading-none">{piece.code}</div>
+                              {isKit && (
+                                <div className="text-[9px] font-bold text-[#C2714F] leading-none uppercase">KIT</div>
+                              )}
+                              <div className="text-[10px] text-stone-500 font-medium line-clamp-2 leading-tight text-center px-1">
+                                {piece.name}
+                              </div>
+                            </div>
+                          </th>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white">
+                    {filteredStores.map(store => (
+                      <tr key={store.id} className="group hover:bg-stone-50/50 transition-colors">
+                        <td className="sticky left-0 z-20 bg-white group-hover:bg-stone-50/50 border-r border-b border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0"
+                              style={{ 
+                                backgroundColor: getStateColor(store.state).bg, 
+                                color: getStateColor(store.state).text 
+                              }}
+                            >
+                              {store.state}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-semibold text-stone-900 text-xs truncate">{store.name}</span>
+                                {store.nickname && (
+                                  <span className="text-[10px] text-stone-400 truncate">({store.nickname})</span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 mt-0.5">
+                                <StoreIcon className="w-3 h-3 text-stone-300 shrink-0" />
+                                <Badge variant="secondary" className="bg-stone-100 text-stone-500 border-none text-[9px] h-4 px-1.5 font-bold uppercase">
+                                  {store.store_model || "PADRÃO"}
+                                </Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        {filteredPieces.map(piece => {
+                          const val = qtyMap[`${store.id}-${piece.id}`] || 0;
+                          const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === piece.id;
+                          
+                          return (
+                            <td 
+                              key={piece.id} 
+                              className={cn(
+                                "border-r border-b border-stone-100 text-center transition-all cursor-pointer",
+                                val > 0 ? "bg-stone-50/30" : "bg-white",
+                                isEditing && "ring-2 ring-inset ring-[#C2714F] z-10"
+                              )}
+                              onClick={() => startEditing(store.id, piece.id, val)}
+                            >
+                              {isEditing ? (
+                                <input
+                                  ref={inputRef}
+                                  type="text"
+                                  className="w-full h-full bg-transparent text-center text-xs font-bold focus:outline-none"
+                                  value={editValue}
+                                  onChange={(e) => setEditValue(e.target.value)}
+                                  onBlur={saveEdit}
+                                  onKeyDown={handleKeyDown}
+                                />
+                              ) : (
+                                <div className={cn(
+                                  "w-full h-full min-h-[48px] flex items-center justify-center text-xs transition-all",
+                                  val > 0 ? "text-stone-900 font-black scale-110" : "text-stone-200 font-medium"
+                                )}>
+                                  {val > 0 ? val : "—"}
+                                </div>
+                              )}
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
               
-              {/* Footer / Counter */}
+              {/* Spreadsheet Footer */}
               <div className="px-6 py-2 border-t border-stone-200 bg-stone-50 flex items-center justify-between text-[11px] text-stone-500 font-medium">
-                <div>
-                  {filteredStores.length} {t("rateio.stores", "loja(s)")}
+                <div className="flex items-center gap-6">
+                  <div>
+                    {filteredStores.length} {t("rateio.stores", "loja(s)")}
+                  </div>
+                  <div>
+                    {filteredPieces.length} {t("pieces.pieceCountShort", "peça(s)")}
+                  </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1.5">
