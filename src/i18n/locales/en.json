@@ -98,6 +98,9 @@
     "saveSuccess": "Saved successfully",
     "noLocation": "No location",
     "orderByLocation": "Order by location",
+    "errors": {
+      "alreadyExists": "This record already exists. If it was previously deleted, try reactivating it."
+    },
     "addressNotInformed": "Address not provided",
     "cardsBlocked": "cards locked",
     "cardsUnblocked": "cards unlocked",
