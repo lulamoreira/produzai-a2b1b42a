@@ -85,16 +85,27 @@ export default function RateioTabV2({
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
   const [filterLogicMode, setFilterLogicMode] = useState<FilterLogicMode>("and");
   
-  // Sorting state
-  const [sortConfig, setSortConfig] = useState<{ key: "name" | "state"; direction: "asc" | "desc" } | null>(null);
+  // Sorting state - supporting multiple levels
+  const [sortConfig, setSortConfig] = useState<{ key: "name" | "state"; direction: "asc" | "desc" }[]>([]);
 
-  const toggleSort = (key: "name" | "state") => {
+  const toggleSort = (key: "name" | "state", multi: boolean = false) => {
     setSortConfig(prev => {
-      if (prev?.key === key) {
-        if (prev.direction === "asc") return { key, direction: "desc" };
-        return null; // Reset sort
+      const existing = prev.find(s => s.key === key);
+      
+      if (existing) {
+        if (existing.direction === "asc") {
+          // Toggle to desc
+          const updated = prev.map(s => s.key === key ? { ...s, direction: "desc" as const } : s);
+          return updated;
+        } else {
+          // Remove this sort
+          return prev.filter(s => s.key !== key);
+        }
+      } else {
+        // Add new sort level
+        const newSort = { key, direction: "asc" as const };
+        return multi ? [...prev, newSort] : [newSort];
       }
-      return { key, direction: "asc" };
     });
   };
 
@@ -139,13 +150,16 @@ export default function RateioTabV2({
       return matchesSearch;
     });
 
-    if (sortConfig) {
+    if (sortConfig.length > 0) {
       result = [...result].sort((a, b) => {
-        const valA = (a[sortConfig.key] || "").toString().toLowerCase();
-        const valB = (b[sortConfig.key] || "").toString().toLowerCase();
-        
-        if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
-        if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
+        for (const sort of sortConfig) {
+          const valA = (a[sort.key] || "").toString().toLowerCase();
+          const valB = (b[sort.key] || "").toString().toLowerCase();
+          
+          if (valA < valB) return sort.direction === "asc" ? -1 : 1;
+          if (valA > valB) return sort.direction === "asc" ? 1 : -1;
+          // If equal, continue to next sort level
+        }
         return 0;
       });
     }
@@ -523,20 +537,36 @@ export default function RateioTabV2({
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className={cn("h-6 w-6 rounded-md", sortConfig?.key === 'state' && "bg-stone-100 text-[#C2714F]")}
-                              onClick={() => toggleSort('state')}
-                              title="Ordenar por Estado"
+                              className={cn(
+                                "h-6 w-6 rounded-md transition-all relative", 
+                                sortConfig.some(s => s.key === 'state') && "bg-stone-100 text-[#C2714F]"
+                              )}
+                              onClick={(e) => toggleSort('state', e.shiftKey || e.metaKey || e.ctrlKey)}
+                              title="Ordenar por Estado (Shift + Clique para multi-nível)"
                             >
                               <MapPin className="w-3.5 h-3.5" />
+                              {sortConfig.length > 1 && sortConfig.findIndex(s => s.key === 'state') !== -1 && (
+                                <span className="absolute -top-1 -right-1 flex items-center justify-center w-3 h-3 bg-[#C2714F] text-white text-[8px] rounded-full font-bold">
+                                  {sortConfig.findIndex(s => s.key === 'state') + 1}
+                                </span>
+                              )}
                             </Button>
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className={cn("h-6 w-6 rounded-md", sortConfig?.key === 'name' && "bg-stone-100 text-[#C2714F]")}
-                              onClick={() => toggleSort('name')}
-                              title="Ordenar por Nome"
+                              className={cn(
+                                "h-6 w-6 rounded-md transition-all relative", 
+                                sortConfig.some(s => s.key === 'name') && "bg-stone-100 text-[#C2714F]"
+                              )}
+                              onClick={(e) => toggleSort('name', e.shiftKey || e.metaKey || e.ctrlKey)}
+                              title="Ordenar por Nome (Shift + Clique para multi-nível)"
                             >
                               <Tag className="w-3.5 h-3.5" />
+                              {sortConfig.length > 1 && sortConfig.findIndex(s => s.key === 'name') !== -1 && (
+                                <span className="absolute -top-1 -right-1 flex items-center justify-center w-3 h-3 bg-[#C2714F] text-white text-[8px] rounded-full font-bold">
+                                  {sortConfig.findIndex(s => s.key === 'name') + 1}
+                                </span>
+                              )}
                             </Button>
                           </div>
                         </div>
