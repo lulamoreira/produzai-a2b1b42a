@@ -34,6 +34,7 @@ import { useAdjustmentRateio } from "@/hooks/useAdjustmentRateio";
 import { useNegotiationStorePieces } from "@/hooks/useNegotiationStorePieces";
 import OccurrencesPortalV2 from "@/pages/v2/OccurrencesPortalV2";
 import OccurrencesPortal from "@/pages/OccurrencesPortal";
+import CampaignBackupDialog from "@/components/CampaignBackupDialog";
 
 
 
