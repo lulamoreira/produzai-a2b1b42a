@@ -127,34 +127,97 @@ export default function RateioTabV2({
     });
   }, [stores, storeSearch, storeFilters]);
 
-  // Filter pieces
-  const filteredPieces = useMemo(() => {
-    return pieces.filter(p => {
-      if (p.kit_only) return false; // Usually matrix doesn't show kit-only pieces as columns
-      
-      if (pieceFilters.category.size > 0 && !pieceFilters.category.has(p.category)) return false;
-      if (pieceFilters.name.size > 0 && !pieceFilters.name.has(p.name)) return false;
-      if (pieceFilters.store_category.size > 0 && !pieceFilters.store_category.has(p.store_category)) return false;
-      
-      return true;
-    }).sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
-  }, [pieces, pieceFilters]);
+  // Build unified columns (pieces + kits) ordered like the Pieces module
+  // (display_order, piece-before-kit on ties). Kit-only pieces are hidden.
+  type ColumnItem = {
+    _type: "piece" | "kit";
+    id: string;
+    code: number | string;
+    name: string;
+    image_url?: string | null;
+    image_report_url?: string | null;
+    category?: string | null;
+    store_category?: string | null;
+    display_order: number;
+    raw: any;
+  };
 
-  // Group pieces for headers
-  const pieceGroups = useMemo(() => {
-    const groups: { label: string; pieces: any[] }[] = [];
-    filteredPieces.forEach(p => {
-      const label = !p.store_category || p.store_category === "TODAS" ? "TODAS" : "ÚNICA";
-      let group = groups.find(g => g.label === label);
-      if (!group) {
-        group = { label, pieces: [] };
-        groups.push(group);
-      }
-      group.pieces.push(p);
+  const columns = useMemo<ColumnItem[]>(() => {
+    const pieceCols: ColumnItem[] = pieces
+      .filter((p: any) => !p.kit_only)
+      .filter((p: any) => {
+        if (pieceFilters.category.size > 0 && !pieceFilters.category.has(p.category)) return false;
+        if (pieceFilters.name.size > 0 && !pieceFilters.name.has(p.name)) return false;
+        if (pieceFilters.store_category.size > 0 && !pieceFilters.store_category.has(p.store_category)) return false;
+        return true;
+      })
+      .map((p: any) => ({
+        _type: "piece" as const,
+        id: p.id,
+        code: p.code,
+        name: p.name,
+        image_url: p.image_url,
+        image_report_url: p.image_report_url,
+        category: p.category,
+        store_category: p.store_category,
+        display_order: p.display_order ?? 0,
+        raw: p,
+      }));
+
+    const kitCols: ColumnItem[] = (kits || []).map((k: any) => ({
+      _type: "kit" as const,
+      id: k.id,
+      code: k.code,
+      name: k.name,
+      image_url: k.image_url,
+      image_report_url: k.image_report_url,
+      category: k.category,
+      store_category: k.category,
+      display_order: k.display_order ?? 0,
+      raw: k,
+    }));
+
+    return [...pieceCols, ...kitCols].sort((a, b) => {
+      const d = (a.display_order ?? 0) - (b.display_order ?? 0);
+      if (d !== 0) return d;
+      if (a._type !== b._type) return a._type === "piece" ? -1 : 1;
+      return a.id < b.id ? -1 : 1;
     });
-    // Ensure "TODAS" is first
-    return groups.sort((a, b) => (a.label === "TODAS" ? -1 : 1));
-  }, [filteredPieces]);
+  }, [pieces, kits, pieceFilters]);
+
+  // Pre-compute kit quantity per store from components (read-only display)
+  const kitQtyMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const kit of kits || []) {
+      const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === kit.id);
+      if (kpList.length === 0) continue;
+      for (const s of stores) {
+        const q = Math.min(
+          ...kpList.map((kp: any) => {
+            const baseQty = qtyMap[`${s.id}-${kp.piece_id}`] || 0;
+            return Math.floor(baseQty / (kp.quantity || 1));
+          })
+        );
+        map[`${s.id}-${kit.id}`] = Number.isFinite(q) ? q : 0;
+      }
+    }
+    return map;
+  }, [kits, kitPieces, stores, qtyMap]);
+
+  // Group columns by store_category label, preserving sorted order (no global re-sort)
+  const pieceGroups = useMemo(() => {
+    const groups: { label: string; items: ColumnItem[] }[] = [];
+    columns.forEach((c) => {
+      const label = !c.store_category || c.store_category === "TODAS" ? "TODAS" : "ÚNICA";
+      const last = groups[groups.length - 1];
+      if (!last || last.label !== label) {
+        groups.push({ label, items: [c] });
+      } else {
+        last.items.push(c);
+      }
+    });
+    return groups;
+  }, [columns]);
 
   // Cell editing state
   const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
@@ -400,7 +463,7 @@ export default function RateioTabV2({
                       {pieceGroups.map((group, gIdx) => (
                         <th 
                           key={gIdx} 
-                          colSpan={group.pieces.length} 
+                          colSpan={group.items.length} 
                           className="bg-stone-50 border-b border-r border-stone-200 text-[10px] font-bold text-stone-500 py-1 text-center uppercase tracking-widest"
                         >
                           {group.label}
@@ -413,15 +476,16 @@ export default function RateioTabV2({
                         <div className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">Loja</div>
                         <div className="text-[10px] text-stone-400 font-medium leading-tight">Total de peças distribuídas por ponto de venda</div>
                       </th>
-                      {filteredPieces.map(piece => {
-                        const isKit = pieces.some(p => p.kit_only && kitPieces.some(kp => kp.piece_id === piece.id && kits.some(k => k.id === kp.kit_id)));
+                      {columns.map((col) => {
+                        const isKit = col._type === "kit";
+                        const img = col.image_url || col.image_report_url || undefined;
                         return (
-                          <th key={piece.id} className="w-[100px] p-2 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50">
+                          <th key={`${col._type}-${col.id}`} className="w-[100px] p-2 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50">
                             <div className="flex flex-col items-center gap-1.5">
-                              {piece.image_url ? (
+                              {img ? (
                                 <img 
-                                  src={piece.image_url} 
-                                  alt={piece.name} 
+                                  src={img} 
+                                  alt={col.name} 
                                   className="w-12 h-12 rounded-lg object-cover border border-stone-100 shadow-sm" 
                                 />
                               ) : (
@@ -429,12 +493,12 @@ export default function RateioTabV2({
                                   <Table2 className="w-4 h-4 text-stone-300" />
                                 </div>
                               )}
-                              <div className="text-sm font-black text-stone-900 leading-none">{piece.code}</div>
+                              <div className="text-sm font-black text-stone-900 leading-none">{col.code}</div>
                               {isKit && (
                                 <div className="text-[9px] font-bold text-[#C2714F] leading-none uppercase">KIT</div>
                               )}
                               <div className="text-[10px] text-stone-500 font-medium line-clamp-2 leading-tight text-center px-1">
-                                {piece.name}
+                                {col.name}
                               </div>
                             </div>
                           </th>
@@ -472,19 +536,23 @@ export default function RateioTabV2({
                             </div>
                           </div>
                         </td>
-                        {filteredPieces.map(piece => {
-                          const val = qtyMap[`${store.id}-${piece.id}`] || 0;
-                          const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === piece.id;
-                          
+                        {columns.map((col) => {
+                          const isKit = col._type === "kit";
+                          const val = isKit
+                            ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
+                            : (qtyMap[`${store.id}-${col.id}`] || 0);
+                          const isEditing = !isKit && editingCell?.storeId === store.id && editingCell?.pieceId === col.id;
+
                           return (
                             <td 
-                              key={piece.id} 
+                              key={`${col._type}-${col.id}`} 
                               className={cn(
-                                "border-r border-b border-stone-100 text-center transition-all cursor-pointer",
-                                val > 0 ? "bg-stone-50/30" : "bg-white",
+                                "border-r border-b border-stone-100 text-center transition-all",
+                                isKit ? "cursor-default bg-[#C2714F]/[0.03]" : "cursor-pointer",
+                                val > 0 && !isKit ? "bg-stone-50/30" : "",
                                 isEditing && "ring-2 ring-inset ring-[#C2714F] z-10"
                               )}
-                              onClick={() => startEditing(store.id, piece.id, val)}
+                              onClick={() => !isKit && startEditing(store.id, col.id, val)}
                             >
                               {isEditing ? (
                                 <input
@@ -499,7 +567,9 @@ export default function RateioTabV2({
                               ) : (
                                 <div className={cn(
                                   "w-full h-full min-h-[48px] flex items-center justify-center text-xs transition-all",
-                                  val > 0 ? "text-stone-900 font-black scale-110" : "text-stone-200 font-medium"
+                                  val > 0 
+                                    ? (isKit ? "text-[#C2714F] font-black" : "text-stone-900 font-black scale-110") 
+                                    : "text-stone-200 font-medium"
                                 )}>
                                   {val > 0 ? val : "—"}
                                 </div>
@@ -520,7 +590,7 @@ export default function RateioTabV2({
                     {filteredStores.length} {t("rateio.stores", "loja(s)")}
                   </div>
                   <div>
-                    {filteredPieces.length} {t("pieces.pieceCountShort", "peça(s)")}
+                    {columns.length} {t("pieces.pieceCountShort", "peça(s)")}
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
