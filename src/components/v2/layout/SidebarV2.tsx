@@ -356,48 +356,115 @@ export function SidebarV2() {
             ))}
           </div>
 
-          {/* Context Section (Campaign or Client) */}
-          {(campaignId || clientId) && !collapsed && (
-            <div className="space-y-1 pt-2">
-              <div 
-                className="px-3 py-1 flex items-center justify-between cursor-pointer group"
-                onClick={() => campaignId ? setExpandedCampaign(!expandedCampaign) : setExpandedClient(!expandedClient)}
-              >
-                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 group-hover:text-stone-300">
-                  {campaignId ? t("sidebar.campaign", "Campanha") : t("sidebar.client", "Cliente")}
-                </span>
-                <ChevronDown className={cn("w-3 h-3 text-stone-500 transition-transform", (campaignId ? expandedCampaign : expandedClient) ? "" : "-rotate-90")} />
+          {/* Context Hierarchy (Breadcrumb style) */}
+          {(agencyId || clientId || campaignId) && !collapsed && (
+            <div className="px-3 py-2 border-b border-stone-800 mb-2">
+              <div className="text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1">
+                Contexto
               </div>
-              
-              {campaignId && expandedCampaign && (
-                <div className="space-y-1">
-                  <div className="px-3 py-1 text-xs font-medium text-stone-300 truncate mb-1">
-                    {campaignData?.name || "..."}
+              <div className="flex flex-col gap-0.5 text-xs">
+                {agencyData?.name && (
+                  <button 
+                    onClick={() => navigate(`/agency/${agencyId}`)}
+                    className="text-stone-400 hover:text-white text-left truncate"
+                  >
+                    {agencyData.name}
+                  </button>
+                )}
+                {clientData?.name && (
+                  <button 
+                    onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}`)}
+                    className="text-stone-300 hover:text-white text-left truncate flex items-center gap-1"
+                  >
+                    <ChevronRight className="w-3 h-3 flex-shrink-0" />
+                    {clientData.name}
+                  </button>
+                )}
+                {campaignData?.name && (
+                  <div className="text-brand-400 font-medium truncate flex items-center gap-1">
+                    <ChevronRight className="w-3 h-3 flex-shrink-0" />
+                    {campaignData.name}
                   </div>
-                  {campaignModules.map((mod) => (
-                    <NavItem key={mod.key} item={mod} isSubItem />
-                  ))}
-                </div>
-              )}
-
-              {clientId && !campaignId && expandedClient && (
-                <div className="space-y-1">
-                  <div className="px-3 py-1 text-xs font-medium text-stone-300 truncate mb-1">
-                    {clientData?.name || "..."}
-                  </div>
-                  {clientModules.map((mod) => (
-                    <NavItem key={mod.label} item={mod} isSubItem />
-                  ))}
-                </div>
-              )}
+                )}
+              </div>
             </div>
           )}
+
+          {/* Agency Context: List Clients */}
+          {agencyId && !clientId && !isLimited && !collapsed && (
+            <div className="space-y-1">
+              <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                {t("sidebar.clients")}
+              </div>
+              <NavItem 
+                item={{ label: t("sidebar.clients"), icon: Briefcase, route: `/agency/${agencyId}` }} 
+                activeOverride={location.pathname === `/agency/${agencyId}`}
+              />
+            </div>
+          )}
+
+          {/* Client Context: Stores, Emails, Campaigns */}
+          {clientId && !campaignId && !isLimited && !collapsed && (
+            <div className="space-y-1">
+              <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                Menu do Cliente
+              </div>
+              <NavItem 
+                item={{ label: t("sidebar.campaigns"), icon: Megaphone, route: `/agency/${agencyId}/clients/${clientId}` }} 
+                activeOverride={location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=")}
+              />
+              <NavItem 
+                item={{ label: t("modules.stores"), icon: Store, route: `/agency/${agencyId}/clients/${clientId}?tab=stores` }} 
+                activeOverride={location.search.includes("tab=stores")}
+              />
+              <NavItem 
+                item={{ label: "E-mails", icon: Mail, route: `/agency/${agencyId}/clients/${clientId}?tab=emails` }} 
+                activeOverride={location.search.includes("tab=emails")}
+              />
+              
+              <div className="pt-2">
+                <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                  {t("sidebar.campaigns")}
+                </div>
+                <div className="space-y-1 mt-1">
+                  {clientCampaigns.map(camp => (
+                    <CampaignItem key={camp.id} camp={camp} agencyId={agencyId!} clientId={clientId!} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Campaign Context: Modules */}
+          {campaignId && !collapsed && (
+            <div className="space-y-1">
+              <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                Módulos da Campanha
+              </div>
+              <CampaignItem camp={campaignData} agencyId={agencyId!} clientId={clientId!} />
+            </div>
+          )}
+
+          {/* Limited User: List allowed clients/campaigns */}
+          {isLimited && !collapsed && limitedClientGroups.map(group => (
+            <div key={group.clientId} className="pt-2">
+              <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-400">
+                {group.clientName}
+              </div>
+              <div className="space-y-1 mt-1">
+                {group.campaigns.map(camp => (
+                  <CampaignItem key={camp.campaignId} camp={{ ...camp, id: camp.campaignId, name: camp.campaignName }} agencyId={group.agencyId} clientId={group.clientId} />
+                ))}
+              </div>
+            </div>
+          ))}
 
           {/* Admin Section */}
           {isAdminOrMaster && (
             <div className="space-y-1 pt-2">
               {!collapsed && (
                 <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
+
                   {t("sidebar.section_admin", "Administração")}
                 </div>
               )}
