@@ -40,7 +40,7 @@ export default function OccurrencesPortal() {
     },
   });
 
-  const { data: tokens, isLoading: loadingTokens } = useQuery({
+  const { data: tokensData, isLoading: loadingTokens } = useQuery({
     queryKey: ["occ-portal-stores-v2", campaignId],
     enabled: !!campaignId,
     queryFn: async () => {
@@ -63,27 +63,28 @@ export default function OccurrencesPortal() {
 
       const tokenMap = new Map(existingTokens?.map(t => [t.store_id, t.token]) || []);
 
-      // Dedup stores (a store can have multiple rows in loja_a_loja_lojas for different pieces, though usually not)
-      const uniqueStores = new Map<string, any>();
+      // Dedup stores
+      const uniqueStoresMap = new Map<string, any>();
       (lojas || []).forEach((l: any) => {
-        if (l.client_stores && !uniqueStores.has(l.store_id)) {
-          uniqueStores.set(l.store_id, l.client_stores);
+        if (l.client_stores && !uniqueStoresMap.has(l.store_id)) {
+          uniqueStoresMap.set(l.store_id, l.client_stores);
         }
       });
 
-      const uniqueStores = Array.from(uniqueStoresMap.values());
-      const tokensList = uniqueStores.map(store => ({
+      const uniqueStoresList = Array.from(uniqueStoresMap.values());
+      const tokensList = uniqueStoresList.map(store => ({
         token: tokenMap.get(store.id) || null,
         client_stores: store
       })) as StoreToken[];
 
       return {
         tokens: tokensList,
-        hasStores: uniqueStores.length > 0,
+        hasStores: uniqueStoresList.length > 0,
         hasTokens: tokensList.some(t => t.token !== null)
       };
     },
   });
+
 
   const isLoading = loadingConfig || loadingTokens;
   const title = config?.occurrences_portal_title || t("occurrences.portal.title");
