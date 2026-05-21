@@ -94,7 +94,11 @@ export default function OccurrencesPortal() {
   const deadline = config?.deadline_ocorrencias ? new Date(config.deadline_ocorrencias) : null;
   const isDeadlinePassed = deadline && isAfter(new Date(), deadline);
 
+  const { user } = useAuth();
+  const isPublic = !user;
+
   const handleGoToStores = () => {
+    if (isPublic) return;
     const pathParts = window.location.pathname.split("/");
     const agencyId = pathParts[2];
     const clientId = pathParts[4];
@@ -155,9 +159,9 @@ export default function OccurrencesPortal() {
             ))}
           </div>
         ) : !hasStores ? (
-          <OccurrencesPortalEmptyState type="no-stores" onGoToStores={handleGoToStores} />
+          <OccurrencesPortalEmptyState type="no-stores" onGoToStores={!isPublic ? handleGoToStores : undefined} />
         ) : isModuleDisabled || !hasTokens ? (
-          <OccurrencesPortalEmptyState type="no-access" onGoToStores={handleGoToStores} />
+          <OccurrencesPortalEmptyState type="no-access" onGoToStores={!isPublic ? handleGoToStores : undefined} />
         ) : isDeadlinePassed ? (
           <OccurrencesPortalEmptyState type="deadline-passed" />
         ) : tokens.length === 0 ? (
