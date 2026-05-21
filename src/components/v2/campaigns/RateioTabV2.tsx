@@ -175,7 +175,7 @@ export default function RateioTabV2({
       .filter((p: any) => {
         if (pieceFilters.category.size > 0 && !pieceFilters.category.has(p.category)) return false;
         if (pieceFilters.name.size > 0 && !pieceFilters.name.has(p.name)) return false;
-        if (pieceFilters.store_category.size > 0 && !pieceFilters.store_category.has(p.store_category)) return false;
+        if (pieceFilters.store_category.size > 0 && !pieceFilters.store_category.has((p.store_category || "").toUpperCase())) return false;
         return true;
       })
       .map((p: any) => ({
