@@ -646,6 +646,28 @@ export default function RateioTabV2({
                       </tr>
                     ))}
                   </tbody>
+                  {/* Table Footer with Totals */}
+                  <tfoot className="sticky bottom-0 z-30 bg-stone-50 shadow-[0_-1px_0_0_rgba(0,0,0,0.05)]">
+                    <tr>
+                      <td className="sticky left-0 z-20 bg-stone-50 border-r border-t border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">
+                        <div className="text-xs font-black text-stone-900 uppercase tracking-widest text-right pr-4">TOTAL</div>
+                      </td>
+                      {columns.map((col) => {
+                        const total = columnTotals[`${col._type}-${col.id}`] || 0;
+                        return (
+                          <td 
+                            key={`total-${col._type}-${col.id}`} 
+                            className={cn(
+                              "border-r border-t border-stone-200 text-center py-3 px-2 text-xs font-black",
+                              total === 0 ? "bg-red-500 text-white" : "bg-stone-50 text-stone-900"
+                            )}
+                          >
+                            {total}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
               
