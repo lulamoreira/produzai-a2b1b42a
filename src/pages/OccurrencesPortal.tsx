@@ -1,10 +1,13 @@
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Store as StoreIcon, AlertTriangle, Clock } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { isAfter } from "date-fns";
+import { OccurrencesPortalEmptyState } from "@/components/v2/campaigns/OccurrencesPortalEmptyState";
+import { useTranslation } from "react-i18next";
+
 
 interface StoreToken {
   token: string | null;
@@ -19,6 +22,9 @@ interface StoreToken {
 
 export default function OccurrencesPortal() {
   const { campaignId } = useParams<{ campaignId: string }>();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+
 
   const { data: config, isLoading: loadingConfig } = useQuery({
     queryKey: ["occ-portal-config", campaignId],
@@ -65,20 +71,39 @@ export default function OccurrencesPortal() {
         }
       });
 
-      return Array.from(uniqueStores.values()).map(store => ({
+      const uniqueStores = Array.from(uniqueStoresMap.values());
+      const tokensList = uniqueStores.map(store => ({
         token: tokenMap.get(store.id) || null,
         client_stores: store
       })) as StoreToken[];
+
+      return {
+        tokens: tokensList,
+        hasStores: uniqueStores.length > 0,
+        hasTokens: tokensList.some(t => t.token !== null)
+      };
     },
   });
 
   const isLoading = loadingConfig || loadingTokens;
-  const title = config?.occurrences_portal_title || "Portal de Ocorrências";
-  const subtitle = config?.occurrences_portal_subtitle || "Selecione sua loja para registrar uma ocorrência";
+  const title = config?.occurrences_portal_title || t("occurrences.portal.title");
+  const subtitle = config?.occurrences_portal_subtitle || t("occurrences.portal.subtitle");
   
   const isModuleDisabled = config && config.module_ocorrencias === false;
   const deadline = config?.deadline_ocorrencias ? new Date(config.deadline_ocorrencias) : null;
   const isDeadlinePassed = deadline && isAfter(new Date(), deadline);
+
+  const handleGoToStores = () => {
+    const pathParts = window.location.pathname.split("/");
+    const agencyId = pathParts[2];
+    const clientId = pathParts[4];
+    navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}?section=loja_a_loja&tab=lojas`);
+  };
+
+  const tokens = tokensData?.tokens || [];
+  const hasStores = tokensData?.hasStores;
+  const hasTokens = tokensData?.hasTokens;
+
 
   // Group by state -> city
   const grouped = (tokens ?? []).reduce<Record<string, Record<string, StoreToken[]>>>((acc, t) => {
@@ -128,9 +153,16 @@ export default function OccurrencesPortal() {
               <Skeleton key={i} className="h-24" />
             ))}
           </div>
-        ) : !tokens || tokens.length === 0 ? (
+        ) : !hasStores ? (
+          <OccurrencesPortalEmptyState type="no-stores" onGoToStores={handleGoToStores} />
+        ) : isModuleDisabled || !hasTokens ? (
+          <OccurrencesPortalEmptyState type="no-access" onGoToStores={handleGoToStores} />
+        ) : isDeadlinePassed ? (
+          <OccurrencesPortalEmptyState type="deadline-passed" />
+        ) : tokens.length === 0 ? (
           <div className="text-center py-16 text-muted-foreground">Nenhuma loja disponível.</div>
         ) : (
+
           <div className="space-y-8">
             {sortedStates.map((state) => {
               const cities = Object.keys(grouped[state]).sort((a, b) => a.localeCompare(b, "pt-BR"));
