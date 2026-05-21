@@ -30,6 +30,8 @@ import TabErrorBoundary from "@/components/campaigns/TabErrorBoundary";
 import { useUIVersion } from "@/hooks/useUIVersion";
 import RateioTabV2 from "@/components/v2/campaigns/RateioTabV2";
 import { useActiveAdjustment } from "@/hooks/useAdjustments";
+import { useAdjustmentRateio } from "@/hooks/useAdjustmentRateio";
+import { useNegotiationStorePieces } from "@/hooks/useNegotiationStorePieces";
 import OccurrencesPortalV2 from "@/pages/v2/OccurrencesPortalV2";
 import OccurrencesPortal from "@/pages/OccurrencesPortal";
 
@@ -153,6 +155,35 @@ const CampaignDetail = () => {
   const resolvedRateioSource = rateioSource ?? vigenteSource;
   const isViewingVigente = resolvedRateioSource === vigenteSource;
 
+  // ─── Rateio data overlays per source ───
+  // Adjustment overlay: uses campaign_adjustment_store_pieces remapped to base piece ids.
+  const { data: adjustmentRateio } = useAdjustmentRateio(
+    resolvedRateioSource === "adjustment" ? activeAdjustment?.id : null,
+  );
+  // Negotiation overlay: budget_negotiation_store_pieces is already keyed by base piece_id.
+  const { data: negotiationRows = [] } = useNegotiationStorePieces(
+    resolvedRateioSource === "negotiation" ? winnerSupplierId : null,
+    campaignId,
+    resolvedRateioSource === "negotiation",
+  );
+
+  // Pick the qtyMap that matches the currently selected rateio source so the
+  // matrix shows the correct quantities for Original / Negociação / Ajuste.
+  const matrixQtyMap = useMemo(() => {
+    if (resolvedRateioSource === "adjustment" && adjustmentRateio?.qtyMap) {
+      return adjustmentRateio.qtyMap;
+    }
+    if (resolvedRateioSource === "negotiation") {
+      const map: Record<string, number> = {};
+      for (const row of negotiationRows as any[]) {
+        map[`${row.store_id}-${row.piece_id}`] = Number(row.quantity) || 0;
+      }
+      return map;
+    }
+    return qtyMap;
+  }, [resolvedRateioSource, adjustmentRateio, negotiationRows, qtyMap]);
+
+
 
   if (loadingCampaign) return <div className="flex h-screen items-center justify-center">Carregando...</div>;
   if (!campaign) return <div className="flex h-screen items-center justify-center">Campanha não encontrada</div>;
@@ -210,7 +241,7 @@ const CampaignDetail = () => {
               {version === "v2" ? (
                 <RateioTabV2 
                   campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
-                  pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
+                  pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={matrixQtyMap}
                   canEditCampaignStores={true} 
                   activeAdjustment={activeAdjustment} 
                   hasNegotiationRateio={hasNegotiationRateio}
@@ -229,7 +260,7 @@ const CampaignDetail = () => {
               ) : (
                 <MatrixTab 
                   campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
-                  pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
+                  pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={matrixQtyMap}
                   canEditCampaignStores={true} 
                   activeAdjustment={activeAdjustment} 
                   hasNegotiationRateio={hasNegotiationRateio}
