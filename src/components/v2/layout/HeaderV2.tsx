@@ -2,7 +2,7 @@ import React from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
-import { ChevronRight, Palette, Sun, Moon, Laptop, Check } from "lucide-react";
+import { ChevronRight, Palette, Sun, Moon, Laptop, Check, Languages } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import NotificationBell from "@/components/NotificationBell";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -14,6 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { SUPPORTED_LANGUAGES } from "@/i18n";
 
 export function HeaderV2() {
   const { theme, setTheme } = useV2Theme();
@@ -58,7 +59,6 @@ export function HeaderV2() {
       crumbs.push({ label: t("sidebar.agencies"), path: "/agencies" });
       
       if (params.clientId) {
-        // Here we could fetch client name too if needed, but for now just label
         crumbs.push({ label: t("sidebar.clients") });
       }
 
@@ -71,7 +71,6 @@ export function HeaderV2() {
       }
     }
 
-    // Truncate if more than 3
     if (crumbs.length > 3) {
       return [crumbs[0], { label: "..." }, crumbs[crumbs.length - 1]];
     }
@@ -122,16 +121,39 @@ export function HeaderV2() {
       </div>
 
       <div className="flex items-center gap-2 flex-shrink-0">
-        <select 
-          value={currentLanguage} 
-          onChange={(e) => changeLanguage(e.target.value as any)}
-          className="text-xs bg-transparent border-none focus:ring-0 cursor-pointer"
-          style={{ color: 'var(--v2-text-secondary)' }}
-        >
-          <option value="pt-BR">PT</option>
-          <option value="en">EN</option>
-          <option value="es">ES</option>
-        </select>
+        <Popover>
+          <PopoverTrigger asChild>
+            <button 
+              className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-stone-100 transition-colors"
+              style={{ color: 'var(--v2-text-secondary)' }}
+            >
+              <Languages className="w-5 h-5" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48 p-2" align="end" style={{ background: 'var(--v2-surface)', borderColor: 'var(--v2-border)' }}>
+            <div className="flex flex-col gap-1">
+              {SUPPORTED_LANGUAGES.map((lang) => (
+                <button
+                  key={lang.code}
+                  onClick={() => changeLanguage(lang.code as any)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors hover:bg-stone-50",
+                    currentLanguage === lang.code ? "font-medium" : ""
+                  )}
+                  style={{ 
+                    color: currentLanguage === lang.code ? 'var(--v2-accent)' : 'var(--v2-text-secondary)' 
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="text-base">{lang.flag}</span>
+                    {lang.label}
+                  </div>
+                  {currentLanguage === lang.code && <Check className="w-4 h-4" />}
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
 
         <Popover>
           <PopoverTrigger asChild>
