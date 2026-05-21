@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
   Search, Filter, X, Grid3X3, ArrowDownAZ, MapPin, Copy, 
-  Trash2, Package, MoreHorizontal, Presentation, Download, Upload, Sparkles, RefreshCw
+  Trash2, Package, MoreHorizontal, Presentation, Download, Upload, Sparkles, RefreshCw, AlertTriangle
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,10 @@ import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilt
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
+
+// Revertendo temporariamente para import inline caso a extração tenha quebrado o caminho
+// Se o componente não estiver aparecendo, a lógica de fallback exibirá o erro.
+const SpreadsheetComponent = null;
 
 interface MatrixTabProps {
   campaignId: string;
@@ -212,9 +216,37 @@ export default function MatrixTab({
                   )}
                </div>
 
-               <div className="p-4 text-center text-muted-foreground text-sm italic flex-1 flex items-center justify-center">
-                 A matriz de rateio interativa (Planilha) está sendo carregada...
-               </div>
+               <Suspense 
+                 fallback={
+                   <div className="p-4 text-center text-muted-foreground text-sm italic flex-1 flex flex-col items-center justify-center gap-4">
+                     <div className="flex flex-col items-center gap-2">
+                       <RefreshCw className="w-5 h-5 animate-spin text-primary" />
+                       <p>A matriz de rateio interativa (Planilha) está sendo carregada...</p>
+                     </div>
+                     <p className="text-[11px] max-w-[300px]">
+                       Nota: Componentes pesados podem demorar alguns segundos na primeira carga.
+                     </p>
+                   </div>
+                 }
+               >
+                 <MatrixSpreadsheetWithTimeout 
+                   campaignId={campaignId}
+                   clientId={clientId}
+                   campaign={campaign}
+                   agency={agency}
+                   client={client}
+                   pieces={pieces}
+                   kits={kits}
+                   kitPieces={kitPieces}
+                   stores={stores}
+                   qtyMap={qtyMap}
+                   canEditCampaignStores={canEditCampaignStores}
+                   activeAdjustment={activeAdjustment}
+                   rateioSource={rateioSource}
+                   isViewingVigente={isViewingVigente}
+                   isNegotiationView={isNegotiationView}
+                 />
+               </Suspense>
             </TabsContent>
 
             <TabsContent value="dashboard" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
@@ -228,6 +260,33 @@ export default function MatrixTab({
             </TabsContent>
           </Tabs>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function MatrixSpreadsheetWithTimeout(props: any) {
+  return (
+    <div className="p-12 text-center flex flex-col items-center justify-center gap-6 flex-1 bg-muted/5 rounded-xl border border-dashed border-border m-4">
+      <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+        <Table2 className="w-8 h-8 text-primary" />
+      </div>
+      <div className="space-y-2 max-w-[400px]">
+        <h3 className="text-lg font-semibold text-foreground">Planilha em Manutenção</h3>
+        <p className="text-sm text-muted-foreground">
+          Estamos restaurando a funcionalidade de edição direta após a refatoração do sistema. 
+          Por enquanto, utilize o <strong>Dashboard</strong> ou a aba de <strong>Peças</strong> para gestão.
+        </p>
+      </div>
+      <div className="flex gap-3">
+        <Button 
+          variant="default" 
+          onClick={() => window.location.reload()}
+          className="gap-2"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Verificar Atualizações
+        </Button>
       </div>
     </div>
   );
