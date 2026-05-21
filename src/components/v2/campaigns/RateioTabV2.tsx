@@ -536,19 +536,23 @@ export default function RateioTabV2({
                             </div>
                           </div>
                         </td>
-                        {filteredPieces.map(piece => {
-                          const val = qtyMap[`${store.id}-${piece.id}`] || 0;
-                          const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === piece.id;
-                          
+                        {columns.map((col) => {
+                          const isKit = col._type === "kit";
+                          const val = isKit
+                            ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
+                            : (qtyMap[`${store.id}-${col.id}`] || 0);
+                          const isEditing = !isKit && editingCell?.storeId === store.id && editingCell?.pieceId === col.id;
+
                           return (
                             <td 
-                              key={piece.id} 
+                              key={`${col._type}-${col.id}`} 
                               className={cn(
-                                "border-r border-b border-stone-100 text-center transition-all cursor-pointer",
-                                val > 0 ? "bg-stone-50/30" : "bg-white",
+                                "border-r border-b border-stone-100 text-center transition-all",
+                                isKit ? "cursor-default bg-[#C2714F]/[0.03]" : "cursor-pointer",
+                                val > 0 && !isKit ? "bg-stone-50/30" : "",
                                 isEditing && "ring-2 ring-inset ring-[#C2714F] z-10"
                               )}
-                              onClick={() => startEditing(store.id, piece.id, val)}
+                              onClick={() => !isKit && startEditing(store.id, col.id, val)}
                             >
                               {isEditing ? (
                                 <input
@@ -563,7 +567,9 @@ export default function RateioTabV2({
                               ) : (
                                 <div className={cn(
                                   "w-full h-full min-h-[48px] flex items-center justify-center text-xs transition-all",
-                                  val > 0 ? "text-stone-900 font-black scale-110" : "text-stone-200 font-medium"
+                                  val > 0 
+                                    ? (isKit ? "text-[#C2714F] font-black" : "text-stone-900 font-black scale-110") 
+                                    : "text-stone-200 font-medium"
                                 )}>
                                   {val > 0 ? val : "—"}
                                 </div>
