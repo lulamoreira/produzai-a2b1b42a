@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { useLocation, NavLink, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { 
   ChevronLeft, 
   ChevronRight, 
@@ -11,14 +13,16 @@ import {
   Home, 
   Building2, 
   Star, 
-  Settings, 
   Users, 
   CheckSquare,
   Database,
-  Briefcase
+  Megaphone,
+  Store,
+  Mail,
+  ChevronDown
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { 
   Tooltip,
@@ -26,9 +30,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { CAMPAIGN_MODULES, MODULE_ICONS } from "@/lib/sidebarRegistry";
 
 export function SidebarV2() {
-  const navigate = useNavigate();
+  const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
   const location = useLocation();
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
@@ -39,19 +44,41 @@ export function SidebarV2() {
     return localStorage.getItem("sidebar-v2-collapsed") === "true";
   });
 
+  const [expandedCampaign, setExpandedCampaign] = useState(true);
+  const [expandedClient, setExpandedClient] = useState(true);
+
   useEffect(() => {
     localStorage.setItem("sidebar-v2-collapsed", String(collapsed));
   }, [collapsed]);
 
   const toggleSidebar = () => setCollapsed(!collapsed);
 
-  const navItems = useMemo(() => {
+  // Fetch names for context
+  const { data: campaignData } = useQuery({
+    queryKey: ["sidebar-v2-campaign", campaignId],
+    queryFn: async () => {
+      const { data } = await supabase.from("campaigns").select("name").eq("id", campaignId!).maybeSingle();
+      return data;
+    },
+    enabled: !!campaignId,
+  });
+
+  const { data: clientData } = useQuery({
+    queryKey: ["sidebar-v2-client", clientId],
+    queryFn: async () => {
+      const { data } = await supabase.from("clients").select("name").eq("id", clientId!).maybeSingle();
+      return data;
+    },
+    enabled: !!clientId && !campaignId,
+  });
+
+  const mainNavItems = useMemo(() => {
     const items = [
       {
         label: t("sidebar.home"),
         icon: Home,
         route: "/",
-        active: location.pathname === "/" || location.pathname === "/agencies" || location.pathname === "/my-campaigns",
+        exact: true,
       },
     ];
 
@@ -60,7 +87,7 @@ export function SidebarV2() {
         label: t("sidebar.agencies"),
         icon: Building2,
         route: "/agencies",
-        active: location.pathname === "/agencies",
+        exact: false,
       });
     }
 
@@ -68,36 +95,124 @@ export function SidebarV2() {
       label: t("sidebar.favorites"),
       icon: Star,
       route: "/favorites",
-      active: location.pathname === "/favorites",
+      exact: false,
     });
 
-    if (isAdminOrMaster) {
-      items.push({
+    return items;
+  }, [isAdminOrMaster, t]);
+
+  const adminItems = useMemo(() => {
+    if (!isAdminOrMaster) return [];
+    const items = [
+      {
         label: t("sidebar.admin_users", "Usuários"),
         icon: Users,
         route: "/admin",
-        active: location.pathname === "/admin",
-      });
-      items.push({
+      },
+      {
         label: t("sidebar.approvals"),
         icon: CheckSquare,
         route: "/approvals",
-        active: location.pathname === "/approvals",
+      },
+    ];
+    if (isAdmin) {
+      items.push({
+        label: "Backup",
+        icon: Database,
+        route: "/admin?tab=backup",
       });
-      if (isAdmin) {
-        items.push({
-          label: "Backup",
-          icon: Database,
-          route: "/admin?tab=backup",
-          active: location.search.includes("tab=backup"),
-        });
-      }
     }
-
     return items;
-  }, [location, isAdminOrMaster, isAdmin, t]);
+  }, [isAdminOrMaster, isAdmin, t]);
+
+  const campaignModules = useMemo(() => {
+    if (!campaignId || !agencyId || !clientId) return [];
+    
+    return CAMPAIGN_MODULES.filter(mod => {
+      if (mod.requires === "admin_or_master" && !isAdminOrMaster) return false;
+      if (mod.hideForLimited && isLimited) return false;
+      return true;
+    }).map(mod => ({
+      key: mod.key,
+      label: t(mod.labelKey, mod.label),
+      icon: MODULE_ICONS[mod.icon],
+      route: `/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}?section=${mod.key}`,
+      active: new URLSearchParams(location.search).get("section") === mod.key
+    }));
+  }, [campaignId, agencyId, clientId, isAdminOrMaster, isLimited, t, location.search]);
+
+  const clientModules = useMemo(() => {
+    if (!clientId || !agencyId || campaignId) return [];
+    return [
+      {
+        label: t("sidebar.campaigns", "Campanhas"),
+        icon: Megaphone,
+        route: `/agency/${agencyId}/clients/${clientId}`,
+        active: !location.search.includes("tab=")
+      },
+      {
+        label: t("sidebar.stores", "Lojas"),
+        icon: Store,
+        route: `/agency/${agencyId}/clients/${clientId}?tab=stores`,
+        active: location.search.includes("tab=stores")
+      },
+      {
+        label: t("sidebar.emails", "E-mails"),
+        icon: Mail,
+        route: `/agency/${agencyId}/clients/${clientId}?tab=emails`,
+        active: location.search.includes("tab=emails")
+      }
+    ];
+  }, [clientId, agencyId, campaignId, t, location.search]);
 
   const userInitial = user?.email?.[0]?.toUpperCase() || "U";
+
+  const NavItem = ({ item, isSubItem = false }: { item: any, isSubItem?: boolean }) => {
+    const isActive = item.active !== undefined ? item.active : (item.exact ? location.pathname === item.route : location.pathname.startsWith(item.route));
+    
+    const content = (
+      <NavLink
+        to={item.route}
+        className={cn(
+          "w-full flex items-center gap-3 py-2 px-3 transition-all duration-200 group relative",
+          isSubItem ? "pl-9 text-xs" : "text-sm font-medium",
+          isActive
+            ? "bg-stone-800 text-white border-l-2 border-brand-400 rounded-r-lg"
+            : "text-stone-300 hover:bg-stone-800/60 hover:text-white rounded-lg"
+        )}
+      >
+        {item.icon && (
+          <item.icon
+            className={cn(
+              isSubItem ? "w-3.5 h-3.5" : "w-5 h-5",
+              "flex-shrink-0 transition-colors",
+              isActive ? "text-brand-400" : "text-stone-400 group-hover:text-stone-200"
+            )}
+          />
+        )}
+        {!collapsed && (
+          <span className="truncate">
+            {item.label}
+          </span>
+        )}
+      </NavLink>
+    );
+
+    if (collapsed && !isSubItem) {
+      return (
+        <Tooltip delayDuration={0}>
+          <TooltipTrigger asChild>
+            {content}
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            {item.label}
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+
+    return content;
+  };
 
   return (
     <aside
@@ -109,7 +224,7 @@ export function SidebarV2() {
       {/* Logo Area */}
       <div className="h-14 flex items-center justify-between px-4 border-b border-stone-700">
         {!collapsed && (
-          <span className="text-white font-semibold text-sm">ProduzAI</span>
+          <span className="text-white font-semibold text-sm tracking-tight">ProduzAI</span>
         )}
         <Button
           variant="ghost"
@@ -126,45 +241,65 @@ export function SidebarV2() {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 py-4 px-3 space-y-4 overflow-y-auto custom-scrollbar">
         <TooltipProvider delayDuration={0}>
-          {navItems.map((item) => (
-            <Tooltip key={item.label} disableHoverableContent={!collapsed}>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => navigate(item.route)}
-                  className={cn(
-                    "w-full flex items-center gap-3 py-2 px-3 transition-all duration-200 group",
-                    item.active
-                      ? "bg-stone-800 border-l-2 border-brand-400 rounded-r-lg"
-                      : "hover:bg-stone-800/60 rounded-lg"
-                  )}
-                >
-                  <item.icon
-                    className={cn(
-                      "w-5 h-5 flex-shrink-0 transition-colors",
-                      item.active ? "text-brand-400" : "text-stone-400 group-hover:text-stone-200"
-                    )}
-                  />
-                  {!collapsed && (
-                    <span
-                      className={cn(
-                        "text-sm font-medium transition-colors",
-                        item.active ? "text-white" : "text-stone-300 group-hover:text-white"
-                      )}
-                    >
-                      {item.label}
-                    </span>
-                  )}
-                </button>
-              </TooltipTrigger>
-              {collapsed && (
-                <TooltipContent side="right">
-                  {item.label}
-                </TooltipContent>
+          {/* Main Nav */}
+          <div className="space-y-1">
+            {mainNavItems.map((item) => (
+              <NavItem key={item.label} item={item} />
+            ))}
+          </div>
+
+          {/* Context Section (Campaign or Client) */}
+          {(campaignId || clientId) && !collapsed && (
+            <div className="space-y-1 pt-2">
+              <div 
+                className="px-3 py-1 flex items-center justify-between cursor-pointer group"
+                onClick={() => campaignId ? setExpandedCampaign(!expandedCampaign) : setExpandedClient(!expandedClient)}
+              >
+                <span className="text-[10px] font-bold uppercase tracking-wider text-stone-500 group-hover:text-stone-300">
+                  {campaignId ? t("sidebar.campaign", "Campanha") : t("sidebar.client", "Cliente")}
+                </span>
+                <ChevronDown className={cn("w-3 h-3 text-stone-500 transition-transform", (campaignId ? expandedCampaign : expandedClient) ? "" : "-rotate-90")} />
+              </div>
+              
+              {campaignId && expandedCampaign && (
+                <div className="space-y-1">
+                  <div className="px-3 py-1 text-xs font-medium text-stone-300 truncate mb-1">
+                    {campaignData?.name || "..."}
+                  </div>
+                  {campaignModules.map((mod) => (
+                    <NavItem key={mod.key} item={mod} isSubItem />
+                  ))}
+                </div>
               )}
-            </Tooltip>
-          ))}
+
+              {clientId && !campaignId && expandedClient && (
+                <div className="space-y-1">
+                  <div className="px-3 py-1 text-xs font-medium text-stone-300 truncate mb-1">
+                    {clientData?.name || "..."}
+                  </div>
+                  {clientModules.map((mod) => (
+                    <NavItem key={mod.label} item={mod} isSubItem />
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Admin Section */}
+          {isAdminOrMaster && (
+            <div className="space-y-1 pt-2">
+              {!collapsed && (
+                <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                  {t("sidebar.section_admin", "Administração")}
+                </div>
+              )}
+              {adminItems.map((item) => (
+                <NavItem key={item.label} item={item} />
+              ))}
+            </div>
+          )}
         </TooltipProvider>
       </nav>
 
