@@ -139,12 +139,10 @@ const CampaignDetail = () => {
   }, [activeAdjustment, hasNegotiationRateio, winnerSupplierId]);
 
   const [rateioSource, setRateioSource] = useState<RateioSource | null>(null);
-  const initializedRateioSourceRef = useRef(false);
   useEffect(() => {
     if (!rateioVersionsReady) return;
     setRateioSource((current) => {
       if (current && availableRateioSources.includes(current)) return current;
-      initializedRateioSourceRef.current = true;
       return vigenteSource;
     });
   }, [availableRateioSources, rateioVersionsReady, vigenteSource]);
@@ -214,7 +212,7 @@ const CampaignDetail = () => {
                   hasNegotiationRateio={hasNegotiationRateio}
                   winnerSupplierId={winnerSupplierId} 
                   winnerSupplierName={winnerSupplierName} 
-                  rateioSource={rateioSource}
+                  rateioSource={resolvedRateioSource}
                   setRateioSource={setRateioSource}
                   vigenteSource={vigenteSource} 
                   isViewingVigente={isViewingVigente}
@@ -233,7 +231,7 @@ const CampaignDetail = () => {
                   hasNegotiationRateio={hasNegotiationRateio}
                   winnerSupplierId={winnerSupplierId} 
                   winnerSupplierName={winnerSupplierName} 
-                  rateioSource={rateioSource}
+                  rateioSource={resolvedRateioSource}
                   setRateioSource={setRateioSource}
                   vigenteSource={vigenteSource} 
                   isViewingVigente={isViewingVigente}
