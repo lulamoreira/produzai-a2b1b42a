@@ -84,6 +84,19 @@ export default function RateioTabV2({
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
   const [filterLogicMode, setFilterLogicMode] = useState<FilterLogicMode>("and");
+  
+  // Sorting state
+  const [sortConfig, setSortConfig] = useState<{ key: "name" | "state"; direction: "asc" | "desc" } | null>(null);
+
+  const toggleSort = (key: "name" | "state") => {
+    setSortConfig(prev => {
+      if (prev?.key === key) {
+        if (prev.direction === "asc") return { key, direction: "desc" };
+        return null; // Reset sort
+      }
+      return { key, direction: "asc" };
+    });
+  };
 
   // Excel-like tabs state
   const storageKey = `rateio-active-tab-${campaignId}`;
@@ -110,7 +123,7 @@ export default function RateioTabV2({
 
   // Filter stores
   const filteredStores = useMemo(() => {
-    return stores.filter(s => {
+    let result = stores.filter(s => {
       const q = storeSearch.toLowerCase();
       const matchesSearch = !q || 
         s.name?.toLowerCase().includes(q) || 
@@ -125,7 +138,20 @@ export default function RateioTabV2({
       
       return matchesSearch;
     });
-  }, [stores, storeSearch, storeFilters]);
+
+    if (sortConfig) {
+      result = [...result].sort((a, b) => {
+        const valA = (a[sortConfig.key] || "").toString().toLowerCase();
+        const valB = (b[sortConfig.key] || "").toString().toLowerCase();
+        
+        if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [stores, storeSearch, storeFilters, sortConfig]);
 
   // Build unified columns (pieces + kits) ordered like the Pieces module
   // (display_order, piece-before-kit on ties). Kit-only pieces are hidden.
@@ -491,44 +517,54 @@ export default function RateioTabV2({
                     {/* Piece Headers Row */}
                     <tr>
                       <th className="w-[300px] sticky left-0 z-40 bg-white p-4 border-r border-b border-stone-200 text-left align-top">
-                        <div className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">Loja</div>
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="text-xs font-bold text-stone-400 uppercase tracking-widest">Loja</div>
+                          <div className="flex items-center gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className={cn("h-6 w-6 rounded-md", sortConfig?.key === 'state' && "bg-stone-100 text-[#C2714F]")}
+                              onClick={() => toggleSort('state')}
+                              title="Ordenar por Estado"
+                            >
+                              <MapPin className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className={cn("h-6 w-6 rounded-md", sortConfig?.key === 'name' && "bg-stone-100 text-[#C2714F]")}
+                              onClick={() => toggleSort('name')}
+                              title="Ordenar por Nome"
+                            >
+                              <Tag className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
                         <div className="text-[10px] text-stone-400 font-medium leading-tight">Total de peças distribuídas por ponto de venda</div>
                       </th>
                       {columns.map((col) => {
                         const isKit = col._type === "kit";
                         const img = col.image_url || col.image_report_url || undefined;
                         return (
-                          <th key={`${col._type}-${col.id}`} className="min-w-[120px] max-w-[200px] p-0 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50">
-                            <div className="flex flex-col h-full">
-                              <div className="flex flex-col items-center gap-1.5 p-2 flex-1">
-                                {img ? (
-                                  <img 
-                                    src={img} 
-                                    alt={col.name} 
-                                    className="w-12 h-12 rounded-lg object-cover border border-stone-100 shadow-sm" 
-                                  />
-                                ) : (
-                                  <div className="w-12 h-12 rounded-lg bg-stone-100 flex items-center justify-center">
-                                    <Table2 className="w-4 h-4 text-stone-300" />
-                                  </div>
-                                )}
-                                <div className="text-sm font-black text-stone-900 leading-none">{col.code}</div>
-                                {isKit && (
-                                  <div className="text-[9px] font-bold text-[#C2714F] leading-none uppercase">KIT</div>
-                                )}
-                                <div className="text-[10px] text-stone-500 font-medium leading-tight text-center px-1 whitespace-normal break-normal line-clamp-3">
-                                  {col.name}
+                          <th key={`${col._type}-${col.id}`} className="min-w-[120px] max-w-[200px] p-2 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50">
+                            <div className="flex flex-col items-center gap-1.5">
+                              {img ? (
+                                <img 
+                                  src={img} 
+                                  alt={col.name} 
+                                  className="w-12 h-12 rounded-lg object-cover border border-stone-100 shadow-sm" 
+                                />
+                              ) : (
+                                <div className="w-12 h-12 rounded-lg bg-stone-100 flex items-center justify-center">
+                                  <Table2 className="w-4 h-4 text-stone-300" />
                                 </div>
-                              </div>
-                              
-                              {/* Column Total */}
-                              <div className={cn(
-                                "mt-auto py-1.5 px-2 text-center text-xs font-black border-t border-stone-100",
-                                columnTotals[`${col._type}-${col.id}`] === 0 
-                                  ? "bg-red-500 text-white" 
-                                  : "bg-stone-50 text-stone-900"
-                              )}>
-                                {columnTotals[`${col._type}-${col.id}`] || 0}
+                              )}
+                              <div className="text-sm font-black text-stone-900 leading-none">{col.code}</div>
+                              {isKit && (
+                                <div className="text-[9px] font-bold text-[#C2714F] leading-none uppercase">KIT</div>
+                              )}
+                              <div className="text-[10px] text-stone-500 font-medium leading-tight text-center px-1 whitespace-normal break-normal line-clamp-3">
+                                {col.name}
                               </div>
                             </div>
                           </th>
@@ -610,6 +646,28 @@ export default function RateioTabV2({
                       </tr>
                     ))}
                   </tbody>
+                  {/* Table Footer with Totals */}
+                  <tfoot className="sticky bottom-0 z-30 bg-stone-50 shadow-[0_-1px_0_0_rgba(0,0,0,0.05)]">
+                    <tr>
+                      <td className="sticky left-0 z-20 bg-stone-50 border-r border-t border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">
+                        <div className="text-xs font-black text-stone-900 uppercase tracking-widest text-right pr-4">TOTAL</div>
+                      </td>
+                      {columns.map((col) => {
+                        const total = columnTotals[`${col._type}-${col.id}`] || 0;
+                        return (
+                          <td 
+                            key={`total-${col._type}-${col.id}`} 
+                            className={cn(
+                              "border-r border-t border-stone-200 text-center py-3 px-2 text-xs font-black",
+                              total === 0 ? "bg-red-500 text-white" : "bg-stone-50 text-stone-900"
+                            )}
+                          >
+                            {total}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
               
