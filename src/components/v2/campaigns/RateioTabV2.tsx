@@ -574,7 +574,7 @@ export default function RateioTabV2({
                   </thead>
                   <tbody className="bg-white">
                     {filteredStores.map(store => (
-                      <tr key={store.id} className="group hover:bg-stone-50/50 transition-colors">
+                      <tr key={store.id} className="group even:bg-stone-50/50 hover:bg-[#C2714F]/[0.04] transition-colors">
                         <td className="sticky left-0 z-20 bg-white group-hover:bg-stone-50/50 border-r border-b border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">
                           <div className="flex items-center gap-3">
                             <div 
@@ -613,7 +613,7 @@ export default function RateioTabV2({
                             <td 
                               key={`${col._type}-${col.id}`} 
                               className={cn(
-                                "border-r border-b border-stone-100 text-center transition-all",
+                                "border-r border-b border-stone-200 text-center transition-all",
                                 isKit ? "cursor-default bg-[#C2714F]/[0.03]" : "cursor-pointer",
                                 val > 0 && !isKit ? "bg-stone-50/30" : "",
                                 isEditing && "ring-2 ring-inset ring-[#C2714F] z-10"
