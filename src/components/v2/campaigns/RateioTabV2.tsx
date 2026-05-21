@@ -480,7 +480,7 @@ export default function RateioTabV2({
                         const isKit = col._type === "kit";
                         const img = col.image_url || col.image_report_url || undefined;
                         return (
-                          <th key={`${col._type}-${col.id}`} className="w-[100px] p-2 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50">
+                          <th key={`${col._type}-${col.id}`} className="w-[140px] p-2 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50">
                             <div className="flex flex-col items-center gap-1.5">
                               {img ? (
                                 <img 
