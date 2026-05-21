@@ -285,10 +285,12 @@ export function SidebarV2() {
   };
 
   const CampaignItem = ({ camp, agencyId, clientId }: { camp: any, agencyId: string, clientId: string }) => {
+    if (!camp || !camp.id) return null;
     const isExpanded = campaignExpanded[camp.id];
     const campBasePath = `/agency/${agencyId}/clients/${clientId}/campaigns/${camp.id}`;
     const isActiveCampaign = campaignId === camp.id;
     const currentSection = new URLSearchParams(location.search).get("section") || "summary";
+
 
     const filteredModules = CAMPAIGN_MODULES.filter(mod => {
       if (mod.requires === "admin_or_master" && !isAdminOrMaster) return false;
