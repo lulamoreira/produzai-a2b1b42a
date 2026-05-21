@@ -13,6 +13,8 @@ interface ApprovalsTabProps {
   clientName: string;
   currencyCode: string;
   isAdminOrMaster: boolean;
+  winnerSupplierId?: string | null;
+  hasNegotiationRateio?: boolean;
 }
 
 export default function ApprovalsTab({ 
