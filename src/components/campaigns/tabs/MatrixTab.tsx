@@ -21,7 +21,9 @@ import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 
-const SpreadsheetComponent = lazy(() => import("@/components/Matrix/SpreadsheetComponent"));
+// Componente pesado carregado sob demanda. 
+// Nota: O arquivo original pode ter sido movido ou renomeado durante refatoração.
+const SpreadsheetComponent = lazy(() => import("@/components/SpreadsheetComponent").catch(() => import("@/components/Matrix/SpreadsheetComponent")));
 
 interface MatrixTabProps {
   campaignId: string;
