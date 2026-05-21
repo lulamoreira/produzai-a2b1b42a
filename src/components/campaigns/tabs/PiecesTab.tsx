@@ -233,9 +233,9 @@ export default function PiecesTab({
         kitOnlyPieces={kitOnlyPieces}
         existingKits={kits}
         existingPieces={pieces}
-        onCreateKit={(k) => addKit.mutateAsync(k)}
-        onAddKitPiece={(kp) => addKitPiece.mutateAsync(kp)}
-        onUpdateKit={(k) => updateKit.mutateAsync(k)}
+        onCreateKit={(k) => addKit?.mutateAsync?.(k)}
+        onAddKitPiece={(kp) => addKitPiece?.mutateAsync?.(kp)}
+        onUpdateKit={(k) => updateKit?.mutateAsync?.(k)}
       />
       <ImportPiecesFromCampaignDialog
         open={importPiecesDialogOpen}
@@ -250,7 +250,9 @@ export default function PiecesTab({
         onOpenChange={setBulkDeleteOpen}
         pieces={pieces}
         onDeletePieces={async (ids) => {
-          for (const id of ids) await deletePiece.mutateAsync(id);
+          if (deletePiece?.mutateAsync) {
+            for (const id of ids) await deletePiece.mutateAsync(id);
+          }
         }}
       />
       <ManageLocationsDialog
