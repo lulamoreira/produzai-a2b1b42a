@@ -72,6 +72,7 @@ const CampaignDetail = () => {
   const [activeSection, setActiveSectionState] = useState<string | null>(() => {
     return locationState?.initialSection || new URLSearchParams(location.search).get("section") || "summary";
   });
+  const [backupOpen, setBackupOpen] = useState(false);
 
   // Keep activeSection in sync with URL changes (e.g. from sidebar clicks)
   useEffect(() => {
