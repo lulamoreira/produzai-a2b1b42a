@@ -246,18 +246,24 @@ export function SidebarV2() {
           "w-full flex items-center gap-3 py-2 px-3 transition-all duration-200 group relative",
           isSubItem ? "pl-9 text-xs" : "text-sm font-medium",
           isActive
-            ? "bg-stone-800 text-white border-l-2 border-brand-400 rounded-r-lg"
-            : "text-stone-300 hover:bg-stone-800/60 hover:text-white rounded-lg"
+            ? "text-white border-l-2 rounded-r-lg"
+            : "hover:text-white rounded-lg"
         )}
+        style={{ 
+          background: isActive ? 'var(--v2-sidebar-active)' : 'transparent',
+          borderColor: isActive ? 'var(--v2-accent)' : 'transparent',
+          color: isActive ? 'var(--v2-sidebar-text)' : 'var(--v2-sidebar-muted)'
+        }}
       >
         {item.icon && (
           <item.icon
             className={cn(
               isSubItem ? "w-3.5 h-3.5" : "w-5 h-5",
-              "flex-shrink-0 transition-colors",
-              isActive ? "text-brand-400" : "text-stone-400 group-hover:text-stone-200"
+              "flex-shrink-0 transition-colors"
             )}
-            style={isSubItem && item.color ? { color: item.color } : {}}
+            style={{ 
+              color: isActive ? 'var(--v2-sidebar-text)' : (isSubItem && item.color ? item.color : 'inherit')
+            }}
           />
         )}
         {!collapsed && (
@@ -310,10 +316,10 @@ export function SidebarV2() {
     return (
       <div className="space-y-0.5">
         <div 
-          className={cn(
-            "group flex items-center justify-between px-2 py-1.5 rounded-lg cursor-pointer transition-colors",
-            isActiveCampaign ? "bg-stone-800/50" : "hover:bg-stone-800/30"
-          )}
+          className="group flex items-center justify-between px-2 py-1.5 rounded-lg cursor-pointer transition-colors"
+          style={{ 
+            background: isActiveCampaign ? 'rgba(255,255,255,0.05)' : 'transparent' 
+          }}
           onClick={() => navigate(campBasePath)}
         >
           <div className="flex items-center gap-2 min-w-0">
@@ -322,18 +328,24 @@ export function SidebarV2() {
               style={{ backgroundColor: camp.color || "#8C6F4E" }}
             />
             {!collapsed && (
-              <span className={cn(
-                "text-xs font-semibold uppercase tracking-wider truncate",
-                isActiveCampaign ? "text-white" : "text-stone-400 group-hover:text-stone-200"
-              )}>
+              <span 
+                className={cn(
+                  "text-xs font-semibold uppercase tracking-wider truncate",
+                  isActiveCampaign ? "text-white" : "group-hover:text-stone-200"
+                )}
+                style={{ color: isActiveCampaign ? 'var(--v2-sidebar-text)' : 'var(--v2-sidebar-muted)' }}
+              >
                 {camp.name}
               </span>
             )}
           </div>
           {!collapsed && (
             <button 
-              className="p-1 text-stone-500 hover:text-stone-300 transition-transform"
-              style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }}
+              className="p-1 transition-transform"
+              style={{ 
+                transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)",
+                color: 'var(--v2-sidebar-muted)'
+              }}
               onClick={(e) => toggleCampaignExpanded(camp.id, e)}
             >
               <ChevronDown className="w-3 h-3" />
@@ -342,7 +354,10 @@ export function SidebarV2() {
         </div>
         
         {isExpanded && !collapsed && (
-          <div className="space-y-0.5 border-l border-stone-800 ml-3 pl-1">
+          <div 
+            className="space-y-0.5 border-l ml-3 pl-1"
+            style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+          >
             {filteredModules.map(mod => (
               <NavItem key={mod.key} item={mod} isSubItem activeOverride={mod.active} />
             ))}
@@ -356,19 +371,30 @@ export function SidebarV2() {
   return (
     <aside
       className={cn(
-        "flex flex-col h-screen bg-stone-900 border-r border-stone-700 transition-all duration-300 ease-in-out z-30",
+        "flex flex-col h-screen transition-all duration-300 ease-in-out z-30 border-r",
         collapsed ? "w-16" : "w-[240px]"
       )}
+      style={{ 
+        background: 'var(--v2-sidebar-bg)', 
+        borderColor: 'var(--v2-border)' 
+      }}
     >
       {/* Logo Area */}
-      <div className="h-14 flex items-center justify-between px-4 border-b border-stone-700">
+      <div 
+        className="h-14 flex items-center justify-between px-4 border-b"
+        style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+      >
         {!collapsed && (
-          <span className="text-white font-semibold text-sm tracking-tight">ProduzAI</span>
+          <span className="font-semibold text-sm tracking-tight" style={{ color: 'var(--v2-sidebar-text)' }}>ProduzAI</span>
         )}
         <Button
           variant="ghost"
           size="icon"
-          className="bg-stone-800 hover:bg-stone-700 rounded-full w-6 h-6 flex items-center justify-center text-stone-400 hover:text-white"
+          className="rounded-full w-6 h-6 flex items-center justify-center transition-colors"
+          style={{ 
+            background: 'rgba(255,255,255,0.1)',
+            color: 'var(--v2-sidebar-muted)'
+          }}
           onClick={toggleSidebar}
         >
           {collapsed ? (
@@ -391,15 +417,22 @@ export function SidebarV2() {
 
           {/* Context Hierarchy (Breadcrumb style) */}
           {(agencyId || clientId || campaignId) && !collapsed && (
-            <div className="px-3 py-2 border-b border-stone-800 mb-2">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-stone-500 mb-1">
+            <div 
+              className="px-3 py-2 border-b mb-2"
+              style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+            >
+              <div 
+                className="text-[10px] font-bold uppercase tracking-wider mb-1"
+                style={{ color: 'var(--v2-sidebar-muted)' }}
+              >
                 Contexto
               </div>
               <div className="flex flex-col gap-0.5 text-xs">
                 {agencyData?.name && (
                   <button 
                     onClick={() => navigate(`/agency/${agencyId}`)}
-                    className="text-stone-400 hover:text-white text-left truncate"
+                    className="hover:text-white text-left truncate"
+                    style={{ color: 'var(--v2-sidebar-muted)' }}
                   >
                     {agencyData.name}
                   </button>
@@ -407,14 +440,18 @@ export function SidebarV2() {
                 {clientData?.name && (
                   <button 
                     onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}`)}
-                    className="text-stone-300 hover:text-white text-left truncate flex items-center gap-1"
+                    className="hover:text-white text-left truncate flex items-center gap-1"
+                    style={{ color: 'var(--v2-sidebar-text)' }}
                   >
                     <ChevronRight className="w-3 h-3 flex-shrink-0" />
                     {clientData.name}
                   </button>
                 )}
                 {campaignData?.name && (
-                  <div className="text-brand-400 font-medium truncate flex items-center gap-1">
+                  <div 
+                    className="font-medium truncate flex items-center gap-1"
+                    style={{ color: 'var(--v2-accent)' }}
+                  >
                     <ChevronRight className="w-3 h-3 flex-shrink-0" />
                     {campaignData.name}
                   </div>

@@ -2,14 +2,21 @@ import React from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Palette, Sun, Moon, Laptop, Check } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import NotificationBell from "@/components/NotificationBell";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useV2Theme, V2Theme } from "@/hooks/useV2Theme";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 
 export function HeaderV2() {
+  const { theme, setTheme } = useV2Theme();
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -76,15 +83,19 @@ export function HeaderV2() {
   const userInitial = user?.email?.[0]?.toUpperCase() || "U";
 
   return (
-    <header className="h-14 bg-white dark:bg-stone-950 border-b border-stone-200 dark:border-stone-800 shadow-sm px-6 flex items-center justify-between z-20">
+    <header 
+      className="h-14 border-b shadow-sm px-6 flex items-center justify-between z-20"
+      style={{ background: 'var(--v2-surface)', borderColor: 'var(--v2-border)' }}
+    >
       <div className="flex items-center gap-2 overflow-hidden">
         {crumbs.map((crumb, idx) => (
           <React.Fragment key={idx}>
-            {idx > 0 && <ChevronRight className="w-3 h-3 text-stone-400 flex-shrink-0" />}
+            {idx > 0 && <ChevronRight className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--v2-text-muted)' }} />}
             {crumb.path ? (
               <button
                 onClick={() => navigate(crumb.path!)}
-                className="text-xs text-stone-400 hover:text-stone-600 cursor-pointer whitespace-nowrap"
+                className="text-xs hover:text-stone-600 cursor-pointer whitespace-nowrap"
+                style={{ color: 'var(--v2-text-muted)' }}
               >
                 {crumb.label}
               </button>
@@ -92,15 +103,20 @@ export function HeaderV2() {
               <span className={cn(
                 "text-xs truncate max-w-[150px]",
                 idx === crumbs.length - 1 
-                  ? "font-semibold text-stone-700 dark:text-stone-200" 
-                  : "text-stone-400"
-              )}>
+                  ? "font-semibold" 
+                  : ""
+              )}
+              style={{ color: idx === crumbs.length - 1 ? 'var(--v2-text-primary)' : 'var(--v2-text-muted)' }}
+            >
                 {crumb.label}
               </span>
             )}
           </React.Fragment>
         ))}
-        <span className="bg-brand-400 text-white text-[10px] font-bold px-1.5 py-0.5 rounded ml-2 flex-shrink-0">
+        <span 
+          className="text-white text-[10px] font-bold px-1.5 py-0.5 rounded ml-2 flex-shrink-0"
+          style={{ background: 'var(--v2-accent)' }}
+        >
           v2
         </span>
       </div>
@@ -109,17 +125,63 @@ export function HeaderV2() {
         <select 
           value={currentLanguage} 
           onChange={(e) => changeLanguage(e.target.value as any)}
-          className="text-xs bg-transparent border-none focus:ring-0 cursor-pointer text-stone-600 dark:text-stone-400"
+          className="text-xs bg-transparent border-none focus:ring-0 cursor-pointer"
+          style={{ color: 'var(--v2-text-secondary)' }}
         >
           <option value="pt-BR">PT</option>
           <option value="en">EN</option>
           <option value="es">ES</option>
         </select>
 
+        <Popover>
+          <PopoverTrigger asChild>
+            <button 
+              className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-stone-100 transition-colors"
+              style={{ color: 'var(--v2-text-secondary)' }}
+            >
+              <Palette className="w-5 h-5" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent className="w-48 p-2" align="end" style={{ background: 'var(--v2-surface)', borderColor: 'var(--v2-border)' }}>
+            <div className="flex flex-col gap-1">
+              {[
+                { id: 'light', icon: Sun, label: t("theme.light") },
+                { id: 'dark', icon: Moon, label: t("theme.dark") },
+                { id: 'system', icon: Laptop, label: t("theme.system") },
+                { id: 'multicolor', icon: Palette, label: t("theme.multicolor") },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  onClick={() => setTheme(opt.id as V2Theme)}
+                  className={cn(
+                    "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors hover:bg-stone-50",
+                    theme === opt.id ? "font-medium" : ""
+                  )}
+                  style={{ 
+                    color: theme === opt.id ? 'var(--v2-accent)' : 'var(--v2-text-secondary)' 
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    <opt.icon className="w-4 h-4" />
+                    {opt.label}
+                  </div>
+                  {theme === opt.id && <Check className="w-4 h-4" />}
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+
         <NotificationBell />
 
-        <Avatar className="w-8 h-8 rounded-full bg-brand-400 border-2 border-white dark:border-stone-900 shadow-sm">
-          <AvatarFallback className="bg-brand-400 text-white text-xs font-bold">
+        <Avatar 
+          className="w-8 h-8 rounded-full border-2 shadow-sm"
+          style={{ background: 'var(--v2-accent)', borderColor: 'var(--v2-surface)' }}
+        >
+          <AvatarFallback 
+            className="text-white text-xs font-bold"
+            style={{ background: 'var(--v2-accent)' }}
+          >
             {userInitial}
           </AvatarFallback>
         </Avatar>
