@@ -125,6 +125,10 @@
   "rateio": {
     "activeTab": "ACTIVO",
     "readOnly": "Solo visualización",
+    "readOnlyBanner": "Versión de solo lectura — no se permiten ediciones en esta hoja",
+    "errors": {
+      "automationFailed": "Error al ejecutar la automatización. Inténtalo de nuevo."
+    },
     "currentRateio": "Rateio vigente",
     "syncWith": "Sincronizado con",
     "searchStore": "Buscar tienda...",
