@@ -455,7 +455,7 @@ export default function RateioTabV2({
 
               {/* Spreadsheet Table */}
               <div className="flex-1 overflow-auto relative custom-scrollbar">
-                <table className="border-collapse table-fixed min-w-full">
+                <table className="border-collapse min-w-full">
                   <thead className="sticky top-0 z-30 bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
                     {/* Group Labels Row */}
                     <tr>
@@ -480,7 +480,7 @@ export default function RateioTabV2({
                         const isKit = col._type === "kit";
                         const img = col.image_url || col.image_report_url || undefined;
                         return (
-                          <th key={`${col._type}-${col.id}`} className="w-[140px] p-2 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50">
+                          <th key={`${col._type}-${col.id}`} className="min-w-[120px] max-w-[200px] w-auto p-2 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50">
                             <div className="flex flex-col items-center gap-1.5">
                               {img ? (
                                 <img 
