@@ -84,6 +84,19 @@ export default function RateioTabV2({
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
   const [filterLogicMode, setFilterLogicMode] = useState<FilterLogicMode>("and");
+  
+  // Sorting state
+  const [sortConfig, setSortConfig] = useState<{ key: "name" | "state"; direction: "asc" | "desc" } | null>(null);
+
+  const toggleSort = (key: "name" | "state") => {
+    setSortConfig(prev => {
+      if (prev?.key === key) {
+        if (prev.direction === "asc") return { key, direction: "desc" };
+        return null; // Reset sort
+      }
+      return { key, direction: "asc" };
+    });
+  };
 
   // Excel-like tabs state
   const storageKey = `rateio-active-tab-${campaignId}`;
