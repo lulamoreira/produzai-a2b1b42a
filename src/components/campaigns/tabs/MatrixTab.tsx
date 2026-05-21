@@ -232,7 +232,7 @@ export default function MatrixTab({
                           variant="outline" 
                           size="sm" 
                           className="h-8 text-xs gap-1.5"
-                          onClick={() => exportMatrixExcelJS(campaign, pieces, kits, kitPieces, stores, qtyMap, client, agency)}
+                          onClick={() => exportMatrixExcelJS(stores, pieces, qtyMap, campaign.name, kits, kitPieces, undefined, [], [], pieces, agency?.name, client?.name)}
                        >
                          <Download className="w-3.5 h-3.5" />
                          {t("common.exportExcel", "Exportar Excel")}
