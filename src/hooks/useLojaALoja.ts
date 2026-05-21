@@ -147,7 +147,6 @@ export function useAddTipo() {
     },
     onError: (e: any) => {
       if (e.code === "23505") {
-        const { t } = require("i18next");
         toast.error(t("common.errors.alreadyExists"));
       } else {
         toast.error("Erro ao adicionar tipo: " + e.message);
