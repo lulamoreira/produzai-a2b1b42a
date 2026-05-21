@@ -134,6 +134,7 @@ export function useAllLojaALojaPecas(campaignId: string | undefined) {
 
 export function useAddTipo() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async (params: { campaign_id: string; letra: string; nome: string; display_order?: number; tem_subdivisao?: boolean }) => {
       const { data, error } = await supabase.from("loja_a_loja_tipos").insert(params).select().single();
