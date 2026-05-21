@@ -153,12 +153,12 @@ export default function RateioTabV2({
     if (sortConfig.length > 0) {
       result = [...result].sort((a, b) => {
         for (const sort of sortConfig) {
-          const valA = (a[sort.key] || "").toString().toLowerCase();
-          const valB = (b[sort.key] || "").toString().toLowerCase();
+          const key = sort.key;
+          const valA = (a[key] || "").toString().trim().toLowerCase();
+          const valB = (b[key] || "").toString().trim().toLowerCase();
           
           if (valA < valB) return sort.direction === "asc" ? -1 : 1;
           if (valA > valB) return sort.direction === "asc" ? 1 : -1;
-          // If equal, continue to next sort level
         }
         return 0;
       });
