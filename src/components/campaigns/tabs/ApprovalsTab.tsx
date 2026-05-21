@@ -15,6 +15,7 @@ interface ApprovalsTabProps {
   isAdminOrMaster: boolean;
   winnerSupplierId?: string | null;
   hasNegotiationRateio?: boolean;
+  onBackToBudgets?: () => void;
 }
 
 export default function ApprovalsTab({ 
