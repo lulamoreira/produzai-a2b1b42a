@@ -103,45 +103,46 @@ const CampaignDetail = () => {
           </TabsList>
 
           <TabErrorBoundary>
+            <TabsContent value="summary">
+              <SummaryTab 
+                campaignId={campaignId!} stores={stores} visiblePieces={pieces} kits={kits}
+                canEditCampaign={true} canViewSchedules={true} canViewInstallations={true}
+                lalPerms={lalPerms} canViewStores={true} canViewCampaignStores={true}
+                isAdmin={isAdmin} isAdminOrMaster={isAdminOrMaster} canViewPieces={true}
+                onNavigate={setActiveSection}
+              />
+            </TabsContent>
+            <TabsContent value="pieces">
+              <PiecesTab 
+                campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
+                pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
+                canEditPieces={true} canDeletePieces={true} pieceLocations={pieceLocations} pieceSubLocations={pieceSubLocations}
+                addPiece={{}} updatePiece={{}} deletePiece={{}} addKit={{}} updateKit={{}} deleteKit={{}}
+                addKitPiece={{}} updateKitPiece={{}} deleteKitPiece={{}} reorderKitPieces={{}}
+                handleRecodificar={() => {}} handleReviewPieceCodes={() => {}} handleDistributePiece={() => {}}
+              />
+            </TabsContent>
+            <TabsContent value="matrix">
+              <MatrixTab 
+                campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
+                pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
+                canEditCampaignStores={true} activeAdjustment={null} hasNegotiationRateio={false}
+                winnerSupplierId={null} winnerSupplierName="" rateioSource="original"
+                setRateioSource={() => {}} vigenteSource="original" isViewingVigente={true}
+                handleResetNegotiationRateio={() => {}} handleCancelNegotiationRateio={() => {}}
+                isNegotiationView={false} hasAnyAdjustment={false} setActiveSection={setActiveSection}
+              />
+            </TabsContent>
+            <TabsContent value="budgets">
+              <BudgetTab 
+                campaignId={campaignId!} clientId={clientId!} 
+                campaignName={campaign.name} agencyName={agency?.name || ""}
+                pieces={pieces} kits={kits} kitPieces={kitPieces} qtyMap={qtyMap}
+                stores={stores} isAdmin={isAdmin}
+              />
+            </TabsContent>
+
             <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">Carregando aba...</div>}>
-              <TabsContent value="summary">
-                <SummaryTab 
-                  campaignId={campaignId!} stores={stores} visiblePieces={pieces} kits={kits}
-                  canEditCampaign={true} canViewSchedules={true} canViewInstallations={true}
-                  lalPerms={lalPerms} canViewStores={true} canViewCampaignStores={true}
-                  isAdmin={isAdmin} isAdminOrMaster={isAdminOrMaster} canViewPieces={true}
-                  onNavigate={setActiveSection}
-                />
-              </TabsContent>
-              <TabsContent value="pieces">
-                <PiecesTab 
-                  campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
-                  pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
-                  canEditPieces={true} canDeletePieces={true} pieceLocations={pieceLocations} pieceSubLocations={pieceSubLocations}
-                  addPiece={{}} updatePiece={{}} deletePiece={{}} addKit={{}} updateKit={{}} deleteKit={{}}
-                  addKitPiece={{}} updateKitPiece={{}} deleteKitPiece={{}} reorderKitPieces={{}}
-                  handleRecodificar={() => {}} handleReviewPieceCodes={() => {}} handleDistributePiece={() => {}}
-                />
-              </TabsContent>
-              <TabsContent value="matrix">
-                <MatrixTab 
-                  campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
-                  pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
-                  canEditCampaignStores={true} activeAdjustment={null} hasNegotiationRateio={false}
-                  winnerSupplierId={null} winnerSupplierName="" rateioSource="original"
-                  setRateioSource={() => {}} vigenteSource="original" isViewingVigente={true}
-                  handleResetNegotiationRateio={() => {}} handleCancelNegotiationRateio={() => {}}
-                  isNegotiationView={false} hasAnyAdjustment={false} setActiveSection={setActiveSection}
-                />
-              </TabsContent>
-              <TabsContent value="budgets">
-                <BudgetTab 
-                  campaignId={campaignId!} clientId={clientId!} 
-                  campaignName={campaign.name} agencyName={agency?.name || ""}
-                  pieces={pieces} kits={kits} kitPieces={kitPieces} qtyMap={qtyMap}
-                  stores={stores} isAdmin={isAdmin}
-                />
-              </TabsContent>
               <TabsContent value="occurrences">
                 <OccurrencesTab campaignId={campaignId!} clientId={clientId!} lalPerms={lalPerms} />
               </TabsContent>
@@ -188,6 +189,7 @@ const CampaignDetail = () => {
               </TabsContent>
             </Suspense>
           </TabErrorBoundary>
+
         </Tabs>
       </div>
     </AppLayout>
