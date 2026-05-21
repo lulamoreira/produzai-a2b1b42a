@@ -326,7 +326,7 @@ export default function RateioTabV2({
                   stores={filteredStores}
                   customFieldLabels={customFieldLabels}
                   canEdit={canEditCampaignStores && isLatestTab}
-                  onUpdateStore={() => {}} // Metadata updates handled elsewhere
+                  onUpdateStore={async () => {}} // Metadata updates handled elsewhere
                   storeSearch={storeSearch}
                   storeStateFilter=""
                   // The component itself handles pieces/quantities internally via hooks if needed
