@@ -437,7 +437,7 @@ export default function PortalConfigTab({ campaignId, clientId, permissions }: P
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Autorizar Ocorrências em todas as lojas?</AlertDialogTitle>
-                        <AlertDialogDescription>Isso ativará o módulo de Ocorrências para todas as {storeIds.length} lojas, sem alterar os demais módulos.</AlertDialogDescription>
+                        <AlertDialogDescription>Isso ativará apenas o módulo de Ocorrências para todas as {storeIds.length} lojas e desativará os demais módulos (Manutenção, Reposições e Conformidade).</AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Cancelar</AlertDialogCancel>
@@ -446,7 +446,12 @@ export default function PortalConfigTab({ campaignId, clientId, permissions }: P
                             bulkSet.mutate({
                               campaign_id: campaignId,
                               store_ids: storeIds,
-                              values: { module_ocorrencias: true },
+                              values: {
+                                module_ocorrencias: true,
+                                module_manutencao: false,
+                                module_reposicoes: false,
+                                module_conformidade: false,
+                              },
                             })
                           }
                         >
