@@ -162,6 +162,7 @@ const CampaignDetail = () => {
           isAdminOrMaster={isAdminOrMaster} canEditCampaign={true}
           onRename={() => {}} onBackup={() => {}} onOpenSection={setActiveSection}
           pieces={pieces} kits={kits} kitPieces={kitPieces}
+          activeAdjustment={activeAdjustment}
         />
 
         <Tabs value={activeSection || "summary"} onValueChange={setActiveSection} className="w-full">
