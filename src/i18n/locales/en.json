@@ -197,6 +197,7 @@
   },
   "sidebar": {
     "home": "Home",
+    "favorites": "Favorites",
     "admin_users": "Users",
     "agencies": "Agencies",
     "clients": "Clients",

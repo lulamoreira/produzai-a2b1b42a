@@ -212,8 +212,14 @@ export default function MatrixTab({
                   )}
                </div>
 
-               <div className="p-4 text-center text-muted-foreground text-sm italic flex-1 flex items-center justify-center">
-                 A matriz de rateio interativa (Planilha) está sendo carregada...
+               <div className="p-4 text-center text-muted-foreground text-sm italic flex-1 flex flex-col items-center justify-center gap-4">
+                 <div className="flex flex-col items-center gap-2">
+                   <RefreshCw className="w-5 h-5 animate-spin text-primary" />
+                   <p>A matriz de rateio interativa (Planilha) está sendo carregada...</p>
+                 </div>
+                 <p className="text-[11px] max-w-[300px]">
+                   Nota: Componentes pesados podem demorar alguns segundos na primeira carga.
+                 </p>
                </div>
             </TabsContent>
 
