@@ -123,7 +123,7 @@ export default function RateioTabV2({
 
   // Filter stores
   const filteredStores = useMemo(() => {
-    return stores.filter(s => {
+    let result = stores.filter(s => {
       const q = storeSearch.toLowerCase();
       const matchesSearch = !q || 
         s.name?.toLowerCase().includes(q) || 
@@ -138,7 +138,20 @@ export default function RateioTabV2({
       
       return matchesSearch;
     });
-  }, [stores, storeSearch, storeFilters]);
+
+    if (sortConfig) {
+      result = [...result].sort((a, b) => {
+        const valA = (a[sortConfig.key] || "").toString().toLowerCase();
+        const valB = (b[sortConfig.key] || "").toString().toLowerCase();
+        
+        if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
+        if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [stores, storeSearch, storeFilters, sortConfig]);
 
   // Build unified columns (pieces + kits) ordered like the Pieces module
   // (display_order, piece-before-kit on ties). Kit-only pieces are hidden.
