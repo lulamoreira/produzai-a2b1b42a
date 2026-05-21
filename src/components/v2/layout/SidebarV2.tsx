@@ -117,8 +117,17 @@ export function SidebarV2() {
   const { data: campaignData } = useQuery({
     queryKey: ["sidebar-v2-campaign", campaignId],
     queryFn: async () => {
-      const { data } = await supabase.from("campaigns").select("id, name, color, display_order, client_id").eq("id", campaignId!).maybeSingle();
-      return data;
+      const { data } = await supabase
+        .from("campaigns")
+        .select("id, name, color, display_order, client_id, campaign_modules(module_key)")
+        .eq("id", campaignId!)
+        .maybeSingle();
+      
+      if (!data) return null;
+      return {
+        ...data,
+        modules: data.campaign_modules?.map((m: any) => m.module_key) || []
+      };
     },
     enabled: !!campaignId,
   });
@@ -128,14 +137,19 @@ export function SidebarV2() {
     queryFn: async () => {
       const { data } = await supabase
         .from("campaigns")
-        .select("id, name, color, display_order, modules")
+        .select("id, name, color, display_order, campaign_modules(module_key)")
         .eq("client_id", clientId!)
         .order("display_order", { ascending: true, nullsFirst: false })
         .order("created_at", { ascending: false });
-      return data ?? [];
+      
+      return (data || []).map((camp: any) => ({
+        ...camp,
+        modules: camp.campaign_modules?.map((m: any) => m.module_key) || []
+      }));
     },
     enabled: !!clientId && !isLimited,
   });
+
 
   // Realtime updates
   useEffect(() => {
