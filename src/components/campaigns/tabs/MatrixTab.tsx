@@ -111,7 +111,7 @@ export default function MatrixTab({
               <TabsList className="h-8 bg-muted/60">
                 <TabsTrigger value="planilha" className="text-xs gap-1.5 h-6 px-2.5">
                   <Table2 className="w-3.5 h-3.5" />
-                  Planilha
+                  {t("modules.matrix")}
                 </TabsTrigger>
                 <TabsTrigger value="dashboard" className="text-xs gap-1.5 h-6 px-2.5">
                   <BarChart3Icon className="w-3.5 h-3.5" />
@@ -151,9 +151,9 @@ export default function MatrixTab({
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {!isViewingVigente && <Button size="sm" className="h-7 text-xs" onClick={() => setRateioSource(vigenteSource)}>← Voltar ao vigente</Button>}
+                        {!isViewingVigente && <Button size="sm" className="h-7 text-xs" onClick={() => setRateioSource(vigenteSource)}>← {t("common.backToVigente") || "Voltar ao vigente"}</Button>}
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild><Button size="sm" variant="outline" className="h-7 text-xs">Ver rateios anteriores ▾</Button></DropdownMenuTrigger>
+                          <DropdownMenuTrigger asChild><Button size="sm" variant="outline" className="h-7 text-xs">{t("common.viewPreviousRateios") || "Ver rateios anteriores"} ▾</Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-64">
                             {vigenteSource !== "original" && <DropdownMenuItem onClick={() => setRateioSource("original")}><div className="flex flex-col"><span className="text-xs font-medium">Rateio Original</span><span className="text-[10px] text-muted-foreground">Congelado · somente leitura</span></div></DropdownMenuItem>}
                             {vigenteSource !== "negotiation" && hasNegotiationRateio && winnerSupplierId && <DropdownMenuItem onClick={() => setRateioSource("negotiation")}><div className="flex flex-col"><span className="text-xs font-medium">Rateio da Negociação</span><span className="text-[10px] text-muted-foreground">{winnerSupplierName} · somente leitura</span></div></DropdownMenuItem>}
@@ -182,10 +182,10 @@ export default function MatrixTab({
 
                <div className="border-b border-border bg-muted/30">
                   <div className="flex items-center justify-between px-3 py-1">
-                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{matrixToolbarCollapsed ? "Filtros e ações ocultos" : "Filtros e ações"}</span>
+                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{matrixToolbarCollapsed ? t("common.filtersAndActionsHidden") || "Filtros e ações ocultos" : t("common.filtersAndActions") || "Filtros e ações"}</span>
                     <Button variant="ghost" size="sm" onClick={() => setMatrixToolbarCollapsed(!matrixToolbarCollapsed)} className="h-6 px-2 text-xs gap-1">
                       {matrixToolbarCollapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
-                      {matrixToolbarCollapsed ? "Expandir" : "Recolher"}
+                      {matrixToolbarCollapsed ? t("common.expand") : t("common.collapse")}
                     </Button>
                   </div>
                   {!matrixToolbarCollapsed && (
