@@ -467,7 +467,7 @@ export function SidebarV2() {
           )}
 
           {/* Campaign Context: Modules */}
-          {campaignId && !collapsed && (
+          {campaignId && !collapsed && campaignData && (
             <div className="space-y-1">
               <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
                 Módulos da Campanha
@@ -475,6 +475,7 @@ export function SidebarV2() {
               <CampaignItem camp={campaignData} agencyId={agencyId!} clientId={clientId!} />
             </div>
           )}
+
 
           {/* Limited User: List allowed clients/campaigns */}
           {isLimited && !collapsed && limitedClientGroups.map(group => (
