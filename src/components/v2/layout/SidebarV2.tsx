@@ -128,6 +128,10 @@ export function SidebarV2() {
   const campaignModules = useMemo(() => {
     if (!campaignId || !agencyId || !clientId) return [];
     
+    // Define the sub-navigation items based on sidebar v1 logic
+    // Scheduling, Installations, Loja a Loja, Lojas, Occurrences, Budgets, Pieces, Matrix, Mockup, Adjustments
+    const currentSection = new URLSearchParams(location.search).get("section") || "summary";
+    
     return CAMPAIGN_MODULES.filter(mod => {
       if (mod.requires === "admin_or_master" && !isAdminOrMaster) return false;
       if (mod.hideForLimited && isLimited) return false;
@@ -137,7 +141,7 @@ export function SidebarV2() {
       label: t(mod.labelKey, mod.label),
       icon: MODULE_ICONS[mod.icon],
       route: `/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}?section=${mod.key}`,
-      active: new URLSearchParams(location.search).get("section") === mod.key
+      active: currentSection === mod.key
     }));
   }, [campaignId, agencyId, clientId, isAdminOrMaster, isLimited, t, location.search]);
 
