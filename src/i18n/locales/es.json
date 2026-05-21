@@ -57,7 +57,8 @@
     "store": "Tienda",
     "campaign": "Campaña",
     "backup": "Copia de seguridad",
-    "activeAdjustment": "Ajuste activo"
+    "activeAdjustment": "Ajuste activo",
+    "registered": "Registrada"
   },
   "greeting": {
     "morning": "Buenos días",
@@ -443,7 +444,7 @@
     "both": "Ambos",
     "teams": "Equipos",
     "exportTeams": "Exportar Equipos",
-    "scheduled": "📅 Programadas",
+    "scheduled": "📅 Programada",
     "noDate": "⏳ Sin fecha",
     "withTeam": "🔧 Con equipo",
     "withOccurrence": "⚠️ Ocurrencias",

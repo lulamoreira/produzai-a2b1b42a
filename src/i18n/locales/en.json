@@ -57,7 +57,8 @@
     "store": "Store",
     "campaign": "Campaign",
     "backup": "Backup",
-    "activeAdjustment": "Active adjustment"
+    "activeAdjustment": "Active adjustment",
+    "registered": "Registered"
   },
   "greeting": {
     "morning": "Good morning",
