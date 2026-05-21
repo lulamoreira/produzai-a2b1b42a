@@ -157,6 +157,8 @@ const CampaignDetail = () => {
             <TabsTrigger value="scheduling" className="hidden">Agendamento</TabsTrigger>
             <TabsTrigger value="installations" className="hidden">Instalações</TabsTrigger>
             <TabsTrigger value="approvals" className="hidden">Aprovações</TabsTrigger>
+            <TabsTrigger value="adjustments" className="hidden">Ajustes</TabsTrigger>
+
             <TabsTrigger value="stores" className="hidden">Lojas</TabsTrigger>
             <TabsTrigger value="history" className="hidden">Histórico</TabsTrigger>
             <TabsTrigger value="mockup" className="hidden">Mockup</TabsTrigger>
