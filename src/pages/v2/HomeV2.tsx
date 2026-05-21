@@ -124,7 +124,7 @@ export function HomeV2() {
     }
   });
 
-  const userName = user?.email?.split("@")[0] || t("header.user");
+  const userName = (displayName || user?.email?.split("@")[0] || t("header.user")).trim().split(/\s+/)[0];
 
   return (
     <div className="max-w-7xl mx-auto animate-in fade-in duration-500">
