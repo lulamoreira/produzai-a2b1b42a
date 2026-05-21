@@ -143,22 +143,22 @@ const CampaignDetail = () => {
                   campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
                   pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
                   canEditCampaignStores={true} 
-                  activeAdjustment={campaign.active_adjustment} 
-                  hasNegotiationRateio={campaign.has_negotiation_rateio}
-                  winnerSupplierId={campaign.winner_supplier_id} 
-                  winnerSupplierName={campaign.winner_supplier_name} 
-                  rateioSource={campaign.rateio_source || "original"}
+                  activeAdjustment={(campaign as any).active_adjustment} 
+                  hasNegotiationRateio={(campaign as any).has_negotiation_rateio}
+                  winnerSupplierId={(campaign as any).winner_supplier_id} 
+                  winnerSupplierName={(campaign as any).winner_supplier_name} 
+                  rateioSource={(campaign as any).rateio_source || "original"}
                   setRateioSource={(source) => {
                     // Update campaign state or handle tab change
                     const storageKey = `rateio-active-tab-${campaignId}`;
                     localStorage.setItem(storageKey, source);
                   }} 
-                  vigenteSource={campaign.vigente_source || "original"} 
+                  vigenteSource={(campaign as any).vigente_source || "original"} 
                   isViewingVigente={true}
                   handleResetNegotiationRateio={() => {}} 
                   handleCancelNegotiationRateio={() => {}}
                   isNegotiationView={false} 
-                  hasAnyAdjustment={!!campaign.active_adjustment} 
+                  hasAnyAdjustment={!!(campaign as any).active_adjustment} 
                   setActiveSection={setActiveSection}
                 />
               ) : (
@@ -166,21 +166,22 @@ const CampaignDetail = () => {
                   campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
                   pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
                   canEditCampaignStores={true} 
-                  activeAdjustment={campaign.active_adjustment} 
-                  hasNegotiationRateio={campaign.has_negotiation_rateio}
-                  winnerSupplierId={campaign.winner_supplier_id} 
-                  winnerSupplierName={campaign.winner_supplier_name} 
-                  rateioSource={campaign.rateio_source || "original"}
+                  activeAdjustment={(campaign as any).active_adjustment} 
+                  hasNegotiationRateio={(campaign as any).has_negotiation_rateio}
+                  winnerSupplierId={(campaign as any).winner_supplier_id} 
+                  winnerSupplierName={(campaign as any).winner_supplier_name} 
+                  rateioSource={(campaign as any).rateio_source || "original"}
                   setRateioSource={() => {}} 
-                  vigenteSource={campaign.vigente_source || "original"} 
+                  vigenteSource={(campaign as any).vigente_source || "original"} 
                   isViewingVigente={true}
                   handleResetNegotiationRateio={() => {}} 
                   handleCancelNegotiationRateio={() => {}}
                   isNegotiationView={false} 
-                  hasAnyAdjustment={!!campaign.active_adjustment} 
+                  hasAnyAdjustment={!!(campaign as any).active_adjustment} 
                   setActiveSection={setActiveSection}
                 />
               )}
+
 
             </TabsContent>
             <TabsContent value="budgets">
