@@ -781,7 +781,7 @@ export async function buildRequoteFinalWorkbook(
           || (a.id < b.id ? -1 : 1);
       });
 
-      const STORE_META_COLS = 5; // name, city, state, store_model, showcase_count
+      const STORE_META_COLS = matrixStoreFieldCount;
       const colCount = STORE_META_COLS + colItems.length;
       // Matrix layout: row 1 title, rows 2-9 meta (8), row 10 stores header,
       // rows 11..(10+N) stores, row (11+N) TOTAL.
@@ -836,8 +836,8 @@ export async function buildRequoteFinalWorkbook(
 
       const lastColLetter = getColLetter(colCount);
       const totalRowLetterStart = getColLetter(STORE_META_COLS + 1);
-      const VALUE_COL_START = STORE_META_COLS + 1; // col 5 — ao lado do rótulo
-      const VALUE_COL_END = STORE_META_COLS + 2;   // col 6 — só 2 células
+      const VALUE_COL_START = 1;
+      const VALUE_COL_END = 3;
       const valCol = getColLetter(VALUE_COL_START);
 
       const styleValue = (cell: any, opts: { bold?: boolean; bgArgb?: string; fgArgb?: string; size?: number } = {}) => {
