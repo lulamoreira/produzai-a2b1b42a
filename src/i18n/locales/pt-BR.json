@@ -442,6 +442,19 @@
     "secondaryDisplay": "Vitrine Secundária"
   },
   "occurrences": {
+    "portal": {
+      "title": "Portal de Ocorrências",
+      "subtitle": "Selecione sua loja para registrar uma ocorrência",
+      "noAccessTitle": "Acesso ao portal não configurado",
+      "noAccessDescription": "Nenhuma loja desta campanha está habilitada para registrar ocorrências. Para liberar o acesso, vá até o módulo Lojas, edite cada loja e ative a opção de ocorrências.",
+      "noStoresTitle": "Nenhuma loja cadastrada nesta campanha",
+      "noStoresDescription": "Cadastre as lojas participantes desta campanha antes de configurar o portal de ocorrências.",
+      "deadlinePassedTitle": "Prazo de ocorrências encerrado",
+      "deadlinePassedDescription": "O prazo para registro de ocorrências nesta campanha foi encerrado.",
+      "goToStores": "Ir para Lojas",
+      "deadline": "Prazo",
+      "deadlineExpired": "Prazo encerrado"
+    },
     "title": "Ocorrências",
     "new": "Nova Ocorrência",
     "empty": "Nenhuma ocorrência encontrada",
