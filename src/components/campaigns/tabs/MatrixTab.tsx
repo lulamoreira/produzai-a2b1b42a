@@ -246,18 +246,16 @@ export default function MatrixTab({
 
                <div className="flex-1 overflow-hidden">
                  <StoresMatrixTable 
-                    campaignId={campaignId}
+                    clientId={clientId}
                     stores={stores.filter(s => {
                       const q = storeSearch.toLowerCase();
                       return !q || s.name.toLowerCase().includes(q) || s.nickname?.toLowerCase().includes(q) || s.city?.toLowerCase().includes(q) || s.store_code?.toLowerCase().includes(q);
                     })}
-                    pieces={pieces}
-                    kits={kits}
-                    kitPieces={kitPieces}
-                    qtyMap={qtyMap}
+                    customFieldLabels={customFieldLabels}
                     canEdit={canEditCampaignStores && isViewingVigente}
-                    client={client}
                     onUpdateStore={handleUpdateStorePiece}
+                    storeSearch={storeSearch}
+                    storeStateFilter=""
                  />
                </div>
             </TabsContent>
@@ -267,6 +265,8 @@ export default function MatrixTab({
                 pieces={pieces}
                 stores={stores}
                 qtyMap={qtyMap}
+                kits={kits}
+                kitPieces={kitPieces}
               />
             </TabsContent>
           </Tabs>
