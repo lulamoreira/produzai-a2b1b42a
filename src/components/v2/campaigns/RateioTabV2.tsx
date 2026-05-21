@@ -117,9 +117,6 @@ export default function RateioTabV2({
     }
   }, [rateioSource, activeVersionTab]);
 
-  const activeTabData = versionTabs.find(t => t.id === activeVersionTab);
-  const isTabEditable = activeTabData?.isVigente && activeVersionTab === vigenteSource;
-  const isLatestTab = isTabEditable;
 
 
 
