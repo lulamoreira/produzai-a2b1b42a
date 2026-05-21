@@ -167,7 +167,11 @@ export function useDeleteTipo() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (params: { id: string; campaign_id: string }) => {
-      const { error } = await supabase.from("loja_a_loja_tipos").delete().eq("id", params.id);
+      // Soft-delete to allow re-creation of the same 'letra'
+      const { error } = await supabase
+        .from("loja_a_loja_tipos")
+        .update({ is_deleted: true as any })
+        .eq("id", params.id);
       if (error) throw error;
     },
     onSuccess: (_, v) => {
