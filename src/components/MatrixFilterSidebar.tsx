@@ -193,7 +193,10 @@ const MatrixFilterSidebar = ({
   const filterOptions = useMemo(() => {
     const categories = [...new Set(pieces.map((p) => p.category).filter(Boolean))].sort();
     const names = [...new Set(pieces.map((p) => p.name).filter(Boolean))].sort();
-    const storeCategories = [...new Set(pieces.map((p) => p.store_category).filter(Boolean) as string[])].sort();
+    const storeCategories = [...new Set(
+      (pieces.map((p) => p.store_category).filter(Boolean) as string[])
+        .map((s) => s.toUpperCase())
+    )].sort();
     const sizes = [...new Set(pieces.map((p) => p.size).filter(Boolean))].sort();
     const specifications = [...new Set(pieces.map((p) => p.specification).filter(Boolean))].sort();
     const instructions = [...new Set(pieces.map((p) => p.installation_instructions).filter(Boolean))].sort();
