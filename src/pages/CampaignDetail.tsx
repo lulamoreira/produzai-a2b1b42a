@@ -30,6 +30,9 @@ import TabErrorBoundary from "@/components/campaigns/TabErrorBoundary";
 import { useUIVersion } from "@/hooks/useUIVersion";
 import RateioTabV2 from "@/components/v2/campaigns/RateioTabV2";
 import { useActiveAdjustment } from "@/hooks/useAdjustments";
+import OccurrencesPortalV2 from "@/pages/v2/OccurrencesPortalV2";
+import OccurrencesPortal from "@/pages/OccurrencesPortal";
+
 
 
 const CampaignDetail = () => {
@@ -171,7 +174,7 @@ const CampaignDetail = () => {
             <TabsTrigger value="pieces">{t("tabs.pieces", "Peças")}</TabsTrigger>
             <TabsTrigger value="matrix">{t("tabs.rateio", "Rateio")}</TabsTrigger>
             {isAdmin && <TabsTrigger value="budgets">{t("tabs.cotacoes", "Cotações")}</TabsTrigger>}
-            <TabsTrigger value="occurrences" className="hidden">Ocorrências</TabsTrigger>
+            <TabsTrigger value="occurrences">{t("occurrences.portal.title")}</TabsTrigger>
             <TabsTrigger value="scheduling" className="hidden">Agendamento</TabsTrigger>
             <TabsTrigger value="installations" className="hidden">Instalações</TabsTrigger>
             <TabsTrigger value="approvals" className="hidden">Aprovações</TabsTrigger>
@@ -269,7 +272,11 @@ const CampaignDetail = () => {
 
             <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">Carregando aba...</div>}>
               <TabsContent value="occurrences">
-                <OccurrencesTab campaignId={campaignId!} clientId={clientId!} lalPerms={lalPerms} />
+                {version === "v2" ? (
+                  <OccurrencesPortalV2 />
+                ) : (
+                  <OccurrencesPortal />
+                )}
               </TabsContent>
               <TabsContent value="scheduling">
                 <SchedulingTab 

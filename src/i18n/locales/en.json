@@ -442,6 +442,19 @@
     "secondaryDisplay": "Secondary Display"
   },
   "occurrences": {
+    "portal": {
+      "title": "Occurrences Portal",
+      "subtitle": "Select your store to register an occurrence",
+      "noAccessTitle": "Portal access not configured",
+      "noAccessDescription": "No store in this campaign is enabled to register occurrences. To grant access, go to the Stores module, edit each store and enable the occurrences option.",
+      "noStoresTitle": "No stores registered in this campaign",
+      "noStoresDescription": "Register the participating stores before configuring the occurrences portal.",
+      "deadlinePassedTitle": "Occurrence deadline has passed",
+      "deadlinePassedDescription": "The deadline for registering occurrences in this campaign has ended.",
+      "goToStores": "Go to Stores",
+      "deadline": "Deadline",
+      "deadlineExpired": "Deadline expired"
+    },
     "title": "Occurrences",
     "new": "New Occurrence",
     "empty": "No occurrences found",
