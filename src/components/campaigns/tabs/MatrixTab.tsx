@@ -200,8 +200,8 @@ export default function MatrixTab({
                               return label ? { key, label } : null;
                             }).filter(Boolean) as any[];
                             await exportMatrixExcelJS(
-                              stores, pieces, qtyMap, campaign?.name || "Campanha", kits, kitPieces, 
-                              undefined, [], [], pieces, agency?.name, client?.name, []
+                              stores || [], pieces || [], qtyMap || {}, campaign?.name || "Campanha", kits || [], kitPieces || [], 
+                              undefined, [], [], pieces || [], agency?.name, client?.name, []
                             );
                             toast.success("Planilha exportada com sucesso!", { id: tId });
                           } catch (e: any) { toast.error("Falha ao exportar: " + e.message, { id: tId }); }

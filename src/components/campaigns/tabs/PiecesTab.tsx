@@ -95,6 +95,8 @@ export default function PiecesTab({
   const [orderByLocationOpen, setOrderByLocationOpen] = useState(false);
   const [pptExportOpen, setPptExportOpen] = useState(false);
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
+  const [newPieceDraft, setNewPieceDraft] = useState<any>(null); // Placeholder state to prevent errors if not passed
+
 
   const visiblePieces = useMemo(() => pieces.filter(p => !p.kit_only), [pieces]);
   const kitOnlyPieces = useMemo(() => pieces.filter(p => p.kit_only), [pieces]);
