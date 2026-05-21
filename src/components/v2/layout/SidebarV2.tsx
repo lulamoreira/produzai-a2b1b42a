@@ -125,15 +125,15 @@ export function SidebarV2() {
       
       if (!data) return null;
 
-      // Fetch modules from the helper table
-      const { data: modData } = await supabase
+      // Fetch modules using untyped select to bypass TS errors if needed
+      const { data: modData } = await (supabase as any)
         .from("campaign_modules")
         .select("module_key")
         .eq("campaign_id", campaignId!);
 
       return {
         ...data,
-        modules: modData?.map((m) => m.module_key) || []
+        modules: modData?.map((m: any) => m.module_key) || []
       };
     },
     enabled: !!campaignId,
@@ -152,18 +152,19 @@ export function SidebarV2() {
       if (!camps) return [];
 
       const campIds = camps.map(c => c.id);
-      const { data: modData } = await supabase
+      const { data: modData } = await (supabase as any)
         .from("campaign_modules")
         .select("campaign_id, module_key")
         .in("campaign_id", campIds);
 
       return camps.map(camp => ({
         ...camp,
-        modules: modData?.filter(m => m.campaign_id === camp.id).map(m => m.module_key) || []
+        modules: modData?.filter((m: any) => m.campaign_id === camp.id).map((m: any) => m.module_key) || []
       }));
     },
     enabled: !!clientId && !isLimited,
   });
+
 
 
 
