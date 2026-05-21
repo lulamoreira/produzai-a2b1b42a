@@ -125,6 +125,10 @@
   "rateio": {
     "activeTab": "ACTIVE",
     "readOnly": "Read-only view",
+    "readOnlyBanner": "Read-only version — editing is not allowed in this spreadsheet",
+    "errors": {
+      "automationFailed": "Automation failed. Please try again."
+    },
     "currentRateio": "Current rateio",
     "syncWith": "Synced with",
     "searchStore": "Search store...",

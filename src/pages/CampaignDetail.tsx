@@ -162,6 +162,7 @@ const CampaignDetail = () => {
           isAdminOrMaster={isAdminOrMaster} canEditCampaign={true}
           onRename={() => {}} onBackup={() => {}} onOpenSection={setActiveSection}
           pieces={pieces} kits={kits} kitPieces={kitPieces}
+          activeAdjustment={activeAdjustment}
         />
 
         <Tabs value={activeSection || "summary"} onValueChange={setActiveSection} className="w-full">
@@ -244,12 +245,17 @@ const CampaignDetail = () => {
               )}
             </TabsContent>
             <TabsContent value="adjustments">
-              <ApprovalsTab 
-                campaignId={campaignId!} campaignName={campaign.name} pieces={pieces}
-                kits={kits} kitPieces={kitPieces} storePieces={storePieces} stores={stores}
-                agencyName={agency?.name || ""} clientName={client?.name || ""}
-                currencyCode="BRL" isAdminOrMaster={isAdminOrMaster}
-              />
+              <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">Carregando aba...</div>}>
+                <ApprovalsTab 
+                  campaignId={campaignId!} campaignName={campaign.name} pieces={pieces}
+                  kits={kits} kitPieces={kitPieces} storePieces={storePieces} stores={stores}
+                  agencyName={agency?.name || ""} clientName={client?.name || ""}
+                  currencyCode="BRL" isAdminOrMaster={isAdminOrMaster}
+                  winnerSupplierId={winnerSupplierId}
+                  hasNegotiationRateio={hasNegotiationRateio}
+                  onBackToBudgets={() => setActiveSection("budgets")}
+                />
+              </Suspense>
             </TabsContent>
             <TabsContent value="budgets">
               <BudgetTab 

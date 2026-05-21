@@ -13,6 +13,9 @@ interface ApprovalsTabProps {
   clientName: string;
   currencyCode: string;
   isAdminOrMaster: boolean;
+  winnerSupplierId?: string | null;
+  hasNegotiationRateio?: boolean;
+  onBackToBudgets?: () => void;
 }
 
 export default function ApprovalsTab({ 
@@ -26,7 +29,10 @@ export default function ApprovalsTab({
   agencyName,
   clientName,
   currencyCode,
-  isAdminOrMaster 
+  isAdminOrMaster,
+  winnerSupplierId,
+  hasNegotiationRateio,
+  onBackToBudgets
 }: ApprovalsTabProps) {
   return (
     <AdjustmentsTab 
@@ -40,6 +46,9 @@ export default function ApprovalsTab({
       agencyName={agencyName}
       clientName={clientName}
       currencyCode={currencyCode}
+      winnerSupplierId={winnerSupplierId}
+      hasNegotiationRateio={hasNegotiationRateio}
+      onBackToBudgets={onBackToBudgets}
     />
   );
 }

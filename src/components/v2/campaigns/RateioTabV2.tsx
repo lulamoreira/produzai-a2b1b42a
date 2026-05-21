@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
   Search, Filter, Download, Sparkles, Copy, MoreHorizontal, Lock, CheckCircle2,
-  Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers
+  Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters, type FilterLogicMode } from "@/components/MatrixFilterSidebar";
 import MatrixDistributionDashboard from "@/components/Matrix/MatrixDistributionDashboard";
+import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getStateColor } from "@/lib/stateColors";
@@ -85,6 +86,18 @@ export default function RateioTabV2({
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
   const [filterLogicMode, setFilterLogicMode] = useState<FilterLogicMode>("and");
   
+  const [isAutomationOpen, setIsAutomationOpen] = useState(false);
+  const [isExecutingAutomation, setIsExecutingAutomation] = useState(false);
+  
+  // Custom field labels for automation
+  const customFieldLabels = useMemo(() => {
+    return Array.from({ length: 15 }, (_, idx) => {
+      const i = idx + 1;
+      const label = (client as any)?.[`custom_field_${i}_label`];
+      return label ? { index: i, label, key: `custom_field_${i}` } : null;
+    }).filter((x): x is { index: number; label: string; key: string } => x !== null);
+  }, [client]);
+
   // Sorting state - "state" or null (default alpha)
   const [sortConfig, setSortConfig] = useState<{ key: "state"; direction: "asc" | "desc" } | null>(null);
 
@@ -317,6 +330,11 @@ export default function RateioTabV2({
   const isTabEditable = activeTabData?.isVigente && activeVersionTab === vigenteSource;
   const isLatestTab = isTabEditable;
 
+  const handleAutomationComplete = () => {
+    setIsAutomationOpen(false);
+    // You might want to refresh data here, but react-query usually handles it via mutations
+  };
+
 
 
 
@@ -415,7 +433,7 @@ export default function RateioTabV2({
                       {isTabEditable ? (
                         <>Rateio vigente: <span className="font-bold">{activeTabData?.label}</span></>
                       ) : (
-                        <>Versão somente leitura — edições não são permitidas nesta planilha: <span className="font-bold">{activeTabData?.label}</span></>
+                        <>{t("rateio.readOnlyBanner")} <span className="font-bold">{activeTabData?.label}</span></>
                       )}
                     </div>
                     {isTabEditable && activeTabData?.type === "adjustment" && (
@@ -436,8 +454,18 @@ export default function RateioTabV2({
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-stone-900"><Redo2 className="w-3.5 h-3.5" /></Button>
                       </div>
 
-                      <Button variant="outline" size="sm" className="h-9 text-xs gap-2 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50">
-                        <Sparkles className="w-3.5 h-3.5 text-[#C2714F]" />
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-9 text-xs gap-2 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
+                        onClick={() => setIsAutomationOpen(true)}
+                        disabled={isExecutingAutomation}
+                      >
+                        {isExecutingAutomation ? (
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Sparkles className="w-3.5 h-3.5 text-[#C2714F]" />
+                        )}
                         {t("rateio.matrixAutomation", "AUTOMAÇÃO DE MATRIZ")}
                       </Button>
 
@@ -445,14 +473,8 @@ export default function RateioTabV2({
                         <Copy className="w-3.5 h-3.5" />
                         {t("rateio.copyQuantities", "COPIAR QUANTIDADES")}
                       </Button>
-
-                      <Badge variant="secondary" className="bg-stone-100 text-stone-500 border-none text-[10px] h-9 px-3 font-bold uppercase rounded-lg">
-                        {activeTabData?.type === "adjustment" ? "AJUSTE" : activeTabData?.type === "negotiation" ? "NEGOCIAÇÃO" : "ORIGINAL"}
-                      </Badge>
                     </>
                   )}
-
-
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -473,11 +495,16 @@ export default function RateioTabV2({
                   </DropdownMenu>
 
                   {isTabEditable && (
-                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg border border-stone-200 shadow-sm">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Button>
+                    <>
+                      <Badge variant="secondary" className="bg-stone-100 text-stone-500 border-none text-[10px] h-9 px-3 font-bold uppercase rounded-lg">
+                        {activeTabData?.type === "adjustment" ? "AJUSTE" : activeTabData?.type === "negotiation" ? "NEGOCIAÇÃO" : "ORIGINAL"}
+                      </Badge>
+                      
+                      <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg border border-stone-200 shadow-sm">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </>
                   )}
-
                 </div>
               </div>
 
@@ -806,6 +833,23 @@ export default function RateioTabV2({
           )}
         </div>
       </div>
+      <MatrixAutomationDialog 
+        open={isAutomationOpen}
+        onOpenChange={setIsAutomationOpen}
+        campaignId={campaignId}
+        clientId={clientId}
+        stores={stores}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        qtyMap={qtyMap}
+        customFieldLabels={customFieldLabels}
+        onComplete={handleAutomationComplete}
+        isAdjustmentView={activeTabData?.type === "adjustment"}
+        adjustmentId={activeAdjustment?.id}
+        isNegotiationView={activeTabData?.type === "negotiation"}
+        negotiationSupplierId={winnerSupplierId}
+      />
     </div>
   );
 }
