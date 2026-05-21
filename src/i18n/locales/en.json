@@ -55,7 +55,9 @@
     "responsible": "Responsible",
     "client": "Client",
     "store": "Store",
-    "campaign": "Campaign"
+    "campaign": "Campaign",
+    "backup": "Backup",
+    "activeAdjustment": "Active adjustment"
   },
   "greeting": {
     "morning": "Good morning",
