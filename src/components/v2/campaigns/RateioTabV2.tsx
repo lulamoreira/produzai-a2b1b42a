@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
@@ -95,30 +95,6 @@ export default function RateioTabV2({
       return null;
     });
   };
-
-  // Excel-like tabs state
-  const storageKey = `rateio-active-tab-${campaignId}`;
-  const [activeVersionTab, setActiveVersionTab] = useState<string>(() => {
-    return localStorage.getItem(storageKey) || vigenteSource;
-  });
-
-  // Sync state with local storage
-  useEffect(() => {
-    localStorage.setItem(storageKey, activeVersionTab);
-    if (activeVersionTab !== rateioSource) {
-      setRateioSource(activeVersionTab as any);
-    }
-  }, [activeVersionTab, storageKey, setRateioSource, rateioSource]);
-
-  // Persist source from props if it changes externally
-  useEffect(() => {
-    if (rateioSource !== activeVersionTab) {
-      setActiveVersionTab(rateioSource);
-    }
-  }, [rateioSource, activeVersionTab]);
-
-
-
 
   // Filter stores
   const filteredStores = useMemo(() => {
@@ -336,7 +312,8 @@ export default function RateioTabV2({
     return tabs;
   }, [hasNegotiationRateio, winnerSupplierId, winnerSupplierName, activeAdjustment]);
 
-  const activeTabData = versionTabs.find(t => t.id === activeVersionTab);
+  const activeTabData = versionTabs.find(t => t.id === rateioSource) || versionTabs.find(t => t.id === vigenteSource) || versionTabs[0];
+  const activeVersionTab = activeTabData?.id || vigenteSource;
   const isTabEditable = activeTabData?.isVigente && activeVersionTab === vigenteSource;
   const isLatestTab = isTabEditable;
 
@@ -399,7 +376,7 @@ export default function RateioTabV2({
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => setActiveVersionTab(tab.id)}
+                      onClick={() => setRateioSource(tab.id as "original" | "negotiation" | "adjustment")}
                       className={cn(
                         "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-all whitespace-nowrap",
                         isActive 
