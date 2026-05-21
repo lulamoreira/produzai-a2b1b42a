@@ -89,7 +89,7 @@ export default function MatrixTab({
       <div className="flex flex-1 overflow-hidden relative">
         <MatrixFilterSidebar
           collapsed={filterSidebarCollapsed}
-          onToggle={() => setFilterSidebarCollapsed(!filterSidebarCollapsed)}
+          onCollapsedChange={setFilterSidebarCollapsed}
           pieces={pieces}
           stores={stores}
           filters={pieceFilters}
@@ -199,12 +199,10 @@ export default function MatrixTab({
                               const label = (client as any)?.[`${key}_label`];
                               return label ? { key, label } : null;
                             }).filter(Boolean) as any[];
-                            await exportMatrixExcelJS({
-                              campaignName: campaign?.name || "Campanha",
-                              stores, pieces, qtyMap, kits, kitPieces, allPieces: pieces,
-                              agencyName: agency?.name, clientName: client?.name,
-                              extraHiddenStoreFields: extraFields,
-                            });
+                            await exportMatrixExcelJS(
+                              stores, pieces, qtyMap, campaign?.name || "Campanha", kits, kitPieces, 
+                              undefined, [], [], pieces, agency?.name, client?.name, []
+                            );
                             toast.success("Planilha exportada com sucesso!", { id: tId });
                           } catch (e: any) { toast.error("Falha ao exportar: " + e.message, { id: tId }); }
                        }}>
