@@ -28,7 +28,9 @@ export default function ApprovalsTab({
   agencyName,
   clientName,
   currencyCode,
-  isAdminOrMaster 
+  isAdminOrMaster,
+  winnerSupplierId,
+  hasNegotiationRateio
 }: ApprovalsTabProps) {
   return (
     <AdjustmentsTab 
@@ -42,6 +44,8 @@ export default function ApprovalsTab({
       agencyName={agencyName}
       clientName={clientName}
       currencyCode={currencyCode}
+      winnerSupplierId={winnerSupplierId}
+      hasNegotiationRateio={hasNegotiationRateio}
     />
   );
 }
