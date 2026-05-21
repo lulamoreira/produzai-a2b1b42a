@@ -451,6 +451,8 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
   } = params;
 
   const effectiveStoreFields = storeFields && storeFields.length > 0 ? storeFields : DEFAULT_STORE_FIELDS;
+  const effectiveMatrixStoreFields = getMatrixStoreFieldsWithHidden(effectiveStoreFields, extraHiddenStoreFields || []);
+  const effectiveStoreMetaCols = Math.max(effectiveMatrixStoreFields.length, 1);
   const colors = makeColors(palette);
   const locData: LocationData = { locations, subLocations };
 
@@ -544,7 +546,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
 
   // Apply change highlights to the main matrix columns (meta rows + store rows).
   if (changeMap && changeMap.size > 0) {
-    const STORE_META_COLS = Math.max(effectiveStoreFields.length, 1);
+    const STORE_META_COLS = effectiveStoreMetaCols;
     const META_ROWS = META_LABELS.length;
     const firstMetaRow = 2;
     const lastMetaRow = firstMetaRow + META_ROWS - 1;
@@ -578,7 +580,7 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
 
   // Apply store-row highlights (added/removed stores)
   if (storeChangeMap && storeChangeMap.size > 0) {
-    const STORE_META_COLS = Math.max(effectiveStoreFields.length, 1);
+    const STORE_META_COLS = effectiveStoreMetaCols;
     const META_ROWS = META_LABELS.length;
     const firstStoreRow = META_ROWS + 2 + 1; // meta rows + title + stores header
     const lastCol = STORE_META_COLS + allColumns.length;
