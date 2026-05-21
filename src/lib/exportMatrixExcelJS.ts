@@ -115,6 +115,28 @@ type MatrixItem = {
   _type?: "piece" | "kit";
 };
 
+export type MatrixStoreField = StoreFieldDef & { __hidden?: boolean };
+
+export function getMatrixStoreFieldsWithHidden(
+  storeFields: StoreFieldDef[] = DEFAULT_STORE_FIELDS,
+  extraHiddenStoreFields: StoreFieldDef[] = [],
+): MatrixStoreField[] {
+  if (!extraHiddenStoreFields.length) return storeFields.slice();
+  const out: MatrixStoreField[] = [];
+  let inserted = false;
+  for (const f of storeFields) {
+    out.push(f);
+    if (!inserted && f.key === "state") {
+      for (const h of extraHiddenStoreFields) out.push({ ...h, __hidden: true });
+      inserted = true;
+    }
+  }
+  if (!inserted) {
+    for (const h of extraHiddenStoreFields) out.push({ ...h, __hidden: true });
+  }
+  return out;
+}
+
 type LocationData = {
   locations: CampaignPieceLocation[];
   subLocations: CampaignPieceSubLocation[];
@@ -148,25 +170,9 @@ async function buildTransposedSheet(
   // inserted right after the `state` (UF) column when present, otherwise at
   // the end of the meta columns — but BEFORE the items, so they stay grouped
   // with the rest of the store info instead of being far to the right.
-  type MetaField = StoreFieldDef & { __hidden?: boolean };
-  const mergedStoreFields: MetaField[] = (() => {
-    if (!extraHiddenStoreFields.length) return storeFields.slice();
-    const out: MetaField[] = [];
-    let inserted = false;
-    for (const f of storeFields) {
-      out.push(f);
-      if (!inserted && f.key === "state") {
-        for (const h of extraHiddenStoreFields) out.push({ ...h, __hidden: true });
-        inserted = true;
-      }
-    }
-    if (!inserted) {
-      for (const h of extraHiddenStoreFields) out.push({ ...h, __hidden: true });
-    }
-    return out;
-  })();
+  const mergedStoreFields = getMatrixStoreFieldsWithHidden(storeFields, extraHiddenStoreFields);
   const hiddenColSet = new Set<number>();
-  mergedStoreFields.forEach((f, i) => { if ((f as MetaField).__hidden) hiddenColSet.add(i + 1); });
+  mergedStoreFields.forEach((f, i) => { if (f.__hidden) hiddenColSet.add(i + 1); });
   // Use merged list for all rendering so hidden cols sit inside meta block.
   storeFields = mergedStoreFields;
 
