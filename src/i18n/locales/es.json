@@ -442,6 +442,19 @@
     "secondaryDisplay": "Vitrina Secundaria"
   },
   "occurrences": {
+    "portal": {
+      "title": "Portal de Ocurrencias",
+      "subtitle": "Selecciona tu tienda para registrar una ocurrencia",
+      "noAccessTitle": "Acceso al portal no configurado",
+      "noAccessDescription": "Ninguna tienda de esta campaña está habilitada para registrar ocurrencias. Ve al módulo Tiendas, edita cada tienda y activa la opción de ocurrencias.",
+      "noStoresTitle": "No hay tiendas registradas en esta campaña",
+      "noStoresDescription": "Registra las tiendas participantes antes de configurar el portal de ocurrencias.",
+      "deadlinePassedTitle": "Plazo de ocurrencias vencido",
+      "deadlinePassedDescription": "El plazo para registrar ocurrencias en esta campanha ha finalizado.",
+      "goToStores": "Ir a Tiendas",
+      "deadline": "Plazo",
+      "deadlineExpired": "Plazo vencido"
+    },
     "title": "Ocurrencias",
     "new": "Nueva Ocurrencia",
     "empty": "No se encontraron ocurrencias",
