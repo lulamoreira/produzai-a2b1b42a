@@ -127,34 +127,97 @@ export default function RateioTabV2({
     });
   }, [stores, storeSearch, storeFilters]);
 
-  // Filter pieces
-  const filteredPieces = useMemo(() => {
-    return pieces.filter(p => {
-      if (p.kit_only) return false; // Usually matrix doesn't show kit-only pieces as columns
-      
-      if (pieceFilters.category.size > 0 && !pieceFilters.category.has(p.category)) return false;
-      if (pieceFilters.name.size > 0 && !pieceFilters.name.has(p.name)) return false;
-      if (pieceFilters.store_category.size > 0 && !pieceFilters.store_category.has(p.store_category)) return false;
-      
-      return true;
-    }).sort((a, b) => (a.display_order || 0) - (b.display_order || 0));
-  }, [pieces, pieceFilters]);
+  // Build unified columns (pieces + kits) ordered like the Pieces module
+  // (display_order, piece-before-kit on ties). Kit-only pieces are hidden.
+  type ColumnItem = {
+    _type: "piece" | "kit";
+    id: string;
+    code: number | string;
+    name: string;
+    image_url?: string | null;
+    image_report_url?: string | null;
+    category?: string | null;
+    store_category?: string | null;
+    display_order: number;
+    raw: any;
+  };
 
-  // Group pieces for headers
-  const pieceGroups = useMemo(() => {
-    const groups: { label: string; pieces: any[] }[] = [];
-    filteredPieces.forEach(p => {
-      const label = !p.store_category || p.store_category === "TODAS" ? "TODAS" : "ÚNICA";
-      let group = groups.find(g => g.label === label);
-      if (!group) {
-        group = { label, pieces: [] };
-        groups.push(group);
-      }
-      group.pieces.push(p);
+  const columns = useMemo<ColumnItem[]>(() => {
+    const pieceCols: ColumnItem[] = pieces
+      .filter((p: any) => !p.kit_only)
+      .filter((p: any) => {
+        if (pieceFilters.category.size > 0 && !pieceFilters.category.has(p.category)) return false;
+        if (pieceFilters.name.size > 0 && !pieceFilters.name.has(p.name)) return false;
+        if (pieceFilters.store_category.size > 0 && !pieceFilters.store_category.has(p.store_category)) return false;
+        return true;
+      })
+      .map((p: any) => ({
+        _type: "piece" as const,
+        id: p.id,
+        code: p.code,
+        name: p.name,
+        image_url: p.image_url,
+        image_report_url: p.image_report_url,
+        category: p.category,
+        store_category: p.store_category,
+        display_order: p.display_order ?? 0,
+        raw: p,
+      }));
+
+    const kitCols: ColumnItem[] = (kits || []).map((k: any) => ({
+      _type: "kit" as const,
+      id: k.id,
+      code: k.code,
+      name: k.name,
+      image_url: k.image_url,
+      image_report_url: k.image_report_url,
+      category: k.category,
+      store_category: k.category,
+      display_order: k.display_order ?? 0,
+      raw: k,
+    }));
+
+    return [...pieceCols, ...kitCols].sort((a, b) => {
+      const d = (a.display_order ?? 0) - (b.display_order ?? 0);
+      if (d !== 0) return d;
+      if (a._type !== b._type) return a._type === "piece" ? -1 : 1;
+      return a.id < b.id ? -1 : 1;
     });
-    // Ensure "TODAS" is first
-    return groups.sort((a, b) => (a.label === "TODAS" ? -1 : 1));
-  }, [filteredPieces]);
+  }, [pieces, kits, pieceFilters]);
+
+  // Pre-compute kit quantity per store from components (read-only display)
+  const kitQtyMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    for (const kit of kits || []) {
+      const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === kit.id);
+      if (kpList.length === 0) continue;
+      for (const s of stores) {
+        const q = Math.min(
+          ...kpList.map((kp: any) => {
+            const baseQty = qtyMap[`${s.id}-${kp.piece_id}`] || 0;
+            return Math.floor(baseQty / (kp.quantity || 1));
+          })
+        );
+        map[`${s.id}-${kit.id}`] = Number.isFinite(q) ? q : 0;
+      }
+    }
+    return map;
+  }, [kits, kitPieces, stores, qtyMap]);
+
+  // Group columns by store_category label, preserving sorted order (no global re-sort)
+  const pieceGroups = useMemo(() => {
+    const groups: { label: string; items: ColumnItem[] }[] = [];
+    columns.forEach((c) => {
+      const label = !c.store_category || c.store_category === "TODAS" ? "TODAS" : "ÚNICA";
+      const last = groups[groups.length - 1];
+      if (!last || last.label !== label) {
+        groups.push({ label, items: [c] });
+      } else {
+        last.items.push(c);
+      }
+    });
+    return groups;
+  }, [columns]);
 
   // Cell editing state
   const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
