@@ -119,14 +119,21 @@ export function SidebarV2() {
     queryFn: async () => {
       const { data } = await supabase
         .from("campaigns")
-        .select("id, name, color, display_order, client_id, campaign_modules(module_key)")
+        .select("id, name, color, display_order, client_id")
         .eq("id", campaignId!)
         .maybeSingle();
       
       if (!data) return null;
+
+      // Fetch modules from the helper table
+      const { data: modData } = await supabase
+        .from("campaign_modules")
+        .select("module_key")
+        .eq("campaign_id", campaignId!);
+
       return {
         ...data,
-        modules: data.campaign_modules?.map((m: any) => m.module_key) || []
+        modules: modData?.map((m) => m.module_key) || []
       };
     },
     enabled: !!campaignId,
@@ -135,20 +142,29 @@ export function SidebarV2() {
   const { data: clientCampaigns = [] } = useQuery({
     queryKey: ["sidebar-v2-client-campaigns", clientId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data: camps } = await supabase
         .from("campaigns")
-        .select("id, name, color, display_order, campaign_modules(module_key)")
+        .select("id, name, color, display_order")
         .eq("client_id", clientId!)
         .order("display_order", { ascending: true, nullsFirst: false })
         .order("created_at", { ascending: false });
       
-      return (data || []).map((camp: any) => ({
+      if (!camps) return [];
+
+      const campIds = camps.map(c => c.id);
+      const { data: modData } = await supabase
+        .from("campaign_modules")
+        .select("campaign_id, module_key")
+        .in("campaign_id", campIds);
+
+      return camps.map(camp => ({
         ...camp,
-        modules: camp.campaign_modules?.map((m: any) => m.module_key) || []
+        modules: modData?.filter(m => m.campaign_id === camp.id).map(m => m.module_key) || []
       }));
     },
     enabled: !!clientId && !isLimited,
   });
+
 
 
   // Realtime updates
