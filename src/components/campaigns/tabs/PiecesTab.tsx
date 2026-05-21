@@ -123,7 +123,7 @@ export default function PiecesTab({
       <div className="sticky top-0 z-30 bg-background -mx-4 sm:-mx-6 px-4 sm:px-6 pt-2 pb-2 border-b border-border/40">
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4">
           <span className="px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-accent/15 text-accent-foreground">
-            {visiblePieces.length + kits.length} {t("pieces.pieceCount")}
+            {visiblePieces.length + kits.length} {t("pieces.pieceCountShort")}
           </span>
           <div className="flex-1" />
           {canEditPieces && (
@@ -131,7 +131,7 @@ export default function PiecesTab({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1">
-                    <MoreHorizontal className="w-3.5 h-3.5" /> Mais ações
+                    <MoreHorizontal className="w-3.5 h-3.5" /> {t("common.moreActions")}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
@@ -146,7 +146,7 @@ export default function PiecesTab({
                     <Download className="w-4 h-4 mr-2" /> {t("common.export")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setPieceImportOpen(true)}>
-                    <Upload className="w-4 h-4 mr-2" /> Importar
+                    <Upload className="w-4 h-4 mr-2" /> {t("common.import")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={handleReviewPieceCodes}>
                     <Sparkles className="w-4 h-4 mr-2" /> {t("pieces.reviewCodes")}
@@ -155,7 +155,7 @@ export default function PiecesTab({
                     <RefreshCw className="w-4 h-4 mr-2" /> {t("pieces.recode")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setOrderByLocationOpen(true)}>
-                    <ArrowDownAZ className="w-4 h-4 mr-2" /> Ordenar por localização
+                    <ArrowDownAZ className="w-4 h-4 mr-2" /> {t("common.orderByLocation")}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setLocationDialogOpen(true)}>
                     <MapPin className="w-4 h-4 mr-2" /> {t("pieces.storeLocation")}
@@ -192,7 +192,7 @@ export default function PiecesTab({
                 trigger={
                   <Button variant="outline" size="sm" className="text-[10px] sm:text-xs gap-1">
                     <Presentation className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    Exportar PPT
+                    {t("common.exportPPT")}
                   </Button>
                 }
               />
