@@ -546,6 +546,7 @@
     "installationOs": "Installation WO",
     "osNumber": "WO #",
     "preferenceLabel": "Preference",
+    "inheritedHint": "Inherited from the previous campaign when available",
     "approvalStatus": "Installation approval status",
     "fillDateTime": "(fill date and time)",
     "storeowner": "Storeowner",
