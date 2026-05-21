@@ -67,7 +67,7 @@ export function CampaignHeader({
               onClick={() => onOpenSection("adjustments")}
             >
               <Layers className="w-3 h-3" />
-              Ajuste ativo: {activeAdjustment.name}
+              {t("common.activeAdjustment")}: {activeAdjustment.name}
             </Badge>
           )}
           
@@ -85,7 +85,7 @@ export function CampaignHeader({
               className="gap-1.5 h-8"
               onClick={onBackup}
             >
-              <Database className="w-3.5 h-3.5" /> Backup
+              <Database className="w-3.5 h-3.5" /> {t("common.backup")}
             </Button>
           )}
 

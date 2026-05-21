@@ -56,11 +56,11 @@ export function HeaderV2() {
       }
 
       if (params.campaignId) {
-        crumbs.push({ label: campaignData?.name || "Campanha" });
+        crumbs.push({ label: campaignData?.name || t("common.campaign") });
       }
 
       if (path.includes("/pieces")) {
-        crumbs.push({ label: "Peças" });
+        crumbs.push({ label: t("pieces.title") });
       }
     }
 
