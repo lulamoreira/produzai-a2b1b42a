@@ -1317,7 +1317,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                                 store_id: store.id,
                                 module: "installations",
                                 action: "mark_completed",
-                                details: t("common.installationCompleted"),
+                                details: t("installations.completed"),
                               });
                               logCampaignActivity.mutate({
                                 campaign_id: campaignId,
@@ -1327,7 +1327,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                                 action: "instalacao_concluida_manual",
                                 description: `${user?.user_metadata?.display_name || "Usuário"} marcou ${store.name} como concluída manualmente`,
                               });
-                              toast.success(t("common.installationCompleted"));
+                              toast.success(t("installations.completed"));
                             } catch {
                               toast.error(t("installations.errorUpdatingCompletion"));
                             }
