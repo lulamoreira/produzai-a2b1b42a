@@ -21,7 +21,7 @@
 //     campaign_adjustment_budget_request.adjusted_prices_jsonb. Falls back
 //     to previousPrice when not present (i.e. unchanged piece).
 
-import { appendMatrixSheets } from "@/lib/exportMatrixExcelJS";
+import { appendMatrixSheets, getMatrixStoreFieldsWithHidden } from "@/lib/exportMatrixExcelJS";
 import type { StoreFieldDef } from "@/components/RateioExportColorDialog";
 
 const XLSX_MIME =
