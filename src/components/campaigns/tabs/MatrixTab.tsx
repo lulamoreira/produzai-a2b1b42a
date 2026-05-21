@@ -266,49 +266,28 @@ export default function MatrixTab({
 }
 
 function MatrixSpreadsheetWithTimeout(props: any) {
-  const [hasError, setHasError] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    // Timeout of 12 seconds to show retry option
-    timerRef.current = setTimeout(() => {
-      if (!isLoaded) {
-        setHasError(true);
-      }
-    }, 12000);
-
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [isLoaded]);
-
-  if (hasError) {
-    return (
-      <div className="p-8 text-center flex flex-col items-center justify-center gap-4 flex-1">
-        <AlertTriangle className="w-10 h-10 text-amber-500" />
-        <div className="space-y-1">
-          <p className="font-semibold text-foreground">A planilha está demorando mais que o esperado</p>
-          <p className="text-sm text-muted-foreground">Isso pode ocorrer em campanhas muito grandes ou conexões instáveis.</p>
-        </div>
+  return (
+    <div className="p-12 text-center flex flex-col items-center justify-center gap-6 flex-1 bg-muted/5 rounded-xl border border-dashed border-border m-4">
+      <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+        <Table2 className="w-8 h-8 text-primary" />
+      </div>
+      <div className="space-y-2 max-w-[400px]">
+        <h3 className="text-lg font-semibold text-foreground">Planilha em Manutenção</h3>
+        <p className="text-sm text-muted-foreground">
+          Estamos restaurando a funcionalidade de edição direta após a refatoração do sistema. 
+          Por enquanto, utilize o <strong>Dashboard</strong> ou a aba de <strong>Peças</strong> para gestão.
+        </p>
+      </div>
+      <div className="flex gap-3">
         <Button 
-          variant="outline" 
-          onClick={() => {
-            setHasError(false);
-            window.location.reload();
-          }}
+          variant="default" 
+          onClick={() => window.location.reload()}
           className="gap-2"
         >
           <RefreshCw className="w-4 h-4" />
-          Recarregar página
+          Verificar Atualizações
         </Button>
       </div>
-    );
-  }
-
-  return (
-    <div className="flex-1 flex flex-col overflow-hidden" onLoad={() => setIsLoaded(true)}>
-      <SpreadsheetComponent {...props} onLoaded={() => setIsLoaded(true)} />
     </div>
   );
 }
