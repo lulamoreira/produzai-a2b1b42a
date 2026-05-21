@@ -204,6 +204,24 @@ export default function RateioTabV2({
     return map;
   }, [kits, kitPieces, stores, qtyMap]);
 
+  // Compute column totals
+  const columnTotals = useMemo(() => {
+    const totals: Record<string, number> = {};
+    columns.forEach(col => {
+      let total = 0;
+      const isKit = col._type === "kit";
+      stores.forEach(store => {
+        if (isKit) {
+          total += kitQtyMap[`${store.id}-${col.id}`] || 0;
+        } else {
+          total += qtyMap[`${store.id}-${col.id}`] || 0;
+        }
+      });
+      totals[`${col._type}-${col.id}`] = total;
+    });
+    return totals;
+  }, [columns, stores, qtyMap, kitQtyMap]);
+
   // Group columns by store_category label, preserving sorted order (no global re-sort)
   const pieceGroups = useMemo(() => {
     const groups: { label: string; items: ColumnItem[] }[] = [];
@@ -480,25 +498,37 @@ export default function RateioTabV2({
                         const isKit = col._type === "kit";
                         const img = col.image_url || col.image_report_url || undefined;
                         return (
-                          <th key={`${col._type}-${col.id}`} className="min-w-[120px] max-w-[200px] w-auto p-2 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50">
-                            <div className="flex flex-col items-center gap-1.5">
-                              {img ? (
-                                <img 
-                                  src={img} 
-                                  alt={col.name} 
-                                  className="w-12 h-12 rounded-lg object-cover border border-stone-100 shadow-sm" 
-                                />
-                              ) : (
-                                <div className="w-12 h-12 rounded-lg bg-stone-100 flex items-center justify-center">
-                                  <Table2 className="w-4 h-4 text-stone-300" />
+                          <th key={`${col._type}-${col.id}`} className="min-w-[120px] max-w-[200px] p-0 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50">
+                            <div className="flex flex-col h-full">
+                              <div className="flex flex-col items-center gap-1.5 p-2 flex-1">
+                                {img ? (
+                                  <img 
+                                    src={img} 
+                                    alt={col.name} 
+                                    className="w-12 h-12 rounded-lg object-cover border border-stone-100 shadow-sm" 
+                                  />
+                                ) : (
+                                  <div className="w-12 h-12 rounded-lg bg-stone-100 flex items-center justify-center">
+                                    <Table2 className="w-4 h-4 text-stone-300" />
+                                  </div>
+                                )}
+                                <div className="text-sm font-black text-stone-900 leading-none">{col.code}</div>
+                                {isKit && (
+                                  <div className="text-[9px] font-bold text-[#C2714F] leading-none uppercase">KIT</div>
+                                )}
+                                <div className="text-[10px] text-stone-500 font-medium leading-tight text-center px-1 whitespace-normal break-normal line-clamp-3">
+                                  {col.name}
                                 </div>
-                              )}
-                              <div className="text-sm font-black text-stone-900 leading-none">{col.code}</div>
-                              {isKit && (
-                                <div className="text-[9px] font-bold text-[#C2714F] leading-none uppercase">KIT</div>
-                              )}
-                              <div className="text-[10px] text-stone-500 font-medium leading-tight text-center px-1 whitespace-normal break-normal line-clamp-3">
-                                {col.name}
+                              </div>
+                              
+                              {/* Column Total */}
+                              <div className={cn(
+                                "mt-auto py-1.5 px-2 text-center text-xs font-black border-t border-stone-100",
+                                columnTotals[`${col._type}-${col.id}`] === 0 
+                                  ? "bg-red-500 text-white" 
+                                  : "bg-stone-50 text-stone-900"
+                              )}>
+                                {columnTotals[`${col._type}-${col.id}`] || 0}
                               </div>
                             </div>
                           </th>
