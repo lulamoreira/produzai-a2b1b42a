@@ -341,6 +341,11 @@ export default function RateioTabV2({
   const isLatestTab = isTabEditable;
 
 
+  const activeTabData = versionTabs.find(t => t.id === activeVersionTab);
+  const isTabEditable = activeTabData?.isVigente && activeVersionTab === vigenteSource;
+  const isLatestTab = isTabEditable;
+
+
   return (
     <div className="flex flex-col h-full overflow-hidden bg-white">
       {/* Top Navigation for Spreadsheet/Dashboard */}
