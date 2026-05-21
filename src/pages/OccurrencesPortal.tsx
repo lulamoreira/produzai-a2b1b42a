@@ -60,7 +60,10 @@ export default function OccurrencesPortal() {
         .select("token, store_id")
         .eq("campaign_id", campaignId!);
       
-      if (tokensErr) throw tokensErr;
+      if (tokensErr) {
+        console.error("Supabase Error [occ-portal-tokens]:", tokensErr);
+        throw tokensErr;
+      }
 
       const tokenMap = new Map(existingTokens?.map(t => [t.store_id, t.token]) || []);
 

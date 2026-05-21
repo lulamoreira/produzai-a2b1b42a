@@ -36,7 +36,10 @@ export default function OccurrencesPortalV2() {
         .select("occurrences_portal_title, occurrences_portal_subtitle, module_ocorrencias, deadline_ocorrencias")
         .eq("campaign_id", campaignId!)
         .maybeSingle();
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase Error [occ-portal-config-v2]:", error);
+        throw error;
+      }
       return data;
     },
   });
@@ -52,7 +55,10 @@ export default function OccurrencesPortalV2() {
         .eq("campaign_id", campaignId!)
         .eq("ativo", true);
       
-      if (lojasErr) throw lojasErr;
+      if (lojasErr) {
+        console.error("Supabase Error [occ-portal-lojas-v2]:", lojasErr);
+        throw lojasErr;
+      }
 
       // 2. Fetch existing tokens
       const { data: existingTokens, error: tokensErr } = await supabase
@@ -60,7 +66,10 @@ export default function OccurrencesPortalV2() {
         .select("token, store_id")
         .eq("campaign_id", campaignId!);
       
-      if (tokensErr) throw tokensErr;
+      if (tokensErr) {
+        console.error("Supabase Error [occ-portal-tokens-v2]:", tokensErr);
+        throw tokensErr;
+      }
 
       const tokenMap = new Map(existingTokens?.map(t => [t.store_id, t.token]) || []);
 
