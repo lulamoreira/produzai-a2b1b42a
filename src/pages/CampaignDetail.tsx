@@ -27,6 +27,8 @@ import {
   BudgetTab, ApprovalsTab, MatrixTab, StoresTab, HistoryTab, MockupTab, LojaALojaTab
 } from "@/components/campaigns/tabs";
 import TabErrorBoundary from "@/components/campaigns/TabErrorBoundary";
+import { useUIVersion } from "@/hooks/useUIVersion";
+import RateioTabV2 from "@/components/v2/campaigns/RateioTabV2";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -35,6 +37,7 @@ const CampaignDetail = () => {
   const { t } = useTranslation();
   const locationState = location.state as { initialSection?: string; limitedMode?: boolean } | null;
   const isLimitedMode = locationState?.limitedMode || false;
+  const { version } = useUIVersion();
 
   const { isAdmin, isAdminOrMaster } = useUserRole();
   const lalPerms = useLojaALojaPermissions(campaignId, clientId);
@@ -100,10 +103,10 @@ const CampaignDetail = () => {
 
         <Tabs value={activeSection || "summary"} onValueChange={setActiveSection} className="w-full">
           <TabsList className="mb-4">
-            <TabsTrigger value="summary">Resumo</TabsTrigger>
-            <TabsTrigger value="pieces">Peças</TabsTrigger>
-            <TabsTrigger value="matrix">Matriz</TabsTrigger>
-            {isAdmin && <TabsTrigger value="budgets">Orçamentos</TabsTrigger>}
+            <TabsTrigger value="summary">{t("tabs.summary", "Resumo")}</TabsTrigger>
+            <TabsTrigger value="pieces">{t("tabs.pieces", "Peças")}</TabsTrigger>
+            <TabsTrigger value="matrix">{t("tabs.rateio", "Rateio")}</TabsTrigger>
+            {isAdmin && <TabsTrigger value="budgets">{t("tabs.cotacoes", "Cotações")}</TabsTrigger>}
             <TabsTrigger value="occurrences" className="hidden">Ocorrências</TabsTrigger>
             <TabsTrigger value="scheduling" className="hidden">Agendamento</TabsTrigger>
             <TabsTrigger value="installations" className="hidden">Instalações</TabsTrigger>
@@ -135,15 +138,27 @@ const CampaignDetail = () => {
               />
             </TabsContent>
             <TabsContent value="matrix">
-              <MatrixTab 
-                campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
-                pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
-                canEditCampaignStores={true} activeAdjustment={null} hasNegotiationRateio={false}
-                winnerSupplierId={null} winnerSupplierName="" rateioSource="original"
-                setRateioSource={() => {}} vigenteSource="original" isViewingVigente={true}
-                handleResetNegotiationRateio={() => {}} handleCancelNegotiationRateio={() => {}}
-                isNegotiationView={false} hasAnyAdjustment={false} setActiveSection={setActiveSection}
-              />
+              {version === "v2" ? (
+                <RateioTabV2 
+                  campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
+                  pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
+                  canEditCampaignStores={true} activeAdjustment={null} hasNegotiationRateio={false}
+                  winnerSupplierId={null} winnerSupplierName="" rateioSource="original"
+                  setRateioSource={() => {}} vigenteSource="original" isViewingVigente={true}
+                  handleResetNegotiationRateio={() => {}} handleCancelNegotiationRateio={() => {}}
+                  isNegotiationView={false} hasAnyAdjustment={false} setActiveSection={setActiveSection}
+                />
+              ) : (
+                <MatrixTab 
+                  campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
+                  pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
+                  canEditCampaignStores={true} activeAdjustment={null} hasNegotiationRateio={false}
+                  winnerSupplierId={null} winnerSupplierName="" rateioSource="original"
+                  setRateioSource={() => {}} vigenteSource="original" isViewingVigente={true}
+                  handleResetNegotiationRateio={() => {}} handleCancelNegotiationRateio={() => {}}
+                  isNegotiationView={false} hasAnyAdjustment={false} setActiveSection={setActiveSection}
+                />
+              )}
             </TabsContent>
             <TabsContent value="budgets">
               <BudgetTab 
