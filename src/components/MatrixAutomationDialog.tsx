@@ -993,9 +993,21 @@ export default function MatrixAutomationDialog({
       .filter(gi => gi.group_id === groupId && gi.enabled)
       .sort((a, b) => a.display_order - b.display_order);
 
+    const total = items.length;
     const results: GroupRunResult[] = [];
+    let count = 0;
+
     for (const gi of items) {
+      count++;
       const tpl = templates.find(t => t.id === gi.template_id);
+      const tplName = tpl?.name || "(Automação removida)";
+      setExecutionStatus({ 
+        step: count, 
+        totalSteps: total, 
+        label: `Executando: ${tplName}`, 
+        details: `Automação ${count} de ${total} do grupo ${groupName}` 
+      });
+
       if (!tpl) {
         results.push({
           templateId: gi.template_id,
@@ -1043,7 +1055,9 @@ export default function MatrixAutomationDialog({
       }
     }
 
+    setExecutionStatus({ step: total, totalSteps: total, label: "Finalizando...", details: "Processando resultados." });
     setExecuting(false);
+    setExecutionStatus(null);
     await onComplete();
 
     const failures = results.filter(r => r.status === "error");
