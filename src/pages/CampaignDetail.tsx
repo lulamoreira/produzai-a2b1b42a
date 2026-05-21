@@ -34,6 +34,7 @@ import { useAdjustmentRateio } from "@/hooks/useAdjustmentRateio";
 import { useNegotiationStorePieces } from "@/hooks/useNegotiationStorePieces";
 import OccurrencesPortalV2 from "@/pages/v2/OccurrencesPortalV2";
 import OccurrencesPortal from "@/pages/OccurrencesPortal";
+import CampaignBackupDialog from "@/components/CampaignBackupDialog";
 
 
 
@@ -71,6 +72,7 @@ const CampaignDetail = () => {
   const [activeSection, setActiveSectionState] = useState<string | null>(() => {
     return locationState?.initialSection || new URLSearchParams(location.search).get("section") || "summary";
   });
+  const [backupOpen, setBackupOpen] = useState(false);
 
   // Keep activeSection in sync with URL changes (e.g. from sidebar clicks)
   useEffect(() => {
@@ -194,9 +196,16 @@ const CampaignDetail = () => {
         <CampaignHeader 
           campaign={campaign} agency={agency} client={client} 
           isAdminOrMaster={isAdminOrMaster} canEditCampaign={true}
-          onRename={() => {}} onBackup={() => {}} onOpenSection={setActiveSection}
+          onRename={() => {}} onBackup={() => setBackupOpen(true)} onOpenSection={setActiveSection}
           pieces={pieces} kits={kits} kitPieces={kitPieces}
           activeAdjustment={activeAdjustment}
+        />
+
+        <CampaignBackupDialog
+          open={backupOpen}
+          onOpenChange={setBackupOpen}
+          campaignId={campaignId!}
+          campaignName={campaign.name}
         />
 
         <Tabs value={activeSection || "summary"} onValueChange={setActiveSection} className="w-full">
