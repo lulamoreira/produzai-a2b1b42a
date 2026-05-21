@@ -30,6 +30,8 @@ import TabErrorBoundary from "@/components/campaigns/TabErrorBoundary";
 import { useUIVersion } from "@/hooks/useUIVersion";
 import RateioTabV2 from "@/components/v2/campaigns/RateioTabV2";
 import { useActiveAdjustment } from "@/hooks/useAdjustments";
+import { useAdjustmentRateio } from "@/hooks/useAdjustmentRateio";
+import { useNegotiationStorePieces } from "@/hooks/useNegotiationStorePieces";
 import OccurrencesPortalV2 from "@/pages/v2/OccurrencesPortalV2";
 import OccurrencesPortal from "@/pages/OccurrencesPortal";
 
