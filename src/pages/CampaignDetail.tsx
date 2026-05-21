@@ -189,21 +189,18 @@ const CampaignDetail = () => {
                   campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
                   pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
                   canEditCampaignStores={true} 
-                  activeAdjustment={(campaign as any).active_adjustment} 
-                  hasNegotiationRateio={(campaign as any).has_negotiation_rateio}
-                  winnerSupplierId={(campaign as any).winner_supplier_id} 
-                  winnerSupplierName={(campaign as any).winner_supplier_name} 
-                  rateioSource={(campaign as any).rateio_source || "original"}
-                  setRateioSource={(source) => {
-                    const storageKey = `rateio-active-tab-${campaignId}`;
-                    localStorage.setItem(storageKey, source);
-                  }} 
-                  vigenteSource={(campaign as any).vigente_source || "original"} 
-                  isViewingVigente={true}
+                  activeAdjustment={activeAdjustment} 
+                  hasNegotiationRateio={hasNegotiationRateio}
+                  winnerSupplierId={winnerSupplierId} 
+                  winnerSupplierName={winnerSupplierName} 
+                  rateioSource={rateioSource}
+                  setRateioSource={setRateioSource}
+                  vigenteSource={vigenteSource} 
+                  isViewingVigente={isViewingVigente}
                   handleResetNegotiationRateio={() => {}} 
                   handleCancelNegotiationRateio={() => {}}
                   isNegotiationView={false} 
-                  hasAnyAdjustment={!!(campaign as any).active_adjustment} 
+                  hasAnyAdjustment={!!activeAdjustment} 
                   setActiveSection={setActiveSection}
                 />
               ) : (
@@ -211,24 +208,29 @@ const CampaignDetail = () => {
                   campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
                   pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
                   canEditCampaignStores={true} 
-                  activeAdjustment={(campaign as any).active_adjustment} 
-                  hasNegotiationRateio={(campaign as any).has_negotiation_rateio}
-                  winnerSupplierId={(campaign as any).winner_supplier_id} 
-                  winnerSupplierName={(campaign as any).winner_supplier_name} 
-                  rateioSource={(campaign as any).rateio_source || "original"}
-                  setRateioSource={() => {}} 
-                  vigenteSource={(campaign as any).vigente_source || "original"} 
-                  isViewingVigente={true}
+                  activeAdjustment={activeAdjustment} 
+                  hasNegotiationRateio={hasNegotiationRateio}
+                  winnerSupplierId={winnerSupplierId} 
+                  winnerSupplierName={winnerSupplierName} 
+                  rateioSource={rateioSource}
+                  setRateioSource={setRateioSource}
+                  vigenteSource={vigenteSource} 
+                  isViewingVigente={isViewingVigente}
                   handleResetNegotiationRateio={() => {}} 
                   handleCancelNegotiationRateio={() => {}}
                   isNegotiationView={false} 
-                  hasAnyAdjustment={!!(campaign as any).active_adjustment} 
+                  hasAnyAdjustment={!!activeAdjustment} 
                   setActiveSection={setActiveSection}
                 />
               )}
-
-
-
+            </TabsContent>
+            <TabsContent value="adjustments">
+              <ApprovalsTab 
+                campaignId={campaignId!} campaignName={campaign.name} pieces={pieces}
+                kits={kits} kitPieces={kitPieces} storePieces={storePieces} stores={stores}
+                agencyName={agency?.name || ""} clientName={client?.name || ""}
+                currencyCode="BRL" isAdminOrMaster={isAdminOrMaster}
+              />
             </TabsContent>
             <TabsContent value="budgets">
               <BudgetTab 
@@ -238,6 +240,7 @@ const CampaignDetail = () => {
                 stores={stores} isAdmin={isAdmin}
               />
             </TabsContent>
+
 
             <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">Carregando aba...</div>}>
               <TabsContent value="occurrences">
