@@ -276,61 +276,63 @@ const AgencySelect = () => {
 
   if (version === "v2") {
     return (
-      <div className="max-w-5xl mx-auto pt-6 px-6">
-        <AgenciesV2 
-          onAddClick={() => setDialogOpen(true)} 
-          onEditClick={openEdit}
-        />
+      <AppLayout title="Agências">
+        <div className="max-w-5xl mx-auto">
+          <AgenciesV2 
+            onAddClick={() => setDialogOpen(true)} 
+            onEditClick={openEdit}
+          />
 
-        {/* Create dialog (shared logic) */}
-        {isAdmin && (
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          {/* Create dialog (shared logic) */}
+          {isAdmin && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogContent>
+                <DialogHeader><DialogTitle>Nova Agência</DialogTitle></DialogHeader>
+                <form onSubmit={handleAdd} className="space-y-4">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome da agência</label>
+                    <Input placeholder="Ex: Agência XPTO" value={newName} onChange={(e) => setNewName(e.target.value)} required />
+                  </div>
+                  <ColorPicker value={newColor} onChange={setNewColor} />
+                  <LogoUploadArea
+                    preview={logoPreview}
+                    onFileSelect={(f) => handleLogoSelect(f, false)}
+                    fileInputRef={fileRef as React.RefObject<HTMLInputElement>}
+                  />
+                  <Button type="submit" className="w-full bg-brand-400 hover:bg-brand-500 text-white" disabled={addAgency.isPending || uploading}>
+                    {uploading ? "Enviando..." : addAgency.isPending ? "Criando..." : "Criar Agência"}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {/* Edit dialog (shared logic) */}
+          <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
             <DialogContent>
-              <DialogHeader><DialogTitle>Nova Agência</DialogTitle></DialogHeader>
-              <form onSubmit={handleAdd} className="space-y-4">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome da agência</label>
-                  <Input placeholder="Ex: Agência XPTO" value={newName} onChange={(e) => setNewName(e.target.value)} required />
-                </div>
-                <ColorPicker value={newColor} onChange={setNewColor} />
-                <LogoUploadArea
-                  preview={logoPreview}
-                  onFileSelect={(f) => handleLogoSelect(f, false)}
-                  fileInputRef={fileRef as React.RefObject<HTMLInputElement>}
-                />
-                <Button type="submit" className="w-full bg-brand-400 hover:bg-brand-500 text-white" disabled={addAgency.isPending || uploading}>
-                  {uploading ? "Enviando..." : addAgency.isPending ? "Criando..." : "Criar Agência"}
-                </Button>
-              </form>
+              <DialogHeader><DialogTitle>Editar Agência</DialogTitle></DialogHeader>
+              {editAgency && (
+                <form onSubmit={handleEdit} className="space-y-4">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome da agência</label>
+                    <Input value={editAgency.name} onChange={(e) => setEditAgency({ ...editAgency, name: e.target.value })} required />
+                  </div>
+                  <ColorPicker value={editAgency.color} onChange={(c) => setEditAgency({ ...editAgency, color: c })} />
+                  <LogoUploadArea
+                    preview={editLogoPreview}
+                    logoUrl={editAgency.logo_url}
+                    onFileSelect={(f) => handleLogoSelect(f, true)}
+                    fileInputRef={editFileRef as React.RefObject<HTMLInputElement>}
+                  />
+                  <Button type="submit" className="w-full bg-brand-400 hover:bg-brand-500 text-white" disabled={uploading}>
+                    {uploading ? "Salvando..." : "Salvar Alterações"}
+                  </Button>
+                </form>
+              )}
             </DialogContent>
           </Dialog>
-        )}
-
-        {/* Edit dialog (shared logic) */}
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent>
-            <DialogHeader><DialogTitle>Editar Agência</DialogTitle></DialogHeader>
-            {editAgency && (
-              <form onSubmit={handleEdit} className="space-y-4">
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Nome da agência</label>
-                  <Input value={editAgency.name} onChange={(e) => setEditAgency({ ...editAgency, name: e.target.value })} required />
-                </div>
-                <ColorPicker value={editAgency.color} onChange={(c) => setEditAgency({ ...editAgency, color: c })} />
-                <LogoUploadArea
-                  preview={editLogoPreview}
-                  logoUrl={editAgency.logo_url}
-                  onFileSelect={(f) => handleLogoSelect(f, true)}
-                  fileInputRef={editFileRef as React.RefObject<HTMLInputElement>}
-                />
-                <Button type="submit" className="w-full bg-brand-400 hover:bg-brand-500 text-white" disabled={uploading}>
-                  {uploading ? "Salvando..." : "Salvar Alterações"}
-                </Button>
-              </form>
-            )}
-          </DialogContent>
-        </Dialog>
-      </div>
+        </div>
+      </AppLayout>
     );
   }
 
