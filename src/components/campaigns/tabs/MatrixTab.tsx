@@ -23,7 +23,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 
 // Revertendo temporariamente para import inline caso a extração tenha quebrado o caminho
 // Se o componente não estiver aparecendo, a lógica de fallback exibirá o erro.
-const SpreadsheetComponent = lazy(() => import("@/components/Matrix/MatrixDistributionSpreadsheet"));
+const SpreadsheetComponent = null;
 
 interface MatrixTabProps {
   campaignId: string;
