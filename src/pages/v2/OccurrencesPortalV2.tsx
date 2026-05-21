@@ -7,6 +7,7 @@ import { isAfter } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { OccurrencesPortalEmptyState } from "@/components/v2/campaigns/OccurrencesPortalEmptyState";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 interface StoreToken {
   token: string | null;
