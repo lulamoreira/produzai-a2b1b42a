@@ -659,7 +659,16 @@
     "supplier": "Proveedor",
     "deliveryDeadline": "Plazo de entrega",
     "paymentConditions": "Condiciones de pago",
-    "notes": "Observaciones"
+    "notes": "Observaciones",
+    "finalResult": "Resultado Final del Ajuste",
+    "winner": "Ganador",
+    "production": "Producción",
+    "freight": "Flete",
+    "installation": "Instalación",
+    "totalPrice": "Precio Total",
+    "initialPrice": "Precio inicial cobrado",
+    "savings": "Ahorro",
+    "increase": "Incremento"
   },
   "client": {
     "settings": "Configuración del Cliente",
