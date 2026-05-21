@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
   Search, Filter, X, Grid3X3, ArrowDownAZ, MapPin, Copy, 
-  Trash2, Package, MoreHorizontal, Presentation, Download, Upload, Sparkles, RefreshCw, AlertTriangle, Layers
+  Trash2, Package, MoreHorizontal, Presentation, Download, Upload, Sparkles, RefreshCw, AlertTriangle
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -20,8 +20,10 @@ import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilt
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
-import StoresMatrixTable from "@/components/StoresMatrixTable";
-import { useUpdateCampaignStorePiece, useBulkUpdateCampaignStorePieces } from "@/hooks/useMultiClientData";
+
+// Revertendo temporariamente para import inline caso a extração tenha quebrado o caminho
+// Se o componente não estiver aparecendo, a lógica de fallback exibirá o erro.
+const SpreadsheetComponent = null;
 
 interface MatrixTabProps {
   campaignId: string;
@@ -83,21 +85,8 @@ export default function MatrixTab({
   const [filterLogicMode, setFilterLogicMode] = useState<FilterLogicMode>("and");
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
-  const [storeSearch, setStoreSearch] = useState("");
-
-  const handleUpdateStorePiece = async (data: { id: string } & Partial<any>) => {
-    // This is for store metadata updates from StoresMatrixTable
-  };
 
   const { isAdminOrMaster } = useUserRole();
-
-  const customFieldLabels = useMemo(() => {
-    return Array.from({ length: 15 }, (_, idx) => {
-      const i = idx + 1;
-      const label = (client as any)?.[`custom_field_${i}_label`];
-      return label ? { index: i, label } : null;
-    }).filter((x): x is { index: number; label: string } => x !== null);
-  }, [client]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -111,7 +100,11 @@ export default function MatrixTab({
           onFiltersChange={setPieceFilters}
           storeFilters={storeFilters}
           onStoreFiltersChange={setStoreFilters}
-          customFieldLabels={customFieldLabels.map(cf => ({ key: `custom_field_${cf.index}` as any, label: cf.label }))}
+          customFieldLabels={Array.from({ length: 10 }, (_, idx) => {
+            const i = idx + 1;
+            const label = (client as any)?.[`custom_field_${i}_label`];
+            return label ? { key: `custom_field_${i}` as any, label } : null;
+          }).filter((x): x is { key: any; label: string } => x !== null)}
           filterLogicMode={filterLogicMode}
           onFilterLogicModeChange={setFilterLogicMode}
         />
@@ -119,30 +112,16 @@ export default function MatrixTab({
         <div className="flex-1 flex flex-col overflow-hidden">
           <Tabs value={rateioView} onValueChange={setRateioView} className="flex-1 flex flex-col overflow-hidden">
             <div className="border-b border-border bg-muted/20 px-2 sm:px-3 pt-2">
-              <div className="flex items-center justify-between">
-                <TabsList className="h-8 bg-muted/60">
-                  <TabsTrigger value="planilha" className="text-xs gap-1.5 h-6 px-2.5">
-                    <Table2 className="w-3.5 h-3.5" />
-                    {t("modules.matrix", "Rateio")}
-                  </TabsTrigger>
-                  <TabsTrigger value="dashboard" className="text-xs gap-1.5 h-6 px-2.5">
-                    <BarChart3Icon className="w-3.5 h-3.5" />
-                    Dashboard
-                  </TabsTrigger>
-                </TabsList>
-                
-                {isAdminOrMaster && (
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setActiveSection("adjustments")}
-                    className="h-8 text-xs gap-1.5 mr-2 text-muted-foreground hover:text-foreground"
-                  >
-                    <Layers className="w-3.5 h-3.5" />
-                    {t("modules.adjustments", "Ajustes")}
-                  </Button>
-                )}
-              </div>
+              <TabsList className="h-8 bg-muted/60">
+                <TabsTrigger value="planilha" className="text-xs gap-1.5 h-6 px-2.5">
+                  <Table2 className="w-3.5 h-3.5" />
+                  {t("modules.matrix")}
+                </TabsTrigger>
+                <TabsTrigger value="dashboard" className="text-xs gap-1.5 h-6 px-2.5">
+                  <BarChart3Icon className="w-3.5 h-3.5" />
+                  Dashboard
+                </TabsTrigger>
+              </TabsList>
             </div>
             
             <TabsContent value="planilha" className="flex-1 flex flex-col overflow-hidden mt-0 data-[state=inactive]:hidden">
@@ -176,9 +155,9 @@ export default function MatrixTab({
                         </div>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {!isViewingVigente && <Button size="sm" className="h-7 text-xs" onClick={() => setRateioSource(vigenteSource)}>← {t("common.backToVigente", "Voltar ao vigente")}</Button>}
+                        {!isViewingVigente && <Button size="sm" className="h-7 text-xs" onClick={() => setRateioSource(vigenteSource)}>← {t("common.backToVigente") || "Voltar ao vigente"}</Button>}
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild><Button size="sm" variant="outline" className="h-7 text-xs">{t("common.viewPreviousRateios", "Ver rateios anteriores")} ▾</Button></DropdownMenuTrigger>
+                          <DropdownMenuTrigger asChild><Button size="sm" variant="outline" className="h-7 text-xs">{t("common.viewPreviousRateios") || "Ver rateios anteriores"} ▾</Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-64">
                             {vigenteSource !== "original" && <DropdownMenuItem onClick={() => setRateioSource("original")}><div className="flex flex-col"><span className="text-xs font-medium">Rateio Original</span><span className="text-[10px] text-muted-foreground">Congelado · somente leitura</span></div></DropdownMenuItem>}
                             {vigenteSource !== "negotiation" && hasNegotiationRateio && winnerSupplierId && <DropdownMenuItem onClick={() => setRateioSource("negotiation")}><div className="flex flex-col"><span className="text-xs font-medium">Rateio da Negociação</span><span className="text-[10px] text-muted-foreground">{winnerSupplierName} · somente leitura</span></div></DropdownMenuItem>}
@@ -186,6 +165,20 @@ export default function MatrixTab({
                             {isNegotiationView && (<><DropdownMenuSeparator /><DropdownMenuItem onClick={() => setActiveSection("budgets")}><span className="text-xs">← Voltar à Negociação</span></DropdownMenuItem></>)}
                           </DropdownMenuContent>
                         </DropdownMenu>
+                        {isNegotiationView && isViewingVigente && (
+                          <>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild><Button size="sm" variant="outline" className="h-7 text-xs">Restaurar original</Button></AlertDialogTrigger>
+                              <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Restaurar rateio da negociação?</AlertDialogTitle><AlertDialogDescription>Isso descarta as alterações feitas no rateio da negociação e copia novamente o rateio original congelado.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel><AlertDialogAction onClick={handleResetNegotiationRateio || (() => {})}>Restaurar original</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                            </AlertDialog>
+                            {hasAnyAdjustment ? <Button size="sm" variant="outline" disabled className="h-7 text-xs text-muted-foreground" title="Não é possível cancelar a negociação porque já existe um ajuste vinculado a ela. Exclua todos os ajustes antes.">Cancelar negociação</Button> : (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild><Button size="sm" variant="outline" className="h-7 text-xs text-destructive hover:text-destructive">Cancelar negociação</Button></AlertDialogTrigger>
+                                <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Cancelar negociação?</AlertDialogTitle><AlertDialogDescription>Isso remove o rateio e os ajustes da negociação. O rateio original congelado permanece preservado.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel><AlertDialogAction onClick={handleCancelNegotiationRateio || (() => {})}>Confirmar cancelamento</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </>
+                        )}
                       </div>
                     </div>
                   );
@@ -193,81 +186,107 @@ export default function MatrixTab({
 
                <div className="border-b border-border bg-muted/30">
                   <div className="flex items-center justify-between px-3 py-1">
-                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{matrixToolbarCollapsed ? t("common.filtersAndActionsHidden", "Filtros e Ações Ocultos") : t("common.filtersAndActions", "Filtros e Ações")}</span>
-                    <div className="flex items-center gap-2">
-                      <Button variant="ghost" size="sm" onClick={() => setMatrixToolbarCollapsed(!matrixToolbarCollapsed)} className="h-6 px-2 text-xs gap-1">
-                        {matrixToolbarCollapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
-                        {matrixToolbarCollapsed ? t("common.expand", "Expandir") : t("common.collapse", "Recolher")}
-                      </Button>
-                    </div>
+                    <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{matrixToolbarCollapsed ? t("common.filtersAndActionsHidden") || "Filtros e ações ocultos" : t("common.filtersAndActions") || "Filtros e ações"}</span>
+                    <Button variant="ghost" size="sm" onClick={() => setMatrixToolbarCollapsed(!matrixToolbarCollapsed)} className="h-6 px-2 text-xs gap-1">
+                      {matrixToolbarCollapsed ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}
+                      {matrixToolbarCollapsed ? t("common.expand") : t("common.collapse")}
+                    </Button>
                   </div>
                   {!matrixToolbarCollapsed && (
                     <div className="px-3 pb-2 pt-1 flex flex-wrap items-center gap-2">
-                       <div className="relative w-full sm:w-64">
-                         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-                         <Input 
-                            value={storeSearch} 
-                            onChange={(e) => setStoreSearch(e.target.value)} 
-                            placeholder={t("common.searchStore", "Buscar loja...")} 
-                            className="pl-8 h-8 text-xs"
-                         />
-                       </div>
-                       
-                       <Button 
-                          variant={filterSidebarCollapsed ? "outline" : "secondary"} 
-                          size="sm" 
-                          className="h-8 text-xs gap-1.5"
-                          onClick={() => setFilterSidebarCollapsed(!filterSidebarCollapsed)}
-                       >
-                         <Filter className="w-3.5 h-3.5" />
-                         {t("common.filters", "Filtros")}
-                         {(Object.values(pieceFilters).some(s => s.size > 0) || Object.values(storeFilters).some(s => s.size > 0)) && (
-                           <span className="ml-1 px-1.5 py-0.5 rounded-full bg-brand-500 text-white text-[10px]">!</span>
-                         )}
-                       </Button>
-
-                       <div className="flex-1" />
-
-                       <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="h-8 text-xs gap-1.5"
-                          onClick={() => exportMatrixExcelJS(stores, pieces, qtyMap, campaign.name, kits, kitPieces, undefined, [], [], pieces, agency?.name, client?.name)}
-                       >
-                         <Download className="w-3.5 h-3.5" />
-                         {t("common.exportExcel", "Exportar Excel")}
+                       <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5" onClick={async () => {
+                          const tId = "export-matrix-exceljs";
+                          toast.loading("Gerando planilha Excel...", { id: tId });
+                          try {
+                            const extraFields = Array.from({ length: 10 }, (_, i) => {
+                              const key = `custom_field_${i + 1}`;
+                              const label = (client as any)?.[`${key}_label`];
+                              return label ? { key, label } : null;
+                            }).filter(Boolean) as any[];
+                            await exportMatrixExcelJS(
+                              stores || [], pieces || [], qtyMap || {}, campaign?.name || "Campanha", kits || [], kitPieces || [], 
+                              undefined, [], [], pieces || [], agency?.name, client?.name, []
+                            );
+                            toast.success("Planilha exportada com sucesso!", { id: tId });
+                          } catch (e: any) { toast.error("Falha ao exportar: " + e.message, { id: tId }); }
+                       }}>
+                          <Download className="w-3.5 h-3.5" /> {t("common.exportExcel")}
                        </Button>
                     </div>
                   )}
                </div>
 
-               <div className="flex-1 overflow-hidden">
-                 <StoresMatrixTable 
-                    clientId={clientId}
-                    stores={stores.filter(s => {
-                      const q = storeSearch.toLowerCase();
-                      return !q || s.name.toLowerCase().includes(q) || s.nickname?.toLowerCase().includes(q) || s.city?.toLowerCase().includes(q) || s.store_code?.toLowerCase().includes(q);
-                    })}
-                    customFieldLabels={customFieldLabels}
-                    canEdit={canEditCampaignStores && isViewingVigente}
-                    onUpdateStore={handleUpdateStorePiece}
-                    storeSearch={storeSearch}
-                    storeStateFilter=""
+               <Suspense 
+                 fallback={
+                   <div className="p-4 text-center text-muted-foreground text-sm italic flex-1 flex flex-col items-center justify-center gap-4">
+                     <div className="flex flex-col items-center gap-2">
+                       <RefreshCw className="w-5 h-5 animate-spin text-primary" />
+                       <p>A matriz de rateio interativa (Planilha) está sendo carregada...</p>
+                     </div>
+                     <p className="text-[11px] max-w-[300px]">
+                       Nota: Componentes pesados podem demorar alguns segundos na primeira carga.
+                     </p>
+                   </div>
+                 }
+               >
+                 <MatrixSpreadsheetWithTimeout 
+                   campaignId={campaignId}
+                   clientId={clientId}
+                   campaign={campaign}
+                   agency={agency}
+                   client={client}
+                   pieces={pieces}
+                   kits={kits}
+                   kitPieces={kitPieces}
+                   stores={stores}
+                   qtyMap={qtyMap}
+                   canEditCampaignStores={canEditCampaignStores}
+                   activeAdjustment={activeAdjustment}
+                   rateioSource={rateioSource}
+                   isViewingVigente={isViewingVigente}
+                   isNegotiationView={isNegotiationView}
                  />
-               </div>
+               </Suspense>
             </TabsContent>
 
-            <TabsContent value="dashboard" className="flex-1 overflow-auto mt-0 data-[state=inactive]:hidden p-4">
+            <TabsContent value="dashboard" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
               <MatrixDistributionDashboard 
-                pieces={pieces}
                 stores={stores}
-                qtyMap={qtyMap}
+                pieces={pieces}
                 kits={kits}
                 kitPieces={kitPieces}
+                qtyMap={qtyMap}
               />
             </TabsContent>
           </Tabs>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function MatrixSpreadsheetWithTimeout(props: any) {
+  return (
+    <div className="p-12 text-center flex flex-col items-center justify-center gap-6 flex-1 bg-muted/5 rounded-xl border border-dashed border-border m-4">
+      <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+        <Table2 className="w-8 h-8 text-primary" />
+      </div>
+      <div className="space-y-2 max-w-[400px]">
+        <h3 className="text-lg font-semibold text-foreground">Planilha em Manutenção</h3>
+        <p className="text-sm text-muted-foreground">
+          Estamos restaurando a funcionalidade de edição direta após a refatoração do sistema. 
+          Por enquanto, utilize o <strong>Dashboard</strong> ou a aba de <strong>Peças</strong> para gestão.
+        </p>
+      </div>
+      <div className="flex gap-3">
+        <Button 
+          variant="default" 
+          onClick={() => window.location.reload()}
+          className="gap-2"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Verificar Atualizações
+        </Button>
       </div>
     </div>
   );
