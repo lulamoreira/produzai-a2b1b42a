@@ -35,7 +35,7 @@ interface MatrixTabProps {
   canEditCampaignStores: boolean;
   activeAdjustment: any;
   hasNegotiationRateio: boolean;
-  winnerSupplierId: string | null;
+  winnerSupplierId: string | null | undefined;
   winnerSupplierName: string;
   rateioSource: "original" | "negotiation" | "adjustment";
   setRateioSource: (source: "original" | "negotiation" | "adjustment") => void;

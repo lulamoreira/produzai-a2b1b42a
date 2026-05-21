@@ -211,15 +211,15 @@ export default function PiecesTab({
         canEditPieces={canEditPieces}
         canDeletePieces={canDeletePieces}
         onEdit={() => {}}
-        onDelete={(id) => deletePiece.mutate(id)}
+        onDelete={(id) => deletePiece?.mutate?.(id)}
         onDistribute={handleDistributePiece}
-        onMarkKitOnly={async (p) => { await updatePiece.mutateAsync({ id: p.id, kit_only: true }); }}
-        onToggleMockup={async (p) => { await updatePiece.mutateAsync({ id: p.id, is_mockup: !p.is_mockup }); }}
+        onMarkKitOnly={async (p) => { await updatePiece?.mutateAsync?.({ id: p.id, kit_only: true }); }}
+        onToggleMockup={async (p) => { await updatePiece?.mutateAsync?.({ id: p.id, is_mockup: !p.is_mockup }); }}
         onKitClick={(kit) => setViewKitDetail(kit)}
-        onDeleteKit={(id) => deleteKit.mutate(id)}
+        onDeleteKit={(id) => deleteKit?.mutate?.(id)}
         onToggleKitMockup={async (kit) => {
           const newVal = !kit.is_mockup;
-          await updateKit.mutateAsync({ id: kit.id, is_mockup: newVal });
+          await updateKit?.mutateAsync?.({ id: kit.id, is_mockup: newVal });
         }}
         onDuplicate={() => {}}
         onDuplicateKit={() => {}}
@@ -277,11 +277,11 @@ export default function PiecesTab({
           kitPieces={kitPieces.filter(kp => kp.kit_id === viewKitDetail.id)}
           allPieces={pieces}
           canEdit={canEditPieces}
-          onDeleteKitPiece={(id) => deleteKitPiece.mutate(id)}
-          onAddKitPiece={(kp) => addKitPiece.mutateAsync(kp)}
-          onUpdateKit={(k) => updateKit.mutateAsync(k)}
-          onUpdateKitPiece={(kp) => updateKitPiece.mutateAsync(kp)}
-          onReorderKitPieces={(updates) => reorderKitPieces.mutateAsync(updates)}
+          onDeleteKitPiece={(id) => deleteKitPiece?.mutate?.(id)}
+          onAddKitPiece={(kp) => addKitPiece?.mutateAsync?.(kp)}
+          onUpdateKit={(k) => updateKit?.mutateAsync?.(k)}
+          onUpdateKitPiece={(kp) => updateKitPiece?.mutateAsync?.(kp)}
+          onReorderKitPieces={(updates) => reorderKitPieces?.mutateAsync?.(updates)}
         />
       )}
     </div>
