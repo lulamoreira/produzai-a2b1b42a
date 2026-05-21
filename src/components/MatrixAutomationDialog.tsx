@@ -1211,7 +1211,30 @@ export default function MatrixAutomationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-3xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-3xl max-h-[85vh] overflow-y-auto relative">
+        {executing && executionStatus && (
+          <div className="absolute inset-0 z-[100] bg-background/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-4">
+            <div className="w-full max-w-md space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  {executionStatus.label}
+                </h3>
+                {executionStatus.details && (
+                  <p className="text-sm text-muted-foreground">{executionStatus.details}</p>
+                )}
+              </div>
+              
+              <div className="space-y-1">
+                <Progress value={(executionStatus.step / executionStatus.totalSteps) * 100} className="h-2" />
+                <div className="flex justify-between text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                  <span>Etapa {executionStatus.step} de {executionStatus.totalSteps}</span>
+                  <span>{Math.round((executionStatus.step / executionStatus.totalSteps) * 100)}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <DialogHeader>
           <DialogTitle>{t("automation.title")}</DialogTitle>
           <DialogDescription>
