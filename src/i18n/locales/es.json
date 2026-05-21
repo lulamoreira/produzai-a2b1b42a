@@ -120,7 +120,7 @@
     "summary": "Resumen",
     "pieces": "Piezas",
     "rateio": "Rateio",
-    "cotacoes": "Cotizaciones"
+    "cotacoes": "Cotações"
   },
   "rateio": {
     "activeTab": "ACTIVO",
@@ -207,7 +207,7 @@
   },
   "modules": {
     "stores": "Tiendas",
-    "matrix": "Prorrateo",
+    "matrix": "Rateio",
     "pieces": "Piezas",
     "occurrences": "Ocurrencias",
     "scheduling": "Programación",

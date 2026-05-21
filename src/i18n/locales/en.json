@@ -120,7 +120,7 @@
     "summary": "Summary",
     "pieces": "Pieces",
     "rateio": "Rateio",
-    "cotacoes": "Quotes"
+    "cotacoes": "Cotações"
   },
   "rateio": {
     "activeTab": "ACTIVE",
@@ -207,12 +207,12 @@
   },
   "modules": {
     "stores": "Stores",
-    "matrix": "Allocation",
+    "matrix": "Rateio",
     "pieces": "Pieces",
     "occurrences": "Occurrences",
     "scheduling": "Scheduling",
     "installations": "Installations",
-    "budgets": "Quotations",
+    "budgets": "Cotações",
     "chat": "Chat",
     "history": "History",
     "loja_a_loja": "Store by Store",
