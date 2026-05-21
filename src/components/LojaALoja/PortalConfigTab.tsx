@@ -426,7 +426,35 @@ export default function PortalConfigTab({ campaignId, clientId, permissions }: P
             <div className="flex items-center justify-between flex-wrap gap-2">
               <CardDescription>Sobrescreva a configuração global para lojas específicas. Valores vazios (—) usam a configuração global.</CardDescription>
               {isAdmin && storeIds.length > 0 && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="gap-1.5 text-xs">
+                        <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                        Autorizar Ocorrências
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Autorizar Ocorrências em todas as lojas?</AlertDialogTitle>
+                        <AlertDialogDescription>Isso ativará o módulo de Ocorrências para todas as {storeIds.length} lojas, sem alterar os demais módulos.</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() =>
+                            bulkSet.mutate({
+                              campaign_id: campaignId,
+                              store_ids: storeIds,
+                              values: { module_ocorrencias: true },
+                            })
+                          }
+                        >
+                          Confirmar
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button size="sm" variant="outline" className="gap-1.5 text-xs">
