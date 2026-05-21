@@ -497,16 +497,92 @@ export default function RateioTabV2({
                 </Button>
 
                 <div className="h-4 w-px bg-stone-200" />
-                
-                <div className="text-[11px] font-medium text-stone-400 uppercase tracking-widest">
-                  ESTADO
-                </div>
-                <div className="text-[11px] font-medium text-stone-400 uppercase tracking-widest">
-                  CIDADE
-                </div>
-                <div className="text-[11px] font-medium text-stone-400 uppercase tracking-widest">
-                  CATEGORIA DE LOJA
-                </div>
+
+                {(() => {
+                  const uniqueStates = Array.from(new Set(stores.map(s => s.state?.trim()).filter(Boolean))).sort();
+                  const uniqueCities = Array.from(new Set(stores.map(s => s.city).filter(Boolean))).sort();
+                  const uniqueModels = Array.from(new Set(stores.map(s => s.store_model).filter(Boolean))).sort();
+
+                  const renderFilterDropdown = (
+                    label: string,
+                    field: "state" | "city" | "store_model",
+                    options: string[]
+                  ) => {
+                    const selected = storeFilters[field];
+                    const hasSelection = selected.size > 0;
+                    return (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button className={cn(
+                            "flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-widest px-2 py-1 rounded transition-colors",
+                            hasSelection 
+                              ? "text-[#C2714F] bg-[#C2714F]/10 hover:bg-[#C2714F]/15" 
+                              : "text-stone-400 hover:text-stone-700 hover:bg-stone-100"
+                          )}>
+                            {label}
+                            {hasSelection && (
+                              <span className="bg-[#C2714F] text-white text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                                {selected.size}
+                              </span>
+                            )}
+                            <ChevronDown className="w-3 h-3" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="max-h-72 overflow-y-auto w-56">
+                          {hasSelection && (
+                            <>
+                              <DropdownMenuItem 
+                                onClick={() => setStoreFilters(prev => ({ ...prev, [field]: new Set() }))}
+                                className="text-xs text-[#C2714F] font-medium"
+                              >
+                                {t("common.clearFilter", "Limpar filtro")}
+                              </DropdownMenuItem>
+                              <div className="h-px bg-stone-100 my-1" />
+                            </>
+                          )}
+                          {options.length === 0 && (
+                            <div className="px-2 py-1.5 text-xs text-stone-400">
+                              {t("common.noOptions", "Sem opções")}
+                            </div>
+                          )}
+                          {options.map(opt => {
+                            const isSelected = selected.has(opt);
+                            return (
+                              <DropdownMenuItem
+                                key={opt}
+                                onSelect={(e) => {
+                                  e.preventDefault();
+                                  setStoreFilters(prev => {
+                                    const next = new Set(prev[field]);
+                                    if (next.has(opt)) next.delete(opt); else next.add(opt);
+                                    return { ...prev, [field]: next };
+                                  });
+                                }}
+                                className="text-xs cursor-pointer flex items-center gap-2"
+                              >
+                                <span className={cn(
+                                  "w-3.5 h-3.5 rounded border flex items-center justify-center",
+                                  isSelected ? "bg-[#C2714F] border-[#C2714F]" : "border-stone-300"
+                                )}>
+                                  {isSelected && <CheckCircle2 className="w-2.5 h-2.5 text-white" />}
+                                </span>
+                                <span className="truncate">{opt}</span>
+                              </DropdownMenuItem>
+                            );
+                          })}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    );
+                  };
+
+                  return (
+                    <>
+                      {renderFilterDropdown(t("filters.state", "Estado"), "state", uniqueStates as string[])}
+                      {renderFilterDropdown(t("filters.city", "Cidade"), "city", uniqueCities as string[])}
+                      {renderFilterDropdown(t("filters.storeCategory", "Categoria de Loja"), "store_model", uniqueModels as string[])}
+                    </>
+                  );
+                })()}
                 
                 <div className="flex-1" />
                 
