@@ -58,12 +58,24 @@ const CampaignDetail = () => {
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
 
-  const [activeSection, setActiveSectionState] = useState<string | null>(locationState?.initialSection || new URLSearchParams(location.search).get("section") || null);
+  const [activeSection, setActiveSectionState] = useState<string | null>(() => {
+    return locationState?.initialSection || new URLSearchParams(location.search).get("section") || "summary";
+  });
+
+  // Keep activeSection in sync with URL changes (e.g. from sidebar clicks)
+  useEffect(() => {
+    const section = new URLSearchParams(location.search).get("section") || "summary";
+    if (section !== activeSection) {
+      setActiveSectionState(section);
+    }
+  }, [location.search, activeSection]);
 
   const setActiveSection = useCallback((section: string | null) => {
     setActiveSectionState(section);
     const params = new URLSearchParams(location.search);
-    if (section) params.set("section", section); else params.delete("section");
+    if (section && section !== "summary") params.set("section", section); 
+    else params.delete("section");
+    
     navigate(`${location.pathname}${params.toString() ? `?${params}` : ""}`, { replace: true, state: location.state });
   }, [location, navigate]);
 
