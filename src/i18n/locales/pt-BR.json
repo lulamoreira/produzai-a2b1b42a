@@ -109,7 +109,9 @@
     "download": "Baixar",
     "allFeminine": "Tudo Feminino",
     "new": "Novo",
-    "blocked": "Bloqueado"
+    "blocked": "Bloqueado",
+    "exportPPT": "Exportar PPT",
+    "exportPpt": "Exportar PPT"
   },
   "greeting": {
     "morning": "Bom dia",
