@@ -439,7 +439,9 @@
     "allBadge": "All",
     "noSpecificInfo": "No specific information",
     "primaryDisplay": "Primary Display",
-    "secondaryDisplay": "Secondary Display"
+    "secondaryDisplay": "Secondary Display",
+    "storeModelLabel": "Store Model",
+    "kitPiece": "Is Kit"
   },
   "occurrences": {
     "portal": {
