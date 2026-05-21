@@ -151,14 +151,18 @@ export default function RateioTabV2({
     });
 
     if (sortConfig.length > 0) {
+      console.log('Sorting stores with config:', sortConfig);
       result = [...result].sort((a, b) => {
         for (const sort of sortConfig) {
-          const valA = (a[sort.key] || "").toString().toLowerCase();
-          const valB = (b[sort.key] || "").toString().toLowerCase();
+          const key = sort.key;
+          const valA = (a[key] || "").toString().trim().toLowerCase();
+          const valB = (b[key] || "").toString().trim().toLowerCase();
           
-          if (valA < valB) return sort.direction === "asc" ? -1 : 1;
-          if (valA > valB) return sort.direction === "asc" ? 1 : -1;
-          // If equal, continue to next sort level
+          if (valA !== valB) {
+            return sort.direction === "asc" 
+              ? valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' })
+              : valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
+          }
         }
         return 0;
       });
