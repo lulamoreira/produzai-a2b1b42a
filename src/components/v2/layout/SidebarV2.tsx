@@ -246,18 +246,24 @@ export function SidebarV2() {
           "w-full flex items-center gap-3 py-2 px-3 transition-all duration-200 group relative",
           isSubItem ? "pl-9 text-xs" : "text-sm font-medium",
           isActive
-            ? "bg-stone-800 text-white border-l-2 border-brand-400 rounded-r-lg"
-            : "text-stone-300 hover:bg-stone-800/60 hover:text-white rounded-lg"
+            ? "text-white border-l-2 rounded-r-lg"
+            : "hover:text-white rounded-lg"
         )}
+        style={{ 
+          background: isActive ? 'var(--v2-sidebar-active)' : 'transparent',
+          borderColor: isActive ? 'var(--v2-accent)' : 'transparent',
+          color: isActive ? 'var(--v2-sidebar-text)' : 'var(--v2-sidebar-muted)'
+        }}
       >
         {item.icon && (
           <item.icon
             className={cn(
               isSubItem ? "w-3.5 h-3.5" : "w-5 h-5",
-              "flex-shrink-0 transition-colors",
-              isActive ? "text-brand-400" : "text-stone-400 group-hover:text-stone-200"
+              "flex-shrink-0 transition-colors"
             )}
-            style={isSubItem && item.color ? { color: item.color } : {}}
+            style={{ 
+              color: isActive ? 'var(--v2-sidebar-text)' : (isSubItem && item.color ? item.color : 'inherit')
+            }}
           />
         )}
         {!collapsed && (
@@ -442,7 +448,10 @@ export function SidebarV2() {
                   </button>
                 )}
                 {campaignData?.name && (
-                  <div className="text-brand-400 font-medium truncate flex items-center gap-1">
+                  <div 
+                    className="font-medium truncate flex items-center gap-1"
+                    style={{ color: 'var(--v2-accent)' }}
+                  >
                     <ChevronRight className="w-3 h-3 flex-shrink-0" />
                     {campaignData.name}
                   </div>
