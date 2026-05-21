@@ -149,7 +149,6 @@ const CampaignDetail = () => {
                   winnerSupplierName={(campaign as any).winner_supplier_name} 
                   rateioSource={(campaign as any).rateio_source || "original"}
                   setRateioSource={(source) => {
-                    // Update campaign state or handle tab change
                     const storageKey = `rateio-active-tab-${campaignId}`;
                     localStorage.setItem(storageKey, source);
                   }} 
@@ -181,6 +180,7 @@ const CampaignDetail = () => {
                   setActiveSection={setActiveSection}
                 />
               )}
+
 
 
             </TabsContent>
