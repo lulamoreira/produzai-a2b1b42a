@@ -244,12 +244,14 @@ const CampaignDetail = () => {
               )}
             </TabsContent>
             <TabsContent value="adjustments">
-              <ApprovalsTab 
-                campaignId={campaignId!} campaignName={campaign.name} pieces={pieces}
-                kits={kits} kitPieces={kitPieces} storePieces={storePieces} stores={stores}
-                agencyName={agency?.name || ""} clientName={client?.name || ""}
-                currencyCode="BRL" isAdminOrMaster={isAdminOrMaster}
-              />
+              <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">Carregando aba...</div>}>
+                <ApprovalsTab 
+                  campaignId={campaignId!} campaignName={campaign.name} pieces={pieces}
+                  kits={kits} kitPieces={kitPieces} storePieces={storePieces} stores={stores}
+                  agencyName={agency?.name || ""} clientName={client?.name || ""}
+                  currencyCode="BRL" isAdminOrMaster={isAdminOrMaster}
+                />
+              </Suspense>
             </TabsContent>
             <TabsContent value="budgets">
               <BudgetTab 
