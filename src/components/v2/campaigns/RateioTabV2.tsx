@@ -204,6 +204,24 @@ export default function RateioTabV2({
     return map;
   }, [kits, kitPieces, stores, qtyMap]);
 
+  // Compute column totals
+  const columnTotals = useMemo(() => {
+    const totals: Record<string, number> = {};
+    columns.forEach(col => {
+      let total = 0;
+      const isKit = col._type === "kit";
+      stores.forEach(store => {
+        if (isKit) {
+          total += kitQtyMap[`${store.id}-${col.id}`] || 0;
+        } else {
+          total += qtyMap[`${store.id}-${col.id}`] || 0;
+        }
+      });
+      totals[`${col._type}-${col.id}`] = total;
+    });
+    return totals;
+  }, [columns, stores, qtyMap, kitQtyMap]);
+
   // Group columns by store_category label, preserving sorted order (no global re-sort)
   const pieceGroups = useMemo(() => {
     const groups: { label: string; items: ColumnItem[] }[] = [];
