@@ -1,6 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
+import { useDisplayName } from "@/components/AppHeader";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -25,6 +26,7 @@ export function HomeV2() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { displayName } = useDisplayName();
   const formatters = useFormatters();
 
   const getGreeting = () => {
@@ -122,7 +124,7 @@ export function HomeV2() {
     }
   });
 
-  const userName = user?.email?.split("@")[0] || t("header.user");
+  const userName = (displayName || user?.email?.split("@")[0] || t("header.user")).trim().split(/\s+/)[0];
 
   return (
     <div className="max-w-7xl mx-auto animate-in fade-in duration-500">
