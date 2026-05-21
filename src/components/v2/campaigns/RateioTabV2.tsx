@@ -85,16 +85,27 @@ export default function RateioTabV2({
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
   const [filterLogicMode, setFilterLogicMode] = useState<FilterLogicMode>("and");
   
-  // Sorting state
-  const [sortConfig, setSortConfig] = useState<{ key: "name" | "state"; direction: "asc" | "desc" } | null>(null);
+  // Sorting state - supporting multiple levels
+  const [sortConfig, setSortConfig] = useState<{ key: "name" | "state"; direction: "asc" | "desc" }[]>([]);
 
-  const toggleSort = (key: "name" | "state") => {
+  const toggleSort = (key: "name" | "state", multi: boolean = false) => {
     setSortConfig(prev => {
-      if (prev?.key === key) {
-        if (prev.direction === "asc") return { key, direction: "desc" };
-        return null; // Reset sort
+      const existing = prev.find(s => s.key === key);
+      
+      if (existing) {
+        if (existing.direction === "asc") {
+          // Toggle to desc
+          const updated = prev.map(s => s.key === key ? { ...s, direction: "desc" as const } : s);
+          return updated;
+        } else {
+          // Remove this sort
+          return prev.filter(s => s.key !== key);
+        }
+      } else {
+        // Add new sort level
+        const newSort = { key, direction: "asc" as const };
+        return multi ? [...prev, newSort] : [newSort];
       }
-      return { key, direction: "asc" };
     });
   };
 
@@ -139,13 +150,16 @@ export default function RateioTabV2({
       return matchesSearch;
     });
 
-    if (sortConfig) {
+    if (sortConfig.length > 0) {
       result = [...result].sort((a, b) => {
-        const valA = (a[sortConfig.key] || "").toString().toLowerCase();
-        const valB = (b[sortConfig.key] || "").toString().toLowerCase();
-        
-        if (valA < valB) return sortConfig.direction === "asc" ? -1 : 1;
-        if (valA > valB) return sortConfig.direction === "asc" ? 1 : -1;
+        for (const sort of sortConfig) {
+          const valA = (a[sort.key] || "").toString().toLowerCase();
+          const valB = (b[sort.key] || "").toString().toLowerCase();
+          
+          if (valA < valB) return sort.direction === "asc" ? -1 : 1;
+          if (valA > valB) return sort.direction === "asc" ? 1 : -1;
+          // If equal, continue to next sort level
+        }
         return 0;
       });
     }
