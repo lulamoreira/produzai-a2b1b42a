@@ -1018,5 +1018,13 @@
     "selectAll": "Seleccionar todos",
     "moreActions": "Más acciones",
     "bulkActions": "Acciones en lote"
+  },
+  "clients": {
+    "title": "Clientes",
+    "subtitle": "Administra los clientes de esta agencia",
+    "newClient": "Nuevo Cliente",
+    "emptyTitle": "No se encontraron clientes",
+    "emptyDescription": "Agrega el primer cliente de esta agencia para comenzar.",
+    "campaigns": "campañas"
   }
 }

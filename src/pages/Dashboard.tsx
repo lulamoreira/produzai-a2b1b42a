@@ -30,6 +30,9 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
 
+import { useUIVersion } from "@/hooks/useUIVersion";
+import ClientsV2 from "./v2/ClientsV2";
+
 const CLIENT_COLORS = [
   "#6366f1", "#8b5cf6", "#a855f7", "#d946ef",
   "#ec4899", "#f43f5e", "#ef4444", "#f97316",
@@ -289,6 +292,60 @@ const Dashboard = () => {
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-10 h-10 border-3 border-primary border-t-transparent rounded-full" />
       </div>
+    );
+  }
+
+  const { version } = useUIVersion();
+
+  if (version === "v2") {
+    return (
+      <AppLayout
+        breadcrumbs={[
+          { label: agencyInfo?.name || "Agência", href: "/" },
+          { label: t("sidebar.clients") },
+        ]}
+      >
+        <div className="max-w-6xl mx-auto">
+          <ClientsV2 onAddClick={() => setDialogOpen(true)} />
+
+          {/* Add Client Dialog (Shared logic) */}
+          {isAdmin && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogContent>
+                <DialogHeader><DialogTitle>{t("clientDashboard.newClient")}</DialogTitle></DialogHeader>
+                <form onSubmit={handleAdd} className="space-y-4">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("clientDashboard.clientName")}</label>
+                    <Input placeholder="Ex: Empresa XPTO" value={newName} onChange={(e) => setNewName(e.target.value)} required />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-2 block">{t("clientDashboard.clientColor")}</label>
+                    <div className="grid grid-cols-8 gap-1.5">
+                      {CLIENT_COLORS.map((c) => (
+                        <button
+                          type="button"
+                          key={c}
+                          className={`w-8 h-8 rounded-lg border-2 transition-all hover:scale-110 ${newColor === c ? "border-foreground scale-110 ring-2 ring-primary/30" : "border-transparent"}`}
+                          style={{ backgroundColor: c }}
+                          onClick={() => setNewColor(c)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <Button
+                    type="submit"
+                    className="w-full text-white"
+                    style={{ backgroundColor: "#C2714F" }}
+                    disabled={addClient.isPending}
+                  >
+                    {addClient.isPending ? t("clientDashboard.creating") : t("clientDashboard.createClient")}
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
+      </AppLayout>
     );
   }
 
