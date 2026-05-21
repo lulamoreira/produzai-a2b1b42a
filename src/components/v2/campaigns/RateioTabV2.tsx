@@ -590,7 +590,7 @@ export default function RateioTabV2({
                     {filteredStores.length} {t("rateio.stores", "loja(s)")}
                   </div>
                   <div>
-                    {filteredPieces.length} {t("pieces.pieceCountShort", "peça(s)")}
+                    {columns.length} {t("pieces.pieceCountShort", "peça(s)")}
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
