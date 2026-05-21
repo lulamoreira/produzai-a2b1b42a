@@ -125,6 +125,10 @@
   "rateio": {
     "activeTab": "ATIVO",
     "readOnly": "Visualização somente leitura",
+    "readOnlyBanner": "Versão somente leitura — edições não são permitidas nesta planilha",
+    "errors": {
+      "automationFailed": "Erro ao executar automação. Tente novamente."
+    },
     "currentRateio": "Rateio vigente",
     "syncWith": "Sincronizado com",
     "searchStore": "Buscar loja...",
