@@ -241,7 +241,7 @@ const CampaignDetail = () => {
               {version === "v2" ? (
                 <RateioTabV2 
                   campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
-                  pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
+                  pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={matrixQtyMap}
                   canEditCampaignStores={true} 
                   activeAdjustment={activeAdjustment} 
                   hasNegotiationRateio={hasNegotiationRateio}
