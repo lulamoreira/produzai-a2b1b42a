@@ -85,9 +85,6 @@ export default function MatrixTab({
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
   const [storeSearch, setStoreSearch] = useState("");
 
-  const updateStorePiece = useUpdateCampaignStorePiece();
-  const bulkUpdateStorePieces = useBulkUpdateCampaignStorePieces();
-
   const handleUpdateStorePiece = async (data: { id: string } & Partial<any>) => {
     // This is for store metadata updates from StoresMatrixTable
   };
