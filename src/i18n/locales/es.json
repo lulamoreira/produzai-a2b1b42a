@@ -207,7 +207,7 @@
   },
   "modules": {
     "stores": "Tiendas",
-    "matrix": "Prorrateo",
+    "matrix": "Rateio",
     "pieces": "Piezas",
     "occurrences": "Ocurrencias",
     "scheduling": "Programación",
