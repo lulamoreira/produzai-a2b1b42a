@@ -25,7 +25,7 @@ import { EmptyStateV2 } from "@/components/v2/ui/EmptyStateV2";
 export function HomeV2() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const { displayName } = useDisplayName();
   const formatters = useFormatters();
 
   const getGreeting = () => {
