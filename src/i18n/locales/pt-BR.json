@@ -194,6 +194,13 @@
     "editProfile": "Editar Perfil",
     "user": "Usuário"
   },
+  "theme": {
+    "label": "Tema",
+    "light": "Claro",
+    "dark": "Escuro",
+    "system": "Sistema",
+    "multicolor": "Multicolorido"
+  },
   "sidebar": {
     "home": "Início",
     "favorites": "Favoritos",
