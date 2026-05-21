@@ -82,7 +82,6 @@ export default function MatrixTab({
   hasAnyAdjustment,
   setActiveSection
 }: MatrixTabProps) {
-  const { t } = useTranslation();
   const [rateioView, setRateioView] = useState("planilha");
   const [matrixToolbarCollapsed, setMatrixToolbarCollapsed] = useState(false);
   const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(true);
@@ -90,14 +89,13 @@ export default function MatrixTab({
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
   const [storeSearch, setStoreSearch] = useState("");
+  const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
 
   const updateStorePiece = useUpdateCampaignStorePiece();
   const bulkUpdateStorePieces = useBulkUpdateCampaignStorePieces();
 
   const handleUpdateStorePiece = async (data: { id: string } & Partial<any>) => {
     // This is for store metadata updates from StoresMatrixTable
-    // MatrixTab actually needs to handle piece quantities mostly
-    // but StoresMatrixTable is used for store fields
   };
 
   const { isAdminOrMaster } = useUserRole();
@@ -109,6 +107,126 @@ export default function MatrixTab({
       return label ? { index: i, label } : null;
     }).filter((x): x is { index: number; label: string } => x !== null);
   }, [client]);
+
+  // ─── Filtered pieces for matrix (by piece filters) ───
+  const matrixPieces = useMemo(() => {
+    let filtered = [...pieces];
+
+    const f = pieceFilters;
+    const activeChecks: ((p: any) => boolean)[] = [];
+    if (f.category.size > 0) activeChecks.push((p) => f.category.has(p.category));
+    if (f.name.size > 0) activeChecks.push((p) => f.name.has(p.name));
+    if (f.store_category.size > 0) activeChecks.push((p) => !!p.store_category && f.store_category.has(p.store_category));
+    if (f.size.size > 0) activeChecks.push((p) => f.size.has(p.size));
+    if (f.specification.size > 0) activeChecks.push((p) => f.specification.has(p.specification));
+    if (f.installation_instructions.size > 0) activeChecks.push((p) => f.installation_instructions.has(p.installation_instructions));
+    if (f.kit_only.size > 0) activeChecks.push((p) => f.kit_only.has(p.kit_only ? "Sim" : "Não"));
+    if (f.is_mockup.size > 0) activeChecks.push((p) => f.is_mockup.has(p.is_mockup ? "Sim" : "Não"));
+
+    if (activeChecks.length > 0) {
+      filtered = filtered.filter((p) => {
+        const results = activeChecks.map((check) => check(p));
+        if (filterLogicMode === "and") return results.every(Boolean);
+        return results.some(Boolean);
+      });
+    }
+
+    return filtered;
+  }, [pieces, pieceFilters, filterLogicMode]);
+
+  // Kits appear as virtual columns in the matrix
+  const matrixKits = useMemo(() => kits, [kits]);
+
+  const getKitCategory = useCallback((kit: any) => {
+    if (kit.category) return kit.category;
+    const kpRows = kitPieces.filter((kp) => kp.kit_id === kit.id);
+    for (const kp of kpRows) {
+      const piece = pieces.find((p) => p.id === kp.piece_id);
+      if (piece?.category) return piece.category;
+    }
+    return null;
+  }, [kitPieces, pieces]);
+
+  // Unified matrix columns sorted by display_order
+  type MatrixCol = { type: "piece"; data: any; display_order: number } | { type: "kit"; data: any; display_order: number };
+  const matrixColumns: MatrixCol[] = useMemo(() => {
+    return [
+      ...matrixPieces.map(p => ({ type: "piece" as const, data: p, display_order: p.display_order })),
+      ...matrixKits.map(k => ({ type: "kit" as const, data: k, display_order: k.display_order })),
+    ].sort((a, b) =>
+      a.display_order - b.display_order
+      || (a.type === b.type ? 0 : a.type === "piece" ? -1 : 1)
+      || (a.data.id < b.data.id ? -1 : 1)
+    );
+  }, [matrixPieces, matrixKits]);
+
+  const matrixCategoryGroups = useMemo(() => {
+    const groups: { label: string; span: number }[] = [];
+    let currentCat: string | null = null;
+    let currentSpan = 0;
+    matrixColumns.forEach((col) => {
+      const cat = col.type === "piece"
+        ? (col.data.category || "Sem localização")
+        : (getKitCategory(col.data) || "Sem localização");
+      if (cat !== currentCat) {
+        if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
+        currentCat = cat;
+        currentSpan = 1;
+      } else {
+        currentSpan++;
+      }
+    });
+    if (currentCat !== null) groups.push({ label: currentCat, span: currentSpan });
+    return groups;
+  }, [matrixColumns, getKitCategory]);
+
+  const columnTints = useMemo(() => {
+    const tints: string[] = [];
+    let currentCat: string | null = null;
+    let tintIndex = -1;
+    matrixColumns.forEach((col) => {
+      const cat = col.type === "piece"
+        ? (col.data.category || "Sem localização")
+        : (getKitCategory(col.data) || "Sem localização");
+      if (cat !== currentCat) {
+        currentCat = cat;
+        tintIndex++;
+      }
+      tints.push(tintIndex % 2 === 0 ? "bg-muted/30" : "bg-transparent");
+    });
+    return tints;
+  }, [matrixColumns, getKitCategory]);
+
+  const filteredStores = useMemo(() => {
+    return stores.filter((s) => {
+      const q = storeSearch.toLowerCase();
+      return !q || s.name.toLowerCase().includes(q) ||
+        s.nickname?.toLowerCase().includes(q) ||
+        s.city?.toLowerCase().includes(q) ||
+        s.store_code?.toLowerCase().includes(q);
+    });
+  }, [stores, storeSearch]);
+
+  const navigateMatrixCell = useCallback((dir: "up" | "down" | "left" | "right") => {
+    if (!editingCell) return;
+    const storeIdx = filteredStores.findIndex((s) => s.id === editingCell.storeId);
+    const colIds = matrixColumns.map((c) => c.type === "piece" ? c.data.id : `kit-${c.data.id}`);
+    const colIdx = colIds.indexOf(editingCell.pieceId);
+    if (storeIdx === -1 || colIdx === -1) return;
+
+    let newStoreIdx = storeIdx;
+    let newColIdx = colIdx;
+    if (dir === "up") newStoreIdx = Math.max(0, storeIdx - 1);
+    else if (dir === "down") newStoreIdx = Math.min(filteredStores.length - 1, storeIdx + 1);
+    else if (dir === "left") newColIdx = Math.max(0, colIdx - 1);
+    else if (dir === "right") newColIdx = Math.min(colIds.length - 1, colIdx + 1);
+
+    const newStore = filteredStores[newStoreIdx];
+    const newPieceId = colIds[newColIdx];
+    if (newStore && newPieceId) {
+      setEditingCell({ storeId: newStore.id, pieceId: newPieceId });
+    }
+  }, [editingCell, filteredStores, matrixColumns]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
