@@ -1,15 +1,15 @@
-// @deprecated [REMOVE-CANDIDATE] Módulo antigo de Ocorrências — desabilitado da UI.
-// Substituído pelo módulo de Ocorrências dentro de "Loja a Loja". Pode ser apagado.
-
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Store as StoreIcon } from "lucide-react";
+import { MapPin, Store as StoreIcon, AlertTriangle, Clock } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { isAfter } from "date-fns";
 
 interface StoreToken {
-  token: string;
+  token: string | null;
   client_stores: {
+    id: string;
     name: string;
     city: string | null;
     state: string | null;
@@ -20,13 +20,13 @@ interface StoreToken {
 export default function OccurrencesPortal() {
   const { campaignId } = useParams<{ campaignId: string }>();
 
-  const { data: config } = useQuery({
+  const { data: config, isLoading: loadingConfig } = useQuery({
     queryKey: ["occ-portal-config", campaignId],
     enabled: !!campaignId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("store_portal_config")
-        .select("occurrences_portal_title, occurrences_portal_subtitle")
+        .select("occurrences_portal_title, occurrences_portal_subtitle, module_ocorrencias, deadline_ocorrencias")
         .eq("campaign_id", campaignId!)
         .maybeSingle();
       if (error) throw error;
@@ -34,22 +34,51 @@ export default function OccurrencesPortal() {
     },
   });
 
-  const { data: tokens, isLoading } = useQuery({
-    queryKey: ["occ-portal-tokens", campaignId],
+  const { data: tokens, isLoading: loadingTokens } = useQuery({
+    queryKey: ["occ-portal-stores-v2", campaignId],
     enabled: !!campaignId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("store_portal_tokens")
-        .select("token, client_stores(name, city, state, store_code)")
+      // Fetch all active stores in the campaign from loja_a_loja_lojas
+      const { data: lojas, error: lojasErr } = await supabase
+        .from("loja_a_loja_lojas")
+        .select("store_id, client_stores(id, name, city, state, store_code)")
         .eq("campaign_id", campaignId!)
-        .not("token", "is", null);
-      if (error) throw error;
-      return (data ?? []) as unknown as StoreToken[];
+        .eq("ativo", true);
+      
+      if (lojasErr) throw lojasErr;
+
+      // Fetch existing tokens
+      const { data: existingTokens, error: tokensErr } = await supabase
+        .from("store_portal_tokens")
+        .select("token, store_id")
+        .eq("campaign_id", campaignId!);
+      
+      if (tokensErr) throw tokensErr;
+
+      const tokenMap = new Map(existingTokens?.map(t => [t.store_id, t.token]) || []);
+
+      // Dedup stores (a store can have multiple rows in loja_a_loja_lojas for different pieces, though usually not)
+      const uniqueStores = new Map<string, any>();
+      (lojas || []).forEach((l: any) => {
+        if (l.client_stores && !uniqueStores.has(l.store_id)) {
+          uniqueStores.set(l.store_id, l.client_stores);
+        }
+      });
+
+      return Array.from(uniqueStores.values()).map(store => ({
+        token: tokenMap.get(store.id) || null,
+        client_stores: store
+      })) as StoreToken[];
     },
   });
 
+  const isLoading = loadingConfig || loadingTokens;
   const title = config?.occurrences_portal_title || "Portal de Ocorrências";
   const subtitle = config?.occurrences_portal_subtitle || "Selecione sua loja para registrar uma ocorrência";
+  
+  const isModuleDisabled = config && config.module_ocorrencias === false;
+  const deadline = config?.deadline_ocorrencias ? new Date(config.deadline_ocorrencias) : null;
+  const isDeadlinePassed = deadline && isAfter(new Date(), deadline);
 
   // Group by state -> city
   const grouped = (tokens ?? []).reduce<Record<string, Record<string, StoreToken[]>>>((acc, t) => {
@@ -63,6 +92,7 @@ export default function OccurrencesPortal() {
   }, {});
 
   const sortedStates = Object.keys(grouped).sort((a, b) => a.localeCompare(b, "pt-BR"));
+
 
   return (
     <div className="min-h-screen bg-background">
