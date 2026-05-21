@@ -473,14 +473,8 @@ export default function RateioTabV2({
                         <Copy className="w-3.5 h-3.5" />
                         {t("rateio.copyQuantities", "COPIAR QUANTIDADES")}
                       </Button>
-
-                      <Badge variant="secondary" className="bg-stone-100 text-stone-500 border-none text-[10px] h-9 px-3 font-bold uppercase rounded-lg">
-                        {activeTabData?.type === "adjustment" ? "AJUSTE" : activeTabData?.type === "negotiation" ? "NEGOCIAÇÃO" : "ORIGINAL"}
-                      </Badge>
                     </>
                   )}
-
-
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -501,11 +495,16 @@ export default function RateioTabV2({
                   </DropdownMenu>
 
                   {isTabEditable && (
-                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg border border-stone-200 shadow-sm">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </Button>
+                    <>
+                      <Badge variant="secondary" className="bg-stone-100 text-stone-500 border-none text-[10px] h-9 px-3 font-bold uppercase rounded-lg">
+                        {activeTabData?.type === "adjustment" ? "AJUSTE" : activeTabData?.type === "negotiation" ? "NEGOCIAÇÃO" : "ORIGINAL"}
+                      </Badge>
+                      
+                      <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg border border-stone-200 shadow-sm">
+                        <MoreHorizontal className="w-4 h-4" />
+                      </Button>
+                    </>
                   )}
-
                 </div>
               </div>
 
