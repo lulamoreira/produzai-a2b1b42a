@@ -114,7 +114,15 @@ const CampaignDetail = () => {
               />
             </TabsContent>
             <TabsContent value="matrix">
-              <MatrixTab campaignId={campaignId!} pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap} />
+              <MatrixTab 
+                campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
+                pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
+                canEditCampaignStores={true} activeAdjustment={null} hasNegotiationRateio={false}
+                winnerSupplierId={null} winnerSupplierName="" rateioSource="original"
+                setRateioSource={() => {}} vigenteSource="original" isViewingVigente={true}
+                handleResetNegotiationRateio={() => {}} handleCancelNegotiationRateio={() => {}}
+                isNegotiationView={false} hasAnyAdjustment={false} setActiveSection={setActiveSection}
+              />
             </TabsContent>
           </Suspense>
         </Tabs>
