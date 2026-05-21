@@ -1,8 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Store as StoreIcon, AlertTriangle, Clock } from "lucide-react";
+import { MapPin, Store as StoreIcon, AlertTriangle, Clock, Globe } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { isAfter } from "date-fns";
 import { OccurrencesPortalEmptyState } from "@/components/v2/campaigns/OccurrencesPortalEmptyState";
@@ -25,6 +27,7 @@ export default function OccurrencesPortal() {
   const { campaignId } = useParams<{ campaignId: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [selectedState, setSelectedState] = useState<string>("all");
 
 
   const { data: config, isLoading: loadingConfig } = useQuery({
@@ -119,9 +122,22 @@ export default function OccurrencesPortal() {
   const hasStores = tokensData?.hasStores;
   const hasTokens = tokensData?.hasTokens;
 
+  const availableStates = useMemo(() => {
+    const states = new Set<string>();
+    tokens.forEach(s => {
+      if (s.client_stores?.state) states.add(s.client_stores.state);
+    });
+    return Array.from(states).sort();
+  }, [tokens]);
+
+  const filteredTokens = useMemo(() => {
+    if (selectedState === "all") return tokens;
+    return tokens.filter(s => s.client_stores?.state === selectedState);
+  }, [tokens, selectedState]);
+
 
   // Group by state -> city
-  const grouped = tokens.reduce<Record<string, Record<string, StoreToken[]>>>((acc, t) => {
+  const grouped = filteredTokens.reduce<Record<string, Record<string, StoreToken[]>>>((acc, t) => {
     if (!t.client_stores) return acc;
     const state = t.client_stores.state || "Sem UF";
     const city = t.client_stores.city || "Sem cidade";
@@ -137,9 +153,37 @@ export default function OccurrencesPortal() {
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        <header className="mb-8 sm:mb-10">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{title}</h1>
-          <p className="text-sm sm:text-base text-muted-foreground mt-2">{subtitle}</p>
+        <header className="mb-8 sm:mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{title}</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-2">{subtitle}</p>
+          </div>
+
+          {availableStates.length > 1 && (
+            <div className="w-full md:w-64">
+              <Select value={selectedState} onValueChange={setSelectedState}>
+                <SelectTrigger className="w-full">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <SelectValue placeholder="Filtrar por UF" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      <span>Todos os Estados</span>
+                    </div>
+                  </SelectItem>
+                  {availableStates.map(state => (
+                    <SelectItem key={state} value={state}>
+                      {state}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </header>
 
         {isModuleDisabled && (
