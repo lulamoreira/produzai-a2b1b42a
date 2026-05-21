@@ -717,6 +717,18 @@ export async function buildRequoteFinalWorkbook(
     showcase_count: s.showcase_count || 0,
   } as any));
 
+  const visibleStoreFields: StoreFieldDef[] = [
+    { key: "name", label: "NOME DA LOJA" },
+    { key: "city", label: "CIDADE" },
+    { key: "state", label: "UF" },
+    { key: "store_model", label: "MODELO" },
+    { key: "showcase_count", label: "VITRINES" },
+  ];
+  const matrixStoreFieldCount = getMatrixStoreFieldsWithHidden(
+    visibleStoreFields,
+    params.extraHiddenStoreFields || [],
+  ).length;
+
   let matrixSheetName: string | null = null;
   try {
     matrixSheetName = await appendMatrixSheets(wb, {
@@ -735,13 +747,7 @@ export async function buildRequoteFinalWorkbook(
       reservedSheetNames: new Set(["preços (recotação)"]),
       skipDashboard: true,
       sortByCode: true,
-      storeFields: [
-        { key: "name", label: "NOME DA LOJA" },
-        { key: "city", label: "CIDADE" },
-        { key: "state", label: "UF" },
-        { key: "store_model", label: "MODELO" },
-        { key: "showcase_count", label: "VITRINES" },
-      ],
+      storeFields: visibleStoreFields,
       extraHiddenStoreFields: params.extraHiddenStoreFields || [],
     } as any);
   } catch (e) {
