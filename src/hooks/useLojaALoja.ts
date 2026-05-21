@@ -51,9 +51,10 @@ export function useLojaALojaTipos(campaignId: string | undefined) {
     enabled: !!campaignId,
     queryFn: async () => {
       const { data: tipos, error } = await supabase
-        .from("loja_a_loja_tipos")
+        .from("lo_ja_a_loja_tipos")
         .select("*")
         .eq("campaign_id", campaignId!)
+        .eq("is_deleted", false)
         .order("display_order");
       if (error) throw error;
 
