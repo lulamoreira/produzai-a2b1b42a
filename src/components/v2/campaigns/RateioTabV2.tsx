@@ -451,12 +451,11 @@ export default function RateioTabV2({
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2 flex-wrap">
                   {isTabEditable && (
-                    <div className="flex items-center bg-stone-100 rounded-lg p-0.5">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-stone-900"><Undo2 className="w-3.5 h-3.5" /></Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-stone-900"><Redo2 className="w-3.5 h-3.5" /></Button>
-                    </div>
-                  )}
-
+                    <>
+                      <div className="flex items-center bg-stone-100 rounded-lg p-0.5">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-stone-900"><Undo2 className="w-3.5 h-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-stone-900"><Redo2 className="w-3.5 h-3.5" /></Button>
+                      </div>
 
                       <Button variant="outline" size="sm" className="h-9 text-xs gap-2 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50">
                         <Sparkles className="w-3.5 h-3.5 text-[#C2714F]" />
@@ -473,6 +472,7 @@ export default function RateioTabV2({
                       </Badge>
                     </>
                   )}
+
 
 
                   <DropdownMenu>
