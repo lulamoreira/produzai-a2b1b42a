@@ -15,6 +15,9 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger 
 } from "@/components/ui/alert-dialog";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
 import MatrixDistributionDashboard from "@/components/Matrix/MatrixDistributionDashboard";
 import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters, type FilterLogicMode } from "@/components/MatrixFilterSidebar";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
@@ -22,6 +25,9 @@ import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
 import StoresMatrixTable from "@/components/StoresMatrixTable";
 import { useUpdateCampaignStorePiece, useBulkUpdateCampaignStorePieces } from "@/hooks/useMultiClientData";
+import { StoreDetailsPopover } from "./StoreDetailsPopover";
+import { getStateColor } from "@/lib/stateColors";
+import PieceThumbnail from "@/components/PieceThumbnail";
 
 interface MatrixTabProps {
   campaignId: string;
