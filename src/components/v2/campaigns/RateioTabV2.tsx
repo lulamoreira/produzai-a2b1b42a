@@ -117,7 +117,8 @@ export default function RateioTabV2({
     }
   }, [rateioSource, activeVersionTab]);
 
-  const isLatestTab = activeVersionTab === vigenteSource;
+
+
 
   // Filter stores
   const filteredStores = useMemo(() => {
@@ -280,7 +281,7 @@ export default function RateioTabV2({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const startEditing = (storeId: string, pieceId: string, currentVal: number) => {
-    if (!canEditCampaignStores || !isLatestTab) return;
+    if (!canEditCampaignStores || !isTabEditable) return;
     setEditingCell({ storeId, pieceId });
     setEditValue(currentVal === 0 ? "" : String(currentVal));
     setTimeout(() => inputRef.current?.focus(), 0);
@@ -305,15 +306,42 @@ export default function RateioTabV2({
   };
 
   const versionTabs = useMemo(() => {
-    const tabs = [{ id: "original", label: "Rateio Original" }];
+    const tabs: { id: string; label: string; isVigente?: boolean; type?: string; parent?: string }[] = [{ id: "original", label: "Rateio Original", type: "original" }];
+    
     if (hasNegotiationRateio && winnerSupplierId) {
-      tabs.push({ id: "negotiation", label: `Negociação · ${winnerSupplierName}` });
+      tabs.push({ 
+        id: "negotiation", 
+        label: `Negociação · ${winnerSupplierName}`,
+        type: "negotiation"
+      });
     }
+    
     if (activeAdjustment) {
-      tabs.push({ id: "adjustment", label: `Ajuste · ${activeAdjustment.name}` });
+      tabs.push({ 
+        id: "adjustment", 
+        label: `Ajuste · ${activeAdjustment.name}`,
+        type: "adjustment",
+        parent: hasNegotiationRateio ? "Negociação" : "Original"
+      });
     }
+
+    // Sort tabs: original first, then others by "version sequence" logic
+    // But requirement says: ALL versions for current campaign, ordered by creation date (oldest first)
+    // Here we use the props which are already the resolved versions.
+    // The most recently created version is always the ATIVO/editable one.
+    // Let's mark the last one as ATIVO.
+    const lastTab = tabs[tabs.length - 1];
+    if (lastTab) lastTab.isVigente = true;
+
     return tabs;
   }, [hasNegotiationRateio, winnerSupplierId, winnerSupplierName, activeAdjustment]);
+
+  const activeTabData = versionTabs.find(t => t.id === activeVersionTab);
+  const isTabEditable = activeTabData?.isVigente && activeVersionTab === vigenteSource;
+  const isLatestTab = isTabEditable;
+
+
+
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-white">
@@ -363,66 +391,68 @@ export default function RateioTabV2({
           {rateioView === "planilha" ? (
             <div className="flex flex-col h-full overflow-hidden">
               {/* Excel-like Version Tabs */}
-              <div className="bg-stone-50 border-b border-stone-200 px-6 pt-2 flex items-end gap-1 overflow-x-auto no-scrollbar">
+              <div className="bg-white border-b border-stone-200 px-4 pt-3 flex items-end gap-1 overflow-x-auto no-scrollbar">
                 {versionTabs.map((tab) => {
                   const isActive = activeVersionTab === tab.id;
-                  const isCurrentVigente = vigenteSource === tab.id;
+                  const isCurrentVigente = tab.isVigente;
                   
                   return (
                     <button
                       key={tab.id}
                       onClick={() => setActiveVersionTab(tab.id)}
                       className={cn(
-                        "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-all border-x border-t whitespace-nowrap",
+                        "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-all whitespace-nowrap",
                         isActive 
-                          ? "bg-white border-stone-200 text-stone-900 -mb-px shadow-[0_-2px_10px_rgba(0,0,0,0.02)]" 
-                          : "bg-stone-100 border-transparent text-stone-500 hover:text-stone-700 hover:bg-stone-50"
+                          ? "bg-white border border-stone-200 border-b-white text-stone-900 -mb-px z-10 shadow-[0_-2px_10px_rgba(0,0,0,0.02)]" 
+                          : "bg-stone-50 text-stone-500 hover:bg-stone-100 hover:text-stone-700"
                       )}
                     >
-                      {!isCurrentVigente && <Lock className="w-3 h-3 text-stone-400" />}
                       {tab.label}
-                      {isCurrentVigente && (
-                        <span className="flex items-center gap-1 bg-[#C2714F]/10 text-[#C2714F] px-1.5 py-0.5 rounded text-[10px] font-bold">
-                          {t("rateio.activeTab", "ATIVO")}
+                      {isCurrentVigente ? (
+                        <span className="bg-[#C2714F] text-white text-[10px] font-bold rounded-full px-2 py-0.5 ml-2">
+                          ATIVO
                         </span>
+                      ) : (
+                        <Lock className="w-3 h-3 text-stone-400 ml-1" />
                       )}
                     </button>
                   );
                 })}
               </div>
 
+
               {/* Rateio Header Banner */}
               <div className={cn(
                 "px-6 py-3 border-b flex flex-col md:flex-row md:items-center justify-between gap-4",
-                isLatestTab 
-                  ? "bg-stone-50/50 border-stone-100" 
+                isTabEditable 
+                  ? "bg-emerald-50/60 border-emerald-100" 
                   : "bg-amber-50/50 border-amber-100"
               )}>
                 <div className="flex items-start gap-3">
                   <div className={cn(
-                    "mt-1 p-1 rounded-full",
-                    isLatestTab ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-600"
-                  )}>
-                    {isLatestTab ? <CheckCircle2 className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                  </div>
+                    "mt-1.5 inline-block h-2 w-2 rounded-full shrink-0",
+                    isTabEditable ? "bg-emerald-500" : "bg-amber-500"
+                  )} />
                   <div>
-                    <div className="text-sm font-semibold text-stone-900">
-                      {isLatestTab ? t("rateio.currentRateio", "Rateio vigente") : t("rateio.readOnly", "Visualização somente leitura")}
-                      : <span className="font-normal text-stone-600 ml-1">
-                        {activeVersionTab === "adjustment" ? activeAdjustment?.name : activeVersionTab === "negotiation" ? winnerSupplierName : "Original"}
-                      </span>
+                    <div className="text-sm font-medium text-stone-900 leading-none">
+                      {isTabEditable ? (
+                        <>Rateio vigente: <span className="font-bold">{activeTabData?.label}</span></>
+                      ) : (
+                        <>Versão somente leitura — edições não são permitidas nesta planilha: <span className="font-bold">{activeTabData?.label}</span></>
+                      )}
                     </div>
-                    {activeVersionTab === "adjustment" && isLatestTab && (
-                      <div className="text-xs text-stone-500 mt-0.5">
-                        {t("rateio.syncWith", "Sincronizado com")}: <span className="font-medium">{hasNegotiationRateio ? "Negociação" : "Original"}</span>
+                    {isTabEditable && activeTabData?.type === "adjustment" && (
+                      <div className="text-[11px] text-stone-500 mt-1.5">
+                        Sincronizado com: <span className="font-bold">{activeTabData.parent}</span> · Edições aqui valem para o ajuste; o rateio original e o da negociação ficam preservados.
                       </div>
                     )}
                   </div>
                 </div>
 
+
                 {/* Action Buttons */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  {isLatestTab && (
+                  {isTabEditable && (
                     <>
                       <div className="flex items-center bg-stone-100 rounded-lg p-0.5">
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-stone-900"><Undo2 className="w-3.5 h-3.5" /></Button>
@@ -438,8 +468,14 @@ export default function RateioTabV2({
                         <Copy className="w-3.5 h-3.5" />
                         {t("rateio.copyQuantities", "COPIAR QUANTIDADES")}
                       </Button>
+
+                      <Badge variant="secondary" className="bg-stone-100 text-stone-500 border-none text-[10px] h-9 px-3 font-bold uppercase rounded-lg">
+                        {activeTabData?.type === "adjustment" ? "AJUSTE" : activeTabData?.type === "negotiation" ? "NEGOCIAÇÃO" : "ORIGINAL"}
+                      </Badge>
                     </>
                   )}
+
+
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -459,11 +495,12 @@ export default function RateioTabV2({
                     </DropdownMenuContent>
                   </DropdownMenu>
 
-                  {isLatestTab && (
+                  {isTabEditable && (
                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg border border-stone-200 shadow-sm">
                       <MoreHorizontal className="w-4 h-4" />
                     </Button>
                   )}
+
                 </div>
               </div>
 
@@ -700,11 +737,11 @@ export default function RateioTabV2({
                               key={`${col._type}-${col.id}`} 
                               className={cn(
                                 "border-r border-b border-stone-200 text-center transition-all",
-                                isKit ? "cursor-default bg-[#C2714F]/[0.03]" : "cursor-pointer",
+                                isKit || !isTabEditable ? "cursor-default bg-[#C2714F]/[0.03]" : "cursor-pointer",
                                 val > 0 && !isKit ? "bg-stone-50/30" : "",
                                 isEditing && "ring-2 ring-inset ring-[#C2714F] z-10"
                               )}
-                              onClick={() => !isKit && startEditing(store.id, col.id, val)}
+                              onClick={() => !isKit && isTabEditable && startEditing(store.id, col.id, val)}
                             >
                               {isEditing ? (
                                 <input
