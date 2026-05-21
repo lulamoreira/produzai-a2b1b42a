@@ -64,7 +64,8 @@
     "campaign": "Campanha",
     "backup": "Backup",
     "activeAdjustment": "Ajuste ativo",
-    "registered": "Registrada"
+    "registered": "Registrada",
+    "mockup": "Mockup"
   },
   "greeting": {
     "morning": "Bom dia",

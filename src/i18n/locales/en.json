@@ -64,7 +64,8 @@
     "campaign": "Campaign",
     "backup": "Backup",
     "activeAdjustment": "Active adjustment",
-    "registered": "Registered"
+    "registered": "Registered",
+    "mockup": "Mockup"
   },
   "greeting": {
     "morning": "Good morning",
