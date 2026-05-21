@@ -1,8 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Store as StoreIcon, ChevronRight, Clock } from "lucide-react";
+import { Store as StoreIcon, ChevronRight, Clock, MapPin, Globe } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { isAfter } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { OccurrencesPortalEmptyState } from "@/components/v2/campaigns/OccurrencesPortalEmptyState";
@@ -26,6 +28,7 @@ export default function OccurrencesPortalV2() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const isPublic = !user;
+  const [selectedState, setSelectedState] = useState<string>("all");
 
   const { data: config, isLoading: loadingConfig } = useQuery({
     queryKey: ["occ-portal-config", campaignId],
@@ -193,24 +196,67 @@ export default function OccurrencesPortalV2() {
     );
   }
 
+  const availableStates = useMemo(() => {
+    const states = new Set<string>();
+    storesData?.tokens?.forEach(s => {
+      if (s.client_stores?.state) states.add(s.client_stores.state);
+    });
+    return Array.from(states).sort();
+  }, [storesData?.tokens]);
+
+  const filteredTokens = useMemo(() => {
+    if (!storesData?.tokens) return [];
+    if (selectedState === "all") return storesData.tokens;
+    return storesData.tokens.filter(s => s.client_stores?.state === selectedState);
+  }, [storesData?.tokens, selectedState]);
+
   return (
     <div className="min-h-screen bg-stone-50">
       <div className="max-w-6xl mx-auto px-4 py-8 sm:py-12">
         <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
+          <div className="flex-1">
             <h1 className="text-2xl font-bold text-stone-900">{title}</h1>
             <p className="text-sm text-stone-500 mt-1">{subtitle}</p>
           </div>
-          {deadline && (
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-100 text-stone-600 text-xs font-medium border border-stone-200">
-              <Clock className="h-3.5 w-3.5" />
-              {t("occurrences.portal.deadline")}: {deadline.toLocaleDateString()}
-            </div>
-          )}
+          
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            {availableStates.length > 1 && (
+              <div className="w-full sm:w-48">
+                <Select value={selectedState} onValueChange={setSelectedState}>
+                  <SelectTrigger className="bg-white border-stone-200">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-stone-400" />
+                      <SelectValue placeholder="Filtrar por UF" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">
+                      <div className="flex items-center gap-2">
+                        <Globe className="h-4 w-4" />
+                        <span>Todos os Estados</span>
+                      </div>
+                    </SelectItem>
+                    {availableStates.map(state => (
+                      <SelectItem key={state} value={state}>
+                        {state}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {deadline && (
+              <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-stone-100 text-stone-600 text-xs font-medium border border-stone-200">
+                <Clock className="h-3.5 w-3.5" />
+                {t("occurrences.portal.deadline")}: {deadline.toLocaleDateString()}
+              </div>
+            )}
+          </div>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {storesData.tokens.map((s) => (
+          {filteredTokens.map((s) => (
             <a
               key={s.token}
               href={`/loja/${s.token}`}
