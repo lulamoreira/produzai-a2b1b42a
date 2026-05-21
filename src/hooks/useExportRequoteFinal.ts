@@ -75,7 +75,7 @@ export async function buildRequoteFinalPackage(params: {
     supabasePaginate<any>((from, to) =>
       supabase
         .from("campaign_adjustment_stores" as any)
-        .select("source_store_id, name, nickname, city, state, store_code, showcase_count")
+        .select("*")
         .eq("adjustment_id", adjustmentId)
         .range(from, to) as any,
     ),
@@ -91,12 +91,15 @@ export async function buildRequoteFinalPackage(params: {
   ]);
 
   const clientId = (campaignRes.data as any)?.client_id || null;
-  const { data: storeRows } = clientId
-    ? await supabase
-        .from("client_stores")
-        .select("*")
-        .eq("client_id", clientId)
-    : { data: [] as any[] };
+  const storeRows = clientId
+    ? await supabasePaginate<any>((from, to) =>
+        supabase
+          .from("client_stores")
+          .select("*")
+          .eq("client_id", clientId)
+          .range(from, to) as any,
+      )
+    : [];
 
   const requoteData = requoteRes.data as any;
   const j = (requoteData?.adjusted_prices_jsonb || {}) as any;
@@ -139,7 +142,11 @@ export async function buildRequoteFinalPackage(params: {
     const current = currentStoreById.get(id);
     if (current) return current;
     const snap = snapshotStoreById.get(id) as any;
+    const original = snap?.original_snapshot && typeof snap.original_snapshot === "object"
+      ? snap.original_snapshot
+      : {};
     return {
+      ...(original as any),
       id,
       name: snap?.name || "Loja removida",
       nickname: snap?.nickname || null,
