@@ -116,6 +116,30 @@
     "exportPPT": "Export PPT",
     "exportPpt": "Export PPT"
   },
+  "tabs": {
+    "summary": "Summary",
+    "pieces": "Pieces",
+    "rateio": "Rateio",
+    "cotacoes": "Quotes"
+  },
+  "rateio": {
+    "activeTab": "ACTIVE",
+    "readOnly": "Read-only view",
+    "currentRateio": "Current rateio",
+    "syncWith": "Synced with",
+    "searchStore": "Search store...",
+    "allStates": "All",
+    "allCities": "All",
+    "allCategories": "All",
+    "stores": "store(s)",
+    "collapse": "COLLAPSE",
+    "expand": "EXPAND",
+    "matrixAutomation": "MATRIX AUTOMATION",
+    "copyQuantities": "COPY QUANTITIES",
+    "exportRateio": "EXPORT RATEIO",
+    "exportByStore": "EXPORT RATEIO BY STORE",
+    "moreActions": "MORE ACTIONS"
+  },
   "greeting": {
     "morning": "Good morning",
     "afternoon": "Good afternoon",

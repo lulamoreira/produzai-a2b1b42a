@@ -116,6 +116,30 @@
     "exportPPT": "Exportar PPT",
     "exportPpt": "Exportar PPT"
   },
+  "tabs": {
+    "summary": "Resumo",
+    "pieces": "Peças",
+    "rateio": "Rateio",
+    "cotacoes": "Cotações"
+  },
+  "rateio": {
+    "activeTab": "ATIVO",
+    "readOnly": "Visualização somente leitura",
+    "currentRateio": "Rateio vigente",
+    "syncWith": "Sincronizado com",
+    "searchStore": "Buscar loja...",
+    "allStates": "Todos",
+    "allCities": "Todas",
+    "allCategories": "Todas",
+    "stores": "loja(s)",
+    "collapse": "RECOLHER",
+    "expand": "EXPANDIR",
+    "matrixAutomation": "AUTOMAÇÃO DE MATRIZ",
+    "copyQuantities": "COPIAR QUANTIDADES",
+    "exportRateio": "EXPORTAR RATEIO",
+    "exportByStore": "EXPORTAR RATEIO POR LOJA",
+    "moreActions": "MAIS AÇÕES"
+  },
   "greeting": {
     "morning": "Bom dia",
     "afternoon": "Boa tarde",
