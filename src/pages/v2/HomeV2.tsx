@@ -96,7 +96,7 @@ export function HomeV2() {
           id: `camp-${item.id}`,
           type: "campaign",
           title: item.name,
-          description: "Nova campanha",
+          description: t("common.new") + " " + t("common.campaign").toLowerCase(),
           time: new Date(item.created_at),
           icon: Megaphone
         })),
@@ -104,7 +104,7 @@ export function HomeV2() {
           id: `inst-${item.id}`,
           type: "installation",
           title: (item as any).client_stores?.name || "Instalação",
-          description: `Agendada`,
+          description: t("scheduling.scheduled"),
           time: new Date(item.created_at),
           icon: Wrench
         })),
@@ -112,7 +112,7 @@ export function HomeV2() {
           id: `occ-${item.id}`,
           type: "occurrence",
           title: item.description || "Ocorrência",
-          description: "Registrada",
+          description: t("common.registered"),
           time: new Date(item.created_at || new Date()),
           icon: Package
         }))
@@ -122,7 +122,7 @@ export function HomeV2() {
     }
   });
 
-  const userName = user?.email?.split("@")[0] || "Usuário";
+  const userName = user?.email?.split("@")[0] || t("header.user");
 
   return (
     <div className="max-w-7xl mx-auto animate-in fade-in duration-500">
@@ -194,7 +194,7 @@ export function HomeV2() {
                 >
                   <div className="flex justify-between items-center mb-2">
                     <Badge variant="outline" className="text-[10px] font-semibold uppercase">
-                      Ativa
+                      {t("campaigns.status.active")}
                     </Badge>
                     <span className="text-[10px] text-stone-400">
                       {formatters.dateShort(new Date(camp.created_at))}
@@ -204,7 +204,7 @@ export function HomeV2() {
                     {camp.name}
                   </h4>
                   <p className="text-xs text-stone-500 mt-0.5 truncate">
-                    {(camp as any).clients?.name || "Cliente"}
+                    {(camp as any).clients?.name || t("common.client")}
                   </p>
                   <div className="border-t border-stone-100 dark:border-stone-800 mt-3 pt-3 flex justify-between items-center text-[10px] text-stone-500">
                     <ChevronRight className="w-3 h-3 text-stone-300 ml-auto" />
@@ -215,8 +215,8 @@ export function HomeV2() {
               <div className="md:col-span-2 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl">
                 <EmptyStateV2 
                   icon={Megaphone}
-                  title="Nenhuma campanha encontrada"
-                  description="Você ainda não possui campanhas recentes."
+                  title={t("common.noResults")}
+                  description={t("common.noResults")}
                 />
               </div>
             )}
@@ -258,8 +258,8 @@ export function HomeV2() {
               ) : (
                 <EmptyStateV2 
                   icon={Inbox}
-                  title="Nenhuma atividade"
-                  description="Ainda não há registros de atividade recente."
+                  title={t("common.noResults")}
+                  description={t("common.noResults")}
                 />
               )}
             </div>
