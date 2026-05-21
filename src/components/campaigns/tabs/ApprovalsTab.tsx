@@ -3,14 +3,43 @@ import AdjustmentsTab from "@/components/AdjustmentsTab";
 
 interface ApprovalsTabProps {
   campaignId: string;
+  campaignName: string;
+  pieces: any[];
+  kits: any[];
+  kitPieces: any[];
+  storePieces: any[];
+  stores: any[];
+  agencyName: string;
+  clientName: string;
+  currencyCode: string;
   isAdminOrMaster: boolean;
 }
 
-export default function ApprovalsTab({ campaignId, isAdminOrMaster }: ApprovalsTabProps) {
+export default function ApprovalsTab({ 
+  campaignId, 
+  campaignName,
+  pieces,
+  kits,
+  kitPieces,
+  storePieces,
+  stores,
+  agencyName,
+  clientName,
+  currencyCode,
+  isAdminOrMaster 
+}: ApprovalsTabProps) {
   return (
     <AdjustmentsTab 
-      campaignId={campaignId} 
-      isAdminOrMaster={isAdminOrMaster} 
+      campaignId={campaignId}
+      campaignName={campaignName}
+      pieces={pieces}
+      kits={kits}
+      kitPieces={kitPieces}
+      storePieces={storePieces}
+      stores={stores}
+      agencyName={agencyName}
+      clientName={clientName}
+      currencyCode={currencyCode}
     />
   );
 }

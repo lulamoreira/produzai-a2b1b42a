@@ -16,6 +16,8 @@ interface StoresTabProps {
   canEditCampaignStores: boolean;
   isLimitedMode: boolean;
   onOpenEditStore: (store: any) => void;
+  agencyName: string;
+  clientName: string;
 }
 
 export default function StoresTab({
@@ -25,7 +27,9 @@ export default function StoresTab({
   canEditStores,
   canEditCampaignStores,
   isLimitedMode,
-  onOpenEditStore
+  onOpenEditStore,
+  agencyName,
+  clientName
 }: StoresTabProps) {
   const { t } = useTranslation();
   const [storeSearch, setStoreSearch] = useState("");
@@ -124,7 +128,9 @@ export default function StoresTab({
         <StoreContactsCardView 
           stores={stores} 
           clientId={clientId} 
-          canEdit={canEditStores} 
+          canEdit={canEditStores}
+          agencyName={agencyName}
+          clientName={clientName}
         />
       )}
     </div>
