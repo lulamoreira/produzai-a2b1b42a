@@ -319,8 +319,7 @@ export default function RateioTabV2({
                 </div>
               </div>
 
-              {/* Spreadsheet Content */}
-              <div className="flex-1 overflow-hidden relative">
+              <div className="flex-1 overflow-hidden relative border-t border-stone-200">
                 <StoresMatrixTable 
                   clientId={clientId}
                   stores={filteredStores}
@@ -329,8 +328,6 @@ export default function RateioTabV2({
                   onUpdateStore={async () => {}} // Metadata updates handled elsewhere
                   storeSearch={storeSearch}
                   storeStateFilter=""
-                  // The component itself handles pieces/quantities internally via hooks if needed
-                  // but usually it receives them. Let's ensure it's compatible with v2 design.
                 />
               </div>
               
