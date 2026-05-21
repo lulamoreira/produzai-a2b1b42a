@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
   Search, Filter, X, Grid3X3, ArrowDownAZ, MapPin, Copy, 
-  Trash2, Package, MoreHorizontal, Presentation, Download, Upload, Sparkles, RefreshCw
+  Trash2, Package, MoreHorizontal, Presentation, Download, Upload, Sparkles, RefreshCw, AlertTriangle
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilt
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { toast } from "sonner";
 import { useUserRole } from "@/hooks/useUserRole";
+
+const SpreadsheetComponent = lazy(() => import("@/components/Matrix/SpreadsheetComponent"));
 
 interface MatrixTabProps {
   campaignId: string;
@@ -212,15 +214,37 @@ export default function MatrixTab({
                   )}
                </div>
 
-               <div className="p-4 text-center text-muted-foreground text-sm italic flex-1 flex flex-col items-center justify-center gap-4">
-                 <div className="flex flex-col items-center gap-2">
-                   <RefreshCw className="w-5 h-5 animate-spin text-primary" />
-                   <p>A matriz de rateio interativa (Planilha) está sendo carregada...</p>
-                 </div>
-                 <p className="text-[11px] max-w-[300px]">
-                   Nota: Componentes pesados podem demorar alguns segundos na primeira carga.
-                 </p>
-               </div>
+               <Suspense 
+                 fallback={
+                   <div className="p-4 text-center text-muted-foreground text-sm italic flex-1 flex flex-col items-center justify-center gap-4">
+                     <div className="flex flex-col items-center gap-2">
+                       <RefreshCw className="w-5 h-5 animate-spin text-primary" />
+                       <p>A matriz de rateio interativa (Planilha) está sendo carregada...</p>
+                     </div>
+                     <p className="text-[11px] max-w-[300px]">
+                       Nota: Componentes pesados podem demorar alguns segundos na primeira carga.
+                     </p>
+                   </div>
+                 }
+               >
+                 <MatrixSpreadsheetWithTimeout 
+                   campaignId={campaignId}
+                   clientId={clientId}
+                   campaign={campaign}
+                   agency={agency}
+                   client={client}
+                   pieces={pieces}
+                   kits={kits}
+                   kitPieces={kitPieces}
+                   stores={stores}
+                   qtyMap={qtyMap}
+                   canEditCampaignStores={canEditCampaignStores}
+                   activeAdjustment={activeAdjustment}
+                   rateioSource={rateioSource}
+                   isViewingVigente={isViewingVigente}
+                   isNegotiationView={isNegotiationView}
+                 />
+               </Suspense>
             </TabsContent>
 
             <TabsContent value="dashboard" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
@@ -235,6 +259,54 @@ export default function MatrixTab({
           </Tabs>
         </div>
       </div>
+    </div>
+  );
+}
+
+function MatrixSpreadsheetWithTimeout(props: any) {
+  const [hasError, setHasError] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    // Timeout of 12 seconds to show retry option
+    timerRef.current = setTimeout(() => {
+      if (!isLoaded) {
+        setHasError(true);
+      }
+    }, 12000);
+
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [isLoaded]);
+
+  if (hasError) {
+    return (
+      <div className="p-8 text-center flex flex-col items-center justify-center gap-4 flex-1">
+        <AlertTriangle className="w-10 h-10 text-amber-500" />
+        <div className="space-y-1">
+          <p className="font-semibold text-foreground">A planilha está demorando mais que o esperado</p>
+          <p className="text-sm text-muted-foreground">Isso pode ocorrer em campanhas muito grandes ou conexões instáveis.</p>
+        </div>
+        <Button 
+          variant="outline" 
+          onClick={() => {
+            setHasError(false);
+            window.location.reload();
+          }}
+          className="gap-2"
+        >
+          <RefreshCw className="w-4 h-4" />
+          Recarregar página
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex flex-col overflow-hidden" onLoad={() => setIsLoaded(true)}>
+      <SpreadsheetComponent {...props} onLoaded={() => setIsLoaded(true)} />
     </div>
   );
 }
