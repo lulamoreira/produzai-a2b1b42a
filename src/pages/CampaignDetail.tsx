@@ -201,6 +201,13 @@ const CampaignDetail = () => {
           activeAdjustment={activeAdjustment}
         />
 
+        <CampaignBackupDialog
+          open={backupOpen}
+          onOpenChange={setBackupOpen}
+          campaignId={campaignId!}
+          campaignName={campaign.name}
+        />
+
         <Tabs value={activeSection || "summary"} onValueChange={setActiveSection} className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="summary">{t("tabs.summary", "Resumo")}</TabsTrigger>
