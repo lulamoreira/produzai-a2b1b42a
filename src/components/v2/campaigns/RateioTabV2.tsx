@@ -85,27 +85,14 @@ export default function RateioTabV2({
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
   const [filterLogicMode, setFilterLogicMode] = useState<FilterLogicMode>("and");
   
-  // Sorting state - supporting multiple levels
-  const [sortConfig, setSortConfig] = useState<{ key: "name" | "state"; direction: "asc" | "desc" }[]>([]);
+  // Sorting state - "state" or null (default alpha)
+  const [sortConfig, setSortConfig] = useState<{ key: "state"; direction: "asc" | "desc" } | null>(null);
 
-  const toggleSort = (key: "name" | "state", multi: boolean = false) => {
+  const toggleSort = (key: "state") => {
     setSortConfig(prev => {
-      const existing = prev.find(s => s.key === key);
-      
-      if (existing) {
-        if (existing.direction === "asc") {
-          // Toggle to desc
-          const updated = prev.map(s => s.key === key ? { ...s, direction: "desc" as const } : s);
-          return updated;
-        } else {
-          // Remove this sort
-          return prev.filter(s => s.key !== key);
-        }
-      } else {
-        // Add new sort level
-        const newSort = { key, direction: "asc" as const };
-        return multi ? [...prev, newSort] : [newSort];
-      }
+      if (!prev) return { key, direction: "asc" };
+      if (prev.direction === "asc") return { key, direction: "desc" };
+      return null;
     });
   };
 
@@ -150,23 +137,29 @@ export default function RateioTabV2({
       return matchesSearch;
     });
 
-    if (sortConfig.length > 0) {
-      console.log('Sorting stores with config:', sortConfig);
-      result = [...result].sort((a, b) => {
-        for (const sort of sortConfig) {
-          const key = sort.key;
-          const valA = (a[key] || "").toString().trim().toLowerCase();
-          const valB = (b[key] || "").toString().trim().toLowerCase();
-          
-          if (valA !== valB) {
-            return sort.direction === "asc" 
-              ? valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' })
-              : valB.localeCompare(valA, undefined, { numeric: true, sensitivity: 'base' });
-          }
+    // Apply sorting logic
+    result = [...result].sort((a, b) => {
+      // 1. If sorting by state
+      if (sortConfig?.key === "state") {
+        const stateA = (a.state || "").toString().trim().toLowerCase();
+        const stateB = (b.state || "").toString().trim().toLowerCase();
+        
+        if (stateA !== stateB) {
+          return sortConfig.direction === "asc" 
+            ? stateA.localeCompare(stateB, undefined, { numeric: true, sensitivity: 'base' })
+            : stateB.localeCompare(stateA, undefined, { numeric: true, sensitivity: 'base' });
         }
-        return 0;
-      });
-    }
+        // If states are equal, always sort by name asc
+        const nameA = (a.name || "").toString().trim().toLowerCase();
+        const nameB = (b.name || "").toString().trim().toLowerCase();
+        return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+      }
+
+      // 2. Default sorting: alphabetic by name asc
+      const nameA = (a.name || "").toString().trim().toLowerCase();
+      const nameB = (b.name || "").toString().trim().toLowerCase();
+      return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+    });
 
     return result;
   }, [stores, storeSearch, storeFilters, sortConfig]);
@@ -619,32 +612,15 @@ export default function RateioTabV2({
                               size="icon" 
                               className={cn(
                                 "h-6 w-6 rounded-md transition-all relative", 
-                                sortConfig.some(s => s.key === 'state') && "bg-stone-100 text-[#C2714F]"
+                                sortConfig?.key === 'state' && "bg-stone-100 text-[#C2714F]"
                               )}
-                              onClick={(e) => toggleSort('state', e.shiftKey || e.metaKey || e.ctrlKey)}
-                              title="Ordenar por Estado (Shift + Clique para multi-nível)"
+                              onClick={() => toggleSort('state')}
+                              title="Ordenar por Estado"
                             >
                               <MapPin className="w-3.5 h-3.5" />
-                              {sortConfig.length > 1 && sortConfig.findIndex(s => s.key === 'state') !== -1 && (
+                              {sortConfig?.key === 'state' && (
                                 <span className="absolute -top-1 -right-1 flex items-center justify-center w-3 h-3 bg-[#C2714F] text-white text-[8px] rounded-full font-bold">
-                                  {sortConfig.findIndex(s => s.key === 'state') + 1}
-                                </span>
-                              )}
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className={cn(
-                                "h-6 w-6 rounded-md transition-all relative", 
-                                sortConfig.some(s => s.key === 'name') && "bg-stone-100 text-[#C2714F]"
-                              )}
-                              onClick={(e) => toggleSort('name', e.shiftKey || e.metaKey || e.ctrlKey)}
-                              title="Ordenar por Nome (Shift + Clique para multi-nível)"
-                            >
-                              <Tag className="w-3.5 h-3.5" />
-                              {sortConfig.length > 1 && sortConfig.findIndex(s => s.key === 'name') !== -1 && (
-                                <span className="absolute -top-1 -right-1 flex items-center justify-center w-3 h-3 bg-[#C2714F] text-white text-[8px] rounded-full font-bold">
-                                  {sortConfig.findIndex(s => s.key === 'name') + 1}
+                                  {sortConfig.direction === "asc" ? "↑" : "↓"}
                                 </span>
                               )}
                             </Button>
