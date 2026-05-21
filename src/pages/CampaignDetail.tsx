@@ -29,6 +29,8 @@ import {
 import TabErrorBoundary from "@/components/campaigns/TabErrorBoundary";
 import { useUIVersion } from "@/hooks/useUIVersion";
 import RateioTabV2 from "@/components/v2/campaigns/RateioTabV2";
+import { useActiveAdjustment } from "@/hooks/useAdjustments";
+
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
@@ -88,6 +90,50 @@ const CampaignDetail = () => {
     return map;
   }, [storePieces]);
 
+  // ─── Rateio version detection (Original / Negociação / Ajuste) ───
+  const { data: activeAdjustment } = useActiveAdjustment(campaignId);
+
+  const { data: budgetSuppliers = [] } = useQuery({
+    queryKey: ["budget_suppliers_winner", campaignId],
+    enabled: !!campaignId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("budget_suppliers")
+        .select("id, company_name, is_winner, negotiation_status")
+        .eq("campaign_id", campaignId!);
+      return data || [];
+    },
+  });
+  const winnerSupplier = useMemo(
+    () => (budgetSuppliers as any[]).find((s) => s.is_winner === true) || null,
+    [budgetSuppliers]
+  );
+  const winnerSupplierId: string | null = winnerSupplier?.id ?? null;
+  const winnerSupplierName: string = winnerSupplier?.company_name ?? "";
+
+  const { data: negRateioCount = 0 } = useQuery({
+    queryKey: ["has_negotiation_rateio", campaignId, winnerSupplierId],
+    enabled: !!campaignId && !!winnerSupplierId,
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("budget_negotiation_store_pieces" as any)
+        .select("id", { count: "exact", head: true })
+        .eq("campaign_id", campaignId!)
+        .eq("supplier_id", winnerSupplierId!);
+      return count || 0;
+    },
+  });
+  const hasNegotiationRateio = (negRateioCount as number) > 0;
+
+  // The "vigente" source is the most recent: adjustment > negotiation > original
+  const vigenteSource: "original" | "negotiation" | "adjustment" =
+    activeAdjustment ? "adjustment" : hasNegotiationRateio ? "negotiation" : "original";
+
+  const [rateioSource, setRateioSource] = useState<"original" | "negotiation" | "adjustment">("original");
+  useEffect(() => { setRateioSource(vigenteSource); }, [vigenteSource]);
+  const isViewingVigente = rateioSource === vigenteSource;
+
+
   if (loadingCampaign) return <div className="flex h-screen items-center justify-center">Carregando...</div>;
   if (!campaign) return <div className="flex h-screen items-center justify-center">Campanha não encontrada</div>;
 
@@ -111,6 +157,8 @@ const CampaignDetail = () => {
             <TabsTrigger value="scheduling" className="hidden">Agendamento</TabsTrigger>
             <TabsTrigger value="installations" className="hidden">Instalações</TabsTrigger>
             <TabsTrigger value="approvals" className="hidden">Aprovações</TabsTrigger>
+            <TabsTrigger value="adjustments" className="hidden">Ajustes</TabsTrigger>
+
             <TabsTrigger value="stores" className="hidden">Lojas</TabsTrigger>
             <TabsTrigger value="history" className="hidden">Histórico</TabsTrigger>
             <TabsTrigger value="mockup" className="hidden">Mockup</TabsTrigger>
@@ -143,21 +191,18 @@ const CampaignDetail = () => {
                   campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
                   pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
                   canEditCampaignStores={true} 
-                  activeAdjustment={(campaign as any).active_adjustment} 
-                  hasNegotiationRateio={(campaign as any).has_negotiation_rateio}
-                  winnerSupplierId={(campaign as any).winner_supplier_id} 
-                  winnerSupplierName={(campaign as any).winner_supplier_name} 
-                  rateioSource={(campaign as any).rateio_source || "original"}
-                  setRateioSource={(source) => {
-                    const storageKey = `rateio-active-tab-${campaignId}`;
-                    localStorage.setItem(storageKey, source);
-                  }} 
-                  vigenteSource={(campaign as any).vigente_source || "original"} 
-                  isViewingVigente={true}
+                  activeAdjustment={activeAdjustment} 
+                  hasNegotiationRateio={hasNegotiationRateio}
+                  winnerSupplierId={winnerSupplierId} 
+                  winnerSupplierName={winnerSupplierName} 
+                  rateioSource={rateioSource}
+                  setRateioSource={setRateioSource}
+                  vigenteSource={vigenteSource} 
+                  isViewingVigente={isViewingVigente}
                   handleResetNegotiationRateio={() => {}} 
                   handleCancelNegotiationRateio={() => {}}
                   isNegotiationView={false} 
-                  hasAnyAdjustment={!!(campaign as any).active_adjustment} 
+                  hasAnyAdjustment={!!activeAdjustment} 
                   setActiveSection={setActiveSection}
                 />
               ) : (
@@ -165,24 +210,29 @@ const CampaignDetail = () => {
                   campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
                   pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
                   canEditCampaignStores={true} 
-                  activeAdjustment={(campaign as any).active_adjustment} 
-                  hasNegotiationRateio={(campaign as any).has_negotiation_rateio}
-                  winnerSupplierId={(campaign as any).winner_supplier_id} 
-                  winnerSupplierName={(campaign as any).winner_supplier_name} 
-                  rateioSource={(campaign as any).rateio_source || "original"}
-                  setRateioSource={() => {}} 
-                  vigenteSource={(campaign as any).vigente_source || "original"} 
-                  isViewingVigente={true}
+                  activeAdjustment={activeAdjustment} 
+                  hasNegotiationRateio={hasNegotiationRateio}
+                  winnerSupplierId={winnerSupplierId} 
+                  winnerSupplierName={winnerSupplierName} 
+                  rateioSource={rateioSource}
+                  setRateioSource={setRateioSource}
+                  vigenteSource={vigenteSource} 
+                  isViewingVigente={isViewingVigente}
                   handleResetNegotiationRateio={() => {}} 
                   handleCancelNegotiationRateio={() => {}}
                   isNegotiationView={false} 
-                  hasAnyAdjustment={!!(campaign as any).active_adjustment} 
+                  hasAnyAdjustment={!!activeAdjustment} 
                   setActiveSection={setActiveSection}
                 />
               )}
-
-
-
+            </TabsContent>
+            <TabsContent value="adjustments">
+              <ApprovalsTab 
+                campaignId={campaignId!} campaignName={campaign.name} pieces={pieces}
+                kits={kits} kitPieces={kitPieces} storePieces={storePieces} stores={stores}
+                agencyName={agency?.name || ""} clientName={client?.name || ""}
+                currencyCode="BRL" isAdminOrMaster={isAdminOrMaster}
+              />
             </TabsContent>
             <TabsContent value="budgets">
               <BudgetTab 
@@ -192,6 +242,7 @@ const CampaignDetail = () => {
                 stores={stores} isAdmin={isAdmin}
               />
             </TabsContent>
+
 
             <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">Carregando aba...</div>}>
               <TabsContent value="occurrences">
