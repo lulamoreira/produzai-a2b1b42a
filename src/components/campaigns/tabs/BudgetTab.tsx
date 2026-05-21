@@ -19,11 +19,11 @@ export default function BudgetTab({
   clientId,
   campaignName,
   agencyName,
-  pieces,
-  kits,
-  kitPieces,
-  qtyMap,
-  stores,
+  pieces = [],
+  kits = [],
+  kitPieces = [],
+  qtyMap = {},
+  stores = [],
   isAdmin 
 }: BudgetTabProps) {
   return (

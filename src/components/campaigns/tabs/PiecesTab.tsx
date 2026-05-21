@@ -95,6 +95,8 @@ export default function PiecesTab({
   const [orderByLocationOpen, setOrderByLocationOpen] = useState(false);
   const [pptExportOpen, setPptExportOpen] = useState(false);
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
+  const [newPieceDraft, setNewPieceDraft] = useState<any>(null); // Placeholder state to prevent errors if not passed
+
 
   const visiblePieces = useMemo(() => pieces.filter(p => !p.kit_only), [pieces]);
   const kitOnlyPieces = useMemo(() => pieces.filter(p => p.kit_only), [pieces]);
@@ -209,15 +211,15 @@ export default function PiecesTab({
         canEditPieces={canEditPieces}
         canDeletePieces={canDeletePieces}
         onEdit={() => {}}
-        onDelete={(id) => deletePiece.mutate(id)}
+        onDelete={(id) => deletePiece?.mutate?.(id)}
         onDistribute={handleDistributePiece}
-        onMarkKitOnly={async (p) => { await updatePiece.mutateAsync({ id: p.id, kit_only: true }); }}
-        onToggleMockup={async (p) => { await updatePiece.mutateAsync({ id: p.id, is_mockup: !p.is_mockup }); }}
+        onMarkKitOnly={async (p) => { await updatePiece?.mutateAsync?.({ id: p.id, kit_only: true }); }}
+        onToggleMockup={async (p) => { await updatePiece?.mutateAsync?.({ id: p.id, is_mockup: !p.is_mockup }); }}
         onKitClick={(kit) => setViewKitDetail(kit)}
-        onDeleteKit={(id) => deleteKit.mutate(id)}
+        onDeleteKit={(id) => deleteKit?.mutate?.(id)}
         onToggleKitMockup={async (kit) => {
           const newVal = !kit.is_mockup;
-          await updateKit.mutateAsync({ id: kit.id, is_mockup: newVal });
+          await updateKit?.mutateAsync?.({ id: kit.id, is_mockup: newVal });
         }}
         onDuplicate={() => {}}
         onDuplicateKit={() => {}}
@@ -231,9 +233,9 @@ export default function PiecesTab({
         kitOnlyPieces={kitOnlyPieces}
         existingKits={kits}
         existingPieces={pieces}
-        onCreateKit={(k) => addKit.mutateAsync(k)}
-        onAddKitPiece={(kp) => addKitPiece.mutateAsync(kp)}
-        onUpdateKit={(k) => updateKit.mutateAsync(k)}
+        onCreateKit={(k) => addKit?.mutateAsync?.(k)}
+        onAddKitPiece={(kp) => addKitPiece?.mutateAsync?.(kp)}
+        onUpdateKit={(k) => updateKit?.mutateAsync?.(k)}
       />
       <ImportPiecesFromCampaignDialog
         open={importPiecesDialogOpen}
@@ -248,7 +250,9 @@ export default function PiecesTab({
         onOpenChange={setBulkDeleteOpen}
         pieces={pieces}
         onDeletePieces={async (ids) => {
-          for (const id of ids) await deletePiece.mutateAsync(id);
+          if (deletePiece?.mutateAsync) {
+            for (const id of ids) await deletePiece.mutateAsync(id);
+          }
         }}
       />
       <ManageLocationsDialog
@@ -275,11 +279,11 @@ export default function PiecesTab({
           kitPieces={kitPieces.filter(kp => kp.kit_id === viewKitDetail.id)}
           allPieces={pieces}
           canEdit={canEditPieces}
-          onDeleteKitPiece={(id) => deleteKitPiece.mutate(id)}
-          onAddKitPiece={(kp) => addKitPiece.mutateAsync(kp)}
-          onUpdateKit={(k) => updateKit.mutateAsync(k)}
-          onUpdateKitPiece={(kp) => updateKitPiece.mutateAsync(kp)}
-          onReorderKitPieces={(updates) => reorderKitPieces.mutateAsync(updates)}
+          onDeleteKitPiece={(id) => deleteKitPiece?.mutate?.(id)}
+          onAddKitPiece={(kp) => addKitPiece?.mutateAsync?.(kp)}
+          onUpdateKit={(k) => updateKit?.mutateAsync?.(k)}
+          onUpdateKitPiece={(kp) => updateKitPiece?.mutateAsync?.(kp)}
+          onReorderKitPieces={(updates) => reorderKitPieces?.mutateAsync?.(updates)}
         />
       )}
     </div>

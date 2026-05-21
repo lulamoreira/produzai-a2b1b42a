@@ -35,7 +35,7 @@ interface MatrixTabProps {
   canEditCampaignStores: boolean;
   activeAdjustment: any;
   hasNegotiationRateio: boolean;
-  winnerSupplierId: string | null;
+  winnerSupplierId: string | null | undefined;
   winnerSupplierName: string;
   rateioSource: "original" | "negotiation" | "adjustment";
   setRateioSource: (source: "original" | "negotiation" | "adjustment") => void;
@@ -165,12 +165,12 @@ export default function MatrixTab({
                           <>
                             <AlertDialog>
                               <AlertDialogTrigger asChild><Button size="sm" variant="outline" className="h-7 text-xs">Restaurar original</Button></AlertDialogTrigger>
-                              <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Restaurar rateio da negociação?</AlertDialogTitle><AlertDialogDescription>Isso descarta as alterações feitas no rateio da negociação e copia novamente o rateio original congelado.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel><AlertDialogAction onClick={handleResetNegotiationRateio}>Restaurar original</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                              <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Restaurar rateio da negociação?</AlertDialogTitle><AlertDialogDescription>Isso descarta as alterações feitas no rateio da negociação e copia novamente o rateio original congelado.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel><AlertDialogAction onClick={handleResetNegotiationRateio || (() => {})}>Restaurar original</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
                             </AlertDialog>
                             {hasAnyAdjustment ? <Button size="sm" variant="outline" disabled className="h-7 text-xs text-muted-foreground" title="Não é possível cancelar a negociação porque já existe um ajuste vinculado a ela. Exclua todos os ajustes antes.">Cancelar negociação</Button> : (
                               <AlertDialog>
                                 <AlertDialogTrigger asChild><Button size="sm" variant="outline" className="h-7 text-xs text-destructive hover:text-destructive">Cancelar negociação</Button></AlertDialogTrigger>
-                                <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Cancelar negociação?</AlertDialogTitle><AlertDialogDescription>Isso remove o rateio e os ajustes da negociação. O rateio original congelado permanece preservado.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel><AlertDialogAction onClick={handleCancelNegotiationRateio}>Confirmar cancelamento</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+                                <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Cancelar negociação?</AlertDialogTitle><AlertDialogDescription>Isso remove o rateio e os ajustes da negociação. O rateio original congelado permanece preservado.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel><AlertDialogAction onClick={handleCancelNegotiationRateio || (() => {})}>Confirmar cancelamento</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
                               </AlertDialog>
                             )}
                           </>
@@ -200,8 +200,8 @@ export default function MatrixTab({
                               return label ? { key, label } : null;
                             }).filter(Boolean) as any[];
                             await exportMatrixExcelJS(
-                              stores, pieces, qtyMap, campaign?.name || "Campanha", kits, kitPieces, 
-                              undefined, [], [], pieces, agency?.name, client?.name, []
+                              stores || [], pieces || [], qtyMap || {}, campaign?.name || "Campanha", kits || [], kitPieces || [], 
+                              undefined, [], [], pieces || [], agency?.name, client?.name, []
                             );
                             toast.success("Planilha exportada com sucesso!", { id: tId });
                           } catch (e: any) { toast.error("Falha ao exportar: " + e.message, { id: tId }); }
