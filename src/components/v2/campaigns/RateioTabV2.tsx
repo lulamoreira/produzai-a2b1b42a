@@ -476,15 +476,16 @@ export default function RateioTabV2({
                         <div className="text-xs font-bold text-stone-400 uppercase tracking-widest mb-1">Loja</div>
                         <div className="text-[10px] text-stone-400 font-medium leading-tight">Total de peças distribuídas por ponto de venda</div>
                       </th>
-                      {filteredPieces.map(piece => {
-                        const isKit = pieces.some(p => p.kit_only && kitPieces.some(kp => kp.piece_id === piece.id && kits.some(k => k.id === kp.kit_id)));
+                      {columns.map((col) => {
+                        const isKit = col._type === "kit";
+                        const img = col.image_url || col.image_report_url || undefined;
                         return (
-                          <th key={piece.id} className="w-[100px] p-2 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50">
+                          <th key={`${col._type}-${col.id}`} className="w-[100px] p-2 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50">
                             <div className="flex flex-col items-center gap-1.5">
-                              {piece.image_url ? (
+                              {img ? (
                                 <img 
-                                  src={piece.image_url} 
-                                  alt={piece.name} 
+                                  src={img} 
+                                  alt={col.name} 
                                   className="w-12 h-12 rounded-lg object-cover border border-stone-100 shadow-sm" 
                                 />
                               ) : (
@@ -492,12 +493,12 @@ export default function RateioTabV2({
                                   <Table2 className="w-4 h-4 text-stone-300" />
                                 </div>
                               )}
-                              <div className="text-sm font-black text-stone-900 leading-none">{piece.code}</div>
+                              <div className="text-sm font-black text-stone-900 leading-none">{col.code}</div>
                               {isKit && (
                                 <div className="text-[9px] font-bold text-[#C2714F] leading-none uppercase">KIT</div>
                               )}
                               <div className="text-[10px] text-stone-500 font-medium line-clamp-2 leading-tight text-center px-1">
-                                {piece.name}
+                                {col.name}
                               </div>
                             </div>
                           </th>
