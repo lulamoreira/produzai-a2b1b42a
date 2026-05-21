@@ -8,6 +8,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
+    "lint:i18n": "eslint src --ext .tsx,.ts --rule 'i18next/no-literal-string: warn' --quiet 2>&1 | grep 'no-literal-string' | wc -l && echo 'strings hardcoded encontradas (warnings)'",
+    "lint:i18n:report": "eslint src --ext .tsx,.ts --format json --output-file i18n-report.json || true",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest"

@@ -3,6 +3,7 @@ import { initReactI18next } from "react-i18next";
 import ptBR from "./locales/pt-BR.json";
 import en from "./locales/en.json";
 import es from "./locales/es.json";
+import { setupI18nGuard } from "@/lib/i18nGuard";
 
 export const SUPPORTED_LANGUAGES = [
   { code: "pt-BR", label: "Português (Brasil)", flag: "🇧🇷" },
@@ -22,6 +23,9 @@ i18n.use(initReactI18next).init({
   lng: "pt-BR",
   fallbackLng: "pt-BR",
   interpolation: { escapeValue: false },
+  saveMissing: import.meta.env.DEV,
 });
+
+setupI18nGuard(i18n);
 
 export default i18n;
