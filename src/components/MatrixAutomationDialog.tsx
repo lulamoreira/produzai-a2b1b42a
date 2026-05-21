@@ -751,6 +751,7 @@ export default function MatrixAutomationDialog({
   // Step 2: Execute with preview-based actions
   const handleExecute = async () => {
     setExecuting(true);
+    setExecutionStatus({ step: 1, totalSteps: 4, label: "Validando dados..." });
     try {
       // Validate custom fields
       for (const filtro of filterGroup.filtros) {
@@ -769,6 +770,7 @@ export default function MatrixAutomationDialog({
         }
       }
 
+      setExecutionStatus({ step: 2, totalSteps: 4, label: "Calculando alterações...", details: "Processando lojas e peças..." });
       const upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[] = [];
       const deletes: { campaignId: string; storeId: string; pieceId: string }[] = [];
 
@@ -805,8 +807,15 @@ export default function MatrixAutomationDialog({
       }
       const dedupedUpserts = Array.from(dedupMap.values());
 
+      setExecutionStatus({ 
+        step: 3, 
+        totalSteps: 4, 
+        label: "Sincronizando com o banco...", 
+        details: `${dedupedUpserts.length} inclusões/alterações e ${deletes.length} exclusões.` 
+      });
       await applyBulk("Automação", dedupedUpserts, deletes);
 
+      setExecutionStatus({ step: 4, totalSteps: 4, label: "Finalizando...", details: "Atualizando interface." });
       toast.success(t("automation.successMessage", { updated: uniqueUpdateStores, kept: keepCount, zeroed: zeroCount }));
       await onComplete();
       onOpenChange(false);
@@ -814,6 +823,7 @@ export default function MatrixAutomationDialog({
       toast.error(t("automation.executionError") + ": " + (err.message || ""));
     } finally {
       setExecuting(false);
+      setExecutionStatus(null);
     }
   };
 
