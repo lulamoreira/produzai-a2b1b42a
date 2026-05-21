@@ -109,7 +109,9 @@
     "download": "Download",
     "allFeminine": "All Feminine",
     "new": "New",
-    "blocked": "Locked"
+    "blocked": "Locked",
+    "exportPPT": "Export PPT",
+    "exportPpt": "Export PPT"
   },
   "greeting": {
     "morning": "Good morning",
