@@ -91,9 +91,10 @@ const CampaignDetail = () => {
   }, [storePieces]);
 
   // ─── Rateio version detection (Original / Negociação / Ajuste) ───
-  const { data: activeAdjustment } = useActiveAdjustment(campaignId);
+  type RateioSource = "original" | "negotiation" | "adjustment";
+  const { data: activeAdjustment, isLoading: loadingActiveAdjustment } = useActiveAdjustment(campaignId);
 
-  const { data: budgetSuppliers = [] } = useQuery({
+  const { data: budgetSuppliers = [], isLoading: loadingBudgetSuppliers } = useQuery({
     queryKey: ["budget_suppliers_winner", campaignId],
     enabled: !!campaignId,
     queryFn: async () => {
@@ -111,7 +112,7 @@ const CampaignDetail = () => {
   const winnerSupplierId: string | null = winnerSupplier?.id ?? null;
   const winnerSupplierName: string = winnerSupplier?.company_name ?? "";
 
-  const { data: negRateioCount = 0 } = useQuery({
+  const { data: negRateioCount = 0, isLoading: loadingNegRateioCount } = useQuery({
     queryKey: ["has_negotiation_rateio", campaignId, winnerSupplierId],
     enabled: !!campaignId && !!winnerSupplierId,
     queryFn: async () => {
@@ -126,12 +127,30 @@ const CampaignDetail = () => {
   const hasNegotiationRateio = (negRateioCount as number) > 0;
 
   // The "vigente" source is the most recent: adjustment > negotiation > original
-  const vigenteSource: "original" | "negotiation" | "adjustment" =
+  const vigenteSource: RateioSource =
     activeAdjustment ? "adjustment" : hasNegotiationRateio ? "negotiation" : "original";
 
-  const [rateioSource, setRateioSource] = useState<"original" | "negotiation" | "adjustment">("original");
-  useEffect(() => { setRateioSource(vigenteSource); }, [vigenteSource]);
-  const isViewingVigente = rateioSource === vigenteSource;
+  const rateioVersionsReady = !loadingActiveAdjustment && !loadingBudgetSuppliers && (!winnerSupplierId || !loadingNegRateioCount);
+  const availableRateioSources = useMemo<RateioSource[]>(() => {
+    const sources: RateioSource[] = ["original"];
+    if (hasNegotiationRateio && winnerSupplierId) sources.push("negotiation");
+    if (activeAdjustment) sources.push("adjustment");
+    return sources;
+  }, [activeAdjustment, hasNegotiationRateio, winnerSupplierId]);
+
+  const [rateioSource, setRateioSource] = useState<RateioSource | null>(null);
+  const initializedRateioSourceRef = useRef(false);
+  useEffect(() => {
+    if (!rateioVersionsReady) return;
+    setRateioSource((current) => {
+      if (current && availableRateioSources.includes(current)) return current;
+      initializedRateioSourceRef.current = true;
+      return vigenteSource;
+    });
+  }, [availableRateioSources, rateioVersionsReady, vigenteSource]);
+
+  const resolvedRateioSource = rateioSource ?? vigenteSource;
+  const isViewingVigente = resolvedRateioSource === vigenteSource;
 
 
   if (loadingCampaign) return <div className="flex h-screen items-center justify-center">Carregando...</div>;
