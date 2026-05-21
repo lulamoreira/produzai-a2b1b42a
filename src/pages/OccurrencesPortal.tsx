@@ -102,6 +102,26 @@ export default function OccurrencesPortal() {
           <p className="text-sm sm:text-base text-muted-foreground mt-2">{subtitle}</p>
         </header>
 
+        {isModuleDisabled && (
+          <Alert variant="destructive" className="mb-8">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Módulo desativado</AlertTitle>
+            <AlertDescription>
+              O registro de ocorrências para esta campanha não está habilitado no momento.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {isDeadlinePassed && !isModuleDisabled && (
+          <Alert className="mb-8 border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10">
+            <Clock className="h-4 w-4 text-yellow-600" />
+            <AlertTitle className="text-yellow-800 dark:text-yellow-500">Prazo de ocorrências encerrado</AlertTitle>
+            <AlertDescription className="text-yellow-700 dark:text-yellow-400">
+              O prazo para registro de ocorrências expirou em {deadline?.toLocaleDateString("pt-BR")} às {deadline?.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' })}.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
             {Array.from({ length: 8 }).map((_, i) => (
@@ -131,12 +151,9 @@ export default function OccurrencesPortal() {
                             {city}
                           </h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                            {stores.map((s) => (
-                              <a
-                                key={s.token}
-                                href={`/loja/${s.token}`}
-                                className="rounded-lg border bg-card p-4 hover:ring-2 hover:ring-[#8C6F4E]/50 cursor-pointer transition-all flex flex-col gap-1"
-                              >
+                            {stores.map((s) => {
+                              const hasToken = !!s.token;
+                              const CardContent = (
                                 <div className="flex items-start gap-2">
                                   <StoreIcon className="h-4 w-4 text-[#8C6F4E] mt-0.5 shrink-0" />
                                   <div className="min-w-0">
@@ -152,10 +169,36 @@ export default function OccurrencesPortal() {
                                       {s.client_stores?.city}
                                       {s.client_stores?.state ? ` / ${s.client_stores.state}` : ""}
                                     </div>
+                                    {!hasToken && (
+                                      <div className="text-[10px] text-destructive font-semibold uppercase mt-1">
+                                        Acesso não configurado
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
-                              </a>
-                            ))}
+                              );
+
+                              if (!hasToken || isModuleDisabled) {
+                                return (
+                                  <div
+                                    key={s.client_stores?.id}
+                                    className="rounded-lg border bg-card/50 p-4 opacity-70 grayscale flex flex-col gap-1 cursor-not-allowed"
+                                  >
+                                    {CardContent}
+                                  </div>
+                                );
+                              }
+
+                              return (
+                                <a
+                                  key={s.token}
+                                  href={`/loja/${s.token}`}
+                                  className="rounded-lg border bg-card p-4 hover:ring-2 hover:ring-[#8C6F4E]/50 cursor-pointer transition-all flex flex-col gap-1"
+                                >
+                                  {CardContent}
+                                </a>
+                              );
+                            })}
                           </div>
                         </div>
                       );
@@ -166,6 +209,7 @@ export default function OccurrencesPortal() {
             })}
           </div>
         )}
+
       </div>
     </div>
   );
