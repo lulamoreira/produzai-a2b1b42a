@@ -497,7 +497,7 @@ export default function RateioTabV2({
                               {isKit && (
                                 <div className="text-[9px] font-bold text-[#C2714F] leading-none uppercase">KIT</div>
                               )}
-                              <div className="text-[10px] text-stone-500 font-medium leading-tight text-center px-1 break-words">
+                              <div className="text-[10px] text-stone-500 font-medium leading-tight text-center px-1 whitespace-normal break-normal">
                                 {col.name}
                               </div>
                             </div>
