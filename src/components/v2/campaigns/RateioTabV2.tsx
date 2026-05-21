@@ -537,20 +537,36 @@ export default function RateioTabV2({
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className={cn("h-6 w-6 rounded-md", sortConfig?.key === 'state' && "bg-stone-100 text-[#C2714F]")}
-                              onClick={() => toggleSort('state')}
-                              title="Ordenar por Estado"
+                              className={cn(
+                                "h-6 w-6 rounded-md transition-all relative", 
+                                sortConfig.some(s => s.key === 'state') && "bg-stone-100 text-[#C2714F]"
+                              )}
+                              onClick={(e) => toggleSort('state', e.shiftKey || e.metaKey || e.ctrlKey)}
+                              title="Ordenar por Estado (Shift + Clique para multi-nível)"
                             >
                               <MapPin className="w-3.5 h-3.5" />
+                              {sortConfig.length > 1 && sortConfig.findIndex(s => s.key === 'state') !== -1 && (
+                                <span className="absolute -top-1 -right-1 flex items-center justify-center w-3 h-3 bg-[#C2714F] text-white text-[8px] rounded-full font-bold">
+                                  {sortConfig.findIndex(s => s.key === 'state') + 1}
+                                </span>
+                              )}
                             </Button>
                             <Button 
                               variant="ghost" 
                               size="icon" 
-                              className={cn("h-6 w-6 rounded-md", sortConfig?.key === 'name' && "bg-stone-100 text-[#C2714F]")}
-                              onClick={() => toggleSort('name')}
-                              title="Ordenar por Nome"
+                              className={cn(
+                                "h-6 w-6 rounded-md transition-all relative", 
+                                sortConfig.some(s => s.key === 'name') && "bg-stone-100 text-[#C2714F]"
+                              )}
+                              onClick={(e) => toggleSort('name', e.shiftKey || e.metaKey || e.ctrlKey)}
+                              title="Ordenar por Nome (Shift + Clique para multi-nível)"
                             >
                               <Tag className="w-3.5 h-3.5" />
+                              {sortConfig.length > 1 && sortConfig.findIndex(s => s.key === 'name') !== -1 && (
+                                <span className="absolute -top-1 -right-1 flex items-center justify-center w-3 h-3 bg-[#C2714F] text-white text-[8px] rounded-full font-bold">
+                                  {sortConfig.findIndex(s => s.key === 'name') + 1}
+                                </span>
+                              )}
                             </Button>
                           </div>
                         </div>
