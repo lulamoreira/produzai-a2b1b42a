@@ -41,7 +41,7 @@ export default function OccurrencesPortal() {
   });
 
   const { data: tokensData, isLoading: loadingTokens } = useQuery({
-    queryKey: ["occ-portal-stores-v2", campaignId],
+    queryKey: ["occ-portal-stores-v1-logic", campaignId],
     enabled: !!campaignId,
     queryFn: async () => {
       // Fetch all active stores in the campaign from loja_a_loja_lojas
@@ -107,7 +107,7 @@ export default function OccurrencesPortal() {
 
 
   // Group by state -> city
-  const grouped = (tokens ?? []).reduce<Record<string, Record<string, StoreToken[]>>>((acc, t) => {
+  const grouped = tokens.reduce<Record<string, Record<string, StoreToken[]>>>((acc, t) => {
     if (!t.client_stores) return acc;
     const state = t.client_stores.state || "Sem UF";
     const city = t.client_stores.city || "Sem cidade";
@@ -175,7 +175,7 @@ export default function OccurrencesPortal() {
                   </h2>
                   <div className="space-y-5">
                     {cities.map((city) => {
-                      const stores = [...grouped[state][city]].sort((a, b) =>
+                      const cityStores = [...grouped[state][city]].sort((a, b) =>
                         (a.client_stores?.name || "").localeCompare(b.client_stores?.name || "", "pt-BR")
                       );
                       return (
@@ -184,7 +184,7 @@ export default function OccurrencesPortal() {
                             {city}
                           </h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                            {stores.map((s) => {
+                            {cityStores.map((s) => {
                               const hasToken = !!s.token;
                               const CardContent = (
                                 <div className="flex items-start gap-2">
