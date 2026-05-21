@@ -674,7 +674,16 @@
     "supplier": "Supplier",
     "deliveryDeadline": "Delivery deadline",
     "paymentConditions": "Payment conditions",
-    "notes": "Notes"
+    "notes": "Notes",
+    "finalResult": "Final Adjustment Result",
+    "winner": "Winner",
+    "production": "Production",
+    "freight": "Freight",
+    "installation": "Installation",
+    "totalPrice": "Total Price",
+    "initialPrice": "Initial price charged",
+    "savings": "Savings",
+    "increase": "Increase"
   },
   "client": {
     "settings": "Client Settings",

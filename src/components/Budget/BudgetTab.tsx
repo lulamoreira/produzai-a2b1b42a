@@ -1124,6 +1124,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         isUnlocking={isUnlocking}
       />
 
+      <AdjustmentKPIBlock campaignId={campaignId} currencyCode={currencyCode} />
+
       {/* ═══ KPI CARDS ═══ */}
       <div className={cn("grid grid-cols-1 gap-4 items-stretch", winnerSupplier ? "md:grid-cols-4" : "md:grid-cols-3")}>
         {/* Reusable header with fixed height for visual alignment across all KPI cards */}
@@ -3209,4 +3211,235 @@ function PhaseStepperWithApproval(props: {
   const { data: requote } = useActiveAdjustmentRequest(props.campaignId);
   const isAdjustmentApproved = requote?.status === "approved";
   return <PhaseStepper {...props} isAdjustmentApproved={isAdjustmentApproved} />;
+}
+
+function AdjustmentKPIBlock({ campaignId, currencyCode }: { campaignId: string; currencyCode: string }) {
+  const { t } = useTranslation();
+  const { data: adjustment } = useQuery({
+    queryKey: ["active_adjustment_summary", campaignId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("campaign_adjustments")
+        .select("id, name, status, approved_at, notes, created_at")
+        .eq("campaign_id", campaignId)
+        .eq("status", "active")
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const { data: requote } = useActiveAdjustmentRequest(campaignId);
+  const isApproved = requote?.status === "approved";
+
+  const { data: adjPieces } = useQuery({
+    queryKey: ["requote_breakdown_pieces", requote?.adjustment_id],
+    enabled: isApproved && !!requote?.adjustment_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("campaign_adjustment_pieces")
+        .select("id, source_piece_id, is_deleted")
+        .eq("adjustment_id", requote!.adjustment_id)
+        .eq("is_deleted", false);
+      return data ?? [];
+    },
+  });
+
+  const { data: baselinePrices } = useQuery({
+    queryKey: ["requote_breakdown_baseline", requote?.supplier_id],
+    enabled: isApproved && !!requote?.supplier_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("budget_prices")
+        .select("piece_id, adjusted_unit_price, unit_price")
+        .eq("supplier_id", requote!.supplier_id);
+      return data ?? [];
+    },
+  });
+
+  const { data: storeQty } = useQuery({
+    queryKey: ["requote_breakdown_qty_all", requote?.adjustment_id, requote?.response_received_at],
+    enabled: isApproved && !!requote?.adjustment_id,
+    queryFn: async () => {
+      const pageSize = 1000;
+      let from = 0;
+      const all: { piece_id: string; quantity: number }[] = [];
+      while (true) {
+        const { data, error } = await supabase
+          .from("campaign_adjustment_store_pieces" as any)
+          .select("piece_id, quantity")
+          .eq("adjustment_id", requote!.adjustment_id)
+          .order("id", { ascending: true })
+          .range(from, from + pageSize - 1);
+        if (error) throw error;
+        const rows = (data ?? []) as unknown as { piece_id: string; quantity: number }[];
+        all.push(...rows);
+        if (rows.length < pageSize) break;
+        from += pageSize;
+      }
+      return all;
+    },
+  });
+
+  const { data: supplier } = useQuery({
+    queryKey: ["requote_supplier", requote?.supplier_id],
+    enabled: isApproved && !!requote?.supplier_id,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("budget_suppliers")
+        .select("company_name")
+        .eq("id", requote!.supplier_id)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  const { data: budgetSettings } = useQuery({
+    queryKey: ["budget_settings_initial", campaignId],
+    enabled: isApproved,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("budget_settings")
+        .select("budget_amount")
+        .eq("campaign_id", campaignId)
+        .maybeSingle();
+      return data;
+    },
+  });
+
+  if (!adjustment || !isApproved || !requote) return null;
+
+  const fmt = (n: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: currencyCode }).format(n);
+
+  const j = (requote.adjusted_prices_jsonb || {}) as {
+    prices?: { piece_id: string; new_price: number }[];
+    installation?: number;
+    freight?: number;
+  };
+  const extras = (requote.adjusted_extras_jsonb || {}) as {
+    installation?: number;
+    freight?: number;
+  };
+  const installation = Number(extras.installation ?? j.installation ?? 0);
+  const freight = Number(extras.freight ?? j.freight ?? 0);
+
+  const ready = !!adjPieces && !!baselinePrices && !!storeQty;
+
+  let production = 0;
+  if (ready) {
+    const sourceByAdj = new Map<string, string | null>();
+    for (const p of adjPieces!) {
+      sourceByAdj.set(String(p.id), p.source_piece_id ? String(p.source_piece_id) : null);
+    }
+    const prevBySource = new Map<string, number>();
+    for (const r of baselinePrices!) {
+      if (!r.piece_id) continue;
+      prevBySource.set(
+        String(r.piece_id),
+        Number(r.adjusted_unit_price ?? r.unit_price ?? 0),
+      );
+    }
+    const qtyByAdj = new Map<string, number>();
+    for (const sp of storeQty!) {
+      const pid = String(sp.piece_id);
+      qtyByAdj.set(pid, (qtyByAdj.get(pid) || 0) + Number(sp.quantity || 0));
+    }
+    const newPriceByAdj = new Map<string, number>();
+    for (const row of j.prices || []) {
+      newPriceByAdj.set(String(row.piece_id), Number(row.new_price) || 0);
+    }
+    for (const p of adjPieces!) {
+      const adjId = String(p.id);
+      const srcId = sourceByAdj.get(adjId);
+      const prevPrice = srcId ? (prevBySource.get(srcId) || 0) : 0;
+      const price = newPriceByAdj.has(adjId) ? (newPriceByAdj.get(adjId) || 0) : prevPrice;
+      production += price * (qtyByAdj.get(adjId) || 0);
+    }
+  }
+
+  const total = production + installation + freight;
+  const initialValue = budgetSettings?.budget_amount ? Number(budgetSettings.budget_amount) : total;
+  const diff = total - initialValue;
+
+  return (
+    <div className="bg-white rounded-2xl border border-stone-100 shadow-md p-6 md:p-8 mt-4 border-l-4 border-l-[#C2714F]">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <Trophy className="w-6 h-6 text-[#C2714F]" />
+          <div>
+            <h3 className="text-stone-500 text-sm font-medium uppercase tracking-wide">
+              {t("budgets.finalResult")}
+            </h3>
+            <p className="text-stone-400 text-xs mt-0.5">
+              {adjustment.name} {adjustment.created_at && `· ${format(new Date(adjustment.created_at), "dd/MM/yyyy")}`}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-6">
+        <p className="text-stone-400 text-[10px] uppercase tracking-wide mb-1">
+          {t("budgets.winner")}
+        </p>
+        <p className="text-stone-900 text-xl font-bold">
+          {supplier?.company_name || "—"}
+        </p>
+      </div>
+
+      <div className="h-px bg-stone-100 mb-6" />
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <div className="space-y-1">
+          <p className="text-stone-400 text-[10px] uppercase tracking-wide">
+            {t("budgets.production")}
+          </p>
+          <p className="text-stone-900 font-semibold text-lg">
+            {ready ? fmt(production) : "—"}
+          </p>
+        </div>
+        <div className="space-y-1">
+          <p className="text-stone-400 text-[10px] uppercase tracking-wide">
+            {t("budgets.freight")}
+          </p>
+          <p className="text-stone-900 font-semibold text-lg">
+            {fmt(freight)}
+          </p>
+        </div>
+        <div className="space-y-1">
+          <p className="text-stone-400 text-[10px] uppercase tracking-wide">
+            {t("budgets.installation")}
+          </p>
+          <p className="text-stone-900 font-semibold text-lg">
+            {fmt(installation)}
+          </p>
+        </div>
+        <div className="bg-[#C2714F] rounded-xl p-4 flex flex-col justify-center">
+          <p className="text-white/80 text-[10px] uppercase tracking-wide">
+            {t("budgets.totalPrice")}
+          </p>
+          <p className="text-white text-2xl font-extrabold tabular-nums">
+            {ready ? fmt(total) : "—"}
+          </p>
+        </div>
+      </div>
+
+      <div className="h-px bg-stone-100 mb-4" />
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <p className="text-stone-400 text-sm">{t("budgets.initialPrice")}:</p>
+          <p className="text-stone-600 text-sm font-medium">{fmt(initialValue)}</p>
+        </div>
+        {diff !== 0 && (
+          <div className={cn("text-sm font-medium", diff < 0 ? "text-emerald-600" : "text-red-500")}>
+            {diff < 0 ? (
+              <>{t("budgets.savings")}: {fmt(Math.abs(diff))}</>
+            ) : (
+              <>{t("budgets.increase")}: {fmt(diff)}</>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
