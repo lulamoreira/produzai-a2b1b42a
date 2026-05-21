@@ -463,7 +463,7 @@ export default function RateioTabV2({
                       {pieceGroups.map((group, gIdx) => (
                         <th 
                           key={gIdx} 
-                          colSpan={group.pieces.length} 
+                          colSpan={group.items.length} 
                           className="bg-stone-50 border-b border-r border-stone-200 text-[10px] font-bold text-stone-500 py-1 text-center uppercase tracking-widest"
                         >
                           {group.label}
