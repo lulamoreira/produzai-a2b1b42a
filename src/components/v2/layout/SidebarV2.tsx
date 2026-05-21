@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { useLocation, NavLink, useParams } from "react-router-dom";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useLocation, NavLink, useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   ChevronLeft, 
@@ -19,7 +19,8 @@ import {
   Megaphone,
   Store,
   Mail,
-  ChevronDown
+  ChevronDown,
+  Briefcase
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -31,36 +32,77 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { CAMPAIGN_MODULES, MODULE_ICONS } from "@/lib/sidebarRegistry";
+import AquaIcon from "@/components/AquaIcon";
 
 export function SidebarV2() {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
   const location = useLocation();
+  const navigate = useNavigate();
+  const qc = useQueryClient();
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
-  const { isAdminOrMaster, isAdmin } = useUserRole();
-  const { isLimited } = useUserDirectAccess();
+  const { isAdminOrMaster, isAdmin, isMaster } = useUserRole();
+  const { isLimited, campaigns: limitedCampaigns } = useUserDirectAccess();
 
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem("sidebar-v2-collapsed") === "true";
   });
 
-  const [expandedCampaign, setExpandedCampaign] = useState(true);
-  const [expandedClient, setExpandedClient] = useState(true);
+  // Campaign expansion states
+  const [campaignExpanded, setCampaignExpanded] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = localStorage.getItem("sidebar_v2_expanded_campaigns");
+      const arr: string[] = raw ? JSON.parse(raw) : [];
+      return Object.fromEntries(arr.map((id) => [id, true]));
+    } catch { return {}; }
+  });
+
+  useEffect(() => {
+    try {
+      const arr = Object.entries(campaignExpanded).filter(([, v]) => v).map(([k]) => k);
+      localStorage.setItem("sidebar_v2_expanded_campaigns", JSON.stringify(arr));
+    } catch {}
+  }, [campaignExpanded]);
 
   useEffect(() => {
     localStorage.setItem("sidebar-v2-collapsed", String(collapsed));
   }, [collapsed]);
 
+  // Auto-expand the active campaign
+  useEffect(() => {
+    if (campaignId) {
+      setCampaignExpanded(prev => ({ ...prev, [campaignId]: true }));
+    }
+  }, [campaignId]);
+
   const toggleSidebar = () => setCollapsed(!collapsed);
 
-  // Fetch names for context
-  const { data: campaignData } = useQuery({
-    queryKey: ["sidebar-v2-campaign", campaignId],
+  const toggleCampaignExpanded = useCallback((id: string, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    setCampaignExpanded(prev => ({ ...prev, [id]: !prev[id] }));
+  }, []);
+
+  // Group limitedCampaigns by clientId
+  const limitedClientGroups = useMemo(() => {
+    if (!isLimited || limitedCampaigns.length === 0) return [];
+    const map = new Map<string, { clientName: string; clientId: string; agencyId: string; campaigns: typeof limitedCampaigns }>();
+    for (const lc of limitedCampaigns) {
+      if (!map.has(lc.clientId)) {
+        map.set(lc.clientId, { clientName: lc.clientName, clientId: lc.clientId, agencyId: lc.agencyId, campaigns: [] });
+      }
+      map.get(lc.clientId)!.campaigns.push(lc);
+    }
+    return Array.from(map.values());
+  }, [isLimited, limitedCampaigns]);
+
+  // Fetch contextual names
+  const { data: agencyData } = useQuery({
+    queryKey: ["sidebar-v2-agency", agencyId],
     queryFn: async () => {
-      const { data } = await supabase.from("campaigns").select("name").eq("id", campaignId!).maybeSingle();
+      const { data } = await supabase.from("agencies").select("name").eq("id", agencyId!).maybeSingle();
       return data;
     },
-    enabled: !!campaignId,
+    enabled: !!agencyId,
   });
 
   const { data: clientData } = useQuery({
@@ -69,8 +111,44 @@ export function SidebarV2() {
       const { data } = await supabase.from("clients").select("name").eq("id", clientId!).maybeSingle();
       return data;
     },
-    enabled: !!clientId && !campaignId,
+    enabled: !!clientId,
   });
+
+  const { data: campaignData } = useQuery({
+    queryKey: ["sidebar-v2-campaign", campaignId],
+    queryFn: async () => {
+      const { data } = await supabase.from("campaigns").select("id, name, color, display_order, client_id").eq("id", campaignId!).maybeSingle();
+      return data;
+    },
+    enabled: !!campaignId,
+  });
+
+  const { data: clientCampaigns = [] } = useQuery({
+    queryKey: ["sidebar-v2-client-campaigns", clientId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("campaigns")
+        .select("id, name, color, display_order, modules")
+        .eq("client_id", clientId!)
+        .order("display_order", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: false });
+      return data ?? [];
+    },
+    enabled: !!clientId && !isLimited,
+  });
+
+  // Realtime updates
+  useEffect(() => {
+    const channel = supabase
+      .channel("sidebar-v2-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "campaigns" }, (payload) => {
+        const row: any = (payload as any).new ?? (payload as any).old ?? {};
+        qc.invalidateQueries({ queryKey: ["sidebar-v2-campaign", row.id] });
+        if (row.client_id) qc.invalidateQueries({ queryKey: ["sidebar-v2-client-campaigns", row.client_id] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [qc]);
 
   const mainNavItems = useMemo(() => {
     const items = [
@@ -125,54 +203,10 @@ export function SidebarV2() {
     return items;
   }, [isAdminOrMaster, isAdmin, t]);
 
-  const campaignModules = useMemo(() => {
-    if (!campaignId || !agencyId || !clientId) return [];
-    
-    // Define the sub-navigation items based on sidebar v1 logic
-    // Scheduling, Installations, Loja a Loja, Lojas, Occurrences, Budgets, Pieces, Matrix, Mockup, Adjustments
-    const currentSection = new URLSearchParams(location.search).get("section") || "summary";
-    
-    return CAMPAIGN_MODULES.filter(mod => {
-      if (mod.requires === "admin_or_master" && !isAdminOrMaster) return false;
-      if (mod.hideForLimited && isLimited) return false;
-      return true;
-    }).map(mod => ({
-      key: mod.key,
-      label: t(mod.labelKey, mod.label),
-      icon: MODULE_ICONS[mod.icon],
-      route: `/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}?section=${mod.key}`,
-      active: currentSection === mod.key
-    }));
-  }, [campaignId, agencyId, clientId, isAdminOrMaster, isLimited, t, location.search]);
-
-  const clientModules = useMemo(() => {
-    if (!clientId || !agencyId || campaignId) return [];
-    return [
-      {
-        label: t("sidebar.campaigns", "Campanhas"),
-        icon: Megaphone,
-        route: `/agency/${agencyId}/clients/${clientId}`,
-        active: !location.search.includes("tab=")
-      },
-      {
-        label: t("sidebar.stores", "Lojas"),
-        icon: Store,
-        route: `/agency/${agencyId}/clients/${clientId}?tab=stores`,
-        active: location.search.includes("tab=stores")
-      },
-      {
-        label: t("sidebar.emails", "E-mails"),
-        icon: Mail,
-        route: `/agency/${agencyId}/clients/${clientId}?tab=emails`,
-        active: location.search.includes("tab=emails")
-      }
-    ];
-  }, [clientId, agencyId, campaignId, t, location.search]);
-
   const userInitial = user?.email?.[0]?.toUpperCase() || "U";
 
-  const NavItem = ({ item, isSubItem = false }: { item: any, isSubItem?: boolean }) => {
-    const isActive = item.active !== undefined ? item.active : (item.exact ? location.pathname === item.route : location.pathname.startsWith(item.route));
+  const NavItem = ({ item, isSubItem = false, activeOverride }: { item: any, isSubItem?: boolean, activeOverride?: boolean }) => {
+    const isActive = activeOverride !== undefined ? activeOverride : (item.exact ? location.pathname === item.route : location.pathname.startsWith(item.route));
     
     const content = (
       <NavLink
@@ -192,6 +226,7 @@ export function SidebarV2() {
               "flex-shrink-0 transition-colors",
               isActive ? "text-brand-400" : "text-stone-400 group-hover:text-stone-200"
             )}
+            style={isSubItem && item.color ? { color: item.color } : {}}
           />
         )}
         {!collapsed && (
@@ -217,6 +252,73 @@ export function SidebarV2() {
 
     return content;
   };
+
+  const CampaignItem = ({ camp, agencyId, clientId }: { camp: any, agencyId: string, clientId: string }) => {
+    const isExpanded = campaignExpanded[camp.id];
+    const campBasePath = `/agency/${agencyId}/clients/${clientId}/campaigns/${camp.id}`;
+    const isActiveCampaign = campaignId === camp.id;
+    const currentSection = new URLSearchParams(location.search).get("section") || "summary";
+
+    const filteredModules = CAMPAIGN_MODULES.filter(mod => {
+      if (mod.requires === "admin_or_master" && !isAdminOrMaster) return false;
+      if (mod.hideForLimited && isLimited) return false;
+      if (mod.requiresCampaignModule && camp.modules && !camp.modules.includes(mod.requiresCampaignModule)) return false;
+      // Note: we can't easily check camp.modules for non-limited users without more fetch, but sidebar v1 filters it
+      return true;
+    }).map(mod => ({
+      key: mod.key,
+      label: t(mod.labelKey, mod.label),
+      icon: MODULE_ICONS[mod.icon],
+      color: mod.color,
+      route: `${campBasePath}?section=${mod.key}`,
+      active: isActiveCampaign && currentSection === mod.key
+    }));
+
+    return (
+      <div className="space-y-0.5">
+        <div 
+          className={cn(
+            "group flex items-center justify-between px-2 py-1.5 rounded-lg cursor-pointer transition-colors",
+            isActiveCampaign ? "bg-stone-800/50" : "hover:bg-stone-800/30"
+          )}
+          onClick={() => navigate(campBasePath)}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <div 
+              className="w-2 h-2 rounded-full flex-shrink-0" 
+              style={{ backgroundColor: camp.color || "#8C6F4E" }}
+            />
+            {!collapsed && (
+              <span className={cn(
+                "text-xs font-semibold uppercase tracking-wider truncate",
+                isActiveCampaign ? "text-white" : "text-stone-400 group-hover:text-stone-200"
+              )}>
+                {camp.name}
+              </span>
+            )}
+          </div>
+          {!collapsed && (
+            <button 
+              className="p-1 text-stone-500 hover:text-stone-300 transition-transform"
+              style={{ transform: isExpanded ? "rotate(0deg)" : "rotate(-90deg)" }}
+              onClick={(e) => toggleCampaignExpanded(camp.id, e)}
+            >
+              <ChevronDown className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+        
+        {isExpanded && !collapsed && (
+          <div className="space-y-0.5 border-l border-stone-800 ml-3 pl-1">
+            {filteredModules.map(mod => (
+              <NavItem key={mod.key} item={mod} isSubItem activeOverride={mod.active} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
 
   return (
     <aside
