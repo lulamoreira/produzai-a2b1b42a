@@ -206,7 +206,7 @@ export default function MatrixTab({
                             toast.success("Planilha exportada com sucesso!", { id: tId });
                           } catch (e: any) { toast.error("Falha ao exportar: " + e.message, { id: tId }); }
                        }}>
-                          <Download className="w-3.5 h-3.5" /> Exportar Excel
+                          <Download className="w-3.5 h-3.5" /> {t("common.exportExcel")}
                        </Button>
                     </div>
                   )}
