@@ -15,10 +15,11 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Plus, ArrowRight, Check, AlertTriangle, Eye, Save, FolderOpen, Play, Layers, Shield, Pencil } from "lucide-react";
+import { Trash2, Plus, ArrowRight, Check, AlertTriangle, Eye, Save, FolderOpen, Play, Layers, Shield, Pencil, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import type { ClientStore, CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 import { useAutomationTemplates, type AutomationTemplateItem, type AutomationKind } from "@/hooks/useAutomationTemplates";
 import { GroupRunReviewDialog, buildValidations, type TemplateValidation } from "@/components/Matrix/GroupRunReviewDialog";
@@ -230,6 +231,12 @@ export default function MatrixAutomationDialog({
   const [preview, setPreview] = useState<PreviewRow[]>([]);
   const [outsideActions, setOutsideActions] = useState<Record<string, OutsideFilterAction>>({});
   const [executing, setExecuting] = useState(false);
+  const [executionStatus, setExecutionStatus] = useState<{
+    step: number;
+    totalSteps: number;
+    label: string;
+    details?: string;
+  } | null>(null);
 
   // Overwrite dialog state
   const [overwriteDialog, setOverwriteDialog] = useState<{ open: boolean; count: number }>({ open: false, count: 0 });
@@ -744,6 +751,7 @@ export default function MatrixAutomationDialog({
   // Step 2: Execute with preview-based actions
   const handleExecute = async () => {
     setExecuting(true);
+    setExecutionStatus({ step: 1, totalSteps: 4, label: "Validando dados..." });
     try {
       // Validate custom fields
       for (const filtro of filterGroup.filtros) {
@@ -762,6 +770,7 @@ export default function MatrixAutomationDialog({
         }
       }
 
+      setExecutionStatus({ step: 2, totalSteps: 4, label: "Calculando alterações...", details: "Processando lojas e peças..." });
       const upserts: { campaignId: string; storeId: string; pieceId: string; quantity: number }[] = [];
       const deletes: { campaignId: string; storeId: string; pieceId: string }[] = [];
 
@@ -798,8 +807,15 @@ export default function MatrixAutomationDialog({
       }
       const dedupedUpserts = Array.from(dedupMap.values());
 
+      setExecutionStatus({ 
+        step: 3, 
+        totalSteps: 4, 
+        label: "Sincronizando com o banco...", 
+        details: `${dedupedUpserts.length} inclusões/alterações e ${deletes.length} exclusões.` 
+      });
       await applyBulk("Automação", dedupedUpserts, deletes);
 
+      setExecutionStatus({ step: 4, totalSteps: 4, label: "Finalizando...", details: "Atualizando interface." });
       toast.success(t("automation.successMessage", { updated: uniqueUpdateStores, kept: keepCount, zeroed: zeroCount }));
       await onComplete();
       onOpenChange(false);
@@ -807,6 +823,7 @@ export default function MatrixAutomationDialog({
       toast.error(t("automation.executionError") + ": " + (err.message || ""));
     } finally {
       setExecuting(false);
+      setExecutionStatus(null);
     }
   };
 
@@ -976,9 +993,21 @@ export default function MatrixAutomationDialog({
       .filter(gi => gi.group_id === groupId && gi.enabled)
       .sort((a, b) => a.display_order - b.display_order);
 
+    const total = items.length;
     const results: GroupRunResult[] = [];
+    let count = 0;
+
     for (const gi of items) {
+      count++;
       const tpl = templates.find(t => t.id === gi.template_id);
+      const tplName = tpl?.name || "(Automação removida)";
+      setExecutionStatus({ 
+        step: count, 
+        totalSteps: total, 
+        label: `Executando: ${tplName}`, 
+        details: `Automação ${count} de ${total} do grupo ${groupName}` 
+      });
+
       if (!tpl) {
         results.push({
           templateId: gi.template_id,
@@ -1026,7 +1055,9 @@ export default function MatrixAutomationDialog({
       }
     }
 
+    setExecutionStatus({ step: total, totalSteps: total, label: "Finalizando...", details: "Processando resultados." });
     setExecuting(false);
+    setExecutionStatus(null);
     await onComplete();
 
     const failures = results.filter(r => r.status === "error");
@@ -1180,7 +1211,30 @@ export default function MatrixAutomationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-full max-w-3xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="w-full max-w-3xl max-h-[85vh] overflow-y-auto relative">
+        {executing && executionStatus && (
+          <div className="absolute inset-0 z-[100] bg-background/90 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-4">
+            <div className="w-full max-w-md space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
+                  <Loader2 className="w-5 h-5 animate-spin text-primary" />
+                  {executionStatus.label}
+                </h3>
+                {executionStatus.details && (
+                  <p className="text-sm text-muted-foreground">{executionStatus.details}</p>
+                )}
+              </div>
+              
+              <div className="space-y-1">
+                <Progress value={(executionStatus.step / executionStatus.totalSteps) * 100} className="h-2" />
+                <div className="flex justify-between text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                  <span>Etapa {executionStatus.step} de {executionStatus.totalSteps}</span>
+                  <span>{Math.round((executionStatus.step / executionStatus.totalSteps) * 100)}%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
         <DialogHeader>
           <DialogTitle>{t("automation.title")}</DialogTitle>
           <DialogDescription>
