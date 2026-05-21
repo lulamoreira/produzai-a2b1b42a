@@ -231,6 +231,12 @@ export default function MatrixAutomationDialog({
   const [preview, setPreview] = useState<PreviewRow[]>([]);
   const [outsideActions, setOutsideActions] = useState<Record<string, OutsideFilterAction>>({});
   const [executing, setExecuting] = useState(false);
+  const [executionStatus, setExecutionStatus] = useState<{
+    step: number;
+    totalSteps: number;
+    label: string;
+    details?: string;
+  } | null>(null);
 
   // Overwrite dialog state
   const [overwriteDialog, setOverwriteDialog] = useState<{ open: boolean; count: number }>({ open: false, count: 0 });
