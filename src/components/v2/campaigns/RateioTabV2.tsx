@@ -117,8 +117,10 @@ export default function RateioTabV2({
     }
   }, [rateioSource, activeVersionTab]);
 
+  const activeTabData = versionTabs.find(t => t.id === activeVersionTab);
   const isTabEditable = activeTabData?.isVigente && activeVersionTab === vigenteSource;
   const isLatestTab = isTabEditable;
+
 
 
   // Filter stores
@@ -337,8 +339,6 @@ export default function RateioTabV2({
     return tabs;
   }, [hasNegotiationRateio, winnerSupplierId, winnerSupplierName, activeAdjustment]);
 
-  const activeTabData = versionTabs.find(t => t.id === activeVersionTab);
-  const isTabEditable = activeTabData?.isVigente && activeVersionTab === vigenteSource;
 
 
   return (
