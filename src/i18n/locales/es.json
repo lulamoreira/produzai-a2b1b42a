@@ -98,6 +98,9 @@
     "saveSuccess": "Guardado con éxito",
     "noLocation": "Sin ubicación",
     "orderByLocation": "Ordenar por ubicación",
+    "errors": {
+      "alreadyExists": "Este registro ya existe. Si fue eliminado anteriormente, intente reactivarlo."
+    },
     "addressNotInformed": "Dirección no informada",
     "cardsBlocked": "tarjetas bloqueadas",
     "cardsUnblocked": "tarjetas liberadas",

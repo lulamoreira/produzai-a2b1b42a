@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTranslation } from "react-i18next";
 
 /* ───── Types ───── */
 export interface LojaALojaTipo {
@@ -54,6 +55,7 @@ export function useLojaALojaTipos(campaignId: string | undefined) {
         .from("loja_a_loja_tipos")
         .select("*")
         .eq("campaign_id", campaignId!)
+        .eq("is_deleted", false as any)
         .order("display_order");
       if (error) throw error;
 
@@ -132,6 +134,7 @@ export function useAllLojaALojaPecas(campaignId: string | undefined) {
 
 export function useAddTipo() {
   const qc = useQueryClient();
+  const { t } = useTranslation();
   return useMutation({
     mutationFn: async (params: { campaign_id: string; letra: string; nome: string; display_order?: number; tem_subdivisao?: boolean }) => {
       const { data, error } = await supabase.from("loja_a_loja_tipos").insert(params).select().single();
@@ -142,7 +145,13 @@ export function useAddTipo() {
       qc.invalidateQueries({ queryKey: ["loja-a-loja-tipos", v.campaign_id] });
       toast.success("Tipo adicionado");
     },
-    onError: (e: any) => toast.error("Erro ao adicionar tipo: " + e.message),
+    onError: (e: any) => {
+      if (e.code === "23505") {
+        toast.error(t("common.errors.alreadyExists"));
+      } else {
+        toast.error("Erro ao adicionar tipo: " + e.message);
+      }
+    },
   });
 }
 
@@ -166,7 +175,11 @@ export function useDeleteTipo() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (params: { id: string; campaign_id: string }) => {
-      const { error } = await supabase.from("loja_a_loja_tipos").delete().eq("id", params.id);
+      // Soft-delete to allow re-creation of the same 'letra'
+      const { error } = await supabase
+        .from("loja_a_loja_tipos")
+        .update({ is_deleted: true as any })
+        .eq("id", params.id);
       if (error) throw error;
     },
     onSuccess: (_, v) => {

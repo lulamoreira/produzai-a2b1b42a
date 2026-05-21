@@ -2895,6 +2895,7 @@ export type Database = {
           created_at: string | null
           display_order: number | null
           id: string
+          is_deleted: boolean | null
           letra: string
           nome: string
           tem_subdivisao: boolean | null
@@ -2904,6 +2905,7 @@ export type Database = {
           created_at?: string | null
           display_order?: number | null
           id?: string
+          is_deleted?: boolean | null
           letra: string
           nome: string
           tem_subdivisao?: boolean | null
@@ -2913,6 +2915,7 @@ export type Database = {
           created_at?: string | null
           display_order?: number | null
           id?: string
+          is_deleted?: boolean | null
           letra?: string
           nome?: string
           tem_subdivisao?: boolean | null
