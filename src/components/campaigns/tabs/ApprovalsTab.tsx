@@ -31,7 +31,8 @@ export default function ApprovalsTab({
   currencyCode,
   isAdminOrMaster,
   winnerSupplierId,
-  hasNegotiationRateio
+  hasNegotiationRateio,
+  onBackToBudgets
 }: ApprovalsTabProps) {
   return (
     <AdjustmentsTab 
@@ -47,6 +48,7 @@ export default function ApprovalsTab({
       currencyCode={currencyCode}
       winnerSupplierId={winnerSupplierId}
       hasNegotiationRateio={hasNegotiationRateio}
+      onBackToBudgets={onBackToBudgets}
     />
   );
 }
