@@ -251,6 +251,8 @@ const CampaignDetail = () => {
                   kits={kits} kitPieces={kitPieces} storePieces={storePieces} stores={stores}
                   agencyName={agency?.name || ""} clientName={client?.name || ""}
                   currencyCode="BRL" isAdminOrMaster={isAdminOrMaster}
+                  winnerSupplierId={winnerSupplierId}
+                  hasNegotiationRateio={hasNegotiationRateio}
                 />
               </Suspense>
             </TabsContent>
