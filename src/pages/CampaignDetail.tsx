@@ -196,7 +196,7 @@ const CampaignDetail = () => {
         <CampaignHeader 
           campaign={campaign} agency={agency} client={client} 
           isAdminOrMaster={isAdminOrMaster} canEditCampaign={true}
-          onRename={() => {}} onBackup={() => {}} onOpenSection={setActiveSection}
+          onRename={() => {}} onBackup={() => setBackupOpen(true)} onOpenSection={setActiveSection}
           pieces={pieces} kits={kits} kitPieces={kitPieces}
           activeAdjustment={activeAdjustment}
         />
