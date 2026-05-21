@@ -7,6 +7,7 @@ import { isAfter } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { OccurrencesPortalEmptyState } from "@/components/v2/campaigns/OccurrencesPortalEmptyState";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/hooks/useAuth";
 
 interface StoreToken {
   token: string | null;
@@ -23,6 +24,8 @@ export default function OccurrencesPortalV2() {
   const { campaignId } = useParams<{ campaignId: string }>();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isPublic = !user;
 
   const { data: config, isLoading: loadingConfig } = useQuery({
     queryKey: ["occ-portal-config", campaignId],
@@ -119,9 +122,7 @@ export default function OccurrencesPortalV2() {
   };
 
   const handleGoToStores = () => {
-    // Navigate to Lojas module (Classification tab)
-    // We don't have client_id in params here directly, but we might be able to infer it or just use campaign link
-    // Assuming campaign detail path: /agency/:agencyId/clients/:clientId/campaigns/:campaignId
+    if (isPublic) return;
     const pathParts = window.location.pathname.split("/");
     const agencyId = pathParts[2];
     const clientId = pathParts[4];
@@ -148,7 +149,7 @@ export default function OccurrencesPortalV2() {
   if (!storesData?.hasStores) {
     return (
       <div className="min-h-screen bg-stone-50 py-12 px-4">
-        <OccurrencesPortalEmptyState type="no-stores" onGoToStores={handleGoToStores} isV2 />
+        <OccurrencesPortalEmptyState type="no-stores" onGoToStores={!isPublic ? handleGoToStores : undefined} isV2 />
       </div>
     );
   }
@@ -156,7 +157,7 @@ export default function OccurrencesPortalV2() {
   if (isModuleDisabled || !storesData?.hasTokens) {
     return (
       <div className="min-h-screen bg-stone-50 py-12 px-4">
-        <OccurrencesPortalEmptyState type="no-access" onGoToStores={handleGoToStores} isV2 />
+        <OccurrencesPortalEmptyState type="no-access" onGoToStores={!isPublic ? handleGoToStores : undefined} isV2 />
       </div>
     );
   }
