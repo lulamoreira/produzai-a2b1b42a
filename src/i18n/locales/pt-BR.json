@@ -1,5 +1,11 @@
 {
   "common": {
+    "filtersAndActions": "Filtros e Ações",
+    "filtersAndActionsHidden": "Filtros e ações ocultos",
+    "collapse": "Recolher",
+    "exportExcel": "Exportar Excel",
+    "expand": "Expandir",
+    "backToVigente": "Voltar ao vigente",
     "loading": "Carregando...",
     "loadError": "Erro ao carregar dados",
     "retry": "Tente novamente",
