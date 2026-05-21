@@ -836,9 +836,9 @@ export async function buildRequoteFinalWorkbook(
 
       const lastColLetter = getColLetter(colCount);
       const totalRowLetterStart = getColLetter(STORE_META_COLS + 1);
-      const VALUE_COL_START = 1;
-      const VALUE_COL_END = 3;
-      const valCol = getColLetter(VALUE_COL_START);
+      const SUMMARY_LABEL_COL_END = 2;
+      const SUMMARY_VALUE_COL = 3;
+      const valCol = getColLetter(SUMMARY_VALUE_COL);
 
       const styleValue = (cell: any, opts: { bold?: boolean; bgArgb?: string; fgArgb?: string; size?: number } = {}) => {
         cell.numFmt = money;
@@ -858,12 +858,11 @@ export async function buildRequoteFinalWorkbook(
       // TOTAL DA PRODUÇÃO (após linha em branco do PREÇO TOTAL)
       const prodRowNum = baseRow + 3;
       const prodRow = matrixWs.getRow(prodRowNum);
-      matrixWs.mergeCells(prodRowNum, 1, prodRowNum, STORE_META_COLS);
+      matrixWs.mergeCells(prodRowNum, 1, prodRowNum, SUMMARY_LABEL_COL_END);
       const prodLabel = matrixWs.getCell(prodRowNum, 1);
       prodLabel.value = "TOTAL DA PRODUÇÃO";
       styleLabel(prodLabel);
-      matrixWs.mergeCells(prodRowNum, VALUE_COL_START, prodRowNum, VALUE_COL_END);
-      const prodValCell = matrixWs.getCell(prodRowNum, VALUE_COL_START);
+      const prodValCell = matrixWs.getCell(prodRowNum, SUMMARY_VALUE_COL);
       // Fórmula real: soma da linha PREÇO TOTAL (todos os itens)
       prodValCell.value = {
         formula: `SUM(${totalRowLetterStart}${baseRow + 1}:${lastColLetter}${baseRow + 1})`,
@@ -874,12 +873,11 @@ export async function buildRequoteFinalWorkbook(
       // Linha branca separadora + FRETE
       const freightRowNum = prodRowNum + 2;
       const freightRow = matrixWs.getRow(freightRowNum);
-      matrixWs.mergeCells(freightRowNum, 1, freightRowNum, STORE_META_COLS);
+      matrixWs.mergeCells(freightRowNum, 1, freightRowNum, SUMMARY_LABEL_COL_END);
       const fLabel = matrixWs.getCell(freightRowNum, 1);
       fLabel.value = "FRETE";
       styleLabel(fLabel);
-      matrixWs.mergeCells(freightRowNum, VALUE_COL_START, freightRowNum, VALUE_COL_END);
-      const fVal = matrixWs.getCell(freightRowNum, VALUE_COL_START);
+      const fVal = matrixWs.getCell(freightRowNum, SUMMARY_VALUE_COL);
       fVal.value = Number(params.newFreight || 0);
       styleValue(fVal);
       freightRow.height = 22;
@@ -887,12 +885,11 @@ export async function buildRequoteFinalWorkbook(
       // Linha branca separadora + INSTALAÇÃO
       const instRowNum = freightRowNum + 2;
       const instRow = matrixWs.getRow(instRowNum);
-      matrixWs.mergeCells(instRowNum, 1, instRowNum, STORE_META_COLS);
+      matrixWs.mergeCells(instRowNum, 1, instRowNum, SUMMARY_LABEL_COL_END);
       const iLabel = matrixWs.getCell(instRowNum, 1);
       iLabel.value = "INSTALAÇÃO";
       styleLabel(iLabel);
-      matrixWs.mergeCells(instRowNum, VALUE_COL_START, instRowNum, VALUE_COL_END);
-      const iVal = matrixWs.getCell(instRowNum, VALUE_COL_START);
+      const iVal = matrixWs.getCell(instRowNum, SUMMARY_VALUE_COL);
       iVal.value = Number(params.newInstallation || 0);
       styleValue(iVal);
       instRow.height = 22;
@@ -900,14 +897,13 @@ export async function buildRequoteFinalWorkbook(
       // Linha branca separadora + VALOR TOTAL GERAL (destaque, fórmula real)
       const grandRowNum = instRowNum + 2;
       const grandRow = matrixWs.getRow(grandRowNum);
-      matrixWs.mergeCells(grandRowNum, 1, grandRowNum, STORE_META_COLS);
+      matrixWs.mergeCells(grandRowNum, 1, grandRowNum, SUMMARY_LABEL_COL_END);
       const gLabel = matrixWs.getCell(grandRowNum, 1);
       gLabel.value = "VALOR TOTAL GERAL";
       gLabel.font = { bold: true, color: { argb: WHITE }, size: 13 };
       gLabel.alignment = { horizontal: "right", vertical: "middle" };
       gLabel.fill = { type: "pattern", pattern: "solid", fgColor: { argb: DARK } };
-      matrixWs.mergeCells(grandRowNum, VALUE_COL_START, grandRowNum, VALUE_COL_END);
-      const gVal = matrixWs.getCell(grandRowNum, VALUE_COL_START);
+      const gVal = matrixWs.getCell(grandRowNum, SUMMARY_VALUE_COL);
       gVal.value = {
         formula: `${valCol}${prodRowNum}+${valCol}${freightRowNum}+${valCol}${instRowNum}`,
       } as any;
