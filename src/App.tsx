@@ -45,6 +45,7 @@ const AdjustmentRequotePortal = lazy(() => import("./pages/AdjustmentRequotePort
 const StorePortal = lazy(() => import("./pages/StorePortal"));
 const OccurrencesPortal = lazy(() => import("./pages/OccurrencesPortal"));
 const HomeV2 = lazy(() => import("./pages/v2/HomeV2").then(m => ({ default: m.HomeV2 })));
+const ClientsV2 = lazy(() => import("./pages/v2/ClientsV2"));
 import { useUIVersion } from "@/hooks/useUIVersion";
 import AppLayout from "@/components/AppLayout";
 
@@ -213,7 +214,10 @@ const App = () => (
                   <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
                   <Route path="/agencies" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
                   <Route path="/agency/:agencyId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/agency/:agencyId/clients" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/agency/:agencyId/clients/:clientId" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
+                  <Route path="/agency/:agencyId/clients/:clientId/campaigns" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
+                  <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId/*" element={<ProtectedRoute><ErrorBoundary><CampaignDetail /></ErrorBoundary></ProtectedRoute>} />
                   <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId" element={<ProtectedRoute><ErrorBoundary><CampaignDetail /></ErrorBoundary></ProtectedRoute>} />
                   <Route path="/checkin/:campaignId/:storeId" element={<ProtectedRoute><PhotoCheckin /></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
