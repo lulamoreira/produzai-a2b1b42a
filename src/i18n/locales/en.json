@@ -48,7 +48,19 @@
       "openEmails": "Open emails",
       "downloadLinks": "Download CSV with links",
       "alreadyInvited": "Already invited",
-      "batchButton": "Batch Invite"
+      "batchButton": "Batch Invite",
+      "campaignAccessHint": "These access permissions will be applied to all guests in the batch"
+    },
+    "campaignAccess": {
+      "title": "Campaign Access",
+      "badge": "Access to a specific campaign",
+      "addCampaign": "ADD CAMPAIGN",
+      "selectCampaign": "Select campaign...",
+      "selectRole": "Role in this campaign",
+      "active": "Active",
+      "inactive": "Inactive",
+      "noCampaigns": "No specific access configured — the user will only have the global role.",
+      "campaigns": "{{count}} campaign(s)"
     },
     "panelTitle": "Invites",
     "newInvite": "New Invite",

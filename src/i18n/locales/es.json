@@ -48,7 +48,19 @@
       "openEmails": "Abrir correos",
       "downloadLinks": "Descargar CSV con enlaces",
       "alreadyInvited": "Ya invitado",
-      "batchButton": "Invitar en Lote"
+      "batchButton": "Invitar en Lote",
+      "campaignAccessHint": "Estos permisos de acceso se aplicarán a todos los invitados en el lote"
+    },
+    "campaignAccess": {
+      "title": "Accesos por Campaña",
+      "badge": "Acceso a uma campaña específica",
+      "addCampaign": "AGREGAR CAMPAÑA",
+      "selectCampaign": "Seleccionar campaña...",
+      "selectRole": "Rol en esta campaña",
+      "active": "Activo",
+      "inactive": "Inactivo",
+      "noCampaigns": "Sin acceso específico configurado — el usuario solo tendrá el rol global.",
+      "campaigns": "{{count}} campaña(s)"
     },
     "panelTitle": "Invitaciones",
     "newInvite": "Nueva Invitación",

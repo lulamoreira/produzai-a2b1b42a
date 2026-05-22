@@ -23,10 +23,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2, Plus, Copy, Check } from "lucide-react";
+import { Loader2, Plus, Copy, Check, Megaphone, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { usePermissionCategories } from "@/hooks/usePermissionCategories";
 
 const ROLES = [
   { value: "viewer", labelKey: "invite.roles.viewer" },
@@ -34,6 +37,17 @@ const ROLES = [
   { value: "manager", labelKey: "invite.roles.manager" },
   { value: "master", labelKey: "invite.roles.master" },
   { value: "admin", labelKey: "invite.roles.admin" },
+];
+
+const CAMPAIGN_ROLES = [
+  "Admin",
+  "Atendimento Agência",
+  "Cliente",
+  "Editor",
+  "Equipe de Instalação",
+  "Master",
+  "Tratativa de Ocorrências",
+  "Visualizador"
 ];
 
 const VALIDITY_OPTIONS = [
@@ -62,6 +76,8 @@ export function InviteForm() {
     validity: "15"
   });
 
+  const [campaignAccess, setCampaignAccess] = useState<any[]>([]);
+
   const { data: agencies = [] } = useQuery({
     queryKey: ["agencies-list"],
     queryFn: async () => {
@@ -74,6 +90,20 @@ export function InviteForm() {
       return data || [];
     }
   });
+
+  const { data: allCampaigns = [] } = useQuery({
+    queryKey: ["all-campaigns-select"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("id, name, client_id, clients(name, agency_id, agencies(name))")
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: categories = [] } = usePermissionCategories();
 
   const handleCopyLink = () => {
     if (!inviteUrl) return;
@@ -101,7 +131,8 @@ export function InviteForm() {
           personal_message: formData.personal_message,
           invited_by: user?.id,
           invited_by_name: displayName,
-          expires_at: expiresAt.toISOString()
+          expires_at: expiresAt.toISOString(),
+          permissions: campaignAccess
         })
         .select()
         .single();
@@ -149,6 +180,7 @@ export function InviteForm() {
       personal_message: "",
       validity: "15"
     });
+    setCampaignAccess([]);
     setInviteUrl(null);
     setCopied(false);
   };
@@ -166,7 +198,7 @@ export function InviteForm() {
           + Novo Convite
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Novo Convite</DialogTitle>
         </DialogHeader>
@@ -264,7 +296,103 @@ export function InviteForm() {
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="pt-4 border-t space-y-4">
+              <div className="flex items-center gap-2">
+                <Megaphone size={16} className="text-primary" />
+                <h4 className="text-sm font-semibold text-foreground">{t("invite.campaignAccess.title")}</h4>
+                <Badge variant="outline" className="bg-stone-100 text-stone-500 text-[10px] rounded-full border-none">
+                  {t("invite.campaignAccess.badge")}
+                </Badge>
+              </div>
+
+              {campaignAccess.length > 0 ? (
+                <div className="space-y-3">
+                  {campaignAccess.map((access, index) => (
+                    <div key={index} className="flex flex-col gap-2 p-3 rounded-lg border border-border bg-stone-50/50">
+                      <div className="flex items-center gap-2">
+                        <Select 
+                          value={access.campaign_id} 
+                          onValueChange={(val) => {
+                            const newAccess = [...campaignAccess];
+                            newAccess[index].campaign_id = val;
+                            setCampaignAccess(newAccess);
+                          }}
+                        >
+                          <SelectTrigger className="h-9 text-xs flex-1">
+                            <SelectValue placeholder={t("invite.campaignAccess.selectCampaign")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {allCampaigns.map((c: any) => (
+                              <SelectItem key={c.id} value={c.id}>
+                                {c.clients?.agencies?.name} / {c.clients?.name} / {c.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-destructive"
+                          onClick={() => setCampaignAccess(campaignAccess.filter((_, i) => i !== index))}
+                        >
+                          <Trash2 size={14} />
+                        </Button>
+                      </div>
+                      
+                      <div className="flex items-center gap-2">
+                        <Select 
+                          value={access.category_id || ""} 
+                          onValueChange={(val) => {
+                            const newAccess = [...campaignAccess];
+                            newAccess[index].category_id = val;
+                            setCampaignAccess(newAccess);
+                          }}
+                        >
+                          <SelectTrigger className="h-8 text-[11px] flex-1">
+                            <SelectValue placeholder="Papel / Categoria" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.map(cat => (
+                              <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+
+                        <div className="flex items-center gap-2 ml-auto">
+                          <span className="text-[10px] font-medium text-stone-500">
+                            {access.suspended ? t("invite.campaignAccess.inactive") : t("invite.campaignAccess.active")}
+                          </span>
+                          <Switch 
+                            checked={!access.suspended} 
+                            onCheckedChange={(checked) => {
+                              const newAccess = [...campaignAccess];
+                              newAccess[index].suspended = !checked;
+                              setCampaignAccess(newAccess);
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-stone-400 italic">
+                  {t("invite.campaignAccess.noCampaigns")}
+                </p>
+              )}
+
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm" 
+                className="text-xs text-primary h-8 gap-1.5"
+                onClick={() => setCampaignAccess([...campaignAccess, { campaign_id: "", category_id: categories[0]?.id || "", suspended: false }])}
+              >
+                <Plus size={14} /> {t("invite.campaignAccess.addCampaign")}
+              </Button>
+            </div>
+
+            <div className="space-y-2 pt-2">
               <Label>{t("invite.form.validity")}</Label>
               <Select 
                 value={formData.validity} 

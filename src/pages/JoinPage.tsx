@@ -104,6 +104,20 @@ const JoinPage = () => {
       });
       if (roleError) throw roleError;
 
+      // 3c. Apply campaign permissions
+      const campaignPermissions = invite.permissions as any[];
+      if (campaignPermissions && Array.isArray(campaignPermissions) && campaignPermissions.length > 0) {
+        const { error: campaignError } = await supabase.from('user_campaign_access').insert(
+          campaignPermissions.map(p => ({
+            user_id: authData.user.id,
+            campaign_id: p.campaign_id,
+            category_id: p.category_id,
+            suspended: p.suspended ?? false
+          }))
+        );
+        if (campaignError) console.error("Error applying campaign permissions:", campaignError);
+      }
+
       // 4. Mark invite used
       const { error: updateError } = await supabase
         .from('invites')
