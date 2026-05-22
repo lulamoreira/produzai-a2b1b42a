@@ -9,7 +9,27 @@
     "alreadyUsed": "This invite has already been used",
     "accountCreated": "Account created successfully! Log in to continue.",
     "invalidPassword": "Password must be at least 8 characters long",
-    "passwordsDoNotMatch": "Passwords do not match"
+    "passwordsDoNotMatch": "Passwords do not match",
+    "send": "Create and Send Invite",
+    "sent": "Invite created! Your email client has been opened.",
+    "copyLink": "Copy link",
+    "linkCopied": "Link copied!",
+    "form": {
+      "namePlaceholder": "Guest name",
+      "messagePlaceholder": "Write a personalized welcome message...",
+      "selectAgency": "Select agency (optional)",
+      "validity": "Validity",
+      "days7": "7 days",
+      "days15": "15 days",
+      "days30": "30 days"
+    },
+    "roles": {
+      "viewer": "Viewer — read only",
+      "editor": "Editor — can edit campaigns",
+      "manager": "Manager — manages teams and campaigns",
+      "master": "Master — full access except admin",
+      "admin": "Admin — complete system access"
+    }
   },
   "common": {
     "filtersAndActions": "Filters and Actions",

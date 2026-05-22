@@ -9,7 +9,27 @@
     "alreadyUsed": "Este convite já foi utilizado",
     "accountCreated": "Conta criada com sucesso! Faça login para continuar.",
     "invalidPassword": "A senha deve ter no mínimo 8 caracteres",
-    "passwordsDoNotMatch": "As senhas não coincidem"
+    "passwordsDoNotMatch": "As senhas não coincidem",
+    "send": "Criar e Enviar Convite",
+    "sent": "Convite criado! Seu cliente de email foi aberto.",
+    "copyLink": "Copiar link",
+    "linkCopied": "Link copiado!",
+    "form": {
+      "namePlaceholder": "Nome do convidado",
+      "messagePlaceholder": "Escreva uma mensagem de boas-vindas personalizada...",
+      "selectAgency": "Selecionar agência (opcional)",
+      "validity": "Validade",
+      "days7": "7 dias",
+      "days15": "15 dias",
+      "days30": "30 dias"
+    },
+    "roles": {
+      "viewer": "Visualizador — apenas leitura",
+      "editor": "Editor — pode editar campanhas",
+      "manager": "Gerente — gerencia equipes e campanhas",
+      "master": "Master — acesso total exceto admin",
+      "admin": "Admin — acesso completo ao sistema"
+    }
   },
   "common": {
     "filtersAndActions": "Filtros e Ações",
