@@ -158,6 +158,10 @@ const Admin = () => {
             )}
           </TabsContent>
 
+          <TabsContent value="invites">
+            <InvitesPanel />
+          </TabsContent>
+
           <TabsContent value="categories">
             <CategoriesTab />
           </TabsContent>
