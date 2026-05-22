@@ -61,32 +61,54 @@ export function HomeV2() {
   const { data: dashboardData, isLoading: loadingKpis } = useQuery({
     queryKey: ["v2-dashboard-data", role, userAgency, isAdminOrMaster],
     queryFn: async () => {
+      const today = new Date().toISOString().split('T')[0];
       if (isAdminOrMaster) {
-        const [agenciesRes, clientsRes, activeCampaignsRes, profilesRes] = await Promise.all([
+        const [agenciesRes, clientsRes, activeCampaignsRes, profilesRes, rolesRes] = await Promise.all([
           (supabase.from("agencies") as any).select("id, name, created_at").is("deleted_at", null).order("name"),
           (supabase.from("clients") as any).select("id, name, created_at, agency_id, agencies(name)").order("name"),
-          (supabase.from("campaigns") as any).select("id, name, created_at, client_id, agency_id, clients(name), occurrence_end_date").or(`occurrence_end_date.is.null,occurrence_end_date.gte.${new Date().toISOString().split('T')[0]}`).order("created_at", { ascending: false }),
-          (supabase.from("profiles") as any).select("id, display_name, created_at, user_id, user_roles(role)").order("display_name")
+          (supabase.from("campaigns") as any).select("id, name, created_at, client_id, clients(name, agency_id), occurrence_end_date").or(`occurrence_end_date.is.null,occurrence_end_date.gte.${today}`).order("created_at", { ascending: false }),
+          (supabase.from("profiles") as any).select("id, display_name, created_at, user_id").order("display_name"),
+          (supabase.from("user_roles") as any).select("user_id, role")
         ]);
+
+        const rolesMap: Record<string, string[]> = {};
+        (rolesRes.data || []).forEach((r: any) => {
+          if (!rolesMap[r.user_id]) rolesMap[r.user_id] = [];
+          rolesMap[r.user_id].push(r.role);
+        });
+        const profilesWithRoles = (profilesRes.data || []).map((p: any) => ({
+          ...p,
+          user_roles: (rolesMap[p.user_id] || []).map((role) => ({ role }))
+        }));
 
         return {
           totalAgencies: agenciesRes.data || [],
           totalClients: clientsRes.data || [],
           activeCampaigns: activeCampaignsRes.data || [],
-          totalUsers: profilesRes.data || []
+          totalUsers: profilesWithRoles
         };
       } else {
         const agencyId = userAgency;
         if (!agencyId) return null;
 
-        const [activeCampaignsRes, clientsRes, pendingApprovalsRes, pendingInstRes] = await Promise.all([
-          (supabase.from("campaigns") as any).select("id, name, created_at, client_id, clients(name), occurrence_end_date").eq("agency_id", agencyId).or(`occurrence_end_date.is.null,occurrence_end_date.gte.${new Date().toISOString().split('T')[0]}`).order("created_at", { ascending: false }),
-          (supabase.from("clients") as any).select("id, name, created_at, agencies(name)").eq("agency_id", agencyId).order("name"),
+        const agencyClientsRes = await (supabase.from("clients") as any).select("id, name, created_at, agencies(name)").eq("agency_id", agencyId).order("name");
+        const agencyClientIds = (agencyClientsRes.data || []).map((c: any) => c.id);
+
+        const [activeCampaignsRes, pendingApprovalsRes, pendingInstRes] = await Promise.all([
+          agencyClientIds.length
+            ? (supabase.from("campaigns") as any).select("id, name, created_at, client_id, clients(name)").in("client_id", agencyClientIds).or(`occurrence_end_date.is.null,occurrence_end_date.gte.${today}`).order("created_at", { ascending: false })
+            : Promise.resolve({ data: [] }),
           (supabase.from("user_approvals" as any).select("id, created_at") as any).eq("status", "pending"),
-          (supabase.from("campaign_schedules") as any).select("id, scheduled_date, scheduled_time, campaign_id, store_id, client_stores(name), campaigns(name, client_id, clients(name)), installation_teams(name)")
-            .is("completed_at", null)
-            .in("campaign_id", (await (supabase.from("campaigns") as any).select("id").eq("agency_id", agencyId)).data?.map((c: any) => c.id) || [])
+          agencyClientIds.length
+            ? (async () => {
+                const campIds = (await (supabase.from("campaigns") as any).select("id").in("client_id", agencyClientIds)).data?.map((c: any) => c.id) || [];
+                return campIds.length
+                  ? (supabase.from("campaign_schedules") as any).select("id, scheduled_date, scheduled_time, campaign_id, store_id, client_stores(name), campaigns(name, client_id, clients(name)), installation_teams(name)").is("completed_at", null).in("campaign_id", campIds)
+                  : { data: [] };
+              })()
+            : Promise.resolve({ data: [] })
         ]);
+        const clientsRes = agencyClientsRes;
 
         return {
           activeCampaigns: activeCampaignsRes.data || [],
