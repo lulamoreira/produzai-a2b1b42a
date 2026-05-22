@@ -193,9 +193,7 @@ export function InviteForm() {
       <DialogTrigger asChild>
         <Button className="bg-[#C2714F] hover:bg-[#b06040] text-white gap-2">
           <Plus size={18} />
-          {t("common.registered")} {t("common.campaign").toLowerCase()} {/* Fallback if no specific button text requested, but user said "+ Novo Convite" */}
-          {/* Re-reading prompt: "opened by a '+ Novo Convite' button" */}
-          + Novo Convite
+          {t("invite.newInvite")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">

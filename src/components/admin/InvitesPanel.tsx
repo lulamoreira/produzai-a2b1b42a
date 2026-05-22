@@ -21,6 +21,13 @@ import { useFormatters } from "@/lib/formatters";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { usePermissionCategories } from "@/hooks/usePermissionCategories";
 
 export function InvitesPanel() {
   const { t } = useTranslation();
@@ -36,6 +43,18 @@ export function InvitesPanel() {
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data ?? [];
+    }
+  });
+
+  const { data: categories = [] } = usePermissionCategories();
+  const { data: allCampaigns = [] } = useQuery({
+    queryKey: ["all-campaigns-list-simple"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("id, name");
+      if (error) throw error;
+      return data || [];
     }
   });
 
@@ -180,9 +199,33 @@ export function InvitesPanel() {
                     <td className="px-4 py-4">{getStatusBadge(invite)}</td>
                     <td className="px-4 py-4">
                       {invite.permissions && Array.isArray(invite.permissions) && invite.permissions.length > 0 ? (
-                        <Badge variant="outline" className="bg-stone-50 text-stone-600 border-stone-200 text-[10px]">
-                          {t("invite.campaignAccess.campaigns", { count: invite.permissions.length })}
-                        </Badge>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Badge variant="outline" className="bg-stone-50 text-stone-600 border-stone-200 text-[10px] cursor-help">
+                                {t("invite.campaignAccess.campaigns", { count: invite.permissions.length })}
+                              </Badge>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-white border border-stone-200 shadow-lg p-3 rounded-lg w-64">
+                              <div className="space-y-2">
+                                <p className="text-xs font-bold text-stone-500 uppercase tracking-wider mb-1">Acessos Pré-configurados</p>
+                                {invite.permissions.map((p: any, i: number) => {
+                                  const campaign = allCampaigns.find(c => c.id === p.campaign_id);
+                                  const category = categories.find(cat => cat.id === p.category_id);
+                                  return (
+                                    <div key={i} className="flex flex-col border-b border-stone-100 last:border-0 pb-1 mb-1 last:mb-0 last:pb-0">
+                                      <span className="text-[11px] font-semibold text-stone-900 truncate">{campaign?.name || p.campaign_id}</span>
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-[10px] text-stone-500">{category?.name || "—"}</span>
+                                        {p.suspended && <span className="text-[9px] bg-red-50 text-red-600 px-1 rounded uppercase font-bold">Inativo</span>}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       ) : (
                         <span className="text-stone-400">—</span>
                       )}
