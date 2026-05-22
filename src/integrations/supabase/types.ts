@@ -2941,6 +2941,74 @@ export type Database = {
           },
         ]
       }
+      messages: {
+        Row: {
+          agency_id: string | null
+          category: string
+          channel: string
+          content: string
+          content_en: string | null
+          content_es: string | null
+          content_pt_br: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_customized: boolean
+          key: string
+          last_translated_at: string | null
+          name: string | null
+          updated_at: string
+          variables: Json | null
+        }
+        Insert: {
+          agency_id?: string | null
+          category?: string
+          channel?: string
+          content?: string
+          content_en?: string | null
+          content_es?: string | null
+          content_pt_br?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_customized?: boolean
+          key: string
+          last_translated_at?: string | null
+          name?: string | null
+          updated_at?: string
+          variables?: Json | null
+        }
+        Update: {
+          agency_id?: string | null
+          category?: string
+          channel?: string
+          content?: string
+          content_en?: string | null
+          content_es?: string | null
+          content_pt_br?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_customized?: boolean
+          key?: string
+          last_translated_at?: string | null
+          name?: string | null
+          updated_at?: string
+          variables?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "system_messages_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_settings: {
         Row: {
           agency_id: string
@@ -4554,44 +4622,6 @@ export type Database = {
           reason?: string
         }
         Relationships: []
-      }
-      system_messages: {
-        Row: {
-          agency_id: string | null
-          category: string
-          content: string
-          created_at: string
-          id: string
-          key: string
-          updated_at: string
-        }
-        Insert: {
-          agency_id?: string | null
-          category?: string
-          content?: string
-          created_at?: string
-          id?: string
-          key: string
-          updated_at?: string
-        }
-        Update: {
-          agency_id?: string | null
-          category?: string
-          content?: string
-          created_at?: string
-          id?: string
-          key?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "system_messages_agency_id_fkey"
-            columns: ["agency_id"]
-            isOneToOne: false
-            referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       user_agency_access: {
         Row: {
