@@ -15,12 +15,12 @@ export function useMessages() {
   const { i18n } = useTranslation();
   const lang = i18n.language;
 
-  const { data: dbMessages = [] } = useQuery<DbMessage[]>({
+  const { data: dbMessages = [], isLoading } = useQuery<DbMessage[]>({
     queryKey: ['system-messages'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('messages' as any)
-        .select('key, content_pt_br, content_en, content_es, is_customized')
+        .select('key, content_pt_br, content_en, content_es, is_customized, is_active')
         .eq('is_active', true);
       if (error) throw error;
       return (data as any) ?? [];
@@ -60,5 +60,5 @@ export function useMessages() {
     return content;
   };
 
-  return { getMessage };
+  return { getMessage, dbMessages, isLoading };
 }
