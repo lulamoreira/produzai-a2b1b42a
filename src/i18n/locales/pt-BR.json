@@ -587,7 +587,6 @@
     "seeAllContacts": "Ver todos os {{count}} contatos",
     "missingOs": "FALTA\nOS"
   },
-  },
   "home": {
     "kpi": {
       "totalAgencies": "Agências",
@@ -604,7 +603,7 @@
       "stores": "Lojas Cadastradas",
       "pieces": "Peças em Produção",
       "pendingInstallations": "Instalações Pendentes",
-      "pendingApprovals": "Aprobaciones Pendientes"
+      "pendingApprovals": "Aprovações Pendentes"
     }
   },
   "installations": {
