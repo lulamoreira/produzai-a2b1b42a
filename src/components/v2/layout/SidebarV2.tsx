@@ -546,7 +546,7 @@ export function SidebarV2() {
                   {t("sidebar.administration", "Administração")}
                 </div>
               )}
-              {isInAdmin && !collapsed && (
+              {location.pathname.startsWith("/admin") && !collapsed && (
                 <button
                   onClick={() => navigate("/")}
                   className="flex items-center gap-2 px-3 pb-2 text-[10px] transition-colors"
