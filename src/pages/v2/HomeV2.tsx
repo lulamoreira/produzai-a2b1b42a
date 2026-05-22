@@ -84,7 +84,7 @@ export function HomeV2() {
         const pendingApprovalsRes = await (supabase.from("user_approvals" as any).select("id", { count: "exact", head: true }) as any).eq("status", "pending");
 
         let pendingInstCount = 0;
-        const { data: agencyCampaigns } = await supabase.from("campaigns").select("id").eq("agency_id", agencyId);
+        const { data: agencyCampaigns } = await (supabase.from("campaigns") as any).select("id").eq("agency_id", agencyId);
         if (agencyCampaigns && agencyCampaigns.length > 0) {
           const campIds = agencyCampaigns.map(c => c.id);
           const { count } = await (supabase.from("campaign_schedules") as any).select("id", { count: "exact", head: true })

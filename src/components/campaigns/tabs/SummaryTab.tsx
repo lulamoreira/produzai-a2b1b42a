@@ -48,7 +48,7 @@ export default function SummaryTab({
     queryFn: async () => {
       const storesRes = await (supabase.from("client_stores") as any).select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
       const piecesRes = await (supabase.from("pieces") as any).select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
-      const pendingInstallationsRes = await supabase.from("campaign_schedules").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).is("completed_at", null);
+      const pendingInstallationsRes = await (supabase.from("campaign_schedules") as any).select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).is("completed_at", null);
       const pendingApprovalsRes = await (supabase.from("user_approvals" as any).select("id", { count: "exact", head: true }) as any).eq("campaign_id", campaignId).eq("status", "pending");
 
       return {
