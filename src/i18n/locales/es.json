@@ -1,4 +1,16 @@
 {
+  "invite": {
+    "welcomeTitle": "Bienvenido a ProduzAI",
+    "invitedBy": "Has sido invitado por {{name}}",
+    "createAccount": "Crear mi cuenta",
+    "expiresOn": "Esta invitación vence el {{date}}",
+    "notFound": "Invitación no encontrada",
+    "expired": "Esta invitación venció el {{date}}",
+    "alreadyUsed": "Esta invitación ya ha sido utilizada",
+    "accountCreated": "¡Cuenta creada con éxito! Inicia sesión para continuar.",
+    "invalidPassword": "La contraseña debe tener al menos 8 caracteres",
+    "passwordsDoNotMatch": "Las contraseñas no coinciden"
+  },
   "common": {
     "filtersAndActions": "Filtros y Acciones",
     "filtersAndActionsHidden": "Filtros y acciones ocultos",
