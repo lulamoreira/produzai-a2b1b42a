@@ -119,7 +119,7 @@ export function SidebarV2() {
     queryFn: async () => {
       const { data } = await supabase
         .from("campaigns")
-        .select("id, name, color, display_order, client_id")
+        .select("id, name, color, display_order, client_id, is_active")
         .eq("id", campaignId!)
         .maybeSingle();
       
@@ -144,7 +144,7 @@ export function SidebarV2() {
     queryFn: async () => {
       const { data: camps } = await supabase
         .from("campaigns")
-        .select("id, name, color, display_order")
+        .select("id, name, color, display_order, is_active")
         .eq("client_id", clientId!)
         .order("display_order", { ascending: true, nullsFirst: false })
         .order("created_at", { ascending: false });
@@ -331,11 +331,12 @@ export function SidebarV2() {
               <span 
                 className={cn(
                   "text-xs font-semibold uppercase tracking-wider truncate",
-                  isActiveCampaign ? "text-white" : "group-hover:text-stone-200"
+                  isActiveCampaign ? "text-white" : "group-hover:text-stone-200",
+                  camp.is_active === false && "text-red-400 opacity-80"
                 )}
-                style={{ color: isActiveCampaign ? 'var(--v2-sidebar-text)' : 'var(--v2-sidebar-muted)' }}
+                style={{ color: isActiveCampaign && camp.is_active !== false ? 'var(--v2-sidebar-text)' : undefined }}
               >
-                {camp.name}
+                {camp.is_active === false ? `🔴 ${camp.name}` : camp.name}
               </span>
             )}
           </div>

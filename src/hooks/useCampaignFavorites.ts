@@ -17,6 +17,7 @@ export type FavoriteWithDetails = CampaignFavorite & {
   client_name: string;
   agency_id: string;
   agency_name: string;
+  is_active?: boolean;
 };
 
 export function useCampaignFavorites() {
@@ -38,7 +39,7 @@ export function useCampaignFavorites() {
       // Fetch campaign + client + agency info
       const { data: campaigns, error: cErr } = await supabase
         .from("campaigns")
-        .select("id, name, color, client_id, clients(id, name, agency_id, agencies(id, name))")
+        .select("id, name, color, is_active, client_id, clients(id, name, agency_id, agencies(id, name))")
         .in("id", campaignIds);
       if (cErr) throw cErr;
 
@@ -93,6 +94,7 @@ export function useCampaignFavorites() {
             client_name: client.name,
             agency_id: agency.id,
             agency_name: agency.name,
+            is_active: camp.is_active,
           } as FavoriteWithDetails;
         })
         .filter(Boolean) as FavoriteWithDetails[];

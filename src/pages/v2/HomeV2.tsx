@@ -66,7 +66,7 @@ export function HomeV2() {
         const [agenciesRes, clientsRes, activeCampaignsRes, profilesRes, rolesRes] = await Promise.all([
           (supabase.from("agencies") as any).select("id, name, created_at").is("deleted_at", null).order("name"),
           (supabase.from("clients") as any).select("id, name, created_at, agency_id, agencies(name)").order("name"),
-          (supabase.from("campaigns") as any).select("id, name, created_at, client_id, clients(name, agency_id), occurrence_end_date").order("created_at", { ascending: false }),
+          (supabase.from("campaigns") as any).select("id, name, created_at, client_id, is_active, clients(name, agency_id), occurrence_end_date").order("created_at", { ascending: false }),
           (supabase.from("profiles") as any).select("id, display_name, created_at, user_id").order("display_name"),
           (supabase.from("user_roles") as any).select("user_id, role")
         ]);
@@ -96,7 +96,7 @@ export function HomeV2() {
 
         const [activeCampaignsRes, pendingApprovalsRes, pendingInstRes] = await Promise.all([
           agencyClientIds.length
-            ? (supabase.from("campaigns") as any).select("id, name, created_at, client_id, clients(name)").in("client_id", agencyClientIds).order("created_at", { ascending: false })
+            ? (supabase.from("campaigns") as any).select("id, name, created_at, client_id, is_active, clients(name)").in("client_id", agencyClientIds).order("created_at", { ascending: false })
             : Promise.resolve({ data: [] }),
           (supabase.from("user_approvals" as any).select("id, created_at") as any).eq("status", "pending"),
           agencyClientIds.length
@@ -142,6 +142,7 @@ export function HomeV2() {
           name, 
           created_at,
           client_id,
+          is_active,
           clients (name)
         `)
         .order("created_at", { ascending: false })
@@ -348,14 +349,25 @@ export function HomeV2() {
                   onClick={() => navigate(`/agency/default/clients/${camp.client_id}/campaigns/${camp.id}`)}
                 >
                   <div className="flex justify-between items-center mb-2">
-                    <Badge variant="outline" className="text-[10px] font-semibold uppercase">
-                      {t("campaigns.status.active")}
+                    <Badge 
+                      variant={camp.is_active === false ? "destructive" : "outline"} 
+                      className={cn(
+                        "text-[10px] font-semibold uppercase",
+                        camp.is_active === false 
+                          ? "bg-red-100 text-red-600 border-red-200 hover:bg-red-100" 
+                          : ""
+                      )}
+                    >
+                      {camp.is_active === false ? t("common.campaign_inactive") : t("campaigns.status.active")}
                     </Badge>
                     <span className="text-[10px] text-stone-400">
                       {formatters.dateShort(new Date(camp.created_at))}
                     </span>
                   </div>
-                  <h4 className="text-sm font-semibold text-stone-800 dark:text-stone-100 truncate group-hover:text-brand-400 transition-colors">
+                  <h4 className={cn(
+                    "text-sm font-semibold truncate group-hover:text-brand-400 transition-colors",
+                    camp.is_active === false ? "text-stone-400" : "text-stone-800 dark:text-stone-100"
+                  )}>
                     {camp.name}
                   </h4>
                   <p className="text-xs text-stone-500 mt-0.5 truncate">

@@ -39,6 +39,7 @@ export type Campaign = {
   color: string | null;
   display_order: number;
   cover_images?: Array<{ url: string; timestamp: string }>;
+  is_active: boolean;
   created_at: string;
 };
 
@@ -357,6 +358,7 @@ export function useAddCampaign() {
         name: newCampaign.name,
         color: null,
         display_order: 999,
+        is_active: true,
         created_at: new Date().toISOString(),
       };
       qc.setQueryData<Campaign[]>(["campaigns", newCampaign.client_id], (old) => [...(old || []), optimistic]);

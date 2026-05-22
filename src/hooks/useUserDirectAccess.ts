@@ -11,6 +11,7 @@ export type CampaignAccess = {
   clientId: string;
   agencyId: string;
   modules: string[];
+  is_active?: boolean;
 };
 
 export type ClientAccess = {
@@ -79,7 +80,7 @@ export function useUserDirectAccess() {
         const campaignIds = campaignAccess.map((ca) => ca.campaign_id);
         const { data: campaigns } = await supabase
           .from("campaigns")
-          .select("id, name, client_id, clients(name, agency_id)")
+          .select("id, name, client_id, is_active, clients(name, agency_id)")
           .in("id", campaignIds);
 
         // v2 grants: collect categories used and look up view-grants for
@@ -112,7 +113,7 @@ export function useUserDirectAccess() {
           (grants ?? []).forEach((g) => grantedV2Modules.add(`${g.category_id}:${g.module_key}`));
         }
 
-        const mergedMap = new Map<string, { campaignId: string; modules: Set<string>; campaignName: string; clientName: string; clientId: string; agencyId: string }>();
+        const mergedMap = new Map<string, { campaignId: string; modules: Set<string>; campaignName: string; clientName: string; clientId: string; agencyId: string; is_active?: boolean }>();
 
         for (const ca of campaignAccess as Array<{ campaign_id: string; category_id?: string | null; permission_categories: Record<string, boolean> | null }>) {
           const campaign = campaigns?.find((c) => c.id === ca.campaign_id);
@@ -126,9 +127,10 @@ export function useUserDirectAccess() {
               campaignName: campaign?.name || "",
               clientName: client?.name || "",
               clientId: campaign?.client_id || "",
-              agencyId: client?.agency_id || "",
-              modules: new Set(),
-            };
+               agencyId: client?.agency_id || "",
+               modules: new Set(),
+               is_active: campaign?.is_active,
+             };
             mergedMap.set(ca.campaign_id, entry);
           }
 

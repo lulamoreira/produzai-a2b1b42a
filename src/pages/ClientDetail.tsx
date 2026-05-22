@@ -83,7 +83,8 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
 import * as XLSX from "xlsx";
-import { capitalizeName } from "@/lib/utils";
+import { capitalizeName, cn } from "@/lib/utils";
+
 
 /** Auto-capitalize text fields of a store form (excludes state, store_model, email, cnpj, codes) */
 function capitalizeStoreFields<T extends Record<string, any>>(data: T): T {
@@ -229,13 +230,24 @@ function SortableCampaignCard({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-base truncate min-w-0" style={{ color: 'var(--text-primary)' }}>
+            <h3 className={cn(
+              "font-semibold text-base truncate min-w-0",
+              campaign.is_active === false ? "text-stone-400" : "text-stone-900"
+            )}>
               {campaign.name}
             </h3>
-            <span className="badge-base badge-success flex-shrink-0">● {t("clientDashboard.active") || "Ativa"}</span>
+            {campaign.is_active === false ? (
+              <span className="badge-base bg-red-100 text-red-600 border-red-200 flex-shrink-0 uppercase text-[10px] font-bold">
+                ● {t("common.campaign_inactive") || "Inativa"}
+              </span>
+            ) : (
+              <span className="badge-base badge-success flex-shrink-0 uppercase text-[10px] font-bold">
+                ● {t("clientDashboard.active") || "Ativa"}
+              </span>
+            )}
             <CampaignActiveAdjustmentBadge campaignId={campaign.id} />
           </div>
-          <p className="text-xs mt-0.5 truncate" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs mt-0.5 truncate text-stone-500">
             {t("clientDashboard.createdAt") || "Criada em"} {new Date(campaign.created_at).toLocaleDateString()}
           </p>
         </div>
