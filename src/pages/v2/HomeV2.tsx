@@ -93,41 +93,68 @@ export function HomeV2() {
     queryKey: ["v2-recent-activity"],
     queryFn: async () => {
       const [campaigns, schedules, occurrences] = await Promise.all([
-        supabase.from("campaigns").select("id, name, created_at").order("created_at", { ascending: false }).limit(4),
-        supabase.from("campaign_schedules").select("id, created_at, client_stores(name)").order("created_at", { ascending: false }).limit(4),
-        supabase.from("occurrences").select("id, description, created_at").order("created_at", { ascending: false }).limit(4)
+        supabase.from("campaigns").select("id, name, created_at, client_id, clients(name)").order("created_at", { ascending: false }).limit(4),
+        supabase.from("campaign_schedules").select("id, created_at, scheduled_date, scheduled_time, campaign_id, store_id, client_stores(name), campaigns(name, client_id, clients(name)), installation_teams(name)").order("created_at", { ascending: false }).limit(4),
+        supabase.from("occurrences").select("id, description, created_at, status, campaign_id, store_id, reporter_name, reporter_type, campaigns(name, client_id, clients(name)), client_stores(name)").order("created_at", { ascending: false }).limit(4)
       ]);
 
       const activities = [
-        ...(campaigns.data || []).map(item => ({
+        ...(campaigns.data || []).map((item: any) => ({
           id: `camp-${item.id}`,
-          type: "campaign",
+          type: "campaign" as const,
           title: item.name,
           description: t("common.new") + " " + t("common.campaign").toLowerCase(),
           time: new Date(item.created_at),
-          icon: Megaphone
+          icon: Megaphone,
+          campaignId: item.id,
+          clientId: item.client_id,
+          clientName: item.clients?.name,
+          campaignName: item.name,
+          actor: null as string | null,
+          extra: null as string | null,
+          navigateTo: `/agency/default/clients/${item.client_id}/campaigns/${item.id}`,
         })),
-        ...(schedules.data || []).map(item => ({
+        ...(schedules.data || []).map((item: any) => ({
           id: `inst-${item.id}`,
-          type: "installation",
-          title: (item as any).client_stores?.name || "Instalação",
+          type: "installation" as const,
+          title: item.client_stores?.name || "Instalação",
           description: t("scheduling.scheduled"),
           time: new Date(item.created_at),
-          icon: Wrench
+          icon: Wrench,
+          campaignId: item.campaign_id,
+          clientId: item.campaigns?.client_id,
+          clientName: item.campaigns?.clients?.name,
+          campaignName: item.campaigns?.name,
+          actor: item.installation_teams?.name || null,
+          extra: item.scheduled_date
+            ? `${item.scheduled_date}${item.scheduled_time ? " " + item.scheduled_time : ""}`
+            : null,
+          navigateTo: `/agency/default/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}/instalacoes`,
         })),
-        ...(occurrences.data || []).map(item => ({
+        ...(occurrences.data || []).map((item: any) => ({
           id: `occ-${item.id}`,
-          type: "occurrence",
-          title: item.description || "Ocorrência",
+          type: "occurrence" as const,
+          title: item.description || item.client_stores?.name || "Ocorrência",
           description: t("common.registered"),
           time: new Date(item.created_at || new Date()),
-          icon: Package
+          icon: Package,
+          campaignId: item.campaign_id,
+          clientId: item.campaigns?.client_id,
+          clientName: item.campaigns?.clients?.name,
+          campaignName: item.campaigns?.name,
+          actor: item.reporter_name || null,
+          extra: item.client_stores?.name || null,
+          navigateTo: `/agency/default/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}/ocorrencias`,
         }))
       ];
 
       return activities.sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 8);
     }
   });
+
+  type ActivityItem = NonNullable<typeof recentActivity>[number];
+  const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
+
 
   const userName = (displayName || user?.email?.split("@")[0] || t("header.user")).trim().split(/\s+/)[0];
 
