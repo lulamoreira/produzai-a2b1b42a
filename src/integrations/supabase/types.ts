@@ -2650,48 +2650,56 @@ export type Database = {
       }
       invites: {
         Row: {
-          agency_id: string
-          client_id: string | null
+          agency_id: string | null
           created_at: string
-          created_by: string
+          email: string
+          expires_at: string
           id: string
+          invited_by: string | null
+          invited_by_name: string | null
+          name: string
+          permissions: Json | null
+          personal_message: string | null
+          role: string
           token: string
           used_at: string | null
-          used_by: string | null
         }
         Insert: {
-          agency_id: string
-          client_id?: string | null
+          agency_id?: string | null
           created_at?: string
-          created_by: string
+          email: string
+          expires_at?: string
           id?: string
+          invited_by?: string | null
+          invited_by_name?: string | null
+          name: string
+          permissions?: Json | null
+          personal_message?: string | null
+          role: string
           token?: string
           used_at?: string | null
-          used_by?: string | null
         }
         Update: {
-          agency_id?: string
-          client_id?: string | null
+          agency_id?: string | null
           created_at?: string
-          created_by?: string
+          email?: string
+          expires_at?: string
           id?: string
+          invited_by?: string | null
+          invited_by_name?: string | null
+          name?: string
+          permissions?: Json | null
+          personal_message?: string | null
+          role?: string
           token?: string
           used_at?: string | null
-          used_by?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "invites_agency_id_fkey"
+            foreignKeyName: "invites_agency_id_fkey1"
             columns: ["agency_id"]
             isOneToOne: false
             referencedRelation: "agencies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "invites_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients"
             referencedColumns: ["id"]
           },
         ]
