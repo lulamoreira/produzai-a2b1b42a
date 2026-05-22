@@ -1017,7 +1017,12 @@ const ClientDetail = () => {
                       <form onSubmit={handleAddCampaign} className="space-y-4">
                         <div>
                           <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("clientDashboard.campaignNameLabel")} *</label>
-                          <Input value={campaignName} onChange={(e) => setCampaignName(e.target.value)} required />
+                          <Input 
+                            value={campaignName} 
+                            onChange={(e) => setCampaignName(e.target.value)} 
+                            onBlur={(e) => setCampaignName(capitalizeName(e.target.value))}
+                            required 
+                          />
                         </div>
                         <div>
                           <label className="text-xs font-medium text-muted-foreground mb-2 block">{t("clientDashboard.campaignColorLabel")}</label>

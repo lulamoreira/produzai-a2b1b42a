@@ -10,7 +10,9 @@ export function capitalizeName(name: string | null | undefined): string {
   if (!name) return "";
   return name
     .toLowerCase()
-    .replace(/(^|\s)\S/g, (c) => c.toUpperCase());
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 const PT_LOWERCASE_WORDS = new Set(["da", "de", "do", "das", "dos", "e"]);
