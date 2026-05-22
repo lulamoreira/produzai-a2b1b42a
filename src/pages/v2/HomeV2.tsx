@@ -64,7 +64,7 @@ export function HomeV2() {
       if (isAdminOrMaster) {
         const agenciesRes = await (supabase.from("agencies") as any).select("id", { count: "exact", head: true }).is("deleted_at", null);
         const clientsRes = await (supabase.from("clients") as any).select("id", { count: "exact", head: true });
-        const activeCampaignsRes = await (supabase.from("campaigns") as any).select("id", { count: "exact", head: true }).eq("status", "active");
+        const activeCampaignsRes = await (supabase.from("campaigns") as any).select("id", { count: "exact", head: true }).or(`occurrence_end_date.is.null,occurrence_end_date.gte.${new Date().toISOString().split('T')[0]}`);
         const profilesRes = await (supabase.from("profiles") as any).select("id", { count: "exact", head: true });
 
         return {
@@ -77,7 +77,7 @@ export function HomeV2() {
         const agencyId = userAgency;
         if (!agencyId) return null;
 
-        const activeCampaignsRes = await (supabase.from("campaigns") as any).select("id", { count: "exact", head: true }).eq("agency_id", agencyId).eq("status", "active");
+        const activeCampaignsRes = await (supabase.from("campaigns") as any).select("id", { count: "exact", head: true }).eq("agency_id", agencyId).or(`occurrence_end_date.is.null,occurrence_end_date.gte.${new Date().toISOString().split('T')[0]}`);
         const clientsRes = await (supabase.from("clients") as any).select("id", { count: "exact", head: true }).eq("agency_id", agencyId);
         
         // Use any to avoid the deep instantiation issue with user_approvals if it's not in the type gen
@@ -182,6 +182,40 @@ export function HomeV2() {
           actor: actorName,
           extra: item.action?.replace(/_/g, " "),
           navigateTo: item.campaign_id ? `/agency/default/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}` : null,
+        });
+      });
+
+      (occurrencesRes.data || []).forEach((item: any) => {
+        activities.push({
+          id: `occ-${item.id}`,
+          type: "occurrence",
+          title: item.campaigns?.name || t("common.occurrence"),
+          description: item.description || t("common.occurrence"),
+          time: new Date(item.created_at),
+          icon: Inbox,
+          campaignId: item.campaign_id,
+          clientId: item.campaigns?.client_id,
+          clientName: item.campaigns?.clients?.name,
+          campaignName: item.campaigns?.name,
+          actor: item.reporter_name,
+          extra: item.status,
+          navigateTo: item.campaign_id ? `/agency/default/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}` : null,
+        });
+      });
+
+      (campaignsRes.data || []).forEach((item: any) => {
+        activities.push({
+          id: `camp-${item.id}`,
+          type: "campaign",
+          title: item.name,
+          description: t("homeV2.recentActivity.newCampaign"),
+          time: new Date(item.created_at),
+          icon: Megaphone,
+          campaignId: item.id,
+          clientId: item.client_id,
+          clientName: item.clients?.name,
+          campaignName: item.name,
+          navigateTo: `/agency/default/clients/${item.client_id}/campaigns/${item.id}`,
         });
       });
 
