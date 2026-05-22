@@ -49,8 +49,8 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, init
         return {
           id: c.id,
           title: c.name,
-          subtitle: c.clients?.name,
-          meta: formatters.dateShort(new Date(c.created_at)),
+          subtitle: c.clients?.name || c.client?.name,
+          meta: c.created_at ? formatters.dateShort(new Date(c.created_at)) : null,
           onClick: () => {
             const agencyId = c.agency_id || "default";
             navigate(`/agency/${agencyId}/clients/${c.client_id}/campaigns/${c.id}`);
