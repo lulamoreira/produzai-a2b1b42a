@@ -358,6 +358,7 @@ export function useAddCampaign() {
         name: newCampaign.name,
         color: null,
         display_order: 999,
+        is_active: true,
         created_at: new Date().toISOString(),
       };
       qc.setQueryData<Campaign[]>(["campaigns", newCampaign.client_id], (old) => [...(old || []), optimistic]);
