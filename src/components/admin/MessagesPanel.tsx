@@ -119,7 +119,7 @@ export function MessagesPanel() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <h2 className="text-xl font-semibold text-stone-900">{t('admin.messages')}</h2>
+          <h2 className="text-xl font-semibold text-stone-900">{t('admin.messages.title')}</h2>
           <Badge className={cn(
             "rounded-full px-3 py-1 text-xs font-medium",
             stats.percentage >= 80 ? "bg-emerald-50 text-emerald-700" :

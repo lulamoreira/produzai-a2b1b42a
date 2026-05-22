@@ -91,7 +91,7 @@ const Admin = () => {
               <Tags className="w-4 h-4" /> {t("admin.categories")}
             </TabsTrigger>
             <TabsTrigger value="messages" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-              <MessageSquareText className="w-4 h-4" /> {t("admin.messages")}
+              <MessageSquareText className="w-4 h-4" /> {t("admin.messages.title")}
             </TabsTrigger>
             <TabsTrigger value="notificacoes" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
               <Bell className="w-4 h-4" /> Notificações
