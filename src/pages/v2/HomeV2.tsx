@@ -65,7 +65,7 @@ export function HomeV2() {
         const [agenciesRes, clientsRes, activeCampaignsRes, profilesRes] = await Promise.all([
           (supabase.from("agencies") as any).select("id, name, created_at").is("deleted_at", null).order("name"),
           (supabase.from("clients") as any).select("id, name, created_at, agencies(name)").order("name"),
-          (supabase.from("campaigns") as any).select("id, name, created_at, client_id, clients(name)").or(`occurrence_end_date.is.null,occurrence_end_date.gte.${new Date().toISOString().split('T')[0]}`).order("created_at", { ascending: false }),
+          (supabase.from("campaigns") as any).select("id, name, created_at, client_id, clients(name), occurrence_end_date").or(`occurrence_end_date.is.null,occurrence_end_date.gte.${new Date().toISOString().split('T')[0]}`).order("created_at", { ascending: false }),
           (supabase.from("profiles") as any).select("id, display_name, created_at, user_id, user_roles(role)").order("display_name")
         ]);
 
@@ -80,7 +80,7 @@ export function HomeV2() {
         if (!agencyId) return null;
 
         const [activeCampaignsRes, clientsRes, pendingApprovalsRes, pendingInstRes] = await Promise.all([
-          (supabase.from("campaigns") as any).select("id, name, created_at, client_id, clients(name)").eq("agency_id", agencyId).or(`occurrence_end_date.is.null,occurrence_end_date.gte.${new Date().toISOString().split('T')[0]}`).order("created_at", { ascending: false }),
+          (supabase.from("campaigns") as any).select("id, name, created_at, client_id, clients(name), occurrence_end_date").eq("agency_id", agencyId).or(`occurrence_end_date.is.null,occurrence_end_date.gte.${new Date().toISOString().split('T')[0]}`).order("created_at", { ascending: false }),
           (supabase.from("clients") as any).select("id, name, created_at, agencies(name)").eq("agency_id", agencyId).order("name"),
           (supabase.from("user_approvals" as any).select("id, created_at") as any).eq("status", "pending"),
           (supabase.from("campaign_schedules") as any).select("id, scheduled_date, scheduled_time, campaign_id, store_id, client_stores(name), campaigns(name, client_id, clients(name)), installation_teams(name)")

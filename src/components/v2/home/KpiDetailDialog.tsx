@@ -45,13 +45,17 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, init
     const rawData = initialData || data || [];
     
     if (kpiKey === "activeCampaigns") {
-      return rawData.map((c: any) => ({
-        id: c.id,
-        title: c.name,
-        subtitle: c.clients?.name,
-        meta: formatters.dateShort(new Date(c.created_at)),
-        onClick: () => navigate(`/agency/default/clients/${c.client_id}/campaigns/${c.id}`),
-      }));
+      return rawData.map((c: any) => {
+        // If occurrence_end_date is null, it's definitely active.
+        // If not null, we already filtered for >= today in the query.
+        return {
+          id: c.id,
+          title: c.name,
+          subtitle: c.clients?.name,
+          meta: formatters.dateShort(new Date(c.created_at)),
+          onClick: () => navigate(`/agency/default/clients/${c.client_id}/campaigns/${c.id}`),
+        };
+      });
     }
     
     if (kpiKey === "totalAgencies") {
