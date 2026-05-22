@@ -130,6 +130,19 @@ const HomeRedirect = () => {
   const { version } = useUIVersion();
   const { isFirstLogin } = useFirstLogin();
 
+  const { data: hasFavorites, isLoading: favLoading } = useQuery({
+    queryKey: ["has_favorites", user?.id],
+    enabled: !!user,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("user_campaign_favorites")
+        .select("id")
+        .eq("user_id", user!.id)
+        .limit(1);
+      return (data?.length ?? 0) > 0;
+    },
+  });
+
   if (isFirstLogin === null) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -145,28 +158,8 @@ const HomeRedirect = () => {
       </Suspense>
     );
   }
-  const { data: hasFavorites, isLoading: favLoading } = useQuery({
-    queryKey: ["has_favorites", user?.id],
-    enabled: !!user,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("user_campaign_favorites")
-        .select("id")
-        .eq("user_id", user!.id)
-        .limit(1);
-      return (data?.length ?? 0) > 0;
-    },
-  });
 
-  if (directLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
-  if (favLoading) {
+  if (directLoading || favLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
