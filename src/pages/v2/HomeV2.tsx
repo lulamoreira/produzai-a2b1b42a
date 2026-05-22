@@ -87,7 +87,7 @@ export function HomeV2() {
         const { data: agencyCampaigns } = await supabase.from("campaigns").select("id").eq("agency_id", agencyId);
         if (agencyCampaigns && agencyCampaigns.length > 0) {
           const campIds = agencyCampaigns.map(c => c.id);
-          const { count } = await supabase.from("campaign_schedules").select("id", { count: "exact", head: true })
+          const { count } = await (supabase.from("campaign_schedules") as any).select("id", { count: "exact", head: true })
             .is("completed_at", null)
             .in("campaign_id", campIds);
           pendingInstCount = count || 0;
