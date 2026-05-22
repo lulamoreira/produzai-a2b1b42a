@@ -826,7 +826,25 @@
     "usersPermissionHint": "Haga clic en un usuario para ver y editar todos los permisos. Admin/Master tienen acceso automático a todo.",
     "noUserFound": "No se encontraron usuarios.",
     "noUserRegistered": "No hay usuarios registrados.",
-    "messages": "Mensajes",
+    "messages": {
+      "coverage": "{{percentage}}% cobertura — {{covered}} mensajes",
+      "filterAll": "Todas",
+      "filterUI": "Visual (UI)",
+      "filterEmail": "Email",
+      "filterWhatsapp": "WhatsApp",
+      "filterPush": "Push",
+      "statusCustom": "Personalizado",
+      "statusDefault": "Predeterminado",
+      "statusMissing": "Ausente",
+      "missingWarning": "{{count}} mensajes sin configuración — usando valores predeterminados",
+      "editTitle": "Editar Mensaje",
+      "newTitle": "Nuevo Mensaje",
+      "autoTranslate": "Traducir automáticamente a EN y ES",
+      "autoTranslateSoon": "Próximamente",
+      "preview": "Vista previa",
+      "saveCustom": "Guardar como Personalizado",
+      "saved": "¡Mensaje guardado exitosamente!"
+    },
     "appearance": "Apariencia"
   },
   "languages": {
