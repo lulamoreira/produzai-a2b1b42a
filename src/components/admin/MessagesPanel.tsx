@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -19,7 +19,9 @@ import {
   AlertCircle,
   Sparkles,
   Eye,
-  Info
+  Info,
+  Loader2,
+  Languages
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -129,10 +131,13 @@ export function MessagesPanel() {
             {t('admin.messages.coverage', { percentage: stats.percentage, covered: stats.covered })}
           </Badge>
         </div>
-        <Button onClick={handleNew} className="bg-[#C2714F] hover:bg-[#A35D3F] text-white gap-2">
-          <Plus className="w-4 h-4" />
-          {t('admin.messages.newTitle')}
-        </Button>
+        <div className="flex items-center gap-2">
+          <BulkTranslateButton dbMessages={dbMessages} />
+          <Button onClick={handleNew} className="bg-[#C2714F] hover:bg-[#A35D3F] text-white gap-2">
+            <Plus className="w-4 h-4" />
+            {t('admin.messages.newTitle')}
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-4">
@@ -283,12 +288,25 @@ export function MessagesPanel() {
                 <div className="flex flex-col items-end gap-3 shrink-0">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1">
-                      <span title="Português" className={cn("w-1.5 h-1.5 rounded-full", (dbMsg?.content_pt_br || msg.defaultPtBr) ? "bg-emerald-500" : "bg-stone-300")}></span>
-                      <span className="text-[10px] grayscale opacity-50">🇧🇷</span>
-                      <span title="English" className={cn("w-1.5 h-1.5 rounded-full ml-1", (dbMsg?.content_en || msg.defaultEn) ? "bg-emerald-500" : "bg-stone-300")}></span>
-                      <span className="text-[10px] grayscale opacity-50">🇺🇸</span>
-                      <span title="Español" className={cn("w-1.5 h-1.5 rounded-full ml-1", (dbMsg?.content_es || msg.defaultEs) ? "bg-emerald-500" : "bg-stone-300")}></span>
-                      <span className="text-[10px] grayscale opacity-50">🇪🇸</span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="flex items-center gap-1">
+                              <span className={cn("w-1.5 h-1.5 rounded-full", (dbMsg?.content_pt_br || msg.defaultPtBr) ? "bg-emerald-500" : "bg-stone-300")}></span>
+                              <span className="text-[10px] grayscale opacity-50">🇧🇷</span>
+                              <span className={cn("w-1.5 h-1.5 rounded-full ml-1", dbMsg?.content_en ? "bg-emerald-500" : (msg.defaultEn ? "bg-amber-400" : "bg-stone-300"))}></span>
+                              <span className="text-[10px] grayscale opacity-50">🇺🇸</span>
+                              <span className={cn("w-1.5 h-1.5 rounded-full ml-1", dbMsg?.content_es ? "bg-emerald-500" : (msg.defaultEs ? "bg-amber-400" : "bg-stone-300"))}></span>
+                              <span className="text-[10px] grayscale opacity-50">🇪🇸</span>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent className="text-[10px]">
+                            Português {(dbMsg?.content_pt_br || msg.defaultPtBr) ? '✅' : '❌'} | 
+                            English {dbMsg?.content_en ? '✅' : (msg.defaultEn ? '⚠️' : '❌')} | 
+                            Español {dbMsg?.content_es ? '✅' : (msg.defaultEs ? '⚠️' : '❌')}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
 
                     {dbMsg?.is_customized ? (
@@ -341,6 +359,7 @@ function MessageEditDialog({ isOpen, onOpenChange, message, dbMessage }: {
   const queryClient = useQueryClient();
   const [activeLangTab, setActiveLangTab] = useState('pt');
   const [showPreview, setShowPreview] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     key: '',
@@ -423,6 +442,41 @@ function MessageEditDialog({ isOpen, onOpenChange, message, dbMessage }: {
   };
 
   const currentContent = activeLangTab === 'pt' ? formData.content_pt : activeLangTab === 'en' ? formData.content_en : formData.content_es;
+
+  const handleAutoTranslate = async () => {
+    if (!formData.content_pt?.trim()) {
+      toast.error(t('admin.messages.translateNeedsContent'));
+      return;
+    }
+
+    setIsTranslating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('translate-message', {
+        body: {
+          text: formData.content_pt,
+          targetLanguages: ['en', 'es']
+        }
+      });
+
+      if (error) throw error;
+
+      const { translations } = data;
+      
+      setFormData(prev => ({
+        ...prev,
+        content_en: translations['en'],
+        content_es: translations['es']
+      }));
+      
+      setActiveLangTab('en');
+      toast.success(t('admin.messages.translateSuccess'));
+    } catch (err) {
+      toast.error(t('admin.messages.translateError'));
+      console.error('Translation error:', err);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   const renderPreview = () => {
     let previewContent = currentContent;
@@ -588,26 +642,28 @@ function MessageEditDialog({ isOpen, onOpenChange, message, dbMessage }: {
               </div>
 
               {activeLangTab === 'pt' && (
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="inline-block">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          disabled 
-                          className="gap-2 text-stone-400 border-stone-200 bg-stone-50/50 h-8"
-                        >
-                          <Sparkles className="w-3.5 h-3.5" />
-                          {t('admin.messages.autoTranslate')}
-                        </Button>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      {t('admin.messages.autoTranslateSoon')}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <div className="flex items-center gap-2">
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleAutoTranslate}
+                    disabled={isTranslating || !formData.content_pt}
+                    className="gap-2 text-stone-600 border-stone-200 bg-white h-8"
+                  >
+                    {isTranslating ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        {t('admin.messages.translating')}
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3.5 h-3.5" />
+                        {t('admin.messages.autoTranslate')}
+                      </>
+                    )}
+                  </Button>
+                </div>
               )}
             </div>
           </Tabs>
@@ -650,5 +706,96 @@ function MessageEditDialog({ isOpen, onOpenChange, message, dbMessage }: {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function BulkTranslateButton({ dbMessages }: { dbMessages: any[] }) {
+  const { t } = useTranslation();
+  const queryClient = useQueryClient();
+  const [isBulkTranslating, setIsBulkTranslating] = useState(false);
+  const [progress, setProgress] = useState({ current: 0, total: 0 });
+
+  const pendingMessages = useMemo(() => {
+    return MESSAGE_REGISTRY.filter(def => {
+      const dbMsg = dbMessages.find(m => m.key === def.key);
+      // Missing either EN or ES
+      return !dbMsg?.content_en || !dbMsg?.content_es;
+    });
+  }, [dbMessages]);
+
+  const handleBulkTranslate = async () => {
+    if (pendingMessages.length === 0) return;
+    if (!confirm(t('admin.messages.bulkTranslateConfirm', { count: pendingMessages.length }) || `Deseja traduzir ${pendingMessages.length} mensagens pendentes automaticamente?`)) return;
+
+    setIsBulkTranslating(true);
+    setProgress({ current: 0, total: pendingMessages.length });
+
+    try {
+      for (let i = 0; i < pendingMessages.length; i++) {
+        const msg = pendingMessages[i];
+        setProgress(p => ({ ...p, current: i + 1 }));
+        
+        const dbMsg = dbMessages.find(m => m.key === msg.key);
+        const ptContent = dbMsg?.content_pt_br || msg.defaultPtBr;
+
+        const { data, error } = await supabase.functions.invoke('translate-message', {
+          body: {
+            text: ptContent,
+            targetLanguages: ['en', 'es']
+          }
+        });
+
+        if (error) throw error;
+
+        const { translations } = data;
+        
+        await supabase
+          .from('messages' as any)
+          .upsert({
+            key: msg.key,
+            name: msg.name,
+            channel: msg.channel,
+            category: msg.category,
+            content_pt_br: ptContent,
+            content_en: translations['en'],
+            content_es: translations['es'],
+            is_customized: true,
+            is_active: true,
+            updated_at: new Date().toISOString()
+          }, { onConflict: 'key' });
+      }
+
+      queryClient.invalidateQueries({ queryKey: ['system-messages'] });
+      toast.success(t('admin.messages.bulkTranslateSuccess', { count: pendingMessages.length }));
+    } catch (err) {
+      console.error('Bulk translation error:', err);
+      toast.error(t('admin.messages.translateError'));
+    } finally {
+      setIsBulkTranslating(false);
+    }
+  };
+
+  if (pendingMessages.length === 0) return null;
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={handleBulkTranslate}
+      disabled={isBulkTranslating}
+      className="gap-2 border-[#C2714F] text-[#C2714F] hover:bg-[#C2714F]/5"
+    >
+      {isBulkTranslating ? (
+        <>
+          <Loader2 className="w-4 h-4 animate-spin" />
+          {t('admin.messages.bulkTranslating', { current: progress.current, total: progress.total })}
+        </>
+      ) : (
+        <>
+          <Languages className="w-4 h-4" />
+          {t('admin.messages.bulkTranslate', { count: pendingMessages.length })}
+        </>
+      )}
+    </Button>
   );
 }
