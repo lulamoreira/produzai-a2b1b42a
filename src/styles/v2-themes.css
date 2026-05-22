@@ -48,3 +48,35 @@
   --v2-badge-bg: #EEF2FF;
   --v2-badge-text: #3730A3;
 }
+
+/* Global overflow protection for v2 */
+.v2-mode *,
+[data-v2-theme] * {
+  min-width: 0;
+}
+
+.v2-mode .card,
+.v2-mode [role="dialog"],
+.v2-mode [data-radix-dialog-content] {
+  overflow: hidden;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Custom scrollbar for v2 */
+.v2-mode .custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.v2-mode .custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.v2-mode .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--v2-border);
+  border-radius: 10px;
+}
+
+.v2-mode .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--v2-text-muted);
+}
