@@ -62,10 +62,10 @@ export function HomeV2() {
     queryKey: ["v2-dashboard-kpis", role, userAgency],
     queryFn: async () => {
       if (isAdminOrMaster) {
-        const agenciesRes = await supabase.from("agencies").select("id", { count: "exact", head: true }).is("deleted_at", null);
-        const clientsRes = await supabase.from("clients").select("id", { count: "exact", head: true });
-        const activeCampaignsRes = await supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("status", "active");
-        const profilesRes = await supabase.from("profiles").select("id", { count: "exact", head: true });
+        const agenciesRes = await (supabase.from("agencies") as any).select("id", { count: "exact", head: true }).is("deleted_at", null);
+        const clientsRes = await (supabase.from("clients") as any).select("id", { count: "exact", head: true });
+        const activeCampaignsRes = await (supabase.from("campaigns") as any).select("id", { count: "exact", head: true }).eq("status", "active");
+        const profilesRes = await (supabase.from("profiles") as any).select("id", { count: "exact", head: true });
 
         return {
           totalAgencies: agenciesRes.count || 0,
@@ -77,8 +77,8 @@ export function HomeV2() {
         const agencyId = userAgency;
         if (!agencyId) return null;
 
-        const activeCampaignsRes = await supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("agency_id", agencyId).eq("status", "active");
-        const clientsRes = await supabase.from("clients").select("id", { count: "exact", head: true }).eq("agency_id", agencyId);
+        const activeCampaignsRes = await (supabase.from("campaigns") as any).select("id", { count: "exact", head: true }).eq("agency_id", agencyId).eq("status", "active");
+        const clientsRes = await (supabase.from("clients") as any).select("id", { count: "exact", head: true }).eq("agency_id", agencyId);
         
         // Use any to avoid the deep instantiation issue with user_approvals if it's not in the type gen
         const pendingApprovalsRes = await (supabase.from("user_approvals" as any).select("id", { count: "exact", head: true }) as any).eq("status", "pending");
@@ -249,7 +249,7 @@ export function HomeV2() {
       </section>
 
       <KpiDetailDialog
-        kpiKey={selectedKpi}
+        kpiKey={selectedKpi as any}
         onClose={() => setSelectedKpi(null)}
         navigate={navigate}
         formatters={formatters}
