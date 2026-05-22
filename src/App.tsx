@@ -129,6 +129,7 @@ const HomeRedirect = () => {
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
   const { isLimited, campaigns, isLoading: directLoading } = useUserDirectAccess();
+  // We keep useUIVersion but the fallback is now v2 by default
   const { version } = useUIVersion();
   const { isFirstLogin } = useFirstLogin();
 
@@ -169,28 +170,32 @@ const HomeRedirect = () => {
     );
   }
 
-  if (version === "v2") {
-    const isAgenciesPage = window.location.pathname === "/agencies";
-    const isFavoritesPage = window.location.pathname === "/favorites";
+  // Default to V2 - V1 is kept as fallback but not used by default
+  const isAgenciesPage = window.location.pathname === "/agencies";
+  const isFavoritesPage = window.location.pathname === "/favorites";
 
-    return (
-      <AppLayout>
-        <Suspense fallback={<RouteFallback />}>
-          {isAgenciesPage ? <AgenciesV2 /> : isFavoritesPage ? <FavoritesV2 /> : <HomeV2 />}
-        </Suspense>
-      </AppLayout>
-    );
+  return (
+    <AppLayout>
+      <Suspense fallback={<RouteFallback />}>
+        {isAgenciesPage ? <AgenciesV2 /> : isFavoritesPage ? <FavoritesV2 /> : <HomeV2 />}
+      </Suspense>
+    </AppLayout>
+  );
+
+  /* 
+  // V1 Fallback (kept for safety)
+  if (version === "v1") {
+    if (isLimited) {
+      return <Navigate to="/my-campaigns" replace />;
+    }
+
+    if (hasFavorites) {
+      return <Navigate to="/favorites" replace />;
+    }
+
+    return <Navigate to="/agencies" replace />;
   }
-
-  if (isLimited) {
-    return <Navigate to="/my-campaigns" replace />;
-  }
-
-  if (hasFavorites) {
-    return <Navigate to="/favorites" replace />;
-  }
-
-  return <Navigate to="/agencies" replace />;
+  */
 };
 
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
