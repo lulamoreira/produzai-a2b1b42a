@@ -112,12 +112,11 @@ export default function RateioTabV2({
   // Filter stores
   const filteredStores = useMemo(() => {
     let result = stores.filter(s => {
-      const q = storeSearch.toLowerCase();
-      const matchesSearch = !q || 
-        s.name?.toLowerCase().includes(q) || 
-        s.nickname?.toLowerCase().includes(q) || 
-        s.city?.toLowerCase().includes(q) || 
-        s.store_code?.toLowerCase().includes(q);
+      const q = storeSearch.toLowerCase().trim();
+      const matchesSearch = !q || Object.values(s).some(val => 
+        (typeof val === 'string' || typeof val === 'number') && 
+        val.toString().toLowerCase().includes(q)
+      );
       
       // Apply sidebar filters
       if (storeFilters.city.size > 0 && !storeFilters.city.has(s.city)) return false;
@@ -515,7 +514,7 @@ export default function RateioTabV2({
                   <Input 
                     value={storeSearch} 
                     onChange={(e) => setStoreSearch(e.target.value)} 
-                    placeholder={t("rateio.searchStore", "Buscar loja...")} 
+                    placeholder={t("stores.searchAll")} 
                     className="pl-8 h-8 text-xs bg-stone-50 border-none rounded-md"
                   />
                 </div>

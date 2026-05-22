@@ -351,6 +351,7 @@
     "nickname": "Apodo",
     "contacts": "Contactos",
     "registered": "Tiendas registradas",
+    "searchAll": "Buscar en todos los campos...",
     "noStoreFound": "No se encontraron tiendas.",
     "cityState": "Ciudad/Región",
     "scheduling": "Prog.",

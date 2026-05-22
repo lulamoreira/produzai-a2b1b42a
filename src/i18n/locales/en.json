@@ -351,6 +351,7 @@
     "nickname": "Nickname",
     "contacts": "Contacts",
     "registered": "Registered stores",
+    "searchAll": "Search across all fields...",
     "noStoreFound": "No stores found.",
     "cityState": "City/State",
     "scheduling": "Sched.",

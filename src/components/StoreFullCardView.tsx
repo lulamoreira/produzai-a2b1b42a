@@ -41,14 +41,14 @@ const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFie
 
   const filteredStores = useMemo(() => {
     if (!search.trim()) return stores;
-    const q = search.toLowerCase();
+    const q = search.toLowerCase().trim();
     return stores.filter(s => {
-      if (s.name.toLowerCase().includes(q)) return true;
-      if (s.nickname?.toLowerCase().includes(q)) return true;
-      if (s.city?.toLowerCase().includes(q)) return true;
-      if (s.state?.toLowerCase().includes(q)) return true;
-      if (s.cnpj?.toLowerCase().includes(q)) return true;
-      if (s.store_code?.toLowerCase().includes(q)) return true;
+      const matchesSearch = Object.values(s).some(val => 
+        (typeof val === 'string' || typeof val === 'number') && 
+        val.toString().toLowerCase().includes(q)
+      );
+      if (matchesSearch) return true;
+      
       // Also search in contacts
       const contacts = contactsByStore[s.id] || [];
       return contacts.some(c =>
@@ -81,7 +81,7 @@ const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFie
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder={t("stores.searchStoreContactPlaceholder")}
+          placeholder={t("stores.searchAll")}
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="pl-9 h-9"

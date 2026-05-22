@@ -241,12 +241,11 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
   const filteredStores = useMemo(() => {
     return scheduledStores.filter((s) => {
-      const matchesSearch = !searchTerm ||
-        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.nickname?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.store_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (s.city || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (s.state || "").toLowerCase().includes(searchTerm.toLowerCase());
+      const q = searchTerm.toLowerCase().trim();
+      const matchesSearch = !q || Object.values(s).some(val => 
+        (typeof val === 'string' || typeof val === 'number') && 
+        val.toString().toLowerCase().includes(q)
+      );
       const matchesState = !filterState || s.state?.trim() === filterState;
       const matchesCity = !filterCity || s.city === filterCity;
       const schedule = scheduleMap[s.id];
@@ -715,7 +714,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           <div className="relative w-[200px] shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={t("filters.searchStore")}
+              placeholder={t("stores.searchAll")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 bg-card border-border h-9 text-sm"

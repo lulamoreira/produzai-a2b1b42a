@@ -206,9 +206,10 @@ export default function MatrixTab({
                        <div className="relative w-full sm:w-64">
                          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
                          <Input 
-                            value={storeSearch} 
-                            onChange={(e) => setStoreSearch(e.target.value)} 
-                            placeholder={t("common.searchStore", "Buscar loja...")} 
+                             value={storeSearch} 
+                             onChange={(e) => setStoreSearch(e.target.value)} 
+                             placeholder={t("stores.searchAll")} 
+
                             className="pl-8 h-8 text-xs"
                          />
                        </div>
@@ -245,8 +246,11 @@ export default function MatrixTab({
                  <StoresMatrixTable 
                     clientId={clientId}
                     stores={stores.filter(s => {
-                      const q = storeSearch.toLowerCase();
-                      return !q || s.name.toLowerCase().includes(q) || s.nickname?.toLowerCase().includes(q) || s.city?.toLowerCase().includes(q) || s.store_code?.toLowerCase().includes(q);
+                      const q = storeSearch.toLowerCase().trim();
+                      return !q || Object.values(s).some(val => 
+                        (typeof val === 'string' || typeof val === 'number') && 
+                        val.toString().toLowerCase().includes(q)
+                      );
                     })}
                     customFieldLabels={customFieldLabels}
                     canEdit={canEditCampaignStores && isViewingVigente}
