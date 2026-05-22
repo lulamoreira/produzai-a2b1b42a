@@ -234,13 +234,12 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     if (filterCity) result = result.filter((s) => s.city === filterCity);
     if (filterModel) result = result.filter((s) => s.store_model === filterModel);
     if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      result = result.filter(
-        (s) =>
-          s.name.toLowerCase().includes(term) ||
-          (s.store_code || "").toLowerCase().includes(term) ||
-          (s.city || "").toLowerCase().includes(term) ||
-          (s.state || "").toLowerCase().includes(term)
+      const q = searchTerm.toLowerCase().trim();
+      result = result.filter((s) =>
+        Object.values(s).some(val => 
+          (typeof val === 'string' || typeof val === 'number') && 
+          val.toString().toLowerCase().includes(q)
+        )
       );
     }
     if (filterApproval) {
@@ -678,7 +677,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           <div className="relative w-[200px] shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder={t("filters.searchStore")}
+              placeholder={t("stores.searchAll")}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 bg-card border-border h-9 text-sm"
