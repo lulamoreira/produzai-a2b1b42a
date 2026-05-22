@@ -1,0 +1,1 @@
+UPDATE app_ui_settings SET ui_version = 'v2' WHERE id = 1;
