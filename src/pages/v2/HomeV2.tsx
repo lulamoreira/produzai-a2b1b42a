@@ -470,8 +470,6 @@ export function HomeV2() {
                 >
                   {t("common.close", { defaultValue: "Fechar" })}
                 </Button>
-                  {t("common.close", { defaultValue: "Fechar" })}
-                </Button>
                 {selectedActivity.campaignId && selectedActivity.clientId && (
                   <Button
                     onClick={() => {
