@@ -55,9 +55,11 @@ const Index = () => {
 
   const filteredStores = useMemo(() => {
     return stores.filter((store) => {
-      const matchesSearch = store.name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
+      const q = searchTerm.toLowerCase().trim();
+      const matchesSearch = !q || Object.values(store).some(val => 
+        (typeof val === 'string' || typeof val === 'number') && 
+        val.toString().toLowerCase().includes(q)
+      );
       const matchesState = !selectedState || store.uf === selectedState;
       const matchesType = !selectedType || store.type === selectedType;
       return matchesSearch && matchesState && matchesType;
