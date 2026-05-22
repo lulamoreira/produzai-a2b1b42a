@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -22,8 +22,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2, FileSpreadsheet, Download, Copy, Check, ChevronLeft, CheckCircle2, Mail } from "lucide-react";
+import { Loader2, Plus, Trash2, FileSpreadsheet, Download, Copy, Check, ChevronLeft, CheckCircle2, Mail, AlertCircle } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import * as XLSX from 'xlsx';
@@ -350,7 +351,7 @@ export function BatchInviteForm() {
                   <Select value={globalConfig.validity} onValueChange={(v) => handleGlobalChange('validity', v)}>
                     <SelectTrigger className="bg-white"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {VALIDITY_OPTIONS.map(o => <SelectItem key={row.value} value={o.value}>{t(o.labelKey)}</SelectItem>)}
+                      {VALIDITY_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{t(o.labelKey)}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
