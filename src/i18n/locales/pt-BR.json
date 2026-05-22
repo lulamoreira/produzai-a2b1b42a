@@ -75,18 +75,6 @@
     "cancel": "Cancelar convite",
     "confirmCancel": "Tem certeza que deseja cancelar este convite? O link ficará inválido."
   },
-    "newInvite": "Novo Convite",
-    "empty": "Nenhum convite enviado ainda.",
-    "emptyHint": "Clique em + Novo Convite para começar.",
-    "status": {
-      "pending": "Pendente",
-      "accepted": "Aceito",
-      "expired": "Expirado"
-    },
-    "resend": "Reenviar",
-    "cancel": "Cancelar convite",
-    "confirmCancel": "Tem certeza que deseja cancelar este convite? O link ficará inválido."
-  },
   "common": {
     "filtersAndActions": "Filtros e Ações",
     "filtersAndActionsHidden": "Filtros e ações ocultos",

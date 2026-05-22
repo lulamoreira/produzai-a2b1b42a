@@ -75,18 +75,6 @@
     "cancel": "Cancel invite",
     "confirmCancel": "Are you sure you want to cancel this invite? The link will become invalid."
   },
-    "newInvite": "New Invite",
-    "empty": "No invites sent yet.",
-    "emptyHint": "Click + New Invite to get started.",
-    "status": {
-      "pending": "Pending",
-      "accepted": "Accepted",
-      "expired": "Expired"
-    },
-    "resend": "Resend",
-    "cancel": "Cancel invite",
-    "confirmCancel": "Are you sure you want to cancel this invite? The link will become invalid."
-  },
   "common": {
     "filtersAndActions": "Filters and Actions",
     "filtersAndActionsHidden": "Filters and actions hidden",
