@@ -370,18 +370,18 @@ export function HomeV2() {
             <div className="flex flex-col max-h-[90vh]">
               <DialogHeader className="p-6 pb-4 flex-shrink-0">
                 <div className="flex items-start gap-3 pr-8">
-                  <div className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center flex-shrink-0 shadow-sm">
-                    <selectedActivity.icon className="w-6 h-6 text-stone-600 dark:text-stone-300" />
+                  <div className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center flex-shrink-0 shadow-sm border border-stone-200 dark:border-stone-700">
+                    <selectedActivity.icon className="w-6 h-6 text-stone-700 dark:text-stone-300" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <DialogTitle className="text-left text-lg font-bold text-stone-900 dark:text-stone-100 break-words leading-tight mb-1">
                       {selectedActivity.title}
                     </DialogTitle>
                     <div className="flex flex-wrap items-center gap-2">
-                      <DialogDescription className="text-left text-sm text-stone-500 dark:text-stone-400 break-words">
+                      <DialogDescription className="text-left text-sm text-stone-600 dark:text-stone-400 break-words font-medium">
                         {selectedActivity.description}
                       </DialogDescription>
-                      <span className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 border border-emerald-100 dark:border-emerald-800">
+                      <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 border border-emerald-200 dark:border-emerald-800">
                         {t("common.registered", { defaultValue: "Registrada" })}
                       </span>
                     </div>
@@ -391,13 +391,13 @@ export function HomeV2() {
 
               <div className="px-6 py-2 space-y-4 overflow-y-auto custom-scrollbar flex-1 min-h-0">
                 {selectedActivity.campaignName && (
-                  <div className="flex gap-3 py-3 border-t border-stone-50 dark:border-stone-800/50 first:border-none">
-                    <Megaphone className="w-4 h-4 text-stone-300 dark:text-stone-600 mt-1 flex-shrink-0" />
+                  <div className="flex gap-3 py-3 border-t border-stone-200 dark:border-stone-800 first:border-none">
+                    <Megaphone className="w-4 h-4 text-stone-400 dark:text-stone-500 mt-1 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-0.5">
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-0.5">
                         {t("common.campaign")}
                       </div>
-                      <div className="text-sm text-stone-900 dark:text-stone-100 font-medium break-words leading-relaxed">
+                      <div className="text-sm text-stone-800 dark:text-stone-100 font-medium break-words leading-relaxed">
                         {selectedActivity.campaignName}
                       </div>
                     </div>
@@ -405,13 +405,13 @@ export function HomeV2() {
                 )}
                 
                 {selectedActivity.clientName && (
-                  <div className="flex gap-3 py-3 border-t border-stone-50 dark:border-stone-800/50">
-                    <Store className="w-4 h-4 text-stone-300 dark:text-stone-600 mt-1 flex-shrink-0" />
+                  <div className="flex gap-3 py-3 border-t border-stone-200 dark:border-stone-800">
+                    <Store className="w-4 h-4 text-stone-400 dark:text-stone-500 mt-1 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-0.5">
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-0.5">
                         {t("common.client")}
                       </div>
-                      <div className="text-sm text-stone-900 dark:text-stone-100 font-medium break-words leading-relaxed">
+                      <div className="text-sm text-stone-800 dark:text-stone-100 font-medium break-words leading-relaxed">
                         {selectedActivity.clientName}
                       </div>
                     </div>
@@ -419,13 +419,13 @@ export function HomeV2() {
                 )}
 
                 {selectedActivity.actor && (
-                  <div className="flex gap-3 py-3 border-t border-stone-50 dark:border-stone-800/50">
-                    <UserIcon className="w-4 h-4 text-stone-300 dark:text-stone-600 mt-1 flex-shrink-0" />
+                  <div className="flex gap-3 py-3 border-t border-stone-200 dark:border-stone-800">
+                    <UserIcon className="w-4 h-4 text-stone-400 dark:text-stone-500 mt-1 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-0.5">
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-0.5">
                         {t("common.by", { defaultValue: "Por" })}
                       </div>
-                      <div className="text-sm text-stone-900 dark:text-stone-100 font-medium break-words leading-relaxed">
+                      <div className="text-sm text-stone-800 dark:text-stone-100 font-medium break-words leading-relaxed">
                         {selectedActivity.actor}
                       </div>
                     </div>
@@ -433,28 +433,28 @@ export function HomeV2() {
                 )}
 
                 {selectedActivity.extra && (
-                  <div className="flex gap-3 py-3 border-t border-stone-50 dark:border-stone-800/50">
-                    <CalendarIcon className="w-4 h-4 text-stone-300 dark:text-stone-600 mt-1 flex-shrink-0" />
+                  <div className="flex gap-3 py-3 border-t border-stone-200 dark:border-stone-800">
+                    <CalendarIcon className="w-4 h-4 text-stone-400 dark:text-stone-500 mt-1 flex-shrink-0" />
                     <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-0.5">
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-0.5">
                         {t("common.details", { defaultValue: "Detalhes" })}
                       </div>
-                      <div className="text-sm text-stone-900 dark:text-stone-100 font-medium break-words leading-relaxed italic">
+                      <div className="text-sm text-stone-800 dark:text-stone-100 font-medium break-words leading-relaxed italic">
                         {selectedActivity.extra}
                       </div>
                     </div>
                   </div>
                 )}
 
-                <div className="flex gap-3 py-3 border-t border-stone-50 dark:border-stone-800/50">
-                  <Clock className="w-4 h-4 text-stone-300 dark:text-stone-600 mt-1 flex-shrink-0" />
+                <div className="flex gap-3 py-3 border-t border-stone-200 dark:border-stone-800">
+                  <Clock className="w-4 h-4 text-stone-400 dark:text-stone-500 mt-1 flex-shrink-0" />
                   <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-0.5">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-0.5">
                       {t("common.when", { defaultValue: "Quando" })}
                     </div>
-                    <div className="text-sm text-stone-900 dark:text-stone-100 font-medium break-words leading-relaxed">
+                    <div className="text-sm text-stone-800 dark:text-stone-100 font-medium break-words leading-relaxed">
                       {formatters.dateTime(selectedActivity.time)}
-                      <span className="block text-xs text-stone-400 font-normal mt-0.5">
+                      <span className="block text-xs text-stone-500 dark:text-stone-400 font-normal mt-0.5">
                         {formatters.relative(selectedActivity.time)}
                       </span>
                     </div>
@@ -462,12 +462,14 @@ export function HomeV2() {
                 </div>
               </div>
 
-              <DialogFooter className="p-6 pt-4 border-t border-stone-100 dark:border-stone-800/50 flex flex-row gap-3 justify-end flex-shrink-0">
+              <DialogFooter className="p-6 pt-4 border-t border-stone-200 dark:border-stone-800 flex flex-row gap-3 justify-end flex-shrink-0">
                 <Button 
                   variant="outline" 
                   onClick={() => setSelectedActivity(null)}
-                  className="rounded-lg border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 h-10 px-4"
+                  className="rounded-lg border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 h-10 px-4 font-medium"
                 >
+                  {t("common.close", { defaultValue: "Fechar" })}
+                </Button>
                   {t("common.close", { defaultValue: "Fechar" })}
                 </Button>
                 {selectedActivity.campaignId && selectedActivity.clientId && (
