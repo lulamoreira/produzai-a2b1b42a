@@ -3587,6 +3587,7 @@ export type Database = {
           company: string | null
           created_at: string
           display_name: string | null
+          first_login_at: string | null
           id: string
           job_title: string | null
           loja_a_loja_tab_order: string[] | null
@@ -3607,6 +3608,7 @@ export type Database = {
           company?: string | null
           created_at?: string
           display_name?: string | null
+          first_login_at?: string | null
           id?: string
           job_title?: string | null
           loja_a_loja_tab_order?: string[] | null
@@ -3627,6 +3629,7 @@ export type Database = {
           company?: string | null
           created_at?: string
           display_name?: string | null
+          first_login_at?: string | null
           id?: string
           job_title?: string | null
           loja_a_loja_tab_order?: string[] | null
