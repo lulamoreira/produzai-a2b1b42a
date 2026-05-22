@@ -46,9 +46,19 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, init
     
     if (kpiKey === "activeCampaigns") {
       return rawData.map((c: any) => {
+        const isInactive = c.is_active === false;
         return {
           id: c.id,
-          title: c.name,
+          title: (
+            <div className="flex items-center gap-2">
+              <span className={isInactive ? "text-stone-400" : ""}>{c.name}</span>
+              {isInactive && (
+                <Badge variant="destructive" className="bg-red-50 text-red-600 border-red-100 hover:bg-red-50 text-[10px] uppercase font-bold px-1.5 py-0 rounded-sm">
+                  {t("common.campaign_inactive")}
+                </Badge>
+              )}
+            </div>
+          ),
           subtitle: c.clients?.name || c.client?.name,
           meta: c.created_at ? formatters.dateShort(new Date(c.created_at)) : null,
           onClick: () => {
@@ -179,9 +189,9 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, init
                     }`}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-stone-800 dark:text-stone-100 truncate">
+                      <div className="text-sm font-medium text-stone-800 dark:text-stone-100 truncate">
                         {item.title}
-                      </p>
+                      </div>
                       {item.subtitle && (
                         <p className="text-xs text-stone-500 truncate mt-0.5">{item.subtitle}</p>
                       )}
