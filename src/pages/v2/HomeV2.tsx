@@ -58,50 +58,57 @@ export function HomeV2() {
     enabled: !!user?.id
   });
 
-  const { data: kpis, isLoading: loadingKpis } = useQuery({
-    queryKey: ["v2-dashboard-kpis", role, userAgency],
+  const { data: dashboardData, isLoading: loadingKpis } = useQuery({
+    queryKey: ["v2-dashboard-data", role, userAgency, isAdminOrMaster],
     queryFn: async () => {
       if (isAdminOrMaster) {
-        const agenciesRes = await (supabase.from("agencies") as any).select("id", { count: "exact", head: true }).is("deleted_at", null);
-        const clientsRes = await (supabase.from("clients") as any).select("id", { count: "exact", head: true });
-        const activeCampaignsRes = await (supabase.from("campaigns") as any).select("id", { count: "exact", head: true }).or(`occurrence_end_date.is.null,occurrence_end_date.gte.${new Date().toISOString().split('T')[0]}`);
-        const profilesRes = await (supabase.from("profiles") as any).select("id", { count: "exact", head: true });
+        const [agenciesRes, clientsRes, activeCampaignsRes, profilesRes] = await Promise.all([
+          (supabase.from("agencies") as any).select("id, name, created_at").is("deleted_at", null).order("name"),
+          (supabase.from("clients") as any).select("id, name, created_at, agencies(name)").order("name"),
+          (supabase.from("campaigns") as any).select("id, name, created_at, client_id, clients(name)").or(`occurrence_end_date.is.null,occurrence_end_date.gte.${new Date().toISOString().split('T')[0]}`).order("created_at", { ascending: false }),
+          (supabase.from("profiles") as any).select("id, display_name, created_at, user_id, user_roles(role)").order("display_name")
+        ]);
 
         return {
-          totalAgencies: agenciesRes.count || 0,
-          totalClients: clientsRes.count || 0,
-          activeCampaigns: activeCampaignsRes.count || 0,
-          totalUsers: profilesRes.count || 0
+          totalAgencies: agenciesRes.data || [],
+          totalClients: clientsRes.data || [],
+          activeCampaigns: activeCampaignsRes.data || [],
+          totalUsers: profilesRes.data || []
         };
       } else {
         const agencyId = userAgency;
         if (!agencyId) return null;
 
-        const activeCampaignsRes = await (supabase.from("campaigns") as any).select("id", { count: "exact", head: true }).eq("agency_id", agencyId).or(`occurrence_end_date.is.null,occurrence_end_date.gte.${new Date().toISOString().split('T')[0]}`);
-        const clientsRes = await (supabase.from("clients") as any).select("id", { count: "exact", head: true }).eq("agency_id", agencyId);
-        
-        // Use any to avoid the deep instantiation issue with user_approvals if it's not in the type gen
-        const pendingApprovalsRes = await (supabase.from("user_approvals" as any).select("id", { count: "exact", head: true }) as any).eq("status", "pending");
-
-        let pendingInstCount = 0;
-        const { data: agencyCampaigns } = await (supabase.from("campaigns") as any).select("id").eq("agency_id", agencyId);
-        if (agencyCampaigns && agencyCampaigns.length > 0) {
-          const campIds = agencyCampaigns.map(c => c.id);
-          const { count } = await (supabase.from("campaign_schedules") as any).select("id", { count: "exact", head: true })
+        const [activeCampaignsRes, clientsRes, pendingApprovalsRes, pendingInstRes] = await Promise.all([
+          (supabase.from("campaigns") as any).select("id, name, created_at, client_id, clients(name)").eq("agency_id", agencyId).or(`occurrence_end_date.is.null,occurrence_end_date.gte.${new Date().toISOString().split('T')[0]}`).order("created_at", { ascending: false }),
+          (supabase.from("clients") as any).select("id, name, created_at, agencies(name)").eq("agency_id", agencyId).order("name"),
+          (supabase.from("user_approvals" as any).select("id, created_at") as any).eq("status", "pending"),
+          (supabase.from("campaign_schedules") as any).select("id, scheduled_date, scheduled_time, campaign_id, store_id, client_stores(name), campaigns(name, client_id, clients(name)), installation_teams(name)")
             .is("completed_at", null)
-            .in("campaign_id", campIds);
-          pendingInstCount = count || 0;
-        }
+            .in("campaign_id", (await (supabase.from("campaigns") as any).select("id").eq("agency_id", agencyId)).data?.map((c: any) => c.id) || [])
+        ]);
 
         return {
-          activeCampaigns: activeCampaignsRes.count || 0,
-          myClients: clientsRes.count || 0,
-          pendingInstallations: pendingInstCount,
-          pendingApprovals: pendingApprovalsRes.count || 0
+          activeCampaigns: activeCampaignsRes.data || [],
+          myClients: clientsRes.data || [],
+          pendingInstallations: pendingInstRes.data || [],
+          pendingApprovals: pendingApprovalsRes.data || []
         };
       }
     }
   });
+
+  const kpis = isAdminOrMaster ? {
+    totalAgencies: dashboardData?.totalAgencies?.length || 0,
+    totalClients: dashboardData?.totalClients?.length || 0,
+    activeCampaigns: dashboardData?.activeCampaigns?.length || 0,
+    totalUsers: dashboardData?.totalUsers?.length || 0
+  } : {
+    activeCampaigns: dashboardData?.activeCampaigns?.length || 0,
+    myClients: dashboardData?.myClients?.length || 0,
+    pendingInstallations: dashboardData?.pendingInstallations?.length || 0,
+    pendingApprovals: dashboardData?.pendingApprovals?.length || 0
+  };
 
   const { data: recentCampaigns, isLoading: loadingCampaigns } = useQuery({
     queryKey: ["v2-recent-campaigns"],
@@ -288,6 +295,7 @@ export function HomeV2() {
         navigate={navigate}
         formatters={formatters}
         t={t}
+        initialData={selectedKpi ? (dashboardData as any)?.[selectedKpi] : null}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
