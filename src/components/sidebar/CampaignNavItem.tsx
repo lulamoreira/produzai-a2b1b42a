@@ -24,12 +24,13 @@ interface Props {
   isActive: boolean;
   isModuleActive: (moduleKey: string) => boolean;
   collapsed: boolean;
+  isInactive?: boolean;
 }
 
 export function CampaignNavItem({
   campaignId, campaignName, modules,
   isExpanded, onToggleExpand, onNavigateHome, onNavigateModule,
-  isActive, isModuleActive, collapsed,
+  isActive, isModuleActive, collapsed, isInactive
 }: Props) {
   const { t } = useTranslation();
 
@@ -52,8 +53,8 @@ export function CampaignNavItem({
               : { color: "var(--brand-300, #C4AD92)" }
             }
           >
-            <span className="text-[10px] font-bold uppercase truncate max-w-[28px]">
-              {campaignName.slice(0, 3)}
+            <span className={`text-[10px] font-bold uppercase truncate max-w-[28px] ${isInactive ? "text-red-400" : ""}`}>
+              {isInactive ? "🔴" : campaignName.slice(0, 3)}
             </span>
           </button>
         </TooltipTrigger>
@@ -76,7 +77,7 @@ export function CampaignNavItem({
           onMouseEnter={(e) => { e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
           onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.color = "var(--brand-300, #C4AD92)"; }}
         >
-          {campaignName}
+          {isInactive ? `🔴 ${campaignName}` : campaignName}
         </button>
         <button
           type="button"
