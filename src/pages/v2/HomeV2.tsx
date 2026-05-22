@@ -348,14 +348,25 @@ export function HomeV2() {
                   onClick={() => navigate(`/agency/default/clients/${camp.client_id}/campaigns/${camp.id}`)}
                 >
                   <div className="flex justify-between items-center mb-2">
-                    <Badge variant="outline" className="text-[10px] font-semibold uppercase">
-                      {t("campaigns.status.active")}
+                    <Badge 
+                      variant={camp.is_active === false ? "destructive" : "outline"} 
+                      className={cn(
+                        "text-[10px] font-semibold uppercase",
+                        camp.is_active === false 
+                          ? "bg-red-100 text-red-600 border-red-200 hover:bg-red-100" 
+                          : ""
+                      )}
+                    >
+                      {camp.is_active === false ? t("common.campaign_inactive") : t("campaigns.status.active")}
                     </Badge>
                     <span className="text-[10px] text-stone-400">
                       {formatters.dateShort(new Date(camp.created_at))}
                     </span>
                   </div>
-                  <h4 className="text-sm font-semibold text-stone-800 dark:text-stone-100 truncate group-hover:text-brand-400 transition-colors">
+                  <h4 className={cn(
+                    "text-sm font-semibold truncate group-hover:text-brand-400 transition-colors",
+                    camp.is_active === false ? "text-stone-400" : "text-stone-800 dark:text-stone-100"
+                  )}>
                     {camp.name}
                   </h4>
                   <p className="text-xs text-stone-500 mt-0.5 truncate">
