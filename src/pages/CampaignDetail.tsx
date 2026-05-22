@@ -1,4 +1,6 @@
 import { Fragment, useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
+import { AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { capitalizeName } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
@@ -190,6 +192,25 @@ const CampaignDetail = () => {
 
 
   if (loadingCampaign) return <div className="flex h-screen items-center justify-center">Carregando...</div>;
+  
+  // Restricted access check for inactive campaigns
+  if (campaign && campaign.is_active === false && !isAdminOrMaster) {
+    return (
+      <AppLayout breadcrumbs={[{ label: t("campaign.unavailable", "Campanha indisponível") }]}>
+        <div className="container mx-auto py-24 flex flex-col items-center justify-center text-center space-y-4">
+          <AlertTriangle className="w-12 h-12 text-amber-500" />
+          <h1 className="text-2xl font-bold">{t("campaign.unavailable_title", "Campanha indisponível")}</h1>
+          <p className="text-muted-foreground max-w-md">
+            {t("campaign.unavailable_description", "Esta campanha foi inativada e não está acessível no momento.")}
+          </p>
+          <Button onClick={() => navigate(-1)} variant="outline">
+            {t("common.back", "Voltar")}
+          </Button>
+        </div>
+      </AppLayout>
+    );
+  }
+
   if (!campaign) return <div className="flex h-screen items-center justify-center">Campanha não encontrada</div>;
 
   return (
