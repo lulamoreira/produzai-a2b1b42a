@@ -21,7 +21,7 @@ import UserPermissionCard from "@/components/admin/UserPermissionCard";
 import CategoryManager from "@/components/admin/CategoryManager";
 import CategoryEditorV2 from "@/components/admin/CategoryEditorV2";
 import { CategoryPreviewSheet } from "@/components/admin/CategoryPreviewSheet";
-import SystemMessagesManager from "@/components/admin/SystemMessagesManager";
+
 import RegeneratePieceImagesPanel from "@/components/admin/RegeneratePieceImagesPanel";
 import { usePermissionCategories, useDeletePermissionCategory, type PermissionCategory } from "@/hooks/usePermissionCategories";
 import { useUserCountByCategory } from "@/hooks/usePermissionGrants";
