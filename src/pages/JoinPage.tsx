@@ -89,16 +89,16 @@ const JoinPage = () => {
       if (invokeError) console.error("Error invoking confirm-invite:", invokeError);
 
       // 3. Insert profile
-      const { error: profileError } = await supabase.from('profiles').insert({
+      const { error: profileError } = await (supabase.from('profiles') as any).insert({
         user_id: authData.user.id,
         display_name: name || invite.name,
-        agency_id: invite.agency_id
+        agency_id: invite.agency_id,
+        approval_status: 'approved' // Invites bypass standard approval
       });
       if (profileError) throw profileError;
 
-      // 3b. Insert role (based on your system's role management - usually a separate table or trigger)
-      // Part 1 migration showed user_roles being used for RLS check.
-      const { error: roleError } = await supabase.from('user_roles').insert({
+      // 3b. Insert role
+      const { error: roleError } = await (supabase.from('user_roles') as any).insert({
         user_id: authData.user.id,
         role: invite.role
       });
