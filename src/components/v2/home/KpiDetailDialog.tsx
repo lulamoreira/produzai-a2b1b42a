@@ -2,10 +2,10 @@ import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Megaphone, Store, Package, Wrench, ChevronRight, Loader2 } from "lucide-react";
+import { Megaphone, Store, Package, Wrench, ChevronRight, Loader2, PowerOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-type KpiKey = "activeCampaigns" | "stores" | "pieces" | "pendingInstallations" | "totalAgencies" | "totalClients" | "totalUsers" | "myClients" | "pendingApprovals";
+type KpiKey = "activeCampaigns" | "inactiveCampaigns" | "stores" | "pieces" | "pendingInstallations" | "totalAgencies" | "totalClients" | "totalUsers" | "myClients" | "pendingApprovals";
 
 interface Props {
   kpiKey: KpiKey | null;
@@ -18,6 +18,7 @@ interface Props {
 
 const META: Record<string, { icon: any; titleKey: string; descKey: string }> = {
   activeCampaigns: { icon: Megaphone, titleKey: "home.kpi.activeCampaigns", descKey: "homeV2.kpiDetail.activeCampaignsDesc" },
+  inactiveCampaigns: { icon: PowerOff, titleKey: "home.kpi.inactiveCampaigns", descKey: "homeV2.kpiDetail.genericDesc" },
   stores: { icon: Store, titleKey: "homeV2.kpis.stores", descKey: "homeV2.kpiDetail.storesDesc" },
   pieces: { icon: Package, titleKey: "homeV2.kpis.piecesInProduction", descKey: "homeV2.kpiDetail.piecesDesc" },
   pendingInstallations: { icon: Wrench, titleKey: "home.kpi.pendingInstallations", descKey: "homeV2.kpiDetail.pendingDesc" },
@@ -44,7 +45,7 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, init
   const displayData = React.useMemo(() => {
     const rawData = initialData || data || [];
     
-    if (kpiKey === "activeCampaigns") {
+    if (kpiKey === "activeCampaigns" || kpiKey === "inactiveCampaigns") {
       return rawData.map((c: any) => {
         const isInactive = c.is_active === false;
         return {

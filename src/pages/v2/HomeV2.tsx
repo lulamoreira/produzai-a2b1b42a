@@ -21,7 +21,8 @@ import {
   Users,
   UserCheck,
   MapPin,
-  ClipboardCheck
+  ClipboardCheck,
+  PowerOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -81,10 +82,12 @@ export function HomeV2() {
           user_roles: (rolesMap[p.user_id] || []).map((role) => ({ role }))
         }));
 
+        const allCampaigns = activeCampaignsRes.data || [];
         return {
           totalAgencies: agenciesRes.data || [],
           totalClients: clientsRes.data || [],
-          activeCampaigns: activeCampaignsRes.data || [],
+          activeCampaigns: allCampaigns.filter((c: any) => c.is_active !== false),
+          inactiveCampaigns: allCampaigns.filter((c: any) => c.is_active === false),
           totalUsers: profilesWithRoles
         };
       } else {
@@ -124,7 +127,8 @@ export function HomeV2() {
     totalAgencies: dashboardData?.totalAgencies?.length || 0,
     totalClients: dashboardData?.totalClients?.length || 0,
     activeCampaigns: dashboardData?.activeCampaigns?.length || 0,
-    totalUsers: dashboardData?.totalUsers?.length || 0
+    totalUsers: dashboardData?.totalUsers?.length || 0,
+    inactiveCampaigns: (dashboardData as any)?.inactiveCampaigns?.length || 0
   } : {
     activeCampaigns: dashboardData?.activeCampaigns?.length || 0,
     myClients: dashboardData?.myClients?.length || 0,
@@ -275,11 +279,12 @@ export function HomeV2() {
       </section>
 
       {/* KPI Section */}
-      <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+      <section className={cn("grid grid-cols-2 gap-4 mt-6", isAdminOrMaster ? "md:grid-cols-5" : "md:grid-cols-4")}>
         {(isAdminOrMaster ? [
           { key: "totalAgencies", label: t("home.kpi.totalAgencies"), value: kpis?.totalAgencies, icon: Building2, color: "text-[#C2714F]" },
           { key: "totalClients", label: t("home.kpi.totalClients"), value: kpis?.totalClients, icon: Users, color: "text-[#C2714F]" },
           { key: "activeCampaigns", label: t("home.kpi.activeCampaigns"), value: kpis?.activeCampaigns, icon: Megaphone, color: "text-[#C2714F]" },
+          { key: "inactiveCampaigns", label: t("home.kpi.inactiveCampaigns", "Campanhas Inativas"), value: (kpis as any)?.inactiveCampaigns, icon: PowerOff, color: "text-red-500" },
           { key: "totalUsers", label: t("home.kpi.totalUsers"), value: kpis?.totalUsers, icon: UserCheck, color: "text-[#C2714F]" },
         ] : [
           { key: "activeCampaigns", label: t("home.kpi.activeCampaigns"), value: kpis?.activeCampaigns, icon: Megaphone, color: "text-[#C2714F]" },
