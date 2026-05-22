@@ -20,7 +20,8 @@ import {
   Store,
   Mail,
   ChevronDown,
-  Briefcase
+  Briefcase,
+  Shield
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -32,6 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { CAMPAIGN_MODULES, MODULE_ICONS } from "@/lib/sidebarRegistry";
+import { ADMIN_MENU_ITEMS } from "@/lib/adminMenuConfig";
 import AquaIcon from "@/components/AquaIcon";
 
 export function SidebarV2() {
@@ -212,27 +214,31 @@ export function SidebarV2() {
 
   const adminItems = useMemo(() => {
     if (!isAdminOrMaster) return [];
-    const items = [
-      {
-        label: t("sidebar.admin_users", "Usuários"),
-        icon: Users,
+    
+    const isInAdmin = location.pathname.startsWith("/admin");
+    const searchParams = new URLSearchParams(location.search);
+    const activeTab = searchParams.get("tab") || "home";
+
+    if (!isInAdmin) {
+      return [{
+        label: t("sidebar.admin_panel", "Painel Administração"),
+        icon: Shield,
         route: "/admin",
-      },
-      {
-        label: t("sidebar.approvals"),
-        icon: CheckSquare,
-        route: "/approvals",
-      },
-    ];
-    if (isAdmin) {
-      items.push({
-        label: "Backup",
-        icon: Database,
-        route: "/admin?tab=backup",
-      });
+      }];
     }
-    return items;
-  }, [isAdminOrMaster, isAdmin, t]);
+
+    // When inside admin, show all items from adminMenuConfig
+    return ADMIN_MENU_ITEMS.filter(item => {
+      if (item.access === "admin-only" && !isAdmin) return false;
+      return true;
+    }).map(item => ({
+      ...item,
+      route: item.key === "home" ? "/admin" : `/admin?tab=${item.key}`,
+      active: item.key === "home" 
+        ? (!searchParams.get("tab") || searchParams.get("tab") === "home")
+        : searchParams.get("tab") === item.key
+    }));
+  }, [isAdminOrMaster, isAdmin, location.pathname, location.search, t]);
 
   const userInitial = user?.email?.[0]?.toUpperCase() || "U";
 
@@ -536,13 +542,31 @@ export function SidebarV2() {
             <div className="space-y-1 pt-2">
               {!collapsed && (
                 <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
-
                   {t("sidebar.section_admin", "Administração")}
                 </div>
               )}
-              {adminItems.map((item) => (
-                <NavItem key={item.label} item={item} />
-              ))}
+              {adminItems.map((item, index) => {
+                const isInAdmin = location.pathname.startsWith("/admin");
+                const showSeparator = isInAdmin && (item as any).access === "admin-only" && 
+                  (index > 0 && (adminItems[index-1] as any).access === "all");
+
+                return (
+                  <React.Fragment key={(item as any).key || item.label}>
+                    {showSeparator && !collapsed && (
+                      <div className="px-3 pt-3 pb-1">
+                        <div className="h-px w-full bg-white/10 mb-2" />
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                          Sistema
+                        </div>
+                      </div>
+                    )}
+                    <NavItem 
+                      item={item} 
+                      activeOverride={(item as any).active} 
+                    />
+                  </React.Fragment>
+                );
+              })}
             </div>
           )}
         </TooltipProvider>

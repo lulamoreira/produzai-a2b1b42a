@@ -48,6 +48,8 @@ const HomeV2 = lazy(() => import("./pages/v2/HomeV2").then(m => ({ default: m.Ho
 const ClientsV2 = lazy(() => import("./pages/v2/ClientsV2"));
 const JoinPage = lazy(() => import("./pages/JoinPage"));
 const WelcomePage = lazy(() => import("./pages/WelcomePage"));
+const FavoritesV2 = lazy(() => import("./pages/v2/FavoritesV2"));
+const AgenciesV2 = lazy(() => import("./pages/v2/AgenciesV2"));
 import { useUIVersion } from "@/hooks/useUIVersion";
 import { useFirstLogin } from "@/hooks/useFirstLogin";
 import AppLayout from "@/components/AppLayout";
@@ -168,10 +170,13 @@ const HomeRedirect = () => {
   }
 
   if (version === "v2") {
+    const isAgenciesPage = window.location.pathname === "/agencies";
+    const isFavoritesPage = window.location.pathname === "/favorites";
+
     return (
       <AppLayout>
         <Suspense fallback={<RouteFallback />}>
-          <HomeV2 />
+          {isAgenciesPage ? <AgenciesV2 /> : isFavoritesPage ? <FavoritesV2 /> : <HomeV2 />}
         </Suspense>
       </AppLayout>
     );
@@ -226,7 +231,7 @@ const App = () => (
                   <Route path="/join/:token" element={<JoinPage />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
-                  <Route path="/agencies" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
+                  <Route path="/agencies" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
                   <Route path="/agency/:agencyId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/agency/:agencyId/clients" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/agency/:agencyId/clients/:clientId" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
@@ -240,7 +245,7 @@ const App = () => (
 
 
                   <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
-                  <Route path="/favorites" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
+                  <Route path="/favorites" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
                   <Route path="/installer" element={<ErrorBoundary><InstallerPortal /></ErrorBoundary>} />
                   <Route path="/instalador" element={<ErrorBoundary><InstallerPortal /></ErrorBoundary>} />
                   <Route path="/orcamento/:token" element={<SupplierPortal />} />
