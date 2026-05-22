@@ -11,9 +11,8 @@ import { Navigate, useNavigate, useParams, useSearchParams } from "react-router-
 import { 
   Users, Mail, Tag, MessageSquare, Bell, CheckSquare, 
   Palette, Image as ImageIcon, Database, Home, 
-  UserCheck, Search, ChevronRight, LogOut, Menu, X, Plus, Clock, UserX, Trash2, ArrowLeft
+  UserCheck, Search, ChevronRight, Menu, X, Plus, Clock, UserX, Trash2
 } from "lucide-react";
-import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +25,7 @@ import AppearancePanel from "@/components/admin/AppearancePanel";
 import RegeneratePieceImagesPanel from "@/components/admin/RegeneratePieceImagesPanel";
 import { BackupRestorePanel } from "@/components/BackupRestorePanel";
 import CategoryManager from "@/components/admin/CategoryManager";
-import { ADMIN_MENU_ITEMS, type AdminMenuItem } from "@/lib/adminMenuConfig";
+import { ADMIN_MENU_ITEMS } from "@/lib/adminMenuConfig";
 import { AppShellV2 } from "@/components/v2/layout/AppShellV2";
 import { cn, capitalizeName } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -49,13 +48,10 @@ interface AdminProps {
 
 const Admin = ({ initialTab: propInitialTab }: AdminProps) => {
   const { t } = useTranslation();
-  const { user, signOut } = useAuth();
-  const { isAdmin, isAdminOrMaster, isLoading: loadingRole } = useUserRole();
-  const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const { isAdminOrMaster, isLoading: loadingRole } = useUserRole();
+  const [searchParams] = useSearchParams();
   
   const currentTab = searchParams.get("tab") || "home";
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (loadingRole) {
     return (
@@ -66,21 +62,6 @@ const Admin = ({ initialTab: propInitialTab }: AdminProps) => {
   }
 
   if (!isAdminOrMaster) return <Navigate to="/" replace />;
-
-  const menuItems = ADMIN_MENU_ITEMS.filter(item => 
-    item.access === "all" || isAdmin
-  );
-
-  const activeItem = menuItems.find(item => item.key === currentTab) || menuItems[0];
-
-  const handleTabChange = (tab: string) => {
-    if (tab === "home") {
-      setSearchParams({});
-    } else {
-      setSearchParams({ tab });
-    }
-    setSidebarOpen(false);
-  };
 
   return (
     <AppShellV2>
@@ -108,7 +89,6 @@ const AdminContent = ({ tab }: { tab: string }) => {
 };
 
 const AdminHome = () => {
-  const { t } = useTranslation();
   const [_, setSearchParams] = useSearchParams();
   const { isAdmin } = useUserRole();
   const { data: users = [] } = useAdminUsers();

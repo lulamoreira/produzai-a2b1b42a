@@ -222,7 +222,7 @@ export function SidebarV2() {
 
     if (!isInAdmin) {
       return [{
-        label: t("sidebar.admin_panel", "Painel Administrativo"),
+        label: "Painel Administrativo",
         icon: Shield,
         route: "/admin",
       }];
