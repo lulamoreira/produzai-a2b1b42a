@@ -1,4 +1,16 @@
 {
+  "invite": {
+    "welcomeTitle": "Welcome to ProduzAI",
+    "invitedBy": "You were invited by {{name}}",
+    "createAccount": "Create my account",
+    "expiresOn": "This invite expires on {{date}}",
+    "notFound": "Invite not found",
+    "expired": "This invite expired on {{date}}",
+    "alreadyUsed": "This invite has already been used",
+    "accountCreated": "Account created successfully! Log in to continue.",
+    "invalidPassword": "Password must be at least 8 characters long",
+    "passwordsDoNotMatch": "Passwords do not match"
+  },
   "common": {
     "filtersAndActions": "Filters and Actions",
     "filtersAndActionsHidden": "Filters and actions hidden",

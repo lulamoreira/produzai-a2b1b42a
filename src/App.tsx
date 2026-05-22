@@ -46,6 +46,7 @@ const StorePortal = lazy(() => import("./pages/StorePortal"));
 const OccurrencesPortal = lazy(() => import("./pages/OccurrencesPortal"));
 const HomeV2 = lazy(() => import("./pages/v2/HomeV2").then(m => ({ default: m.HomeV2 })));
 const ClientsV2 = lazy(() => import("./pages/v2/ClientsV2"));
+const JoinPage = lazy(() => import("./pages/JoinPage"));
 import { useUIVersion } from "@/hooks/useUIVersion";
 import AppLayout from "@/components/AppLayout";
 
@@ -210,6 +211,7 @@ const App = () => (
               <Suspense fallback={<RouteFallback />}>
                 <Routes>
                   <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+                  <Route path="/join/:token" element={<JoinPage />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
                   <Route path="/agencies" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
