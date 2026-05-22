@@ -29,7 +29,19 @@
       "manager": "Gerente — gestiona equipos y campañas",
       "master": "Master — acceso total excepto admin",
       "admin": "Admin — acceso completo al sistema"
-    }
+    },
+    "panelTitle": "Invitaciones",
+    "newInvite": "Nueva Invitación",
+    "empty": "Aún no se han enviado invitaciones.",
+    "emptyHint": "Haz clic en + Nueva Invitación para comenzar.",
+    "status": {
+      "pending": "Pendiente",
+      "accepted": "Aceptada",
+      "expired": "Expirada"
+    },
+    "resend": "Reenviar",
+    "cancel": "Cancelar invitación",
+    "confirmCancel": "¿Estás seguro de que deseas cancelar esta invitación? El enlace quedará inválido."
   },
   "common": {
     "filtersAndActions": "Filtros y Acciones",

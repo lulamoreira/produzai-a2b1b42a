@@ -8,7 +8,7 @@ import { useUserClientAccess } from "@/hooks/useMultiClientData";
 import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { Users, Tags, Database, UserCheck, Search, MessageSquareText, Bell, Image as ImageIcon, Plus, Eye, Edit3, Trash2, Lock, Paintbrush } from "lucide-react";
+import { Users, Tags, Database, UserCheck, Search, MessageSquareText, Bell, Image as ImageIcon, Plus, Eye, Edit3, Trash2, Lock, Paintbrush, Mail } from "lucide-react";
 import { CreateUserDialog } from "@/components/CreateUserDialog";
 import AppLayout from "@/components/AppLayout";
 import NotificationSettingsManager from "@/components/admin/NotificationSettingsManager";
@@ -29,6 +29,7 @@ import { CATEGORY_COLORS } from "@/lib/permissionRegistry";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import AppearancePanel from "@/components/admin/AppearancePanel";
+import { InvitesPanel } from "@/components/admin/InvitesPanel";
 
 const Admin = () => {
   const { t } = useTranslation();
@@ -81,6 +82,9 @@ const Admin = () => {
           <TabsList className="mb-6 bg-card border border-border">
             <TabsTrigger value="users" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
               <Users className="w-4 h-4" /> {t("admin.users")}
+            </TabsTrigger>
+            <TabsTrigger value="invites" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
+              <Mail className="w-4 h-4" /> {t("invite.panelTitle")}
             </TabsTrigger>
             <TabsTrigger value="categories" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
               <Tags className="w-4 h-4" /> {t("admin.categories")}
@@ -152,6 +156,10 @@ const Admin = () => {
                 ))}
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="invites">
+            <InvitesPanel />
           </TabsContent>
 
           <TabsContent value="categories">

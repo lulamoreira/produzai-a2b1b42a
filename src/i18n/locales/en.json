@@ -29,7 +29,19 @@
       "manager": "Manager — manages teams and campaigns",
       "master": "Master — full access except admin",
       "admin": "Admin — complete system access"
-    }
+    },
+    "panelTitle": "Invites",
+    "newInvite": "New Invite",
+    "empty": "No invites sent yet.",
+    "emptyHint": "Click + New Invite to get started.",
+    "status": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "expired": "Expired"
+    },
+    "resend": "Resend",
+    "cancel": "Cancel invite",
+    "confirmCancel": "Are you sure you want to cancel this invite? The link will become invalid."
   },
   "common": {
     "filtersAndActions": "Filters and Actions",
