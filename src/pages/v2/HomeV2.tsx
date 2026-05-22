@@ -270,7 +270,12 @@ export function HomeV2() {
                 ))
               ) : recentActivity && recentActivity.length > 0 ? (
                 recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex gap-3 p-4 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors">
+                  <button
+                    type="button"
+                    key={activity.id}
+                    onClick={() => setSelectedActivity(activity)}
+                    className="w-full text-left flex gap-3 p-4 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors cursor-pointer"
+                  >
                     <div className="w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center flex-shrink-0">
                       <activity.icon className="w-4 h-4 text-stone-500" />
                     </div>
@@ -278,16 +283,16 @@ export function HomeV2() {
                       <p className="text-sm text-stone-700 dark:text-stone-300 truncate font-medium">
                         {activity.title}
                       </p>
-                      <div className="flex items-center justify-between mt-0.5">
-                        <span className="text-xs text-stone-500">
-                          {activity.description}
+                      <div className="flex items-center justify-between mt-0.5 gap-2">
+                        <span className="text-xs text-stone-500 truncate">
+                          {activity.campaignName ? activity.campaignName : activity.description}
                         </span>
-                        <span className="text-[10px] text-stone-400 flex items-center gap-1">
+                        <span className="text-[10px] text-stone-400 flex items-center gap-1 flex-shrink-0">
                           <Clock className="w-2.5 h-2.5" /> {formatters.relative(activity.time)}
                         </span>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))
               ) : (
                 <EmptyStateV2 
