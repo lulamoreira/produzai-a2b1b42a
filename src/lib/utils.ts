@@ -5,13 +5,32 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-/** Capitalizes each word: "LUIS MOREIRA" → "Luis Moreira" */
+const LOWERCASE_WORDS = new Set([
+  "a", "o", "as", "os", "um", "uma", "uns", "umas",
+  "de", "da", "do", "das", "dos",
+  "em", "na", "no", "nas", "nos",
+  "por", "para", "com", "sem", "sob", "sobre",
+  "entre", "até", "após", "ante", "perante",
+  "e", "ou", "mas", "nem", "que", "se", "pois",
+  "logo", "porém", "contudo", "todavia", "entretanto", "portanto"
+]);
+
+/** Capitalizes each word except for small Portuguese words (unless first word): "LUIS DA SILVA" → "Luis da Silva" */
 export function capitalizeName(name: string | null | undefined): string {
   if (!name) return "";
-  return name
+  const cleaned = name.replace(/\s+/g, " ").trim();
+  return cleaned
     .toLowerCase()
     .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word, index) => {
+      if (index === 0) {
+        return word.charAt(0).toUpperCase() + word.slice(1);
+      }
+      if (LOWERCASE_WORDS.has(word)) {
+        return word;
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    })
     .join(" ");
 }
 
