@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useCampaignFavorites } from "@/hooks/useCampaignFavorites";
-import { AppShellV2 } from "@/components/v2/layout/AppShellV2";
+
 import { Star, ArrowRight } from "lucide-react";
 
 const FavoritesV2 = () => {
@@ -12,17 +12,14 @@ const FavoritesV2 = () => {
 
   if (isLoading) {
     return (
-      <AppShellV2>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="animate-spin w-8 h-8 border-2 border-brand-400 border-t-transparent rounded-full" />
-        </div>
-      </AppShellV2>
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin w-8 h-8 border-2 border-brand-400 border-t-transparent rounded-full" />
+      </div>
     );
   }
 
   return (
-    <AppShellV2>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <div className="flex items-center gap-3">
           <Star className="w-6 h-6 text-amber-400 fill-amber-400" />
           <h1 className="text-2xl font-bold text-stone-800 tracking-tight">Favoritos</h1>
@@ -68,7 +65,7 @@ const FavoritesV2 = () => {
           </div>
         )}
       </div>
-    </AppShellV2>
+    
   );
 };
 
