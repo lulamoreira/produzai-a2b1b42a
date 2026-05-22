@@ -175,7 +175,7 @@ export function HomeV2() {
           id: `camp-${item.id}`,
           type: "campaign",
           title: item.name,
-          description: t("common.new") + " " + t("common.campaign").toLowerCase(),
+          description: t("common.new", { defaultValue: "Nova" }) + " " + t("common.campaign").toLowerCase(),
           time: new Date(item.created_at),
           icon: Megaphone,
           campaignId: item.id,
