@@ -1,4 +1,5 @@
 import { Fragment, useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
+import { capitalizeName } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
@@ -68,6 +69,7 @@ const CampaignDetail = () => {
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
+  const updateCampaign = useUpdateCampaign();
 
   const [activeSection, setActiveSectionState] = useState<string | null>(() => {
     return locationState?.initialSection || new URLSearchParams(location.search).get("section") || "summary";
