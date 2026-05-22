@@ -158,6 +158,7 @@ export function InvitesPanel() {
                 <th className="px-4 py-4 text-xs font-bold text-stone-400 uppercase tracking-wider">Papel</th>
                 <th className="px-4 py-4 text-xs font-bold text-stone-400 uppercase tracking-wider text-center">Agência</th>
                 <th className="px-4 py-4 text-xs font-bold text-stone-400 uppercase tracking-wider">Status</th>
+                <th className="px-4 py-4 text-xs font-bold text-stone-400 uppercase tracking-wider">Campanhas</th>
                 <th className="px-4 py-4 text-xs font-bold text-stone-400 uppercase tracking-wider">Enviado em</th>
                 <th className="px-4 py-4 text-xs font-bold text-stone-400 uppercase tracking-wider">Válido até</th>
                 <th className="px-6 py-4 text-xs font-bold text-stone-400 uppercase tracking-wider text-right">Ações</th>
@@ -177,6 +178,15 @@ export function InvitesPanel() {
                       {invite.agency?.name || "—"}
                     </td>
                     <td className="px-4 py-4">{getStatusBadge(invite)}</td>
+                    <td className="px-4 py-4">
+                      {invite.permissions && Array.isArray(invite.permissions) && invite.permissions.length > 0 ? (
+                        <Badge variant="outline" className="bg-stone-50 text-stone-600 border-stone-200 text-[10px]">
+                          {t("invite.campaignAccess.campaigns", { count: invite.permissions.length })}
+                        </Badge>
+                      ) : (
+                        <span className="text-stone-400">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-4 text-stone-500 text-sm">
                       {formatters.dateShort(invite.created_at)}
                     </td>

@@ -23,14 +23,16 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { Loader2, Plus, Trash2, FileSpreadsheet, Download, Copy, Check, ChevronLeft, CheckCircle2, Mail, AlertCircle } from "lucide-react";
+import { Loader2, Plus, Trash2, FileSpreadsheet, Download, Copy, Check, ChevronLeft, CheckCircle2, Mail, AlertCircle, Megaphone } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import * as XLSX from 'xlsx';
 import { downloadCsv } from "@/lib/downloadCsv";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { usePermissionCategories } from "@/hooks/usePermissionCategories";
 
 interface BatchRow {
   id: string;
@@ -80,6 +82,7 @@ export function BatchInviteForm() {
   });
 
   const [createdInvites, setCreatedInvites] = useState<any[]>([]);
+  const [campaignAccess, setCampaignAccess] = useState<any[]>([]);
 
   const { data: agencies = [] } = useQuery({
     queryKey: ["agencies-list"],
@@ -93,6 +96,20 @@ export function BatchInviteForm() {
       return data || [];
     }
   });
+
+  const { data: allCampaigns = [] } = useQuery({
+    queryKey: ["all-campaigns-select"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("id, name, client_id, clients(name, agency_id, agencies(name))")
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  const { data: categories = [] } = usePermissionCategories();
 
   const { data: existingEmails = [] } = useQuery({
     queryKey: ["existing-invites-emails"],
@@ -252,7 +269,8 @@ export function BatchInviteForm() {
             agency_id: row.agency_id === "none" ? null : row.agency_id,
             invited_by: user?.id,
             invited_by_name: displayName,
-            expires_at: expiresAt.toISOString()
+            expires_at: expiresAt.toISOString(),
+            permissions: campaignAccess
           })
           .select()
           .single();
@@ -302,6 +320,7 @@ export function BatchInviteForm() {
       { id: Math.random().toString(), name: "", email: "", role: "viewer", agency_id: "none", valid: false },
     ]);
     setCreatedInvites([]);
+    setCampaignAccess([]);
   };
 
   const validCount = rows.filter(r => r.valid).length;
@@ -358,6 +377,102 @@ export function BatchInviteForm() {
                 <p className="md:col-span-3 text-[11px] text-stone-400 italic">
                   {t("invite.batch.globalHint")}
                 </p>
+
+                <div className="md:col-span-3 pt-4 border-t space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Megaphone size={16} className="text-primary" />
+                    <h4 className="text-sm font-semibold text-foreground">{t("invite.campaignAccess.title")}</h4>
+                    <Badge variant="outline" className="bg-stone-100 text-stone-500 text-[10px] rounded-full border-none">
+                      {t("invite.campaignAccess.badge")}
+                    </Badge>
+                  </div>
+
+                  <p className="text-[11px] text-stone-400 italic">
+                    {t("invite.batch.campaignAccessHint")}
+                  </p>
+
+                  {campaignAccess.length > 0 && (
+                    <div className="space-y-3">
+                      {campaignAccess.map((access, index) => (
+                        <div key={index} className="flex flex-col gap-2 p-3 rounded-lg border border-border bg-white">
+                          <div className="flex items-center gap-2">
+                            <Select 
+                              value={access.campaign_id} 
+                              onValueChange={(val) => {
+                                const newAccess = [...campaignAccess];
+                                newAccess[index].campaign_id = val;
+                                setCampaignAccess(newAccess);
+                              }}
+                            >
+                              <SelectTrigger className="h-9 text-xs flex-1">
+                                <SelectValue placeholder={t("invite.campaignAccess.selectCampaign")} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {allCampaigns.map((c: any) => (
+                                  <SelectItem key={c.id} value={c.id}>
+                                    {c.clients?.agencies?.name} / {c.clients?.name} / {c.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-destructive"
+                              onClick={() => setCampaignAccess(campaignAccess.filter((_, i) => i !== index))}
+                            >
+                              <Trash2 size={14} />
+                            </Button>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Select 
+                              value={access.category_id || ""} 
+                              onValueChange={(val) => {
+                                const newAccess = [...campaignAccess];
+                                newAccess[index].category_id = val;
+                                setCampaignAccess(newAccess);
+                              }}
+                            >
+                              <SelectTrigger className="h-8 text-[11px] flex-1">
+                                <SelectValue placeholder="Papel / Categoria" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {categories.map(cat => (
+                                  <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+
+                            <div className="flex items-center gap-2 ml-auto">
+                              <span className="text-[10px] font-medium text-stone-500">
+                                {access.suspended ? t("invite.campaignAccess.inactive") : t("invite.campaignAccess.active")}
+                              </span>
+                              <Switch 
+                                checked={!access.suspended} 
+                                onCheckedChange={(checked) => {
+                                  const newAccess = [...campaignAccess];
+                                  newAccess[index].suspended = !checked;
+                                  setCampaignAccess(newAccess);
+                                }}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-xs text-primary h-8 gap-1.5"
+                    onClick={() => setCampaignAccess([...campaignAccess, { campaign_id: "", category_id: categories[0]?.id || "", suspended: false }])}
+                  >
+                    <Plus size={14} /> {t("invite.campaignAccess.addCampaign")}
+                  </Button>
+                </div>
               </div>
 
               <div className="flex items-center justify-between">
