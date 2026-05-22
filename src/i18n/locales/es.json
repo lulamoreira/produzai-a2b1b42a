@@ -9,7 +9,27 @@
     "alreadyUsed": "Esta invitación ya ha sido utilizada",
     "accountCreated": "¡Cuenta creada con éxito! Inicia sesión para continuar.",
     "invalidPassword": "La contraseña debe tener al menos 8 caracteres",
-    "passwordsDoNotMatch": "Las contraseñas no coinciden"
+    "passwordsDoNotMatch": "Las contraseñas no coinciden",
+    "send": "Crear y Enviar Invitación",
+    "sent": "¡Invitación creada! Tu cliente de correo ha sido abierto.",
+    "copyLink": "Copiar enlace",
+    "linkCopied": "¡Enlace copiado!",
+    "form": {
+      "namePlaceholder": "Nombre del invitado",
+      "messagePlaceholder": "Escribe un mensaje de bienvenida personalizado...",
+      "selectAgency": "Seleccionar agencia (opcional)",
+      "validity": "Validez",
+      "days7": "7 días",
+      "days15": "15 dias",
+      "days30": "30 días"
+    },
+    "roles": {
+      "viewer": "Visualizador — solo lectura",
+      "editor": "Editor — puede editar campañas",
+      "manager": "Gerente — gestiona equipos y campañas",
+      "master": "Master — acceso total excepto admin",
+      "admin": "Admin — acceso completo al sistema"
+    }
   },
   "common": {
     "filtersAndActions": "Filtros y Acciones",
