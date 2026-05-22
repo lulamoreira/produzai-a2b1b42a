@@ -770,10 +770,11 @@ const ClientDetail = () => {
   const filteredStoresCount = stores
     .filter((s) => {
       if (storeStateFilter && storeStateFilter !== "all" && s.state?.trim() !== storeStateFilter) return false;
-      const q = storeSearch.toLowerCase();
-      return !q || s.name.toLowerCase().includes(q) ||
-        s.nickname?.toLowerCase().includes(q) ||
-        s.city?.toLowerCase().includes(q);
+      const q = storeSearch.toLowerCase().trim();
+      return !q || Object.values(s).some(val => 
+        (typeof val === 'string' || typeof val === 'number') && 
+        val.toString().toLowerCase().includes(q)
+      );
     }).length;
 
   const customFieldLabelsRaw = [
@@ -1147,7 +1148,7 @@ const ClientDetail = () => {
               <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-foreground">{stores.length} {t("clientDashboard.storeCount").toLowerCase()}</span>
                 <div className="flex-1 min-w-[80px] max-w-xs">
-                  <Input placeholder={t("clientDashboard.searchStore")} value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="h-8 text-xs" />
+                  <Input placeholder={t("stores.searchAll")} value={storeSearch} onChange={(e) => setStoreSearch(e.target.value)} className="h-8 text-xs" />
                 </div>
                 <Select value={storeStateFilter} onValueChange={setStoreStateFilter}>
                   <SelectTrigger className="h-8 text-xs w-[80px] sm:w-[100px]">
