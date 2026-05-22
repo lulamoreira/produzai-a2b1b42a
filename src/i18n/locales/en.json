@@ -411,7 +411,10 @@
     "linkCopied": "Link copied!",
     "rename": "Rename",
     "renamedSuccess": "Campaign renamed",
-    "renamedError": "Error renaming"
+    "renamedError": "Error renaming",
+    "emptyTitle": "No campaigns registered",
+    "emptyDescription": "Create the first campaign for this client.",
+    "newCampaign": "New Campaign"
   },
   "home": {
     "kpi": {

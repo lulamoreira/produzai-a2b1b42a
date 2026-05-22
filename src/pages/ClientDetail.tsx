@@ -963,26 +963,81 @@ const ClientDetail = () => {
         { label: client.name },
       ]}
     >
-      <div className="max-w-6xl mx-auto">
-        {/* ─── Campaigns View (default) ─── */}
-        {!new URLSearchParams(location.search).has("tab") && (
-          <>
-            {/* Stats cards */}
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mb-6">
-              <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}`)}>
-                <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                  <Megaphone className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-bold text-foreground">{campaigns.length}</p>
-                  <p className="text-[11px] text-muted-foreground">{t("clientDashboard.campaignCount")}</p>
-                </div>
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Client Header V2 Style */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <div 
+              className="w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-2xl shadow-inner shrink-0"
+              style={{ 
+                backgroundColor: (() => {
+                  const letter = (client.name?.[0] ?? "A").toUpperCase();
+                  const colors: Record<string, string> = {
+                    A: "#8C6F4E", B: "#7B5E3A", C: "#6B4F2E",
+                    D: "#5C6B3F", E: "#4A5568", F: "#735A3D",
+                    G: "#7A3B2E", H: "#5A4A3A", I: "#8C6F4E",
+                    J: "#6B4F2E", K: "#7B5E3A", L: "#5C6B3F",
+                    M: "#A07850", N: "#7B5E3A", O: "#6B4F2E",
+                    P: "#8C6F4E", Q: "#5A4A3A", R: "#7A3B2E",
+                    S: "#735A3D", T: "#5C6B3F", U: "#4A5568",
+                    V: "#8C6F4E", W: "#7B5E3A", X: "#6B4F2E",
+                    Y: "#A07850", Z: "#5A4A3A",
+                  };
+                  return colors[letter] ?? "#8C6F4E";
+                })()
+              }}
+            >
+              {client.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h1 className="text-2xl font-bold text-stone-900 truncate">
+                  {client.name}
+                </h1>
+                {canEditClients && (
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6 text-stone-400 hover:text-stone-600"
+                    onClick={() => setSettingsOpen(true)}
+                  >
+                    <Pencil className="w-4 h-4" />
+                  </Button>
+                )}
               </div>
-              <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`)}>
-                <div className="w-10 h-10 rounded-lg bg-primary/80 flex items-center justify-center">
-                  <Store className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <div>
+              <p className="text-sm text-stone-400">
+                {agencyInfo?.name || "..." }
+              </p>
+            </div>
+          </div>
+          {canEditCampaigns && (
+            <Button
+              onClick={() => setCampaignDialogOpen(true)}
+              className="rounded-lg text-white font-medium shadow-sm transition-all hover:brightness-110 active:scale-[0.98]"
+              style={{ backgroundColor: "#C2714F" }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              {t("campaigns.newCampaign")}
+            </Button>
+          )}
+        </div>
+
+        {/* Stats cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}`)}>
+            <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+              <Megaphone className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <p className="text-xl sm:text-2xl font-bold text-foreground">{campaigns.length}</p>
+              <p className="text-[11px] text-muted-foreground">{t("clientDashboard.campaignCount")}</p>
+            </div>
+          </div>
+          <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`)}>
+            <div className="w-10 h-10 rounded-lg bg-primary/80 flex items-center justify-center">
+              <Store className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
                   <p className="text-xl sm:text-2xl font-bold text-foreground">{stores.length}</p>
                   <p className="text-[11px] text-muted-foreground">{t("clientDashboard.storeCount")}</p>
                 </div>
