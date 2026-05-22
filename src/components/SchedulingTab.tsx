@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Schedule, ApprovalStatusValue } from "@/types/schedule";
 import { useCampaignSchedules } from "@/hooks/useCampaignSchedules";
 import { useOccurrenceStatusSync } from "@/hooks/useOccurrenceStatusSync";
+import { useScheduleInheritance } from "@/hooks/useScheduleInheritance";
 import { buildContactsByStoreMap } from "@/lib/storeHelpers";
 import { isResolvedStatus } from "@/lib/occurrenceHelpers";
 import { type ClientStore } from "@/hooks/useMultiClientData";
@@ -94,8 +95,23 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     { value: "not_informed", label: t("scheduling.notInformed"), icon: HelpCircle },
     { value: "morning", label: t("scheduling.morning"), icon: Sun },
     { value: "night", label: t("scheduling.night"), icon: Moon },
-    { value: "both", label: t("scheduling.both"), icon: Sun },
+    { value: "both", label: t("scheduling.both"), icon: HelpCircle },
   ], [t]);
+
+  // Preference label with inheritance hint
+  const prefLabel = (storeId: string, val: string | null) => {
+    const opt = PREFERENCE_OPTIONS.find((o) => o.value === (val || "not_informed"));
+    const label = opt?.label || t("scheduling.notInformed");
+    
+    // If not informed in current but available in inheritance
+    if ((!val || val === "not_informed") && inheritanceData?.preferencesMap?.[storeId]) {
+      const inheritedVal = inheritanceData.preferencesMap[storeId];
+      const inheritedOpt = PREFERENCE_OPTIONS.find(o => o.value === inheritedVal);
+      return `${label} (${t("scheduling.inherited", "Sugerido")}: ${inheritedOpt?.label})`;
+    }
+    
+    return label;
+  };
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterState, setFilterState] = useState("");
@@ -188,6 +204,48 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   // Shared hooks for schedules and occurrence status sync
   const { schedules, scheduleMap, reinstallsByStore } = useCampaignSchedules(campaignId);
   const { storeOccurrenceStatus } = useOccurrenceStatusSync(campaignId);
+
+  const { data: inheritanceData, isLoading: isLoadingInheritance } = useScheduleInheritance(clientId, campaignId);
+  const [inheritanceDismissed, setInheritanceDismissed] = useState(false);
+
+  // Check if current campaign has any preferences set
+  const hasCurrentPreferences = useMemo(() => {
+    return schedules.some(s => s.installation_preference && s.installation_preference !== "not_informed");
+  }, [schedules]);
+
+  const showInheritanceBanner = !!inheritanceData?.hasPreferences && !hasCurrentPreferences && !inheritanceDismissed;
+
+  // Apply inherited preferences when banner is shown (or automatically if requested)
+  const applyInheritedPreferences = () => {
+    if (!inheritanceData?.preferencesMap) return;
+    
+    // We only apply for stores that don't have a preference yet
+    Object.entries(inheritanceData.preferencesMap).forEach(([storeId, preference]) => {
+      const current = scheduleMap[storeId];
+      if (!current || !current.installation_preference || current.installation_preference === "not_informed") {
+        upsertSchedule.mutate({
+          campaign_id: campaignId,
+          store_id: storeId,
+          installation_preference: preference,
+        });
+      }
+    });
+    setInheritanceDismissed(true);
+    toast.success(t("scheduling.inheritedSuccess", "Preferências herdadas com sucesso!"));
+  };
+
+  const clearInheritedPreferences = () => {
+    schedules.forEach(s => {
+      if (s.installation_preference && s.installation_preference !== "not_informed") {
+        upsertSchedule.mutate({
+          campaign_id: campaignId,
+          store_id: storeId,
+          installation_preference: "not_informed",
+        });
+      }
+    });
+    setInheritanceDismissed(true);
+  };
 
   // Upsert schedule
   const upsertSchedule = useMutation({
@@ -1074,7 +1132,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       {effectiveTime}
                     </span>
                   )}
-                  <span className="text-[var(--text-muted)]">{prefLabel(effectivePref)}</span>
+                  <span className="text-[var(--text-muted)]">{prefLabel(store.id, effectivePref)}</span>
                 </div>
 
                 {/* Row 4: Approval badges + chevron */}
@@ -1222,7 +1280,12 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                             onChange={(e) => handleFieldChange(store.id, "reschedule_preference", e.target.value)}
                             className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
                           >
-                            {PREFERENCE_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                            {PREFERENCE_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                                {opt.value !== "not_informed" && inheritanceData?.preferencesMap?.[store.id] === opt.value && !schedule?.reschedule_preference && ` (${t("scheduling.inherited", "Sugerido")})`}
+                              </option>
+                            ))}
                           </select>
                         </div>
                       </div>
@@ -1266,8 +1329,20 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-foreground flex items-center gap-1"><Sun className="w-3 h-3" /> {t("scheduling.preferenceLabel")}</label>
                         <select disabled={!cardCanEdit} value={schedule?.installation_preference || "not_informed"} onChange={(e) => handleFieldChange(store.id, "installation_preference", e.target.value)} className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2">
-                          {PREFERENCE_OPTIONS.map((opt) => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
+                          {PREFERENCE_OPTIONS.map((opt) => (
+                            <option key={opt.value} value={opt.value}>
+                              {opt.label}
+                              {opt.value !== "not_informed" && inheritanceData?.preferencesMap?.[store.id] === opt.value && (!schedule?.installation_preference || schedule?.installation_preference === "not_informed") && ` (${t("scheduling.inherited", "Sugerido")})`}
+                            </option>
+                          ))}
                         </select>
+                        {(!schedule?.installation_preference || schedule?.installation_preference === "not_informed") && inheritanceData?.preferencesMap?.[store.id] && (
+                          <p className="text-[10px] text-amber-600 dark:text-amber-400 italic">
+                            {t("scheduling.inheritedHint", "Sugerido com base na campanha anterior")}: {
+                              PREFERENCE_OPTIONS.find(o => o.value === inheritanceData.preferencesMap[store.id])?.label
+                            }
+                          </p>
+                        )}
                         {(!schedule?.installation_preference || schedule?.installation_preference === "not_informed") && (
                           <p className="text-[10px] text-muted-foreground italic">{t("scheduling.inheritedHint")}</p>
                         )}
