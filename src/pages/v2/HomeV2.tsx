@@ -305,6 +305,104 @@ export function HomeV2() {
           </div>
         </section>
       </div>
+
+      <Dialog open={!!selectedActivity} onOpenChange={(o) => !o && setSelectedActivity(null)}>
+        <DialogContent className="max-w-md">
+          {selectedActivity && (
+            <>
+              <DialogHeader>
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center flex-shrink-0">
+                    <selectedActivity.icon className="w-5 h-5 text-stone-600 dark:text-stone-300" />
+                  </div>
+                  <div className="min-w-0">
+                    <DialogTitle className="text-left truncate">{selectedActivity.title}</DialogTitle>
+                    <DialogDescription className="text-left">
+                      {selectedActivity.description}
+                    </DialogDescription>
+                  </div>
+                </div>
+              </DialogHeader>
+
+              <div className="space-y-3 text-sm mt-2">
+                {selectedActivity.campaignName && (
+                  <div className="flex items-start gap-2">
+                    <Megaphone className="w-4 h-4 text-stone-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-[11px] uppercase tracking-wider text-stone-400">
+                        {t("common.campaign")}
+                      </div>
+                      <div className="text-stone-700 dark:text-stone-200">{selectedActivity.campaignName}</div>
+                    </div>
+                  </div>
+                )}
+                {selectedActivity.clientName && (
+                  <div className="flex items-start gap-2">
+                    <Store className="w-4 h-4 text-stone-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-[11px] uppercase tracking-wider text-stone-400">
+                        {t("common.client")}
+                      </div>
+                      <div className="text-stone-700 dark:text-stone-200">{selectedActivity.clientName}</div>
+                    </div>
+                  </div>
+                )}
+                {selectedActivity.actor && (
+                  <div className="flex items-start gap-2">
+                    <UserIcon className="w-4 h-4 text-stone-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-[11px] uppercase tracking-wider text-stone-400">
+                        {t("common.by", { defaultValue: "Por" })}
+                      </div>
+                      <div className="text-stone-700 dark:text-stone-200">{selectedActivity.actor}</div>
+                    </div>
+                  </div>
+                )}
+                {selectedActivity.extra && (
+                  <div className="flex items-start gap-2">
+                    <CalendarIcon className="w-4 h-4 text-stone-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <div className="text-[11px] uppercase tracking-wider text-stone-400">
+                        {t("common.details", { defaultValue: "Detalhes" })}
+                      </div>
+                      <div className="text-stone-700 dark:text-stone-200">{selectedActivity.extra}</div>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-start gap-2">
+                  <Clock className="w-4 h-4 text-stone-400 mt-0.5 flex-shrink-0" />
+                  <div>
+                    <div className="text-[11px] uppercase tracking-wider text-stone-400">
+                      {t("common.when", { defaultValue: "Quando" })}
+                    </div>
+                    <div className="text-stone-700 dark:text-stone-200">
+                      {formatters.dateTime(selectedActivity.time)} · {formatters.relative(selectedActivity.time)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <DialogFooter className="mt-4">
+                <Button variant="outline" onClick={() => setSelectedActivity(null)}>
+                  {t("common.close", { defaultValue: "Fechar" })}
+                </Button>
+                {selectedActivity.campaignId && selectedActivity.clientId && (
+                  <Button
+                    onClick={() => {
+                      const target = selectedActivity.navigateTo;
+                      setSelectedActivity(null);
+                      navigate(target);
+                    }}
+                  >
+                    {t("common.openCampaign", { defaultValue: "Abrir campanha" })}
+                    <ExternalLink className="w-3.5 h-3.5 ml-1" />
+                  </Button>
+                )}
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
