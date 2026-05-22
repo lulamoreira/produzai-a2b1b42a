@@ -16,7 +16,7 @@ interface UIVersionContextType {
 const UIVersionContext = createContext<UIVersionContextType | undefined>(undefined);
 
 export const UIVersionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [version, setVersionState] = useState<UIVersion>("v1");
+  const [version, setVersionState] = useState<UIVersion>("v2");
   const [isLoading, setIsLoading] = useState(true);
   const { isAdminOrMaster } = useUserRole();
   const { t } = useTranslation();
@@ -35,7 +35,7 @@ export const UIVersionProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       }
     } catch (error) {
       console.error("Error fetching UI version:", error);
-      setVersionState("v1"); // Fallback
+      setVersionState("v2"); // Fallback
     } finally {
       setIsLoading(false);
     }
