@@ -15,6 +15,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { SUPPORTED_LANGUAGES } from "@/i18n";
+import { ADMIN_MENU_ITEMS as SUPPORTED_ADMIN_TABS } from "@/lib/adminMenuConfig";
 
 export function HeaderV2() {
   const { theme, setTheme } = useV2Theme();
@@ -64,7 +65,15 @@ export function HeaderV2() {
     } else if (path === "/favorites") {
       crumbs.push({ label: t("sidebar.favorites") });
     } else if (path === "/admin") {
-      crumbs.push({ label: t("sidebar.admin_panel", "Painel Administrativo") });
+      crumbs.push({ label: t("sidebar.administration", "Administração"), path: "/admin" });
+      
+      const tab = new URLSearchParams(location.search).get("tab") || "home";
+      const activeItem = SUPPORTED_ADMIN_TABS.find(item => item.key === tab);
+      if (activeItem && tab !== "home") {
+        crumbs.push({ label: activeItem.label });
+      } else if (tab === "home") {
+        crumbs.push({ label: t("admin.home", "Painel Administrativo") });
+      }
     } else if (path === "/approvals") {
       crumbs.push({ label: t("sidebar.approvals") });
     } else if (path === "/my-campaigns") {
