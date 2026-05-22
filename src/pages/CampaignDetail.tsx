@@ -1,4 +1,5 @@
 import { Fragment, useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
+import { capitalizeName } from "@/lib/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
@@ -68,6 +69,7 @@ const CampaignDetail = () => {
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
+  const updateCampaign = useUpdateCampaign();
 
   const [activeSection, setActiveSectionState] = useState<string | null>(() => {
     return locationState?.initialSection || new URLSearchParams(location.search).get("section") || "summary";
@@ -196,7 +198,13 @@ const CampaignDetail = () => {
         <CampaignHeader 
           campaign={campaign} agency={agency} client={client} 
           isAdminOrMaster={isAdminOrMaster} canEditCampaign={true}
-          onRename={() => {}} onBackup={() => setBackupOpen(true)} onOpenSection={setActiveSection}
+          onRename={async () => {
+            const newName = prompt(t("clientDashboard.renameCampaign"), campaign.name);
+            if (newName && newName.trim() !== campaign.name) {
+              const formattedName = capitalizeName(newName.trim());
+              await updateCampaign.mutateAsync({ id: campaignId!, name: formattedName });
+            }
+          }} onBackup={() => setBackupOpen(true)} onOpenSection={setActiveSection}
           pieces={pieces} kits={kits} kitPieces={kitPieces}
           activeAdjustment={activeAdjustment}
         />

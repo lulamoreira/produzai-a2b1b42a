@@ -4908,6 +4908,7 @@ export type Database = {
         }
         Returns: Json
       }
+      to_title_case: { Args: { input: string }; Returns: string }
       unlock_budget_phase: {
         Args: { p_campaign_id: string; p_target_phase: string }
         Returns: Json
