@@ -1903,6 +1903,7 @@ export type Database = {
           created_at: string
           display_order: number | null
           id: string
+          is_active: boolean
           name: string
           occurrence_end_date: string | null
           occurrence_start_date: string | null
@@ -1920,6 +1921,7 @@ export type Database = {
           created_at?: string
           display_order?: number | null
           id?: string
+          is_active?: boolean
           name: string
           occurrence_end_date?: string | null
           occurrence_start_date?: string | null
@@ -1937,6 +1939,7 @@ export type Database = {
           created_at?: string
           display_order?: number | null
           id?: string
+          is_active?: boolean
           name?: string
           occurrence_end_date?: string | null
           occurrence_start_date?: string | null
@@ -4774,6 +4777,7 @@ export type Database = {
         }
         Returns: Json
       }
+      campaigns_set_active: { Args: never; Returns: undefined }
       can_edit_prices: { Args: { p_campaign_id: string }; Returns: boolean }
       can_edit_rateio: { Args: { p_campaign_id: string }; Returns: boolean }
       check_category_permission: {
