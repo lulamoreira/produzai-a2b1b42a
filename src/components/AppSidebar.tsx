@@ -158,7 +158,7 @@ export default function AppSidebar() {
     queryFn: async () => {
       const { data } = await supabase
         .from("campaigns")
-        .select("id, name, color, display_order")
+        .select("id, name, color, display_order, is_active")
         .eq("client_id", clientId!)
         .order("display_order", { ascending: true, nullsFirst: false })
         .order("created_at", { ascending: false });
@@ -457,6 +457,7 @@ export default function AppSidebar() {
                         isActive={isActiveCampaign}
                         isModuleActive={(k) => isCampaignModuleActive(camp.campaignId, k)}
                         collapsed={collapsed}
+                        isInactive={camp.is_active === false}
                       />
                     );
                   })}
@@ -532,6 +533,7 @@ export default function AppSidebar() {
                     isActive={isActiveCampaign}
                     isModuleActive={(k) => isCampaignModuleActive(camp.id, k)}
                     collapsed={collapsed}
+                    isInactive={camp.is_active === false}
                   />
                 );
               })}
