@@ -35,9 +35,11 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t }: Pr
     queryKey: ["v2-kpi-detail", kpiKey],
     queryFn: async () => {
       if (kpiKey === "activeCampaigns") {
+        const today = new Date().toISOString().split("T")[0];
         const { data } = await supabase
           .from("campaigns")
           .select("id, name, created_at, client_id, clients(name)")
+          .or(`occurrence_end_date.is.null,occurrence_end_date.gte.${today}`)
           .order("created_at", { ascending: false });
         return (data || []).map((c: any) => ({
           id: c.id,
