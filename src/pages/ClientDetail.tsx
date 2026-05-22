@@ -511,9 +511,10 @@ const ClientDetail = () => {
   const handleAddCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clientId || !campaignName.trim()) return;
-    await addCampaign.mutateAsync({ client_id: clientId, name: campaignName.trim() });
+    const formattedName = capitalizeName(campaignName.trim());
+    await addCampaign.mutateAsync({ client_id: clientId, name: formattedName });
     // Set color
-    const { data } = await supabase.from("campaigns").select("id").eq("name", campaignName.trim()).eq("client_id", clientId).order("created_at", { ascending: false }).limit(1);
+    const { data } = await supabase.from("campaigns").select("id").eq("name", formattedName).eq("client_id", clientId).order("created_at", { ascending: false }).limit(1);
     if (data?.[0]) {
       await updateCampaign.mutateAsync({ id: data[0].id, color: campaignColor });
     }
