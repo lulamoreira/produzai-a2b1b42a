@@ -542,13 +542,31 @@ export function SidebarV2() {
             <div className="space-y-1 pt-2">
               {!collapsed && (
                 <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
-
                   {t("sidebar.section_admin", "Administração")}
                 </div>
               )}
-              {adminItems.map((item) => (
-                <NavItem key={item.label} item={item} />
-              ))}
+              {adminItems.map((item, index) => {
+                const isInAdmin = location.pathname.startsWith("/admin");
+                const showSeparator = isInAdmin && (item as any).access === "admin-only" && 
+                  (index > 0 && (adminItems[index-1] as any).access === "all");
+
+                return (
+                  <React.Fragment key={(item as any).key || item.label}>
+                    {showSeparator && !collapsed && (
+                      <div className="px-3 pt-3 pb-1">
+                        <div className="h-px w-full bg-white/10 mb-2" />
+                        <div className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                          Sistema
+                        </div>
+                      </div>
+                    )}
+                    <NavItem 
+                      item={item} 
+                      activeOverride={(item as any).active} 
+                    />
+                  </React.Fragment>
+                );
+              })}
             </div>
           )}
         </TooltipProvider>
