@@ -127,13 +127,18 @@ export function HomeV2() {
       // Add activity log items
       (activityLogRes.data || []).forEach((item: any) => {
         const actorName = item.actor_name || profileMap[item.user_id] || t("common.user");
+        let icon = Wrench;
+        if (item.action?.includes("concluida")) icon = Package;
+        if (item.action?.includes("foto")) icon = Megaphone; // Or an Image icon if available
+        if (item.action?.includes("agendamento")) icon = CalendarIcon;
+
         activities.push({
           id: `log-${item.id}`,
           type: "activity",
           title: item.client_stores?.name || item.campaigns?.name || t("common.activity"),
           description: item.description || item.action,
           time: new Date(item.created_at),
-          icon: item.action?.includes("concluida") ? Package : Wrench,
+          icon: icon,
           campaignId: item.campaign_id,
           clientId: item.campaigns?.client_id,
           clientName: item.campaigns?.clients?.name,
