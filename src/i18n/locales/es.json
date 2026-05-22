@@ -114,7 +114,12 @@
     "new": "Nuevo",
     "blocked": "Bloqueado",
     "exportPPT": "Exportar PPT",
-    "exportPpt": "Exportar PPT"
+    "exportPpt": "Exportar PPT",
+    "user": "Usuario",
+    "activity": "Actividad",
+    "by": "Por",
+    "when": "Cuándo",
+    "openCampaign": "Abrir campaña"
   },
   "tabs": {
     "summary": "Resumen",
