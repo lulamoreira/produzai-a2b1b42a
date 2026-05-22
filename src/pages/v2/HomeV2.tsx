@@ -314,15 +314,18 @@ export function HomeV2() {
                       <activity.icon className="w-4 h-4 text-stone-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm text-stone-700 dark:text-stone-300 truncate font-medium">
-                        {activity.title}
-                      </p>
-                      <div className="flex items-center justify-between mt-0.5 gap-2">
-                        <span className="text-xs text-stone-500 truncate">
-                          {activity.campaignName ? activity.campaignName : activity.description}
-                        </span>
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-sm text-stone-700 dark:text-stone-300 truncate font-medium">
+                          {activity.title}
+                        </p>
                         <span className="text-[10px] text-stone-400 flex items-center gap-1 flex-shrink-0">
                           <Clock className="w-2.5 h-2.5" /> {formatters.relative(activity.time)}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between mt-0.5 gap-2">
+                        <span className="text-xs text-stone-500 truncate">
+                          {activity.actor && <span className="font-semibold text-brand-400 mr-1">{activity.actor}:</span>}
+                          {activity.campaignName ? activity.campaignName : activity.description}
                         </span>
                       </div>
                     </div>
