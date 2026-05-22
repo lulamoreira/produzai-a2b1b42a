@@ -26,6 +26,7 @@ import { SkeletonCard } from "@/components/v2/ui/SkeletonCard";
 import { EmptyStateV2 } from "@/components/v2/ui/EmptyStateV2";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { KpiDetailDialog } from "@/components/v2/home/KpiDetailDialog";
 
 export function HomeV2() {
   const { t } = useTranslation();
@@ -193,6 +194,8 @@ export function HomeV2() {
 
   type ActivityItem = NonNullable<typeof recentActivity>[number];
   const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
+  type KpiKey = "activeCampaigns" | "stores" | "pieces" | "pendingInstallations";
+  const [selectedKpi, setSelectedKpi] = useState<KpiKey | null>(null);
 
 
   const userName = (displayName || user?.email?.split("@")[0] || t("header.user")).trim().split(/\s+/)[0];
@@ -212,12 +215,16 @@ export function HomeV2() {
       {/* KPI Section */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
         {[
-          { label: t("homeV2.kpis.activeCampaigns"), value: kpis?.activeCampaigns, icon: Megaphone, color: "text-brand-400" },
-          { label: t("homeV2.kpis.stores"), value: kpis?.storesCount, icon: Store, color: "text-stone-600" },
-          { label: t("homeV2.kpis.piecesInProduction"), value: kpis?.piecesCount, icon: Package, color: "text-amber-600" },
-          { label: t("homeV2.kpis.pendingInstallations"), value: kpis?.pendingInstallations, icon: Wrench, color: "text-rose-500" },
-        ].map((card, idx) => (
-          <Card key={idx} className="bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 p-4 shadow-sm">
+          { key: "activeCampaigns" as const, label: t("homeV2.kpis.activeCampaigns"), value: kpis?.activeCampaigns, icon: Megaphone, color: "text-brand-400" },
+          { key: "stores" as const, label: t("homeV2.kpis.stores"), value: kpis?.storesCount, icon: Store, color: "text-stone-600" },
+          { key: "pieces" as const, label: t("homeV2.kpis.piecesInProduction"), value: kpis?.piecesCount, icon: Package, color: "text-amber-600" },
+          { key: "pendingInstallations" as const, label: t("homeV2.kpis.pendingInstallations"), value: kpis?.pendingInstallations, icon: Wrench, color: "text-rose-500" },
+        ].map((card) => (
+          <Card
+            key={card.key}
+            onClick={() => setSelectedKpi(card.key)}
+            className="bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 p-4 shadow-sm cursor-pointer hover:shadow-md hover:border-brand-300 transition-all"
+          >
             <div className="flex justify-between items-start">
               <span className="text-[10px] font-medium text-stone-500 uppercase tracking-wider">
                 {card.label}
@@ -231,12 +238,21 @@ export function HomeV2() {
                 {card.value}
               </div>
             )}
-            <div className="text-[10px] text-stone-400 mt-1">
-              {t("homeV2.kpis.updatedNow")}
+            <div className="text-[10px] text-stone-400 mt-1 flex items-center gap-1">
+              {t("homeV2.kpis.updatedNow")} <ChevronRight className="w-2.5 h-2.5" />
             </div>
           </Card>
         ))}
       </section>
+
+      <KpiDetailDialog
+        kpiKey={selectedKpi}
+        onClose={() => setSelectedKpi(null)}
+        navigate={navigate}
+        formatters={formatters}
+        t={t}
+      />
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
         {/* Recent Campaigns Section */}
