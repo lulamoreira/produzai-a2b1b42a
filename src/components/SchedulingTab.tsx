@@ -98,8 +98,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     { value: "both", label: t("scheduling.both"), icon: HelpCircle },
   ], [t]);
 
+  const { data: inheritanceData, isLoading: isLoadingInheritance } = useScheduleInheritance(clientId, campaignId);
+  const [inheritanceDismissed, setInheritanceDismissed] = useState(false);
+
   // Preference label with inheritance hint
-  const prefLabel = (storeId: string, val: string | null) => {
+  const getPrefLabel = (storeId: string, val: string | null) => {
     const opt = PREFERENCE_OPTIONS.find((o) => o.value === (val || "not_informed"));
     const label = opt?.label || t("scheduling.notInformed");
     
@@ -550,7 +553,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       if (value === "client") return t("scheduling.client");
       return String(value);
     }
-    if (field === "installation_preference" || field === "reschedule_preference") return prefLabel(value);
+    if (field === "installation_preference" || field === "reschedule_preference") return getPrefLabel(storeId, value);
     if (field === "team_id") {
       const team = value ? teamMap[value] : null;
       return team?.name || `(${t("common.none")})`;
@@ -1132,7 +1135,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                       {effectiveTime}
                     </span>
                   )}
-                  <span className="text-[var(--text-muted)]">{prefLabel(store.id, effectivePref)}</span>
+                  <span className="text-[var(--text-muted)]">{getPrefLabel(store.id, effectivePref)}</span>
                 </div>
 
                 {/* Row 4: Approval badges + chevron */}
