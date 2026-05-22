@@ -365,83 +365,109 @@ export function HomeV2() {
       </div>
 
       <Dialog open={!!selectedActivity} onOpenChange={(o) => !o && setSelectedActivity(null)}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md w-full rounded-2xl overflow-hidden p-0 gap-0 border-none shadow-xl bg-[var(--v2-surface)]">
           {selectedActivity && (
-            <>
-              <DialogHeader>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center flex-shrink-0">
-                    <selectedActivity.icon className="w-5 h-5 text-stone-600 dark:text-stone-300" />
+            <div className="flex flex-col max-h-[90vh]">
+              <DialogHeader className="p-6 pb-4 flex-shrink-0">
+                <div className="flex items-start gap-3 pr-8">
+                  <div className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center flex-shrink-0 shadow-sm">
+                    <selectedActivity.icon className="w-6 h-6 text-stone-600 dark:text-stone-300" />
                   </div>
-                  <div className="min-w-0">
-                    <DialogTitle className="text-left truncate">{selectedActivity.title}</DialogTitle>
-                    <DialogDescription className="text-left">
-                      {selectedActivity.description}
-                    </DialogDescription>
+                  <div className="min-w-0 flex-1">
+                    <DialogTitle className="text-left text-lg font-bold text-stone-900 dark:text-stone-100 break-words leading-tight mb-1">
+                      {selectedActivity.title}
+                    </DialogTitle>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <DialogDescription className="text-left text-sm text-stone-500 dark:text-stone-400 break-words">
+                        {selectedActivity.description}
+                      </DialogDescription>
+                      <span className="bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 border border-emerald-100 dark:border-emerald-800">
+                        {t("common.registered", { defaultValue: "Registrada" })}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </DialogHeader>
 
-              <div className="space-y-3 text-sm mt-2">
+              <div className="px-6 py-2 space-y-4 overflow-y-auto custom-scrollbar flex-1 min-h-0">
                 {selectedActivity.campaignName && (
-                  <div className="flex items-start gap-2">
-                    <Megaphone className="w-4 h-4 text-stone-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="text-[11px] uppercase tracking-wider text-stone-400">
+                  <div className="flex gap-3 py-3 border-t border-stone-50 dark:border-stone-800/50 first:border-none">
+                    <Megaphone className="w-4 h-4 text-stone-300 dark:text-stone-600 mt-1 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-0.5">
                         {t("common.campaign")}
                       </div>
-                      <div className="text-stone-700 dark:text-stone-200">{selectedActivity.campaignName}</div>
+                      <div className="text-sm text-stone-900 dark:text-stone-100 font-medium break-words leading-relaxed">
+                        {selectedActivity.campaignName}
+                      </div>
                     </div>
                   </div>
                 )}
+                
                 {selectedActivity.clientName && (
-                  <div className="flex items-start gap-2">
-                    <Store className="w-4 h-4 text-stone-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="text-[11px] uppercase tracking-wider text-stone-400">
+                  <div className="flex gap-3 py-3 border-t border-stone-50 dark:border-stone-800/50">
+                    <Store className="w-4 h-4 text-stone-300 dark:text-stone-600 mt-1 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-0.5">
                         {t("common.client")}
                       </div>
-                      <div className="text-stone-700 dark:text-stone-200">{selectedActivity.clientName}</div>
+                      <div className="text-sm text-stone-900 dark:text-stone-100 font-medium break-words leading-relaxed">
+                        {selectedActivity.clientName}
+                      </div>
                     </div>
                   </div>
                 )}
+
                 {selectedActivity.actor && (
-                  <div className="flex items-start gap-2">
-                    <UserIcon className="w-4 h-4 text-stone-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="text-[11px] uppercase tracking-wider text-stone-400">
+                  <div className="flex gap-3 py-3 border-t border-stone-50 dark:border-stone-800/50">
+                    <UserIcon className="w-4 h-4 text-stone-300 dark:text-stone-600 mt-1 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-0.5">
                         {t("common.by", { defaultValue: "Por" })}
                       </div>
-                      <div className="text-stone-700 dark:text-stone-200">{selectedActivity.actor}</div>
+                      <div className="text-sm text-stone-900 dark:text-stone-100 font-medium break-words leading-relaxed">
+                        {selectedActivity.actor}
+                      </div>
                     </div>
                   </div>
                 )}
+
                 {selectedActivity.extra && (
-                  <div className="flex items-start gap-2">
-                    <CalendarIcon className="w-4 h-4 text-stone-400 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="text-[11px] uppercase tracking-wider text-stone-400">
+                  <div className="flex gap-3 py-3 border-t border-stone-50 dark:border-stone-800/50">
+                    <CalendarIcon className="w-4 h-4 text-stone-300 dark:text-stone-600 mt-1 flex-shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-0.5">
                         {t("common.details", { defaultValue: "Detalhes" })}
                       </div>
-                      <div className="text-stone-700 dark:text-stone-200">{selectedActivity.extra}</div>
+                      <div className="text-sm text-stone-900 dark:text-stone-100 font-medium break-words leading-relaxed italic">
+                        {selectedActivity.extra}
+                      </div>
                     </div>
                   </div>
                 )}
-                <div className="flex items-start gap-2">
-                  <Clock className="w-4 h-4 text-stone-400 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <div className="text-[11px] uppercase tracking-wider text-stone-400">
+
+                <div className="flex gap-3 py-3 border-t border-stone-50 dark:border-stone-800/50">
+                  <Clock className="w-4 h-4 text-stone-300 dark:text-stone-600 mt-1 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[10px] font-bold uppercase tracking-widest text-stone-400 mb-0.5">
                       {t("common.when", { defaultValue: "Quando" })}
                     </div>
-                    <div className="text-stone-700 dark:text-stone-200">
-                      {formatters.dateTime(selectedActivity.time)} · {formatters.relative(selectedActivity.time)}
+                    <div className="text-sm text-stone-900 dark:text-stone-100 font-medium break-words leading-relaxed">
+                      {formatters.dateTime(selectedActivity.time)}
+                      <span className="block text-xs text-stone-400 font-normal mt-0.5">
+                        {formatters.relative(selectedActivity.time)}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <DialogFooter className="mt-4">
-                <Button variant="outline" onClick={() => setSelectedActivity(null)}>
+              <DialogFooter className="p-6 pt-4 border-t border-stone-100 dark:border-stone-800/50 flex flex-row gap-3 justify-end flex-shrink-0">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSelectedActivity(null)}
+                  className="rounded-lg border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 h-10 px-4"
+                >
                   {t("common.close", { defaultValue: "Fechar" })}
                 </Button>
                 {selectedActivity.campaignId && selectedActivity.clientId && (
@@ -451,13 +477,14 @@ export function HomeV2() {
                       setSelectedActivity(null);
                       navigate(target);
                     }}
+                    className="rounded-lg bg-[var(--v2-accent)] hover:bg-[var(--v2-accent-hover)] text-white h-10 px-4 gap-2 flex-shrink-0"
                   >
                     {t("common.openCampaign", { defaultValue: "Abrir campanha" })}
-                    <ExternalLink className="w-3.5 h-3.5 ml-1" />
+                    <ExternalLink className="w-4 h-4" />
                   </Button>
                 )}
               </DialogFooter>
-            </>
+            </div>
           )}
         </DialogContent>
       </Dialog>
