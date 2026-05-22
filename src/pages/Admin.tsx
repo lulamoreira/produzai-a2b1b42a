@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import AppearancePanel from "@/components/admin/AppearancePanel";
 import { InvitesPanel } from "@/components/admin/InvitesPanel";
+import { MessagesPanel } from "@/components/admin/MessagesPanel";
 
 const Admin = () => {
   const { t } = useTranslation();
@@ -167,7 +168,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="messages">
-            <SystemMessagesManager />
+            <MessagesPanel />
           </TabsContent>
 
           <TabsContent value="notificacoes">
