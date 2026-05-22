@@ -39,6 +39,20 @@ export function HeaderV2() {
     enabled: !!params.campaignId
   });
 
+  const { data: clientData } = useQuery({
+    queryKey: ["breadcrumb-client", params.clientId],
+    queryFn: async () => {
+      if (!params.clientId) return null;
+      const { data } = await supabase
+        .from("clients")
+        .select("name")
+        .eq("id", params.clientId)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!params.clientId
+  });
+
   const getBreadcrumbs = () => {
     const path = location.pathname;
     const crumbs: { label: string; path?: string }[] = [];
@@ -59,7 +73,7 @@ export function HeaderV2() {
       crumbs.push({ label: t("sidebar.agencies"), path: "/agencies" });
       
       if (params.clientId) {
-        crumbs.push({ label: t("sidebar.clients") });
+        crumbs.push({ label: clientData?.name || t("sidebar.clients") });
       }
 
       if (params.campaignId) {

@@ -411,7 +411,10 @@
     "linkCopied": "Link copiado!",
     "rename": "Renomear",
     "renamedSuccess": "Campanha renomeada",
-    "renamedError": "Erro ao renomear"
+    "renamedError": "Erro ao renomear",
+    "emptyTitle": "Nenhuma campanha cadastrada",
+    "emptyDescription": "Crie a primeira campanha deste cliente.",
+    "newCampaign": "Nova Campanha"
   },
   "pieces": {
     "title": "Peças",

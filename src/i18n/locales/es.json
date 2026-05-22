@@ -411,7 +411,10 @@
     "linkCopied": "¡Enlace copiado!",
     "rename": "Renombrar",
     "renamedSuccess": "Campaña renombrada",
-    "renamedError": "Error al renombrar"
+    "renamedError": "Error al renombrar",
+    "emptyTitle": "No hay campañas registradas",
+    "emptyDescription": "Crea la primera campaña de este cliente.",
+    "newCampaign": "Nueva Campaña"
   },
   "home": {
     "kpi": {
