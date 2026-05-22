@@ -16,7 +16,12 @@ import {
   Inbox,
   User as UserIcon,
   Calendar as CalendarIcon,
-  ExternalLink
+  ExternalLink,
+  Building2,
+  Users,
+  UserCheck,
+  MapPin,
+  ClipboardCheck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -214,32 +219,37 @@ export function HomeV2() {
 
       {/* KPI Section */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-        {[
-          { key: "activeCampaigns" as const, label: t("homeV2.kpis.activeCampaigns"), value: kpis?.activeCampaigns, icon: Megaphone, color: "text-brand-400" },
-          { key: "stores" as const, label: t("homeV2.kpis.stores"), value: kpis?.storesCount, icon: Store, color: "text-stone-600" },
-          { key: "pieces" as const, label: t("homeV2.kpis.piecesInProduction"), value: kpis?.piecesCount, icon: Package, color: "text-amber-600" },
-          { key: "pendingInstallations" as const, label: t("homeV2.kpis.pendingInstallations"), value: kpis?.pendingInstallations, icon: Wrench, color: "text-rose-500" },
-        ].map((card) => (
+        {(isAdminOrMaster ? [
+          { key: "totalAgencies", label: t("home.kpi.totalAgencies"), value: kpis?.totalAgencies, icon: Building2, color: "text-[#C2714F]" },
+          { key: "totalClients", label: t("home.kpi.totalClients"), value: kpis?.totalClients, icon: Users, color: "text-[#C2714F]" },
+          { key: "activeCampaigns", label: t("home.kpi.activeCampaigns"), value: kpis?.activeCampaigns, icon: Megaphone, color: "text-[#C2714F]" },
+          { key: "totalUsers", label: t("home.kpi.totalUsers"), value: kpis?.totalUsers, icon: UserCheck, color: "text-[#C2714F]" },
+        ] : [
+          { key: "activeCampaigns", label: t("home.kpi.activeCampaigns"), value: kpis?.activeCampaigns, icon: Megaphone, color: "text-[#C2714F]" },
+          { key: "myClients", label: t("home.kpi.myClients"), value: kpis?.myClients, icon: Users, color: "text-[#C2714F]" },
+          { key: "pendingInstallations", label: t("home.kpi.pendingInstallations"), value: kpis?.pendingInstallations, icon: MapPin, color: "text-[#C2714F]" },
+          { key: "pendingApprovals", label: t("home.kpi.pendingApprovals"), value: kpis?.pendingApprovals, icon: ClipboardCheck, color: "text-[#C2714F]" },
+        ]).map((card) => (
           <Card
             key={card.key}
             onClick={() => setSelectedKpi(card.key)}
-            className="bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 p-4 shadow-sm cursor-pointer hover:shadow-md hover:border-brand-300 transition-all"
+            className="bg-white dark:bg-stone-900 border-stone-100 dark:border-stone-800 p-5 shadow-sm cursor-pointer hover:shadow-md hover:border-stone-200 transition-all rounded-xl"
           >
             <div className="flex justify-between items-start">
-              <span className="text-[10px] font-medium text-stone-500 uppercase tracking-wider">
+              <span className="text-xs font-medium text-stone-400 uppercase tracking-wide">
                 {card.label}
               </span>
-              <card.icon className={cn("w-4 h-4", card.color)} />
+              <card.icon className={cn("w-5 h-5", card.color)} />
             </div>
             {loadingKpis ? (
-              <div className="h-9 w-16 bg-stone-100 dark:bg-stone-800 animate-pulse rounded mt-2" />
+              <div className="h-10 w-20 bg-stone-50 dark:bg-stone-800 animate-pulse rounded my-2" />
             ) : (
-              <div className="text-3xl font-bold text-stone-800 dark:text-stone-100 mt-2">
-                {card.value}
+              <div className="text-4xl font-bold text-stone-900 dark:text-stone-100 my-2">
+                {card.value ?? 0}
               </div>
             )}
-            <div className="text-[10px] text-stone-400 mt-1 flex items-center gap-1">
-              {t("homeV2.kpis.updatedNow")} <ChevronRight className="w-2.5 h-2.5" />
+            <div className="text-xs text-stone-400 mt-1 flex items-center gap-1">
+              {t("homeV2.kpis.updatedNow")} <ChevronRight className="w-3 h-3" />
             </div>
           </Card>
         ))}
