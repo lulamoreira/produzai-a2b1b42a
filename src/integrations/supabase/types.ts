@@ -4807,7 +4807,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      system_messages: {
+        Row: {
+          agency_id: string | null
+          category: string | null
+          content: string | null
+          created_at: string | null
+          id: string | null
+          key: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          agency_id?: never
+          category?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string | null
+          key?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          agency_id?: never
+          category?: string | null
+          content?: string | null
+          created_at?: string | null
+          id?: string | null
+          key?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       advance_budget_phase: {
