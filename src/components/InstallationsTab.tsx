@@ -88,6 +88,8 @@ interface InstallationsTabProps {
   onInitialFilterApplied?: () => void;
 }
 
+const PREDEFINED_MODELS = ["LOOK & FEEL", "NOVO", "ANTIGO", "QUIOSQUE NOVO", "QUIOSQUE ANTIGO"];
+
 const CATEGORY_OPTIONS = [
   { value: "before", labelKey: "installations.before" },
   { value: "during", labelKey: "installations.during" },
@@ -675,6 +677,39 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         </div>
       )}
 
+      {/* Modelo de Loja Quick Filter */}
+      <div className="flex items-center gap-3 overflow-x-auto pb-1 scrollbar-hide no-scrollbar">
+        <span className="text-[10px] font-bold text-muted-foreground shrink-0 uppercase tracking-widest pl-1">
+          {t("stores.store_model", "Modelo")}:
+        </span>
+        <div className="flex items-center gap-1.5">
+          {PREDEFINED_MODELS.map((model) => (
+            <button
+              key={model}
+              onClick={() => setFilterModel(prev => prev === model ? "" : model)}
+              className={cn(
+                "h-7 px-3 text-[11px] font-medium rounded-full transition-all border whitespace-nowrap",
+                filterModel === model 
+                  ? "bg-primary text-primary-foreground border-primary shadow-sm" 
+                  : "bg-card text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+              )}
+            >
+              {model}
+            </button>
+          ))}
+          {filterModel && !PREDEFINED_MODELS.includes(filterModel) && (
+             <button
+              onClick={() => setFilterModel("")}
+              className="h-7 px-3 text-[11px] font-medium rounded-full transition-all border bg-primary/5 text-primary border-primary/30 whitespace-nowrap flex items-center gap-1"
+            >
+              {filterModel}
+              <span className="text-[10px]">✕</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+
       {/* Filters — Single row */}
       <div className="flex gap-2 items-center flex-wrap lg:flex-nowrap">
           <div className="relative w-[200px] shrink-0">
@@ -777,18 +812,17 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                 <option value="yes">Com remarcação</option>
                 <option value="no">Sem remarcação</option>
               </select>
-              {storeModels.length > 0 && (
-                <select
-                  value={filterModel}
-                  onChange={(e) => setFilterModel(e.target.value)}
-                  className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground"
-                >
-                  <option value="">Modelo</option>
-                  {storeModels.map((m) => (
-                    <option key={m} value={m}>{m}</option>
-                  ))}
-                </select>
-              )}
+              <select
+                value={filterModel}
+                onChange={(e) => setFilterModel(e.target.value)}
+                className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground"
+              >
+                <option value="">{t("stores.store_model", "Modelo")}</option>
+                {storeModels.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))}
+              </select>
+
               {secondaryFilterCount > 0 && (
                 <Button
                   variant="ghost"
