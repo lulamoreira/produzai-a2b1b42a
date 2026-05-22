@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { InviteForm } from "./InviteForm";
+import { BatchInviteForm } from "./BatchInviteForm";
 import { useFormatters } from "@/lib/formatters";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -135,7 +136,10 @@ export function InvitesPanel() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold text-stone-900">{t("invite.panelTitle")}</h2>
-        <InviteForm />
+        <div className="flex items-center gap-2">
+          <InviteForm />
+          <BatchInviteForm />
+        </div>
       </div>
 
       {invites.length === 0 ? (
