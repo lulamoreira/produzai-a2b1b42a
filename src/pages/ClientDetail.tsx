@@ -1038,100 +1038,102 @@ const ClientDetail = () => {
               <Store className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-                  <p className="text-xl sm:text-2xl font-bold text-foreground">{stores.length}</p>
-                  <p className="text-[11px] text-muted-foreground">{t("clientDashboard.storeCount")}</p>
-                </div>
-              </div>
-              <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=suppliers`)}>
-                <div className="w-10 h-10 rounded-lg bg-primary/60 flex items-center justify-center">
-                  <Building2 className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-bold text-foreground">{suppliers.length}</p>
-                  <p className="text-[11px] text-muted-foreground">Fornecedores</p>
-                </div>
-              </div>
-              <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=emails`)}>
-                <div className="w-10 h-10 rounded-lg bg-primary/50 flex items-center justify-center">
-                  <Mail className="w-5 h-5 text-primary-foreground" />
-                </div>
-                <div>
-                  <p className="text-xl sm:text-2xl font-bold text-foreground">∞</p>
-                  <p className="text-[11px] text-muted-foreground">Memória de e-mails</p>
-                </div>
-              </div>
-              {canEditCampaigns && (
-                <div className="card-kpi p-3 sm:p-4 col-span-2 sm:col-span-2 md:col-span-1 flex items-center justify-center">
-                  <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button size="lg" className="gap-2 bg-primary text-primary-foreground hover:bg-primary/90 shadow-md font-bold text-sm px-6">
-                        <Plus className="w-5 h-5" /> {t("clientDashboard.addCampaign")}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader><DialogTitle>{t("clientDashboard.newCampaign")}</DialogTitle></DialogHeader>
-                      <form onSubmit={handleAddCampaign} className="space-y-4">
-                        <div>
-                          <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("clientDashboard.campaignNameLabel")} *</label>
-                          <Input 
-                            value={campaignName} 
-                            onChange={(e) => setCampaignName(e.target.value)} 
-                            onBlur={(e) => setCampaignName(capitalizeName(e.target.value))}
-                            required 
-                          />
-                        </div>
-                        <div>
-                          <label className="text-xs font-medium text-muted-foreground mb-2 block">{t("clientDashboard.campaignColorLabel")}</label>
-                          <div className="grid grid-cols-8 gap-1.5">
-                            {CAMPAIGN_COLORS.map((c) => (
-                              <button
-                                type="button"
-                                key={c}
-                                className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${campaignColor === c ? "border-foreground scale-110 ring-2 ring-primary/30" : "border-transparent"}`}
-                                style={{ backgroundColor: c }}
-                                onClick={() => setCampaignColor(c)}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addCampaign.isPending}>{t("clientDashboard.create")}</Button>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-              )}
+              <p className="text-xl sm:text-2xl font-bold text-foreground">{stores.length}</p>
+              <p className="text-[11px] text-muted-foreground">{t("clientDashboard.storeCount")}</p>
             </div>
+          </div>
+          <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=suppliers`)}>
+            <div className="w-10 h-10 rounded-lg bg-primary/60 flex items-center justify-center">
+              <Building2 className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <p className="text-xl sm:text-2xl font-bold text-foreground">{suppliers.length}</p>
+              <p className="text-[11px] text-muted-foreground">Fornecedores</p>
+            </div>
+          </div>
+          <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=emails`)}>
+            <div className="w-10 h-10 rounded-lg bg-primary/50 flex items-center justify-center">
+              <Mail className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <p className="text-xl sm:text-2xl font-bold text-foreground">∞</p>
+              <p className="text-[11px] text-muted-foreground">Memória de e-mails</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── Campaigns View (default) ─── */}
+        {!new URLSearchParams(location.search).has("tab") && (
+          <>
+            <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
+              <DialogContent>
+                <DialogHeader><DialogTitle>{t("clientDashboard.newCampaign")}</DialogTitle></DialogHeader>
+                <form onSubmit={handleAddCampaign} className="space-y-4">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("clientDashboard.campaignNameLabel")} *</label>
+                    <Input 
+                      value={campaignName} 
+                      onChange={(e) => setCampaignName(e.target.value)} 
+                      onBlur={(e) => setCampaignName(capitalizeName(e.target.value))}
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-2 block">{t("clientDashboard.campaignColorLabel")}</label>
+                    <div className="grid grid-cols-8 gap-1.5">
+                      {CAMPAIGN_COLORS.map((c) => (
+                        <button
+                          type="button"
+                          key={c}
+                          className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${campaignColor === c ? "border-foreground scale-110 ring-2 ring-primary/30" : "border-transparent"}`}
+                          style={{ backgroundColor: c }}
+                          onClick={() => setCampaignColor(c)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addCampaign.isPending}>{t("clientDashboard.create")}</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
 
             {loadingCampaigns ? (
               <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
             ) : campaigns.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center mx-auto mb-3">
-                  <Megaphone className="w-8 h-8 text-white" />
-                </div>
-                <p className="text-muted-foreground text-sm">{t("clientDashboard.noCampaigns")}</p>
+              <div className="bg-white rounded-xl border border-stone-200 border-dashed mt-6">
+                <EmptyStateV2
+                  icon={Megaphone}
+                  title={t("campaigns.emptyTitle")}
+                  description={t("campaigns.emptyDescription")}
+                  action={canEditCampaigns ? { 
+                    label: t("campaigns.newCampaign"), 
+                    onClick: () => setCampaignDialogOpen(true) 
+                  } : undefined}
+                />
               </div>
             ) : (
-              <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
-                <SortableContext items={campaigns.map((c) => c.id)} strategy={rectSortingStrategy}>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    {campaigns.map((c) => (
-                      <SortableCampaignCard
-                        key={c.id}
-                        campaign={c}
-                        canDelete={canDeleteCampaigns}
-                        canEdit={canEditCampaigns}
-                        onNavigate={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
-                        onDelete={() => deleteCampaign.mutate(c.id)}
-                        onColorChange={(color) => updateCampaign.mutate({ id: c.id, color })}
-                        isFavorited={favoriteIds?.has(c.id) ?? false}
-                        onToggleFavorite={() => toggleFavorite.mutate({ campaignId: c.id, isFavorited: favoriteIds?.has(c.id) ?? false })}
-                        showFavorite={true}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
+              <div className="mt-6">
+                <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
+                  <SortableContext items={campaigns.map((c) => c.id)} strategy={rectSortingStrategy}>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {campaigns.map((c) => (
+                        <SortableCampaignCard
+                          key={c.id}
+                          campaign={c}
+                          canDelete={canDeleteCampaigns}
+                          canEdit={canEditCampaigns}
+                          onNavigate={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
+                          onDelete={() => deleteCampaign.mutate(c.id)}
+                          onColorChange={(color) => updateCampaign.mutate({ id: c.id, color })}
+                          isFavorited={favoriteIds?.includes(c.id) ?? false}
+                          onToggleFavorite={() => toggleFavorite.mutate(c.id)}
+                          showFavorite={true}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              </div>
             )}
           </>
         )}
