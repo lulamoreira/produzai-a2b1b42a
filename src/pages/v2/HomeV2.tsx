@@ -62,17 +62,10 @@ export function HomeV2() {
     queryKey: ["v2-dashboard-kpis", role, userAgency],
     queryFn: async () => {
       if (isAdminOrMaster) {
-        const [
-          agenciesRes,
-          clientsRes,
-          activeCampaignsRes,
-          profilesRes
-        ] = await Promise.all([
-          supabase.from("agencies").select("id", { count: "exact", head: true }).is("deleted_at", null) as any,
-          supabase.from("clients").select("id", { count: "exact", head: true }) as any,
-          supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("status", "active") as any,
-          supabase.from("profiles").select("id", { count: "exact", head: true }) as any
-        ]);
+        const agenciesRes = await supabase.from("agencies").select("id", { count: "exact", head: true }).is("deleted_at", null);
+        const clientsRes = await supabase.from("clients").select("id", { count: "exact", head: true });
+        const activeCampaignsRes = await supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("status", "active");
+        const profilesRes = await supabase.from("profiles").select("id", { count: "exact", head: true });
 
         return {
           totalAgencies: agenciesRes.count || 0,
@@ -84,16 +77,11 @@ export function HomeV2() {
         const agencyId = userAgency;
         if (!agencyId) return null;
 
-        const [
-          activeCampaignsRes,
-          clientsRes,
-          pendingApprovalsRes
-        ] = await Promise.all([
-          supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("agency_id", agencyId).eq("status", "active") as any,
-          supabase.from("clients").select("id", { count: "exact", head: true }).eq("agency_id", agencyId) as any,
-          supabase.from("user_approvals").select("id", { count: "exact", head: true })
-            .eq("status", "pending") as any
-        ]);
+        const activeCampaignsRes = await supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("agency_id", agencyId).eq("status", "active");
+        const clientsRes = await supabase.from("clients").select("id", { count: "exact", head: true }).eq("agency_id", agencyId);
+        
+        // Use any to avoid the deep instantiation issue with user_approvals if it's not in the type gen
+        const pendingApprovalsRes = await (supabase.from("user_approvals" as any).select("id", { count: "exact", head: true }) as any).eq("status", "pending");
 
         let pendingInstCount = 0;
         const { data: agencyCampaigns } = await supabase.from("campaigns").select("id").eq("agency_id", agencyId);
@@ -237,7 +225,7 @@ export function HomeV2() {
         ]).map((card) => (
           <Card
             key={card.key}
-            onClick={() => setSelectedKpi(card.key)}
+            onClick={() => setSelectedKpi(card.key as any)}
             className="bg-white dark:bg-stone-900 border-stone-100 dark:border-stone-800 p-5 shadow-sm cursor-pointer hover:shadow-md hover:border-stone-200 transition-all rounded-xl"
           >
             <div className="flex justify-between items-start">
