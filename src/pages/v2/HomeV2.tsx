@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useDisplayName } from "@/components/AppHeader";
@@ -13,7 +13,10 @@ import {
   ArrowRight,
   ChevronRight,
   Clock,
-  Inbox
+  Inbox,
+  User as UserIcon,
+  Calendar as CalendarIcon,
+  ExternalLink
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +24,8 @@ import { Card } from "@/components/ui/card";
 import { useFormatters } from "@/lib/formatters";
 import { SkeletonCard } from "@/components/v2/ui/SkeletonCard";
 import { EmptyStateV2 } from "@/components/v2/ui/EmptyStateV2";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 
 export function HomeV2() {
   const { t } = useTranslation();
