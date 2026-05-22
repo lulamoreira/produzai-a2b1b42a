@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Edit3, Database, Layers, PauseCircle, PlayCircle, AlertTriangle } from "lucide-react";
+import { Edit3, Database, Layers, PauseCircle, PlayCircle, AlertTriangle, PowerOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
@@ -9,6 +9,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CampaignHeaderProps {
   campaign: any;
@@ -42,13 +52,10 @@ export function CampaignHeader({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
+  const [isAlertOpen, setIsAlertOpen] = useState(false);
+
   const handleToggleActive = async () => {
     const newValue = !campaign.is_active;
-    const confirmMsg = newValue
-      ? t("common.campaign_confirmActivate")
-      : t("common.campaign_confirmDeactivate");
-    
-    if (!window.confirm(confirmMsg)) return;
     
     const { error } = await supabase
       .from('campaigns')
@@ -58,9 +65,13 @@ export function CampaignHeader({
     if (error) {
       toast.error(t("common.error"));
     } else {
-      toast.success(newValue ? t("common.campaign_activated") : t("common.campaign_deactivated"));
+      toast.success(newValue 
+        ? t("campaign.activated_success", "Campanha reativada com sucesso") 
+        : t("campaign.inactivated_success", "Campanha inativada com sucesso")
+      );
       queryClient.invalidateQueries({ queryKey: ['campaign', campaign.id] });
       queryClient.invalidateQueries({ queryKey: ['campaigns'] });
+      setIsAlertOpen(false);
     }
   };
 
@@ -101,22 +112,49 @@ export function CampaignHeader({
             )}
             
             {isAdminOrMaster && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleToggleActive}
-                className={cn(
-                  "h-8 transition-colors",
-                  !isInactive
-                    ? "border-stone-200 text-stone-600 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
-                    : "border-emerald-200 text-emerald-600 hover:bg-emerald-50 bg-emerald-50"
-                )}
-              >
-                {!isInactive
-                  ? <><PauseCircle size={14} className="mr-1.5" />{t("common.campaign_deactivate")}</>
-                  : <><PlayCircle size={14} className="mr-1.5" />{t("common.campaign_activate")}</>
-                }
-              </Button>
+              <>
+                <Button
+                  variant={isInactive ? "outline" : "destructive"}
+                  size="sm"
+                  onClick={() => isInactive ? handleToggleActive() : setIsAlertOpen(true)}
+                  className={cn(
+                    "h-8 transition-colors",
+                    isInactive && "border-emerald-200 text-emerald-600 hover:bg-emerald-50 bg-emerald-50"
+                  )}
+                >
+                  {isInactive ? (
+                    <>
+                      <PlayCircle size={14} className="mr-1.5" />
+                      {t("campaign.reactivate", "Reativar Campanha")}
+                    </>
+                  ) : (
+                    <>
+                      <PowerOff size={14} className="mr-1.5" />
+                      {t("campaign.inactivate", "Inativar Campanha")}
+                    </>
+                  )}
+                </Button>
+
+                <AlertDialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{t("campaign.inactivate_title", "Inativar campanha?")}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {t("campaign.inactivate_description", "Esta ação tornará a campanha invisível para todos os usuários, exceto admins e masters. Você poderá reativá-la depois.")}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{t("common.cancel", "Cancelar")}</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={handleToggleActive}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {t("common.confirm", "Confirmar")}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
             )}
           </div>
           <p className="text-sm text-muted-foreground">
