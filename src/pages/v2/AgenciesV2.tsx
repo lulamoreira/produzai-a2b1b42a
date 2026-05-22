@@ -10,7 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Plus, ArrowRight, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AppShellV2 } from "@/components/v2/layout/AppShellV2";
+
 
 const AgenciesV2 = ({ onAddClick, onEditClick }: { onAddClick?: () => void, onEditClick?: (agency: any) => void }) => {
   const { user } = useAuth();
@@ -122,10 +122,6 @@ const AgenciesV2 = ({ onAddClick, onEditClick }: { onAddClick?: () => void, onEd
     </div>
   );
 
-  // If used as a standalone page (no props), wrap in AppShellV2
-  if (!onAddClick) {
-    return <AppShellV2>{content}</AppShellV2>;
-  }
 
   return content;
 };
