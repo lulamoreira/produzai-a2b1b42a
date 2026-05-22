@@ -92,16 +92,82 @@ export function HomeV2() {
   const { data: recentActivity, isLoading: loadingActivity } = useQuery({
     queryKey: ["v2-recent-activity"],
     queryFn: async () => {
-      const [campaigns, schedules, occurrences] = await Promise.all([
-        supabase.from("campaigns").select("id, name, created_at, client_id, clients(name)").order("created_at", { ascending: false }).limit(4),
-        supabase.from("campaign_schedules").select("id, created_at, scheduled_date, scheduled_time, campaign_id, store_id, client_stores(name), campaigns(name, client_id, clients(name)), installation_teams(name)").order("created_at", { ascending: false }).limit(4),
-        supabase.from("occurrences").select("id, description, created_at, status, campaign_id, store_id, reporter_name, reporter_type, campaigns(name, client_id, clients(name)), client_stores(name)").order("created_at", { ascending: false }).limit(4)
+      const [activityLogRes, occurrencesRes, campaignsRes] = await Promise.all([
+        supabase.from("campaign_activity_log")
+          .select("*, campaigns(name, client_id, clients(name)), client_stores(name)")
+          .order("created_at", { ascending: false })
+          .limit(10),
+        supabase.from("occurrences")
+          .select("*, campaigns(name, client_id, clients(name)), client_stores(name)")
+          .order("created_at", { ascending: false })
+          .limit(5),
+        supabase.from("campaigns")
+          .select("*, clients(name)")
+          .order("created_at", { ascending: false })
+          .limit(5)
       ]);
 
-      const activities = [
-        ...(campaigns.data || []).map((item: any) => ({
+      // Get user profiles for activity log actors
+      const userIds = [...new Set((activityLogRes.data || []).map(item => item.user_id).filter(Boolean))];
+      let profileMap: Record<string, string> = {};
+      
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, display_name")
+          .in("user_id", userIds);
+        
+        profiles?.forEach(p => {
+          profileMap[p.user_id] = p.display_name;
+        });
+      }
+
+      const activities: any[] = [];
+
+      // Add activity log items
+      (activityLogRes.data || []).forEach((item: any) => {
+        const actorName = item.actor_name || profileMap[item.user_id] || t("common.user");
+        activities.push({
+          id: `log-${item.id}`,
+          type: "activity",
+          title: item.client_stores?.name || item.campaigns?.name || t("common.activity"),
+          description: item.description || item.action,
+          time: new Date(item.created_at),
+          icon: item.action?.includes("concluida") ? Package : Wrench,
+          campaignId: item.campaign_id,
+          clientId: item.campaigns?.client_id,
+          clientName: item.campaigns?.clients?.name,
+          campaignName: item.campaigns?.name,
+          actor: actorName,
+          extra: item.action?.replace(/_/g, " "),
+          navigateTo: item.campaign_id ? `/agency/default/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}` : null,
+        });
+      });
+
+      // Add occurrences
+      (occurrencesRes.data || []).forEach((item: any) => {
+        activities.push({
+          id: `occ-${item.id}`,
+          type: "occurrence",
+          title: item.description || item.client_stores?.name || t("common.occurrence"),
+          description: t("common.registered"),
+          time: new Date(item.created_at || new Date()),
+          icon: Package,
+          campaignId: item.campaign_id,
+          clientId: item.campaigns?.client_id,
+          clientName: item.campaigns?.clients?.name,
+          campaignName: item.campaigns?.name,
+          actor: item.reporter_name || t("common.user"),
+          extra: item.client_stores?.name || null,
+          navigateTo: `/agency/default/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}/ocorrencias`,
+        });
+      });
+
+      // Add campaigns
+      (campaignsRes.data || []).forEach((item: any) => {
+        activities.push({
           id: `camp-${item.id}`,
-          type: "campaign" as const,
+          type: "campaign",
           title: item.name,
           description: t("common.new") + " " + t("common.campaign").toLowerCase(),
           time: new Date(item.created_at),
@@ -110,45 +176,13 @@ export function HomeV2() {
           clientId: item.client_id,
           clientName: item.clients?.name,
           campaignName: item.name,
-          actor: null as string | null,
-          extra: null as string | null,
+          actor: t("common.system", { defaultValue: "Sistema" }),
+          extra: null,
           navigateTo: `/agency/default/clients/${item.client_id}/campaigns/${item.id}`,
-        })),
-        ...(schedules.data || []).map((item: any) => ({
-          id: `inst-${item.id}`,
-          type: "installation" as const,
-          title: item.client_stores?.name || "Instalação",
-          description: t("scheduling.scheduled"),
-          time: new Date(item.created_at),
-          icon: Wrench,
-          campaignId: item.campaign_id,
-          clientId: item.campaigns?.client_id,
-          clientName: item.campaigns?.clients?.name,
-          campaignName: item.campaigns?.name,
-          actor: item.installation_teams?.name || null,
-          extra: item.scheduled_date
-            ? `${item.scheduled_date}${item.scheduled_time ? " " + item.scheduled_time : ""}`
-            : null,
-          navigateTo: `/agency/default/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}/instalacoes`,
-        })),
-        ...(occurrences.data || []).map((item: any) => ({
-          id: `occ-${item.id}`,
-          type: "occurrence" as const,
-          title: item.description || item.client_stores?.name || "Ocorrência",
-          description: t("common.registered"),
-          time: new Date(item.created_at || new Date()),
-          icon: Package,
-          campaignId: item.campaign_id,
-          clientId: item.campaigns?.client_id,
-          clientName: item.campaigns?.clients?.name,
-          campaignName: item.campaigns?.name,
-          actor: item.reporter_name || null,
-          extra: item.client_stores?.name || null,
-          navigateTo: `/agency/default/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}/ocorrencias`,
-        }))
-      ];
+        });
+      });
 
-      return activities.sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 8);
+      return activities.sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 10);
     }
   });
 
