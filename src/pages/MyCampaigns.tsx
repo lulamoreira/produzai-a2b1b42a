@@ -4,6 +4,8 @@ import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Store, Grid3X3, LayoutList, CalendarDays, LogOut, Package, Camera, Building2, Star, ArrowRight, Palette, GitMerge } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import AppLayout from "@/components/AppLayout";
 import ModuleGrid from "@/components/ModuleGrid";
 import { useCampaignFavorites, useToggleFavorite } from "@/hooks/useCampaignFavorites";
@@ -116,9 +118,14 @@ const MyCampaigns = () => {
                             <span className="text-white font-semibold text-base">{initial}</span>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-semibold text-base truncate text-foreground">
+                            <div className="flex items-center gap-2">
+                            <h4 className={cn(
+                              "font-semibold text-base truncate",
+                              fav.is_active === false ? "text-stone-400" : "text-foreground"
+                            )}>
                               {fav.campaign_name}
                             </h4>
+                            </div>
                             <p className="text-xs mt-0.5 text-muted-foreground truncate">
                               {fav.client_name}
                             </p>
@@ -158,7 +165,19 @@ const MyCampaigns = () => {
                 className="aqua-card border border-border p-6 bg-card hover:shadow-md transition-shadow"
               >
                 <div className="mb-5">
-                  <h3 className="font-bold text-foreground text-lg">{c.campaignName}</h3>
+                  <div className="flex items-center gap-2 mb-1">
+                    <h3 className={cn(
+                      "font-bold text-lg",
+                      c.is_active === false ? "text-stone-400" : "text-foreground"
+                    )}>
+                      {c.campaignName}
+                    </h3>
+                    {c.is_active === false && (
+                      <Badge variant="destructive" className="bg-red-100 text-red-600 border-red-200 hover:bg-red-100 text-[10px] uppercase font-bold px-1.5 py-0 rounded-sm">
+                        {t("common.campaign_inactive")}
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground">{c.clientName}</p>
                 </div>
                 <ModuleGrid
