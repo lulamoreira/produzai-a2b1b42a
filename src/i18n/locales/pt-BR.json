@@ -820,6 +820,7 @@
     "noUserFound": "Nenhum usuário encontrado.",
     "noUserRegistered": "Nenhum usuário cadastrado.",
     "messages": {
+      "title": "Mensagens",
       "coverage": "{{percentage}}% cobertura — {{covered}} mensagens",
       "filterAll": "Todas",
       "filterUI": "Visual (UI)",

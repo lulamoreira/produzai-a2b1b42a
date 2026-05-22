@@ -842,6 +842,7 @@
     "noUserFound": "No users found.",
     "noUserRegistered": "No users registered.",
     "messages": {
+      "title": "Messages",
       "coverage": "{{percentage}}% coverage — {{covered}} messages",
       "filterAll": "All",
       "filterUI": "Visual (UI)",
