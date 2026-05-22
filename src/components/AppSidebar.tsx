@@ -337,64 +337,18 @@ export default function AppSidebar() {
 
         {/* ── Admin (fixed, admin/master only) ── */}
         {isAdminOrMaster && (
-          <div>
-            <button
-              data-keep-open
-              onClick={toggleAdmin}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all"
-              style={itemStyle(location.pathname.startsWith("/admin") || location.pathname === "/approvals")}
-              {...hoverHandlers(location.pathname.startsWith("/admin") || location.pathname === "/approvals")}
-              title={collapsed ? t("header.admin") : undefined}
-            >
-              <AquaIcon icon={Settings} size="sm" color="#7A3B2E" />
-              {!collapsed && (
-                <>
-                  <span className="truncate font-medium flex-1 text-left">{t("header.admin")}</span>
-                  {adminOpen
-                    ? <ChevronDown className="w-3.5 h-3.5 flex-shrink-0 opacity-40" />
-                    : <ChevronRight className="w-3.5 h-3.5 flex-shrink-0 opacity-40" />
-                  }
-                </>
-              )}
-            </button>
-            {!collapsed && (
-              <div className={`overflow-hidden transition-all duration-200 ease-out ${adminOpen ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"}`}>
-                <div className="relative ml-4 pl-3 mt-1 mb-1 space-y-0.5">
-                  <span className="absolute left-0 top-0 bottom-0 w-px bg-border" />
-                  <button
-                    onClick={() => handleNavigate("/admin")}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all relative before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
-                    style={itemStyle(location.pathname === "/admin" && !location.search.includes("tab=backup"))}
-                    {...hoverHandlers(location.pathname === "/admin" && !location.search.includes("tab=backup"))}
-                  >
-                    <AquaIcon icon={Users} size="xs" color="#7A3B2E" />
-                    <span className="truncate">{t("sidebar.admin_users", "Usuários")}</span>
-                  </button>
-                  <button
-                    onClick={() => handleNavigate("/approvals")}
-                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all relative before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
-                    style={itemStyle(location.pathname === "/approvals")}
-                    {...hoverHandlers(location.pathname === "/approvals")}
-                  >
-                    <AquaIcon icon={Shield} size="xs" color="#5C6B3F" />
-                    <span className="truncate">{t("sidebar.approvals")}</span>
-                  </button>
-                  {isAdmin && (
-                    <button
-                      onClick={() => handleNavigate("/admin?tab=backup")}
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-xs transition-all relative before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
-                      style={itemStyle(location.pathname === "/admin" && location.search.includes("tab=backup"))}
-                      {...hoverHandlers(location.pathname === "/admin" && location.search.includes("tab=backup"))}
-                    >
-                      <AquaIcon icon={Database} size="xs" color="#4A5568" />
-                      <span className="truncate">Backup</span>
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+          <button
+            onClick={() => handleNavigate("/admin")}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
+            style={itemStyle(location.pathname.startsWith("/admin") || location.pathname === "/approvals")}
+            {...hoverHandlers(location.pathname.startsWith("/admin") || location.pathname === "/approvals")}
+            title={collapsed ? t("header.admin") : undefined}
+          >
+            <AquaIcon icon={Settings} size="sm" color="#7A3B2E" />
+            {!collapsed && <span className="truncate font-medium">{t("header.admin")}</span>}
+          </button>
         )}
+
 
         {/* Separator */}
         {isInsideAgency && (

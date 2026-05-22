@@ -1,49 +1,61 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { BackupRestorePanel } from "@/components/BackupRestorePanel";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useAdminUsers } from "@/hooks/useAdminUsers";
+import { useAdminUsers, type UserWithRole } from "@/hooks/useAdminUsers";
 import { useUserClientAccess } from "@/hooks/useMultiClientData";
 import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
-import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { Users, Tags, Database, UserCheck, Search, MessageSquareText, Bell, Image as ImageIcon, Plus, Eye, Edit3, Trash2, Lock, Paintbrush, Mail } from "lucide-react";
-import { CreateUserDialog } from "@/components/CreateUserDialog";
+import { useAllUsersApproval, useUpdateApprovalStatus, type ApprovalStatus } from "@/hooks/useUserApproval";
+import { Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { 
+  Users, Mail, Tag, MessageSquare, Bell, CheckSquare, 
+  Palette, Image as ImageIcon, Database, Home, 
+  UserCheck, Search, ChevronRight, LogOut, Menu, X, Plus, Clock, UserX, Trash2
+} from "lucide-react";
 import AppLayout from "@/components/AppLayout";
-import NotificationSettingsManager from "@/components/admin/NotificationSettingsManager";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CreateUserDialog } from "@/components/CreateUserDialog";
 import UserPermissionCard from "@/components/admin/UserPermissionCard";
-import CategoryManager from "@/components/admin/CategoryManager";
-import CategoryEditorV2 from "@/components/admin/CategoryEditorV2";
-import { CategoryPreviewSheet } from "@/components/admin/CategoryPreviewSheet";
-
-import RegeneratePieceImagesPanel from "@/components/admin/RegeneratePieceImagesPanel";
-import { usePermissionCategories, useDeletePermissionCategory, type PermissionCategory } from "@/hooks/usePermissionCategories";
-import { useUserCountByCategory } from "@/hooks/usePermissionGrants";
-import { CATEGORY_COLORS } from "@/lib/permissionRegistry";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import AppearancePanel from "@/components/admin/AppearancePanel";
 import { InvitesPanel } from "@/components/admin/InvitesPanel";
 import { MessagesPanel } from "@/components/admin/MessagesPanel";
+import NotificationSettingsManager from "@/components/admin/NotificationSettingsManager";
+import AppearancePanel from "@/components/admin/AppearancePanel";
+import RegeneratePieceImagesPanel from "@/components/admin/RegeneratePieceImagesPanel";
+import { BackupRestorePanel } from "@/components/BackupRestorePanel";
+import CategoryManager from "@/components/admin/CategoryManager";
+import { ADMIN_MENU_ITEMS, type AdminMenuItem } from "@/lib/adminMenuConfig";
+import { cn, capitalizeName } from "@/lib/utils";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
-const Admin = () => {
+interface AdminProps {
+  initialTab?: string;
+}
+
+const Admin = ({ initialTab: propInitialTab }: AdminProps) => {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { isAdmin, isAdminOrMaster, isLoading: loadingRole } = useUserRole();
-  const { data: users = [], isLoading: loadingUsers } = useAdminUsers();
-  const { data: allAccess = [] } = useUserClientAccess();
-  const { data: allAgencyAccess = [] } = useUserAgencyAccess();
-  const { data: allCampaignAccess = [] } = useUserCampaignAccess();
   const navigate = useNavigate();
+  const { tab: urlTab } = useParams();
   const [searchParams] = useSearchParams();
-  const initialTab = searchParams.get("tab") || "users";
-  const [searchQuery, setSearchQuery] = useState("");
+  
+  const currentTab = urlTab || propInitialTab || searchParams.get("tab") || "home";
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (loadingRole) {
     return (
@@ -55,299 +67,416 @@ const Admin = () => {
 
   if (!isAdminOrMaster) return <Navigate to="/" replace />;
 
-  const sortedUsers = [...users].sort((a, b) => {
-    if (a.user_id === user?.id) return -1;
-    if (b.user_id === user?.id) return 1;
-    const roleOrder = { admin: 0, master: 1, viewer: 2 };
-    return (roleOrder[a.role] ?? 2) - (roleOrder[b.role] ?? 2);
-  });
+  const menuItems = ADMIN_MENU_ITEMS.filter(item => 
+    item.access === "all" || isAdmin
+  );
 
-  const filteredUsers = searchQuery.trim()
-    ? sortedUsers.filter(u =>
-        (u.display_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.user_id.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : sortedUsers;
+  const activeItem = menuItems.find(item => item.key === currentTab) || menuItems[0];
+
+  const handleTabChange = (tab: string) => {
+    navigate(`/admin/${tab}`);
+    setSidebarOpen(false);
+  };
 
   return (
-    <AppLayout
-      breadcrumbs={[{ label: "Admin" }]}
-      headerRight={
-        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => navigate("/approvals")}>
-          <UserCheck className="w-4 h-4" /> {t("sidebar.approvals")}
-        </Button>
-      }
-    >
-      <div className="max-w-5xl mx-auto">
-        <Tabs defaultValue={initialTab}>
-          <TabsList className="mb-6 bg-card border border-border">
-            <TabsTrigger value="users" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-              <Users className="w-4 h-4" /> {t("admin.users")}
-            </TabsTrigger>
-            <TabsTrigger value="invites" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-              <Mail className="w-4 h-4" /> {t("invite.panelTitle")}
-            </TabsTrigger>
-            <TabsTrigger value="categories" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-              <Tags className="w-4 h-4" /> {t("admin.categories")}
-            </TabsTrigger>
-            <TabsTrigger value="messages" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-              <MessageSquareText className="w-4 h-4" /> {t("admin.messages.title")}
-            </TabsTrigger>
-            <TabsTrigger value="notificacoes" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-              <Bell className="w-4 h-4" /> Notificações
-            </TabsTrigger>
-            {isAdmin && (
-              <TabsTrigger value="images" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-                <ImageIcon className="w-4 h-4" /> Imagens
-              </TabsTrigger>
-            )}
-            {isAdmin && (
-              <TabsTrigger value="appearance" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-                <Paintbrush className="w-4 h-4" /> {t("admin.appearance")}
-              </TabsTrigger>
-            )}
-            {isAdmin && (
-              <TabsTrigger value="backup" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-                <Database className="w-4 h-4" /> {t("common.backup")}
-              </TabsTrigger>
-            )}
-          </TabsList>
-
-          <TabsContent value="users">
-            <div className="flex items-center gap-3 mb-5">
-              <h2 className="text-base font-semibold text-foreground">
-                {t("admin.users")} ({users.length})
-              </h2>
-              <div className="flex items-center gap-2 ml-auto">
-                <CreateUserDialog />
-                <div className="relative max-w-xs">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder={t("admin.searchUser")}
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                    className="pl-9 h-9"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <p className="text-xs text-muted-foreground mb-4">
-              {t("admin.usersPermissionHint")}
-            </p>
-
-            {loadingUsers ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
-              </div>
-            ) : filteredUsers.length === 0 ? (
-              <p className="text-muted-foreground text-sm py-12 text-center">
-                {searchQuery ? t("admin.noUserFound") : t("admin.noUserRegistered")}
-              </p>
-            ) : (
-              <div className="space-y-3">
-                {filteredUsers.map(u => (
-                  <UserPermissionCard
-                    key={u.user_id}
-                    userInfo={u}
-                    allClientAccess={allAccess}
-                    allAgencyAccess={allAgencyAccess}
-                    allCampaignAccess={allCampaignAccess}
-                  />
-                ))}
-              </div>
-            )}
-          </TabsContent>
-
-          <TabsContent value="invites">
-            <InvitesPanel />
-          </TabsContent>
-
-          <TabsContent value="categories">
-            <CategoriesTab />
-          </TabsContent>
-
-          <TabsContent value="messages">
-            <MessagesPanel />
-          </TabsContent>
-
-          <TabsContent value="notificacoes">
-            <NotificationSettingsManager />
-          </TabsContent>
-
-          {isAdmin && (
-            <TabsContent value="appearance">
-              <AppearancePanel />
-            </TabsContent>
-          )}
-          {isAdmin && (
-            <TabsContent value="images">
-              <RegeneratePieceImagesPanel />
-            </TabsContent>
-          )}
-
-          {isAdmin && (
-            <TabsContent value="backup">
-              <BackupRestorePanel />
-            </TabsContent>
-          )}
-        </Tabs>
+    <div className="min-h-screen bg-background flex flex-col md:flex-row">
+      {/* Mobile Header */}
+      <div className="md:hidden flex items-center justify-between p-4 border-b bg-card sticky top-0 z-50">
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
+            <Menu className="w-5 h-5" />
+          </Button>
+          <span className="font-bold text-lg">Admin</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+            <Home className="w-5 h-5" />
+          </Button>
+        </div>
       </div>
-    </AppLayout>
+
+      {/* Sidebar Overlay */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-50 md:hidden" 
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside className={cn(
+        "fixed inset-y-0 left-0 w-64 bg-card border-r z-50 transition-transform duration-300 transform md:relative md:translate-x-0",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className="flex flex-col h-full">
+          <div className="p-6 border-b flex items-center justify-between">
+            <div>
+              <h1 className="text-xl font-bold text-primary">ProduzAI</h1>
+              <p className="text-xs text-muted-foreground">Painel Administrativo</p>
+            </div>
+            <Button variant="ghost" size="icon" className="md:hidden" onClick={() => setSidebarOpen(false)}>
+              <X className="w-5 h-5" />
+            </Button>
+          </div>
+
+          <nav className="flex-1 overflow-y-auto p-4 space-y-1">
+            {menuItems.map((item) => (
+              <button
+                key={item.key}
+                onClick={() => handleTabChange(item.key)}
+                className={cn(
+                  "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                  currentTab === item.key 
+                    ? "bg-primary text-primary-foreground shadow-sm" 
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                <item.icon className="w-4 h-4" />
+                {item.label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="p-4 border-t space-y-2">
+            <Button 
+              variant="outline" 
+              className="w-full justify-start gap-3" 
+              onClick={() => navigate("/")}
+            >
+              <Home className="w-4 h-4" />
+              Voltar ao App
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="w-full justify-start gap-3 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={() => signOut()}
+            >
+              <LogOut className="w-4 h-4" />
+              Sair
+            </Button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 min-w-0 overflow-y-auto">
+        <header className="h-16 border-b bg-card/50 backdrop-blur-sm sticky top-0 z-40 hidden md:flex items-center justify-between px-8">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span>Administração</span>
+            <ChevronRight className="w-4 h-4" />
+            <span className="font-medium text-foreground">{activeItem.label}</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-sm font-medium leading-none">{user?.user_metadata?.display_name || user?.email}</p>
+              <p className="text-xs text-muted-foreground mt-1">{isAdmin ? "Administrador" : "Master"}</p>
+            </div>
+          </div>
+        </header>
+
+        <div className="p-4 md:p-8 max-w-6xl mx-auto">
+          <div className="mb-8 md:hidden">
+            <h2 className="text-2xl font-bold text-foreground">{activeItem.label}</h2>
+          </div>
+          <AdminContent tab={currentTab} />
+        </div>
+      </main>
+    </div>
   );
 };
 
-export default Admin;
-
-// ─── Categories tab (Phase 2 UI) ───
-function CategoriesTab() {
-  const { data: categories = [], isLoading } = usePermissionCategories();
-  const deleteCat = useDeletePermissionCategory();
-  const [useNewUI, setUseNewUI] = useState(true);
-  const [editorOpen, setEditorOpen] = useState(false);
-  const [editing, setEditing] = useState<Partial<PermissionCategory> | null>(null);
-  const [search, setSearch] = useState("");
-  const [previewCategoryId, setPreviewCategoryId] = useState<string | null>(null);
-
-  const filtered = categories.filter(c =>
-    !search.trim() || c.name.toLowerCase().includes(search.toLowerCase()),
-  );
-
-  const openCreate = () => { setEditing(null); setEditorOpen(true); };
-  const openEdit = (cat: PermissionCategory) => { setEditing(cat); setEditorOpen(true); };
-
-  if (!useNewUI) {
-    return (
-      <div>
-        <div className="flex items-center justify-end mb-3">
-          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
-            <Switch checked={useNewUI} onCheckedChange={setUseNewUI} />
-            Nova interface
-          </label>
-        </div>
-        <CategoryManager />
-      </div>
-    );
+const AdminContent = ({ tab }: { tab: string }) => {
+  switch (tab) {
+    case "home":         return <AdminHome />;
+    case "users":        return <AdminUsers />;
+    case "invites":      return <InvitesPanel />;
+    case "categories":   return <CategoryManager />;
+    case "messages":     return <MessagesPanel />;
+    case "notificacoes": return <NotificationSettingsManager />;
+    case "approvals":    return <AdminApprovals />;
+    case "appearance":   return <AppearancePanel />;
+    case "images":       return <RegeneratePieceImagesPanel />;
+    case "backup":       return <BackupRestorePanel />;
+    default:             return <AdminHome />;
   }
+};
+
+const AdminHome = () => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { isAdmin } = useUserRole();
+  const { data: users = [] } = useAdminUsers();
+  const { data: approvals = [] } = useAllUsersApproval();
+  
+  const pendingApprovals = approvals.filter(u => u.approval_status === "pending").length;
+
+  const stats = [
+    { label: "Usuários Ativos", value: users.length, icon: Users, color: "text-blue-600", bg: "bg-blue-100" },
+    { label: "Aprovações Pendentes", value: pendingApprovals, icon: UserCheck, color: "text-amber-600", bg: "bg-amber-100", tab: "approvals" },
+    { label: "Novas Mensagens", value: "80%", icon: MessageSquare, color: "text-emerald-600", bg: "bg-emerald-100", tab: "messages" },
+  ];
+
+  const quickActions = ADMIN_MENU_ITEMS.filter(item => 
+    (item.access === "all" || isAdmin) && item.key !== "home"
+  ).slice(0, 6);
 
   return (
-    <div>
-      <div className="flex items-center gap-3 mb-5 flex-wrap">
-        <h2 className="text-base font-semibold text-foreground">
-          Categorias ({categories.length})
-        </h2>
-        <div className="flex items-center gap-2 ml-auto">
-          <div className="relative">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Buscar categoria..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-9 w-56"
-            />
-          </div>
-          <Button size="sm" onClick={openCreate}>
-            <Plus className="w-4 h-4 mr-1.5" /> Nova Categoria
-          </Button>
-          <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer ml-2">
-            <Switch checked={useNewUI} onCheckedChange={setUseNewUI} />
-            Nova UI
-          </label>
-        </div>
+    <div className="space-y-8">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">Bem-vindo ao ProduzAI Admin</h2>
+        <p className="text-muted-foreground mt-1">Gerencie usuários, permissões e configurações globais do sistema.</p>
       </div>
 
-      {isLoading ? (
+      <div className="grid gap-4 md:grid-cols-3">
+        {stats.map((stat, i) => (
+          <div 
+            key={i} 
+            className="p-6 bg-card border rounded-xl shadow-sm cursor-pointer hover:border-primary transition-colors"
+            onClick={() => stat.tab && navigate(`/admin/${stat.tab}`)}
+          >
+            <div className="flex items-center gap-4">
+              <div className={cn("p-3 rounded-lg", stat.bg)}>
+                <stat.icon className={cn("w-6 h-6", stat.color)} />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
+                <p className="text-2xl font-bold">{stat.value}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        <h3 className="text-lg font-semibold mb-4">Acesso Rápido</h3>
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+          {quickActions.map((item) => (
+            <button
+              key={item.key}
+              onClick={() => navigate(`/admin/${item.key}`)}
+              className="p-4 bg-card border rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-muted transition-colors text-center"
+            >
+              <div className="p-2 bg-primary/10 rounded-full">
+                <item.icon className="w-5 h-5 text-primary" />
+              </div>
+              <span className="text-sm font-medium">{item.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AdminUsers = () => {
+  const { t } = useTranslation();
+  const { data: users = [], isLoading: loadingUsers } = useAdminUsers();
+  const { data: allAccess = [] } = useUserClientAccess();
+  const { data: allAgencyAccess = [] } = useUserAgencyAccess();
+  const { data: allCampaignAccess = [] } = useUserCampaignAccess();
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredUsers = searchQuery.trim()
+    ? users.filter(u =>
+        (u.display_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        u.user_id.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : users;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+        <div>
+          <h2 className="text-xl font-bold">Gerenciamento de Usuários</h2>
+          <p className="text-sm text-muted-foreground">Visualize e edite permissões de todos os usuários do sistema.</p>
+        </div>
+        <CreateUserDialog />
+      </div>
+
+      <div className="relative">
+        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          placeholder="Buscar usuário por nome ou ID..."
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          className="pl-9"
+        />
+      </div>
+
+      {loadingUsers ? (
         <div className="flex justify-center py-12">
           <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
         </div>
-      ) : filtered.length === 0 ? (
-        <p className="text-muted-foreground text-sm py-12 text-center">
-          {search ? "Nenhuma categoria encontrada" : "Nenhuma categoria cadastrada"}
-        </p>
+      ) : filteredUsers.length === 0 ? (
+        <div className="text-center py-12 border border-dashed rounded-xl">
+          <p className="text-muted-foreground">Nenhum usuário encontrado.</p>
+        </div>
       ) : (
-        <div className="space-y-2">
-          {filtered.map(cat => (
-            <CategoryRow
-              key={cat.id}
-              category={cat}
-              onEdit={() => openEdit(cat)}
-              onPreview={() => setPreviewCategoryId(cat.id)}
-              onDelete={() => {
-                if (cat.is_system) { toast.error("Categoria do sistema não pode ser apagada"); return; }
-                if (confirm(`Apagar categoria "${cat.name}"?`)) deleteCat.mutate(cat.id);
-              }}
+        <div className="grid gap-4">
+          {filteredUsers.map(u => (
+            <UserPermissionCard
+              key={u.user_id}
+              userInfo={u}
+              allClientAccess={allAccess}
+              allAgencyAccess={allAgencyAccess}
+              allCampaignAccess={allCampaignAccess}
             />
           ))}
         </div>
       )}
-
-      <CategoryEditorV2
-        open={editorOpen}
-        onOpenChange={setEditorOpen}
-        category={editing}
-      />
-
-      <CategoryPreviewSheet
-        open={!!previewCategoryId}
-        onOpenChange={(v) => !v && setPreviewCategoryId(null)}
-        categoryId={previewCategoryId}
-      />
     </div>
   );
-}
+};
 
-function CategoryRow({
-  category, onEdit, onPreview, onDelete,
-}: {
-  category: PermissionCategory;
-  onEdit: () => void;
-  onPreview: () => void;
-  onDelete: () => void;
-}) {
-  const { data: userCount = 0 } = useUserCountByCategory(category.id);
-  const colorMeta = CATEGORY_COLORS.find(c => c.key === category.color) || CATEGORY_COLORS[1];
+const AdminApprovals = () => {
+  const { user } = useAuth();
+  const { t } = useTranslation();
+  const { isAdmin } = useUserRole();
+  const { data: users = [], isLoading } = useAllUsersApproval();
+  const updateStatus = useUpdateApprovalStatus();
+  const qc = useQueryClient();
+
+  const deleteUser = useMutation({
+    mutationFn: async (userId: string) => {
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { userId },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["all_users_approval"] });
+      qc.invalidateQueries({ queryKey: ["pending_users_count"] });
+      toast.success("Usuário excluído com sucesso.");
+    },
+    onError: (e: any) => toast.error(`Erro: ${e.message}`),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  const pending = users.filter((u) => u.approval_status === "pending");
+  const approved = users.filter((u) => u.approval_status === "approved");
+  const rejected = users.filter((u) => u.approval_status === "rejected");
+  const sorted = [...pending, ...approved, ...rejected];
 
   return (
-    <div className="flex items-center gap-3 p-3 border border-border rounded-lg bg-card hover:bg-muted/30 transition-colors">
-      <div className={cn("w-3 h-3 rounded-full shrink-0", colorMeta.class)} />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-sm text-foreground truncate">{category.name}</span>
-          {category.is_system && (
-            <Badge variant="secondary" className="gap-1 text-[10px]">
-              <Lock className="w-2.5 h-2.5" /> Sistema
-            </Badge>
-          )}
-          <Badge variant="outline" className="text-[10px]">{userCount} usuários</Badge>
-        </div>
-        {category.description && (
-          <div className="text-xs text-muted-foreground truncate mt-0.5">{category.description}</div>
-        )}
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-bold">Aprovação de Novos Usuários</h2>
+        <p className="text-sm text-muted-foreground">Gerencie as solicitações de acesso ao sistema.</p>
       </div>
-      <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onPreview}
-          title="Preview"
-        >
-          <Eye className="w-4 h-4" />
-        </Button>
-        <Button variant="ghost" size="sm" onClick={onEdit} title="Editar">
-          <Edit3 className="w-4 h-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onDelete}
-          disabled={!!category.is_system}
-          className="text-destructive hover:text-destructive"
-          title="Apagar"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider">Pendentes</span>
+          </div>
+          <p className="text-2xl font-bold">{pending.length}</p>
+        </div>
+        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700">
+          <div className="flex items-center gap-2 mb-1">
+            <UserCheck className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider">Aprovados</span>
+          </div>
+          <p className="text-2xl font-bold">{approved.length}</p>
+        </div>
+        <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-700">
+          <div className="flex items-center gap-2 mb-1">
+            <UserX className="w-4 h-4" />
+            <span className="text-xs font-bold uppercase tracking-wider">Rejeitados</span>
+          </div>
+          <p className="text-2xl font-bold">{rejected.length}</p>
+        </div>
+      </div>
+
+      <div className="border rounded-xl overflow-hidden bg-card">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Usuário</TableHead>
+              <TableHead>Cadastro</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {sorted.map((u) => {
+              const isCurrentUser = u.user_id === user?.id;
+              return (
+                <TableRow key={u.user_id}>
+                  <TableCell>
+                    <p className="font-medium">{capitalizeName(u.display_name) || "Sem nome"}</p>
+                    <p className="text-xs text-muted-foreground">{u.user_id.slice(0, 8)}…</p>
+                  </TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
+                    {new Date(u.created_at).toLocaleDateString("pt-BR")}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={cn(
+                      u.approval_status === "approved" && "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
+                      u.approval_status === "pending" && "bg-amber-500/10 text-amber-700 border-amber-500/30",
+                      u.approval_status === "rejected" && "bg-red-500/10 text-red-700 border-red-500/30",
+                    )}>
+                      {u.approval_status === "approved" ? "Aprovado" : u.approval_status === "pending" ? "Pendente" : "Rejeitado"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      {!isCurrentUser && (
+                        <>
+                          <Select
+                            value={u.approval_status}
+                            onValueChange={(val) =>
+                              updateStatus.mutate({ userId: u.user_id, status: val as ApprovalStatus })
+                            }
+                          >
+                            <SelectTrigger className="w-[130px] h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="approved">Aprovar</SelectItem>
+                              <SelectItem value="rejected">Rejeitar</SelectItem>
+                              <SelectItem value="pending">Pendente</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          {isAdmin && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive">
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+                                  <AlertDialogDescription>Esta ação é permanente.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteUser.mutate(u.user_id)} className="bg-destructive">Excluir</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
-}
+};
 
+export default Admin;
