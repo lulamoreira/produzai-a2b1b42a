@@ -208,8 +208,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const { schedules, scheduleMap, reinstallsByStore } = useCampaignSchedules(campaignId);
   const { storeOccurrenceStatus } = useOccurrenceStatusSync(campaignId);
 
-  const { data: inheritanceData, isLoading: isLoadingInheritance } = useScheduleInheritance(clientId, campaignId);
-  const [inheritanceDismissed, setInheritanceDismissed] = useState(false);
 
   // Check if current campaign has any preferences set
   const hasCurrentPreferences = useMemo(() => {
@@ -242,7 +240,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       if (s.installation_preference && s.installation_preference !== "not_informed") {
         upsertSchedule.mutate({
           campaign_id: campaignId,
-          store_id: storeId,
+          store_id: s.store_id,
           installation_preference: "not_informed",
         });
       }
@@ -539,7 +537,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     });
   };
 
-  const formatFieldValue = (field: string, value: any): string => {
+  const formatFieldValue = (field: string, value: any, storeId?: string): string => {
     if (value === null || value === undefined || value === "") return `(${t("common.none")})`;
     if (field === "store_approval_status" || field === "team_approval_status" || field === "reschedule_store_approval_status" || field === "reschedule_team_approval_status") {
       if (value === "approved") return t("scheduling.approved");
@@ -553,7 +551,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       if (value === "client") return t("scheduling.client");
       return String(value);
     }
-    if (field === "installation_preference" || field === "reschedule_preference") return getPrefLabel(storeId, value);
+    if (field === "installation_preference" || field === "reschedule_preference") return getPrefLabel(storeId || "", value);
     if (field === "team_id") {
       const team = value ? teamMap[value] : null;
       return team?.name || `(${t("common.none")})`;
@@ -584,7 +582,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       if (!label) continue;
       const oldVal = existing ? (existing as any)[key] : null;
       if (oldVal === newVal) continue;
-        changedDetails.push(`${label}: ${formatFieldValue(key, oldVal)} → ${formatFieldValue(key, newVal)}`);
+        changedDetails.push(`${label}: ${formatFieldValue(key, oldVal, storeId)} → ${formatFieldValue(key, newVal, storeId)}`);
     }
     if (changedDetails.length > 0) {
       logActivity.mutate({
@@ -654,7 +652,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         [t("scheduling.scheduledDate")]: schedule?.scheduled_date ? fmt.dateShort(new Date(schedule.scheduled_date + "T12:00:00")) : "",
         [t("common.time")]: schedule?.scheduled_time || "",
         "OS Instalação": schedule?.installation_os || "",
-        [t("scheduling.preferenceLabel")]: prefLabel(schedule?.installation_preference ?? null),
+        [t("scheduling.preferenceLabel")]: getPrefLabel(store.id, schedule?.installation_preference ?? null),
         [t("scheduling.team")]: team?.name || "",
         [t("scheduling.storeApproval")]: approvalLabel(schedule?.store_approval_status as ApprovalStatusValue | undefined),
         [t("scheduling.teamApproval")]: approvalLabel(schedule?.team_approval_status as ApprovalStatusValue | undefined),
