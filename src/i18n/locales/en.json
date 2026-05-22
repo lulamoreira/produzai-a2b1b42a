@@ -841,7 +841,26 @@
     "usersPermissionHint": "Click on a user to view and edit all permissions. Admin/Master have automatic access to everything.",
     "noUserFound": "No users found.",
     "noUserRegistered": "No users registered.",
-    "messages": "Messages",
+    "messages": {
+      "title": "Messages",
+      "coverage": "{{percentage}}% coverage — {{covered}} messages",
+      "filterAll": "All",
+      "filterUI": "Visual (UI)",
+      "filterEmail": "Email",
+      "filterWhatsapp": "WhatsApp",
+      "filterPush": "Push",
+      "statusCustom": "Customized",
+      "statusDefault": "Default",
+      "statusMissing": "Missing",
+      "missingWarning": "{{count}} messages without configuration — using system defaults",
+      "editTitle": "Edit Message",
+      "newTitle": "New Message",
+      "autoTranslate": "Auto-translate to EN and ES",
+      "autoTranslateSoon": "Coming soon",
+      "preview": "Preview",
+      "saveCustom": "Save as Customized",
+      "saved": "Message saved successfully!"
+    },
     "appearance": "Appearance"
   },
   "languages": {

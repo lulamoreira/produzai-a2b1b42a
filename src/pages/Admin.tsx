@@ -21,7 +21,7 @@ import UserPermissionCard from "@/components/admin/UserPermissionCard";
 import CategoryManager from "@/components/admin/CategoryManager";
 import CategoryEditorV2 from "@/components/admin/CategoryEditorV2";
 import { CategoryPreviewSheet } from "@/components/admin/CategoryPreviewSheet";
-import SystemMessagesManager from "@/components/admin/SystemMessagesManager";
+
 import RegeneratePieceImagesPanel from "@/components/admin/RegeneratePieceImagesPanel";
 import { usePermissionCategories, useDeletePermissionCategory, type PermissionCategory } from "@/hooks/usePermissionCategories";
 import { useUserCountByCategory } from "@/hooks/usePermissionGrants";
@@ -30,6 +30,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import AppearancePanel from "@/components/admin/AppearancePanel";
 import { InvitesPanel } from "@/components/admin/InvitesPanel";
+import { MessagesPanel } from "@/components/admin/MessagesPanel";
 
 const Admin = () => {
   const { t } = useTranslation();
@@ -90,7 +91,7 @@ const Admin = () => {
               <Tags className="w-4 h-4" /> {t("admin.categories")}
             </TabsTrigger>
             <TabsTrigger value="messages" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
-              <MessageSquareText className="w-4 h-4" /> {t("admin.messages")}
+              <MessageSquareText className="w-4 h-4" /> {t("admin.messages.title")}
             </TabsTrigger>
             <TabsTrigger value="notificacoes" className="gap-1.5 data-[state=active]:bg-primary/10 data-[state=active]:text-primary">
               <Bell className="w-4 h-4" /> Notificações
@@ -167,7 +168,7 @@ const Admin = () => {
           </TabsContent>
 
           <TabsContent value="messages">
-            <SystemMessagesManager />
+            <MessagesPanel />
           </TabsContent>
 
           <TabsContent value="notificacoes">
