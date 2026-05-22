@@ -235,7 +235,9 @@ const App = () => (
                   <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId" element={<ProtectedRoute><ErrorBoundary><CampaignDetail /></ErrorBoundary></ProtectedRoute>} />
                   <Route path="/checkin/:campaignId/:storeId" element={<ProtectedRoute><PhotoCheckin /></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-                  <Route path="/approvals" element={<ProtectedRoute><UserApprovals /></ProtectedRoute>} />
+                  <Route path="/admin/:tab" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                  <Route path="/approvals" element={<ProtectedRoute><Admin initialTab="approvals" /></ProtectedRoute>} />
+
 
                   <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
                   <Route path="/favorites" element={<ProtectedRoute><AgencySelect /></ProtectedRoute>} />
