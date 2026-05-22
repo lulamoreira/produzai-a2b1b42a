@@ -196,7 +196,13 @@ const CampaignDetail = () => {
         <CampaignHeader 
           campaign={campaign} agency={agency} client={client} 
           isAdminOrMaster={isAdminOrMaster} canEditCampaign={true}
-          onRename={() => {}} onBackup={() => setBackupOpen(true)} onOpenSection={setActiveSection}
+          onRename={async () => {
+            const newName = prompt(t("clientDashboard.renameCampaign"), campaign.name);
+            if (newName && newName.trim() !== campaign.name) {
+              const formattedName = capitalizeName(newName.trim());
+              await updateCampaign.mutateAsync({ id: campaignId!, name: formattedName });
+            }
+          }} onBackup={() => setBackupOpen(true)} onOpenSection={setActiveSection}
           pieces={pieces} kits={kits} kitPieces={kitPieces}
           activeAdjustment={activeAdjustment}
         />
