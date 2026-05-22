@@ -10,7 +10,7 @@ export interface AdminMenuItem {
 }
 
 export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
-  { key: "home",         label: "Início",        icon: Home,          access: "all" },
+  { key: "home",         label: "Painel Administrativo", icon: Home,          access: "all" },
   { key: "users",        label: "Usuários",       icon: Users,         access: "all" },
   { key: "invites",      label: "Convites",       icon: Mail,          access: "all" },
   { key: "categories",   label: "Categorias",     icon: Tag,           access: "all" },

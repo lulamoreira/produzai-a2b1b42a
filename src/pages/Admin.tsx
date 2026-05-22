@@ -51,10 +51,9 @@ const Admin = ({ initialTab: propInitialTab }: AdminProps) => {
   const { user, signOut } = useAuth();
   const { isAdmin, isAdminOrMaster, isLoading: loadingRole } = useUserRole();
   const navigate = useNavigate();
-  const { tab: urlTab } = useParams();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   
-  const currentTab = urlTab || propInitialTab || searchParams.get("tab") || "home";
+  const currentTab = searchParams.get("tab") || "home";
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   if (loadingRole) {
@@ -74,7 +73,11 @@ const Admin = ({ initialTab: propInitialTab }: AdminProps) => {
   const activeItem = menuItems.find(item => item.key === currentTab) || menuItems[0];
 
   const handleTabChange = (tab: string) => {
-    navigate(`/admin/${tab}`);
+    if (tab === "home") {
+      setSearchParams({});
+    } else {
+      setSearchParams({ tab });
+    }
     setSidebarOpen(false);
   };
 
@@ -203,7 +206,7 @@ const AdminContent = ({ tab }: { tab: string }) => {
 
 const AdminHome = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
+  const [_, setSearchParams] = useSearchParams();
   const { isAdmin } = useUserRole();
   const { data: users = [] } = useAdminUsers();
   const { data: approvals = [] } = useAllUsersApproval();
@@ -223,7 +226,7 @@ const AdminHome = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Bem-vindo ao ProduzAI Admin</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Painel Administrativo</h2>
         <p className="text-muted-foreground mt-1">Gerencie usuários, permissões e configurações globais do sistema.</p>
       </div>
 
@@ -232,7 +235,7 @@ const AdminHome = () => {
           <div 
             key={i} 
             className="p-6 bg-card border rounded-xl shadow-sm cursor-pointer hover:border-primary transition-colors"
-            onClick={() => stat.tab && navigate(`/admin/${stat.tab}`)}
+            onClick={() => stat.tab && setSearchParams({ tab: stat.tab })}
           >
             <div className="flex items-center gap-4">
               <div className={cn("p-3 rounded-lg", stat.bg)}>
@@ -253,7 +256,7 @@ const AdminHome = () => {
           {quickActions.map((item) => (
             <button
               key={item.key}
-              onClick={() => navigate(`/admin/${item.key}`)}
+              onClick={() => setSearchParams({ tab: item.key })}
               className="p-4 bg-card border rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-muted transition-colors text-center"
             >
               <div className="p-2 bg-primary/10 rounded-full">
