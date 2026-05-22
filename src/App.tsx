@@ -49,6 +49,7 @@ const ClientsV2 = lazy(() => import("./pages/v2/ClientsV2"));
 const JoinPage = lazy(() => import("./pages/JoinPage"));
 const WelcomePage = lazy(() => import("./pages/WelcomePage"));
 const FavoritesV2 = lazy(() => import("./pages/v2/FavoritesV2"));
+const AgenciesV2 = lazy(() => import("./pages/v2/AgenciesV2"));
 import { useUIVersion } from "@/hooks/useUIVersion";
 import { useFirstLogin } from "@/hooks/useFirstLogin";
 import AppLayout from "@/components/AppLayout";
