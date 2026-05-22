@@ -221,7 +221,7 @@ export function SidebarV2() {
 
     if (!isInAdmin) {
       return [{
-        label: t("sidebar.admin_panel", "Painel Administração"),
+        label: t("sidebar.admin_panel", "Painel Administrativo"),
         icon: Shield,
         route: "/admin",
       }];
@@ -235,7 +235,7 @@ export function SidebarV2() {
       ...item,
       route: item.key === "home" ? "/admin" : `/admin?tab=${item.key}`,
       active: item.key === "home" 
-        ? (!searchParams.get("tab") || searchParams.get("tab") === "home")
+        ? (location.pathname === "/admin" && !searchParams.get("tab")) || searchParams.get("tab") === "home"
         : searchParams.get("tab") === item.key
     }));
   }, [isAdminOrMaster, isAdmin, location.pathname, location.search, t]);

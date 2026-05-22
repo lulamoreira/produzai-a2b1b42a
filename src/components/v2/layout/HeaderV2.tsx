@@ -64,7 +64,7 @@ export function HeaderV2() {
     } else if (path === "/favorites") {
       crumbs.push({ label: t("sidebar.favorites") });
     } else if (path === "/admin") {
-      crumbs.push({ label: t("header.admin") });
+      crumbs.push({ label: t("sidebar.admin_panel", "Painel Administrativo") });
     } else if (path === "/approvals") {
       crumbs.push({ label: t("sidebar.approvals") });
     } else if (path === "/my-campaigns") {
