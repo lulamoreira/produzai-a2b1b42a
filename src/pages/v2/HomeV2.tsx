@@ -64,8 +64,8 @@ export function HomeV2() {
       if (isAdminOrMaster) {
         const [agenciesRes, clientsRes, activeCampaignsRes, profilesRes] = await Promise.all([
           (supabase.from("agencies") as any).select("id, name, created_at").is("deleted_at", null).order("name"),
-          (supabase.from("clients") as any).select("id, name, created_at, agencies(name)").order("name"),
-          (supabase.from("campaigns") as any).select("id, name, created_at, client_id, clients(name), occurrence_end_date").or(`occurrence_end_date.is.null,occurrence_end_date.gte.${new Date().toISOString().split('T')[0]}`).order("created_at", { ascending: false }),
+          (supabase.from("clients") as any).select("id, name, created_at, agency_id, agencies(name)").order("name"),
+          (supabase.from("campaigns") as any).select("id, name, created_at, client_id, agency_id, clients(name), occurrence_end_date").or(`occurrence_end_date.is.null,occurrence_end_date.gte.${new Date().toISOString().split('T')[0]}`).order("created_at", { ascending: false }),
           (supabase.from("profiles") as any).select("id, display_name, created_at, user_id, user_roles(role)").order("display_name")
         ]);
 

@@ -46,14 +46,16 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, init
     
     if (kpiKey === "activeCampaigns") {
       return rawData.map((c: any) => {
-        // If occurrence_end_date is null, it's definitely active.
-        // If not null, we already filtered for >= today in the query.
         return {
           id: c.id,
           title: c.name,
           subtitle: c.clients?.name,
           meta: formatters.dateShort(new Date(c.created_at)),
-          onClick: () => navigate(`/agency/default/clients/${c.client_id}/campaigns/${c.id}`),
+          onClick: () => {
+            const agencyId = c.agency_id || "default";
+            navigate(`/agency/${agencyId}/clients/${c.client_id}/campaigns/${c.id}`);
+            onClose();
+          },
         };
       });
     }
@@ -64,7 +66,10 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, init
         title: a.name,
         subtitle: null,
         meta: formatters.dateShort(new Date(a.created_at)),
-        onClick: () => navigate(`/agencies/${a.id}`),
+        onClick: () => {
+          navigate(`/agency/${a.id}`);
+          onClose();
+        },
       }));
     }
 
@@ -74,7 +79,11 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, init
         title: c.name,
         subtitle: c.agencies?.name,
         meta: formatters.dateShort(new Date(c.created_at)),
-        onClick: () => navigate(`/clients/${c.id}`),
+        onClick: () => {
+          const agencyId = c.agency_id || "default";
+          navigate(`/agency/${agencyId}/clients/${c.id}`);
+          onClose();
+        },
       }));
     }
 
@@ -84,13 +93,16 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, init
         return {
           id: p.id,
           title: p.display_name || t("common.user"),
-          subtitle: p.user_id, // could be email if available, but profiles doesn't have it.
+          subtitle: p.user_id,
           meta: role ? (
             <Badge variant="secondary" className="text-[10px] bg-stone-100 text-stone-600 border-none">
               {role.toUpperCase()}
             </Badge>
           ) : null,
-          onClick: null,
+          onClick: () => {
+            navigate(`/admin?tab=users&userId=${p.user_id}`);
+            onClose();
+          },
         };
       });
     }
@@ -105,7 +117,11 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, init
           ? `${s.scheduled_date}${s.scheduled_time ? " " + s.scheduled_time : ""}`
           : t("scheduling.notScheduled"),
         onClick: s.campaign_id
-          ? () => navigate(`/agency/default/clients/${s.campaigns?.client_id}/campaigns/${s.campaign_id}/instalacoes`)
+          ? () => {
+              const agencyId = s.campaigns?.agency_id || "default";
+              navigate(`/agency/${agencyId}/clients/${s.campaigns?.client_id}/campaigns/${s.campaign_id}/instalacoes`);
+              onClose();
+            }
           : null,
       }));
     }
