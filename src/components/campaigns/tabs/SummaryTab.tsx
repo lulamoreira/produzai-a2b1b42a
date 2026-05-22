@@ -47,10 +47,10 @@ export default function SummaryTab({
     queryKey: ["campaign-summary-kpis", campaignId],
     queryFn: async () => {
       const [storesRes, piecesRes, pendingInstallationsRes, pendingApprovalsRes] = await Promise.all([
-        supabase.from("client_stores").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId),
-        supabase.from("pieces").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId),
-        supabase.from("campaign_schedules").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).is("completed_at", null),
-        supabase.from("user_approvals").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).eq("status", "pending")
+        supabase.from("client_stores").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId) as any,
+        supabase.from("pieces").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId) as any,
+        supabase.from("campaign_schedules").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).is("completed_at", null) as any,
+        supabase.from("user_approvals").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).eq("status", "pending") as any
       ]);
 
       return {

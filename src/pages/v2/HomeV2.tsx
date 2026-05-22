@@ -68,10 +68,10 @@ export function HomeV2() {
           activeCampaignsRes,
           profilesRes
         ] = await Promise.all([
-          supabase.from("agencies").select("id", { count: "exact", head: true }).is("deleted_at", null),
-          supabase.from("clients").select("id", { count: "exact", head: true }),
-          supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("status", "active"),
-          supabase.from("profiles").select("id", { count: "exact", head: true })
+          supabase.from("agencies").select("id", { count: "exact", head: true }).is("deleted_at", null) as any,
+          supabase.from("clients").select("id", { count: "exact", head: true }) as any,
+          supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("status", "active") as any,
+          supabase.from("profiles").select("id", { count: "exact", head: true }) as any
         ]);
 
         return {
@@ -89,10 +89,10 @@ export function HomeV2() {
           clientsRes,
           pendingApprovalsRes
         ] = await Promise.all([
-          supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("agency_id", agencyId).eq("status", "active"),
-          supabase.from("clients").select("id", { count: "exact", head: true }).eq("agency_id", agencyId),
+          supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("agency_id", agencyId).eq("status", "active") as any,
+          supabase.from("clients").select("id", { count: "exact", head: true }).eq("agency_id", agencyId) as any,
           supabase.from("user_approvals").select("id", { count: "exact", head: true })
-            .eq("status", "pending")
+            .eq("status", "pending") as any
         ]);
 
         let pendingInstCount = 0;
@@ -393,7 +393,7 @@ export function HomeV2() {
                 </DialogTitle>
                 <div className="text-xs text-stone-500 font-medium flex items-center gap-1.5 mt-0.5">
                   <Clock className="w-3.5 h-3.5" />
-                  {selectedActivity?.time && formatters.fullDate(selectedActivity.time)}
+                  {selectedActivity?.time && formatters.dateTime(selectedActivity.time)}
                 </div>
               </div>
             </div>

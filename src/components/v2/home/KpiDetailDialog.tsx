@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Megaphone, Store, Package, Wrench, ChevronRight, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
-type KpiKey = "activeCampaigns" | "stores" | "pieces" | "pendingInstallations";
+type KpiKey = "activeCampaigns" | "stores" | "pieces" | "pendingInstallations" | "totalAgencies" | "totalClients" | "totalUsers" | "myClients" | "pendingApprovals";
 
 interface Props {
   kpiKey: KpiKey | null;
@@ -15,12 +15,19 @@ interface Props {
   t: (key: string, opts?: any) => string;
 }
 
-const META: Record<KpiKey, { icon: any; titleKey: string; descKey: string }> = {
-  activeCampaigns: { icon: Megaphone, titleKey: "homeV2.kpis.activeCampaigns", descKey: "homeV2.kpiDetail.activeCampaignsDesc" },
+const META: Record<string, { icon: any; titleKey: string; descKey: string }> = {
+  activeCampaigns: { icon: Megaphone, titleKey: "home.kpi.activeCampaigns", descKey: "homeV2.kpiDetail.activeCampaignsDesc" },
   stores: { icon: Store, titleKey: "homeV2.kpis.stores", descKey: "homeV2.kpiDetail.storesDesc" },
   pieces: { icon: Package, titleKey: "homeV2.kpis.piecesInProduction", descKey: "homeV2.kpiDetail.piecesDesc" },
-  pendingInstallations: { icon: Wrench, titleKey: "homeV2.kpis.pendingInstallations", descKey: "homeV2.kpiDetail.pendingDesc" },
+  pendingInstallations: { icon: Wrench, titleKey: "home.kpi.pendingInstallations", descKey: "homeV2.kpiDetail.pendingDesc" },
+  totalAgencies: { icon: Building2, titleKey: "home.kpi.totalAgencies", descKey: "homeV2.kpiDetail.genericDesc" },
+  totalClients: { icon: Users, titleKey: "home.kpi.totalClients", descKey: "homeV2.kpiDetail.genericDesc" },
+  totalUsers: { icon: UserCheck, titleKey: "home.kpi.totalUsers", descKey: "homeV2.kpiDetail.genericDesc" },
+  myClients: { icon: Users, titleKey: "home.kpi.myClients", descKey: "homeV2.kpiDetail.genericDesc" },
+  pendingApprovals: { icon: ClipboardCheck, titleKey: "home.kpi.pendingApprovals", descKey: "homeV2.kpiDetail.genericDesc" },
 };
+
+import { Building2, Users, UserCheck, ClipboardCheck } from "lucide-react";
 
 export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t }: Props) {
   const { data, isLoading } = useQuery({
