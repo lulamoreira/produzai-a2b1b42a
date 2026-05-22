@@ -39,6 +39,7 @@ export type Campaign = {
   color: string | null;
   display_order: number;
   cover_images?: Array<{ url: string; timestamp: string }>;
+  is_active: boolean;
   created_at: string;
 };
 
