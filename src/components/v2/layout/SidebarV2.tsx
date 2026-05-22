@@ -21,7 +21,8 @@ import {
   Mail,
   ChevronDown,
   Briefcase,
-  Shield
+  Shield,
+  ArrowLeft
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -542,8 +543,18 @@ export function SidebarV2() {
             <div className="space-y-1 pt-2">
               {!collapsed && (
                 <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
-                  {t("sidebar.section_admin", "Administração")}
+                  {t("sidebar.administration", "Administração")}
                 </div>
+              )}
+              {isInAdmin && !collapsed && (
+                <button
+                  onClick={() => navigate("/")}
+                  className="flex items-center gap-2 px-3 pb-2 text-[10px] transition-colors"
+                  style={{ color: 'var(--v2-sidebar-muted)' }}
+                >
+                  <ArrowLeft className="w-3 h-3" />
+                  Voltar ao App
+                </button>
               )}
               {adminItems.map((item, index) => {
                 const isInAdmin = location.pathname.startsWith("/admin");
