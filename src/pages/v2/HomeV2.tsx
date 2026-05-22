@@ -193,6 +193,8 @@ export function HomeV2() {
 
   type ActivityItem = NonNullable<typeof recentActivity>[number];
   const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
+  type KpiKey = "activeCampaigns" | "stores" | "pieces" | "pendingInstallations";
+  const [selectedKpi, setSelectedKpi] = useState<KpiKey | null>(null);
 
 
   const userName = (displayName || user?.email?.split("@")[0] || t("header.user")).trim().split(/\s+/)[0];
