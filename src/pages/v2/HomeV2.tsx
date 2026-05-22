@@ -142,6 +142,7 @@ export function HomeV2() {
           name, 
           created_at,
           client_id,
+          is_active,
           clients (name)
         `)
         .order("created_at", { ascending: false })

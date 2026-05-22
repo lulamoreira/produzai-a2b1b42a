@@ -83,7 +83,8 @@ import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
 
 import * as XLSX from "xlsx";
-import { capitalizeName } from "@/lib/utils";
+import { capitalizeName, cn } from "@/lib/utils";
+
 
 /** Auto-capitalize text fields of a store form (excludes state, store_model, email, cnpj, codes) */
 function capitalizeStoreFields<T extends Record<string, any>>(data: T): T {
