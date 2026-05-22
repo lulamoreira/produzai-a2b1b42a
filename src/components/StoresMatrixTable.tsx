@@ -369,11 +369,11 @@ export default function StoresMatrixTable({
     return stores
       .filter((s) => {
         if (storeStateFilter && storeStateFilter !== "all" && s.state?.trim() !== storeStateFilter) return false;
-        const q = storeSearch.toLowerCase();
-        return !q || s.name.toLowerCase().includes(q) ||
-          s.nickname?.toLowerCase().includes(q) ||
-          s.city?.toLowerCase().includes(q) ||
-          s.store_code?.toLowerCase().includes(q);
+        const q = storeSearch.toLowerCase().trim();
+        return !q || Object.values(s).some(val => 
+          (typeof val === 'string' || typeof val === 'number') && 
+          val.toString().toLowerCase().includes(q)
+        );
       })
       .sort((a, b) => {
         const valA = ((a as any)[sortKey] || "").toString().toLowerCase();
