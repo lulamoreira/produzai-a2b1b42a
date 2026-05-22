@@ -13,6 +13,7 @@ interface Props {
   navigate: (path: string) => void;
   formatters: any;
   t: (key: string, opts?: any) => string;
+  initialData?: any[];
 }
 
 const META: Record<string, { icon: any; titleKey: string; descKey: string }> = {
@@ -29,77 +30,89 @@ const META: Record<string, { icon: any; titleKey: string; descKey: string }> = {
 
 import { Building2, Users, UserCheck, ClipboardCheck } from "lucide-react";
 
-export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t }: Props) {
+export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, initialData }: Props) {
   const { data, isLoading } = useQuery({
-    enabled: !!kpiKey,
+    enabled: !!kpiKey && !initialData,
     queryKey: ["v2-kpi-detail", kpiKey],
     queryFn: async () => {
-      if (kpiKey === "activeCampaigns") {
-        const today = new Date().toISOString().split("T")[0];
-        const { data } = await supabase
-          .from("campaigns")
-          .select("id, name, created_at, client_id, clients(name)")
-          .or(`occurrence_end_date.is.null,occurrence_end_date.gte.${today}`)
-          .order("created_at", { ascending: false });
-        return (data || []).map((c: any) => ({
+      // Keep existing fetch logic for other KPIs not in dashboardData if needed
+      // But for our main 4 KPIs we now use initialData
+      return [];
+    },
+  });
+
+  const displayData = React.useMemo(() => {
+    const rawData = initialData || data || [];
+    
+    if (kpiKey === "activeCampaigns") {
+      return rawData.map((c: any) => {
+        // If occurrence_end_date is null, it's definitely active.
+        // If not null, we already filtered for >= today in the query.
+        return {
           id: c.id,
           title: c.name,
           subtitle: c.clients?.name,
           meta: formatters.dateShort(new Date(c.created_at)),
           onClick: () => navigate(`/agency/default/clients/${c.client_id}/campaigns/${c.id}`),
-        }));
-      }
-      if (kpiKey === "stores") {
-        const { data } = await supabase
-          .from("stores")
-          .select("id, name, uf, type, model")
-          .order("name", { ascending: true })
-          .limit(500);
-        return (data || []).map((s: any) => ({
-          id: s.id,
-          title: s.name,
-          subtitle: [s.uf, s.type, s.model].filter(Boolean).join(" • "),
-          meta: null,
-          onClick: null,
-        }));
-      }
-      if (kpiKey === "pieces") {
-        const { data } = await supabase
-          .from("pieces")
-          .select("id, name, code, category, size, created_at")
-          .order("created_at", { ascending: false })
-          .limit(500);
-        return (data || []).map((p: any) => ({
+        };
+      });
+    }
+    
+    if (kpiKey === "totalAgencies") {
+      return rawData.map((a: any) => ({
+        id: a.id,
+        title: a.name,
+        subtitle: null,
+        meta: formatters.dateShort(new Date(a.created_at)),
+        onClick: () => navigate(`/agencies/${a.id}`),
+      }));
+    }
+
+    if (kpiKey === "totalClients" || kpiKey === "myClients") {
+      return rawData.map((c: any) => ({
+        id: c.id,
+        title: c.name,
+        subtitle: c.agencies?.name,
+        meta: formatters.dateShort(new Date(c.created_at)),
+        onClick: () => navigate(`/clients/${c.id}`),
+      }));
+    }
+
+    if (kpiKey === "totalUsers") {
+      return rawData.map((p: any) => {
+        const role = p.user_roles?.[0]?.role;
+        return {
           id: p.id,
-          title: p.name,
-          subtitle: [p.code, p.category, p.size].filter(Boolean).join(" • "),
-          meta: p.created_at ? formatters.dateShort(new Date(p.created_at)) : null,
+          title: p.display_name || t("common.user"),
+          subtitle: p.user_id, // could be email if available, but profiles doesn't have it.
+          meta: role ? (
+            <Badge variant="secondary" className="text-[10px] bg-stone-100 text-stone-600 border-none">
+              {role.toUpperCase()}
+            </Badge>
+          ) : null,
           onClick: null,
-        }));
-      }
-      if (kpiKey === "pendingInstallations") {
-        const { data } = await supabase
-          .from("campaign_schedules")
-          .select("id, scheduled_date, scheduled_time, campaign_id, store_id, client_stores(name), campaigns(name, client_id, clients(name)), installation_teams(name)")
-          .is("completed_at", null)
-          .order("scheduled_date", { ascending: true, nullsFirst: false })
-          .limit(500);
-        return (data || []).map((s: any) => ({
-          id: s.id,
-          title: s.client_stores?.name || t("common.store", { defaultValue: "Loja" }),
-          subtitle: [s.campaigns?.clients?.name, s.campaigns?.name, s.installation_teams?.name]
-            .filter(Boolean).join(" • "),
-          meta: s.scheduled_date
-            ? `${s.scheduled_date}${s.scheduled_time ? " " + s.scheduled_time : ""}`
-            : t("scheduling.notScheduled", { defaultValue: "Sem data" }),
-          onClick: s.campaign_id
-            ? () => navigate(`/agency/default/clients/${s.campaigns?.client_id}/campaigns/${s.campaign_id}/instalacoes`)
-            : null,
-        }));
-      }
-      return [];
-    },
-  });
+        };
+      });
+    }
+
+    if (kpiKey === "pendingInstallations") {
+      return rawData.map((s: any) => ({
+        id: s.id,
+        title: s.client_stores?.name || t("common.store"),
+        subtitle: [s.campaigns?.clients?.name, s.campaigns?.name, s.installation_teams?.name]
+          .filter(Boolean).join(" • "),
+        meta: s.scheduled_date
+          ? `${s.scheduled_date}${s.scheduled_time ? " " + s.scheduled_time : ""}`
+          : t("scheduling.notScheduled"),
+        onClick: s.campaign_id
+          ? () => navigate(`/agency/default/clients/${s.campaigns?.client_id}/campaigns/${s.campaign_id}/instalacoes`)
+          : null,
+      }));
+    }
+
+    // fallback for other raw data
+    return rawData;
+  }, [kpiKey, initialData, data, formatters, navigate, t]);
 
   const open = !!kpiKey;
   const meta = kpiKey ? META[kpiKey] : null;
@@ -121,7 +134,7 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t }: Pr
                 </DialogDescription>
               </div>
               <Badge variant="outline" className="ml-auto">
-                {isLoading ? "…" : data?.length ?? 0}
+                {isLoading ? "…" : displayData?.length ?? 0}
               </Badge>
             </div>
           </DialogHeader>
@@ -132,13 +145,13 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t }: Pr
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-5 h-5 animate-spin text-stone-400" />
             </div>
-          ) : !data || data.length === 0 ? (
+          ) : !displayData || displayData.length === 0 ? (
             <div className="text-center py-12 text-sm text-stone-500">
               {t("common.noResults", { defaultValue: "Nenhum resultado" })}
             </div>
           ) : (
             <div className="divide-y divide-stone-100 dark:divide-stone-800">
-              {data.map((item) => {
+              {displayData.map((item: any) => {
                 const Tag: any = item.onClick ? "button" : "div";
                 return (
                   <Tag
