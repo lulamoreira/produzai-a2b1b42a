@@ -329,6 +329,7 @@ export function SidebarV2() {
             />
             {!collapsed && (
               <span 
+                className={cn(
                   "text-xs font-semibold uppercase tracking-wider truncate",
                   isActiveCampaign ? "text-white" : "group-hover:text-stone-200",
                   camp.is_active === false && "text-red-400 opacity-80"
