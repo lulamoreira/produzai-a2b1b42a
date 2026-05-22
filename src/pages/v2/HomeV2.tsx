@@ -32,42 +32,86 @@ import { EmptyStateV2 } from "@/components/v2/ui/EmptyStateV2";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { KpiDetailDialog } from "@/components/v2/home/KpiDetailDialog";
+import { useUserRole } from "@/hooks/useUserRole";
 
 export function HomeV2() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { role, isAdminOrMaster } = useUserRole();
   const navigate = useNavigate();
   const { displayName } = useDisplayName();
   const formatters = useFormatters();
+  const [selectedKpi, setSelectedKpi] = useState<string | null>(null);
+  const [selectedActivity, setSelectedActivity] = useState<any>(null);
 
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return t("homeV2.greeting.morning");
-    if (hour >= 12 && hour < 18) return t("homeV2.greeting.afternoon");
-    return t("homeV2.greeting.evening");
-  };
+  const { data: userAgency } = useQuery({
+    queryKey: ["user-agency-id", user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      const { data } = await supabase
+        .from("profiles")
+        .select("agency_id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+      return data?.agency_id;
+    },
+    enabled: !!user?.id
+  });
 
   const { data: kpis, isLoading: loadingKpis } = useQuery({
-    queryKey: ["v2-dashboard-kpis"],
+    queryKey: ["v2-dashboard-kpis", role, userAgency],
     queryFn: async () => {
-      const [
-        activeCampaignsRes,
-        storesCountRes,
-        piecesCountRes,
-        pendingInstallationsRes
-      ] = await Promise.all([
-        supabase.from("campaigns").select("id", { count: "exact", head: true }),
-        supabase.from("stores").select("id", { count: "exact", head: true }),
-        supabase.from("pieces").select("id", { count: "exact", head: true }),
-        supabase.from("campaign_schedules").select("id", { count: "exact", head: true }).is("completed_at", null)
-      ]);
+      if (isAdminOrMaster) {
+        const [
+          agenciesRes,
+          clientsRes,
+          activeCampaignsRes,
+          profilesRes
+        ] = await Promise.all([
+          supabase.from("agencies").select("id", { count: "exact", head: true }).is("deleted_at", null),
+          supabase.from("clients").select("id", { count: "exact", head: true }),
+          supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("status", "active"),
+          supabase.from("profiles").select("id", { count: "exact", head: true })
+        ]);
 
-      return {
-        activeCampaigns: activeCampaignsRes.count || 0,
-        storesCount: storesCountRes.count || 0,
-        piecesCount: piecesCountRes.count || 0,
-        pendingInstallations: pendingInstallationsRes.count || 0
-      };
+        return {
+          totalAgencies: agenciesRes.count || 0,
+          totalClients: clientsRes.count || 0,
+          activeCampaigns: activeCampaignsRes.count || 0,
+          totalUsers: profilesRes.count || 0
+        };
+      } else {
+        const agencyId = userAgency;
+        if (!agencyId) return null;
+
+        const [
+          activeCampaignsRes,
+          clientsRes,
+          pendingApprovalsRes
+        ] = await Promise.all([
+          supabase.from("campaigns").select("id", { count: "exact", head: true }).eq("agency_id", agencyId).eq("status", "active"),
+          supabase.from("clients").select("id", { count: "exact", head: true }).eq("agency_id", agencyId),
+          supabase.from("user_approvals").select("id", { count: "exact", head: true })
+            .eq("status", "pending")
+        ]);
+
+        let pendingInstCount = 0;
+        const { data: agencyCampaigns } = await supabase.from("campaigns").select("id").eq("agency_id", agencyId);
+        if (agencyCampaigns && agencyCampaigns.length > 0) {
+          const campIds = agencyCampaigns.map(c => c.id);
+          const { count } = await supabase.from("campaign_schedules").select("id", { count: "exact", head: true })
+            .is("completed_at", null)
+            .in("campaign_id", campIds);
+          pendingInstCount = count || 0;
+        }
+
+        return {
+          activeCampaigns: activeCampaignsRes.count || 0,
+          myClients: clientsRes.count || 0,
+          pendingInstallations: pendingInstCount,
+          pendingApprovals: pendingApprovalsRes.count || 0
+        };
+      }
     }
   });
 
@@ -113,7 +157,6 @@ export function HomeV2() {
           .limit(5)
       ]);
 
-      // Get user profiles for activity log actors
       const userIds = [...new Set((activityLogRes.data || []).map(item => item.user_id).filter(Boolean))];
       let profileMap: Record<string, string> = {};
       
@@ -130,12 +173,11 @@ export function HomeV2() {
 
       const activities: any[] = [];
 
-      // Add activity log items
       (activityLogRes.data || []).forEach((item: any) => {
         const actorName = item.actor_name || profileMap[item.user_id] || t("common.user");
         let icon = Wrench;
         if (item.action?.includes("concluida")) icon = Package;
-        if (item.action?.includes("foto")) icon = Megaphone; // Or an Image icon if available
+        if (item.action?.includes("foto")) icon = Megaphone;
         if (item.action?.includes("agendamento")) icon = CalendarIcon;
 
         activities.push({
@@ -155,53 +197,16 @@ export function HomeV2() {
         });
       });
 
-      // Add occurrences
-      (occurrencesRes.data || []).forEach((item: any) => {
-        activities.push({
-          id: `occ-${item.id}`,
-          type: "occurrence",
-          title: item.description || item.client_stores?.name || t("common.occurrence"),
-          description: t("common.registered"),
-          time: new Date(item.created_at || new Date()),
-          icon: Package,
-          campaignId: item.campaign_id,
-          clientId: item.campaigns?.client_id,
-          clientName: item.campaigns?.clients?.name,
-          campaignName: item.campaigns?.name,
-          actor: item.reporter_name || t("common.user"),
-          extra: item.client_stores?.name || null,
-          navigateTo: `/agency/default/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}/ocorrencias`,
-        });
-      });
-
-      // Add campaigns
-      (campaignsRes.data || []).forEach((item: any) => {
-        activities.push({
-          id: `camp-${item.id}`,
-          type: "campaign",
-          title: item.name,
-          description: t("common.new", { defaultValue: "Nova" }) + " " + t("common.campaign").toLowerCase(),
-          time: new Date(item.created_at),
-          icon: Megaphone,
-          campaignId: item.id,
-          clientId: item.client_id,
-          clientName: item.clients?.name,
-          campaignName: item.name,
-          actor: t("common.system", { defaultValue: "Sistema" }),
-          extra: null,
-          navigateTo: `/agency/default/clients/${item.client_id}/campaigns/${item.id}`,
-        });
-      });
-
-      return activities.sort((a, b) => b.time.getTime() - a.time.getTime()).slice(0, 10);
+      return activities.sort((a, b) => b.time.getTime() - a.time.getTime());
     }
   });
 
-  type ActivityItem = NonNullable<typeof recentActivity>[number];
-  const [selectedActivity, setSelectedActivity] = useState<ActivityItem | null>(null);
-  type KpiKey = "activeCampaigns" | "stores" | "pieces" | "pendingInstallations";
-  const [selectedKpi, setSelectedKpi] = useState<KpiKey | null>(null);
-
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return t("homeV2.greeting.morning");
+    if (hour >= 12 && hour < 18) return t("homeV2.greeting.afternoon");
+    return t("homeV2.greeting.evening");
+  };
 
   const userName = (displayName || user?.email?.split("@")[0] || t("header.user")).trim().split(/\s+/)[0];
 
@@ -262,7 +267,6 @@ export function HomeV2() {
         formatters={formatters}
         t={t}
       />
-
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
         {/* Recent Campaigns Section */}
@@ -363,139 +367,102 @@ export function HomeV2() {
                   </button>
                 ))
               ) : (
-                <EmptyStateV2 
-                  icon={Inbox}
-                  title={t("common.noResults")}
-                  description={t("common.noResults")}
-                />
+                <div className="p-8">
+                  <EmptyStateV2 
+                    icon={Inbox}
+                    title={t("common.noResults")}
+                    description={t("common.noResults")}
+                  />
+                </div>
               )}
             </div>
           </div>
         </section>
       </div>
 
-      <Dialog open={!!selectedActivity} onOpenChange={(o) => !o && setSelectedActivity(null)}>
-        <DialogContent className="max-w-md w-full rounded-2xl overflow-hidden p-0 gap-0 border-none shadow-xl bg-[var(--v2-surface)]">
-          {selectedActivity && (
-            <div className="flex flex-col max-h-[90vh]">
-              <DialogHeader className="p-6 pb-4 flex-shrink-0">
-                <div className="flex items-start gap-3 pr-8">
-                  <div className="w-12 h-12 rounded-xl bg-stone-100 dark:bg-stone-800 flex items-center justify-center flex-shrink-0 shadow-sm border border-stone-200 dark:border-stone-700">
-                    <selectedActivity.icon className="w-6 h-6 text-stone-700 dark:text-stone-300" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <DialogTitle className="text-left text-lg font-bold text-stone-900 dark:text-stone-100 break-words leading-tight mb-1">
-                      {selectedActivity.title}
-                    </DialogTitle>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <DialogDescription className="text-left text-sm text-stone-600 dark:text-stone-400 break-words font-medium">
-                        {selectedActivity.description}
-                      </DialogDescription>
-                      <span className="bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5 border border-emerald-200 dark:border-emerald-800">
-                        {t("common.registered", { defaultValue: "Registrada" })}
-                      </span>
-                    </div>
-                  </div>
+      <Dialog open={!!selectedActivity} onOpenChange={(open) => !open && setSelectedActivity(null)}>
+        <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 shadow-2xl">
+          <DialogHeader className="p-6 pb-4 bg-stone-50/50 dark:bg-stone-900/50 border-b border-stone-100 dark:border-stone-800">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-10 h-10 rounded-full bg-white dark:bg-stone-800 flex items-center justify-center shadow-sm border border-stone-100 dark:border-stone-700">
+                {selectedActivity?.icon && <selectedActivity.icon className="w-5 h-5 text-[#C2714F]" />}
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-bold text-stone-900 dark:text-stone-100 leading-tight">
+                  {selectedActivity?.title}
+                </DialogTitle>
+                <div className="text-xs text-stone-500 font-medium flex items-center gap-1.5 mt-0.5">
+                  <Clock className="w-3.5 h-3.5" />
+                  {selectedActivity?.time && formatters.fullDate(selectedActivity.time)}
                 </div>
-              </DialogHeader>
+              </div>
+            </div>
+          </DialogHeader>
 
-              <div className="px-6 py-2 space-y-4 overflow-y-auto custom-scrollbar flex-1 min-h-0">
-                {selectedActivity.campaignName && (
-                  <div className="flex gap-3 py-3 border-t border-stone-200 dark:border-stone-800 first:border-none">
-                    <Megaphone className="w-4 h-4 text-stone-400 dark:text-stone-500 mt-1 flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-0.5">
-                        {t("common.campaign")}
-                      </div>
-                      <div className="text-sm text-stone-800 dark:text-stone-100 font-medium break-words leading-relaxed">
-                        {selectedActivity.campaignName}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {selectedActivity.clientName && (
-                  <div className="flex gap-3 py-3 border-t border-stone-200 dark:border-stone-800">
-                    <Store className="w-4 h-4 text-stone-400 dark:text-stone-500 mt-1 flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-0.5">
-                        {t("common.client")}
-                      </div>
-                      <div className="text-sm text-stone-800 dark:text-stone-100 font-medium break-words leading-relaxed">
-                        {selectedActivity.clientName}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {selectedActivity.actor && (
-                  <div className="flex gap-3 py-3 border-t border-stone-200 dark:border-stone-800">
-                    <UserIcon className="w-4 h-4 text-stone-400 dark:text-stone-500 mt-1 flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-0.5">
-                        {t("common.by", { defaultValue: "Por" })}
-                      </div>
-                      <div className="text-sm text-stone-800 dark:text-stone-100 font-medium break-words leading-relaxed">
-                        {selectedActivity.actor}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {selectedActivity.extra && (
-                  <div className="flex gap-3 py-3 border-t border-stone-200 dark:border-stone-800">
-                    <CalendarIcon className="w-4 h-4 text-stone-400 dark:text-stone-500 mt-1 flex-shrink-0" />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-0.5">
-                        {t("common.details", { defaultValue: "Detalhes" })}
-                      </div>
-                      <div className="text-sm text-stone-800 dark:text-stone-100 font-medium break-words leading-relaxed italic">
-                        {selectedActivity.extra}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="flex gap-3 py-3 border-t border-stone-200 dark:border-stone-800">
-                  <Clock className="w-4 h-4 text-stone-400 dark:text-stone-500 mt-1 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[10px] font-bold uppercase tracking-widest text-stone-500 dark:text-stone-400 mb-0.5">
-                      {t("common.when", { defaultValue: "Quando" })}
-                    </div>
-                    <div className="text-sm text-stone-800 dark:text-stone-100 font-medium break-words leading-relaxed">
-                      {formatters.dateTime(selectedActivity.time)}
-                      <span className="block text-xs text-stone-500 dark:text-stone-400 font-normal mt-0.5">
-                        {formatters.relative(selectedActivity.time)}
-                      </span>
-                    </div>
-                  </div>
+          <div className="p-6 space-y-5">
+            <div className="grid grid-cols-1 gap-4">
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-stone-50/30 dark:bg-stone-900/30 border border-stone-100/50 dark:border-stone-800/50">
+                <Building2 className="w-4 h-4 text-stone-400 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">{t("common.client")}</p>
+                  <p className="text-sm font-semibold text-stone-800 dark:text-stone-200 truncate">
+                    {selectedActivity?.clientName || "—"}
+                  </p>
                 </div>
               </div>
 
-              <DialogFooter className="p-6 pt-4 border-t border-stone-200 dark:border-stone-800 flex flex-row gap-3 justify-end flex-shrink-0">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setSelectedActivity(null)}
-                  className="rounded-lg border-stone-300 dark:border-stone-700 text-stone-700 dark:text-stone-300 hover:bg-stone-50 dark:hover:bg-stone-800 h-10 px-4 font-medium"
-                >
-                  {t("common.close", { defaultValue: "Fechar" })}
-                </Button>
-                {selectedActivity.campaignId && selectedActivity.clientId && (
-                  <Button
-                    onClick={() => {
-                      const target = selectedActivity.navigateTo;
-                      setSelectedActivity(null);
-                      navigate(target);
-                    }}
-                    className="rounded-lg bg-[var(--v2-accent)] hover:bg-[var(--v2-accent-hover)] text-white h-10 px-4 gap-2 flex-shrink-0"
-                  >
-                    {t("common.openCampaign", { defaultValue: "Abrir campanha" })}
-                    <ExternalLink className="w-4 h-4" />
-                  </Button>
-                )}
-              </DialogFooter>
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-stone-50/30 dark:bg-stone-900/30 border border-stone-100/50 dark:border-stone-800/50">
+                <Megaphone className="w-4 h-4 text-stone-400 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">{t("common.campaign")}</p>
+                  <p className="text-sm font-semibold text-stone-800 dark:text-stone-200 truncate">
+                    {selectedActivity?.campaignName || "—"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-lg bg-stone-50/30 dark:bg-stone-900/30 border border-stone-100/50 dark:border-stone-800/50">
+                <UserCheck className="w-4 h-4 text-stone-400 mt-0.5 shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-1">{t("common.by")}</p>
+                  <p className="text-sm font-semibold text-stone-800 dark:text-stone-200">
+                    {selectedActivity?.actor || "—"}
+                  </p>
+                </div>
+              </div>
             </div>
-          )}
+
+            <div className="pt-4 border-t border-stone-100 dark:border-stone-800">
+              <p className="text-[10px] font-bold text-stone-400 uppercase tracking-widest mb-2 px-1">DETALHES DA AÇÃO</p>
+              <div className="p-4 rounded-xl bg-[#C2714F]/5 border border-[#C2714F]/10">
+                <p className="text-sm text-stone-700 dark:text-stone-300 leading-relaxed font-medium">
+                  {selectedActivity?.description}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="p-4 bg-stone-50 dark:bg-stone-900 border-t border-stone-100 dark:border-stone-800 flex flex-row gap-2 sm:justify-end">
+            <Button 
+              variant="outline" 
+              onClick={() => setSelectedActivity(null)}
+              className="flex-1 sm:flex-none h-11 border-stone-200 dark:border-stone-700 text-stone-600 dark:text-stone-400 hover:bg-white dark:hover:bg-stone-800 font-bold rounded-xl"
+            >
+              {t("common.close").toUpperCase()}
+            </Button>
+            {selectedActivity?.navigateTo && (
+              <Button 
+                onClick={() => {
+                  navigate(selectedActivity.navigateTo);
+                  setSelectedActivity(null);
+                }}
+                className="flex-1 sm:flex-none h-11 bg-[#C2714F] hover:bg-[#A35D3F] text-white font-bold gap-2 rounded-xl shadow-lg shadow-[#C2714F]/20"
+              >
+                {t("common.openCampaign").toUpperCase()}
+                <ExternalLink className="w-4 h-4" />
+              </Button>
+            )}
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

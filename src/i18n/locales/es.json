@@ -413,6 +413,25 @@
     "renamedSuccess": "Campaña renombrada",
     "renamedError": "Error al renombrar"
   },
+  "home": {
+    "kpi": {
+      "totalAgencies": "Agencias",
+      "totalClients": "Clientes",
+      "activeCampaigns": "Campañas Activas",
+      "totalUsers": "Usuarios",
+      "myClients": "Clientes",
+      "pendingInstallations": "Instalaciones Pendentes",
+      "pendingApprovals": "Aprobaciones Pendientes"
+    }
+  },
+  "campaign": {
+    "kpi": {
+      "stores": "Tiendas Registradas",
+      "pieces": "Piezas en Producción",
+      "pendingInstallations": "Instalaciones Pendientes",
+      "pendingApprovals": "Aprobaciones Pendientes"
+    }
+  },
   "pieces": {
     "title": "Piezas",
     "new": "Nueva Pieza",

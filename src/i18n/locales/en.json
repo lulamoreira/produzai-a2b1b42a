@@ -413,6 +413,25 @@
     "renamedSuccess": "Campaign renamed",
     "renamedError": "Error renaming"
   },
+  "home": {
+    "kpi": {
+      "totalAgencies": "Agencies",
+      "totalClients": "Clients",
+      "activeCampaigns": "Active Campaigns",
+      "totalUsers": "Users",
+      "myClients": "Clients",
+      "pendingInstallations": "Pending Installations",
+      "pendingApprovals": "Pending Approvals"
+    }
+  },
+  "campaign": {
+    "kpi": {
+      "stores": "Registered Stores",
+      "pieces": "Pieces in Production",
+      "pendingInstallations": "Pending Installations",
+      "pendingApprovals": "Pending Approvals"
+    }
+  },
   "pieces": {
     "title": "Pieces",
     "new": "New Piece",
