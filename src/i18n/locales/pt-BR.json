@@ -587,6 +587,25 @@
     "seeAllContacts": "Ver todos os {{count}} contatos",
     "missingOs": "FALTA\nOS"
   },
+  "home": {
+    "kpi": {
+      "totalAgencies": "Agências",
+      "totalClients": "Clientes",
+      "activeCampaigns": "Campanhas Ativas",
+      "totalUsers": "Usuários",
+      "myClients": "Clientes",
+      "pendingInstallations": "Instalações Pendentes",
+      "pendingApprovals": "Aprovações Pendentes"
+    }
+  },
+  "campaign": {
+    "kpi": {
+      "stores": "Lojas Cadastradas",
+      "pieces": "Peças em Produção",
+      "pendingInstallations": "Instalações Pendentes",
+      "pendingApprovals": "Aprovações Pendentes"
+    }
+  },
   "installations": {
     "title": "Instalações",
     "newInstallation": "Nova Instalação",

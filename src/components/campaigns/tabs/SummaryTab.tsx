@@ -1,9 +1,12 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { CalendarDays, Camera, LayoutGrid, Store, AlertTriangle, DollarSign, Layers, LayoutList, Grid3X3 } from "lucide-react";
+import { CalendarDays, Camera, LayoutGrid, Store, AlertTriangle, DollarSign, Layers, LayoutList, Grid3X3, Package, MapPin, ClipboardCheck } from "lucide-react";
 import CampaignStatusDashboard from "@/components/CampaignStatusDashboard";
 import SupportMaterialsSection from "@/components/SupportMaterialsSection";
 import ModuleGrid from "@/components/ModuleGrid";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Card } from "@/components/ui/card";
 
 interface SummaryTabProps {
   campaignId: string;
@@ -40,8 +43,47 @@ export default function SummaryTab({
 }: SummaryTabProps) {
   const { t } = useTranslation();
 
+  const { data: campaignKpis } = useQuery({
+    queryKey: ["campaign-summary-kpis", campaignId],
+    queryFn: async () => {
+      const storesRes = await (supabase.from("client_stores") as any).select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
+      const piecesRes = await (supabase.from("pieces") as any).select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
+      const pendingInstallationsRes = await (supabase.from("campaign_schedules") as any).select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).is("completed_at", null);
+      const pendingApprovalsRes = await (supabase.from("user_approvals" as any).select("id", { count: "exact", head: true }) as any).eq("campaign_id", campaignId).eq("status", "pending");
+
+      return {
+        stores: storesRes.count || 0,
+        pieces: piecesRes.count || 0,
+        pendingInstallations: pendingInstallationsRes.count || 0,
+        pendingApprovals: pendingApprovalsRes.count || 0
+      };
+    },
+    enabled: !!campaignId
+  });
+
   return (
     <div className="space-y-6">
+      {/* Campaign KPI Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        {[
+          { label: t("campaign.kpi.stores"), value: campaignKpis?.stores, icon: Store },
+          { label: t("campaign.kpi.pieces"), value: campaignKpis?.pieces, icon: Package },
+          { label: t("campaign.kpi.pendingInstallations"), value: campaignKpis?.pendingInstallations, icon: MapPin },
+          { label: t("campaign.kpi.pendingApprovals"), value: campaignKpis?.pendingApprovals, icon: ClipboardCheck },
+        ].map((kpi, idx) => (
+          <Card key={idx} className="bg-stone-50 dark:bg-stone-900/50 p-4 border-stone-100 dark:border-stone-800 relative overflow-hidden group">
+            <div className="flex flex-col">
+              <span className="text-[10px] text-stone-400 uppercase tracking-widest font-medium mb-1">
+                {kpi.label}
+              </span>
+              <span className="text-2xl font-bold text-stone-900 dark:text-stone-100">
+                {kpi.value ?? 0}
+              </span>
+            </div>
+            <kpi.icon className="absolute top-4 right-4 w-4 h-4 text-[#C2714F] opacity-80" />
+          </Card>
+        ))}
+      </div>
       {/* KPI Stats moved to Header or kept here? The user prompt suggests SummaryTab is the overview */}
       <div className="flex items-baseline gap-3 flex-wrap">
         <button onClick={() => onNavigate("stores")} className="inline-flex items-baseline gap-1.5 group cursor-pointer">
