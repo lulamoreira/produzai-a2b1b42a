@@ -66,7 +66,7 @@ export function HomeV2() {
         const [agenciesRes, clientsRes, activeCampaignsRes, profilesRes, rolesRes] = await Promise.all([
           (supabase.from("agencies") as any).select("id, name, created_at").is("deleted_at", null).order("name"),
           (supabase.from("clients") as any).select("id, name, created_at, agency_id, agencies(name)").order("name"),
-          (supabase.from("campaigns") as any).select("id, name, created_at, client_id, clients(name, agency_id), occurrence_end_date").or(`occurrence_end_date.is.null,occurrence_end_date.gte.${today}`).order("created_at", { ascending: false }),
+          (supabase.from("campaigns") as any).select("id, name, created_at, client_id, clients(name, agency_id), occurrence_end_date").order("created_at", { ascending: false }),
           (supabase.from("profiles") as any).select("id, display_name, created_at, user_id").order("display_name"),
           (supabase.from("user_roles") as any).select("user_id, role")
         ]);
@@ -96,7 +96,7 @@ export function HomeV2() {
 
         const [activeCampaignsRes, pendingApprovalsRes, pendingInstRes] = await Promise.all([
           agencyClientIds.length
-            ? (supabase.from("campaigns") as any).select("id, name, created_at, client_id, clients(name)").in("client_id", agencyClientIds).or(`occurrence_end_date.is.null,occurrence_end_date.gte.${today}`).order("created_at", { ascending: false })
+            ? (supabase.from("campaigns") as any).select("id, name, created_at, client_id, clients(name)").in("client_id", agencyClientIds).order("created_at", { ascending: false })
             : Promise.resolve({ data: [] }),
           (supabase.from("user_approvals" as any).select("id, created_at") as any).eq("status", "pending"),
           agencyClientIds.length
