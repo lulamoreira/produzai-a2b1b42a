@@ -26,6 +26,7 @@ import { SkeletonCard } from "@/components/v2/ui/SkeletonCard";
 import { EmptyStateV2 } from "@/components/v2/ui/EmptyStateV2";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { KpiDetailDialog } from "@/components/v2/home/KpiDetailDialog";
 
 export function HomeV2() {
   const { t } = useTranslation();
