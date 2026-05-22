@@ -1,4 +1,21 @@
 {
+  "welcome": {
+    "hello": "Hello, {{name}}! 👋",
+    "subtitle": "Your account is ready. See what you can access.",
+    "yourRole": "Your role:",
+    "yourCampaigns": "Your campaigns",
+    "moreCampaigns": "+ {{count}} more campaigns",
+    "noCampaigns": "You don't have access to specific campaigns yet. An administrator can configure this at any time.",
+    "goToHome": "Go to Home",
+    "letsGo": "Get started →",
+    "roleDescriptions": {
+      "viewer": "You can view campaign information.",
+      "editor": "You can edit and update campaigns.",
+      "manager": "You manage teams and campaigns.",
+      "master": "You have full system access.",
+      "admin": "You have complete administrative access."
+    }
+  },
   "invite": {
     "welcomeTitle": "Welcome to ProduzAI",
     "invitedBy": "You were invited by {{name}}",
