@@ -174,10 +174,19 @@ const HomeRedirect = () => {
   const isAgenciesPage = window.location.pathname === "/agencies";
   const isFavoritesPage = window.location.pathname === "/favorites";
 
+  if (isAgenciesPage) {
+    // AgencySelect already wraps with AppLayout and provides add/edit dialog logic
+    return (
+      <Suspense fallback={<RouteFallback />}>
+        <AgencySelect />
+      </Suspense>
+    );
+  }
+
   return (
     <AppLayout>
       <Suspense fallback={<RouteFallback />}>
-        {isAgenciesPage ? <AgenciesV2 /> : isFavoritesPage ? <FavoritesV2 /> : <HomeV2 />}
+        {isFavoritesPage ? <FavoritesV2 /> : <HomeV2 />}
       </Suspense>
     </AppLayout>
   );
