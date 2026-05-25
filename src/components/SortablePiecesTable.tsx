@@ -58,6 +58,7 @@ interface SortableRowProps {
   stores: ClientStore[];
   kitCategory: string;
   customFieldLabels?: (string | null)[];
+  visibleColumns?: Record<string, boolean>;
 }
 
 function SortableRow({
