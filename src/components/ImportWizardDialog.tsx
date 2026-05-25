@@ -162,7 +162,8 @@ export default function ImportWizardDialog({
       setLoadingAI(false);
       setUpdateExisting(true);
       setImporting(false);
-      setProgress(0);
+      setImportProgress({ current: 0, total: 0 });
+      setCurrentStoreName('');
     }
   }, [open]);
 
