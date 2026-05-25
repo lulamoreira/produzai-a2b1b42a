@@ -160,13 +160,13 @@ const AddPieceDialog = ({
 
     try {
       if (initialPiece) {
-        await updatePiece.mutateAsync({
+        await updatePieceAction.mutateAsync({
           id: initialPiece.id,
           ...pieceData
         });
         toast.success(t("pieces.pieceUpdated"));
       } else {
-        await addPiece.mutateAsync({
+        await addPieceAction.mutateAsync({
           ...pieceData,
           display_order: maxCode + 1,
           is_mockup: false,
@@ -304,8 +304,8 @@ const AddPieceDialog = ({
             )}
           </div>
 
-          <Button type="submit" className="w-full" disabled={addPiece.isPending || updatePiece.isPending || uploading}>
-            {(addPiece.isPending || updatePiece.isPending) ? t("common.loading") : t("common.save")}
+          <Button type="submit" className="w-full" disabled={addPieceAction.isPending || updatePieceAction.isPending || uploading}>
+            {(addPieceAction.isPending || updatePieceAction.isPending) ? t("common.loading") : t("common.save")}
           </Button>
         </form>
       </DialogContent>
