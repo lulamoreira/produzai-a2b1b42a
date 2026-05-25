@@ -169,11 +169,18 @@ export default function ImportWizardDialog({
       try {
         const wb = XLSX.read(evt.target?.result, { type: "binary" });
         const ws = wb.Sheets[wb.SheetNames[0]];
+        // Use range: 0 to ensure we get all rows including the header for manual mapping detection if needed,
+        // but sheet_to_json with default options usually treats first row as header and returns objects.
         const rows = XLSX.utils.sheet_to_json<Record<string, string>>(ws, { defval: "" });
+        
         if (rows.length === 0) {
           toast.error("Planilha vazia.");
           return;
         }
+
+        // rows already has the first row (header) removed and used as keys.
+        // So rawRows[0] is the FIRST DATA ROW.
+        
         const cols = Object.keys(rows[0] ?? {});
         const sampleMap: Record<string, string> = {};
         for (const c of cols) {
