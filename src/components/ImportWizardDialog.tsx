@@ -324,18 +324,26 @@ export default function ImportWizardDialog({
       return;
     }
     setImporting(true);
-    setProgress(0);
+    setImportProgress({ current: 0, total: valid.length });
+    setCurrentStoreName('');
+    
     try {
-      // Wrap onImport so progress can advance — we expose a chunked-style call.
-      // The caller decides processing order. We just animate progress to 100%.
-      await onImport(valid, { updateExisting });
-      setProgress(100);
+      await onImport(valid, { 
+        updateExisting,
+        onProgress: (current, total, name) => {
+          setImportProgress({ current, total });
+          if (name) setCurrentStoreName(name);
+        }
+      });
       toast.success(t("common.import") + " concluída: " + valid.length + " registro(s).");
       onOpenChange(false);
     } catch (e: any) {
       console.error(e);
       toast.error(e?.message ?? "Erro durante importação.");
     } finally {
+      setImporting(false);
+    }
+  };
       setImporting(false);
     }
   };
