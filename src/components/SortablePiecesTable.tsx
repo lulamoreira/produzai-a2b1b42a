@@ -335,7 +335,7 @@ export default function SortablePiecesTable({
   pieces, kits, kitPieces: kitPiecesList, allPieces, stores, qtyMap,
   canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit, onReorder,
-  customFieldLabels
+  customFieldLabels, visibleColumns
 }: SortablePiecesTableProps) {
   const { t } = useTranslation();
   const sensors = useSensors(
