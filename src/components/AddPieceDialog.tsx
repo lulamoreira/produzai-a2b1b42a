@@ -189,7 +189,7 @@ const AddPieceDialog = ({
         </DialogTrigger>
       )}
       <DialogContent className="max-h-[90vh] sm:max-w-[600px] p-0 flex flex-col overflow-hidden">
-        <div className="p-6 pb-2 border-b">
+        <div className="p-6 pb-2 border-b shrink-0">
           <DialogHeader>
             <DialogTitle className="font-display">
               {initialPiece ? t("pieces.editPieceTitle") : t("pieces.addPieceTitle")}
@@ -310,7 +310,7 @@ const AddPieceDialog = ({
             </div>
           </div>
 
-          <div className="p-6 pt-4 border-t flex gap-3">
+          <div className="p-6 pt-4 border-t flex gap-3 shrink-0">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)} disabled={uploading}>
               {t("common.cancel")}
             </Button>
