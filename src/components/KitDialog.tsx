@@ -241,57 +241,34 @@ export function CreateKitDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>{step === "name" ? t("pieces.newKit") : `${t("common.kit")}: ${kitName}`}</DialogTitle>
-          <DialogDescription>
-            {step === "name"
-              ? t("pieces.kitNameDesc")
-              : t("pieces.kitPiecesDesc")}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-md flex flex-col max-h-[90vh] p-0 overflow-hidden">
+        <div className="p-6 pb-2 border-b">
+          <DialogHeader>
+            <DialogTitle>{step === "name" ? t("pieces.newKit") : `${t("common.kit")}: ${kitName}`}</DialogTitle>
+            <DialogDescription>
+              {step === "name"
+                ? t("pieces.kitNameDesc")
+                : t("pieces.kitPiecesDesc")}
+            </DialogDescription>
+          </DialogHeader>
 
-        {step === "name" ? (
-          <div className="space-y-4">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.kitName")} *</label>
-              <Input
-                value={kitName}
-                onChange={(e) => setKitName(e.target.value)}
-                placeholder={t("pieces.kitNamePlaceholder")}
-                onKeyDown={(e) => { if (e.key === "Enter") handleCreateKit(); }}
-                autoFocus
-              />
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg border border-green-500/20 bg-green-500/5">
-              <div>
-                <label className="text-xs font-medium text-foreground">{t("pieces.newKit")}</label>
-                <p className="text-[10px] text-muted-foreground">{t("pieces.newKitDesc")}</p>
-              </div>
-              <Switch checked={kitIsNew} onCheckedChange={setKitIsNew} />
-            </div>
-            <Button onClick={handleCreateKit} disabled={!kitName.trim() || saving} className="w-full">
-              {saving ? t("common.wait") : t("common.next")}
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-4 overflow-hidden">
-            {/* Kit image */}
-            {createdKit && (
-              <KitImageSection
-                imageUrl={createdKit.image_url}
-                kitId={createdKit.id}
-                kitName={kitName}
-                canEdit
-                onImageUpdated={async (url) => {
-                  const updated = await onUpdateKit({ id: createdKit.id, image_url: url });
-                  setCreatedKit(updated);
-                }}
-              />
-            )}
+          {step === "pieces" && (
+            <div className="mt-4 space-y-4">
+              {/* Kit image (Fixed in header) */}
+              {createdKit && (
+                <KitImageSection
+                  imageUrl={createdKit.image_url}
+                  kitId={createdKit.id}
+                  kitName={kitName}
+                  canEdit
+                  onImageUpdated={async (url) => {
+                    const updated = await onUpdateKit({ id: createdKit.id, image_url: url });
+                    setCreatedKit(updated);
+                  }}
+                />
+              )}
 
-            {/* Search bar */}
-            <div>
+              {/* Search bar (Fixed in header) */}
               <Input
                 placeholder="Buscar peça por nome, código ou categoria..."
                 value={createSearch}
@@ -299,50 +276,83 @@ export function CreateKitDialog({
                 className="h-9 text-sm"
               />
             </div>
+          )}
+        </div>
 
-            {selectedPieceIds.length > 0 && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">{t("pieces.includedPieces")} ({selectedPieceIds.length})</label>
-                {selectedPieceIds.map(pid => {
-                  const piece = kitOnlyPieces.find(p => p.id === pid);
-                  if (!piece) return null;
-                  return (
-                    <div key={pid} className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/20 min-w-0">
-                      <PieceThumbnail imageUrl={piece.image_url} name={piece.name} size="md" />
-                      <span className="text-xs font-bold text-primary shrink-0">#{piece.code}</span>
-                      <span className="text-sm flex-1 break-words min-w-0">{piece.name}</span>
-                    </div>
-                  );
-                })}
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          {step === "name" ? (
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.kitName")} *</label>
+                <Input
+                  value={kitName}
+                  onChange={(e) => setKitName(e.target.value)}
+                  placeholder={t("pieces.kitNamePlaceholder")}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleCreateKit(); }}
+                  autoFocus
+                />
               </div>
-            )}
-
-            {filteredAvailablePieces.length > 0 ? (
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">{t("pieces.availablePiecesForKit")}</label>
-                <div className="max-h-[250px] overflow-y-auto space-y-1.5 pr-1">
-                  {filteredAvailablePieces.map(p => (
-                    <div key={p.id} className="flex items-center gap-2 px-3 py-2 rounded-md border border-border hover:bg-muted/50 transition-colors">
-                      <PieceThumbnail imageUrl={p.image_url} name={p.name} size="md" />
-                      <span className="text-xs font-bold text-primary shrink-0">#{p.code}</span>
-                      <span className="text-sm flex-1 break-words min-w-0">{p.name}</span>
-                      <Button size="sm" variant="outline" className="text-xs gap-1 shrink-0 ml-2" onClick={() => handleAddPiece(p.id)}>
-                        <Plus className="w-3 h-3" /> {t("pieces.includeInKit")}
-                      </Button>
-                    </div>
-                  ))}
+              <div className="flex items-center justify-between p-3 rounded-lg border border-green-500/20 bg-green-500/5">
+                <div>
+                  <label className="text-xs font-medium text-foreground">{t("pieces.newKit")}</label>
+                  <p className="text-[10px] text-muted-foreground">{t("pieces.newKitDesc")}</p>
                 </div>
+                <Switch checked={kitIsNew} onCheckedChange={setKitIsNew} />
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                {kitOnlyPieces.length === 0
-                  ? t("pieces.noKitOnlyPieces")
-                  : createSearch.trim()
-                    ? t("pieces.noPieceFound")
-                    : t("pieces.allKitPiecesIncluded")}
-              </p>
-            )}
+              <Button onClick={handleCreateKit} disabled={!kitName.trim() || saving} className="w-full">
+                {saving ? t("common.wait") : t("common.next")}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {selectedPieceIds.length > 0 && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">{t("pieces.includedPieces")} ({selectedPieceIds.length})</label>
+                  {selectedPieceIds.map(pid => {
+                    const piece = kitOnlyPieces.find(p => p.id === pid);
+                    if (!piece) return null;
+                    return (
+                      <div key={pid} className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/20 min-w-0">
+                        <PieceThumbnail imageUrl={piece.image_url} name={piece.name} size="md" />
+                        <span className="text-xs font-bold text-primary shrink-0">#{piece.code}</span>
+                        <span className="text-sm flex-1 break-words min-w-0">{piece.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
+              {filteredAvailablePieces.length > 0 ? (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">{t("pieces.availablePiecesForKit")}</label>
+                  <div className="space-y-1.5">
+                    {filteredAvailablePieces.map(p => (
+                      <div key={p.id} className="flex items-center gap-2 px-3 py-2 rounded-md border border-border hover:bg-muted/50 transition-colors">
+                        <PieceThumbnail imageUrl={p.image_url} name={p.name} size="md" />
+                        <span className="text-xs font-bold text-primary shrink-0">#{p.code}</span>
+                        <span className="text-sm flex-1 break-words min-w-0">{p.name}</span>
+                        <Button size="sm" variant="outline" className="text-xs gap-1 shrink-0 ml-2" onClick={() => handleAddPiece(p.id)}>
+                          <Plus className="w-3 h-3" /> {t("pieces.includeInKit")}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  {kitOnlyPieces.length === 0
+                    ? t("pieces.noKitOnlyPieces")
+                    : createSearch.trim()
+                      ? t("pieces.noPieceFound")
+                      : t("pieces.allKitPiecesIncluded")}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+        
+        {step === "pieces" && (
+          <div className="p-6 pt-0 border-t">
             <Button onClick={handleClose} className="w-full">
               {t("common.saveAndExit")}
             </Button>
@@ -530,19 +540,35 @@ export function KitDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditingPieceId(null); setShowAddPieces(false); setEditingKitName(false); setLocalImageUrl(undefined); setLocalKitName(undefined); setLocalCategory(undefined); setLocalSubLocation(undefined); } onOpenChange(v); }}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Package className="w-5 h-5 text-primary" />
-            {editingKitName && canEdit && onUpdateKit ? (
-              <div className="flex items-center gap-2 flex-1">
-                <Input
-                  value={kitNameInput}
-                  onChange={(e) => setKitNameInput(e.target.value)}
-                  className="h-8 text-sm"
-                  autoFocus
-                  onKeyDown={async (e) => {
-                    if (e.key === "Enter" && kitNameInput.trim() && kit) {
+      <DialogContent className="max-w-2xl flex flex-col max-h-[90vh] p-0 overflow-hidden">
+        <div className="p-6 pb-2 border-b space-y-4">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="w-5 h-5 text-primary" />
+              {editingKitName && canEdit && onUpdateKit ? (
+                <div className="flex items-center gap-2 flex-1">
+                  <Input
+                    value={kitNameInput}
+                    onChange={(e) => setKitNameInput(e.target.value)}
+                    className="h-8 text-sm"
+                    autoFocus
+                    onKeyDown={async (e) => {
+                      if (e.key === "Enter" && kitNameInput.trim() && kit) {
+                        const safeName = kitNameInput.trim().startsWith("KIT ") ? kitNameInput.trim() : `KIT ${kitNameInput.trim()}`;
+                        const dup = findDuplicateName(safeName, allPieces, existingKits, { ignoreKitId: kit.id });
+                        if (dup) {
+                          toast.error(duplicateNameMessage(dup));
+                          return;
+                        }
+                        setLocalKitName(safeName);
+                        setEditingKitName(false);
+                        toast.success(t("pieces.nameUpdated"));
+                        await onUpdateKit({ id: kit.id, name: safeName });
+                      }
+                    }}
+                  />
+                  <Button size="sm" className="h-8 text-xs" onClick={async () => {
+                    if (kitNameInput.trim() && kit) {
                       const safeName = kitNameInput.trim().startsWith("KIT ") ? kitNameInput.trim() : `KIT ${kitNameInput.trim()}`;
                       const dup = findDuplicateName(safeName, allPieces, existingKits, { ignoreKitId: kit.id });
                       if (dup) {
@@ -554,54 +580,55 @@ export function KitDetailDialog({
                       toast.success(t("pieces.nameUpdated"));
                       await onUpdateKit({ id: kit.id, name: safeName });
                     }
-                  }}
-                />
-                <Button size="sm" className="h-8 text-xs" onClick={async () => {
-                  if (kitNameInput.trim() && kit) {
-                    const safeName = kitNameInput.trim().startsWith("KIT ") ? kitNameInput.trim() : `KIT ${kitNameInput.trim()}`;
-                    const dup = findDuplicateName(safeName, allPieces, existingKits, { ignoreKitId: kit.id });
-                    if (dup) {
-                      toast.error(duplicateNameMessage(dup));
-                      return;
-                    }
-                    setLocalKitName(safeName);
-                    setEditingKitName(false);
-                    toast.success(t("pieces.nameUpdated"));
-                    await onUpdateKit({ id: kit.id, name: safeName });
-                  }
-                }}>{t("common.save")}</Button>
-              </div>
-            ) : (
-              <span className="flex items-center gap-2">
-                <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">{kit.code}</span>
-                {displayKitName}
-                {canEdit && onUpdateKit && (
-                  <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setKitNameInput(kit.name); setEditingKitName(true); }}>
-                    <Edit3 className="w-3 h-3" />
-                  </Button>
-                )}
-              </span>
-            )}
-          </DialogTitle>
-          <DialogDescription>{t("pieces.pieceCountInKit", { count: piecesInKit.length })}</DialogDescription>
-        </DialogHeader>
+                  }}>{t("common.save")}</Button>
+                </div>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">{kit.code}</span>
+                  {displayKitName}
+                  {canEdit && onUpdateKit && (
+                    <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setKitNameInput(kit.name); setEditingKitName(true); }}>
+                      <Edit3 className="w-3 h-3" />
+                    </Button>
+                  )}
+                </span>
+              )}
+            </DialogTitle>
+            <DialogDescription>{t("pieces.pieceCountInKit", { count: piecesInKit.length })}</DialogDescription>
+          </DialogHeader>
 
-        {/* Kit image */}
-        {canEdit && onUpdateKit && (
-          <KitImageSection
-            imageUrl={effectiveImageUrl}
-            kitId={kit.id}
-            kitName={kit.name}
-            canEdit={canEdit}
-            onImageUpdated={async (url) => {
-              setLocalImageUrl(url);
-              await onUpdateKit({ id: kit.id, image_url: url });
-            }}
-          />
-        )}
-        {!canEdit && kit.image_url && (
-          <img src={kit.image_url} alt={kit.name} loading="lazy" decoding="async" className="w-full h-32 object-contain rounded-lg border border-border bg-muted/30" />
-        )}
+          {/* Kit image (Fixed in header) */}
+          {canEdit && onUpdateKit && (
+            <KitImageSection
+              imageUrl={effectiveImageUrl}
+              kitId={kit.id}
+              kitName={kit.name}
+              canEdit={canEdit}
+              onImageUpdated={async (url) => {
+                setLocalImageUrl(url);
+                await onUpdateKit({ id: kit.id, image_url: url });
+              }}
+            />
+          )}
+          {!canEdit && kit.image_url && (
+            <img src={kit.image_url} alt={kit.name} loading="lazy" decoding="async" className="w-full h-32 object-contain rounded-lg border border-border bg-muted/30" />
+          )}
+
+          {/* Search bar for adding pieces (Fixed in header if visible) */}
+          {canEdit && onAddKitPiece && showAddPieces && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">{t("pieces.availablePiecesThisCampaign")}</label>
+              <Input
+                placeholder={t("pieces.searchPiecePlaceholder")}
+                value={addPieceSearch}
+                onChange={(e) => setAddPieceSearch(e.target.value)}
+                className="h-9 text-sm"
+                autoFocus
+              />
+            </div>
+          )}
+        </div>
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
 
         {/* Mockup toggle */}
         {canEdit && onUpdateKit && (
@@ -744,7 +771,7 @@ export function KitDetailDialog({
           return (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={piecesInKit.map(kp => kp.id)} strategy={verticalListSortingStrategy}>
-                <div className="space-y-2 max-h-[350px] overflow-y-auto">
+                <div className="space-y-2">
                   {piecesInKit.map((kp, idx) => (
                     <SortableKitPieceRow
                       key={kp.id}
@@ -972,14 +999,6 @@ export function KitDetailDialog({
               </Button>
             ) : (
               <div className="space-y-1 max-h-[250px] overflow-y-auto border border-border rounded-lg p-2">
-                <label className="text-xs font-medium text-muted-foreground">{t("pieces.availablePiecesThisCampaign")}</label>
-                <Input
-                  placeholder={t("pieces.searchPiecePlaceholder")}
-                  value={addPieceSearch}
-                  onChange={(e) => setAddPieceSearch(e.target.value)}
-                  className="h-7 text-xs mb-1"
-                  autoFocus
-                />
                 {kitOnlyPiecesNotInKit.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-3">{t("pieces.noPieceAvailable")}</p>
                 ) : filteredAddPieces.length === 0 ? (
@@ -1003,10 +1022,10 @@ export function KitDetailDialog({
             )}
           </div>
         )}
-
-        {/* Delete kit */}
+        </div>
+        
         {canEdit && onDeleteKit && (
-          <div className="pt-2 border-t border-border">
+          <div className="p-6 pt-0 border-t">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm" className="w-full text-xs gap-1">
