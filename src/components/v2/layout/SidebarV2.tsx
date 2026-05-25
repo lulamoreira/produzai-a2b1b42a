@@ -338,10 +338,13 @@ export function SidebarV2() {
               <span 
                 className={cn(
                   "text-xs font-semibold uppercase tracking-wider truncate",
-                  isActiveCampaign ? "text-white" : "group-hover:text-stone-200",
-                  camp.is_active === false && "text-red-400 opacity-80"
+                  camp.is_active === false && "opacity-80"
                 )}
-                style={{ color: isActiveCampaign && camp.is_active !== false ? 'var(--v2-sidebar-text)' : undefined }}
+                style={{ 
+                  color: camp.is_active === false 
+                    ? '#f87171' 
+                    : 'var(--v2-sidebar-text)' 
+                }}
               >
                 {camp.is_active === false ? `🔴 ${camp.name}` : camp.name}
               </span>
