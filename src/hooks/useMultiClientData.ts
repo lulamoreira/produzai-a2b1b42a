@@ -601,7 +601,16 @@ export function useAddCampaignPiece() {
           .maybeSingle();
         resolvedOrder = (maxRow?.display_order ?? -1) + 1;
       }
-      const { data, error } = await supabase.from("campaign_pieces").insert({ ...piece, display_order: resolvedOrder }).select().single();
+      const { client_id, ...insertData } = piece as any;
+      const { data, error } = await supabase
+        .from("campaign_pieces")
+        .insert({ 
+          ...insertData, 
+          display_order: resolvedOrder, 
+          is_deleted: false 
+        })
+        .select()
+        .single();
       if (error) throw error;
       return data as CampaignPiece;
     },
