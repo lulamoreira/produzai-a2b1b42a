@@ -999,14 +999,6 @@ export function KitDetailDialog({
               </Button>
             ) : (
               <div className="space-y-1 max-h-[250px] overflow-y-auto border border-border rounded-lg p-2">
-                <label className="text-xs font-medium text-muted-foreground">{t("pieces.availablePiecesThisCampaign")}</label>
-                <Input
-                  placeholder={t("pieces.searchPiecePlaceholder")}
-                  value={addPieceSearch}
-                  onChange={(e) => setAddPieceSearch(e.target.value)}
-                  className="h-7 text-xs mb-1"
-                  autoFocus
-                />
                 {kitOnlyPiecesNotInKit.length === 0 ? (
                   <p className="text-xs text-muted-foreground text-center py-3">{t("pieces.noPieceAvailable")}</p>
                 ) : filteredAddPieces.length === 0 ? (
