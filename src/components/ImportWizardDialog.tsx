@@ -451,12 +451,31 @@ export default function ImportWizardDialog({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={IGNORE}>Ignorar campo</SelectItem>
-                      {systemFields.map((f) => (
-                        <SelectItem key={f.key} value={f.key}>
-                          {f.label}
-                          {f.required && <span className="text-destructive ml-1">*</span>}
-                        </SelectItem>
-                      ))}
+                      <SelectGroup>
+                        <SelectLabel>Campos do Sistema</SelectLabel>
+                        {systemFields.filter(f => !f.isCustom).map((f) => (
+                          <SelectItem key={f.key} value={f.key}>
+                            {f.label}
+                            {f.required && <span className="text-destructive ml-1">*</span>}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      {systemFields.some(f => f.isCustom) && (
+                        <>
+                          <SelectSeparator />
+                          <SelectGroup>
+                            <SelectLabel>Campos Personalizados</SelectLabel>
+                            {systemFields.filter(f => f.isCustom).map((f) => (
+                              <SelectItem key={f.key} value={f.key}>
+                                <div className="flex items-center gap-1.5">
+                                  <Tag className="w-3 h-3 text-primary" />
+                                  {f.label}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
