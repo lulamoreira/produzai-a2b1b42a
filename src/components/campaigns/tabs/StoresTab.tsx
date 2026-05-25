@@ -91,23 +91,23 @@ export default function StoresTab({
       </div>
 
       {storesViewMode === "table" ? (
-        <Card className="overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Loja</TableHead>
-                <TableHead>Cidade/UF</TableHead>
-                <TableHead>Modelo</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
+        <Card className="overflow-hidden border-gray-200 dark:border-gray-700">
+          <Table className="border-collapse">
+            <TableHeader className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+              <TableRow className="hover:bg-transparent border-gray-200 dark:border-gray-700">
+                <TableHead className="text-gray-900 dark:text-gray-100 font-semibold">Loja</TableHead>
+                <TableHead className="text-gray-900 dark:text-gray-100 font-semibold">Cidade/UF</TableHead>
+                <TableHead className="text-gray-900 dark:text-gray-100 font-semibold">Modelo</TableHead>
+                <TableHead className="text-right text-gray-900 dark:text-gray-100 font-semibold">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {stores.map(store => (
-                <TableRow key={store.id}>
-                  <TableCell className="font-medium">{store.name}</TableCell>
-                  <TableCell>{store.city} / {store.state}</TableCell>
-                  <TableCell>{store.store_model}</TableCell>
-                  <TableCell className="text-right">
+                <TableRow key={store.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-700">
+                  <TableCell className="font-medium text-gray-900 dark:text-gray-100">{store.name}</TableCell>
+                  <TableCell className="text-gray-900 dark:text-gray-100">{store.city} / {store.state}</TableCell>
+                  <TableCell className="text-gray-900 dark:text-gray-100">{store.store_model}</TableCell>
+                  <TableCell className="text-right text-gray-900 dark:text-gray-100">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
