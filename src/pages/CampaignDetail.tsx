@@ -363,11 +363,11 @@ const CampaignDetail = () => {
 
             <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">Carregando aba...</div>}>
               <TabsContent value="occurrences">
-                {version === "v2" ? (
-                  <OccurrencesPortalV2 />
-                ) : (
-                  <OccurrencesPortal />
-                )}
+                <OccurrencesTab 
+                  campaignId={campaignId!} 
+                  clientId={clientId!} 
+                  lalPerms={lalPerms} 
+                />
               </TabsContent>
               <TabsContent value="scheduling">
                 <SchedulingTab 
