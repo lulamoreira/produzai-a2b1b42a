@@ -110,6 +110,35 @@ export default function PiecesTab({
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
   const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
   
+  const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
+    const saved = localStorage.getItem(`pieces_columns_${campaignId}`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error("Error parsing visible columns", e);
+      }
+    }
+    return {
+      code: true,
+      location: true,
+      name: true,
+      size: true,
+      store_category: true,
+      specification: true,
+      installation_instructions: true,
+      custom_field_1: true,
+      custom_field_2: true,
+      custom_field_3: true,
+      custom_field_4: true,
+      custom_field_5: true,
+    };
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`pieces_columns_${campaignId}`, JSON.stringify(visibleColumns));
+  }, [visibleColumns, campaignId]);
+  
   const [configLabels, setConfigLabels] = useState({
     field1: campaign?.piece_custom_field_1_label || "",
     field2: campaign?.piece_custom_field_2_label || "",
