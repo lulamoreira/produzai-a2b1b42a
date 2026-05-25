@@ -18,12 +18,28 @@ import { toast } from "sonner";
 
 interface AddPieceDialogProps {
   existingPieces: Piece[];
+  customFieldLabels?: (string | null)[];
+  campaignId?: string;
+  clientId?: string;
 }
 
-const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
+const AddPieceDialog = ({ existingPieces, customFieldLabels, campaignId, clientId }: AddPieceDialogProps) => {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ code: "", category: "", name: "", size: "", image_url: "", specification: t("pieces.videManual"), installation_instructions: t("pieces.noSpecificInfo") });
+  const [form, setForm] = useState({ 
+    code: "", 
+    category: "", 
+    name: "", 
+    size: "", 
+    image_url: "", 
+    specification: t("pieces.videManual"), 
+    installation_instructions: t("pieces.noSpecificInfo"),
+    custom_field_1: "",
+    custom_field_2: "",
+    custom_field_3: "",
+    custom_field_4: "",
+    custom_field_5: "",
+  });
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const addPiece = useAddPiece();
@@ -72,8 +88,28 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
       image_url: form.image_url || undefined,
       specification: form.specification,
       installation_instructions: form.installation_instructions,
+      campaign_id: campaignId,
+      client_id: clientId,
+      custom_field_1: form.custom_field_1 || null,
+      custom_field_2: form.custom_field_2 || null,
+      custom_field_3: form.custom_field_3 || null,
+      custom_field_4: form.custom_field_4 || null,
+      custom_field_5: form.custom_field_5 || null,
+    } as any);
+    setForm({ 
+      code: "", 
+      category: "", 
+      name: "", 
+      size: "", 
+      image_url: "", 
+      specification: t("pieces.videManual"), 
+      installation_instructions: t("pieces.noSpecificInfo"),
+      custom_field_1: "",
+      custom_field_2: "",
+      custom_field_3: "",
+      custom_field_4: "",
+      custom_field_5: "",
     });
-    setForm({ code: "", category: "", name: "", size: "", image_url: "", specification: "Vide Book/Manual", installation_instructions: "Sem informações específicas" });
     setPreviewUrl(null);
     setOpen(false);
   };
@@ -128,6 +164,22 @@ const AddPieceDialog = ({ existingPieces }: AddPieceDialogProps) => {
               onChange={(e) => setForm({ ...form, size: e.target.value })}
             />
           </div>
+
+          {customFieldLabels?.map((label, i) => {
+            if (!label) return null;
+            const fieldName = `custom_field_${i + 1}`;
+            return (
+              <div key={fieldName}>
+                <label className="text-xs font-medium text-muted-foreground">{label}</label>
+                <Input
+                  value={(form as any)[fieldName]}
+                  onChange={(e) => setForm({ ...form, [fieldName]: e.target.value })}
+                  placeholder={`Digite ${label.toLowerCase()}`}
+                />
+              </div>
+            );
+          })}
+
           <div>
             <label className="text-xs font-medium text-muted-foreground">{t("pieces.specification")}</label>
             <Textarea
