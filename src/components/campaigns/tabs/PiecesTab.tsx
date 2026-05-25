@@ -109,6 +109,9 @@ export default function PiecesTab({
   const [pptExportOpen, setPptExportOpen] = useState(false);
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
   const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
+  const [selectedPieceIds, setSelectedPieceIds] = useState<string[]>([]);
+  const [convertSelectionDialogOpen, setConvertSelectionDialogOpen] = useState(false);
+  const [preSelectedForKit, setPreSelectedForKit] = useState<string[]>([]);
   
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem(`pieces_columns_${campaignId}`);
@@ -264,6 +267,25 @@ export default function PiecesTab({
       await refetch();
     }
   };
+
+  const handleToggleSelection = (id: string) => {
+    setSelectedPieceIds(prev => 
+      prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleToggleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allSelectableIds = visiblePieces.map(p => p.id);
+      setSelectedPieceIds(allSelectableIds);
+    } else {
+      setSelectedPieceIds([]);
+    }
+  };
+
+  useEffect(() => {
+    setSelectedPieceIds([]);
+  }, [campaignId]);
 
   const countsByLocation = useMemo(() => {
     const counts: Record<string, number> = {};
