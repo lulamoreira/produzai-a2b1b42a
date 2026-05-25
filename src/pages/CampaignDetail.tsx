@@ -283,7 +283,9 @@ const CampaignDetail = () => {
                 lalPerms={lalPerms} canViewStores={true} canViewCampaignStores={true}
                 isAdmin={isAdmin} isAdminOrMaster={isAdminOrMaster} canViewPieces={true}
                 onNavigate={setActiveSection}
+                campaignKpis={campaignKpis}
               />
+
             </TabsContent>
             <TabsContent value="pieces">
               <PiecesTab 
