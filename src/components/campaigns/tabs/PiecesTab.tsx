@@ -222,7 +222,7 @@ export default function PiecesTab({
           {canEditPieces && (
             <>
               {isAdminOrMaster && (
-                <Popover>
+                <Popover open={customFieldsOpen} onOpenChange={setCustomFieldsOpen}>
                   <PopoverTrigger asChild>
                     <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1">
                       <Settings2 className="w-3.5 h-3.5" />
