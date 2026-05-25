@@ -90,13 +90,17 @@ function SortableRow({
             </button>
           </TableCell>
         )}
-        <TableCell>
-          <div className="flex items-center gap-2">
-            <KitImageDropZone kit={kit} canEdit={canEditPieces} />
-            <span className="font-bold text-primary">{kit.code}</span>
-          </div>
-        </TableCell>
-        <TableCell className="text-muted-foreground hidden sm:table-cell">{kitCategory || "—"}</TableCell>
+        {(!visibleColumns || visibleColumns.code) && (
+          <TableCell>
+            <div className="flex items-center gap-2">
+              <KitImageDropZone kit={kit} canEdit={canEditPieces} />
+              <span className="font-bold text-primary">{kit.code}</span>
+            </div>
+          </TableCell>
+        )}
+        {(!visibleColumns || visibleColumns.location) && (
+          <TableCell className="text-muted-foreground hidden sm:table-cell">{kitCategory || "—"}</TableCell>
+        )}
         <TableCell>
           <button
             className="font-medium text-left hover:text-primary hover:underline transition-colors"
@@ -112,13 +116,22 @@ function SortableRow({
             </span>
           </button>
         </TableCell>
-        <TableCell className="text-sm text-muted-foreground hidden md:table-cell">—</TableCell>
-        <TableCell className="hidden lg:table-cell">—</TableCell>
-        <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">—</TableCell>
-        <TableCell className="text-sm text-muted-foreground hidden xl:table-cell">—</TableCell>
+        {(!visibleColumns || visibleColumns.size) && (
+          <TableCell className="text-sm text-muted-foreground hidden md:table-cell">—</TableCell>
+        )}
+        {(!visibleColumns || visibleColumns.store_category) && (
+          <TableCell className="hidden lg:table-cell">—</TableCell>
+        )}
+        {(!visibleColumns || visibleColumns.specification) && (
+          <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">—</TableCell>
+        )}
+        {(!visibleColumns || visibleColumns.installation_instructions) && (
+          <TableCell className="text-sm text-muted-foreground hidden xl:table-cell">—</TableCell>
+        )}
         
         {customFieldLabels?.map((label, i) => {
           if (!label) return null;
+          if (visibleColumns && !visibleColumns[`custom_field_${i + 1}`]) return null;
           return <TableCell key={`custom-${i}`} className="text-sm text-muted-foreground hidden xl:table-cell">—</TableCell>;
         })}
 
