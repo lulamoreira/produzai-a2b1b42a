@@ -5,7 +5,26 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown, ArrowUpDown, GripVertical, Check, X, ChevronsRight } from "lucide-react";
+import { 
+  ArrowUp, ArrowDown, ArrowUpDown, GripVertical, Check, X, ChevronsRight, 
+  ClipboardPaste, AlertTriangle, Info
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Switch } from "@/components/ui/switch";
 import { getStateColor } from "@/lib/stateColors";
@@ -438,9 +457,137 @@ export default function StoresMatrixTable({
   }, [filteredStores, onDisplayOrderChange]);
 
   const [editingCell, setEditingCell] = useState<{ storeId: string; field: string } | null>(null);
+  const [anchorCell, setAnchorCell] = useState<{ rowIndex: number; colKey: string } | null>(null);
+  const [pastePreview, setPastePreview] = useState<{
+    open: boolean;
+    changes: Array<{
+      storeId: string;
+      storeName: string;
+      field: string;
+      fieldLabel: string;
+      oldValue: string;
+      newValue: string;
+      hasExistingValue: boolean;
+    }>;
+  }>({ open: false, changes: [] });
+
   const cellRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   const getCellKey = (storeId: string, field: string) => `${storeId}__${field}`;
+
+  const parseExcelTSV = (text: string): string[][] => {
+    const lines = text.split(/\r?\n/);
+    const result = lines
+      .map(line => line.split('\t').map(cell => cell.trim()))
+      .filter((row, idx) => {
+        // Ignore completely empty rows at the end
+        if (idx === lines.length - 1 && row.every(cell => cell === "")) return false;
+        return true;
+      });
+    return result;
+  };
+
+  const handleExcelPaste = useCallback((text: string, anchor: { rowIndex: number; colKey: string }) => {
+    const parsedData = parseExcelTSV(text);
+    if (parsedData.length === 0) return;
+
+    const changes: typeof pastePreview.changes = [];
+    const startColIdx = orderedColumns.findIndex(c => c.storeField === anchor.colKey);
+
+    parsedData.forEach((row, rOffset) => {
+      const targetStoreIdx = anchor.rowIndex + rOffset;
+      if (targetStoreIdx >= filteredStores.length) return;
+
+      const store = filteredStores[targetStoreIdx];
+
+      row.forEach((value, cOffset) => {
+        const targetColIdx = startColIdx + cOffset;
+        if (targetColIdx >= orderedColumns.length) return;
+
+        const col = orderedColumns[targetColIdx];
+        // Only paste into editable fields (skipping name and boolean switches if they shouldn't be bulk pasted)
+        // User said "works only in editable columns"
+        if (col.storeField === "cnpj" || col.fieldType === "boolean") return;
+
+        const oldValue = ((store as any)[col.storeField] || "").toString();
+        if (oldValue === value) return;
+
+        changes.push({
+          storeId: store.id,
+          storeName: store.name,
+          field: col.storeField,
+          fieldLabel: col.label,
+          oldValue,
+          newValue: value,
+          hasExistingValue: oldValue !== ""
+        });
+      });
+    });
+
+    if (changes.length > 0) {
+      setPastePreview({ open: true, changes });
+    } else {
+      toast.info("Nenhuma alteração detectada na colagem.");
+    }
+  }, [filteredStores, orderedColumns]);
+
+  const confirmPaste = async () => {
+    const changesByStore = new Map<string, Record<string, any>>();
+    
+    pastePreview.changes.forEach(change => {
+      if (!changesByStore.has(change.storeId)) {
+        changesByStore.set(change.storeId, {});
+      }
+      const storeChanges = changesByStore.get(change.storeId)!;
+      const finalValue = change.field === "showcase_count" ? (parseInt(change.newValue, 10) || 0) : (change.newValue || null);
+      storeChanges[change.field] = finalValue;
+    });
+
+    let successCount = 0;
+    let storeCount = 0;
+    let failCount = 0;
+
+    setPastePreview(prev => ({ ...prev, open: false }));
+
+    for (const [storeId, fields] of changesByStore.entries()) {
+      try {
+        await onUpdateStore({ id: storeId, ...fields });
+        successCount += Object.keys(fields).length;
+        storeCount++;
+      } catch (error) {
+        console.error("Paste error for store", storeId, error);
+        failCount += Object.keys(fields).length;
+      }
+    }
+
+    if (failCount > 0) {
+      toast.error(`Falha ao atualizar ${failCount} células. ${successCount} atualizadas com sucesso.`);
+    } else {
+      toast.success(`${successCount} células atualizadas em ${storeCount} lojas.`);
+    }
+    
+    setAnchorCell(null);
+  };
+
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (!anchorCell || editingCell) return;
+      e.preventDefault();
+      const text = e.clipboardData?.getData('text/plain') || '';
+      handleExcelPaste(text, anchorCell);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setAnchorCell(null);
+    };
+
+    window.addEventListener('paste', handlePaste);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('paste', handlePaste);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [anchorCell, editingCell, handleExcelPaste]);
 
   const navigateToCell = useCallback((dir: "up" | "down" | "left" | "right") => {
     setEditingCell((prev) => {
@@ -562,11 +709,12 @@ export default function StoresMatrixTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredStores.map((store) => (
+              {filteredStores.map((store, rowIndex) => (
                 <TableRow key={store.id} className="group odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-700">
                   {orderedColumns.map((col) => {
                     const isNameCol = col.storeField === "name";
                     const isEditingThis = editingCell?.storeId === store.id && editingCell?.field === col.storeField;
+                    const isAnchor = anchorCell?.rowIndex === rowIndex && anchorCell?.colKey === col.storeField;
                     const displayVal = getCellDisplay(store, col);
 
                     if (isNameCol) {
@@ -575,21 +723,39 @@ export default function StoresMatrixTable({
                           key={col.key}
                           className={cn(
                             "font-medium sticky left-0 z-[5] text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700",
-                            // Always-on opaque bg matching row state so the frozen
-                            // column never goes transparent during horizontal scroll.
-                            "bg-white dark:bg-gray-900 group-even:bg-gray-50 dark:group-even:bg-gray-800/50 text-gray-900 dark:text-gray-100 group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition-colors",
-                            // Right-edge shadow indicating more content to scroll.
-                            "shadow-[1px_0_0_0_rgba(0,0,0,0.1)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.05)]"
+                            "bg-white dark:bg-gray-900 group-even:bg-gray-50 dark:group-even:bg-gray-800/50 text-gray-900 dark:text-gray-100 group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition-colors cursor-cell",
+                            "shadow-[1px_0_0_0_rgba(0,0,0,0.1)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.05)]",
+                            isAnchor && "ring-2 ring-inset ring-blue-500 z-[6]"
                           )}
+                          onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}
                         >
-                          <button
-                            type="button"
-                            className="text-left hover:underline underline-offset-2 transition-colors cursor-pointer px-2 py-0.5 rounded-md text-xs"
-                            style={{ backgroundColor: getStateColor(store.state).bg, color: getStateColor(store.state).text }}
-                            onClick={() => onOpenEditStore?.(store)}
-                          >
-                            {store.name}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              className="text-left hover:underline underline-offset-2 transition-colors cursor-pointer px-2 py-0.5 rounded-md text-xs"
+                              style={{ backgroundColor: getStateColor(store.state).bg, color: getStateColor(store.state).text }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onOpenEditStore?.(store);
+                              }}
+                            >
+                              {store.name}
+                            </button>
+                            {isAnchor && !editingCell && (
+                              <TooltipProvider>
+                                <Tooltip open={true}>
+                                  <TooltipTrigger asChild>
+                                    <div className="w-0 h-0" />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="bottom" className="text-[10px] py-1 px-2">
+                                    <div className="flex items-center gap-1.5">
+                                      <kbd className="bg-muted px-1 rounded border">Ctrl+V</kbd> para colar • <kbd className="bg-muted px-1 rounded border">Esc</kbd>
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
                         </TableCell>
                       );
                     }
@@ -599,7 +765,7 @@ export default function StoresMatrixTable({
                     const boolVal = (store as any)[col.storeField];
                     const isTrue = boolVal === "true" || boolVal === true;
                     return (
-                      <TableCell key={col.key} className="p-1 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                      <TableCell key={col.key} className={cn("p-1 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 cursor-cell transition-all", isAnchor && "ring-2 ring-inset ring-blue-500 z-[6]")} onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}>
                         {canEdit ? (
                           <div className="flex items-center justify-center gap-1.5 px-1 py-0.5 min-h-[28px]">
                             <Switch
@@ -610,6 +776,20 @@ export default function StoresMatrixTable({
                               className="scale-75"
                             />
                             <span className="text-xs text-muted-foreground">{isTrue ? "Sim" : "Não"}</span>
+                            {isAnchor && !editingCell && (
+                              <TooltipProvider>
+                                <Tooltip open={true}>
+                                  <TooltipTrigger asChild>
+                                    <div className="w-0 h-0" />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="bottom" className="text-[10px] py-1 px-2 z-50">
+                                    <div className="flex items-center gap-1.5">
+                                      <kbd className="bg-muted px-1 rounded border">Ctrl+V</kbd> para colar • <kbd className="bg-muted px-1 rounded border">Esc</kbd>
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
                           </div>
                         ) : (
                           <span className="text-xs px-1 text-gray-900 dark:text-gray-100">{isTrue ? "Sim" : "Não"}</span>
@@ -620,14 +800,38 @@ export default function StoresMatrixTable({
 
                   if (!canEdit) {
                     return (
-                      <TableCell key={col.key} className="text-xs text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700">
-                        {displayVal || "—"}
+                      <TableCell key={col.key} className={cn("text-xs text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 cursor-cell transition-all px-2", isAnchor && "ring-2 ring-inset ring-blue-500 z-[6]")} onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}>
+                        <div className="flex items-center justify-between gap-2">
+                          <span>{displayVal || "—"}</span>
+                          {isAnchor && !editingCell && (
+                            <TooltipProvider>
+                              <Tooltip open={true}>
+                                <TooltipTrigger asChild>
+                                  <div className="w-0 h-0" />
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" className="text-[10px] py-1 px-2 z-50">
+                                  <div className="flex items-center gap-1.5">
+                                    <kbd className="bg-muted px-1 rounded border">Ctrl+V</kbd> para colar • <kbd className="bg-muted px-1 rounded border">Esc</kbd>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
                       </TableCell>
                     );
                   }
 
+
                   return (
-                    <TableCell key={col.key} className="p-1 border-gray-200 dark:border-gray-700">
+                    <TableCell 
+                      key={col.key} 
+                      className={cn(
+                        "p-1 border-gray-200 dark:border-gray-700 transition-all cursor-cell relative",
+                        isAnchor && "ring-2 ring-inset ring-blue-500 z-[6]"
+                      )}
+                      onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}
+                    >
                       <EditableCell
                         value={((store as any)[col.storeField] || "").toString()}
                         storeId={store.id}
@@ -644,6 +848,20 @@ export default function StoresMatrixTable({
                           else cellRefs.current.delete(key);
                         }}
                       />
+                      {isAnchor && !editingCell && (
+                        <TooltipProvider>
+                          <Tooltip open={true}>
+                            <TooltipTrigger asChild>
+                              <div className="absolute inset-0 pointer-events-none" />
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="text-[10px] py-1 px-2 z-50">
+                              <div className="flex items-center gap-1.5">
+                                <kbd className="bg-muted px-1 rounded border">Ctrl+V</kbd> para colar • <kbd className="bg-muted px-1 rounded border">Esc</kbd>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                     </TableCell>
                   );
                 })}
@@ -659,6 +877,73 @@ export default function StoresMatrixTable({
           Deslize para ver mais colunas
         </div>
       )}
+
+      {/* Paste Preview Modal */}
+      <AlertDialog open={pastePreview.open} onOpenChange={(open) => !open && setPastePreview(prev => ({ ...prev, open }))}>
+        <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ClipboardPaste className="w-5 h-5 text-primary" />
+              Colar dados do Excel
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pastePreview.changes.length} células serão atualizadas a partir de{" "}
+              <strong>{pastePreview.changes[0]?.storeName}</strong> /{" "}
+              <strong>{pastePreview.changes[0]?.fieldLabel}</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="flex-1 overflow-auto my-4 border rounded-md">
+            <Table>
+              <TableHeader className="sticky top-0 bg-muted">
+                <TableRow>
+                  <TableHead className="text-xs">Loja</TableHead>
+                  <TableHead className="text-xs">Campo</TableHead>
+                  <TableHead className="text-xs">Valor Atual</TableHead>
+                  <TableHead className="text-xs">Novo Valor</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pastePreview.changes.slice(0, 10).map((change, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell className="text-xs font-medium">{change.storeName}</TableCell>
+                    <TableCell className="text-xs">{change.fieldLabel}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground italic">
+                      {change.oldValue || "vazio"}
+                    </TableCell>
+                    <TableCell className={cn(
+                      "text-xs font-medium",
+                      change.newValue === change.oldValue ? "text-muted-foreground" : "text-primary",
+                      change.hasExistingValue && change.newValue !== change.oldValue && "bg-amber-50 text-amber-700 px-1 rounded"
+                    )}>
+                      {change.newValue === change.oldValue ? (
+                        "sem alteração"
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          {change.hasExistingValue && <AlertTriangle className="w-3 h-3" />}
+                          {change.newValue}
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {pastePreview.changes.length > 10 && (
+              <div className="p-2 text-center text-xs text-muted-foreground border-t bg-muted/30">
+                ... e mais {pastePreview.changes.length - 10} alterações
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmPaste}>
+              Confirmar colagem
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
