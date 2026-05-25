@@ -709,11 +709,12 @@ export default function StoresMatrixTable({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredStores.map((store) => (
+              {filteredStores.map((store, rowIndex) => (
                 <TableRow key={store.id} className="group odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-700">
                   {orderedColumns.map((col) => {
                     const isNameCol = col.storeField === "name";
                     const isEditingThis = editingCell?.storeId === store.id && editingCell?.field === col.storeField;
+                    const isAnchor = anchorCell?.rowIndex === rowIndex && anchorCell?.colKey === col.storeField;
                     const displayVal = getCellDisplay(store, col);
 
                     if (isNameCol) {
@@ -722,21 +723,39 @@ export default function StoresMatrixTable({
                           key={col.key}
                           className={cn(
                             "font-medium sticky left-0 z-[5] text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700",
-                            // Always-on opaque bg matching row state so the frozen
-                            // column never goes transparent during horizontal scroll.
-                            "bg-white dark:bg-gray-900 group-even:bg-gray-50 dark:group-even:bg-gray-800/50 text-gray-900 dark:text-gray-100 group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition-colors",
-                            // Right-edge shadow indicating more content to scroll.
-                            "shadow-[1px_0_0_0_rgba(0,0,0,0.1)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.05)]"
+                            "bg-white dark:bg-gray-900 group-even:bg-gray-50 dark:group-even:bg-gray-800/50 text-gray-900 dark:text-gray-100 group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition-colors cursor-cell",
+                            "shadow-[1px_0_0_0_rgba(0,0,0,0.1)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.05)]",
+                            isAnchor && "ring-2 ring-inset ring-blue-500 z-[6]"
                           )}
+                          onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}
                         >
-                          <button
-                            type="button"
-                            className="text-left hover:underline underline-offset-2 transition-colors cursor-pointer px-2 py-0.5 rounded-md text-xs"
-                            style={{ backgroundColor: getStateColor(store.state).bg, color: getStateColor(store.state).text }}
-                            onClick={() => onOpenEditStore?.(store)}
-                          >
-                            {store.name}
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              className="text-left hover:underline underline-offset-2 transition-colors cursor-pointer px-2 py-0.5 rounded-md text-xs"
+                              style={{ backgroundColor: getStateColor(store.state).bg, color: getStateColor(store.state).text }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onOpenEditStore?.(store);
+                              }}
+                            >
+                              {store.name}
+                            </button>
+                            {isAnchor && !editingCell && (
+                              <TooltipProvider>
+                                <Tooltip open={true}>
+                                  <TooltipTrigger asChild>
+                                    <div className="w-0 h-0" />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="bottom" className="text-[10px] py-1 px-2">
+                                    <div className="flex items-center gap-1.5">
+                                      <kbd className="bg-muted px-1 rounded border">Ctrl+V</kbd> para colar • <kbd className="bg-muted px-1 rounded border">Esc</kbd>
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
                         </TableCell>
                       );
                     }
