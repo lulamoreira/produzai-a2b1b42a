@@ -577,7 +577,10 @@ export default function PiecesTab({
 
       <ConvertSelectionToKitDialog
         open={convertSelectionDialogOpen}
-        onOpenChange={setConvertSelectionDialogOpen}
+        onOpenChange={(open) => {
+          setConvertSelectionDialogOpen(open);
+          if (!open) setSelectedPieceIds([]);
+        }}
         campaignId={campaignId}
         selectedPieceIds={selectedPieceIds}
         kits={kits}
@@ -594,6 +597,7 @@ export default function PiecesTab({
           setPreSelectedForKit(selectedPieceIds);
           setCreateKitDialogOpen(true);
           setConvertSelectionDialogOpen(false);
+          setSelectedPieceIds([]); // User requested immediate visual feedback
         }}
         addKitPiece={addKitPiece}
         updatePiece={updatePiece}
