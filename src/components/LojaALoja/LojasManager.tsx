@@ -55,11 +55,52 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
 
   // Sort stores alphabetically by name (default)
   const sortedStores = useMemo(
-    () => [...stores].sort((a, b) =>
-      (a.name || "").localeCompare(b.name || "", "pt-BR")
-    ),
-    [stores],
-  );
+  const { user } = useAuth();
+
+  // Sortable fields
+  const SORT_FIELDS: { value: string; label: string }[] = [
+    { value: "name", label: "Nome da loja" },
+    { value: "store_code", label: "Código da loja" },
+    { value: "city", label: "Cidade" },
+    { value: "state", label: "Estado (UF)" },
+  ];
+
+  const storageKey = user?.id ? `lojaSortField:${user.id}` : null;
+
+  // Sort preference persisted per user (always ascending)
+  const [sortField, setSortField] = useState<string>("name");
+  const [showSortDialog, setShowSortDialog] = useState(false);
+  const [pendingSortField, setPendingSortField] = useState<string>("name");
+
+  useEffect(() => {
+    if (!storageKey) return;
+    const saved = localStorage.getItem(storageKey);
+    if (saved && SORT_FIELDS.some((f) => f.value === saved)) {
+      setSortField(saved);
+    } else {
+      setPendingSortField("name");
+      setShowSortDialog(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
+
+  const persistSortField = (field: string) => {
+    setSortField(field);
+    if (storageKey) localStorage.setItem(storageKey, field);
+  };
+
+  const handleConfirmSortDialog = () => {
+    persistSortField(pendingSortField);
+    setShowSortDialog(false);
+  };
+
+  // Sort stores by user preference (always ascending)
+  const sortedStores = useMemo(() => {
+    const getVal = (s: any) => (s?.[sortField] ?? "").toString();
+    return [...stores].sort((a, b) =>
+      getVal(a).localeCompare(getVal(b), "pt-BR", { numeric: true, sensitivity: "base" })
+    );
+  }, [stores, sortField]);
 
   // Filter stores by search
   const filteredStores = useMemo(() => {
@@ -73,24 +114,19 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
     );
   }, [sortedStores, search]);
 
-  // Click-to-sort over the filtered stores (3-state cycle)
-  const {
-    sortedItems: sortedFilteredStores,
-    sortField: storeSortField,
-    sortDir: storeSortDir,
-    handleSort: handleStoreSort,
-  } = useTableSort(filteredStores);
+  const sortedFilteredStores = filteredStores;
 
   const renderSortTh = (label: string, field: string, className?: string) => {
-    const Icon = storeSortField !== field ? ArrowUpDown : storeSortDir === "asc" ? ArrowUp : ArrowDown;
-    const active = storeSortField === field && storeSortDir != null;
+    const active = sortField === field;
+    const Icon = active ? ArrowUp : ArrowUpDown;
     return (
       <th
-        onClick={() => handleStoreSort(field)}
+        onClick={() => persistSortField(field)}
         className={cn(
           "h-9 px-3 text-left text-xs font-medium text-muted-foreground cursor-pointer select-none hover:bg-muted/70 transition-colors",
           className
         )}
+        title="Clique para ordenar por este campo"
       >
         <span className="inline-flex items-center gap-1">
           {label}
