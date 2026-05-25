@@ -1022,10 +1022,10 @@ export function KitDetailDialog({
             )}
           </div>
         )}
-
-        {/* Delete kit */}
+        </div>
+        
         {canEdit && onDeleteKit && (
-          <div className="pt-2 border-t border-border">
+          <div className="p-6 pt-0 border-t">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm" className="w-full text-xs gap-1">
@@ -1047,7 +1047,6 @@ export function KitDetailDialog({
             </AlertDialog>
           </div>
         )}
-        </div>
       </DialogContent>
     </Dialog>
   );
