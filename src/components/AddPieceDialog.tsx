@@ -79,7 +79,7 @@ const AddPieceDialog = ({ existingPieces, customFieldLabels, campaignId, clientI
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const code = form.code ? Number(form.code) : maxCode + 1;
+    const code = form.code ? form.code.trim() : `PCA-${Date.now()}-0`;
     await addPiece.mutateAsync({
       code,
       category: form.category.toUpperCase(),
