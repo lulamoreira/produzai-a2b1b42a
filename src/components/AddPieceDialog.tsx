@@ -188,125 +188,136 @@ const AddPieceDialog = ({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
-        <DialogHeader>
-          <DialogTitle className="font-display">
-            {initialPiece ? t("pieces.editPieceTitle") : t("pieces.addPieceTitle")}
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">{t("common.code")}</label>
-              <Input
-                type="number"
-                placeholder={String(maxCode + 1)}
-                value={form.code}
-                onChange={(e) => setForm({ ...form, code: e.target.value })}
-              />
+      <DialogContent className="max-h-[90vh] sm:max-w-[600px] p-0 flex flex-col overflow-hidden">
+        <div className="p-6 pb-2 border-b shrink-0">
+          <DialogHeader>
+            <DialogTitle className="font-display">
+              {initialPiece ? t("pieces.editPieceTitle") : t("pieces.addPieceTitle")}
+            </DialogTitle>
+          </DialogHeader>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">{t("common.code")}</label>
+                <Input
+                  type="number"
+                  placeholder={String(maxCode + 1)}
+                  value={form.code}
+                  onChange={(e) => setForm({ ...form, code: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">{t("common.category")}</label>
+                <Input
+                  required
+                  placeholder={t("pieces.pieceCategoryPlaceholder")}
+                  value={form.category}
+                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                />
+              </div>
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">{t("common.category")}</label>
+              <label className="text-xs font-medium text-muted-foreground">{t("common.name")}</label>
               <Input
                 required
-                placeholder="Ex: CUBOS"
-                value={form.category}
-                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                placeholder={t("pieces.pieceNamePlaceholder")}
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
             </div>
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">{t("common.name")}</label>
-            <Input
-              required
-              placeholder={t("pieces.pieceNamePlaceholder")}
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">{t("pieces.measures")}</label>
-            <Input
-              required
-              placeholder="Ex: 90x60cm"
-              value={form.size}
-              onChange={(e) => setForm({ ...form, size: e.target.value })}
-            />
-          </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">{t("pieces.measures")}</label>
+              <Input
+                required
+                placeholder={t("pieces.pieceSizePlaceholder")}
+                value={form.size}
+                onChange={(e) => setForm({ ...form, size: e.target.value })}
+              />
+            </div>
 
-          {customFieldLabels?.map((label, i) => {
-            if (!label) return null;
-            const fieldName = `custom_field_${i + 1}`;
-            return (
-              <div key={fieldName} className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">{label}</label>
-                <Input
-                  value={(form as any)[fieldName]}
-                  onChange={(e) => setForm({ ...form, [fieldName]: e.target.value })}
-                  placeholder={`Digite ${label.toLowerCase()}`}
-                />
-              </div>
-            );
-          })}
-
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">{t("pieces.specification")}</label>
-            <Textarea
-              value={form.specification}
-              onChange={(e) => setForm({ ...form, specification: e.target.value })}
-              className="min-h-[80px]"
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">{t("pieces.installationInstructions")}</label>
-            <Textarea
-              value={form.installation_instructions}
-              onChange={(e) => setForm({ ...form, installation_instructions: e.target.value })}
-              className="min-h-[80px]"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.piecePhoto")}</label>
-            {previewUrl ? (
-              <div className="relative group">
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  className="w-full h-48 object-contain rounded-lg border border-border bg-muted/30"
-                />
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="destructive"
-                  className="absolute top-2 right-2 h-8 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={handleRemoveImage}
-                >
-                  <X className="w-4 h-4 mr-1" /> {t("common.remove")}
-                </Button>
-              </div>
-            ) : (
-              <div className="relative">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileUpload}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  disabled={uploading}
-                />
-                <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20">
-                  <Upload className="w-6 h-6 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
-                    {uploading ? t("common.sending") : t("common.clickOrDrag")}
-                  </span>
+            {customFieldLabels?.map((label, i) => {
+              if (!label) return null;
+              const fieldName = `custom_field_${i + 1}`;
+              return (
+                <div key={fieldName} className="space-y-2">
+                  <label className="text-xs font-medium text-muted-foreground">{label}</label>
+                  <Input
+                    value={(form as any)[fieldName]}
+                    onChange={(e) => setForm({ ...form, [fieldName]: e.target.value })}
+                    placeholder={t("pieces.enterCustomFieldValue", { label })}
+                  />
                 </div>
-              </div>
-            )}
+              );
+            })}
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">{t("pieces.specification")}</label>
+              <Textarea
+                value={form.specification}
+                onChange={(e) => setForm({ ...form, specification: e.target.value })}
+                placeholder={t("pieces.videManual")}
+                className="min-h-[80px]"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">{t("pieces.installationInstructions")}</label>
+              <Textarea
+                value={form.installation_instructions}
+                onChange={(e) => setForm({ ...form, installation_instructions: e.target.value })}
+                className="min-h-[80px]"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.piecePhoto")}</label>
+              {previewUrl ? (
+                <div className="relative group">
+                  <img
+                    src={previewUrl}
+                    alt="Preview"
+                    className="w-full h-48 object-contain rounded-lg border border-border bg-muted/30"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    className="absolute top-2 right-2 h-8 px-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={handleRemoveImage}
+                  >
+                    <X className="w-4 h-4 mr-1" /> {t("common.remove")}
+                  </Button>
+                </div>
+              ) : (
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    disabled={uploading}
+                  />
+                  <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 rounded-lg border-2 border-dashed border-border hover:border-primary/50 transition-colors bg-muted/20">
+                    <Upload className="w-6 h-6 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      {uploading ? t("common.sending") : t("common.clickOrDrag")}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
-          <Button type="submit" className="w-full" disabled={addPieceAction.isPending || updatePieceAction.isPending || uploading}>
-            {(addPieceAction.isPending || updatePieceAction.isPending) ? t("common.loading") : t("common.save")}
-          </Button>
+          <div className="p-6 pt-4 border-t flex gap-3 shrink-0">
+            <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)} disabled={uploading}>
+              {t("common.cancel")}
+            </Button>
+            <Button type="submit" className="flex-1" disabled={addPieceAction.isPending || updatePieceAction.isPending || uploading}>
+              {(addPieceAction.isPending || updatePieceAction.isPending) ? t("common.loading") : t("common.save")}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
