@@ -470,7 +470,19 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
       {/* OCCURRENCE MANAGEMENT */}
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2 space-y-0">
-          <CardTitle className="text-base">Gestão de Ocorrências</CardTitle>
+          <div className="flex items-center gap-4">
+            <CardTitle className="text-base">Gestão de Ocorrências</CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5"
+              onClick={() => window.open(`/ocorrencias-portal/${campaignId}`, '_blank')}
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Abrir Portal Público
+            </Button>
+          </div>
+
           <div className="inline-flex rounded-md border bg-muted/30 p-0.5">
             <button
               type="button"
