@@ -575,6 +575,8 @@
     "markNewKitDesc": "Mark as new kit in the campaign",
     "kitLocation": "Kit Location",
     "kitLocationDesc": "Changing the kit location updates all pieces automatically.",
+    "selectLocation": "Select location",
+    "subLocation": "Sub-location",
     "kitEmpty": "This kit has no pieces",
     "selectKit": "Select Kit",
     "selectKitPlaceholder": "Select a kit...",

@@ -575,6 +575,8 @@
     "markNewKitDesc": "Marcar como kit nuevo en la campaña",
     "kitLocation": "Ubicación del Kit",
     "kitLocationDesc": "Cambiar la ubicación del kit actualiza todas las piezas automáticamente.",
+    "selectLocation": "Seleccionar ubicación",
+    "subLocation": "Sububicación",
     "kitEmpty": "Este kit no tiene piezas",
     "selectKit": "Selecionar Kit",
     "selectKitPlaceholder": "Seleccionar kit...",
