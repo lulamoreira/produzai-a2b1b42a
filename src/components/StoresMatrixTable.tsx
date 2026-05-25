@@ -786,7 +786,7 @@ export default function StoresMatrixTable({
 
                   if (!canEdit) {
                     return (
-                      <TableCell key={col.key} className="text-xs text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700">
+                      <TableCell key={col.key} className={cn("text-xs text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 cursor-cell transition-all px-2", isAnchor && "ring-2 ring-inset ring-blue-500 z-[6]")} onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}>
                         {displayVal || "—"}
                       </TableCell>
                     );
