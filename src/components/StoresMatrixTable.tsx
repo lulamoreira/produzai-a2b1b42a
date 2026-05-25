@@ -5,7 +5,26 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, ArrowDown, ArrowUpDown, GripVertical, Check, X, ChevronsRight } from "lucide-react";
+import { 
+  ArrowUp, ArrowDown, ArrowUpDown, GripVertical, Check, X, ChevronsRight, 
+  ClipboardPaste, AlertTriangle, Info
+} from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Switch } from "@/components/ui/switch";
 import { getStateColor } from "@/lib/stateColors";
