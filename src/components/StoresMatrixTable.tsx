@@ -416,43 +416,45 @@ export default function StoresMatrixTable({
 
   // Filter + sort stores
   const filteredStores = useMemo(() => {
-    return stores
-      .filter((s) => {
-        if (storeStateFilter && storeStateFilter !== "all" && s.state?.trim() !== storeStateFilter) return false;
-        const q = storeSearch.toLowerCase().trim();
-        return !q || Object.values(s).some(val => 
-          (typeof val === 'string' || typeof val === 'number') && 
-          val.toString().toLowerCase().includes(q)
-        );
-      })
-      .sort((a, b) => {
-        const field = orderedColumns.find(c => c.key === sortKey) || allColumns.find(c => c.key === sortKey);
-        const storeField = field?.storeField || sortKey;
-        
-        let valA = (a as any)[storeField];
-        let valB = (b as any)[storeField];
+    const filtered = stores.filter((s) => {
+      if (storeStateFilter && storeStateFilter !== "all" && s.state?.trim() !== storeStateFilter) return false;
+      const q = storeSearch.toLowerCase().trim();
+      return !q || Object.values(s).some(val => 
+        (typeof val === 'string' || typeof val === 'number') && 
+        val.toString().toLowerCase().includes(q)
+      );
+    });
 
-        // Handle nulls
-        if (valA === null || valA === undefined) valA = "";
-        if (valB === null || valB === undefined) valB = "";
+    if (disableInternalSort) return filtered;
 
-        // Detect type from field definition or data
-        const fieldType = field?.fieldType;
-        
-        if (fieldType === "number" || (typeof valA === "number" && typeof valB === "number")) {
-          const numA = Number(valA);
-          const numB = Number(valB);
-          return sortDir === "asc" ? numA - numB : numB - numA;
-        }
+    return [...filtered].sort((a, b) => {
+      const field = orderedColumns.find(c => c.key === sortKey) || allColumns.find(c => c.key === sortKey);
+      const storeField = field?.storeField || sortKey;
+      
+      let valA = (a as any)[storeField];
+      let valB = (b as any)[storeField];
 
-        // Default to string comparison
-        const strA = valA.toString().toLowerCase();
-        const strB = valB.toString().toLowerCase();
-        const cmp = strA.localeCompare(strB);
-        return sortDir === "asc" ? cmp : -cmp;
-      });
+      // Handle nulls
+      if (valA === null || valA === undefined) valA = "";
+      if (valB === null || valB === undefined) valB = "";
 
-  }, [stores, storeSearch, storeStateFilter, sortKey, sortDir]);
+      // Detect type from field definition or data
+      const fieldType = field?.fieldType;
+      
+      if (fieldType === "number" || (typeof valA === "number" && typeof valB === "number")) {
+        const numA = Number(valA);
+        const numB = Number(valB);
+        return sortDir === "asc" ? numA - numB : numB - numA;
+      }
+
+      // Default to string comparison
+      const strA = valA.toString().toLowerCase();
+      const strB = valB.toString().toLowerCase();
+      const cmp = strA.localeCompare(strB, 'pt-BR', { numeric: true });
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+  }, [stores, storeSearch, storeStateFilter, sortKey, sortDir, disableInternalSort, orderedColumns, allColumns]);
 
   useEffect(() => {
     onDisplayOrderChange?.(filteredStores);
