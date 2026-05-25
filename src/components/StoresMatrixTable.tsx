@@ -801,7 +801,23 @@ export default function StoresMatrixTable({
                   if (!canEdit) {
                     return (
                       <TableCell key={col.key} className={cn("text-xs text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 cursor-cell transition-all px-2", isAnchor && "ring-2 ring-inset ring-blue-500 z-[6]")} onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}>
-                        {displayVal || "—"}
+                        <div className="flex items-center justify-between gap-2">
+                          <span>{displayVal || "—"}</span>
+                          {isAnchor && !editingCell && (
+                            <TooltipProvider>
+                              <Tooltip open={true}>
+                                <TooltipTrigger asChild>
+                                  <div className="w-0 h-0" />
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" className="text-[10px] py-1 px-2 z-50">
+                                  <div className="flex items-center gap-1.5">
+                                    <kbd className="bg-muted px-1 rounded border">Ctrl+V</kbd> para colar • <kbd className="bg-muted px-1 rounded border">Esc</kbd>
+                                  </div>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          )}
+                        </div>
                       </TableCell>
                     );
                   }
