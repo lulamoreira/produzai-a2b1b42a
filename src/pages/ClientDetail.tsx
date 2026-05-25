@@ -733,7 +733,7 @@ const ClientDetail = () => {
     let updated = 0;
     for (const row of rows) {
       const showcaseRaw = row.showcase_count ?? "";
-      const item = capitalizeStoreFields({
+      const item: any = capitalizeStoreFields({
         client_id: clientId,
         name: row.name ?? "",
         nickname: row.nickname || null,
@@ -755,6 +755,15 @@ const ClientDetail = () => {
         observations: row.observations || null,
         showcase_count: parseInt(showcaseRaw, 10) || 0,
       });
+
+      // Add custom fields to the item if they exist in the row
+      for (let i = 1; i <= 15; i++) {
+        const key = `custom_field_${i}`;
+        if (row[key] !== undefined) {
+          item[key] = row[key];
+        }
+      }
+
       const existing = existingByName.get(item.name.trim().toLowerCase());
       if (existing && updateExisting) {
         await updateStore.mutateAsync({ id: existing.id, ...item });
