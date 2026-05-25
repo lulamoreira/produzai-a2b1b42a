@@ -206,7 +206,7 @@ function SortableRow({
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{t("pieces.alreadyInKit") || "Já pertence a um kit"}</p>
+                  <p>{t("pieces.alreadyInKit")}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
