@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import * as XLSX from "xlsx";
-import { Sparkles, Upload, ArrowRight, ArrowLeft, AlertCircle, Loader2 } from "lucide-react";
+import { Sparkles, Upload, ArrowRight, ArrowLeft, AlertCircle, Loader2, Tag } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -14,7 +15,7 @@ import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -30,6 +31,7 @@ interface SystemField {
   key: string;
   label: string;
   required?: boolean;
+  isCustom?: boolean;
 }
 
 export interface ImportWizardDialogProps {
@@ -37,6 +39,7 @@ export interface ImportWizardDialogProps {
   onOpenChange: (open: boolean) => void;
   mode: ImportWizardMode;
   existingItems: { name: string; id: string }[];
+  clientId?: string;
   onImport: (
     rows: Record<string, string>[],
     options: { updateExisting: boolean },
@@ -89,24 +92,56 @@ export default function ImportWizardDialog({
   onOpenChange,
   mode,
   existingItems,
+  clientId,
   onImport,
   trigger,
 }: ImportWizardDialogProps) {
   const { t } = useTranslation();
-  const systemFields = mode === "stores" ? STORE_FIELDS : PIECE_FIELDS;
+
+  // ─── Custom Fields Logic ──────────────────────────────────────────────────
+  const { data: client } = useQuery({
+    queryKey: ["clients", clientId],
+    queryFn: async () => {
+      if (!clientId) return null;
+      const { data, error } = await supabase.from("clients").select("*").eq("id", clientId).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: open && !!clientId && mode === "stores",
+  });
+
+  const customFields: SystemField[] = useMemo(() => {
+    if (!client || mode !== "stores") return [];
+    return Array.from({ length: 15 }, (_, i) => {
+      const idx = i + 1;
+      const rawLabel = (client as any)[`custom_field_${idx}_label`];
+      if (!rawLabel) return null;
+      const name = rawLabel.split("|")[0];
+      return {
+        key: `custom_field_${idx}`,
+        label: name,
+        isCustom: true
+      } as SystemField;
+    }).filter((f): f is SystemField => f !== null);
+  }, [client, mode]);
+
+  const systemFields = useMemo(() => {
+    const base = mode === "stores" ? STORE_FIELDS : PIECE_FIELDS;
+    return [...base, ...customFields];
+  }, [mode, customFields]);
 
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [fileName, setFileName] = useState<string>("");
   const [rawRows, setRawRows] = useState<Record<string, string>[]>([]);
   const [columns, setColumns] = useState<string[]>([]);
   const [samples, setSamples] = useState<Record<string, string>>({});
-  // mapping: spreadsheet column -> system field key (or IGNORE)
   const [mapping, setMapping] = useState<Record<string, string>>({});
   const [aiMapped, setAiMapped] = useState<Set<string>>(new Set());
   const [loadingAI, setLoadingAI] = useState(false);
   const [updateExisting, setUpdateExisting] = useState(true);
   const [importing, setImporting] = useState(false);
   const [progress, setProgress] = useState(0);
+
 
   // Reset on close
   useEffect(() => {
@@ -416,12 +451,31 @@ export default function ImportWizardDialog({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value={IGNORE}>Ignorar campo</SelectItem>
-                      {systemFields.map((f) => (
-                        <SelectItem key={f.key} value={f.key}>
-                          {f.label}
-                          {f.required && <span className="text-destructive ml-1">*</span>}
-                        </SelectItem>
-                      ))}
+                      <SelectGroup>
+                        <SelectLabel>Campos do Sistema</SelectLabel>
+                        {systemFields.filter(f => !f.isCustom).map((f) => (
+                          <SelectItem key={f.key} value={f.key}>
+                            {f.label}
+                            {f.required && <span className="text-destructive ml-1">*</span>}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      {systemFields.some(f => f.isCustom) && (
+                        <>
+                          <SelectSeparator />
+                          <SelectGroup>
+                            <SelectLabel>Campos Personalizados</SelectLabel>
+                            {systemFields.filter(f => f.isCustom).map((f) => (
+                              <SelectItem key={f.key} value={f.key}>
+                                <div className="flex items-center gap-1.5">
+                                  <Tag className="w-3 h-3 text-primary" />
+                                  {f.label}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -460,6 +514,15 @@ export default function ImportWizardDialog({
                 {stats.ignored > 0 && (
                   <p className="text-muted-foreground">
                     <strong>{stats.ignored}</strong> ignorado(s) (campos obrigatórios ausentes)
+                  </p>
+                )}
+                {mode === "stores" && customFields.length > 0 && mappedSystemKeys.size > 0 && (
+                  <p className="text-primary font-medium">
+                    {(() => {
+                      const standardMapped = Array.from(mappedSystemKeys).filter(k => !systemFields.find(f => f.key === k)?.isCustom).length;
+                      const customMapped = Array.from(mappedSystemKeys).filter(k => systemFields.find(f => f.key === k)?.isCustom).length;
+                      return `${standardMapped} campos padrão + ${customMapped} campos personalizados por loja`;
+                    })()}
                   </p>
                 )}
               </div>
