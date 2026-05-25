@@ -106,6 +106,7 @@ export default function PiecesTab({
   const [orderByLocationOpen, setOrderByLocationOpen] = useState(false);
   const [pptExportOpen, setPptExportOpen] = useState(false);
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
+  const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
   
   const [configLabels, setConfigLabels] = useState({
     field1: campaign?.piece_custom_field_1_label || "",
