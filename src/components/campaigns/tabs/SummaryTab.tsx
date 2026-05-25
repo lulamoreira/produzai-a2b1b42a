@@ -103,8 +103,9 @@ export default function SummaryTab({
         </button>
         <span className="text-border-default">·</span>
         <button onClick={() => onNavigate("pieces")} className="inline-flex items-baseline gap-1.5 group cursor-pointer">
-          <span className="text-xl font-bold text-foreground">{(visiblePieces?.length || 0) + (kits?.length || 0)}</span>
+          <span className="text-xl font-bold text-foreground">{campaignKpis?.pieces || (visiblePieces?.length || 0) + (kits?.length || 0)}</span>
           <span className="text-[13px] text-muted-foreground group-hover:underline">{t("pieces.registered")}</span>
+
         </button>
       </div>
 
