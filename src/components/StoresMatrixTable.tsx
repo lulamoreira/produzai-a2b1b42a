@@ -106,7 +106,7 @@ function DraggableHeaderCell({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "bg-background text-foreground",
+        "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700",
         isFirstCol && "sticky left-0 z-[11] shadow-[1px_0_0_0_rgba(0,0,0,0.1)]",
       )}
     >
@@ -281,7 +281,7 @@ const EditableCell = React.memo(function EditableCell({
   return (
     <div
       ref={cellRef}
-      className="cursor-pointer hover:bg-accent/50 rounded px-1 py-0.5 min-h-[28px] flex items-center text-xs text-foreground transition-colors"
+      className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 rounded px-1 py-0.5 min-h-[28px] flex items-center text-xs text-gray-900 dark:text-gray-100 transition-colors"
       onClick={onStartEdit}
       tabIndex={0}
       onKeyDown={(e) => {
@@ -482,12 +482,12 @@ export default function StoresMatrixTable({
   const isMobile = useIsMobile();
 
   return (
-    <div className="border border-border rounded-lg overflow-hidden">
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
       <div className="overflow-x-auto">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <Table className="min-w-[1200px]">
-            <TableHeader className="sticky top-0 z-10 bg-card border-b">
-              <TableRow>
+          <Table className="min-w-[1200px] border-collapse">
+            <TableHeader className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+              <TableRow className="hover:bg-transparent border-gray-200 dark:border-gray-700">
                 <SortableContext items={columnOrder} strategy={horizontalListSortingStrategy}>
                   {orderedColumns.map((col) => (
                     <DraggableHeaderCell
@@ -503,7 +503,7 @@ export default function StoresMatrixTable({
             </TableHeader>
             <TableBody>
               {filteredStores.map((store) => (
-                <TableRow key={store.id} className="group">
+                <TableRow key={store.id} className="group odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-700">
                   {orderedColumns.map((col) => {
                     const isNameCol = col.storeField === "name";
                     const isEditingThis = editingCell?.storeId === store.id && editingCell?.field === col.storeField;
@@ -514,12 +514,12 @@ export default function StoresMatrixTable({
                         <TableCell
                           key={col.key}
                           className={cn(
-                            "font-medium sticky left-0 z-[5]",
+                            "font-medium sticky left-0 z-[5] text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700",
                             // Always-on opaque bg matching row state so the frozen
                             // column never goes transparent during horizontal scroll.
-                            "bg-background text-foreground group-hover:bg-muted/50 transition-colors",
+                            "bg-white dark:bg-gray-900 group-even:bg-gray-50 dark:group-even:bg-gray-800/50 text-gray-900 dark:text-gray-100 group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition-colors",
                             // Right-edge shadow indicating more content to scroll.
-                            "shadow-[1px_0_0_0_rgba(0,0,0,0.1)]"
+                            "shadow-[1px_0_0_0_rgba(0,0,0,0.1)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.05)]"
                           )}
                         >
                           <button
@@ -539,7 +539,7 @@ export default function StoresMatrixTable({
                     const boolVal = (store as any)[col.storeField];
                     const isTrue = boolVal === "true" || boolVal === true;
                     return (
-                      <TableCell key={col.key} className="p-1">
+                      <TableCell key={col.key} className="p-1 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
                         {canEdit ? (
                           <div className="flex items-center justify-center gap-1.5 px-1 py-0.5 min-h-[28px]">
                             <Switch
@@ -552,7 +552,7 @@ export default function StoresMatrixTable({
                             <span className="text-xs text-muted-foreground">{isTrue ? "Sim" : "Não"}</span>
                           </div>
                         ) : (
-                          <span className="text-xs px-1">{isTrue ? "Sim" : "Não"}</span>
+                          <span className="text-xs px-1 text-gray-900 dark:text-gray-100">{isTrue ? "Sim" : "Não"}</span>
                         )}
                       </TableCell>
                     );
@@ -560,14 +560,14 @@ export default function StoresMatrixTable({
 
                   if (!canEdit) {
                     return (
-                      <TableCell key={col.key} className="text-xs text-foreground">
+                      <TableCell key={col.key} className="text-xs text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700">
                         {displayVal || "—"}
                       </TableCell>
                     );
                   }
 
                   return (
-                    <TableCell key={col.key} className="p-1">
+                    <TableCell key={col.key} className="p-1 border-gray-200 dark:border-gray-700">
                       <EditableCell
                         value={((store as any)[col.storeField] || "").toString()}
                         storeId={store.id}
