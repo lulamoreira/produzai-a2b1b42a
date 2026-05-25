@@ -432,8 +432,6 @@ export default function SortablePiecesTable({
               {customFieldLabels?.map((label, i) => {
                 if (!label) return null;
                 if (visibleColumns && !visibleColumns[`custom_field_${i + 1}`]) return null;
-                return <TableHead key={`custom-${i}`} className="hidden xl:table-cell">{label}</TableHead>;
-              })}
                 return <TableHead key={`custom-head-${i}`} className="hidden xl:table-cell">{label}</TableHead>;
               })}
 
