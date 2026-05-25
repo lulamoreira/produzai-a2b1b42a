@@ -340,6 +340,7 @@ type Props = {
   storeSearch: string;
   storeStateFilter: string;
   onDisplayOrderChange?: (stores: ClientStore[]) => void;
+  disableInternalSort?: boolean;
 };
 
 export default function StoresMatrixTable({
@@ -353,6 +354,7 @@ export default function StoresMatrixTable({
   storeSearch,
   storeStateFilter,
   onDisplayOrderChange,
+  disableInternalSort = false,
 }: Props) {
   const persistenceId = campaignId ? `campaign_${campaignId}` : `client_${clientId}`;
 
