@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useCallback, useRef } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
   Search, Filter, Download, Sparkles, Copy, MoreHorizontal, Lock, CheckCircle2,
-  Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw
+  Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw, X, Clipboard
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,24 @@ import { Badge } from "@/components/ui/badge";
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters, type FilterLogicMode } from "@/components/MatrixFilterSidebar";
 import MatrixDistributionDashboard from "@/components/Matrix/MatrixDistributionDashboard";
@@ -20,6 +38,8 @@ import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getStateColor } from "@/lib/stateColors";
 import { useUpdateCampaignStorePiece } from "@/hooks/useMultiClientData";
+import { applyRateioBulk } from "@/lib/applyRateioBulk";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 interface RateioTabV2Props {
@@ -78,9 +98,24 @@ export default function RateioTabV2({
   const { t } = useTranslation();
   const { isAdminOrMaster } = useUserRole();
   const updatePieceQty = useUpdateCampaignStorePiece();
+  const queryClient = useQueryClient();
   
   const [rateioView, setRateioView] = useState("planilha");
   const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(true);
+  
+  // Excel Paste state
+  const [anchorCell, setAnchorCell] = useState<{ rowIndex: number; colIndex: number } | null>(null);
+  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState<{ 
+    storeId: string; 
+    pieceId: string; 
+    oldValue: number; 
+    newValue: number; 
+    storeName: string; 
+    pieceName: string;
+    isIgnored: boolean;
+  }[]>([]);
+  const [isApplyingPaste, setIsApplyingPaste] = useState(false);
   const [storeSearch, setStoreSearch] = useState("");
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
@@ -88,6 +123,38 @@ export default function RateioTabV2({
   
   const [isAutomationOpen, setIsAutomationOpen] = useState(false);
   const [isExecutingAutomation, setIsExecutingAutomation] = useState(false);
+
+  const versionTabs = useMemo(() => {
+    const tabs: { id: string; label: string; isVigente?: boolean; type?: string; parent?: string }[] = [{ id: "original", label: "Rateio Original", type: "original" }];
+    
+    if (hasNegotiationRateio && winnerSupplierId) {
+      tabs.push({ 
+        id: "negotiation", 
+        label: `Negociação · ${winnerSupplierName}`,
+        type: "negotiation"
+      });
+    }
+    
+    if (activeAdjustment) {
+      tabs.push({ 
+        id: "adjustment", 
+        label: `Ajuste · ${activeAdjustment.name}`,
+        type: "adjustment",
+        parent: hasNegotiationRateio ? "Negociação" : "Original"
+      });
+    }
+
+    const lastTab = tabs[tabs.length - 1];
+    if (lastTab) lastTab.isVigente = true;
+
+    return tabs;
+  }, [hasNegotiationRateio, winnerSupplierId, winnerSupplierName, activeAdjustment]);
+
+  const activeTabData = versionTabs.find(t => t.id === rateioSource) || versionTabs.find(t => t.id === vigenteSource) || versionTabs[0];
+  const activeVersionTab = activeTabData?.id || vigenteSource;
+  const isTabEditable = activeTabData?.isVigente && activeVersionTab === vigenteSource;
+  const isLatestTab = isTabEditable;
+
   
   // Custom field labels for automation
   const customFieldLabels = useMemo(() => {
@@ -290,44 +357,125 @@ export default function RateioTabV2({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") saveEdit();
-    if (e.key === "Escape") setEditingCell(null);
+    if (e.key === "Escape") {
+      setEditingCell(null);
+      setAnchorCell(null);
+    }
   };
 
-  const versionTabs = useMemo(() => {
-    const tabs: { id: string; label: string; isVigente?: boolean; type?: string; parent?: string }[] = [{ id: "original", label: "Rateio Original", type: "original" }];
-    
-    if (hasNegotiationRateio && winnerSupplierId) {
-      tabs.push({ 
-        id: "negotiation", 
-        label: `Negociação · ${winnerSupplierName}`,
-        type: "negotiation"
+  const parseExcelTSV = (text: string): (number | null)[][] => {
+    const lines = text.trim().split(/\r?\n/);
+    return lines.map(line => 
+      line.split('\t').map(cell => {
+        const cleaned = cell.trim().replace(/\./g, '').replace(',', '.');
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? null : num;
+      })
+    );
+  };
+
+  const handleExcelPaste = useCallback((text: string, anchor: { rowIndex: number; colIndex: number }) => {
+    const parsedData = parseExcelTSV(text);
+    const changes: typeof pendingChanges = [];
+
+    parsedData.forEach((row, rIdx) => {
+      const storeIdx = anchor.rowIndex + rIdx;
+      if (storeIdx >= filteredStores.length) return;
+      
+      const store = filteredStores[storeIdx];
+      
+      row.forEach((val, cIdx) => {
+        const colIdx = anchor.colIndex + cIdx;
+        if (colIdx >= columns.length) return;
+        
+        const col = columns[colIdx];
+        if (col._type === 'kit') return; // Cannot paste into kits
+
+        const oldValue = qtyMap[`${store.id}-${col.id}`] || 0;
+        
+        changes.push({
+          storeId: store.id,
+          pieceId: col.id,
+          oldValue,
+          newValue: val ?? 0,
+          storeName: store.name,
+          pieceName: col.name,
+          isIgnored: val === null
+        });
       });
+    });
+
+    if (changes.length > 0) {
+      setPendingChanges(changes);
+      setIsPasteModalOpen(true);
     }
-    
-    if (activeAdjustment) {
-      tabs.push({ 
-        id: "adjustment", 
-        label: `Ajuste · ${activeAdjustment.name}`,
-        type: "adjustment",
-        parent: hasNegotiationRateio ? "Negociação" : "Original"
+  }, [filteredStores, columns, qtyMap]);
+
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (!anchorCell || editingCell || !isTabEditable) return;
+      
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+      e.preventDefault();
+      const text = e.clipboardData?.getData('text/plain') || '';
+      handleExcelPaste(text, anchorCell);
+    };
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setAnchorCell(null);
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      window.removeEventListener('paste', handlePaste);
+      window.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, [anchorCell, editingCell, isTabEditable, handleExcelPaste]);
+
+  const confirmPaste = async () => {
+    const upserts = pendingChanges
+      .filter(c => !c.isIgnored)
+      .map(c => ({
+        campaignId,
+        storeId: c.storeId,
+        pieceId: c.pieceId,
+        quantity: c.newValue
+      }));
+
+    if (upserts.length === 0) {
+      setIsPasteModalOpen(false);
+      return;
+    }
+
+    setIsApplyingPaste(true);
+    try {
+      await applyRateioBulk(upserts, [], {
+        isNegotiationView: rateioSource === 'negotiation',
+        negotiationSupplierId: winnerSupplierId,
+        isAdjustmentView: rateioSource === 'adjustment',
+        adjustmentId: activeAdjustment?.id
       });
+      
+      queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
+      
+      toast.success(`${upserts.length} células atualizadas com sucesso`);
+      setIsPasteModalOpen(false);
+      setAnchorCell(null);
+    } catch (err) {
+      console.error("Erro ao colar dados:", err);
+      toast.error("Erro ao aplicar colagem do Excel");
+    } finally {
+      setIsApplyingPaste(false);
     }
+  };
 
-    // Sort tabs: original first, then others by "version sequence" logic
-    // But requirement says: ALL versions for current campaign, ordered by creation date (oldest first)
-    // Here we use the props which are already the resolved versions.
-    // The most recently created version is always the ATIVO/editable one.
-    // Let's mark the last one as ATIVO.
-    const lastTab = tabs[tabs.length - 1];
-    if (lastTab) lastTab.isVigente = true;
-
-    return tabs;
-  }, [hasNegotiationRateio, winnerSupplierId, winnerSupplierName, activeAdjustment]);
-
-  const activeTabData = versionTabs.find(t => t.id === rateioSource) || versionTabs.find(t => t.id === vigenteSource) || versionTabs[0];
-  const activeVersionTab = activeTabData?.id || vigenteSource;
-  const isTabEditable = activeTabData?.isVigente && activeVersionTab === vigenteSource;
-  const isLatestTab = isTabEditable;
 
   const handleAutomationComplete = () => {
     setIsAutomationOpen(false);
@@ -699,7 +847,7 @@ export default function RateioTabV2({
                     </tr>
                   </thead>
                   <tbody className="bg-white">
-                    {filteredStores.map(store => (
+                    {filteredStores.map((store, sIdx) => (
                       <tr key={store.id} className="group even:bg-stone-100/80 odd:bg-white hover:bg-[#C2714F]/[0.08] transition-colors">
                         <td className="sticky left-0 z-20 bg-white group-hover:bg-stone-50/50 border-r border-b border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">
                           <div className="flex items-center gap-3">
@@ -728,23 +876,29 @@ export default function RateioTabV2({
                             </div>
                           </div>
                         </td>
-                        {columns.map((col) => {
+                        {columns.map((col, cIdx) => {
                           const isKit = col._type === "kit";
                           const val = isKit
                             ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
                             : (qtyMap[`${store.id}-${col.id}`] || 0);
                           const isEditing = !isKit && editingCell?.storeId === store.id && editingCell?.pieceId === col.id;
+                          const isSelected = !isEditing && anchorCell?.rowIndex === sIdx && anchorCell?.colIndex === cIdx;
 
                           return (
                             <td 
                               key={`${col._type}-${col.id}`} 
                               className={cn(
-                                "border-r border-b border-stone-200 text-center transition-all",
-                                isKit || !isTabEditable ? "cursor-default bg-[#C2714F]/[0.03]" : "cursor-pointer",
+                                "border-r border-b border-stone-200 text-center transition-all relative",
+                                isKit || !isTabEditable ? "cursor-default bg-[#C2714F]/[0.03]" : "cursor-cell",
                                 val > 0 && !isKit ? "bg-stone-50/30" : "",
-                                isEditing && "ring-2 ring-inset ring-[#C2714F] z-10"
+                                isEditing && "ring-2 ring-inset ring-[#C2714F] z-10",
+                                isSelected && "ring-2 ring-inset ring-blue-500 z-10 bg-blue-50/50"
                               )}
-                              onClick={() => !isKit && isTabEditable && startEditing(store.id, col.id, val)}
+                              onClick={() => {
+                                if (isKit || !isTabEditable) return;
+                                setAnchorCell({ rowIndex: sIdx, colIndex: cIdx });
+                              }}
+                              onDoubleClick={() => !isKit && isTabEditable && startEditing(store.id, col.id, val)}
                             >
                               {isEditing ? (
                                 <input
@@ -832,6 +986,96 @@ export default function RateioTabV2({
           )}
         </div>
       </div>
+
+      {anchorCell && (
+        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-stone-900 text-white px-4 py-2 rounded-full text-xs font-medium shadow-2xl z-[100] flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4">
+          <div className="flex items-center gap-2">
+            <Clipboard className="w-3.5 h-3.5 text-[#C2714F]" />
+            <span>Pressione <strong>Ctrl+V</strong> para colar do Excel</span>
+          </div>
+          <div className="w-px h-3 bg-stone-700" />
+          <button 
+            onClick={() => setAnchorCell(null)}
+            className="text-stone-400 hover:text-white transition-colors flex items-center gap-1"
+          >
+            <span>Esc para cancelar</span>
+            <X className="w-3 h-3" />
+          </button>
+        </div>
+      )}
+
+      <AlertDialog open={isPasteModalOpen} onOpenChange={setIsPasteModalOpen}>
+        <AlertDialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Colar dados do Excel</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você está prestes a preencher {pendingChanges.filter(c => !c.isIgnored).length} células.
+              {pendingChanges.some(c => c.oldValue > 0) && (
+                <span className="block mt-1 text-amber-600 font-medium">
+                  Aviso: {pendingChanges.filter(c => c.oldValue > 0).length} células com valores existentes serão sobrescritas.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="flex-1 overflow-auto my-4 border rounded-md">
+            <Table>
+              <TableHeader className="bg-stone-50 sticky top-0">
+                <TableRow>
+                  <TableHead className="text-xs">Loja</TableHead>
+                  <TableHead className="text-xs">Peça</TableHead>
+                  <TableHead className="text-xs text-center">Valor atual</TableHead>
+                  <TableHead className="text-xs text-center">Novo valor</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pendingChanges.slice(0, 10).map((change, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell className="text-xs font-medium">{change.storeName}</TableCell>
+                    <TableCell className="text-xs">{change.pieceName}</TableCell>
+                    <TableCell className="text-xs text-center text-stone-400">{change.oldValue || "—"}</TableCell>
+                    <TableCell className={cn(
+                      "text-xs text-center font-bold",
+                      change.isIgnored ? "text-red-500" : "text-stone-900"
+                    )}>
+                      {change.isIgnored ? "ignorado" : change.newValue}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {pendingChanges.length > 10 && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-xs text-center text-stone-500 bg-stone-50/50 italic py-2">
+                      ... e mais {pendingChanges.length - 10} células
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isApplyingPaste}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={(e) => {
+                e.preventDefault();
+                confirmPaste();
+              }}
+              disabled={isApplyingPaste}
+              className="bg-[#C2714F] hover:bg-[#A35D3F]"
+            >
+              {isApplyingPaste ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Aplicando...
+                </>
+              ) : (
+                "Confirmar colagem"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <MatrixAutomationDialog 
         open={isAutomationOpen}
         onOpenChange={setIsAutomationOpen}
