@@ -45,11 +45,12 @@ export default function SummaryTab({
   isAdmin,
   isAdminOrMaster,
   canViewPieces,
-  onNavigate
+  onNavigate,
+  campaignKpis: externalKpis
 }: SummaryTabProps) {
   const { t } = useTranslation();
 
-  const { data: campaignKpis } = useQuery({
+  const { data: internalKpis } = useQuery({
     queryKey: ["campaign-summary-kpis", campaignId],
     queryFn: async () => {
       const storesRes = await (supabase.from("client_stores") as any).select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
@@ -64,8 +65,11 @@ export default function SummaryTab({
         pendingApprovals: pendingApprovalsRes.count || 0
       };
     },
-    enabled: !!campaignId
+    enabled: !!campaignId && !externalKpis
   });
+
+  const campaignKpis = externalKpis || internalKpis;
+
 
   return (
     <div className="space-y-6">
