@@ -1492,7 +1492,7 @@ export function useAddCampaignKit() {
       // Kits live in the [10000, ...] display_order namespace to keep them sorted after standalone pieces
       // and to prevent collisions that destabilize matrix column identity.
       let resolvedOrder = kit.display_order;
-      if (resolvedOrder === undefined || resolvedOrder === null || resolvedOrder < 10000) {
+      if (resolvedOrder === undefined || resolvedOrder === null) {
         const { data: maxRow } = await supabase
           .from("campaign_kits")
           .select("display_order")

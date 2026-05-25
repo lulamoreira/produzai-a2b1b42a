@@ -146,7 +146,7 @@ interface CreateKitDialogProps {
   kitOnlyPieces: CampaignPiece[];
   existingKits: CampaignKit[];
   existingPieces?: CampaignPiece[];
-  onCreateKit: (kit: { campaign_id: string; name: string; code: number; is_new?: boolean }) => Promise<CampaignKit>;
+  onCreateKit: (kit: { campaign_id: string; name: string; code: number; is_new?: boolean; display_order?: number }) => Promise<CampaignKit>;
   onAddKitPiece: (kitPiece: { kit_id: string; piece_id: string }) => Promise<void>;
   onUpdateKit: (kit: { id: string; image_url?: string | null; is_new?: boolean }) => Promise<CampaignKit>;
   onUpdatePiece?: (piece: Partial<CampaignPiece> & { id: string }) => Promise<void>;
@@ -154,8 +154,8 @@ interface CreateKitDialogProps {
 }
 
 export function CreateKitDialog({
-  open, onOpenChange, campaignId, kitOnlyPieces, existingKits, existingPieces = [], onCreateKit, onAddKitPiece, onUpdateKit, onUpdatePiece, preSelectedPieceIds = [],
-}: CreateKitDialogProps) {
+  open, onOpenChange, campaignId, kitOnlyPieces, existingKits, existingPieces = [], onCreateKit, onAddKitPiece, onUpdateKit, onUpdatePiece, preSelectedPieceIds = [], displayOrder,
+}: CreateKitDialogProps & { displayOrder?: number }) {
   const { t } = useTranslation();
   const [step, setStep] = useState<"name" | "pieces">("name");
   const [kitName, setKitName] = useState("");
@@ -204,7 +204,7 @@ export function CreateKitDialog({
     }
     setSaving(true);
     try {
-      const kit = await onCreateKit({ campaign_id: campaignId, name: finalName, code: nextCode, is_new: kitIsNew });
+      const kit = await onCreateKit({ campaign_id: campaignId, name: finalName, code: nextCode, is_new: kitIsNew, display_order: displayOrder });
       setCreatedKit(kit);
       
       // If we have preselected pieces, add them all
