@@ -224,7 +224,7 @@ export default function PiecesTab({
                   <PopoverTrigger asChild>
                     <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1">
                       <Settings2 className="w-3.5 h-3.5" />
-                      {t("pieces.customFields") || "Campos Personalizados"}
+                      {"⚙ Campos Personalizados"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-80">
