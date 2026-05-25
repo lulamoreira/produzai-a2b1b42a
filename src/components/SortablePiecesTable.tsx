@@ -409,16 +409,31 @@ export default function SortablePiecesTable({
           <TableHeader>
             <TableRow>
               {canEditPieces && <TableHead className="w-8" />}
-              <TableHead className="w-[70px]">{t("common.code")}</TableHead>
-              <TableHead className="hidden sm:table-cell">{t("pieces.locationInStore")}</TableHead>
+              {(!visibleColumns || visibleColumns.code) && (
+                <TableHead className="w-[70px]">{t("common.code")}</TableHead>
+              )}
+              {(!visibleColumns || visibleColumns.location) && (
+                <TableHead className="hidden sm:table-cell">{t("pieces.locationInStore")}</TableHead>
+              )}
               <TableHead>{t("common.name")}</TableHead>
-              <TableHead className="hidden md:table-cell w-[140px] min-w-[140px]">{t("pieces.measures")}</TableHead>
-              <TableHead className="hidden lg:table-cell">{t("common.model")}</TableHead>
-              <TableHead className="hidden lg:table-cell">{t("pieces.specification")}</TableHead>
-              <TableHead className="hidden xl:table-cell">{t("pieces.installationInstructions")}</TableHead>
+              {(!visibleColumns || visibleColumns.size) && (
+                <TableHead className="hidden md:table-cell w-[140px] min-w-[140px]">{t("pieces.measures")}</TableHead>
+              )}
+              {(!visibleColumns || visibleColumns.store_category) && (
+                <TableHead className="hidden lg:table-cell">{t("common.model")}</TableHead>
+              )}
+              {(!visibleColumns || visibleColumns.specification) && (
+                <TableHead className="hidden lg:table-cell">{t("pieces.specification")}</TableHead>
+              )}
+              {(!visibleColumns || visibleColumns.installation_instructions) && (
+                <TableHead className="hidden xl:table-cell">{t("pieces.installationInstructions")}</TableHead>
+              )}
               
               {customFieldLabels?.map((label, i) => {
                 if (!label) return null;
+                if (visibleColumns && !visibleColumns[`custom_field_${i + 1}`]) return null;
+                return <TableHead key={`custom-${i}`} className="hidden xl:table-cell">{label}</TableHead>;
+              })}
                 return <TableHead key={`custom-head-${i}`} className="hidden xl:table-cell">{label}</TableHead>;
               })}
 
