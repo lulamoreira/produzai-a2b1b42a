@@ -23,6 +23,12 @@ interface SummaryTabProps {
   isAdminOrMaster: boolean;
   canViewPieces: boolean;
   onNavigate: (section: string, filter?: any) => void;
+  campaignKpis?: {
+    stores: number;
+    pieces: number;
+    pendingInstallations: number;
+    pendingApprovals: number;
+  };
 }
 
 export default function SummaryTab({
