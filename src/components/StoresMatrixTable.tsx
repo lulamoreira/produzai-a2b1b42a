@@ -476,15 +476,17 @@ export default function StoresMatrixTable({
   const getCellKey = (storeId: string, field: string) => `${storeId}__${field}`;
 
   const parseExcelTSV = (text: string): string[][] => {
-    const lines = text.split(/\r?\n/);
-    const result = lines
-      .map(line => line.split('\t').map(cell => cell.trim()))
-      .filter((row, idx) => {
-        // Ignore completely empty rows at the end
-        if (idx === lines.length - 1 && row.every(cell => cell === "")) return false;
-        return true;
-      });
-    return result;
+    // Normaliza quebras de linha: \r\n e \r viram \n
+    const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    
+    // Remove linha vazia no final (Excel adiciona \n no final)
+    const trimmed = normalized.replace(/\n$/, '');
+    
+    // Divide em linhas
+    const lines = trimmed.split('\n');
+    
+    // Divide cada linha em colunas por tab
+    return lines.map(line => line.split('\t').map(cell => cell.trim()));
   };
 
   const handleExcelPaste = useCallback((text: string, anchor: { rowIndex: number; colKey: string }) => {

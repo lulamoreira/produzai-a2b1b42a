@@ -364,12 +364,22 @@ export default function RateioTabV2({
   };
 
   const parseExcelTSV = (text: string): (number | null)[][] => {
-    const lines = text.trim().split(/\r?\n/);
+    // Normaliza quebras de linha: \r\n e \r viram \n
+    const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+    
+    // Remove linha vazia no final (Excel adiciona \n no final)
+    const trimmed = normalized.replace(/\n$/, '');
+    
+    // Divide em linhas
+    const lines = trimmed.split('\n');
+    
     return lines.map(line => 
       line.split('\t').map(cell => {
+        // Para valores numéricos do rateio, após o split, converta para número
+        // Remove pontos de milhar e troca vírgula por ponto decimal
         const cleaned = cell.trim().replace(/\./g, '').replace(',', '.');
-        const num = parseFloat(cleaned);
-        return isNaN(num) ? null : num;
+        const numValue = parseFloat(cleaned);
+        return isNaN(numValue) ? null : numValue;
       })
     );
   };
