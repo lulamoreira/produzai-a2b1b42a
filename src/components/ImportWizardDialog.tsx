@@ -310,8 +310,8 @@ export default function ImportWizardDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger}
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-2">
           <DialogTitle className="flex items-center gap-2">
             <Upload className="w-5 h-5" />
             {t("common.import")} {mode === "stores" ? t("modules.stores") : t("modules.pieces")}
