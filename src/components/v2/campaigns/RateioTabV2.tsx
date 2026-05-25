@@ -542,7 +542,7 @@ export default function RateioTabV2({
           </TabsList>
         </Tabs>
 
-        {isAdminOrMaster && (
+        {isAdminOrMaster && hasNegotiationRateio && (
           <Button 
             variant="ghost" 
             size="sm" 
