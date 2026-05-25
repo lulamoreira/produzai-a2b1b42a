@@ -792,7 +792,6 @@ export default function StoresMatrixTable({
                     );
                   }
 
-                  const isAnchor = anchorCell?.rowIndex === rowIndex && anchorCell?.colKey === col.storeField;
 
                   return (
                     <TableCell 
