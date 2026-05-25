@@ -792,8 +792,17 @@ export default function StoresMatrixTable({
                     );
                   }
 
+                  const isAnchor = anchorCell?.rowIndex === rowIndex && anchorCell?.colKey === col.storeField;
+
                   return (
-                    <TableCell key={col.key} className="p-1 border-gray-200 dark:border-gray-700">
+                    <TableCell 
+                      key={col.key} 
+                      className={cn(
+                        "p-1 border-gray-200 dark:border-gray-700 transition-all cursor-cell relative",
+                        isAnchor && "ring-2 ring-inset ring-blue-500 z-[6]"
+                      )}
+                      onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}
+                    >
                       <EditableCell
                         value={((store as any)[col.storeField] || "").toString()}
                         storeId={store.id}
@@ -810,6 +819,20 @@ export default function StoresMatrixTable({
                           else cellRefs.current.delete(key);
                         }}
                       />
+                      {isAnchor && !editingCell && (
+                        <TooltipProvider>
+                          <Tooltip open={true}>
+                            <TooltipTrigger asChild>
+                              <div className="absolute inset-0 pointer-events-none" />
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="text-[10px] py-1 px-2 z-50">
+                              <div className="flex items-center gap-1.5">
+                                <kbd className="bg-muted px-1 rounded border">Ctrl+V</kbd> para colar • <kbd className="bg-muted px-1 rounded border">Esc</kbd>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
                     </TableCell>
                   );
                 })}
