@@ -245,6 +245,7 @@ export default function MatrixTab({
                <div className="flex-1 overflow-hidden">
                  <StoresMatrixTable 
                     clientId={clientId}
+                    campaignId={campaignId}
                     stores={stores.filter(s => {
                       const q = storeSearch.toLowerCase().trim();
                       return !q || Object.values(s).some(val => 
@@ -258,6 +259,7 @@ export default function MatrixTab({
                     storeSearch={storeSearch}
                     storeStateFilter=""
                  />
+
                </div>
             </TabsContent>
 

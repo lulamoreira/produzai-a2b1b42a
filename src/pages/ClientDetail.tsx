@@ -1513,6 +1513,7 @@ const ClientDetail = () => {
                 storeStateFilter={storeStateFilter}
                 onDisplayOrderChange={setDisplayOrderStores}
                />
+
             )}
             </>
             )}

@@ -67,16 +67,28 @@ function buildColumns(customFieldLabels: { label: string; index: number; type?: 
 
 // ─── LocalStorage helpers ────────────────────────────────
 
-function loadColumnOrder(clientId: string): string[] | null {
+function loadColumnOrder(id: string): string[] | null {
   try {
-    const raw = localStorage.getItem(`store_col_order_${clientId}`);
+    const raw = localStorage.getItem(`store_col_order_${id}`);
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
 
-function saveColumnOrder(clientId: string, order: string[]) {
-  localStorage.setItem(`store_col_order_${clientId}`, JSON.stringify(order));
+function saveColumnOrder(id: string, order: string[]) {
+  localStorage.setItem(`store_col_order_${id}`, JSON.stringify(order));
 }
+
+function loadSortState(id: string): { key: string; dir: "asc" | "desc" } | null {
+  try {
+    const raw = localStorage.getItem(`store_sort_state_${id}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function saveSortState(id: string, state: { key: string; dir: "asc" | "desc" }) {
+  localStorage.setItem(`store_sort_state_${id}`, JSON.stringify(state));
+}
+
 
 // ─── Draggable Header Cell ──────────────────────────────
 
@@ -301,6 +313,7 @@ const EditableCell = React.memo(function EditableCell({
 type Props = {
   stores: ClientStore[];
   clientId: string;
+  campaignId?: string;
   customFieldLabels: { label: string; index: number; type?: string }[];
   canEdit: boolean;
   onUpdateStore: (data: { id: string } & Partial<ClientStore>) => Promise<void>;
@@ -313,6 +326,7 @@ type Props = {
 export default function StoresMatrixTable({
   stores,
   clientId,
+  campaignId,
   customFieldLabels,
   canEdit,
   onUpdateStore,
@@ -321,11 +335,13 @@ export default function StoresMatrixTable({
   storeStateFilter,
   onDisplayOrderChange,
 }: Props) {
+  const persistenceId = campaignId ? `campaign_${campaignId}` : `client_${clientId}`;
+
   const allColumns = useMemo(() => buildColumns(customFieldLabels), [customFieldLabels]);
 
   // Column order
   const [columnOrder, setColumnOrder] = useState<string[]>(() => {
-    const saved = loadColumnOrder(clientId);
+    const saved = loadColumnOrder(persistenceId);
     if (saved) {
       const allKeys = new Set(allColumns.map((c) => c.key));
       const ordered = saved.filter((k) => allKeys.has(k));
@@ -350,19 +366,32 @@ export default function StoresMatrixTable({
   }, [columnOrder, allColumns]);
 
   // Sort
-  const [sortKey, setSortKey] = useState("state");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortKey, setSortKey] = useState(() => {
+    const saved = loadSortState(persistenceId);
+    return saved?.key || "state";
+  });
+  const [sortDir, setSortDir] = useState<"asc" | "desc">(() => {
+    const saved = loadSortState(persistenceId);
+    return saved?.dir || "asc";
+  });
 
   const handleSort = useCallback((key: string) => {
     setSortKey((prev) => {
+      let newDir: "asc" | "desc" = "asc";
+      let newKey = key;
       if (prev === key) {
-        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-        return prev;
+        newDir = sortDir === "asc" ? "desc" : "asc";
+        setSortDir(newDir);
+        newKey = prev;
+      } else {
+        setSortDir("asc");
+        newKey = key;
       }
-      setSortDir("asc");
-      return key;
+      saveSortState(persistenceId, { key: newKey, dir: newDir });
+      return newKey;
     });
-  }, []);
+  }, [sortDir, persistenceId]);
+
 
   // Filter + sort stores
   const filteredStores = useMemo(() => {
@@ -376,11 +405,32 @@ export default function StoresMatrixTable({
         );
       })
       .sort((a, b) => {
-        const valA = ((a as any)[sortKey] || "").toString().toLowerCase();
-        const valB = ((b as any)[sortKey] || "").toString().toLowerCase();
-        const cmp = valA.localeCompare(valB);
+        const field = orderedColumns.find(c => c.key === sortKey) || allColumns.find(c => c.key === sortKey);
+        const storeField = field?.storeField || sortKey;
+        
+        let valA = (a as any)[storeField];
+        let valB = (b as any)[storeField];
+
+        // Handle nulls
+        if (valA === null || valA === undefined) valA = "";
+        if (valB === null || valB === undefined) valB = "";
+
+        // Detect type from field definition or data
+        const fieldType = field?.fieldType;
+        
+        if (fieldType === "number" || (typeof valA === "number" && typeof valB === "number")) {
+          const numA = Number(valA);
+          const numB = Number(valB);
+          return sortDir === "asc" ? numA - numB : numB - numA;
+        }
+
+        // Default to string comparison
+        const strA = valA.toString().toLowerCase();
+        const strB = valB.toString().toLowerCase();
+        const cmp = strA.localeCompare(strB);
         return sortDir === "asc" ? cmp : -cmp;
       });
+
   }, [stores, storeSearch, storeStateFilter, sortKey, sortDir]);
 
   useEffect(() => {
@@ -454,10 +504,20 @@ export default function StoresMatrixTable({
       const oldIdx = prev.indexOf(active.id as string);
       const newIdx = prev.indexOf(over.id as string);
       const next = arrayMove(prev, oldIdx, newIdx);
-      saveColumnOrder(clientId, next);
+      saveColumnOrder(persistenceId, next);
+
+      // Automatic sorting by the first column after reordering
+      if (newIdx === 0 && oldIdx !== 0) {
+        const firstColKey = next[0];
+        setSortKey(firstColKey);
+        setSortDir("asc");
+        saveSortState(persistenceId, { key: firstColKey, dir: "asc" });
+      }
+
       return next;
     });
-  }, [clientId]);
+  }, [persistenceId]);
+
 
   const formatPhone = (v: string) => {
     const d = v.replace(/\D/g, "").slice(0, 11);
