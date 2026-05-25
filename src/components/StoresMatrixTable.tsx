@@ -313,6 +313,7 @@ const EditableCell = React.memo(function EditableCell({
 type Props = {
   stores: ClientStore[];
   clientId: string;
+  campaignId?: string;
   customFieldLabels: { label: string; index: number; type?: string }[];
   canEdit: boolean;
   onUpdateStore: (data: { id: string } & Partial<ClientStore>) => Promise<void>;
@@ -325,6 +326,7 @@ type Props = {
 export default function StoresMatrixTable({
   stores,
   clientId,
+  campaignId,
   customFieldLabels,
   canEdit,
   onUpdateStore,
@@ -333,6 +335,8 @@ export default function StoresMatrixTable({
   storeStateFilter,
   onDisplayOrderChange,
 }: Props) {
+  const persistenceId = campaignId ? `campaign_${campaignId}` : `client_${clientId}`;
+
   const allColumns = useMemo(() => buildColumns(customFieldLabels), [customFieldLabels]);
 
   // Column order
