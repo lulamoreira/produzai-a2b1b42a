@@ -577,6 +577,32 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Sort preference dialog */}
+      <Dialog open={showSortDialog} onOpenChange={setShowSortDialog}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Ordenar lojas por</DialogTitle>
+            <DialogDescription>
+              Escolha o campo para organizar as lojas. A ordem será sempre crescente e ficará salva para o seu usuário.
+            </DialogDescription>
+          </DialogHeader>
+          <RadioGroup value={pendingSortField} onValueChange={setPendingSortField} className="gap-2 py-2">
+            {SORT_FIELDS.map((f) => (
+              <div key={f.value} className="flex items-center gap-2">
+                <RadioGroupItem id={`sort-${f.value}`} value={f.value} />
+                <Label htmlFor={`sort-${f.value}`} className="text-sm font-normal cursor-pointer">
+                  {f.label}
+                </Label>
+              </div>
+            ))}
+          </RadioGroup>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowSortDialog(false)}>Cancelar</Button>
+            <Button onClick={handleConfirmSortDialog}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
