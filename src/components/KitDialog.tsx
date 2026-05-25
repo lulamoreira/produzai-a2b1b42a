@@ -812,7 +812,7 @@ export function KitDetailDialog({
                       <div className="relative">
                         <input type="file" accept="image/*" onChange={(e) => handlePieceImageUpload(p.id, e)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                         <div className="flex items-center gap-1 px-2 py-1 rounded border border-dashed border-border text-[10px] text-muted-foreground hover:border-primary/50">
-                          <Image className="w-3 h-3" /> {p.image_url ? "Trocar (clique ou arraste)" : "Foto (clique ou arraste)"}
+                          <Image className="w-3 h-3" /> {p.image_url ? t("pieces.changePhoto") : t("pieces.addPhoto")}
                         </div>
                       </div>
                     </div>
@@ -839,7 +839,7 @@ export function KitDetailDialog({
                         <span className="text-xs font-bold text-primary">#{p.code}</span>
                         <span className="font-medium text-sm break-words">{p.name}</span>
                         {dragOverPieceId === p.id && (
-                          <span className="text-[10px] text-primary font-medium">Solte para {p.image_url ? 'substituir' : 'adicionar'} imagem</span>
+                          <span className="text-[10px] text-primary font-medium">{p.image_url ? t("pieces.dropToChangeImage") : t("pieces.dropToAddImage")}</span>
                         )}
                       </div>
                       <p className="text-[11px] text-muted-foreground">{p.category} · {p.size || "—"}</p>
@@ -907,9 +907,9 @@ export function KitDetailDialog({
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Remover "{p.name}" do kit?</AlertDialogTitle>
+                              <AlertDialogTitle>{t("pieces.removePieceFromKitQuestion", { name: p.name })}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                O que deseja fazer com esta peça?
+                                {t("pieces.removePieceFromKitDesc")}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter className="flex-col sm:flex-row gap-2 flex-wrap">
@@ -920,19 +920,19 @@ export function KitDetailDialog({
                                 }}
                                 className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
                               >
-                                Manter peça (disponível para kits)
+                                {t("pieces.keepPieceInKits")}
                               </AlertDialogAction>
                               {onUpdatePiece && (
                                 <AlertDialogAction
                                   onClick={async () => {
                                     onDeleteKitPiece(kp.id);
                                     await onUpdatePiece({ id: p.id, kit_only: false });
-                                    toast.success(`Peça "${p.name}" agora é uma peça normal (fora do kit).`);
+                                    toast.success(t("pieces.convertToNormalPieceSuccess", { name: p.name }));
                                   }}
                                   className="bg-emerald-600 text-white hover:bg-emerald-700"
                                   title="Remove do kit e converte em peça comum, mantendo o mesmo código"
                                 >
-                                  Tornar peça normal (fora do kit)
+                                  {t("pieces.convertToNormalPiece")}
                                 </AlertDialogAction>
                               )}
                               {onDeletePiece && (
@@ -943,7 +943,7 @@ export function KitDetailDialog({
                                   }}
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
-                                  Excluir peça permanentemente
+                                  {t("pieces.deletePiecePermanently")}
                                 </AlertDialogAction>
                               )}
                             </AlertDialogFooter>
@@ -1015,13 +1015,13 @@ export function KitDetailDialog({
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir kit "{kit.name}"?</AlertDialogTitle>
+                  <AlertDialogTitle>{t("pieces.deleteKitQuestionWithName", { name: kit.name })}</AlertDialogTitle>
                   <AlertDialogDescription>O kit será removido. As peças que o compõem continuarão existindo.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                   <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => { onDeleteKit(kit.id); onOpenChange(false); }}>
-                    Excluir
+                    {t("common.delete")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
