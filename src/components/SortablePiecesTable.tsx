@@ -302,6 +302,7 @@ interface SortablePiecesTableProps {
   onDuplicateKit: (kit: CampaignKit) => void;
   onReorder: (rows: UnifiedRow[]) => void;
   customFieldLabels?: (string | null)[];
+  visibleColumns?: Record<string, boolean>;
 }
 
 export default function SortablePiecesTable({
