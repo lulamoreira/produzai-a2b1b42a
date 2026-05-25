@@ -717,6 +717,33 @@ export default function RateioTabV2({
                   {t("common.filters", "Filtros")}
                 </Button>
 
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-[11px] font-bold uppercase tracking-wider gap-2 px-3"
+                      title={t("common.sortBy", "Ordenar por")}
+                    >
+                      <ArrowUpDown className="w-3 h-3" />
+                      <span>{t("common.sortBy", "Ordenar por")}:</span>
+                      <span className="text-[#C2714F]">{currentSortLabel}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56 max-h-72 overflow-y-auto">
+                    {sortFieldOptions.map((opt) => (
+                      <DropdownMenuItem
+                        key={opt.value}
+                        onSelect={(e) => { e.preventDefault(); handleSortFieldChange(opt.value); }}
+                        className="text-xs cursor-pointer flex items-center justify-between gap-2"
+                      >
+                        <span className="truncate">{opt.label}</span>
+                        {storeSortField === opt.value && <Check className="w-3.5 h-3.5 text-[#C2714F]" />}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
                 <div className="h-4 w-px bg-stone-200" />
 
                 {(() => {
