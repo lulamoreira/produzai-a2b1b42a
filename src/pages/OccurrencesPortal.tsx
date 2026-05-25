@@ -135,7 +135,6 @@ export default function OccurrencesPortal() {
     return tokens.filter(s => s.client_stores?.state === selectedState);
   }, [tokens, selectedState]);
 
-
   // Group by state -> city
   const grouped = filteredTokens.reduce<Record<string, Record<string, StoreToken[]>>>((acc, t) => {
     if (!t.client_stores) return acc;
@@ -149,78 +148,31 @@ export default function OccurrencesPortal() {
 
   const sortedStates = Object.keys(grouped).sort((a, b) => a.localeCompare(b, "pt-BR"));
 
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <Skeleton key={i} className="h-24" />
+        ))}
+      </div>
+    );
+  }
 
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        <header className="mb-8 sm:mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{title}</h1>
-            <p className="text-sm sm:text-base text-muted-foreground mt-2">{subtitle}</p>
-          </div>
+  if (!hasStores) {
+    return <OccurrencesPortalEmptyState type="no-stores" onGoToStores={!isPublic ? handleGoToStores : undefined} />;
+  }
 
-          {availableStates.length > 1 && (
-            <div className="w-full md:w-64">
-              <Select value={selectedState} onValueChange={setSelectedState}>
-                <SelectTrigger className="w-full">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <SelectValue placeholder="Filtrar por UF" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-4 w-4" />
-                      <span>Todos os Estados</span>
-                    </div>
-                  </SelectItem>
-                  {availableStates.map(state => (
-                    <SelectItem key={state} value={state}>
-                      {state}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-        </header>
+  if (isModuleDisabled || !hasTokens) {
+    return <OccurrencesPortalEmptyState type="no-access" onGoToStores={!isPublic ? handleGoToStores : undefined} />;
+  }
 
-        {isModuleDisabled && (
-          <Alert variant="destructive" className="mb-8">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Módulo desativado</AlertTitle>
-            <AlertDescription>
-              O registro de ocorrências para esta campanha não está habilitado no momento.
-            </AlertDescription>
-          </Alert>
-        )}
+  if (isDeadlinePassed) {
+    return <OccurrencesPortalEmptyState type="deadline-passed" />;
+  }
 
-        {isDeadlinePassed && !isModuleDisabled && (
-          <Alert className="mb-8 border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10">
-            <Clock className="h-4 w-4 text-yellow-600" />
-            <AlertTitle className="text-yellow-800 dark:text-yellow-500">Prazo de ocorrências encerrado</AlertTitle>
-            <AlertDescription className="text-yellow-700 dark:text-yellow-400">
-              O prazo para registro de ocorrências expirou em {deadline?.toLocaleDateString("pt-BR")} às {deadline?.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' })}.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-            {Array.from({ length: 8 }).map((_, i) => (
-              <Skeleton key={i} className="h-24" />
-            ))}
-          </div>
-        ) : !hasStores ? (
-          <OccurrencesPortalEmptyState type="no-stores" onGoToStores={!isPublic ? handleGoToStores : undefined} />
-        ) : isModuleDisabled || !hasTokens ? (
-          <OccurrencesPortalEmptyState type="no-access" onGoToStores={!isPublic ? handleGoToStores : undefined} />
-        ) : isDeadlinePassed ? (
-          <OccurrencesPortalEmptyState type="deadline-passed" />
-        ) : tokens.length === 0 ? (
-          <div className="text-center py-16 text-muted-foreground">Nenhuma loja disponível.</div>
-        ) : (
+  if (tokens.length === 0) {
+    return <div className="text-center py-16 text-muted-foreground">Nenhuma loja disponível.</div>;
+  }
 
           <div className="space-y-8">
             {sortedStates.map((state) => {

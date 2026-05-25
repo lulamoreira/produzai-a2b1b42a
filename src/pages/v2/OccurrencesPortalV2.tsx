@@ -141,6 +141,25 @@ export default function OccurrencesPortalV2() {
     navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}?section=loja_a_loja&tab=lojas`);
   };
 
+
+  // Smart Empty States Logic
+  const hasStores = storesData?.hasStores;
+  const hasTokens = storesData?.hasTokens;
+
+  const availableStates = useMemo(() => {
+    const states = new Set<string>();
+    storesData?.tokens?.forEach(s => {
+      if (s.client_stores?.state) states.add(s.client_stores.state);
+    });
+    return Array.from(states).sort();
+  }, [storesData?.tokens]);
+
+  const filteredTokens = useMemo(() => {
+    if (!storesData?.tokens) return [];
+    if (selectedState === "all") return storesData.tokens;
+    return storesData.tokens.filter(s => s.client_stores?.state === selectedState);
+  }, [storesData?.tokens, selectedState]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-stone-50">
@@ -157,8 +176,7 @@ export default function OccurrencesPortalV2() {
     );
   }
 
-  // Smart Empty States Logic
-  if (!storesData?.hasStores) {
+  if (!hasStores) {
     return (
       <div className="min-h-screen bg-stone-50 py-12 px-4">
         <OccurrencesPortalEmptyState type="no-stores" onGoToStores={!isPublic ? handleGoToStores : undefined} isV2 />
@@ -166,7 +184,7 @@ export default function OccurrencesPortalV2() {
     );
   }
 
-  if (isModuleDisabled || !storesData?.hasTokens) {
+  if (isModuleDisabled || !hasTokens) {
     return (
       <div className="min-h-screen bg-stone-50 py-12 px-4">
         <OccurrencesPortalEmptyState type="no-access" onGoToStores={!isPublic ? handleGoToStores : undefined} isV2 />
@@ -195,20 +213,6 @@ export default function OccurrencesPortalV2() {
       </div>
     );
   }
-
-  const availableStates = useMemo(() => {
-    const states = new Set<string>();
-    storesData?.tokens?.forEach(s => {
-      if (s.client_stores?.state) states.add(s.client_stores.state);
-    });
-    return Array.from(states).sort();
-  }, [storesData?.tokens]);
-
-  const filteredTokens = useMemo(() => {
-    if (!storesData?.tokens) return [];
-    if (selectedState === "all") return storesData.tokens;
-    return storesData.tokens.filter(s => s.client_stores?.state === selectedState);
-  }, [storesData?.tokens, selectedState]);
 
   return (
     <div className="min-h-screen bg-stone-50">
