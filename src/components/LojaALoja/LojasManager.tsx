@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useLojaALojaTipos, useLojaALojaLojas, useToggleLojaAssignment, type LojaALojaTipo } from "@/hooks/useLojaALoja";
 import { useClientStores } from "@/hooks/useMultiClientData";
@@ -11,12 +11,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { Store, Copy, Search, ArrowUp, ArrowDown, ArrowUpDown, AlertTriangle } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Store, Copy, Search, ArrowUp, ArrowDown, ArrowUpDown, AlertTriangle, ArrowDownAZ } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useTableSort } from "@/hooks/useTableSort";
+import { useAuth } from "@/hooks/useAuth";
 
 interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boolean }
 
@@ -51,13 +53,52 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
   const vitrinesTipos = useMemo(() => tipos.filter((t) => !t.tem_subdivisao), [tipos]);
   const internosTipos = useMemo(() => tipos.filter((t) => t.tem_subdivisao), [tipos]);
 
-  // Sort stores alphabetically by name (default)
-  const sortedStores = useMemo(
-    () => [...stores].sort((a, b) =>
-      (a.name || "").localeCompare(b.name || "", "pt-BR")
-    ),
-    [stores],
-  );
+  const { user } = useAuth();
+
+  // Sortable fields
+  const SORT_FIELDS: { value: string; label: string }[] = [
+    { value: "name", label: "Nome da loja" },
+    { value: "store_code", label: "Código da loja" },
+    { value: "city", label: "Cidade" },
+    { value: "state", label: "Estado (UF)" },
+  ];
+
+  const storageKey = user?.id ? `lojaSortField:${user.id}` : null;
+
+  // Sort preference persisted per user (always ascending)
+  const [sortField, setSortField] = useState<string>("name");
+  const [showSortDialog, setShowSortDialog] = useState(false);
+  const [pendingSortField, setPendingSortField] = useState<string>("name");
+
+  useEffect(() => {
+    if (!storageKey) return;
+    const saved = localStorage.getItem(storageKey);
+    if (saved && SORT_FIELDS.some((f) => f.value === saved)) {
+      setSortField(saved);
+    } else {
+      setPendingSortField("name");
+      setShowSortDialog(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
+
+  const persistSortField = (field: string) => {
+    setSortField(field);
+    if (storageKey) localStorage.setItem(storageKey, field);
+  };
+
+  const handleConfirmSortDialog = () => {
+    persistSortField(pendingSortField);
+    setShowSortDialog(false);
+  };
+
+  // Sort stores by user preference (always ascending)
+  const sortedStores = useMemo(() => {
+    const getVal = (s: any) => (s?.[sortField] ?? "").toString();
+    return [...stores].sort((a, b) =>
+      getVal(a).localeCompare(getVal(b), "pt-BR", { numeric: true, sensitivity: "base" })
+    );
+  }, [stores, sortField]);
 
   // Filter stores by search
   const filteredStores = useMemo(() => {
@@ -71,24 +112,19 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
     );
   }, [sortedStores, search]);
 
-  // Click-to-sort over the filtered stores (3-state cycle)
-  const {
-    sortedItems: sortedFilteredStores,
-    sortField: storeSortField,
-    sortDir: storeSortDir,
-    handleSort: handleStoreSort,
-  } = useTableSort(filteredStores);
+  const sortedFilteredStores = filteredStores;
 
   const renderSortTh = (label: string, field: string, className?: string) => {
-    const Icon = storeSortField !== field ? ArrowUpDown : storeSortDir === "asc" ? ArrowUp : ArrowDown;
-    const active = storeSortField === field && storeSortDir != null;
+    const active = sortField === field;
+    const Icon = active ? ArrowUp : ArrowUpDown;
     return (
       <th
-        onClick={() => handleStoreSort(field)}
+        onClick={() => persistSortField(field)}
         className={cn(
           "h-9 px-3 text-left text-xs font-medium text-muted-foreground cursor-pointer select-none hover:bg-muted/70 transition-colors",
           className
         )}
+        title="Clique para ordenar por este campo"
       >
         <span className="inline-flex items-center gap-1">
           {label}
@@ -368,6 +404,19 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
             className="h-8 text-xs pl-8"
           />
         </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-xs gap-1.5 shrink-0"
+          onClick={() => {
+            setPendingSortField(sortField);
+            setShowSortDialog(true);
+          }}
+          title="Alterar campo de ordenação"
+        >
+          <ArrowDownAZ className="h-3.5 w-3.5" />
+          Ordenar por
+        </Button>
         {isAdmin && (
           <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 shrink-0" onClick={handleOpenCopy}>
             <Copy className="h-3.5 w-3.5" />
@@ -525,6 +574,32 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
             <Button onClick={handleConfirmCopy} disabled={!selectedCampaignId || copying}>
               {copying ? "Copiando..." : "Confirmar"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Sort preference dialog */}
+      <Dialog open={showSortDialog} onOpenChange={setShowSortDialog}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Ordenar lojas por</DialogTitle>
+            <DialogDescription>
+              Escolha o campo para organizar as lojas. A ordem será sempre crescente e ficará salva para o seu usuário.
+            </DialogDescription>
+          </DialogHeader>
+          <RadioGroup value={pendingSortField} onValueChange={setPendingSortField} className="gap-2 py-2">
+            {SORT_FIELDS.map((f) => (
+              <div key={f.value} className="flex items-center gap-2">
+                <RadioGroupItem id={`sort-${f.value}`} value={f.value} />
+                <Label htmlFor={`sort-${f.value}`} className="text-sm font-normal cursor-pointer">
+                  {f.label}
+                </Label>
+              </div>
+            ))}
+          </RadioGroup>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setShowSortDialog(false)}>Cancelar</Button>
+            <Button onClick={handleConfirmSortDialog}>Salvar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
