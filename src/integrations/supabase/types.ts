@@ -1395,6 +1395,11 @@ export type Database = {
           category: string
           code: number
           created_at: string
+          custom_field_1: string | null
+          custom_field_2: string | null
+          custom_field_3: string | null
+          custom_field_4: string | null
+          custom_field_5: string | null
           deleted_at: string | null
           display_order: number
           id: string
@@ -1419,6 +1424,11 @@ export type Database = {
           category: string
           code: number
           created_at?: string
+          custom_field_1?: string | null
+          custom_field_2?: string | null
+          custom_field_3?: string | null
+          custom_field_4?: string | null
+          custom_field_5?: string | null
           deleted_at?: string | null
           display_order?: number
           id?: string
@@ -1443,6 +1453,11 @@ export type Database = {
           category?: string
           code?: number
           created_at?: string
+          custom_field_1?: string | null
+          custom_field_2?: string | null
+          custom_field_3?: string | null
+          custom_field_4?: string | null
+          custom_field_5?: string | null
           deleted_at?: string | null
           display_order?: number
           id?: string
@@ -1907,6 +1922,11 @@ export type Database = {
           name: string
           occurrence_end_date: string | null
           occurrence_start_date: string | null
+          piece_custom_field_1_label: string | null
+          piece_custom_field_2_label: string | null
+          piece_custom_field_3_label: string | null
+          piece_custom_field_4_label: string | null
+          piece_custom_field_5_label: string | null
         }
         Insert: {
           access_days_after?: number | null
@@ -1925,6 +1945,11 @@ export type Database = {
           name: string
           occurrence_end_date?: string | null
           occurrence_start_date?: string | null
+          piece_custom_field_1_label?: string | null
+          piece_custom_field_2_label?: string | null
+          piece_custom_field_3_label?: string | null
+          piece_custom_field_4_label?: string | null
+          piece_custom_field_5_label?: string | null
         }
         Update: {
           access_days_after?: number | null
@@ -1943,6 +1968,11 @@ export type Database = {
           name?: string
           occurrence_end_date?: string | null
           occurrence_start_date?: string | null
+          piece_custom_field_1_label?: string | null
+          piece_custom_field_2_label?: string | null
+          piece_custom_field_3_label?: string | null
+          piece_custom_field_4_label?: string | null
+          piece_custom_field_5_label?: string | null
         }
         Relationships: [
           {

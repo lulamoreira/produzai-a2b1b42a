@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { 
   Plus, Download, Upload, Sparkles, RefreshCw, ArrowDownAZ, MapPin, Copy, 
-  Trash2, Search, X, Package, MoreHorizontal, Presentation 
+  Trash2, Search, X, Package, MoreHorizontal, Presentation, Settings2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,10 +10,12 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { 
-  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger 
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter
 } from "@/components/ui/dialog";
+import { 
+  Popover, PopoverContent, PopoverTrigger 
+} from "@/components/ui/popover";
 import { toast } from "sonner";
-import { findDuplicateName, duplicateNameMessage } from "@/lib/duplicateName";
 import { exportCampaignPieces } from "@/lib/exportMultiClient";
 import SortablePiecesTable from "@/components/SortablePiecesTable";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
@@ -23,6 +25,10 @@ import BulkDeletePiecesDialog from "@/components/BulkDeletePiecesDialog";
 import ManageLocationsDialog from "@/components/ManageLocationsDialog";
 import { OrderByLocationDialog } from "@/components/OrderByLocationDialog";
 import ImportWizardDialog from "@/components/ImportWizardDialog";
+import { useUserRole } from "@/hooks/useUserRole";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import AddPieceDialog from "@/components/AddPieceDialog";
 
 interface PiecesTabProps {
   campaignId: string;
@@ -86,6 +92,8 @@ export default function PiecesTab({
   refetch
 }: PiecesTabProps) {
   const { t } = useTranslation();
+  const qc = useQueryClient();
+  const { isAdminOrMaster } = useUserRole();
   const [pieceSearch, setPieceSearch] = useState("");
   const [newFilter, setNewFilter] = useState<"all" | "new" | "not_new">("all");
   const [pieceDialogOpen, setPieceDialogOpen] = useState(false);
@@ -98,8 +106,49 @@ export default function PiecesTab({
   const [orderByLocationOpen, setOrderByLocationOpen] = useState(false);
   const [pptExportOpen, setPptExportOpen] = useState(false);
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
-  const [newPieceDraft, setNewPieceDraft] = useState<any>(null); // Placeholder state to prevent errors if not passed
+  
+  const [configLabels, setConfigLabels] = useState({
+    field1: campaign?.piece_custom_field_1_label || "",
+    field2: campaign?.piece_custom_field_2_label || "",
+    field3: campaign?.piece_custom_field_3_label || "",
+    field4: campaign?.piece_custom_field_4_label || "",
+    field5: campaign?.piece_custom_field_5_label || "",
+  });
+  const [isSavingLabels, setIsSavingLabels] = useState(false);
 
+  const customFieldLabels = useMemo(() => [
+    campaign?.piece_custom_field_1_label,
+    campaign?.piece_custom_field_2_label,
+    campaign?.piece_custom_field_3_label,
+    campaign?.piece_custom_field_4_label,
+    campaign?.piece_custom_field_5_label,
+  ], [campaign]);
+
+  const hasAnyCustomField = useMemo(() => customFieldLabels.some(l => !!l), [customFieldLabels]);
+
+  const handleSaveCustomLabels = async () => {
+    setIsSavingLabels(true);
+    try {
+      const { error } = await supabase
+        .from("campaigns")
+        .update({
+          piece_custom_field_1_label: configLabels.field1 || null,
+          piece_custom_field_2_label: configLabels.field2 || null,
+          piece_custom_field_3_label: configLabels.field3 || null,
+          piece_custom_field_4_label: configLabels.field4 || null,
+          piece_custom_field_5_label: configLabels.field5 || null,
+        })
+        .eq("id", campaignId);
+
+      if (error) throw error;
+      toast.success("Labels salvos com sucesso!");
+      qc.invalidateQueries({ queryKey: ["campaign", campaignId] });
+    } catch (error: any) {
+      toast.error("Erro ao salvar: " + error.message);
+    } finally {
+      setIsSavingLabels(false);
+    }
+  };
 
   const visiblePieces = useMemo(() => pieces.filter(p => !p.kit_only), [pieces]);
   const kitOnlyPieces = useMemo(() => pieces.filter(p => p.kit_only), [pieces]);
@@ -124,7 +173,6 @@ export default function PiecesTab({
           kit_only: ['true', '1', 'sim', 'yes'].includes(String(row.kit_only).toLowerCase())
         };
         
-        // Check if piece already exists by code in this campaign if updateExisting is true
         if (options.updateExisting && row.code) {
           const existing = pieces.find(p => p.code === row.code);
           if (existing && updatePiece?.mutateAsync) {
@@ -171,6 +219,43 @@ export default function PiecesTab({
           <div className="flex-1" />
           {canEditPieces && (
             <>
+              {isAdminOrMaster && (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1">
+                      <Settings2 className="w-3.5 h-3.5" />
+                      {t("pieces.customFields") || "Campos Personalizados"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80">
+                    <div className="grid gap-4">
+                      <div className="space-y-2">
+                        <h4 className="font-medium leading-none">Campos Personalizados</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Configure os nomes dos campos extras para esta campanha.
+                        </p>
+                      </div>
+                      <div className="grid gap-2">
+                        {[1, 2, 3, 4, 5].map((i) => (
+                          <div key={i} className="grid grid-cols-3 items-center gap-4">
+                            <label className="text-sm">Campo {i}</label>
+                            <Input
+                              value={(configLabels as any)[`field${i}`]}
+                              onChange={(e) => setConfigLabels({ ...configLabels, [`field${i}`]: e.target.value })}
+                              className="col-span-2 h-8"
+                              placeholder="Ex: Material, Fornecedor..."
+                            />
+                          </div>
+                        ))}
+                      </div>
+                      <Button size="sm" onClick={handleSaveCustomLabels} disabled={isSavingLabels}>
+                        {isSavingLabels ? t("common.saving") : t("common.save")}
+                      </Button>
+                    </div>
+                  </PopoverContent>
+                </Popover>
+              )}
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1">
@@ -213,9 +298,7 @@ export default function PiecesTab({
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              <Button size="sm" className="text-[10px] sm:text-xs gap-1 gradient-accent text-white border-0" onClick={() => setPieceDialogOpen(true)}>
-                <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.newPiece")}
-              </Button>
+              <AddPieceDialog existingPieces={pieces} customFieldLabels={customFieldLabels} campaignId={campaignId} clientId={clientId} />
 
               <Button size="sm" className="text-[10px] sm:text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setCreateKitDialogOpen(true)}>
                 <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.newKit")}
@@ -267,6 +350,7 @@ export default function PiecesTab({
         onDuplicate={() => {}}
         onDuplicateKit={() => {}}
         onReorder={() => {}}
+        customFieldLabels={customFieldLabels}
       />
 
       <CreateKitDialog
@@ -335,6 +419,7 @@ export default function PiecesTab({
         onOpenChange={setPieceImportOpen}
         mode="pieces"
         clientId={clientId}
+        campaignId={campaignId}
         existingItems={pieces.map(p => ({ id: p.id, name: p.name || p.code }))}
         onImport={handlePiecesImport}
       />
