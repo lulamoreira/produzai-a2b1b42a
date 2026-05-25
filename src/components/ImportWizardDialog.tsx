@@ -212,9 +212,12 @@ export default function ImportWizardDialog({
       const flagged = new Set<string>();
       for (const col of columns) {
         const suggested = aiMapping[col];
-        if (suggested && systemFields.some((f) => f.key === suggested)) {
-          next[col] = suggested;
-          flagged.add(col);
+        if (suggested) {
+          const field = systemFields.find((f) => f.key === suggested || f.label === suggested);
+          if (field) {
+            next[col] = field.key;
+            flagged.add(col);
+          }
         }
       }
       setMapping(next);
