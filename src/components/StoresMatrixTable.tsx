@@ -560,7 +560,7 @@ export default function StoresMatrixTable({
 
                   if (!canEdit) {
                     return (
-                      <TableCell key={col.key} className="text-xs">
+                      <TableCell key={col.key} className="text-xs text-foreground">
                         {displayVal || "—"}
                       </TableCell>
                     );
