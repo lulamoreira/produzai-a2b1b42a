@@ -89,7 +89,6 @@ const AddPieceDialog = ({ existingPieces, customFieldLabels, campaignId, clientI
       specification: form.specification,
       installation_instructions: form.installation_instructions,
       campaign_id: campaignId,
-      client_id: clientId,
       custom_field_1: form.custom_field_1 || null,
       custom_field_2: form.custom_field_2 || null,
       custom_field_3: form.custom_field_3 || null,
