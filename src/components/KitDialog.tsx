@@ -1035,6 +1035,7 @@ export function KitDetailDialog({
             </AlertDialog>
           </div>
         )}
+        </div>
       </DialogContent>
     </Dialog>
   );
