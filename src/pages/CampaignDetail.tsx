@@ -71,7 +71,27 @@ const CampaignDetail = () => {
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
+
+  const { data: campaignKpis } = useQuery({
+    queryKey: ["campaign-summary-kpis", campaignId],
+    queryFn: async () => {
+      const storesRes = await (supabase.from("client_stores") as any).select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
+      const piecesRes = await (supabase.from("pieces") as any).select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
+      const pendingInstallationsRes = await (supabase.from("campaign_schedules") as any).select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).is("completed_at", null);
+      const pendingApprovalsRes = await (supabase.from("user_approvals" as any).select("id", { count: "exact", head: true }) as any).eq("campaign_id", campaignId).eq("status", "pending");
+
+      return {
+        stores: storesRes.count || 0,
+        pieces: piecesRes.count || 0,
+        pendingInstallations: pendingInstallationsRes.count || 0,
+        pendingApprovals: pendingApprovalsRes.count || 0
+      };
+    },
+    enabled: !!campaignId
+  });
+
   const updateCampaign = useUpdateCampaign();
+
 
   const [activeSection, setActiveSectionState] = useState<string | null>(() => {
     return locationState?.initialSection || new URLSearchParams(location.search).get("section") || "summary";
@@ -263,7 +283,9 @@ const CampaignDetail = () => {
                 lalPerms={lalPerms} canViewStores={true} canViewCampaignStores={true}
                 isAdmin={isAdmin} isAdminOrMaster={isAdminOrMaster} canViewPieces={true}
                 onNavigate={setActiveSection}
+                campaignKpis={campaignKpis}
               />
+
             </TabsContent>
             <TabsContent value="pieces">
               <PiecesTab 

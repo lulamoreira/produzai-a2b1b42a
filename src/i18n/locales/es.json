@@ -401,7 +401,9 @@
     "checkinDone": "Con check-in"
   },
   "stores": {
+    "totalStores": "Total de tiendas",
     "title": "Tiendas",
+
     "tabs": {
       "info": "Información",
       "contacts": "Contactos",
@@ -538,7 +540,9 @@
     }
   },
   "pieces": {
+    "registered": "Piezas registradas",
     "title": "Piezas",
+
     "new": "Nueva Pieza",
     "newPiece": "Nueva Pieza",
     "kit": "Kit",
@@ -719,7 +723,9 @@
     "missingOs": "FALTA\nOT"
   },
   "installations": {
+    "photosSentShort": "Fotos enviadas",
     "title": "Instalaciones",
+
     "newInstallation": "Nueva Instalación",
     "empty": "No se encontraron instalaciones",
     "installer": "Instalador",

@@ -401,7 +401,9 @@
     "checkinDone": "Com check-in"
   },
   "stores": {
+    "totalStores": "Total de lojas",
     "title": "Lojas",
+
     "tabs": {
       "info": "Informações",
       "contacts": "Contatos",
@@ -519,7 +521,9 @@
     "newCampaign": "Nova Campanha"
   },
   "pieces": {
+    "registered": "Peças registradas",
     "title": "Peças",
+
     "new": "Nova Peça",
     "newPiece": "Nova Peça",
     "kit": "Kit",
@@ -712,7 +716,9 @@
     }
   },
   "installations": {
+    "photosSentShort": "Fotos enviadas",
     "title": "Instalações",
+
     "newInstallation": "Nova Instalação",
     "empty": "Nenhuma instalação encontrada",
     "installer": "Instalador",

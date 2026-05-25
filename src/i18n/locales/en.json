@@ -401,7 +401,9 @@
     "checkinDone": "With check-in"
   },
   "stores": {
+    "totalStores": "Total stores",
     "title": "Stores",
+
     "tabs": {
       "info": "Information",
       "contacts": "Contacts",
@@ -538,7 +540,9 @@
     }
   },
   "pieces": {
+    "registered": "Registered pieces",
     "title": "Pieces",
+
     "new": "New Piece",
     "newPiece": "New Piece",
     "kit": "Kit",
@@ -734,7 +738,9 @@
     "next": "Next"
   },
   "installations": {
+    "photosSentShort": "Photos sent",
     "title": "Installations",
+
     "newInstallation": "New Installation",
     "empty": "No installations found",
     "installer": "Installer",
