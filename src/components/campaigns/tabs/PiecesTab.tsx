@@ -321,6 +321,15 @@ export default function PiecesTab({
           onReorderKitPieces={(updates) => reorderKitPieces?.mutateAsync?.(updates)}
         />
       )}
+      
+      <ImportWizardDialog
+        open={pieceImportOpen}
+        onOpenChange={setPieceImportOpen}
+        mode="pieces"
+        clientId={clientId}
+        existingItems={pieces.map(p => ({ id: p.id, name: p.name || p.code }))}
+        onImport={handlePiecesImport}
+      />
     </div>
   );
 }
