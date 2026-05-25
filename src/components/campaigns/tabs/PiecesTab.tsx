@@ -52,6 +52,7 @@ interface PiecesTabProps {
   handleRecodificar: () => void;
   handleReviewPieceCodes: () => void;
   handleDistributePiece: (piece: any) => void;
+  refetch?: () => void;
 }
 
 export default function PiecesTab({
@@ -81,7 +82,8 @@ export default function PiecesTab({
   reorderKitPieces,
   handleRecodificar,
   handleReviewPieceCodes,
-  handleDistributePiece
+  handleDistributePiece,
+  refetch
 }: PiecesTabProps) {
   const { t } = useTranslation();
   const [pieceSearch, setPieceSearch] = useState("");
@@ -133,6 +135,10 @@ export default function PiecesTab({
       } catch (error) {
         console.error(`Error importing piece ${pieceName}:`, error);
       }
+    }
+    
+    if (refetch) {
+      await refetch();
     }
   };
 
