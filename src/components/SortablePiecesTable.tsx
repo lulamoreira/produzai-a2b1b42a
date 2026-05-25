@@ -32,6 +32,8 @@ import KitImageDropZone from "@/components/KitImageDropZone";
 
 import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
 import type { CampaignPiece, ClientStore, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 // Unified row type
 export type UnifiedRow = 
@@ -59,12 +61,15 @@ interface SortableRowProps {
   kitCategory: string;
   customFieldLabels?: (string | null)[];
   visibleColumns?: Record<string, boolean>;
+  selectedPieceIds?: string[];
+  onToggleSelection?: (id: string) => void;
 }
 
 function SortableRow({
   row, pieceTotal, canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit,
-  isDistributed, kitCategory, customFieldLabels, visibleColumns
+  isDistributed, kitCategory, customFieldLabels, visibleColumns,
+  selectedPieceIds, onToggleSelection
 }: SortableRowProps) {
   const { t } = useTranslation();
   const id = row.type === "piece" ? row.data.id : `kit-${row.data.id}`;
@@ -83,6 +88,9 @@ function SortableRow({
     const kitPieceDetails = row.kitPieces.map(kp => row.allPieces.find(p => p.id === kp.piece_id)).filter(Boolean);
     return (
       <TableRow ref={setNodeRef} style={style} className="bg-primary/5 hover:bg-primary/10">
+        <TableCell className="w-10 p-2 text-center">
+          {/* Kit row doesn't have a checkbox for now as per instructions */}
+        </TableCell>
         {canEditPieces && (
           <TableCell className="w-8 p-1">
             <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground">
@@ -187,6 +195,29 @@ function SortableRow({
   const piece = row.data;
   return (
     <TableRow ref={setNodeRef} style={style}>
+      <TableCell className="w-10 p-2">
+        <div className="flex justify-center">
+          {piece.kit_only ? (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="opacity-50 cursor-not-allowed">
+                    <Checkbox disabled checked />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{t("pieces.alreadyInKit") || "Já pertence a um kit"}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : (
+            <Checkbox 
+              checked={selectedPieceIds?.includes(piece.id)} 
+              onCheckedChange={() => onToggleSelection?.(piece.id)} 
+            />
+          )}
+        </div>
+      </TableCell>
       {canEditPieces && (
         <TableCell className="w-8 p-1">
           <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground">
@@ -329,13 +360,17 @@ interface SortablePiecesTableProps {
   onReorder: (rows: UnifiedRow[]) => void;
   customFieldLabels?: (string | null)[];
   visibleColumns?: Record<string, boolean>;
+  selectedPieceIds?: string[];
+  onToggleSelection?: (id: string) => void;
+  onToggleSelectAll?: (checked: boolean) => void;
 }
 
 export default function SortablePiecesTable({
   pieces, kits, kitPieces: kitPiecesList, allPieces, stores, qtyMap,
   canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit, onReorder,
-  customFieldLabels, visibleColumns
+  customFieldLabels, visibleColumns,
+  selectedPieceIds, onToggleSelection, onToggleSelectAll
 }: SortablePiecesTableProps) {
   const { t } = useTranslation();
   const sensors = useSensors(
