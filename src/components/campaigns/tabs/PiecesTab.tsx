@@ -144,6 +144,7 @@ export default function PiecesTab({
       if (error) throw error;
       toast.success("Labels salvos com sucesso!");
       qc.invalidateQueries({ queryKey: ["campaign", campaignId] });
+      setCustomFieldsOpen(false);
     } catch (error: any) {
       toast.error("Erro ao salvar: " + error.message);
     } finally {
