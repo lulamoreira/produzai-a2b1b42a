@@ -169,7 +169,6 @@ export default function PiecesTab({
         const pieceData = {
           ...row,
           campaign_id: campaignId,
-          client_id: clientId,
           is_deleted: false,
           display_order: i,
           kit_only: ['true', '1', 'sim', 'yes'].includes(String(row.kit_only).toLowerCase())

@@ -104,6 +104,11 @@ export type CampaignPiece = {
   is_mockup: boolean;
   display_order: number;
   created_at: string;
+  custom_field_1?: string | null;
+  custom_field_2?: string | null;
+  custom_field_3?: string | null;
+  custom_field_4?: string | null;
+  custom_field_5?: string | null;
 };
 
 export type CampaignKit = {
@@ -601,7 +606,16 @@ export function useAddCampaignPiece() {
           .maybeSingle();
         resolvedOrder = (maxRow?.display_order ?? -1) + 1;
       }
-      const { data, error } = await supabase.from("campaign_pieces").insert({ ...piece, display_order: resolvedOrder }).select().single();
+      const { client_id, ...insertData } = piece as any;
+      const { data, error } = await supabase
+        .from("campaign_pieces")
+        .insert({ 
+          ...insertData, 
+          display_order: resolvedOrder, 
+          is_deleted: false 
+        })
+        .select()
+        .single();
       if (error) throw error;
       return data as CampaignPiece;
     },
@@ -641,7 +655,8 @@ export function useUpdateCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<CampaignPiece> & { id: string }) => {
-      const { error } = await supabase.from("campaign_pieces").update(data).eq("id", id);
+      const { client_id, ...updateData } = data as any;
+      const { error } = await supabase.from("campaign_pieces").update(updateData).eq("id", id);
       if (error) throw error;
     },
     onMutate: async ({ id, ...data }) => {
