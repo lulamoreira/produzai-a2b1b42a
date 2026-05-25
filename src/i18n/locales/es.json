@@ -540,6 +540,7 @@
     }
   },
   "pieces": {
+    "customFields": "Campos Personalizados",
     "registered": "Piezas registradas",
     "title": "Piezas",
 

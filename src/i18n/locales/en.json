@@ -540,6 +540,7 @@
     }
   },
   "pieces": {
+    "customFields": "Custom Fields",
     "registered": "Registered pieces",
     "title": "Pieces",
 
