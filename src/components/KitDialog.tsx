@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -149,10 +149,12 @@ interface CreateKitDialogProps {
   onCreateKit: (kit: { campaign_id: string; name: string; code: number; is_new?: boolean }) => Promise<CampaignKit>;
   onAddKitPiece: (kitPiece: { kit_id: string; piece_id: string }) => Promise<void>;
   onUpdateKit: (kit: { id: string; image_url?: string | null; is_new?: boolean }) => Promise<CampaignKit>;
+  onUpdatePiece?: (piece: Partial<CampaignPiece> & { id: string }) => Promise<void>;
+  preSelectedPieceIds?: string[];
 }
 
 export function CreateKitDialog({
-  open, onOpenChange, campaignId, kitOnlyPieces, existingKits, existingPieces = [], onCreateKit, onAddKitPiece, onUpdateKit,
+  open, onOpenChange, campaignId, kitOnlyPieces, existingKits, existingPieces = [], onCreateKit, onAddKitPiece, onUpdateKit, onUpdatePiece, preSelectedPieceIds = [],
 }: CreateKitDialogProps) {
   const { t } = useTranslation();
   const [step, setStep] = useState<"name" | "pieces">("name");
@@ -162,6 +164,12 @@ export function CreateKitDialog({
   const [selectedPieceIds, setSelectedPieceIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [createSearch, setCreateSearch] = useState("");
+
+  useEffect(() => {
+    if (open && preSelectedPieceIds.length > 0) {
+      setSelectedPieceIds(preSelectedPieceIds);
+    }
+  }, [open, preSelectedPieceIds]);
 
   const nextCode = useMemo(() => {
     const maxCode = existingKits.reduce((max, k) => Math.max(max, k.code), 0);
@@ -198,6 +206,17 @@ export function CreateKitDialog({
     try {
       const kit = await onCreateKit({ campaign_id: campaignId, name: finalName, code: nextCode, is_new: kitIsNew });
       setCreatedKit(kit);
+      
+      // If we have preselected pieces, add them all
+      if (preSelectedPieceIds.length > 0) {
+        for (const pid of preSelectedPieceIds) {
+          await onAddKitPiece({ kit_id: kit.id, piece_id: pid });
+          if (onUpdatePiece) {
+            await onUpdatePiece({ id: pid, kit_only: true });
+          }
+        }
+      }
+      
       setStep("pieces");
     } finally {
       setSaving(false);
