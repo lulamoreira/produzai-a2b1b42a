@@ -53,8 +53,6 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
   const vitrinesTipos = useMemo(() => tipos.filter((t) => !t.tem_subdivisao), [tipos]);
   const internosTipos = useMemo(() => tipos.filter((t) => t.tem_subdivisao), [tipos]);
 
-  // Sort stores alphabetically by name (default)
-  const sortedStores = useMemo(
   const { user } = useAuth();
 
   // Sortable fields
