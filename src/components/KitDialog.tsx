@@ -489,7 +489,7 @@ export function KitDetailDialog({
       installation_instructions: editForm.installation_instructions,
     });
     setEditingPieceId(null);
-    toast.success("Peça atualizada!");
+    toast.success(t("pieces.pieceUpdated"));
   };
 
   const uploadPieceFile = async (pieceId: string, file: File) => {
@@ -551,7 +551,7 @@ export function KitDetailDialog({
                       }
                       setLocalKitName(safeName);
                       setEditingKitName(false);
-                      toast.success("Nome atualizado!");
+                      toast.success(t("pieces.nameUpdated"));
                       await onUpdateKit({ id: kit.id, name: safeName });
                     }
                   }}
@@ -566,7 +566,7 @@ export function KitDetailDialog({
                     }
                     setLocalKitName(safeName);
                     setEditingKitName(false);
-                    toast.success("Nome atualizado!");
+                    toast.success(t("pieces.nameUpdated"));
                     await onUpdateKit({ id: kit.id, name: safeName });
                   }
                 }}>Salvar</Button>
@@ -622,7 +622,7 @@ export function KitDetailDialog({
                     }
                   }
                 }
-                toast.success(checked ? "Kit marcado como mockup!" : "Mockup removido do kit!");
+                toast.success(checked ? t("pieces.kitMockupMarked") : t("pieces.kitMockupRemoved"));
               }}
             />
           </div>
@@ -639,7 +639,7 @@ export function KitDetailDialog({
               checked={(kit as any).is_new || false}
               onCheckedChange={async (checked) => {
                 await onUpdateKit({ id: kit.id, is_new: checked });
-                toast.success(checked ? "Kit marcado como novo!" : "Marcação de novo removida!");
+                toast.success(checked ? t("pieces.kitNewMarked") : t("pieces.kitNewRemoved"));
               }}
             />
           </div>
@@ -666,7 +666,7 @@ export function KitDetailDialog({
                       }
                     }
                   }
-                  toast.success("Localização do kit atualizada!");
+                  toast.success(t("pieces.kitLocationUpdated"));
                 }}
               >
                 <SelectTrigger className="h-8 text-xs">
@@ -697,7 +697,7 @@ export function KitDetailDialog({
                         }
                       }
                     }
-                    toast.success("Sub-localização do kit atualizada!");
+                    toast.success(t("pieces.kitSubLocationUpdated"));
                   }}
                 >
                   <SelectTrigger className="h-8 text-xs">
@@ -817,8 +817,8 @@ export function KitDetailDialog({
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" className="text-xs flex-1" onClick={saveEditPiece}>Salvar</Button>
-                      <Button size="sm" variant="outline" className="text-xs" onClick={() => setEditingPieceId(null)}>Cancelar</Button>
+                      <Button size="sm" className="text-xs flex-1" onClick={saveEditPiece}>{t("common.save")}</Button>
+                      <Button size="sm" variant="outline" className="text-xs" onClick={() => setEditingPieceId(null)}>{t("common.cancel")}</Button>
                     </div>
                   </div>
                 );
