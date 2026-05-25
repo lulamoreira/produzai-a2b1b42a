@@ -327,7 +327,7 @@ export function CreateKitDialog({
                       <span className="text-xs font-bold text-primary shrink-0">#{p.code}</span>
                       <span className="text-sm flex-1 break-words min-w-0">{p.name}</span>
                       <Button size="sm" variant="outline" className="text-xs gap-1 shrink-0 ml-2" onClick={() => handleAddPiece(p.id)}>
-                        <Plus className="w-3 h-3" /> {t("common.include")}
+                        <Plus className="w-3 h-3" /> {t("pieces.includeInKit")}
                       </Button>
                     </div>
                   ))}
@@ -901,7 +901,7 @@ export function KitDetailDialog({
                       {onDeleteKitPiece && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/60 hover:text-destructive" title="Remover do kit">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/60 hover:text-destructive" title={t("pieces.removeFromKit")}>
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           </AlertDialogTrigger>
@@ -968,11 +968,11 @@ export function KitDetailDialog({
           <div>
             {!showAddPieces ? (
               <Button variant="outline" size="sm" className="w-full text-xs gap-1" onClick={() => setShowAddPieces(true)}>
-                <Plus className="w-3 h-3" /> Incluir mais peças
+                <Plus className="w-3 h-3" /> {t("pieces.addMorePieces")}
               </Button>
             ) : (
               <div className="space-y-1 max-h-[250px] overflow-y-auto border border-border rounded-lg p-2">
-                <label className="text-xs font-medium text-muted-foreground">Peças disponíveis desta campanha</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("pieces.availablePiecesThisCampaign")}</label>
                 <Input
                   placeholder="Buscar peça por nome, código ou localização..."
                   value={addPieceSearch}
@@ -993,12 +993,12 @@ export function KitDetailDialog({
                         <span className="text-xs truncate">{p.name}</span>
                       </div>
                       <Button size="sm" variant="outline" className="text-[10px] h-6 gap-1" onClick={async () => { await onAddKitPiece({ kit_id: kit.id, piece_id: p.id }); }}>
-                        <Plus className="w-2.5 h-2.5" /> Incluir
+                        <Plus className="w-2.5 h-2.5" /> {t("pieces.includeInKit")}
                       </Button>
                     </div>
                   ))
                 )}
-                <Button variant="ghost" size="sm" className="w-full text-xs mt-1" onClick={() => { setShowAddPieces(false); setAddPieceSearch(""); }}>Fechar</Button>
+                <Button variant="ghost" size="sm" className="w-full text-xs mt-1" onClick={() => { setShowAddPieces(false); setAddPieceSearch(""); }}>{t("common.close")}</Button>
               </div>
             )}
           </div>
