@@ -476,41 +476,6 @@ export default function RateioTabV2({
     }
   };
 
-  const versionTabs = useMemo(() => {
-    const tabs: { id: string; label: string; isVigente?: boolean; type?: string; parent?: string }[] = [{ id: "original", label: "Rateio Original", type: "original" }];
-    
-    if (hasNegotiationRateio && winnerSupplierId) {
-      tabs.push({ 
-        id: "negotiation", 
-        label: `Negociação · ${winnerSupplierName}`,
-        type: "negotiation"
-      });
-    }
-    
-    if (activeAdjustment) {
-      tabs.push({ 
-        id: "adjustment", 
-        label: `Ajuste · ${activeAdjustment.name}`,
-        type: "adjustment",
-        parent: hasNegotiationRateio ? "Negociação" : "Original"
-      });
-    }
-
-    // Sort tabs: original first, then others by "version sequence" logic
-    // But requirement says: ALL versions for current campaign, ordered by creation date (oldest first)
-    // Here we use the props which are already the resolved versions.
-    // The most recently created version is always the ATIVO/editable one.
-    // Let's mark the last one as ATIVO.
-    const lastTab = tabs[tabs.length - 1];
-    if (lastTab) lastTab.isVigente = true;
-
-    return tabs;
-  }, [hasNegotiationRateio, winnerSupplierId, winnerSupplierName, activeAdjustment]);
-
-  const activeTabData = versionTabs.find(t => t.id === rateioSource) || versionTabs.find(t => t.id === vigenteSource) || versionTabs[0];
-  const activeVersionTab = activeTabData?.id || vigenteSource;
-  const isTabEditable = activeTabData?.isVigente && activeVersionTab === vigenteSource;
-  const isLatestTab = isTabEditable;
 
   const handleAutomationComplete = () => {
     setIsAutomationOpen(false);
