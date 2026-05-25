@@ -194,13 +194,17 @@ function SortableRow({
           </button>
         </TableCell>
       )}
-      <TableCell>
-        <div className="flex items-center gap-2">
-          <PieceImageDropZone piece={piece} canEdit={canEditPieces} />
-          <span className="font-bold text-primary">{piece.code}</span>
-        </div>
-      </TableCell>
-      <TableCell className="text-muted-foreground hidden sm:table-cell">{piece.sub_location ? `${piece.category} / ${piece.sub_location}` : piece.category}</TableCell>
+      {(!visibleColumns || visibleColumns.code) && (
+        <TableCell>
+          <div className="flex items-center gap-2">
+            <PieceImageDropZone piece={piece} canEdit={canEditPieces} />
+            <span className="font-bold text-primary">{piece.code}</span>
+          </div>
+        </TableCell>
+      )}
+      {(!visibleColumns || visibleColumns.location) && (
+        <TableCell className="text-muted-foreground hidden sm:table-cell">{piece.sub_location ? `${piece.category} / ${piece.sub_location}` : piece.category}</TableCell>
+      )}
       <TableCell>
         <button
           className="font-medium text-left hover:text-primary hover:underline transition-colors"
@@ -213,17 +217,26 @@ function SortableRow({
           </span>
         </button>
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground hidden md:table-cell w-[140px] min-w-[140px] whitespace-nowrap">{piece.size || "—"}</TableCell>
-      <TableCell className="hidden lg:table-cell">
-        {piece.store_category ? (
-          <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded">{piece.store_category}</span>
-        ) : "—"}
-      </TableCell>
-      <TableCell className="text-sm text-muted-foreground hidden lg:table-cell whitespace-pre-wrap">{piece.specification}</TableCell>
-      <TableCell className="text-sm text-muted-foreground hidden xl:table-cell whitespace-pre-wrap">{piece.installation_instructions}</TableCell>
+      {(!visibleColumns || visibleColumns.size) && (
+        <TableCell className="text-sm text-muted-foreground hidden md:table-cell w-[140px] min-w-[140px] whitespace-nowrap">{piece.size || "—"}</TableCell>
+      )}
+      {(!visibleColumns || visibleColumns.store_category) && (
+        <TableCell className="hidden lg:table-cell">
+          {piece.store_category ? (
+            <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded">{piece.store_category}</span>
+          ) : "—"}
+        </TableCell>
+      )}
+      {(!visibleColumns || visibleColumns.specification) && (
+        <TableCell className="text-sm text-muted-foreground hidden lg:table-cell whitespace-pre-wrap">{piece.specification}</TableCell>
+      )}
+      {(!visibleColumns || visibleColumns.installation_instructions) && (
+        <TableCell className="text-sm text-muted-foreground hidden xl:table-cell whitespace-pre-wrap">{piece.installation_instructions}</TableCell>
+      )}
       
       {customFieldLabels?.map((label, i) => {
         if (!label) return null;
+        if (visibleColumns && !visibleColumns[`custom_field_${i + 1}`]) return null;
         const value = (piece as any)[`custom_field_${i + 1}`];
         return <TableCell key={`custom-${i}`} className="text-sm text-muted-foreground hidden xl:table-cell whitespace-nowrap">{value || "—"}</TableCell>;
       })}
