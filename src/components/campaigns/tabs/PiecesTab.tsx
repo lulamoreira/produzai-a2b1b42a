@@ -329,6 +329,94 @@ export default function PiecesTab({
                 </Popover>
               )}
 
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1">
+                    <Columns className="w-3.5 h-3.5" />
+                    {"Colunas"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-4" align="end">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <h4 className="font-medium leading-none">Configurar Colunas</h4>
+                      <p className="text-xs text-muted-foreground">
+                        Selecione quais colunas deseja exibir na tabela de peças.
+                      </p>
+                    </div>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="col-name" className="text-sm">Nome (Obrigatório)</Label>
+                        <Switch id="col-name" checked disabled />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="col-code" className="text-sm">Código</Label>
+                        <Switch 
+                          id="col-code" 
+                          checked={visibleColumns.code} 
+                          onCheckedChange={(val) => setVisibleColumns(prev => ({ ...prev, code: val }))}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="col-location" className="text-sm">Localização na Loja</Label>
+                        <Switch 
+                          id="col-location" 
+                          checked={visibleColumns.location} 
+                          onCheckedChange={(val) => setVisibleColumns(prev => ({ ...prev, location: val }))}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="col-size" className="text-sm">Medidas</Label>
+                        <Switch 
+                          id="col-size" 
+                          checked={visibleColumns.size} 
+                          onCheckedChange={(val) => setVisibleColumns(prev => ({ ...prev, size: val }))}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="col-store_category" className="text-sm">Modelo de Loja</Label>
+                        <Switch 
+                          id="col-store_category" 
+                          checked={visibleColumns.store_category} 
+                          onCheckedChange={(val) => setVisibleColumns(prev => ({ ...prev, store_category: val }))}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="col-specification" className="text-sm">Especificação</Label>
+                        <Switch 
+                          id="col-specification" 
+                          checked={visibleColumns.specification} 
+                          onCheckedChange={(val) => setVisibleColumns(prev => ({ ...prev, specification: val }))}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="col-installation_instructions" className="text-sm">Instruções de Instalação</Label>
+                        <Switch 
+                          id="col-installation_instructions" 
+                          checked={visibleColumns.installation_instructions} 
+                          onCheckedChange={(val) => setVisibleColumns(prev => ({ ...prev, installation_instructions: val }))}
+                        />
+                      </div>
+                      
+                      {customFieldLabels.map((label, idx) => {
+                        if (!label) return null;
+                        const fieldKey = `custom_field_${idx + 1}`;
+                        return (
+                          <div key={fieldKey} className="flex items-center justify-between">
+                            <Label htmlFor={`col-${fieldKey}`} className="text-sm">{label}</Label>
+                            <Switch 
+                              id={`col-${fieldKey}`} 
+                              checked={visibleColumns[fieldKey]} 
+                              onCheckedChange={(val) => setVisibleColumns(prev => ({ ...prev, [fieldKey]: val }))}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1">
