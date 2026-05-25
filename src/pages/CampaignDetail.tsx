@@ -305,6 +305,7 @@ const CampaignDetail = () => {
                 addPiece={addPiece} updatePiece={updatePiece} deletePiece={deletePiece} addKit={addKit} updateKit={updateKit} deleteKit={deleteKit}
                 addKitPiece={addKitPiece} updateKitPiece={updateKitPiece} deleteKitPiece={deleteKitPiece} reorderKitPieces={reorderKitPieces}
                 handleRecodificar={() => {}} handleReviewPieceCodes={() => {}} handleDistributePiece={() => {}}
+                refetch={refetchPieces}
               />
             </TabsContent>
             <TabsContent value="matrix">
