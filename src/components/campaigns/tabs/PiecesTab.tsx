@@ -162,6 +162,17 @@ export default function PiecesTab({
     let importedCount = 0;
     let skippedCount = 0;
 
+    const { data: existingMax } = await supabase
+      .from("campaign_pieces")
+      .select("code")
+      .eq("campaign_id", campaignId)
+      .eq("is_deleted", false)
+      .order("code", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const maxCode = existingMax?.code ?? 0;
+
     for (let i = 0; i < total; i++) {
       const row = rows[i];
       const name = (row.name ?? "").trim();
@@ -174,10 +185,13 @@ export default function PiecesTab({
       options.onProgress?.(i + 1, total, `Peça: ${name}`);
       
       try {
+        const parsedCode = parseInt(String(row.code ?? ""), 10);
+        const finalCode = isNaN(parsedCode) ? maxCode + i + 1 : parsedCode;
+
         const pieceData = {
           campaign_id: campaignId,
           name: name,
-          code: row.code?.trim() || `PCA-${Date.now()}-${i}`,
+          code: finalCode,
           category: row.category ?? null,
           size: row.size ?? null,
           specification: row.specification ?? null,
@@ -194,8 +208,8 @@ export default function PiecesTab({
           custom_field_5: row.custom_field_5 ?? null,
         };
         
-        if (options.updateExisting && row.code) {
-          const existing = pieces.find(p => p.code === row.code);
+        if (options.updateExisting && !isNaN(parsedCode)) {
+          const existing = pieces.find(p => p.code === finalCode);
           if (existing && updatePiece?.mutateAsync) {
             await updatePiece.mutateAsync({ id: existing.id, ...pieceData });
             importedCount++;
