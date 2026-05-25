@@ -614,6 +614,7 @@ export default function PiecesTab({
         onUpdateKit={(k: any) => updateKit?.mutateAsync?.(k)}
         onUpdatePiece={(p: any) => updatePiece?.mutateAsync?.(p)}
         preSelectedPieceIds={preSelectedForKit}
+        displayOrder={preSelectedForKit.length > 0 ? Math.min(...preSelectedForKit.map(id => pieces.find(p => p.id === id)?.display_order ?? 999)) : undefined}
       />
       <ImportPiecesFromCampaignDialog
         open={importPiecesDialogOpen}
