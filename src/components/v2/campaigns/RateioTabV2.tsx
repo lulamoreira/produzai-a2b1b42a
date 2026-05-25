@@ -129,31 +129,6 @@ export default function RateioTabV2({
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
 
-  useEffect(() => {
-    const container = gridContainerRef.current;
-    if (!container) return;
-
-    const handleScroll = () => {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      setShowScrollTop(scrollTop > 200);
-      // Show bottom button if we are not at the very end (with some buffer)
-      setShowScrollBottom(scrollTop + clientHeight < scrollHeight - 100);
-    };
-
-    container.addEventListener("scroll", handleScroll);
-    // Initial check
-    handleScroll();
-    
-    // Also check when data changes
-    const observer = new ResizeObserver(handleScroll);
-    observer.observe(container);
-
-    return () => {
-      container.removeEventListener("scroll", handleScroll);
-      observer.disconnect();
-    };
-  }, [filteredStores]);
-
   const scrollToFirst = () => {
     gridContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
