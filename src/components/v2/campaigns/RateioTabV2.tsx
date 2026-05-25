@@ -325,7 +325,123 @@ export default function RateioTabV2({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") saveEdit();
-    if (e.key === "Escape") setEditingCell(null);
+    if (e.key === "Escape") {
+      setEditingCell(null);
+      setAnchorCell(null);
+    }
+  };
+
+  const parseExcelTSV = (text: string): (number | null)[][] => {
+    const lines = text.trim().split(/\r?\n/);
+    return lines.map(line => 
+      line.split('\t').map(cell => {
+        const cleaned = cell.trim().replace(/\./g, '').replace(',', '.');
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? null : num;
+      })
+    );
+  };
+
+  const handleExcelPaste = useCallback((text: string, anchor: { rowIndex: number; colIndex: number }) => {
+    const parsedData = parseExcelTSV(text);
+    const changes: typeof pendingChanges = [];
+
+    parsedData.forEach((row, rIdx) => {
+      const storeIdx = anchor.rowIndex + rIdx;
+      if (storeIdx >= filteredStores.length) return;
+      
+      const store = filteredStores[storeIdx];
+      
+      row.forEach((val, cIdx) => {
+        const colIdx = anchor.colIndex + cIdx;
+        if (colIdx >= columns.length) return;
+        
+        const col = columns[colIdx];
+        if (col._type === 'kit') return; // Cannot paste into kits
+
+        const oldValue = qtyMap[`${store.id}-${col.id}`] || 0;
+        
+        changes.push({
+          storeId: store.id,
+          pieceId: col.id,
+          oldValue,
+          newValue: val ?? 0,
+          storeName: store.name,
+          pieceName: col.name,
+          isIgnored: val === null
+        });
+      });
+    });
+
+    if (changes.length > 0) {
+      setPendingChanges(changes);
+      setIsPasteModalOpen(true);
+    }
+  }, [filteredStores, columns, qtyMap]);
+
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (!anchorCell || editingCell || !isTabEditable) return;
+      
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+      e.preventDefault();
+      const text = e.clipboardData?.getData('text/plain') || '';
+      handleExcelPaste(text, anchorCell);
+    };
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setAnchorCell(null);
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      window.removeEventListener('paste', handlePaste);
+      window.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, [anchorCell, editingCell, isTabEditable, handleExcelPaste]);
+
+  const confirmPaste = async () => {
+    const upserts = pendingChanges
+      .filter(c => !c.isIgnored)
+      .map(c => ({
+        campaignId,
+        storeId: c.storeId,
+        pieceId: c.pieceId,
+        quantity: c.newValue
+      }));
+
+    if (upserts.length === 0) {
+      setIsPasteModalOpen(false);
+      return;
+    }
+
+    setIsApplyingPaste(true);
+    try {
+      await applyRateioBulk(upserts, [], {
+        isNegotiationView: rateioSource === 'negotiation',
+        negotiationSupplierId: winnerSupplierId,
+        isAdjustmentView: rateioSource === 'adjustment',
+        adjustmentId: activeAdjustment?.id
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
+      
+      toast.success(`${upserts.length} células atualizadas com sucesso`);
+      setIsPasteModalOpen(false);
+      setAnchorCell(null);
+    } catch (err) {
+      console.error("Erro ao colar dados:", err);
+      toast.error("Erro ao aplicar colagem do Excel");
+    } finally {
+      setIsApplyingPaste(false);
+    }
   };
 
   const versionTabs = useMemo(() => {
