@@ -1,9 +1,9 @@
-import React, { useState, useMemo, useCallback, useRef } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
   Search, Filter, Download, Sparkles, Copy, MoreHorizontal, Lock, CheckCircle2,
-  Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw
+  Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw, X, Clipboard
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,24 @@ import { Badge } from "@/components/ui/badge";
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters, type FilterLogicMode } from "@/components/MatrixFilterSidebar";
 import MatrixDistributionDashboard from "@/components/Matrix/MatrixDistributionDashboard";
@@ -20,6 +38,8 @@ import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getStateColor } from "@/lib/stateColors";
 import { useUpdateCampaignStorePiece } from "@/hooks/useMultiClientData";
+import { applyRateioBulk } from "@/lib/applyRateioBulk";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
 interface RateioTabV2Props {
