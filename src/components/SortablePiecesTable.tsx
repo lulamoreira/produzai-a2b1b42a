@@ -58,12 +58,13 @@ interface SortableRowProps {
   stores: ClientStore[];
   kitCategory: string;
   customFieldLabels?: (string | null)[];
+  visibleColumns?: Record<string, boolean>;
 }
 
 function SortableRow({
   row, pieceTotal, canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit,
-  isDistributed, kitCategory, customFieldLabels
+  isDistributed, kitCategory, customFieldLabels, visibleColumns
 }: SortableRowProps) {
   const { t } = useTranslation();
   const id = row.type === "piece" ? row.data.id : `kit-${row.data.id}`;
@@ -89,13 +90,17 @@ function SortableRow({
             </button>
           </TableCell>
         )}
-        <TableCell>
-          <div className="flex items-center gap-2">
-            <KitImageDropZone kit={kit} canEdit={canEditPieces} />
-            <span className="font-bold text-primary">{kit.code}</span>
-          </div>
-        </TableCell>
-        <TableCell className="text-muted-foreground hidden sm:table-cell">{kitCategory || "—"}</TableCell>
+        {(!visibleColumns || visibleColumns.code) && (
+          <TableCell>
+            <div className="flex items-center gap-2">
+              <KitImageDropZone kit={kit} canEdit={canEditPieces} />
+              <span className="font-bold text-primary">{kit.code}</span>
+            </div>
+          </TableCell>
+        )}
+        {(!visibleColumns || visibleColumns.location) && (
+          <TableCell className="text-muted-foreground hidden sm:table-cell">{kitCategory || "—"}</TableCell>
+        )}
         <TableCell>
           <button
             className="font-medium text-left hover:text-primary hover:underline transition-colors"
@@ -111,13 +116,22 @@ function SortableRow({
             </span>
           </button>
         </TableCell>
-        <TableCell className="text-sm text-muted-foreground hidden md:table-cell">—</TableCell>
-        <TableCell className="hidden lg:table-cell">—</TableCell>
-        <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">—</TableCell>
-        <TableCell className="text-sm text-muted-foreground hidden xl:table-cell">—</TableCell>
+        {(!visibleColumns || visibleColumns.size) && (
+          <TableCell className="text-sm text-muted-foreground hidden md:table-cell">—</TableCell>
+        )}
+        {(!visibleColumns || visibleColumns.store_category) && (
+          <TableCell className="hidden lg:table-cell">—</TableCell>
+        )}
+        {(!visibleColumns || visibleColumns.specification) && (
+          <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">—</TableCell>
+        )}
+        {(!visibleColumns || visibleColumns.installation_instructions) && (
+          <TableCell className="text-sm text-muted-foreground hidden xl:table-cell">—</TableCell>
+        )}
         
         {customFieldLabels?.map((label, i) => {
           if (!label) return null;
+          if (visibleColumns && !visibleColumns[`custom_field_${i + 1}`]) return null;
           return <TableCell key={`custom-${i}`} className="text-sm text-muted-foreground hidden xl:table-cell">—</TableCell>;
         })}
 
@@ -180,13 +194,17 @@ function SortableRow({
           </button>
         </TableCell>
       )}
-      <TableCell>
-        <div className="flex items-center gap-2">
-          <PieceImageDropZone piece={piece} canEdit={canEditPieces} />
-          <span className="font-bold text-primary">{piece.code}</span>
-        </div>
-      </TableCell>
-      <TableCell className="text-muted-foreground hidden sm:table-cell">{piece.sub_location ? `${piece.category} / ${piece.sub_location}` : piece.category}</TableCell>
+      {(!visibleColumns || visibleColumns.code) && (
+        <TableCell>
+          <div className="flex items-center gap-2">
+            <PieceImageDropZone piece={piece} canEdit={canEditPieces} />
+            <span className="font-bold text-primary">{piece.code}</span>
+          </div>
+        </TableCell>
+      )}
+      {(!visibleColumns || visibleColumns.location) && (
+        <TableCell className="text-muted-foreground hidden sm:table-cell">{piece.sub_location ? `${piece.category} / ${piece.sub_location}` : piece.category}</TableCell>
+      )}
       <TableCell>
         <button
           className="font-medium text-left hover:text-primary hover:underline transition-colors"
@@ -199,17 +217,26 @@ function SortableRow({
           </span>
         </button>
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground hidden md:table-cell w-[140px] min-w-[140px] whitespace-nowrap">{piece.size || "—"}</TableCell>
-      <TableCell className="hidden lg:table-cell">
-        {piece.store_category ? (
-          <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded">{piece.store_category}</span>
-        ) : "—"}
-      </TableCell>
-      <TableCell className="text-sm text-muted-foreground hidden lg:table-cell whitespace-pre-wrap">{piece.specification}</TableCell>
-      <TableCell className="text-sm text-muted-foreground hidden xl:table-cell whitespace-pre-wrap">{piece.installation_instructions}</TableCell>
+      {(!visibleColumns || visibleColumns.size) && (
+        <TableCell className="text-sm text-muted-foreground hidden md:table-cell w-[140px] min-w-[140px] whitespace-nowrap">{piece.size || "—"}</TableCell>
+      )}
+      {(!visibleColumns || visibleColumns.store_category) && (
+        <TableCell className="hidden lg:table-cell">
+          {piece.store_category ? (
+            <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded">{piece.store_category}</span>
+          ) : "—"}
+        </TableCell>
+      )}
+      {(!visibleColumns || visibleColumns.specification) && (
+        <TableCell className="text-sm text-muted-foreground hidden lg:table-cell whitespace-pre-wrap">{piece.specification}</TableCell>
+      )}
+      {(!visibleColumns || visibleColumns.installation_instructions) && (
+        <TableCell className="text-sm text-muted-foreground hidden xl:table-cell whitespace-pre-wrap">{piece.installation_instructions}</TableCell>
+      )}
       
       {customFieldLabels?.map((label, i) => {
         if (!label) return null;
+        if (visibleColumns && !visibleColumns[`custom_field_${i + 1}`]) return null;
         const value = (piece as any)[`custom_field_${i + 1}`];
         return <TableCell key={`custom-${i}`} className="text-sm text-muted-foreground hidden xl:table-cell whitespace-nowrap">{value || "—"}</TableCell>;
       })}
@@ -301,13 +328,14 @@ interface SortablePiecesTableProps {
   onDuplicateKit: (kit: CampaignKit) => void;
   onReorder: (rows: UnifiedRow[]) => void;
   customFieldLabels?: (string | null)[];
+  visibleColumns?: Record<string, boolean>;
 }
 
 export default function SortablePiecesTable({
   pieces, kits, kitPieces: kitPiecesList, allPieces, stores, qtyMap,
   canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit, onReorder,
-  customFieldLabels
+  customFieldLabels, visibleColumns
 }: SortablePiecesTableProps) {
   const { t } = useTranslation();
   const sensors = useSensors(
@@ -381,16 +409,29 @@ export default function SortablePiecesTable({
           <TableHeader>
             <TableRow>
               {canEditPieces && <TableHead className="w-8" />}
-              <TableHead className="w-[70px]">{t("common.code")}</TableHead>
-              <TableHead className="hidden sm:table-cell">{t("pieces.locationInStore")}</TableHead>
+              {(!visibleColumns || visibleColumns.code) && (
+                <TableHead className="w-[70px]">{t("common.code")}</TableHead>
+              )}
+              {(!visibleColumns || visibleColumns.location) && (
+                <TableHead className="hidden sm:table-cell">{t("pieces.locationInStore")}</TableHead>
+              )}
               <TableHead>{t("common.name")}</TableHead>
-              <TableHead className="hidden md:table-cell w-[140px] min-w-[140px]">{t("pieces.measures")}</TableHead>
-              <TableHead className="hidden lg:table-cell">{t("common.model")}</TableHead>
-              <TableHead className="hidden lg:table-cell">{t("pieces.specification")}</TableHead>
-              <TableHead className="hidden xl:table-cell">{t("pieces.installationInstructions")}</TableHead>
+              {(!visibleColumns || visibleColumns.size) && (
+                <TableHead className="hidden md:table-cell w-[140px] min-w-[140px]">{t("pieces.measures")}</TableHead>
+              )}
+              {(!visibleColumns || visibleColumns.store_category) && (
+                <TableHead className="hidden lg:table-cell">{t("common.model")}</TableHead>
+              )}
+              {(!visibleColumns || visibleColumns.specification) && (
+                <TableHead className="hidden lg:table-cell">{t("pieces.specification")}</TableHead>
+              )}
+              {(!visibleColumns || visibleColumns.installation_instructions) && (
+                <TableHead className="hidden xl:table-cell">{t("pieces.installationInstructions")}</TableHead>
+              )}
               
               {customFieldLabels?.map((label, i) => {
                 if (!label) return null;
+                if (visibleColumns && !visibleColumns[`custom_field_${i + 1}`]) return null;
                 return <TableHead key={`custom-head-${i}`} className="hidden xl:table-cell">{label}</TableHead>;
               })}
 
@@ -427,6 +468,7 @@ export default function SortablePiecesTable({
                     stores={stores}
                     kitCategory={row.type === "kit" ? getKitCategory(row.data) : ""}
                     customFieldLabels={customFieldLabels}
+                    visibleColumns={visibleColumns}
                   />
                 );
               })}
