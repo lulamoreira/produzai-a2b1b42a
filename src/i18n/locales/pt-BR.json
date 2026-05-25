@@ -716,7 +716,9 @@
     }
   },
   "installations": {
+    "photosSentShort": "Fotos enviadas",
     "title": "Instalações",
+
     "newInstallation": "Nova Instalação",
     "empty": "Nenhuma instalação encontrada",
     "installer": "Instalador",
