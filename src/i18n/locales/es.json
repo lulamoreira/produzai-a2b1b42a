@@ -564,6 +564,8 @@
     "availablePiecesForKit": "Piezas disponibles para agregar",
     "includeInKit": "Incluir",
     "addToKit": "Agregar al Kit",
+    "kitLocation": "Ubicación en Tienda",
+    "kitLocationUpdated": "Ubicación actualizada en todas las piezas del kit",
     "addToKitTitle": "Agregar al Kit",
     "editPieceTitle": "Editar Pieza",
     "pieceUpdated": "Pieza actualizada con éxito",
