@@ -145,7 +145,8 @@ export default function ImportWizardDialog({
   const [loadingAI, setLoadingAI] = useState(false);
   const [updateExisting, setUpdateExisting] = useState(true);
   const [importing, setImporting] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
+  const [currentStoreName, setCurrentStoreName] = useState('');
 
 
   // Reset on close
