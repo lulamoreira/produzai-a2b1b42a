@@ -457,9 +457,137 @@ export default function StoresMatrixTable({
   }, [filteredStores, onDisplayOrderChange]);
 
   const [editingCell, setEditingCell] = useState<{ storeId: string; field: string } | null>(null);
+  const [anchorCell, setAnchorCell] = useState<{ rowIndex: number; colKey: string } | null>(null);
+  const [pastePreview, setPastePreview] = useState<{
+    open: boolean;
+    changes: Array<{
+      storeId: string;
+      storeName: string;
+      field: string;
+      fieldLabel: string;
+      oldValue: string;
+      newValue: string;
+      hasExistingValue: boolean;
+    }>;
+  }>({ open: false, changes: [] });
+
   const cellRefs = useRef<Map<string, HTMLElement>>(new Map());
 
   const getCellKey = (storeId: string, field: string) => `${storeId}__${field}`;
+
+  const parseExcelTSV = (text: string): string[][] => {
+    const lines = text.split(/\r?\n/);
+    const result = lines
+      .map(line => line.split('\t').map(cell => cell.trim()))
+      .filter((row, idx) => {
+        // Ignore completely empty rows at the end
+        if (idx === lines.length - 1 && row.every(cell => cell === "")) return false;
+        return true;
+      });
+    return result;
+  };
+
+  const handleExcelPaste = useCallback((text: string, anchor: { rowIndex: number; colKey: string }) => {
+    const parsedData = parseExcelTSV(text);
+    if (parsedData.length === 0) return;
+
+    const changes: typeof pastePreview.changes = [];
+    const startColIdx = orderedColumns.findIndex(c => c.storeField === anchor.colKey);
+
+    parsedData.forEach((row, rOffset) => {
+      const targetStoreIdx = anchor.rowIndex + rOffset;
+      if (targetStoreIdx >= filteredStores.length) return;
+
+      const store = filteredStores[targetStoreIdx];
+
+      row.forEach((value, cOffset) => {
+        const targetColIdx = startColIdx + cOffset;
+        if (targetColIdx >= orderedColumns.length) return;
+
+        const col = orderedColumns[targetColIdx];
+        // Only paste into editable fields (skipping name and boolean switches if they shouldn't be bulk pasted)
+        // User said "works only in editable columns"
+        if (col.storeField === "cnpj" || col.fieldType === "boolean") return;
+
+        const oldValue = ((store as any)[col.storeField] || "").toString();
+        if (oldValue === value) return;
+
+        changes.push({
+          storeId: store.id,
+          storeName: store.name,
+          field: col.storeField,
+          fieldLabel: col.label,
+          oldValue,
+          newValue: value,
+          hasExistingValue: oldValue !== ""
+        });
+      });
+    });
+
+    if (changes.length > 0) {
+      setPastePreview({ open: true, changes });
+    } else {
+      toast.info("Nenhuma alteração detectada na colagem.");
+    }
+  }, [filteredStores, orderedColumns]);
+
+  const confirmPaste = async () => {
+    const changesByStore = new Map<string, Record<string, any>>();
+    
+    pastePreview.changes.forEach(change => {
+      if (!changesByStore.has(change.storeId)) {
+        changesByStore.set(change.storeId, {});
+      }
+      const storeChanges = changesByStore.get(change.storeId)!;
+      const finalValue = change.field === "showcase_count" ? (parseInt(change.newValue, 10) || 0) : (change.newValue || null);
+      storeChanges[change.field] = finalValue;
+    });
+
+    let successCount = 0;
+    let storeCount = 0;
+    let failCount = 0;
+
+    setPastePreview(prev => ({ ...prev, open: false }));
+
+    for (const [storeId, fields] of changesByStore.entries()) {
+      try {
+        await onUpdateStore({ id: storeId, ...fields });
+        successCount += Object.keys(fields).length;
+        storeCount++;
+      } catch (error) {
+        console.error("Paste error for store", storeId, error);
+        failCount += Object.keys(fields).length;
+      }
+    }
+
+    if (failCount > 0) {
+      toast.error(`Falha ao atualizar ${failCount} células. ${successCount} atualizadas com sucesso.`);
+    } else {
+      toast.success(`${successCount} células atualizadas em ${storeCount} lojas.`);
+    }
+    
+    setAnchorCell(null);
+  };
+
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      if (!anchorCell || editingCell) return;
+      e.preventDefault();
+      const text = e.clipboardData?.getData('text/plain') || '';
+      handleExcelPaste(text, anchorCell);
+    };
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setAnchorCell(null);
+    };
+
+    window.addEventListener('paste', handlePaste);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('paste', handlePaste);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [anchorCell, editingCell, handleExcelPaste]);
 
   const navigateToCell = useCallback((dir: "up" | "down" | "left" | "right") => {
     setEditingCell((prev) => {
