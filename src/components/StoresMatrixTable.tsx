@@ -504,10 +504,20 @@ export default function StoresMatrixTable({
       const oldIdx = prev.indexOf(active.id as string);
       const newIdx = prev.indexOf(over.id as string);
       const next = arrayMove(prev, oldIdx, newIdx);
-      saveColumnOrder(clientId, next);
+      saveColumnOrder(persistenceId, next);
+
+      // Automatic sorting by the first column after reordering
+      if (newIdx === 0 && oldIdx !== 0) {
+        const firstColKey = next[0];
+        setSortKey(firstColKey);
+        setSortDir("asc");
+        saveSortState(persistenceId, { key: firstColKey, dir: "asc" });
+      }
+
       return next;
     });
-  }, [clientId]);
+  }, [persistenceId]);
+
 
   const formatPhone = (v: string) => {
     const d = v.replace(/\D/g, "").slice(0, 11);
