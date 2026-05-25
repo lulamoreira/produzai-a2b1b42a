@@ -344,9 +344,6 @@ export default function ImportWizardDialog({
       setImporting(false);
     }
   };
-      setImporting(false);
-    }
-  };
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
