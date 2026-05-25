@@ -512,6 +512,7 @@ export default function PiecesTab({
         onDuplicateKit={() => {}}
         onReorder={() => {}}
         customFieldLabels={customFieldLabels}
+        visibleColumns={visibleColumns}
       />
 
       <CreateKitDialog
