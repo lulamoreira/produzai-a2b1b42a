@@ -547,7 +547,7 @@ export default function PiecesTab({
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4">
           <div className="bg-background border border-border shadow-xl rounded-full px-4 py-2 flex items-center gap-4">
             <span className="text-sm font-medium">
-              {selectedPieceIds.length} {selectedPieceIds.length === 1 ? t("pieces.pieceSelected") || "peça selecionada" : t("pieces.piecesSelected") || "peças selecionadas"}
+              {t("pieces.piecesSelected", { count: selectedPieceIds.length })}
             </span>
             <div className="h-4 w-px bg-border" />
             <div className="flex items-center gap-2">
@@ -556,7 +556,7 @@ export default function PiecesTab({
                 className="gap-2 rounded-full h-8 px-4"
                 disabled={selectedPieceIds.length < 2}
                 onClick={() => setConvertSelectionDialogOpen(true)}
-                title={selectedPieceIds.length < 2 ? "Selecione ao menos 2 peças para criar um kit" : ""}
+                title={selectedPieceIds.length < 2 ? t("pieces.minPiecesForKit") : ""}
               >
                 <Package className="w-3.5 h-3.5" />
                 {t("pieces.groupInKit") || "Agrupar em Kit"}
@@ -566,6 +566,7 @@ export default function PiecesTab({
                 variant="ghost" 
                 className="h-8 w-8 rounded-full"
                 onClick={() => setSelectedPieceIds([])}
+                title={t("pieces.clearSelection")}
               >
                 <X className="w-4 h-4" />
               </Button>
@@ -725,7 +726,7 @@ function ConvertSelectionToKitDialog({
         toast.error(`${errors.length} peças falharam ao serem adicionadas.`);
       } else {
         const kit = existingKits.find(k => k.id === selectedKitId);
-        toast.success(t("pieces.piecesAddedToKit", { count: selectedPieceIds.length, kitName: kit?.name }) || `${selectedPieceIds.length} peças adicionadas ao kit ${kit?.name}`);
+        toast.success(t("pieces.kitGroupSuccess", { count: selectedPieceIds.length, name: kit?.name }));
       }
       onSuccess();
       onOpenChange(false);
@@ -740,9 +741,9 @@ function ConvertSelectionToKitDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("pieces.addToKit") || "Adicionar ao Kit"}</DialogTitle>
+          <DialogTitle>{t("pieces.addToKitTitle")}</DialogTitle>
           <DialogDescription>
-            {t("pieces.addToKitDesc") || "Escolha se deseja criar um novo kit ou adicionar as peças selecionadas a um kit existente."}
+            {t("pieces.addToKitDesc")}
           </DialogDescription>
         </DialogHeader>
 
@@ -788,7 +789,7 @@ function ConvertSelectionToKitDialog({
             {t("common.cancel")}
           </Button>
           <Button onClick={handleConfirm} disabled={saving || (mode === "existing" && !selectedKitId)}>
-            {saving ? t("common.wait") : t("common.continue")}
+            {saving ? t("common.wait") : t("pieces.continueButton")}
           </Button>
         </DialogFooter>
       </DialogContent>
