@@ -257,7 +257,12 @@ export default function ImportWizardDialog({
       const out: Record<string, string> = {};
       for (const [col, fieldKey] of Object.entries(mapping)) {
         if (fieldKey === IGNORE) continue;
-        out[fieldKey] = String(row[col] ?? "").trim();
+        const value = row[col];
+        // Ensure values like 0 or "0" are not treated as empty.
+        // Also ensure everything is converted to a trimmed string for consistency.
+        out[fieldKey] = (value !== null && value !== undefined && value !== "") 
+          ? String(value).trim() 
+          : "";
       }
       return out;
     });
