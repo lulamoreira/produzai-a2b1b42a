@@ -352,6 +352,61 @@ export default function PiecesTab({
     ]);
   };
 
+  const handleDuplicatePiece = async (piece: any) => {
+    const maxCode = Math.max(...pieces.map(p => p.code ?? 0), 0);
+    
+    await addPiece?.mutateAsync?.({
+      campaign_id: piece.campaign_id,
+      name: `${piece.name} (cópia)`,
+      code: maxCode + 1,
+      category: piece.category,
+      size: piece.size,
+      specification: piece.specification,
+      installation_instructions: piece.installation_instructions,
+      sub_location: piece.sub_location,
+      kit_only: false,
+      is_deleted: false,
+      is_mockup: false,
+      is_new: piece.is_new,
+      display_order: (piece.display_order ?? 0) + 1,
+      custom_field_1: piece.custom_field_1,
+      custom_field_2: piece.custom_field_2,
+      custom_field_3: piece.custom_field_3,
+      custom_field_4: piece.custom_field_4,
+      custom_field_5: piece.custom_field_5,
+      image_url: null,
+      image_thumb_url: null,
+      image_full_url: null,
+      image_report_url: null,
+    });
+    
+    toast.success(t("pieces.pieceDuplicated"));
+  };
+
+  const handleDuplicateKit = async (kit: any) => {
+    const maxCode = Math.max(...kits.map(k => k.code ?? 0), 0);
+    
+    const novoKit = await addKit?.mutateAsync?.({
+      campaign_id: kit.campaign_id,
+      name: `${kit.name} (cópia)`,
+      code: maxCode + 1,
+      is_new: kit.is_new,
+      is_deleted: false,
+      display_order: (kit.display_order ?? 0) + 1,
+    });
+    
+    if (!novoKit) return;
+    
+    const pecasDoKit = kitPieces.filter(kp => kp.kit_id === kit.id);
+    await Promise.allSettled(
+      pecasDoKit.map(kp =>
+        addKitPiece?.mutateAsync?.({ kit_id: novoKit.id, piece_id: kp.piece_id })
+      )
+    );
+    
+    toast.success(t("pieces.kitDuplicated"));
+  };
+
   return (
     <div className="space-y-4">
       <div className="sticky top-0 z-30 bg-background -mx-4 sm:-mx-6 px-4 sm:px-6 pt-2 pb-2 border-b border-border/40">
@@ -585,8 +640,8 @@ export default function PiecesTab({
           const newVal = !kit.is_mockup;
           await updateKit?.mutateAsync?.({ id: kit.id, is_mockup: newVal });
         }}
-        onDuplicate={(p: any) => {}}
-        onDuplicateKit={(k: any) => {}}
+        onDuplicate={handleDuplicatePiece}
+        onDuplicateKit={handleDuplicateKit}
         onReorder={handleReorder}
         customFieldLabels={customFieldLabels}
         visibleColumns={visibleColumns}

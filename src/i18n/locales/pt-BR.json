@@ -598,6 +598,8 @@
     "enterCustomFieldValue": "Digite o valor de {{label}}",
     "pieceUpdated": "Peça atualizada com sucesso",
     "groupInKit": "Agrupar em Kit",
+    "pieceDuplicated": "Peça duplicada com sucesso",
+    "kitDuplicated": "Kit duplicado com sucesso",
     "clearSelection": "Limpar seleção",
     "createNewKit": "Criar novo kit",
     "createNewKitSub": "Cria um novo agrupamento para estas peças",

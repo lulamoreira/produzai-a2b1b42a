@@ -617,6 +617,8 @@
     "enterCustomFieldValue": "Enter {{label}} value",
     "pieceUpdated": "Piece updated successfully",
     "groupInKit": "Group into Kit",
+    "pieceDuplicated": "Piece duplicated successfully",
+    "kitDuplicated": "Kit duplicated successfully",
     "clearSelection": "Clear selection",
     "createNewKit": "Create new kit",
     "createNewKitSub": "Creates a new grouping for these pieces",
