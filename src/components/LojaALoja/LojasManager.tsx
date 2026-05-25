@@ -404,6 +404,19 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
             className="h-8 text-xs pl-8"
           />
         </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-8 text-xs gap-1.5 shrink-0"
+          onClick={() => {
+            setPendingSortField(sortField);
+            setShowSortDialog(true);
+          }}
+          title="Alterar campo de ordenação"
+        >
+          <ArrowDownAZ className="h-3.5 w-3.5" />
+          Ordenar por
+        </Button>
         {isAdmin && (
           <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 shrink-0" onClick={handleOpenCopy}>
             <Copy className="h-3.5 w-3.5" />
