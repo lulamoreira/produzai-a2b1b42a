@@ -85,6 +85,40 @@ export default function MatrixTab({
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
   const [storeSearch, setStoreSearch] = useState("");
+  const [storeSortField, setStoreSortField] = useState(() => {
+    return localStorage.getItem(`rateio_sort_field_${campaignId}`) || "name";
+  });
+
+  const handleSortChange = (field: string) => {
+    setStoreSortField(field);
+    localStorage.setItem(`rateio_sort_field_${campaignId}`, field);
+  };
+
+  const getSortLabel = (field: string) => {
+    if (field === "name") return t("stores.name", "Nome");
+    if (field === "city") return t("stores.city", "Cidade");
+    if (field === "state") return t("stores.state", "Estado");
+    if (field === "store_model") return t("pieces.storeModelLabel", "Categoria de Loja");
+    if (field.startsWith("custom_field_")) {
+      const idx = parseInt(field.replace("custom_field_", ""), 10);
+      const label = customFieldLabels.find(cf => cf.index === idx)?.label;
+      return label || field;
+    }
+    return field;
+  };
+
+  const sortedStores = useMemo(() => {
+    return [...stores].sort((a, b) => {
+      let valA = (a as any)[storeSortField];
+      let valB = (b as any)[storeSortField];
+
+      if (valA === null || valA === undefined) valA = "";
+      if (valB === null || valB === undefined) valB = "";
+
+      // Numerical sort for specific fields if needed, but localeCompare with numeric: true is usually enough
+      return valA.toString().localeCompare(valB.toString(), 'pt-BR', { numeric: true });
+    });
+  }, [stores, storeSortField]);
 
   const handleUpdateStorePiece = async (data: { id: string } & Partial<any>) => {
     // This is for store metadata updates from StoresMatrixTable
