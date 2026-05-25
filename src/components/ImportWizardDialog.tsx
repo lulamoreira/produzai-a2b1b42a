@@ -80,8 +80,8 @@ const PIECE_FIELDS: SystemField[] = [
   { key: "category", label: "Localização" },
   { key: "size", label: "Tamanho" },
   { key: "specification", label: "Especificação" },
-  { key: "store_category", label: "Modelo de Loja" },
-  { key: "installation_instructions", label: "Instruções" },
+  { key: "store_model", label: "Modelo de Loja" },
+  { key: "instructions", label: "Instruções" },
   { key: "sub_location", label: "Sublocalização" },
   { key: "kit_only", label: "Apenas em Kit" },
 ];
