@@ -116,7 +116,7 @@ const Index = () => {
                 <strong className="text-foreground">{totalPieces}</strong> peças
               </span>
             </div>
-
+            
             {isAdmin && <AddPieceDialog existingPieces={pieces} />}
 
             <DropdownMenu>
