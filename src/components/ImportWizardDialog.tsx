@@ -43,7 +43,10 @@ export interface ImportWizardDialogProps {
   clientId?: string;
   onImport: (
     rows: Record<string, string>[],
-    options: { updateExisting: boolean },
+    options: { 
+      updateExisting: boolean;
+      onProgress?: (current: number, total: number, name?: string) => void;
+    },
   ) => Promise<void>;
   trigger?: React.ReactNode;
 }
