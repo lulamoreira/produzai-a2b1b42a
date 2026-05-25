@@ -725,13 +725,14 @@ const ClientDetail = () => {
 
   const handleStoresImport = async (
     rows: Record<string, string>[],
-    { updateExisting }: { updateExisting: boolean },
+    { updateExisting, onProgress }: { updateExisting: boolean; onProgress?: (current: number, total: number, name?: string) => void },
   ) => {
     if (!clientId) return;
     const existingByName = new Map(stores.map(s => [s.name.trim().toLowerCase(), s]));
     let added = 0;
     let updated = 0;
-    for (const row of rows) {
+    for (let i = 0; i < rows.length; i++) {
+      const row = rows[i];
       const showcaseRaw = row.showcase_count ?? "";
       const item: any = capitalizeStoreFields({
         client_id: clientId,
