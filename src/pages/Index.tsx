@@ -6,6 +6,7 @@ import {
   type Store,
 } from "@/hooks/useStoreData";
 import { useAuth } from "@/hooks/useAuth";
+import { useAddPiece } from "@/hooks/useStoreData";
 import { useUserRole } from "@/hooks/useUserRole";
 import StoreSelector from "@/components/StoreSelector";
 import StoreDetail from "@/components/StoreDetail";
@@ -37,6 +38,7 @@ const Index = () => {
   const { data: stores = [], isLoading: loadingStores } = useStores();
   const { data: pieces = [], isLoading: loadingPieces } = usePieces();
   const { data: allStorePieces = [] } = useAllStorePieces();
+  const addPiece = useAddPiece();
 
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -116,8 +118,8 @@ const Index = () => {
                 <strong className="text-foreground">{totalPieces}</strong> peças
               </span>
             </div>
-
-            {isAdmin && <AddPieceDialog existingPieces={pieces} />}
+            
+            {isAdmin && <AddPieceDialog existingPieces={pieces} addPieceMutation={addPiece} />}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

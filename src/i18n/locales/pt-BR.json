@@ -546,6 +546,8 @@
     "includeInKit": "Incluir",
     "addToKit": "Adicionar ao Kit",
     "addToKitTitle": "Adicionar ao Kit",
+    "editPieceTitle": "Editar Peça",
+    "pieceUpdated": "Peça atualizada com sucesso",
     "addToKitDesc": "Escolha se deseja criar um novo kit ou adicionar as peças selecionadas a um kit existente.",
     "removeFromKit": "Remover do kit",
     "addMorePieces": "Incluir mais peças",

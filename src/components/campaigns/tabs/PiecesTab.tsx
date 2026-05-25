@@ -115,6 +115,7 @@ export default function PiecesTab({
   const [selectedPieceIds, setSelectedPieceIds] = useState<string[]>([]);
   const [convertSelectionDialogOpen, setConvertSelectionDialogOpen] = useState(false);
   const [preSelectedForKit, setPreSelectedForKit] = useState<string[]>([]);
+  const [editingPiece, setEditingPiece] = useState<any>(null);
   
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem(`pieces_columns_${campaignId}`);
@@ -528,7 +529,14 @@ export default function PiecesTab({
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              <AddPieceDialog existingPieces={pieces} customFieldLabels={customFieldLabels} campaignId={campaignId} clientId={clientId} />
+              <AddPieceDialog 
+                existingPieces={pieces} 
+                customFieldLabels={customFieldLabels} 
+                campaignId={campaignId} 
+                clientId={clientId} 
+                addPieceMutation={addPiece}
+                updatePieceMutation={updatePiece}
+              />
 
               <Button size="sm" className="text-[10px] sm:text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setCreateKitDialogOpen(true)}>
                 <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.newKit")}
@@ -566,7 +574,7 @@ export default function PiecesTab({
         qtyMap={qtyMap}
         canEditPieces={canEditPieces}
         canDeletePieces={canDeletePieces}
-        onEdit={(p: any) => {}}
+        onEdit={(p: any) => setEditingPiece(p)}
         onDelete={(id: string) => deletePiece?.mutate?.(id)}
         onDistribute={handleDistributePiece}
         onMarkKitOnly={async (p: any) => { await updatePiece?.mutateAsync?.({ id: p.id, kit_only: true }); }}
@@ -585,6 +593,18 @@ export default function PiecesTab({
         selectedPieceIds={selectedPieceIds}
         onToggleSelection={handleToggleSelection}
         onToggleSelectAll={handleToggleSelectAll}
+      />
+
+      <AddPieceDialog
+        open={editingPiece !== null}
+        onOpenChange={(open) => { if (!open) setEditingPiece(null); }}
+        initialPiece={editingPiece}
+        existingPieces={pieces}
+        customFieldLabels={customFieldLabels}
+        campaignId={campaignId}
+        clientId={clientId}
+        addPieceMutation={addPiece}
+        updatePieceMutation={updatePiece}
       />
 
       {selectedPieceIds.length > 0 && (
