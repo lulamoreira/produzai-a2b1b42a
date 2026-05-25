@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useLojaALojaTipos, useLojaALojaLojas, useToggleLojaAssignment, type LojaALojaTipo } from "@/hooks/useLojaALoja";
 import { useClientStores } from "@/hooks/useMultiClientData";
@@ -11,12 +11,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from "@/components/ui/dialog";
-import { Store, Copy, Search, ArrowUp, ArrowDown, ArrowUpDown, AlertTriangle } from "lucide-react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Store, Copy, Search, ArrowUp, ArrowDown, ArrowUpDown, AlertTriangle, ArrowDownAZ } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { useTableSort } from "@/hooks/useTableSort";
+import { useAuth } from "@/hooks/useAuth";
 
 interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boolean }
 
