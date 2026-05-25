@@ -341,7 +341,7 @@ export default function StoresMatrixTable({
 
   // Column order
   const [columnOrder, setColumnOrder] = useState<string[]>(() => {
-    const saved = loadColumnOrder(clientId);
+    const saved = loadColumnOrder(persistenceId);
     if (saved) {
       const allKeys = new Set(allColumns.map((c) => c.key));
       const ordered = saved.filter((k) => allKeys.has(k));
@@ -366,19 +366,32 @@ export default function StoresMatrixTable({
   }, [columnOrder, allColumns]);
 
   // Sort
-  const [sortKey, setSortKey] = useState("state");
-  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [sortKey, setSortKey] = useState(() => {
+    const saved = loadSortState(persistenceId);
+    return saved?.key || "state";
+  });
+  const [sortDir, setSortDir] = useState<"asc" | "desc">(() => {
+    const saved = loadSortState(persistenceId);
+    return saved?.dir || "asc";
+  });
 
   const handleSort = useCallback((key: string) => {
     setSortKey((prev) => {
+      let newDir: "asc" | "desc" = "asc";
+      let newKey = key;
       if (prev === key) {
-        setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-        return prev;
+        newDir = sortDir === "asc" ? "desc" : "asc";
+        setSortDir(newDir);
+        newKey = prev;
+      } else {
+        setSortDir("asc");
+        newKey = key;
       }
-      setSortDir("asc");
-      return key;
+      saveSortState(persistenceId, { key: newKey, dir: newDir });
+      return newKey;
     });
-  }, []);
+  }, [sortDir, persistenceId]);
+
 
   // Filter + sort stores
   const filteredStores = useMemo(() => {
