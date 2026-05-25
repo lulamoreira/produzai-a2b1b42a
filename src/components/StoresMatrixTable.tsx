@@ -405,11 +405,32 @@ export default function StoresMatrixTable({
         );
       })
       .sort((a, b) => {
-        const valA = ((a as any)[sortKey] || "").toString().toLowerCase();
-        const valB = ((b as any)[sortKey] || "").toString().toLowerCase();
-        const cmp = valA.localeCompare(valB);
+        const field = orderedColumns.find(c => c.key === sortKey) || allColumns.find(c => c.key === sortKey);
+        const storeField = field?.storeField || sortKey;
+        
+        let valA = (a as any)[storeField];
+        let valB = (b as any)[storeField];
+
+        // Handle nulls
+        if (valA === null || valA === undefined) valA = "";
+        if (valB === null || valB === undefined) valB = "";
+
+        // Detect type from field definition or data
+        const fieldType = field?.fieldType;
+        
+        if (fieldType === "number" || (typeof valA === "number" && typeof valB === "number")) {
+          const numA = Number(valA);
+          const numB = Number(valB);
+          return sortDir === "asc" ? numA - numB : numB - numA;
+        }
+
+        // Default to string comparison
+        const strA = valA.toString().toLowerCase();
+        const strB = valB.toString().toLowerCase();
+        const cmp = strA.localeCompare(strB);
         return sortDir === "asc" ? cmp : -cmp;
       });
+
   }, [stores, storeSearch, storeStateFilter, sortKey, sortDir]);
 
   useEffect(() => {
