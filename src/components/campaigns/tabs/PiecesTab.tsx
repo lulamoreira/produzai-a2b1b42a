@@ -22,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { exportCampaignPieces } from "@/lib/exportMultiClient";
-import SortablePiecesTable from "@/components/SortablePiecesTable";
+import SortablePiecesTable, { type UnifiedRow } from "@/components/SortablePiecesTable";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
 import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
 import ImportPiecesFromCampaignDialog from "@/components/ImportPiecesFromCampaignDialog";
@@ -307,6 +307,50 @@ export default function PiecesTab({
     return counts;
   }, [pieces, kits, kitPieces]);
 
+  const handleReorder = async (rows: UnifiedRow[]) => {
+    // 1. ATUALIZAÇÃO OTIMISTA — reflita a nova ordem na UI imediatamente
+    qc.setQueryData(["campaign_pieces", campaignId], (old: any) => {
+      if (!old) return old;
+      return old.map((p: any) => {
+        const matchingRow = rows.find(r => r.type === "piece" && r.data.id === p.id);
+        if (matchingRow) {
+          return { ...p, display_order: rows.indexOf(matchingRow) };
+        }
+        return p;
+      });
+    });
+
+    qc.setQueryData(["campaign_kits", campaignId], (old: any) => {
+      if (!old) return old;
+      return old.map((k: any) => {
+        const matchingRow = rows.find(r => r.type === "kit" && r.data.id === k.id);
+        if (matchingRow) {
+          return { ...k, display_order: rows.indexOf(matchingRow) };
+        }
+        return k;
+      });
+    });
+
+    // 2. Para cada row no array reordenado, o novo display_order é o índice (0, 1, 2...)
+    const updates = rows.map((row, index) => ({ row, display_order: index }));
+
+    // 3. Persista no banco em paralelo:
+    await Promise.allSettled([
+      ...updates
+        .filter(u => u.row.type === "piece")
+        .map(u => updatePiece?.mutateAsync?.({ 
+          id: (u.row.data as any).id, 
+          display_order: u.display_order 
+        })),
+      ...updates
+        .filter(u => u.row.type === "kit")
+        .map(u => updateKit?.mutateAsync?.({ 
+          id: (u.row.data as any).id, 
+          display_order: u.display_order 
+        }))
+    ]);
+  };
+
   return (
     <div className="space-y-4">
       <div className="sticky top-0 z-30 bg-background -mx-4 sm:-mx-6 px-4 sm:px-6 pt-2 pb-2 border-b border-border/40">
@@ -535,7 +579,7 @@ export default function PiecesTab({
         }}
         onDuplicate={(p: any) => {}}
         onDuplicateKit={(k: any) => {}}
-        onReorder={() => {}}
+        onReorder={handleReorder}
         customFieldLabels={customFieldLabels}
         visibleColumns={visibleColumns}
         selectedPieceIds={selectedPieceIds}
