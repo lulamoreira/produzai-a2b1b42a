@@ -119,7 +119,9 @@ export default function PiecesTab({
           ...row,
           campaign_id: campaignId,
           client_id: clientId,
-          kit_only: row.kit_only === "true" || row.kit_only === true || row.kit_only === "Sim"
+          is_deleted: false,
+          display_order: i,
+          kit_only: ['true', '1', 'sim', 'yes'].includes(String(row.kit_only).toLowerCase())
         };
         
         // Check if piece already exists by code in this campaign if updateExisting is true
