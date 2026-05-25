@@ -516,6 +516,15 @@ export default function ImportWizardDialog({
                     <strong>{stats.ignored}</strong> ignorado(s) (campos obrigatórios ausentes)
                   </p>
                 )}
+                {mode === "stores" && customFields.length > 0 && mappedSystemKeys.size > 0 && (
+                  <p className="text-primary font-medium">
+                    {(() => {
+                      const standardMapped = Array.from(mappedSystemKeys).filter(k => !systemFields.find(f => f.key === k)?.isCustom).length;
+                      const customMapped = Array.from(mappedSystemKeys).filter(k => systemFields.find(f => f.key === k)?.isCustom).length;
+                      return `${standardMapped} campos padrão + ${customMapped} campos personalizados por loja`;
+                    })()}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 <Switch
