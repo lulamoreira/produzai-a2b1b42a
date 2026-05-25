@@ -104,6 +104,11 @@ export type CampaignPiece = {
   is_mockup: boolean;
   display_order: number;
   created_at: string;
+  custom_field_1?: string | null;
+  custom_field_2?: string | null;
+  custom_field_3?: string | null;
+  custom_field_4?: string | null;
+  custom_field_5?: string | null;
 };
 
 export type CampaignKit = {
