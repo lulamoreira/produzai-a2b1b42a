@@ -32,6 +32,7 @@ interface SystemField {
   label: string;
   required?: boolean;
   isCustom?: boolean;
+  index?: number;
 }
 
 export interface ImportWizardDialogProps {
@@ -120,7 +121,8 @@ export default function ImportWizardDialog({
       return {
         key: `custom_field_${idx}`,
         label: name,
-        isCustom: true
+        isCustom: true,
+        index: idx
       } as SystemField;
     }).filter((f): f is SystemField => f !== null);
   }, [client, mode]);
@@ -210,9 +212,12 @@ export default function ImportWizardDialog({
       const flagged = new Set<string>();
       for (const col of columns) {
         const suggested = aiMapping[col];
-        if (suggested && systemFields.some((f) => f.key === suggested)) {
-          next[col] = suggested;
-          flagged.add(col);
+        if (suggested) {
+          const field = systemFields.find((f) => f.key === suggested || f.label === suggested);
+          if (field) {
+            next[col] = field.key;
+            flagged.add(col);
+          }
         }
       }
       setMapping(next);
@@ -244,10 +249,15 @@ export default function ImportWizardDialog({
 
   // ─── Validation ───────────────────────────────────────────────────────────
   const requiredKeys = systemFields.filter((f) => f.required).map((f) => f.key);
-  const mappedSystemKeys = useMemo(
-    () => new Set(Object.values(mapping).filter((v) => v !== IGNORE)),
-    [mapping],
-  );
+  const mappedSystemKeys = useMemo(() => {
+    const keys = new Set<string>();
+    Object.values(mapping).forEach((v) => {
+      if (v === IGNORE) return;
+      const field = systemFields.find((f) => f.key === v || f.label === v);
+      keys.add(field ? field.key : v);
+    });
+    return keys;
+  }, [mapping, systemFields]);
   const missingRequired = requiredKeys.filter((k) => !mappedSystemKeys.has(k));
   const canAdvanceFromStep2 = missingRequired.length === 0;
 
@@ -255,18 +265,25 @@ export default function ImportWizardDialog({
   const transformedRows = useMemo(() => {
     return rawRows.map((row) => {
       const out: Record<string, string> = {};
-      for (const [col, fieldKey] of Object.entries(mapping)) {
-        if (fieldKey === IGNORE) continue;
+      for (const [col, mappingValue] of Object.entries(mapping)) {
+        if (mappingValue === IGNORE) continue;
+        
+        // Find the system field to get the correct key (e.g. custom_field_1)
+        // This ensures that even if mappingValue was somehow set to the label,
+        // we use the technical key required by the backend/onImport.
+        const field = systemFields.find(f => f.key === mappingValue || f.label === mappingValue);
+        const targetKey = field ? field.key : mappingValue;
+
         const value = row[col];
         // Ensure values like 0 or "0" are not treated as empty.
         // Also ensure everything is converted to a trimmed string for consistency.
-        out[fieldKey] = (value !== null && value !== undefined && value !== "") 
+        out[targetKey] = (value !== null && value !== undefined && value !== "") 
           ? String(value).trim() 
           : "";
       }
       return out;
     });
-  }, [rawRows, mapping]);
+  }, [rawRows, mapping, systemFields]);
 
   const stats = useMemo(() => {
     const existingNames = new Set(existingItems.map((i) => i.name.trim().toLowerCase()));
