@@ -517,7 +517,7 @@ export default function StoresMatrixTable({
                             "font-medium sticky left-0 z-[5] text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700",
                             // Always-on opaque bg matching row state so the frozen
                             // column never goes transparent during horizontal scroll.
-                            "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition-colors",
+                            "bg-white dark:bg-gray-900 group-even:bg-gray-50 dark:group-even:bg-gray-800/50 text-gray-900 dark:text-gray-100 group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition-colors",
                             // Right-edge shadow indicating more content to scroll.
                             "shadow-[1px_0_0_0_rgba(0,0,0,0.1)] dark:shadow-[1px_0_0_0_rgba(255,255,255,0.05)]"
                           )}
