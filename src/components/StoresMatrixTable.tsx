@@ -806,6 +806,73 @@ export default function StoresMatrixTable({
           Deslize para ver mais colunas
         </div>
       )}
+
+      {/* Paste Preview Modal */}
+      <AlertDialog open={pastePreview.open} onOpenChange={(open) => !open && setPastePreview(prev => ({ ...prev, open }))}>
+        <AlertDialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ClipboardPaste className="w-5 h-5 text-primary" />
+              Colar dados do Excel
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {pastePreview.changes.length} células serão atualizadas a partir de{" "}
+              <strong>{pastePreview.changes[0]?.storeName}</strong> /{" "}
+              <strong>{pastePreview.changes[0]?.fieldLabel}</strong>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <div className="flex-1 overflow-auto my-4 border rounded-md">
+            <Table>
+              <TableHeader className="sticky top-0 bg-muted">
+                <TableRow>
+                  <TableHead className="text-xs">Loja</TableHead>
+                  <TableHead className="text-xs">Campo</TableHead>
+                  <TableHead className="text-xs">Valor Atual</TableHead>
+                  <TableHead className="text-xs">Novo Valor</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pastePreview.changes.slice(0, 10).map((change, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell className="text-xs font-medium">{change.storeName}</TableCell>
+                    <TableCell className="text-xs">{change.fieldLabel}</TableCell>
+                    <TableCell className="text-xs text-muted-foreground italic">
+                      {change.oldValue || "vazio"}
+                    </TableCell>
+                    <TableCell className={cn(
+                      "text-xs font-medium",
+                      change.newValue === change.oldValue ? "text-muted-foreground" : "text-primary",
+                      change.hasExistingValue && change.newValue !== change.oldValue && "bg-amber-50 text-amber-700 px-1 rounded"
+                    )}>
+                      {change.newValue === change.oldValue ? (
+                        "sem alteração"
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          {change.hasExistingValue && <AlertTriangle className="w-3 h-3" />}
+                          {change.newValue}
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+            {pastePreview.changes.length > 10 && (
+              <div className="p-2 text-center text-xs text-muted-foreground border-t bg-muted/30">
+                ... e mais {pastePreview.changes.length - 10} alterações
+              </div>
+            )}
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmPaste}>
+              Confirmar colagem
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
