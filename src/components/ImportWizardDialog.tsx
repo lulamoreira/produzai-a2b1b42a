@@ -270,14 +270,14 @@ export default function ImportWizardDialog({
 
   // ─── Step 3 — preview transformed rows ────────────────────────────────────
   const transformedRows = useMemo(() => {
+    // rawRows already has the header removed and objects with correct keys.
+    // So rawRows[0] is the first store (e.g., GEA).
     return rawRows.map((row) => {
       const out: Record<string, string> = {};
       for (const [col, mappingValue] of Object.entries(mapping)) {
         if (mappingValue === IGNORE) continue;
         
         // Find the system field to get the correct key (e.g. custom_field_1)
-        // This ensures that even if mappingValue was somehow set to the label,
-        // we use the technical key required by the backend/onImport.
         const field = systemFields.find(f => f.key === mappingValue || f.label === mappingValue);
         const targetKey = field ? field.key : mappingValue;
 
