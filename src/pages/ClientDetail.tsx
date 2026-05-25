@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -1294,82 +1294,90 @@ const ClientDetail = () => {
                       <Settings className="w-3.5 h-3.5" /> Configurações
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-h-[85vh] overflow-y-auto">
-                    <DialogHeader><DialogTitle>Configurações do Cliente</DialogTitle></DialogHeader>
+                  <DialogContent className="flex flex-col max-h-[90vh] overflow-hidden p-0">
+                    <DialogHeader className="px-6 pt-6"><DialogTitle>Configurações do Cliente</DialogTitle></DialogHeader>
 
-                    {/* Country / Currency */}
-                    <div className="space-y-3 pb-3 border-b border-border">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase">País e Moeda</p>
-                      <div className="grid grid-cols-2 gap-3">
-                        <div>
-                          <label className="text-xs font-medium text-muted-foreground mb-1 block">País</label>
-                          <Select value={countryCode} onValueChange={(val) => {
-                            setCountryCode(val);
-                            const cfg = getCountryConfig(val);
-                            setCurrencyCode(cfg.currency);
-                          }}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                              {SUPPORTED_COUNTRIES.map(c => (
-                                <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                    <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+                      {/* Country / Currency */}
+                      <div className="space-y-3 pb-3 border-b border-border">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase">País e Moeda</p>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-xs font-medium text-muted-foreground mb-1 block">País</label>
+                            <Select value={countryCode} onValueChange={(val) => {
+                              setCountryCode(val);
+                              const cfg = getCountryConfig(val);
+                              setCurrencyCode(cfg.currency);
+                            }}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                {SUPPORTED_COUNTRIES.map(c => (
+                                  <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <label className="text-xs font-medium text-muted-foreground mb-1 block">Moeda</label>
+                            <Input value={currencyCode} onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())} placeholder="BRL" maxLength={3} />
+                          </div>
                         </div>
-                        <div>
-                          <label className="text-xs font-medium text-muted-foreground mb-1 block">Moeda</label>
-                          <Input value={currencyCode} onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())} placeholder="BRL" maxLength={3} />
-                        </div>
+                      </div>
+
+                      {/* Language */}
+                      <div className="space-y-3 pb-3 border-b border-border">
+                        <p className="text-xs font-semibold text-muted-foreground uppercase">Idioma do Sistema</p>
+                        <Select value={clientLanguage} onValueChange={setClientLanguage}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pt-BR">🇧🇷 Português (Brasil)</SelectItem>
+                            <SelectItem value="en">🇺🇸 English</SelectItem>
+                            <SelectItem value="es">🇪🇸 Español</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <p className="text-xs font-semibold text-muted-foreground uppercase pt-1">Campos Personalizáveis</p>
+                      <p className="text-xs text-muted-foreground mb-2">Defina os nomes dos campos extras para as lojas deste cliente.</p>
+                      <div className="space-y-3">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((i) => {
+                          const parsed = parseFieldLabel((customLabels as any)[`custom_field_${i}_label`]);
+                          return (
+                            <div key={i} className="space-y-1">
+                              <label className="text-xs font-medium text-muted-foreground block">Campo {i}</label>
+                              <div className="flex gap-2">
+                                <Input
+                                  className="flex-1"
+                                  placeholder={`Ex: Tipo de Piso`}
+                                  value={parsed.name}
+                                  onChange={(e) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: encodeFieldLabel(e.target.value, parsed.type) }))}
+                                />
+                                <Select
+                                  value={parsed.type}
+                                  onValueChange={(val) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: encodeFieldLabel(parsed.name, val as FieldType) }))}
+                                >
+                                  <SelectTrigger className="w-[120px]">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {FIELD_TYPES.map(ft => (
+                                      <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
-                    {/* Language */}
-                    <div className="space-y-3 pb-3 border-b border-border">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase">Idioma do Sistema</p>
-                      <Select value={clientLanguage} onValueChange={setClientLanguage}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pt-BR">🇧🇷 Português (Brasil)</SelectItem>
-                          <SelectItem value="en">🇺🇸 English</SelectItem>
-                          <SelectItem value="es">🇪🇸 Español</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <p className="text-xs font-semibold text-muted-foreground uppercase pt-1">Campos Personalizáveis</p>
-                    <p className="text-xs text-muted-foreground mb-2">Defina os nomes dos campos extras para as lojas deste cliente.</p>
-                    <div className="space-y-3">
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].map((i) => {
-                        const parsed = parseFieldLabel((customLabels as any)[`custom_field_${i}_label`]);
-                        return (
-                          <div key={i} className="space-y-1">
-                            <label className="text-xs font-medium text-muted-foreground block">Campo {i}</label>
-                            <div className="flex gap-2">
-                              <Input
-                                className="flex-1"
-                                placeholder={`Ex: Tipo de Piso`}
-                                value={parsed.name}
-                                onChange={(e) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: encodeFieldLabel(e.target.value, parsed.type) }))}
-                              />
-                              <Select
-                                value={parsed.type}
-                                onValueChange={(val) => setCustomLabels((l) => ({ ...l, [`custom_field_${i}_label`]: encodeFieldLabel(parsed.name, val as FieldType) }))}
-                              >
-                                <SelectTrigger className="w-[120px]">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {FIELD_TYPES.map(ft => (
-                                    <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <Button onClick={handleSaveSettings} className="w-full mt-4" disabled={updateClient.isPending}>Salvar</Button>
+                    <DialogFooter className="px-6 py-4 border-t border-border bg-background">
+                      <Button variant="outline" onClick={() => setSettingsOpen(false)}>Cancelar</Button>
+                      <Button onClick={handleSaveSettings} disabled={updateClient.isPending}>
+                        {updateClient.isPending ? "Salvando..." : "Salvar"}
+                      </Button>
+                    </DialogFooter>
                   </DialogContent>
                 </Dialog>
 
