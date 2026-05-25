@@ -149,11 +149,12 @@ interface CreateKitDialogProps {
   onCreateKit: (kit: { campaign_id: string; name: string; code: number; is_new?: boolean }) => Promise<CampaignKit>;
   onAddKitPiece: (kitPiece: { kit_id: string; piece_id: string }) => Promise<void>;
   onUpdateKit: (kit: { id: string; image_url?: string | null; is_new?: boolean }) => Promise<CampaignKit>;
+  onUpdatePiece?: (piece: Partial<CampaignPiece> & { id: string }) => Promise<void>;
   preSelectedPieceIds?: string[];
 }
 
 export function CreateKitDialog({
-  open, onOpenChange, campaignId, kitOnlyPieces, existingKits, existingPieces = [], onCreateKit, onAddKitPiece, onUpdateKit, preSelectedPieceIds = [],
+  open, onOpenChange, campaignId, kitOnlyPieces, existingKits, existingPieces = [], onCreateKit, onAddKitPiece, onUpdateKit, onUpdatePiece, preSelectedPieceIds = [],
 }: CreateKitDialogProps) {
   const { t } = useTranslation();
   const [step, setStep] = useState<"name" | "pieces">("name");
@@ -210,6 +211,9 @@ export function CreateKitDialog({
       if (preSelectedPieceIds.length > 0) {
         for (const pid of preSelectedPieceIds) {
           await onAddKitPiece({ kit_id: kit.id, piece_id: pid });
+          if (onUpdatePiece) {
+            await onUpdatePiece({ id: pid, kit_only: true });
+          }
         }
       }
       

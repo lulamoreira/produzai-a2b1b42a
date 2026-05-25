@@ -611,6 +611,7 @@ export default function PiecesTab({
         onCreateKit={(k: any) => addKit?.mutateAsync?.(k)}
         onAddKitPiece={(kp: any) => addKitPiece?.mutateAsync?.(kp)}
         onUpdateKit={(k: any) => updateKit?.mutateAsync?.(k)}
+        onUpdatePiece={(p: any) => updatePiece?.mutateAsync?.(p)}
         preSelectedPieceIds={preSelectedForKit}
       />
       <ImportPiecesFromCampaignDialog
