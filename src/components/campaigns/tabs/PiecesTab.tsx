@@ -17,6 +17,7 @@ import {
 import { 
   Popover, PopoverContent, PopoverTrigger 
 } from "@/components/ui/popover";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { toast } from "sonner";
 import { exportCampaignPieces } from "@/lib/exportMultiClient";
 import SortablePiecesTable from "@/components/SortablePiecesTable";
@@ -519,34 +520,96 @@ export default function PiecesTab({
         qtyMap={qtyMap}
         canEditPieces={canEditPieces}
         canDeletePieces={canDeletePieces}
-        onEdit={() => {}}
-        onDelete={(id) => deletePiece?.mutate?.(id)}
+        onEdit={(p: any) => {}}
+        onDelete={(id: string) => deletePiece?.mutate?.(id)}
         onDistribute={handleDistributePiece}
-        onMarkKitOnly={async (p) => { await updatePiece?.mutateAsync?.({ id: p.id, kit_only: true }); }}
-        onToggleMockup={async (p) => { await updatePiece?.mutateAsync?.({ id: p.id, is_mockup: !p.is_mockup }); }}
-        onKitClick={(kit) => setViewKitDetail(kit)}
-        onDeleteKit={(id) => deleteKit?.mutate?.(id)}
-        onToggleKitMockup={async (kit) => {
+        onMarkKitOnly={async (p: any) => { await updatePiece?.mutateAsync?.({ id: p.id, kit_only: true }); }}
+        onToggleMockup={async (p: any) => { await updatePiece?.mutateAsync?.({ id: p.id, is_mockup: !p.is_mockup }); }}
+        onKitClick={(kit: any) => setViewKitDetail(kit)}
+        onDeleteKit={(id: string) => deleteKit?.mutate?.(id)}
+        onToggleKitMockup={async (kit: any) => {
           const newVal = !kit.is_mockup;
           await updateKit?.mutateAsync?.({ id: kit.id, is_mockup: newVal });
         }}
-        onDuplicate={() => {}}
-        onDuplicateKit={() => {}}
+        onDuplicate={(p: any) => {}}
+        onDuplicateKit={(k: any) => {}}
         onReorder={() => {}}
         customFieldLabels={customFieldLabels}
         visibleColumns={visibleColumns}
+        selectedPieceIds={selectedPieceIds}
+        onToggleSelection={handleToggleSelection}
+        onToggleSelectAll={handleToggleSelectAll}
+      />
+
+      {selectedPieceIds.length > 0 && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4">
+          <div className="bg-background border border-border shadow-xl rounded-full px-4 py-2 flex items-center gap-4">
+            <span className="text-sm font-medium">
+              {selectedPieceIds.length} {selectedPieceIds.length === 1 ? t("pieces.pieceSelected") || "peça selecionada" : t("pieces.piecesSelected") || "peças selecionadas"}
+            </span>
+            <div className="h-4 w-px bg-border" />
+            <div className="flex items-center gap-2">
+              <Button 
+                size="sm" 
+                className="gap-2 rounded-full h-8 px-4"
+                disabled={selectedPieceIds.length < 2}
+                onClick={() => setConvertSelectionDialogOpen(true)}
+                title={selectedPieceIds.length < 2 ? "Selecione ao menos 2 peças para criar um kit" : ""}
+              >
+                <Package className="w-3.5 h-3.5" />
+                {t("pieces.groupInKit") || "Agrupar em Kit"}
+              </Button>
+              <Button 
+                size="icon" 
+                variant="ghost" 
+                className="h-8 w-8 rounded-full"
+                onClick={() => setSelectedPieceIds([])}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ConvertSelectionToKitDialog
+        open={convertSelectionDialogOpen}
+        onOpenChange={setConvertSelectionDialogOpen}
+        campaignId={campaignId}
+        selectedPieceIds={selectedPieceIds}
+        kits={kits}
+        kitPieces={kitPieces}
+        pieces={pieces}
+        onSuccess={() => {
+          setSelectedPieceIds([]);
+          qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
+          qc.invalidateQueries({ queryKey: ["campaign_kits", campaignId] });
+          qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] });
+          if (refetch) refetch();
+        }}
+        onCreateNewKit={() => {
+          setPreSelectedForKit(selectedPieceIds);
+          setCreateKitDialogOpen(true);
+          setConvertSelectionDialogOpen(false);
+        }}
+        addKitPiece={addKitPiece}
+        updatePiece={updatePiece}
       />
 
       <CreateKitDialog
         open={createKitDialogOpen}
-        onOpenChange={setCreateKitDialogOpen}
+        onOpenChange={(open) => {
+          setCreateKitDialogOpen(open);
+          if (!open) setPreSelectedForKit([]);
+        }}
         campaignId={campaignId}
-        kitOnlyPieces={kitOnlyPieces}
+        kitOnlyPieces={pieces}
         existingKits={kits}
         existingPieces={pieces}
-        onCreateKit={(k) => addKit?.mutateAsync?.(k)}
-        onAddKitPiece={(kp) => addKitPiece?.mutateAsync?.(kp)}
-        onUpdateKit={(k) => updateKit?.mutateAsync?.(k)}
+        onCreateKit={(k: any) => addKit?.mutateAsync?.(k)}
+        onAddKitPiece={(kp: any) => addKitPiece?.mutateAsync?.(kp)}
+        onUpdateKit={(k: any) => updateKit?.mutateAsync?.(k)}
+        preSelectedPieceIds={preSelectedForKit}
       />
       <ImportPiecesFromCampaignDialog
         open={importPiecesDialogOpen}
@@ -608,5 +671,124 @@ export default function PiecesTab({
         onImport={handlePiecesImport}
       />
     </div>
+  );
+}
+
+interface ConvertSelectionToKitDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  campaignId: string;
+  selectedPieceIds: string[];
+  kits: any[];
+  kitPieces: any[];
+  pieces: any[];
+  onSuccess: () => void;
+  onCreateNewKit: () => void;
+  addKitPiece: any;
+  updatePiece: any;
+}
+
+function ConvertSelectionToKitDialog({
+  open, onOpenChange, campaignId, selectedPieceIds, kits, kitPieces, pieces, onSuccess, onCreateNewKit, addKitPiece, updatePiece
+}: ConvertSelectionToKitDialogProps) {
+  const { t } = useTranslation();
+  const [mode, setMode] = useState<"new" | "existing">("new");
+  const [selectedKitId, setSelectedKitId] = useState<string>("");
+  const [saving, setSaving] = useState(false);
+
+  const existingKits = useMemo(() => kits.filter(k => !k.is_deleted), [kits]);
+
+  const handleConfirm = async () => {
+    if (mode === "new") {
+      onCreateNewKit();
+      return;
+    }
+
+    if (!selectedKitId) return;
+
+    setSaving(true);
+    try {
+      const results = await Promise.allSettled(selectedPieceIds.map(async (pieceId) => {
+        // Check if piece is already in this kit
+        const alreadyInKit = kitPieces.some(kp => kp.kit_id === selectedKitId && kp.piece_id === pieceId);
+        if (alreadyInKit) return;
+
+        await addKitPiece.mutateAsync({ kit_id: selectedKitId, piece_id: pieceId });
+        await updatePiece.mutateAsync({ id: pieceId, kit_only: true });
+      }));
+
+      const errors = results.filter(r => r.status === "rejected");
+      if (errors.length > 0) {
+        toast.error(`${errors.length} peças falharam ao serem adicionadas.`);
+      } else {
+        const kit = existingKits.find(k => k.id === selectedKitId);
+        toast.success(t("pieces.piecesAddedToKit", { count: selectedPieceIds.length, kitName: kit?.name }) || `${selectedPieceIds.length} peças adicionadas ao kit ${kit?.name}`);
+      }
+      onSuccess();
+      onOpenChange(false);
+    } catch (error: any) {
+      toast.error("Erro ao adicionar peças: " + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t("pieces.addToKit") || "Adicionar ao Kit"}</DialogTitle>
+          <DialogDescription>
+            {t("pieces.addToKitDesc") || "Escolha se deseja criar um novo kit ou adicionar as peças selecionadas a um kit existente."}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <RadioGroup value={mode} onValueChange={(v: any) => setMode(v)}>
+            <div className="flex items-center space-x-2 p-3 rounded-lg border border-border bg-muted/20">
+              <RadioGroupItem value="new" id="mode-new" />
+              <Label htmlFor="mode-new" className="flex-1 cursor-pointer">
+                <span className="font-medium">{t("pieces.createNewKit") || "Criar novo kit"}</span>
+                <p className="text-xs text-muted-foreground">{t("pieces.createNewKitSub") || "Cria um novo agrupamento para estas peças"}</p>
+              </Label>
+            </div>
+            {existingKits.length > 0 && (
+              <div className="flex items-center space-x-2 p-3 rounded-lg border border-border bg-muted/20">
+                <RadioGroupItem value="existing" id="mode-existing" />
+                <Label htmlFor="mode-existing" className="flex-1 cursor-pointer">
+                  <span className="font-medium">{t("pieces.addToExistingKit") || "Adicionar a kit existente"}</span>
+                  <p className="text-xs text-muted-foreground">{t("pieces.addToExistingKitSub") || "Inclui as peças em um kit já cadastrado"}</p>
+                </Label>
+              </div>
+            )}
+          </RadioGroup>
+
+          {mode === "existing" && (
+            <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
+              <Label className="text-xs">{t("pieces.selectKit") || "Selecionar Kit"}</Label>
+              <Select value={selectedKitId} onValueChange={setSelectedKitId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("pieces.selectKitPlaceholder") || "Escolha um kit..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  {existingKits.map(k => (
+                    <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            {t("common.cancel")}
+          </Button>
+          <Button onClick={handleConfirm} disabled={saving || (mode === "existing" && !selectedKitId)}>
+            {saving ? t("common.wait") : t("common.continue")}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
