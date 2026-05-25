@@ -723,7 +723,9 @@
     "missingOs": "FALTA\nOT"
   },
   "installations": {
+    "photosSentShort": "Fotos enviadas",
     "title": "Instalaciones",
+
     "newInstallation": "Nueva Instalación",
     "empty": "No se encontraron instalaciones",
     "installer": "Instalador",
