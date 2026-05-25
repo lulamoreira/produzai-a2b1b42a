@@ -24,6 +24,8 @@ interface AddPieceDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   initialPiece?: any;
+  addPieceMutation?: any;
+  updatePieceMutation?: any;
 }
 
 const AddPieceDialog = ({ 
@@ -33,7 +35,9 @@ const AddPieceDialog = ({
   clientId,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
-  initialPiece
+  initialPiece,
+  addPieceMutation,
+  updatePieceMutation
 }: AddPieceDialogProps) => {
   const { t } = useTranslation();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -58,8 +62,11 @@ const AddPieceDialog = ({
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   
-  const addPiece = useAddCampaignPiece();
-  const updatePiece = useUpdateCampaignPiece();
+  const addCampaignPiece = useAddCampaignPiece();
+  const updateCampaignPiece = useUpdateCampaignPiece();
+  
+  const addPieceAction = addPieceMutation || addCampaignPiece;
+  const updatePieceAction = updatePieceMutation || updateCampaignPiece;
 
   useEffect(() => {
     if (initialPiece) {
