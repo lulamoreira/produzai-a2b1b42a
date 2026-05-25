@@ -174,85 +174,139 @@ export default function OccurrencesPortal() {
     return <div className="text-center py-16 text-muted-foreground">Nenhuma loja disponível.</div>;
   }
 
-          <div className="space-y-8">
-            {sortedStates.map((state) => {
-              const cities = Object.keys(grouped[state]).sort((a, b) => a.localeCompare(b, "pt-BR"));
-              return (
-                <section key={state}>
-                  <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-[#8C6F4E]" />
-                    {state}
-                  </h2>
-                  <div className="space-y-5">
-                    {cities.map((city) => {
-                      const cityStores = [...grouped[state][city]].sort((a, b) =>
-                        (a.client_stores?.name || "").localeCompare(b.client_stores?.name || "", "pt-BR")
-                      );
-                      return (
-                        <div key={city}>
-                          <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">
-                            {city}
-                          </h3>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                            {cityStores.map((s) => {
-                              const hasToken = !!s.token;
-                              const CardContent = (
-                                <div className="flex items-start gap-2">
-                                  <StoreIcon className="h-4 w-4 text-[#8C6F4E] mt-0.5 shrink-0" />
-                                  <div className="min-w-0">
-                                    <div className="font-medium text-sm text-foreground truncate">
-                                      {s.client_stores?.name}
-                                    </div>
-                                    {s.client_stores?.store_code && (
-                                      <div className="text-xs text-muted-foreground">
-                                        Cód: {s.client_stores.store_code}
-                                      </div>
-                                    )}
-                                    <div className="text-xs text-muted-foreground mt-0.5">
-                                      {s.client_stores?.city}
-                                      {s.client_stores?.state ? ` / ${s.client_stores.state}` : ""}
-                                    </div>
-                                    {!hasToken && (
-                                      <div className="text-[10px] text-destructive font-semibold uppercase mt-1">
-                                        Acesso não configurado
-                                      </div>
-                                    )}
-                                  </div>
-                                </div>
-                              );
-
-                              if (!hasToken || isModuleDisabled) {
-                                return (
-                                  <div
-                                    key={s.client_stores?.id}
-                                    className="rounded-lg border bg-card/50 p-4 opacity-70 grayscale flex flex-col gap-1 cursor-not-allowed"
-                                  >
-                                    {CardContent}
-                                  </div>
-                                );
-                              }
-
-                              return (
-                                <a
-                                  key={s.token}
-                                  href={`/loja/${s.token}`}
-                                  className="rounded-lg border bg-card p-4 hover:ring-2 hover:ring-[#8C6F4E]/50 cursor-pointer transition-all flex flex-col gap-1"
-                                >
-                                  {CardContent}
-                                </a>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              );
-            })}
+  return (
+    <div className="min-h-screen bg-background">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+        <header className="mb-8 sm:mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">{title}</h1>
+            <p className="text-sm sm:text-base text-muted-foreground mt-2">{subtitle}</p>
           </div>
+
+          {availableStates.length > 1 && (
+            <div className="w-full md:w-64">
+              <Select value={selectedState} onValueChange={setSelectedState}>
+                <SelectTrigger className="w-full">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <SelectValue placeholder="Filtrar por UF" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    <div className="flex items-center gap-2">
+                      <Globe className="h-4 w-4" />
+                      <span>Todos os Estados</span>
+                    </div>
+                  </SelectItem>
+                  {availableStates.map(state => (
+                    <SelectItem key={state} value={state}>
+                      {state}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </header>
+
+        {isModuleDisabled && (
+          <Alert variant="destructive" className="mb-8">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Módulo desativado</AlertTitle>
+            <AlertDescription>
+              O registro de ocorrências para esta campanha não está habilitado no momento.
+            </AlertDescription>
+          </Alert>
         )}
 
+        {isDeadlinePassed && !isModuleDisabled && (
+          <Alert className="mb-8 border-yellow-500 bg-yellow-50 dark:bg-yellow-900/10">
+            <Clock className="h-4 w-4 text-yellow-600" />
+            <AlertTitle className="text-yellow-800 dark:text-yellow-500">Prazo de ocorrências encerrado</AlertTitle>
+            <AlertDescription className="text-yellow-700 dark:text-yellow-400">
+              O prazo para registro de ocorrências expirou em {deadline?.toLocaleDateString("pt-BR")} às {deadline?.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' })}.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        <div className="space-y-8">
+          {sortedStates.map((state) => {
+            const cities = Object.keys(grouped[state]).sort((a, b) => a.localeCompare(b, "pt-BR"));
+            return (
+              <section key={state}>
+                <h2 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-[#8C6F4E]" />
+                  {state}
+                </h2>
+                <div className="space-y-5">
+                  {cities.map((city) => {
+                    const cityStores = [...grouped[state][city]].sort((a, b) =>
+                      (a.client_stores?.name || "").localeCompare(b.client_stores?.name || "", "pt-BR")
+                    );
+                    return (
+                      <div key={city}>
+                        <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">
+                          {city}
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                          {cityStores.map((s) => {
+                            const hasToken = !!s.token;
+                            const CardContent = (
+                              <div className="flex items-start gap-2">
+                                <StoreIcon className="h-4 w-4 text-[#8C6F4E] mt-0.5 shrink-0" />
+                                <div className="min-w-0">
+                                  <div className="font-medium text-sm text-foreground truncate">
+                                    {s.client_stores?.name}
+                                  </div>
+                                  {s.client_stores?.store_code && (
+                                    <div className="text-xs text-muted-foreground">
+                                      Cód: {s.client_stores.store_code}
+                                    </div>
+                                  )}
+                                  <div className="text-xs text-muted-foreground mt-0.5">
+                                    {s.client_stores?.city}
+                                    {s.client_stores?.state ? ` / ${s.client_stores.state}` : ""}
+                                  </div>
+                                  {!hasToken && (
+                                    <div className="text-[10px] text-destructive font-semibold uppercase mt-1">
+                                      Acesso não configurado
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+
+                            if (!hasToken || isModuleDisabled) {
+                              return (
+                                <div
+                                  key={s.client_stores?.id}
+                                  className="rounded-lg border bg-card/50 p-4 opacity-70 grayscale flex flex-col gap-1 cursor-not-allowed"
+                                >
+                                  {CardContent}
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <a
+                                key={s.token}
+                                href={`/loja/${s.token}`}
+                                className="rounded-lg border bg-card p-4 hover:ring-2 hover:ring-[#8C6F4E]/50 cursor-pointer transition-all flex flex-col gap-1"
+                              >
+                                {CardContent}
+                              </a>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
