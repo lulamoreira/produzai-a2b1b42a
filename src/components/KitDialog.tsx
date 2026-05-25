@@ -974,16 +974,16 @@ export function KitDetailDialog({
               <div className="space-y-1 max-h-[250px] overflow-y-auto border border-border rounded-lg p-2">
                 <label className="text-xs font-medium text-muted-foreground">{t("pieces.availablePiecesThisCampaign")}</label>
                 <Input
-                  placeholder="Buscar peça por nome, código ou localização..."
+                  placeholder={t("pieces.searchPiecePlaceholder")}
                   value={addPieceSearch}
                   onChange={(e) => setAddPieceSearch(e.target.value)}
                   className="h-7 text-xs mb-1"
                   autoFocus
                 />
                 {kitOnlyPiecesNotInKit.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-3">Nenhuma peça disponível.</p>
+                  <p className="text-xs text-muted-foreground text-center py-3">{t("pieces.noPieceAvailable")}</p>
                 ) : filteredAddPieces.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-3">Nenhuma peça encontrada.</p>
+                  <p className="text-xs text-muted-foreground text-center py-3">{t("pieces.noPieceFound")}</p>
                 ) : (
                   filteredAddPieces.map(p => (
                     <div key={p.id} className="flex items-center justify-between px-2 py-1.5 rounded border border-border hover:bg-muted/50">
