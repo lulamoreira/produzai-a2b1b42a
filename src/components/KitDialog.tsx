@@ -327,7 +327,7 @@ export function CreateKitDialog({
                       <span className="text-xs font-bold text-primary shrink-0">#{p.code}</span>
                       <span className="text-sm flex-1 break-words min-w-0">{p.name}</span>
                       <Button size="sm" variant="outline" className="text-xs gap-1 shrink-0 ml-2" onClick={() => handleAddPiece(p.id)}>
-                        <Plus className="w-3 h-3" /> {t("common.include")}
+                        <Plus className="w-3 h-3" /> {t("pieces.includeInKit")}
                       </Button>
                     </div>
                   ))}
@@ -489,7 +489,7 @@ export function KitDetailDialog({
       installation_instructions: editForm.installation_instructions,
     });
     setEditingPieceId(null);
-    toast.success("Peça atualizada!");
+    toast.success(t("pieces.pieceUpdated"));
   };
 
   const uploadPieceFile = async (pieceId: string, file: File) => {
@@ -551,7 +551,7 @@ export function KitDetailDialog({
                       }
                       setLocalKitName(safeName);
                       setEditingKitName(false);
-                      toast.success("Nome atualizado!");
+                      toast.success(t("pieces.nameUpdated"));
                       await onUpdateKit({ id: kit.id, name: safeName });
                     }
                   }}
@@ -566,10 +566,10 @@ export function KitDetailDialog({
                     }
                     setLocalKitName(safeName);
                     setEditingKitName(false);
-                    toast.success("Nome atualizado!");
+                    toast.success(t("pieces.nameUpdated"));
                     await onUpdateKit({ id: kit.id, name: safeName });
                   }
-                }}>Salvar</Button>
+                }}>{t("common.save")}</Button>
               </div>
             ) : (
               <span className="flex items-center gap-2">
@@ -583,7 +583,7 @@ export function KitDetailDialog({
               </span>
             )}
           </DialogTitle>
-          <DialogDescription>{piecesInKit.length} peça(s) neste kit</DialogDescription>
+          <DialogDescription>{t("pieces.pieceCountInKit", { count: piecesInKit.length })}</DialogDescription>
         </DialogHeader>
 
         {/* Kit image */}
@@ -607,8 +607,8 @@ export function KitDetailDialog({
         {canEdit && onUpdateKit && (
           <div className="flex items-center justify-between p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
             <div>
-              <label className="text-xs font-medium text-foreground">Mockup</label>
-              <p className="text-[10px] text-muted-foreground">Marcar kit e suas peças como mockup</p>
+              <label className="text-xs font-medium text-foreground">{t("common.mockup")}</label>
+              <p className="text-[10px] text-muted-foreground">{t("pieces.markKitMockupDesc")}</p>
             </div>
             <Switch
               checked={kit.is_mockup || false}
@@ -622,7 +622,7 @@ export function KitDetailDialog({
                     }
                   }
                 }
-                toast.success(checked ? "Kit marcado como mockup!" : "Mockup removido do kit!");
+                toast.success(checked ? t("pieces.kitMockupMarked") : t("pieces.kitMockupRemoved"));
               }}
             />
           </div>
@@ -632,14 +632,14 @@ export function KitDetailDialog({
         {canEdit && onUpdateKit && (
           <div className="flex items-center justify-between p-3 rounded-lg border border-green-500/20 bg-green-500/5">
             <div>
-              <label className="text-xs font-medium text-foreground">Kit Novo</label>
-              <p className="text-[10px] text-muted-foreground">Marcar como kit novo na campanha</p>
+              <label className="text-xs font-medium text-foreground">{t("pieces.newKit")}</label>
+              <p className="text-[10px] text-muted-foreground">{t("pieces.markNewKitDesc")}</p>
             </div>
             <Switch
               checked={(kit as any).is_new || false}
               onCheckedChange={async (checked) => {
                 await onUpdateKit({ id: kit.id, is_new: checked });
-                toast.success(checked ? "Kit marcado como novo!" : "Marcação de novo removida!");
+                toast.success(checked ? t("pieces.kitNewMarked") : t("pieces.kitNewRemoved"));
               }}
             />
           </div>
@@ -648,8 +648,8 @@ export function KitDetailDialog({
         {/* Kit location */}
         {canEdit && onUpdateKit && pieceLocations.length > 0 && (
           <div className="space-y-2 p-3 rounded-lg border border-border bg-muted/20">
-            <label className="text-xs font-medium text-foreground">Localização do Kit</label>
-            <p className="text-[10px] text-muted-foreground">Alterar a localização do kit atualiza todas as peças automaticamente.</p>
+            <label className="text-xs font-medium text-foreground">{t("pieces.kitLocation")}</label>
+            <p className="text-[10px] text-muted-foreground">{t("pieces.kitLocationDesc")}</p>
             <div className="grid grid-cols-2 gap-2">
               <Select
                 value={effectiveCategory || "__none__"}
@@ -666,11 +666,11 @@ export function KitDetailDialog({
                       }
                     }
                   }
-                  toast.success("Localização do kit atualizada!");
+                  toast.success(t("pieces.kitLocationUpdated"));
                 }}
               >
                 <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Selecione a localização" />
+                  <SelectValue placeholder={t("pieces.selectLocation")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">Nenhuma</SelectItem>
@@ -697,11 +697,11 @@ export function KitDetailDialog({
                         }
                       }
                     }
-                    toast.success("Sub-localização do kit atualizada!");
+                    toast.success(t("pieces.kitSubLocationUpdated"));
                   }}
                 >
                   <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="Sub-localização" />
+                    <SelectValue placeholder={t("pieces.subLocation")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">Nenhuma</SelectItem>
@@ -812,13 +812,13 @@ export function KitDetailDialog({
                       <div className="relative">
                         <input type="file" accept="image/*" onChange={(e) => handlePieceImageUpload(p.id, e)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                         <div className="flex items-center gap-1 px-2 py-1 rounded border border-dashed border-border text-[10px] text-muted-foreground hover:border-primary/50">
-                          <Image className="w-3 h-3" /> {p.image_url ? "Trocar (clique ou arraste)" : "Foto (clique ou arraste)"}
+                          <Image className="w-3 h-3" /> {p.image_url ? t("pieces.changePhoto") : t("pieces.addPhoto")}
                         </div>
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button size="sm" className="text-xs flex-1" onClick={saveEditPiece}>Salvar</Button>
-                      <Button size="sm" variant="outline" className="text-xs" onClick={() => setEditingPieceId(null)}>Cancelar</Button>
+                      <Button size="sm" className="text-xs flex-1" onClick={saveEditPiece}>{t("common.save")}</Button>
+                      <Button size="sm" variant="outline" className="text-xs" onClick={() => setEditingPieceId(null)}>{t("common.cancel")}</Button>
                     </div>
                   </div>
                 );
@@ -839,7 +839,7 @@ export function KitDetailDialog({
                         <span className="text-xs font-bold text-primary">#{p.code}</span>
                         <span className="font-medium text-sm break-words">{p.name}</span>
                         {dragOverPieceId === p.id && (
-                          <span className="text-[10px] text-primary font-medium">Solte para {p.image_url ? 'substituir' : 'adicionar'} imagem</span>
+                          <span className="text-[10px] text-primary font-medium">{p.image_url ? t("pieces.dropToChangeImage") : t("pieces.dropToAddImage")}</span>
                         )}
                       </div>
                       <p className="text-[11px] text-muted-foreground">{p.category} · {p.size || "—"}</p>
@@ -901,15 +901,15 @@ export function KitDetailDialog({
                       {onDeleteKitPiece && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/60 hover:text-destructive" title="Remover do kit">
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive/60 hover:text-destructive" title={t("pieces.removeFromKit")}>
                               <Trash2 className="w-3.5 h-3.5" />
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>Remover "{p.name}" do kit?</AlertDialogTitle>
+                              <AlertDialogTitle>{t("pieces.removePieceFromKitQuestion", { name: p.name })}</AlertDialogTitle>
                               <AlertDialogDescription>
-                                O que deseja fazer com esta peça?
+                                {t("pieces.removePieceFromKitDesc")}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter className="flex-col sm:flex-row gap-2 flex-wrap">
@@ -920,19 +920,19 @@ export function KitDetailDialog({
                                 }}
                                 className="bg-secondary text-secondary-foreground hover:bg-secondary/80"
                               >
-                                Manter peça (disponível para kits)
+                                {t("pieces.keepPieceInKits")}
                               </AlertDialogAction>
                               {onUpdatePiece && (
                                 <AlertDialogAction
                                   onClick={async () => {
                                     onDeleteKitPiece(kp.id);
                                     await onUpdatePiece({ id: p.id, kit_only: false });
-                                    toast.success(`Peça "${p.name}" agora é uma peça normal (fora do kit).`);
+                                    toast.success(t("pieces.convertToNormalPieceSuccess", { name: p.name }));
                                   }}
                                   className="bg-emerald-600 text-white hover:bg-emerald-700"
                                   title="Remove do kit e converte em peça comum, mantendo o mesmo código"
                                 >
-                                  Tornar peça normal (fora do kit)
+                                  {t("pieces.convertToNormalPiece")}
                                 </AlertDialogAction>
                               )}
                               {onDeletePiece && (
@@ -943,7 +943,7 @@ export function KitDetailDialog({
                                   }}
                                   className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                 >
-                                  Excluir peça permanentemente
+                                  {t("pieces.deletePiecePermanently")}
                                 </AlertDialogAction>
                               )}
                             </AlertDialogFooter>
@@ -968,22 +968,22 @@ export function KitDetailDialog({
           <div>
             {!showAddPieces ? (
               <Button variant="outline" size="sm" className="w-full text-xs gap-1" onClick={() => setShowAddPieces(true)}>
-                <Plus className="w-3 h-3" /> Incluir mais peças
+                <Plus className="w-3 h-3" /> {t("pieces.addMorePieces")}
               </Button>
             ) : (
               <div className="space-y-1 max-h-[250px] overflow-y-auto border border-border rounded-lg p-2">
-                <label className="text-xs font-medium text-muted-foreground">Peças disponíveis desta campanha</label>
+                <label className="text-xs font-medium text-muted-foreground">{t("pieces.availablePiecesThisCampaign")}</label>
                 <Input
-                  placeholder="Buscar peça por nome, código ou localização..."
+                  placeholder={t("pieces.searchPiecePlaceholder")}
                   value={addPieceSearch}
                   onChange={(e) => setAddPieceSearch(e.target.value)}
                   className="h-7 text-xs mb-1"
                   autoFocus
                 />
                 {kitOnlyPiecesNotInKit.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-3">Nenhuma peça disponível.</p>
+                  <p className="text-xs text-muted-foreground text-center py-3">{t("pieces.noPieceAvailable")}</p>
                 ) : filteredAddPieces.length === 0 ? (
-                  <p className="text-xs text-muted-foreground text-center py-3">Nenhuma peça encontrada.</p>
+                  <p className="text-xs text-muted-foreground text-center py-3">{t("pieces.noPieceFound")}</p>
                 ) : (
                   filteredAddPieces.map(p => (
                     <div key={p.id} className="flex items-center justify-between px-2 py-1.5 rounded border border-border hover:bg-muted/50">
@@ -993,12 +993,12 @@ export function KitDetailDialog({
                         <span className="text-xs truncate">{p.name}</span>
                       </div>
                       <Button size="sm" variant="outline" className="text-[10px] h-6 gap-1" onClick={async () => { await onAddKitPiece({ kit_id: kit.id, piece_id: p.id }); }}>
-                        <Plus className="w-2.5 h-2.5" /> Incluir
+                        <Plus className="w-2.5 h-2.5" /> {t("pieces.includeInKit")}
                       </Button>
                     </div>
                   ))
                 )}
-                <Button variant="ghost" size="sm" className="w-full text-xs mt-1" onClick={() => { setShowAddPieces(false); setAddPieceSearch(""); }}>Fechar</Button>
+                <Button variant="ghost" size="sm" className="w-full text-xs mt-1" onClick={() => { setShowAddPieces(false); setAddPieceSearch(""); }}>{t("common.close")}</Button>
               </div>
             )}
           </div>
@@ -1015,13 +1015,13 @@ export function KitDetailDialog({
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
-                  <AlertDialogTitle>Excluir kit "{kit.name}"?</AlertDialogTitle>
+                  <AlertDialogTitle>{t("pieces.deleteKitQuestionWithName", { name: kit.name })}</AlertDialogTitle>
                   <AlertDialogDescription>O kit será removido. As peças que o compõem continuarão existindo.</AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
                   <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => { onDeleteKit(kit.id); onOpenChange(false); }}>
-                    Excluir
+                    {t("common.delete")}
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
