@@ -583,7 +583,7 @@ export function KitDetailDialog({
               </span>
             )}
           </DialogTitle>
-          <DialogDescription>{piecesInKit.length} peça(s) neste kit</DialogDescription>
+          <DialogDescription>{t("pieces.pieceCountInKit", { count: piecesInKit.length })}</DialogDescription>
         </DialogHeader>
 
         {/* Kit image */}
@@ -607,8 +607,8 @@ export function KitDetailDialog({
         {canEdit && onUpdateKit && (
           <div className="flex items-center justify-between p-3 rounded-lg border border-amber-500/20 bg-amber-500/5">
             <div>
-              <label className="text-xs font-medium text-foreground">Mockup</label>
-              <p className="text-[10px] text-muted-foreground">Marcar kit e suas peças como mockup</p>
+              <label className="text-xs font-medium text-foreground">{t("common.mockup")}</label>
+              <p className="text-[10px] text-muted-foreground">{t("pieces.markKitMockupDesc")}</p>
             </div>
             <Switch
               checked={kit.is_mockup || false}
@@ -632,8 +632,8 @@ export function KitDetailDialog({
         {canEdit && onUpdateKit && (
           <div className="flex items-center justify-between p-3 rounded-lg border border-green-500/20 bg-green-500/5">
             <div>
-              <label className="text-xs font-medium text-foreground">Kit Novo</label>
-              <p className="text-[10px] text-muted-foreground">Marcar como kit novo na campanha</p>
+              <label className="text-xs font-medium text-foreground">{t("pieces.newKit")}</label>
+              <p className="text-[10px] text-muted-foreground">{t("pieces.markNewKitDesc")}</p>
             </div>
             <Switch
               checked={(kit as any).is_new || false}
@@ -648,8 +648,8 @@ export function KitDetailDialog({
         {/* Kit location */}
         {canEdit && onUpdateKit && pieceLocations.length > 0 && (
           <div className="space-y-2 p-3 rounded-lg border border-border bg-muted/20">
-            <label className="text-xs font-medium text-foreground">Localização do Kit</label>
-            <p className="text-[10px] text-muted-foreground">Alterar a localização do kit atualiza todas as peças automaticamente.</p>
+            <label className="text-xs font-medium text-foreground">{t("pieces.kitLocation")}</label>
+            <p className="text-[10px] text-muted-foreground">{t("pieces.kitLocationDesc")}</p>
             <div className="grid grid-cols-2 gap-2">
               <Select
                 value={effectiveCategory || "__none__"}
@@ -670,7 +670,7 @@ export function KitDetailDialog({
                 }}
               >
                 <SelectTrigger className="h-8 text-xs">
-                  <SelectValue placeholder="Selecione a localização" />
+                  <SelectValue placeholder={t("pieces.selectLocation")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="__none__">Nenhuma</SelectItem>
@@ -701,7 +701,7 @@ export function KitDetailDialog({
                   }}
                 >
                   <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="Sub-localização" />
+                    <SelectValue placeholder={t("pieces.subLocation")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="__none__">Nenhuma</SelectItem>
