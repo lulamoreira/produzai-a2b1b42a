@@ -569,7 +569,7 @@ export function KitDetailDialog({
                     toast.success(t("pieces.nameUpdated"));
                     await onUpdateKit({ id: kit.id, name: safeName });
                   }
-                }}>Salvar</Button>
+                }}>{t("common.save")}</Button>
               </div>
             ) : (
               <span className="flex items-center gap-2">
