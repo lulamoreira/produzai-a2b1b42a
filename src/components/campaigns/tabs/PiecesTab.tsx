@@ -588,6 +588,16 @@ export default function PiecesTab({
         onToggleSelectAll={handleToggleSelectAll}
       />
 
+      <AddPieceDialog
+        open={editingPiece !== null}
+        onOpenChange={(open) => { if (!open) setEditingPiece(null); }}
+        initialPiece={editingPiece}
+        existingPieces={pieces}
+        customFieldLabels={customFieldLabels}
+        campaignId={campaignId}
+        clientId={clientId}
+      />
+
       {selectedPieceIds.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4">
           <div className="bg-background border border-border shadow-xl rounded-full px-4 py-2 flex items-center gap-4">
