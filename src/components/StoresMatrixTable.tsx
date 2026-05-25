@@ -776,6 +776,20 @@ export default function StoresMatrixTable({
                               className="scale-75"
                             />
                             <span className="text-xs text-muted-foreground">{isTrue ? "Sim" : "Não"}</span>
+                            {isAnchor && !editingCell && (
+                              <TooltipProvider>
+                                <Tooltip open={true}>
+                                  <TooltipTrigger asChild>
+                                    <div className="w-0 h-0" />
+                                  </TooltipTrigger>
+                                  <TooltipContent side="bottom" className="text-[10px] py-1 px-2 z-50">
+                                    <div className="flex items-center gap-1.5">
+                                      <kbd className="bg-muted px-1 rounded border">Ctrl+V</kbd> para colar • <kbd className="bg-muted px-1 rounded border">Esc</kbd>
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
                           </div>
                         ) : (
                           <span className="text-xs px-1 text-gray-900 dark:text-gray-100">{isTrue ? "Sim" : "Não"}</span>
