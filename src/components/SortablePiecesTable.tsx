@@ -468,6 +468,7 @@ export default function SortablePiecesTable({
                     stores={stores}
                     kitCategory={row.type === "kit" ? getKitCategory(row.data) : ""}
                     customFieldLabels={customFieldLabels}
+                    visibleColumns={visibleColumns}
                   />
                 );
               })}
