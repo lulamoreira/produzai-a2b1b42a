@@ -766,6 +766,10 @@ const ClientDetail = () => {
       }
 
       const existing = existingByName.get(item.name.trim().toLowerCase());
+      
+      // Update progress before potentially long await
+      if (onProgress) onProgress(i + 1, rows.length, item.name);
+
       if (existing && updateExisting) {
         await updateStore.mutateAsync({ id: existing.id, ...item });
         updated++;
