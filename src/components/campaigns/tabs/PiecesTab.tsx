@@ -22,7 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { exportCampaignPieces } from "@/lib/exportMultiClient";
-import SortablePiecesTable from "@/components/SortablePiecesTable";
+import SortablePiecesTable, { type UnifiedRow } from "@/components/SortablePiecesTable";
 import ExportReportDropdown from "@/components/ExportReportDropdown";
 import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
 import ImportPiecesFromCampaignDialog from "@/components/ImportPiecesFromCampaignDialog";
