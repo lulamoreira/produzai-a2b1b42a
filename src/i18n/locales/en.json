@@ -316,6 +316,7 @@
     "clients": "Clients",
     "campaigns": "Campaigns",
     "admin": "Administration",
+    "administration": "Administration",
     "approvals": "Approvals",
     "chat": "Chat",
     "myCampaigns": "My Campaigns",
@@ -921,6 +922,7 @@
   },
   "admin": {
     "title": "Administration",
+    "home": "Home",
     "users": "Users",
     "permissions": "Permissions",
     "categories": "Categories",
