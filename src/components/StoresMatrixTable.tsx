@@ -514,7 +514,7 @@ export default function StoresMatrixTable({
                         <TableCell
                           key={col.key}
                           className={cn(
-                            "font-medium sticky left-0 z-[5]",
+                            "font-medium sticky left-0 z-[5] text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700",
                             // Always-on opaque bg matching row state so the frozen
                             // column never goes transparent during horizontal scroll.
                             "bg-white dark:bg-gray-900 text-gray-900 dark:text-gray-100 group-hover:bg-gray-100 dark:group-hover:bg-gray-700 transition-colors",
@@ -539,7 +539,7 @@ export default function StoresMatrixTable({
                     const boolVal = (store as any)[col.storeField];
                     const isTrue = boolVal === "true" || boolVal === true;
                     return (
-                      <TableCell key={col.key} className="p-1">
+                      <TableCell key={col.key} className="p-1 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
                         {canEdit ? (
                           <div className="flex items-center justify-center gap-1.5 px-1 py-0.5 min-h-[28px]">
                             <Switch
