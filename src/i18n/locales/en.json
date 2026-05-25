@@ -564,6 +564,8 @@
     "availablePiecesForKit": "Available pieces to add",
     "includeInKit": "Include",
     "addToKit": "Add to Kit",
+    "kitLocation": "Store Location",
+    "kitLocationUpdated": "Location updated for all pieces in the kit",
     "addToKitTitle": "Add to Kit",
     "editPieceTitle": "Edit Piece",
     "pieceUpdated": "Piece updated successfully",
