@@ -540,7 +540,9 @@
     }
   },
   "pieces": {
+    "registered": "Piezas registradas",
     "title": "Piezas",
+
     "new": "Nueva Pieza",
     "newPiece": "Nueva Pieza",
     "kit": "Kit",
