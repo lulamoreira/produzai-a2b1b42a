@@ -249,10 +249,15 @@ export default function ImportWizardDialog({
 
   // ─── Validation ───────────────────────────────────────────────────────────
   const requiredKeys = systemFields.filter((f) => f.required).map((f) => f.key);
-  const mappedSystemKeys = useMemo(
-    () => new Set(Object.values(mapping).filter((v) => v !== IGNORE)),
-    [mapping],
-  );
+  const mappedSystemKeys = useMemo(() => {
+    const keys = new Set<string>();
+    Object.values(mapping).forEach((v) => {
+      if (v === IGNORE) return;
+      const field = systemFields.find((f) => f.key === v || f.label === v);
+      keys.add(field ? field.key : v);
+    });
+    return keys;
+  }, [mapping, systemFields]);
   const missingRequired = requiredKeys.filter((k) => !mappedSystemKeys.has(k));
   const canAdvanceFromStep2 = missingRequired.length === 0;
 
