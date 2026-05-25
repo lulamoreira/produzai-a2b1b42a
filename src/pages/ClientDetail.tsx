@@ -1743,6 +1743,7 @@ const ClientDetail = () => {
         onOpenChange={setStoreImportOpen}
         mode="stores"
         existingItems={stores.map(s => ({ name: s.name, id: s.id }))}
+        clientId={clientId}
         onImport={handleStoresImport}
       />
     </AppLayout>
