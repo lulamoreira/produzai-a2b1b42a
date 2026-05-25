@@ -207,7 +207,7 @@ function SortableRow({
       )}
       <TableCell>
         <button
-          className="font-medium text-left hover:text-primary hover:underline transition-colors"
+          className="font-medium text-left hover:text-primary hover:underline transition-colors w-full"
           onClick={() => onEdit(piece)}
         >
           <span className="flex items-center gap-1.5 flex-wrap">
