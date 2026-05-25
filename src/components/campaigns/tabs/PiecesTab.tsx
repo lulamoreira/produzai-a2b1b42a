@@ -106,6 +106,7 @@ export default function PiecesTab({
   const [orderByLocationOpen, setOrderByLocationOpen] = useState(false);
   const [pptExportOpen, setPptExportOpen] = useState(false);
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
+  const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
   
   const [configLabels, setConfigLabels] = useState({
     field1: campaign?.piece_custom_field_1_label || "",
@@ -143,6 +144,7 @@ export default function PiecesTab({
       if (error) throw error;
       toast.success("Labels salvos com sucesso!");
       qc.invalidateQueries({ queryKey: ["campaign", campaignId] });
+      setCustomFieldsOpen(false);
     } catch (error: any) {
       toast.error("Erro ao salvar: " + error.message);
     } finally {
@@ -220,7 +222,7 @@ export default function PiecesTab({
           {canEditPieces && (
             <>
               {isAdminOrMaster && (
-                <Popover>
+                <Popover open={customFieldsOpen} onOpenChange={setCustomFieldsOpen}>
                   <PopoverTrigger asChild>
                     <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1">
                       <Settings2 className="w-3.5 h-3.5" />
