@@ -609,9 +609,17 @@ export default function ImportWizardDialog({
             </div>
 
             {importing && (
-              <div className="space-y-1">
-                <Progress value={progress} className="h-2" />
-                <p className="text-xs text-muted-foreground text-center">Importando...</p>
+              <div className="space-y-2 mt-4">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Importando lojas...</span>
+                  <span>{importProgress.current} de {importProgress.total}</span>
+                </div>
+                <Progress value={(importProgress.current / (importProgress.total || 1)) * 100} className="h-2" />
+                {currentStoreName && (
+                  <p className="text-[10px] text-muted-foreground truncate italic">
+                    Processando: {currentStoreName}
+                  </p>
+                )}
               </div>
             )}
           </div>
