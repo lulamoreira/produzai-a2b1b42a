@@ -771,7 +771,7 @@ export function KitDetailDialog({
           return (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
               <SortableContext items={piecesInKit.map(kp => kp.id)} strategy={verticalListSortingStrategy}>
-                <div className="space-y-2 max-h-[350px] overflow-y-auto">
+                <div className="space-y-2">
                   {piecesInKit.map((kp, idx) => (
                     <SortableKitPieceRow
                       key={kp.id}
