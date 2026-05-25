@@ -343,7 +343,7 @@ const ClientDetail = () => {
     },
     enabled: !!agencyId,
   });
-  const { data: stores = [], isLoading: loadingStores } = useClientStores(clientId);
+  const { data: stores = [], isLoading: loadingStores, refetch: refetchStores } = useClientStores(clientId);
   const addCampaign = useAddCampaign();
   const deleteCampaign = useDeleteCampaign();
   const updateCampaign = useUpdateCampaign();
@@ -778,6 +778,9 @@ const ClientDetail = () => {
         added++;
       }
     }
+    
+    await refetchStores();
+    
     const parts: string[] = [];
     if (added > 0) parts.push(`${added} adicionada(s)`);
     if (updated > 0) parts.push(`${updated} atualizada(s)`);
