@@ -281,7 +281,7 @@ const EditableCell = React.memo(function EditableCell({
   return (
     <div
       ref={cellRef}
-      className="cursor-pointer hover:bg-accent/50 rounded px-1 py-0.5 min-h-[28px] flex items-center text-xs transition-colors"
+      className="cursor-pointer hover:bg-accent/50 rounded px-1 py-0.5 min-h-[28px] flex items-center text-xs text-foreground transition-colors"
       onClick={onStartEdit}
       tabIndex={0}
       onKeyDown={(e) => {
