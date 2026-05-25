@@ -91,6 +91,16 @@ const CampaignDetail = () => {
   });
 
   const updateCampaign = useUpdateCampaign();
+  const addPiece = useAddCampaignPiece();
+  const updatePiece = useUpdateCampaignPiece();
+  const deletePiece = useDeleteCampaignPiece();
+  const addKit = useAddCampaignKit();
+  const updateKit = useUpdateCampaignKit();
+  const deleteKit = useDeleteCampaignKit();
+  const addKitPiece = useAddCampaignKitPiece();
+  const updateKitPiece = useUpdateCampaignKitPiece();
+  const deleteKitPiece = useDeleteCampaignKitPiece();
+  const reorderKitPieces = useReorderCampaignKitPieces();
 
 
   const [activeSection, setActiveSectionState] = useState<string | null>(() => {
@@ -292,8 +302,8 @@ const CampaignDetail = () => {
                 campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
                 pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
                 canEditPieces={true} canDeletePieces={true} pieceLocations={pieceLocations} pieceSubLocations={pieceSubLocations}
-                addPiece={{}} updatePiece={{}} deletePiece={{}} addKit={{}} updateKit={{}} deleteKit={{}}
-                addKitPiece={{}} updateKitPiece={{}} deleteKitPiece={{}} reorderKitPieces={{}}
+                addPiece={addPiece} updatePiece={updatePiece} deletePiece={deletePiece} addKit={addKit} updateKit={updateKit} deleteKit={deleteKit}
+                addKitPiece={addKitPiece} updateKitPiece={updateKitPiece} deleteKitPiece={deleteKitPiece} reorderKitPieces={reorderKitPieces}
                 handleRecodificar={() => {}} handleReviewPieceCodes={() => {}} handleDistributePiece={() => {}}
               />
             </TabsContent>
