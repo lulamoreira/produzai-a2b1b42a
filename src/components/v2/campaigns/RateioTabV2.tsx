@@ -98,9 +98,24 @@ export default function RateioTabV2({
   const { t } = useTranslation();
   const { isAdminOrMaster } = useUserRole();
   const updatePieceQty = useUpdateCampaignStorePiece();
+  const queryClient = useQueryClient();
   
   const [rateioView, setRateioView] = useState("planilha");
   const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(true);
+  
+  // Excel Paste state
+  const [anchorCell, setAnchorCell] = useState<{ rowIndex: number; colIndex: number } | null>(null);
+  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState<{ 
+    storeId: string; 
+    pieceId: string; 
+    oldValue: number; 
+    newValue: number; 
+    storeName: string; 
+    pieceName: string;
+    isIgnored: boolean;
+  }[]>([]);
+  const [isApplyingPaste, setIsApplyingPaste] = useState(false);
   const [storeSearch, setStoreSearch] = useState("");
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
