@@ -76,7 +76,7 @@ const STORE_FIELDS: SystemField[] = [
 
 const PIECE_FIELDS: SystemField[] = [
   { key: "name", label: "Nome", required: true },
-  { key: "code", label: "Código", required: true },
+  { key: "code", label: "Código" },
   { key: "category", label: "Localização" },
   { key: "size", label: "Tamanho" },
   { key: "specification", label: "Especificação" },
