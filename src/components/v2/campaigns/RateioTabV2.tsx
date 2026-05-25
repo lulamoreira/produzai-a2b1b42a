@@ -265,6 +265,31 @@ export default function RateioTabV2({
     return result;
   }, [stores, storeSearch, storeFilters, sortConfig, storeSortField]);
 
+  useEffect(() => {
+    const container = gridContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      setShowScrollTop(scrollTop > 200);
+      // Show bottom button if we are not at the very end (with some buffer)
+      setShowScrollBottom(scrollTop + clientHeight < scrollHeight - 100);
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    // Initial check
+    handleScroll();
+    
+    // Also check when data changes
+    const observer = new ResizeObserver(handleScroll);
+    observer.observe(container);
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      observer.disconnect();
+    };
+  }, [filteredStores]);
+
   // Build unified columns (pieces + kits) ordered like the Pieces module
   // (display_order, piece-before-kit on ties). Kit-only pieces are hidden.
   type ColumnItem = {
