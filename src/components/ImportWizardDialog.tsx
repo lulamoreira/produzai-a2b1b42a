@@ -43,7 +43,10 @@ export interface ImportWizardDialogProps {
   clientId?: string;
   onImport: (
     rows: Record<string, string>[],
-    options: { updateExisting: boolean },
+    options: { 
+      updateExisting: boolean;
+      onProgress?: (current: number, total: number, name?: string) => void;
+    },
   ) => Promise<void>;
   trigger?: React.ReactNode;
 }
@@ -142,7 +145,8 @@ export default function ImportWizardDialog({
   const [loadingAI, setLoadingAI] = useState(false);
   const [updateExisting, setUpdateExisting] = useState(true);
   const [importing, setImporting] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
+  const [currentStoreName, setCurrentStoreName] = useState('');
 
 
   // Reset on close
@@ -158,7 +162,8 @@ export default function ImportWizardDialog({
       setLoadingAI(false);
       setUpdateExisting(true);
       setImporting(false);
-      setProgress(0);
+      setImportProgress({ current: 0, total: 0 });
+      setCurrentStoreName('');
     }
   }, [open]);
 
@@ -319,12 +324,17 @@ export default function ImportWizardDialog({
       return;
     }
     setImporting(true);
-    setProgress(0);
+    setImportProgress({ current: 0, total: valid.length });
+    setCurrentStoreName('');
+    
     try {
-      // Wrap onImport so progress can advance — we expose a chunked-style call.
-      // The caller decides processing order. We just animate progress to 100%.
-      await onImport(valid, { updateExisting });
-      setProgress(100);
+      await onImport(valid, { 
+        updateExisting,
+        onProgress: (current, total, name) => {
+          setImportProgress({ current, total });
+          if (name) setCurrentStoreName(name);
+        }
+      });
       toast.success(t("common.import") + " concluída: " + valid.length + " registro(s).");
       onOpenChange(false);
     } catch (e: any) {
@@ -599,9 +609,17 @@ export default function ImportWizardDialog({
             </div>
 
             {importing && (
-              <div className="space-y-1">
-                <Progress value={progress} className="h-2" />
-                <p className="text-xs text-muted-foreground text-center">Importando...</p>
+              <div className="space-y-2 mt-4">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Importando lojas...</span>
+                  <span>{importProgress.current} de {importProgress.total}</span>
+                </div>
+                <Progress value={(importProgress.current / (importProgress.total || 1)) * 100} className="h-2" />
+                {currentStoreName && (
+                  <p className="text-[10px] text-muted-foreground truncate italic">
+                    Processando: {currentStoreName}
+                  </p>
+                )}
               </div>
             )}
           </div>
