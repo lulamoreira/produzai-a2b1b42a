@@ -321,19 +321,15 @@ export default function MatrixTab({
                  <StoresMatrixTable 
                     clientId={clientId}
                     campaignId={campaignId}
-                    stores={stores.filter(s => {
-                      const q = storeSearch.toLowerCase().trim();
-                      return !q || Object.values(s).some(val => 
-                        (typeof val === 'string' || typeof val === 'number') && 
-                        val.toString().toLowerCase().includes(q)
-                      );
-                    })}
+                    stores={sortedStores}
                     customFieldLabels={customFieldLabels}
                     canEdit={canEditCampaignStores && isViewingVigente}
                     onUpdateStore={handleUpdateStorePiece}
                     storeSearch={storeSearch}
                     storeStateFilter=""
+                    disableInternalSort={true}
                  />
+
 
                </div>
             </TabsContent>
