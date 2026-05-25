@@ -536,7 +536,7 @@ export function KitDetailDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditingPieceId(null); setShowAddPieces(false); setEditingKitName(false); setLocalImageUrl(undefined); setLocalKitName(undefined); setLocalCategory(undefined); setLocalSubLocation(undefined); } onOpenChange(v); }}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl flex flex-col max-h-[90vh] p-0 overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Package className="w-5 h-5 text-primary" />
