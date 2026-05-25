@@ -57,12 +57,13 @@ interface SortableRowProps {
   qtyMap: Record<string, number>;
   stores: ClientStore[];
   kitCategory: string;
+  customFieldLabels?: (string | null)[];
 }
 
 function SortableRow({
   row, pieceTotal, canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit,
-  isDistributed, kitCategory,
+  isDistributed, kitCategory, customFieldLabels
 }: SortableRowProps) {
   const { t } = useTranslation();
   const id = row.type === "piece" ? row.data.id : `kit-${row.data.id}`;
@@ -114,6 +115,12 @@ function SortableRow({
         <TableCell className="hidden lg:table-cell">—</TableCell>
         <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">—</TableCell>
         <TableCell className="text-sm text-muted-foreground hidden xl:table-cell">—</TableCell>
+        
+        {customFieldLabels?.map((label, i) => {
+          if (!label) return null;
+          return <TableCell key={`custom-${i}`} className="text-sm text-muted-foreground hidden xl:table-cell">—</TableCell>;
+        })}
+
         <TableCell className="text-center font-semibold">{pieceTotal}</TableCell>
         {(canEditPieces || canDeletePieces) && (
           <TableCell>
@@ -200,6 +207,13 @@ function SortableRow({
       </TableCell>
       <TableCell className="text-sm text-muted-foreground hidden lg:table-cell whitespace-pre-wrap">{piece.specification}</TableCell>
       <TableCell className="text-sm text-muted-foreground hidden xl:table-cell whitespace-pre-wrap">{piece.installation_instructions}</TableCell>
+      
+      {customFieldLabels?.map((label, i) => {
+        if (!label) return null;
+        const value = (piece as any)[`custom_field_${i + 1}`];
+        return <TableCell key={`custom-${i}`} className="text-sm text-muted-foreground hidden xl:table-cell whitespace-nowrap">{value || "—"}</TableCell>;
+      })}
+
       <TableCell className="text-center font-semibold">{pieceTotal}</TableCell>
       {(canEditPieces || canDeletePieces) && (
         <TableCell>
@@ -286,12 +300,14 @@ interface SortablePiecesTableProps {
   onDuplicate: (piece: CampaignPiece) => void;
   onDuplicateKit: (kit: CampaignKit) => void;
   onReorder: (rows: UnifiedRow[]) => void;
+  customFieldLabels?: (string | null)[];
 }
 
 export default function SortablePiecesTable({
   pieces, kits, kitPieces: kitPiecesList, allPieces, stores, qtyMap,
   canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit, onReorder,
+  customFieldLabels
 }: SortablePiecesTableProps) {
   const { t } = useTranslation();
   const sensors = useSensors(
@@ -372,6 +388,12 @@ export default function SortablePiecesTable({
               <TableHead className="hidden lg:table-cell">{t("common.model")}</TableHead>
               <TableHead className="hidden lg:table-cell">{t("pieces.specification")}</TableHead>
               <TableHead className="hidden xl:table-cell">{t("pieces.installationInstructions")}</TableHead>
+              
+              {customFieldLabels?.map((label, i) => {
+                if (!label) return null;
+                return <TableHead key={`custom-head-${i}`} className="hidden xl:table-cell">{label}</TableHead>;
+              })}
+
               <TableHead className="text-center w-[60px]">{t("common.total")}</TableHead>
               {(canEditPieces || canDeletePieces) && <TableHead className="w-[80px]">{t("common.actions")}</TableHead>}
             </TableRow>
@@ -404,6 +426,7 @@ export default function SortablePiecesTable({
                     qtyMap={qtyMap}
                     stores={stores}
                     kitCategory={row.type === "kit" ? getKitCategory(row.data) : ""}
+                    customFieldLabels={customFieldLabels}
                   />
                 );
               })}
