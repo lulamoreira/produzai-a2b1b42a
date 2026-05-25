@@ -3,7 +3,8 @@ import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
   Search, Filter, Download, Sparkles, Copy, MoreHorizontal, Lock, CheckCircle2,
-  Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw, X, Clipboard
+  Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw, X, Clipboard,
+  ArrowUpDown, Check
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -168,6 +169,34 @@ export default function RateioTabV2({
   // Sorting state - "state" or null (default alpha)
   const [sortConfig, setSortConfig] = useState<{ key: "state"; direction: "asc" | "desc" } | null>(null);
 
+  // Persisted sort field per campaign
+  const sortStorageKey = `rateio_sort_field_${campaignId}`;
+  const [storeSortField, setStoreSortField] = useState<string>(() => {
+    try {
+      return localStorage.getItem(sortStorageKey) || "name";
+    } catch { return "name"; }
+  });
+
+  const sortFieldOptions = useMemo(() => {
+    const base = [
+      { value: "name", label: t("stores.name", "Nome") },
+      { value: "city", label: t("stores.city", "Cidade") },
+      { value: "state", label: t("stores.state", "Estado") },
+      { value: "store_model", label: t("filters.storeCategory", "Categoria de Loja") },
+    ];
+    customFieldLabels.forEach((cf) => {
+      base.push({ value: `custom_field_${cf.index}`, label: cf.label });
+    });
+    return base;
+  }, [customFieldLabels, t]);
+
+  const currentSortLabel = sortFieldOptions.find(o => o.value === storeSortField)?.label || storeSortField;
+
+  const handleSortFieldChange = (field: string) => {
+    setStoreSortField(field);
+    try { localStorage.setItem(sortStorageKey, field); } catch {}
+  };
+
   const toggleSort = (key: "state") => {
     setSortConfig(prev => {
       if (!prev) return { key, direction: "asc" };
@@ -193,32 +222,33 @@ export default function RateioTabV2({
       return matchesSearch;
     });
 
-    // Apply sorting logic
+    // Apply sorting: legacy state toggle takes priority, otherwise persisted field
     result = [...result].sort((a, b) => {
-      // 1. If sorting by state
       if (sortConfig?.key === "state") {
         const stateA = (a.state || "").toString().trim().toLowerCase();
         const stateB = (b.state || "").toString().trim().toLowerCase();
-        
         if (stateA !== stateB) {
           return sortConfig.direction === "asc" 
             ? stateA.localeCompare(stateB, undefined, { numeric: true, sensitivity: 'base' })
             : stateB.localeCompare(stateA, undefined, { numeric: true, sensitivity: 'base' });
         }
-        // If states are equal, always sort by name asc
         const nameA = (a.name || "").toString().trim().toLowerCase();
         const nameB = (b.name || "").toString().trim().toLowerCase();
         return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
       }
 
-      // 2. Default sorting: alphabetic by name asc
+      const valA = ((a as any)[storeSortField] ?? "").toString().trim().toLowerCase();
+      const valB = ((b as any)[storeSortField] ?? "").toString().trim().toLowerCase();
+      const cmp = valA.localeCompare(valB, 'pt-BR', { numeric: true, sensitivity: 'base' });
+      if (cmp !== 0) return cmp;
+      // Tiebreaker: name asc
       const nameA = (a.name || "").toString().trim().toLowerCase();
       const nameB = (b.name || "").toString().trim().toLowerCase();
-      return nameA.localeCompare(nameB, undefined, { numeric: true, sensitivity: 'base' });
+      return nameA.localeCompare(nameB, 'pt-BR', { numeric: true, sensitivity: 'base' });
     });
 
     return result;
-  }, [stores, storeSearch, storeFilters, sortConfig]);
+  }, [stores, storeSearch, storeFilters, sortConfig, storeSortField]);
 
   // Build unified columns (pieces + kits) ordered like the Pieces module
   // (display_order, piece-before-kit on ties). Kit-only pieces are hidden.
@@ -686,6 +716,33 @@ export default function RateioTabV2({
                   <Filter className="w-3 h-3" />
                   {t("common.filters", "Filtros")}
                 </Button>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 text-[11px] font-bold uppercase tracking-wider gap-2 px-3"
+                      title={t("common.sortBy", "Ordenar por")}
+                    >
+                      <ArrowUpDown className="w-3 h-3" />
+                      <span>{t("common.sortBy", "Ordenar por")}:</span>
+                      <span className="text-[#C2714F]">{currentSortLabel}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="w-56 max-h-72 overflow-y-auto">
+                    {sortFieldOptions.map((opt) => (
+                      <DropdownMenuItem
+                        key={opt.value}
+                        onSelect={(e) => { e.preventDefault(); handleSortFieldChange(opt.value); }}
+                        className="text-xs cursor-pointer flex items-center justify-between gap-2"
+                      >
+                        <span className="truncate">{opt.label}</span>
+                        {storeSortField === opt.value && <Check className="w-3.5 h-3.5 text-[#C2714F]" />}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
 
                 <div className="h-4 w-px bg-stone-200" />
 
