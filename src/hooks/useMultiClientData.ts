@@ -655,7 +655,8 @@ export function useUpdateCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<CampaignPiece> & { id: string }) => {
-      const { error } = await supabase.from("campaign_pieces").update(data).eq("id", id);
+      const { client_id, ...updateData } = data as any;
+      const { error } = await supabase.from("campaign_pieces").update(updateData).eq("id", id);
       if (error) throw error;
     },
     onMutate: async ({ id, ...data }) => {
