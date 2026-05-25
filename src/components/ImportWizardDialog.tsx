@@ -41,6 +41,7 @@ export interface ImportWizardDialogProps {
   mode: ImportWizardMode;
   existingItems: { name: string; id: string }[];
   clientId?: string;
+  campaignId?: string;
   onImport: (
     rows: Record<string, string>[],
     options: { 
@@ -97,6 +98,7 @@ export default function ImportWizardDialog({
   mode,
   existingItems,
   clientId,
+  campaignId,
   onImport,
   trigger,
 }: ImportWizardDialogProps) {
@@ -114,21 +116,49 @@ export default function ImportWizardDialog({
     enabled: open && !!clientId && mode === "stores",
   });
 
+  const { data: campaign } = useQuery({
+    queryKey: ["campaign", campaignId],
+    queryFn: async () => {
+      if (!campaignId) return null;
+      const { data, error } = await supabase.from("campaigns").select("*").eq("id", campaignId).single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: open && !!campaignId && mode === "pieces",
+  });
+
   const customFields: SystemField[] = useMemo(() => {
-    if (!client || mode !== "stores") return [];
-    return Array.from({ length: 15 }, (_, i) => {
-      const idx = i + 1;
-      const rawLabel = (client as any)[`custom_field_${idx}_label`];
-      if (!rawLabel) return null;
-      const name = rawLabel.split("|")[0];
-      return {
-        key: `custom_field_${idx}`,
-        label: name,
-        isCustom: true,
-        index: idx
-      } as SystemField;
-    }).filter((f): f is SystemField => f !== null);
-  }, [client, mode]);
+    if (mode === "stores" && client) {
+      return Array.from({ length: 15 }, (_, i) => {
+        const idx = i + 1;
+        const rawLabel = (client as any)[`custom_field_${idx}_label`];
+        if (!rawLabel) return null;
+        const name = rawLabel.split("|")[0];
+        return {
+          key: `custom_field_${idx}`,
+          label: name,
+          isCustom: true,
+          index: idx
+        } as SystemField;
+      }).filter((f): f is SystemField => f !== null);
+    }
+    
+    if (mode === "pieces" && campaign) {
+      return Array.from({ length: 5 }, (_, i) => {
+        const idx = i + 1;
+        const label = (campaign as any)[`piece_custom_field_${idx}_label`];
+        if (!label) return null;
+        return {
+          key: `custom_field_${idx}`,
+          label: label,
+          isCustom: true,
+          index: idx
+        } as SystemField;
+      }).filter((f): f is SystemField => f !== null);
+    }
+    
+    return [];
+  }, [client, campaign, mode]);
 
   const systemFields = useMemo(() => {
     const base = mode === "stores" ? STORE_FIELDS : PIECE_FIELDS;
