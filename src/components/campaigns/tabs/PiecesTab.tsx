@@ -567,7 +567,7 @@ export default function PiecesTab({
         qtyMap={qtyMap}
         canEditPieces={canEditPieces}
         canDeletePieces={canDeletePieces}
-        onEdit={(p: any) => {}}
+        onEdit={(p: any) => setEditingPiece(p)}
         onDelete={(id: string) => deletePiece?.mutate?.(id)}
         onDistribute={handleDistributePiece}
         onMarkKitOnly={async (p: any) => { await updatePiece?.mutateAsync?.({ id: p.id, kit_only: true }); }}
