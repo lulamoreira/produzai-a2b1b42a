@@ -64,7 +64,7 @@ const CampaignDetail = () => {
   });
 
   const { data: stores = [] } = useClientStores(clientId);
-  const { data: pieces = [] } = useCampaignPieces(campaignId);
+  const { data: pieces = [], refetch: refetchPieces } = useCampaignPieces(campaignId);
   const { data: storePieces = [] } = useCampaignStorePieces(campaignId);
   const { data: kits = [] } = useCampaignKits(campaignId);
   const { data: kitPieces = [] } = useCampaignKitPieces(campaignId);
