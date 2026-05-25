@@ -168,6 +168,7 @@ export default function PiecesTab({
       try {
         const pieceData = {
           ...row,
+          code: row.code?.trim() || `PCA-${Date.now()}-${i}`,
           campaign_id: campaignId,
           is_deleted: false,
           display_order: i,
