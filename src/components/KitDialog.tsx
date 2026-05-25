@@ -241,8 +241,8 @@ export function CreateKitDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="max-w-md flex flex-col max-h-[90vh] p-0 overflow-hidden">
+        <DialogHeader className="p-6 pb-2">
           <DialogTitle>{step === "name" ? t("pieces.newKit") : `${t("common.kit")}: ${kitName}`}</DialogTitle>
           <DialogDescription>
             {step === "name"
@@ -251,98 +251,104 @@ export function CreateKitDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {step === "name" ? (
-          <div className="space-y-4">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.kitName")} *</label>
-              <Input
-                value={kitName}
-                onChange={(e) => setKitName(e.target.value)}
-                placeholder={t("pieces.kitNamePlaceholder")}
-                onKeyDown={(e) => { if (e.key === "Enter") handleCreateKit(); }}
-                autoFocus
-              />
-            </div>
-            <div className="flex items-center justify-between p-3 rounded-lg border border-green-500/20 bg-green-500/5">
+        <div className="flex-1 overflow-y-auto p-6 pt-0 space-y-4">
+          {step === "name" ? (
+            <div className="space-y-4">
               <div>
-                <label className="text-xs font-medium text-foreground">{t("pieces.newKit")}</label>
-                <p className="text-[10px] text-muted-foreground">{t("pieces.newKitDesc")}</p>
+                <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("pieces.kitName")} *</label>
+                <Input
+                  value={kitName}
+                  onChange={(e) => setKitName(e.target.value)}
+                  placeholder={t("pieces.kitNamePlaceholder")}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleCreateKit(); }}
+                  autoFocus
+                />
               </div>
-              <Switch checked={kitIsNew} onCheckedChange={setKitIsNew} />
-            </div>
-            <Button onClick={handleCreateKit} disabled={!kitName.trim() || saving} className="w-full">
-              {saving ? t("common.wait") : t("common.next")}
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-4 overflow-hidden">
-            {/* Kit image */}
-            {createdKit && (
-              <KitImageSection
-                imageUrl={createdKit.image_url}
-                kitId={createdKit.id}
-                kitName={kitName}
-                canEdit
-                onImageUpdated={async (url) => {
-                  const updated = await onUpdateKit({ id: createdKit.id, image_url: url });
-                  setCreatedKit(updated);
-                }}
-              />
-            )}
-
-            {/* Search bar */}
-            <div>
-              <Input
-                placeholder="Buscar peça por nome, código ou categoria..."
-                value={createSearch}
-                onChange={(e) => setCreateSearch(e.target.value)}
-                className="h-9 text-sm"
-              />
-            </div>
-
-            {selectedPieceIds.length > 0 && (
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">{t("pieces.includedPieces")} ({selectedPieceIds.length})</label>
-                {selectedPieceIds.map(pid => {
-                  const piece = kitOnlyPieces.find(p => p.id === pid);
-                  if (!piece) return null;
-                  return (
-                    <div key={pid} className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/20 min-w-0">
-                      <PieceThumbnail imageUrl={piece.image_url} name={piece.name} size="md" />
-                      <span className="text-xs font-bold text-primary shrink-0">#{piece.code}</span>
-                      <span className="text-sm flex-1 break-words min-w-0">{piece.name}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {filteredAvailablePieces.length > 0 ? (
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-muted-foreground">{t("pieces.availablePiecesForKit")}</label>
-                <div className="max-h-[250px] overflow-y-auto space-y-1.5 pr-1">
-                  {filteredAvailablePieces.map(p => (
-                    <div key={p.id} className="flex items-center gap-2 px-3 py-2 rounded-md border border-border hover:bg-muted/50 transition-colors">
-                      <PieceThumbnail imageUrl={p.image_url} name={p.name} size="md" />
-                      <span className="text-xs font-bold text-primary shrink-0">#{p.code}</span>
-                      <span className="text-sm flex-1 break-words min-w-0">{p.name}</span>
-                      <Button size="sm" variant="outline" className="text-xs gap-1 shrink-0 ml-2" onClick={() => handleAddPiece(p.id)}>
-                        <Plus className="w-3 h-3" /> {t("pieces.includeInKit")}
-                      </Button>
-                    </div>
-                  ))}
+              <div className="flex items-center justify-between p-3 rounded-lg border border-green-500/20 bg-green-500/5">
+                <div>
+                  <label className="text-xs font-medium text-foreground">{t("pieces.newKit")}</label>
+                  <p className="text-[10px] text-muted-foreground">{t("pieces.newKitDesc")}</p>
                 </div>
+                <Switch checked={kitIsNew} onCheckedChange={setKitIsNew} />
               </div>
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-4">
-                {kitOnlyPieces.length === 0
-                  ? t("pieces.noKitOnlyPieces")
-                  : createSearch.trim()
-                    ? t("pieces.noPieceFound")
-                    : t("pieces.allKitPiecesIncluded")}
-              </p>
-            )}
+              <Button onClick={handleCreateKit} disabled={!kitName.trim() || saving} className="w-full">
+                {saving ? t("common.wait") : t("common.next")}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Kit image */}
+              {createdKit && (
+                <KitImageSection
+                  imageUrl={createdKit.image_url}
+                  kitId={createdKit.id}
+                  kitName={kitName}
+                  canEdit
+                  onImageUpdated={async (url) => {
+                    const updated = await onUpdateKit({ id: createdKit.id, image_url: url });
+                    setCreatedKit(updated);
+                  }}
+                />
+              )}
 
+              {/* Search bar */}
+              <div>
+                <Input
+                  placeholder="Buscar peça por nome, código ou categoria..."
+                  value={createSearch}
+                  onChange={(e) => setCreateSearch(e.target.value)}
+                  className="h-9 text-sm"
+                />
+              </div>
+
+              {selectedPieceIds.length > 0 && (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">{t("pieces.includedPieces")} ({selectedPieceIds.length})</label>
+                  {selectedPieceIds.map(pid => {
+                    const piece = kitOnlyPieces.find(p => p.id === pid);
+                    if (!piece) return null;
+                    return (
+                      <div key={pid} className="flex items-center gap-2 px-3 py-2 rounded-md bg-primary/5 border border-primary/20 min-w-0">
+                        <PieceThumbnail imageUrl={piece.image_url} name={piece.name} size="md" />
+                        <span className="text-xs font-bold text-primary shrink-0">#{piece.code}</span>
+                        <span className="text-sm flex-1 break-words min-w-0">{piece.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {filteredAvailablePieces.length > 0 ? (
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">{t("pieces.availablePiecesForKit")}</label>
+                  <div className="space-y-1.5">
+                    {filteredAvailablePieces.map(p => (
+                      <div key={p.id} className="flex items-center gap-2 px-3 py-2 rounded-md border border-border hover:bg-muted/50 transition-colors">
+                        <PieceThumbnail imageUrl={p.image_url} name={p.name} size="md" />
+                        <span className="text-xs font-bold text-primary shrink-0">#{p.code}</span>
+                        <span className="text-sm flex-1 break-words min-w-0">{p.name}</span>
+                        <Button size="sm" variant="outline" className="text-xs gap-1 shrink-0 ml-2" onClick={() => handleAddPiece(p.id)}>
+                          <Plus className="w-3 h-3" /> {t("pieces.includeInKit")}
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  {kitOnlyPieces.length === 0
+                    ? t("pieces.noKitOnlyPieces")
+                    : createSearch.trim()
+                      ? t("pieces.noPieceFound")
+                      : t("pieces.allKitPiecesIncluded")}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+        
+        {step === "pieces" && (
+          <div className="p-6 pt-0">
             <Button onClick={handleClose} className="w-full">
               {t("common.saveAndExit")}
             </Button>
