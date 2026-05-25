@@ -106,8 +106,8 @@ function DraggableHeaderCell({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "bg-card",
-        isFirstCol && "sticky left-0 z-[11]",
+        "bg-background text-foreground",
+        isFirstCol && "sticky left-0 z-[11] shadow-[1px_0_0_0_rgba(0,0,0,0.1)]",
       )}
     >
       <div className="flex items-center gap-0.5">
@@ -517,9 +517,9 @@ export default function StoresMatrixTable({
                             "font-medium sticky left-0 z-[5]",
                             // Always-on opaque bg matching row state so the frozen
                             // column never goes transparent during horizontal scroll.
-                            "bg-card group-hover:bg-muted/50",
+                            "bg-background text-foreground group-hover:bg-muted/50 transition-colors",
                             // Right-edge shadow indicating more content to scroll.
-                            "after:content-[''] after:absolute after:top-0 after:right-0 after:bottom-0 after:w-2 after:bg-gradient-to-r after:from-black/10 after:to-transparent after:pointer-events-none"
+                            "shadow-[1px_0_0_0_rgba(0,0,0,0.1)]"
                           )}
                         >
                           <button
