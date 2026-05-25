@@ -592,8 +592,8 @@ export function KitDetailDialog({
           </DialogTitle>
           <DialogDescription>{t("pieces.pieceCountInKit", { count: piecesInKit.length })}</DialogDescription>
         </DialogHeader>
-
-        {/* Kit image */}
+      </div>
+      <div className="flex-1 overflow-y-auto p-6 space-y-4">
         {canEdit && onUpdateKit && (
           <KitImageSection
             imageUrl={effectiveImageUrl}
