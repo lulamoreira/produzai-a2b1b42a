@@ -603,7 +603,10 @@ export default function PiecesTab({
         open={createKitDialogOpen}
         onOpenChange={(open) => {
           setCreateKitDialogOpen(open);
-          if (!open) setPreSelectedForKit([]);
+          if (!open) {
+            setPreSelectedForKit([]);
+            setSelectedPieceIds([]);
+          }
         }}
         campaignId={campaignId}
         kitOnlyPieces={pieces}
