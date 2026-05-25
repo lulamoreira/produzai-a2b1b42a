@@ -582,18 +582,6 @@ export default function ImportWizardDialog({
           </div>
         </div>
         <DialogFooter className="flex-row justify-between sm:justify-between gap-2 p-6 pt-2 border-t mt-auto bg-background sticky bottom-0 z-20">
-
-
-
-
-
-
-
-
-
-
-
-
           <Button
             variant="outline"
             size="sm"
