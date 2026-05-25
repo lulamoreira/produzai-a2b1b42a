@@ -847,7 +847,7 @@ export default function RateioTabV2({
                     </tr>
                   </thead>
                   <tbody className="bg-white">
-                    {filteredStores.map(store => (
+                    {filteredStores.map((store, sIdx) => (
                       <tr key={store.id} className="group even:bg-stone-100/80 odd:bg-white hover:bg-[#C2714F]/[0.08] transition-colors">
                         <td className="sticky left-0 z-20 bg-white group-hover:bg-stone-50/50 border-r border-b border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">
                           <div className="flex items-center gap-3">
@@ -876,23 +876,29 @@ export default function RateioTabV2({
                             </div>
                           </div>
                         </td>
-                        {columns.map((col) => {
+                        {columns.map((col, cIdx) => {
                           const isKit = col._type === "kit";
                           const val = isKit
                             ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
                             : (qtyMap[`${store.id}-${col.id}`] || 0);
                           const isEditing = !isKit && editingCell?.storeId === store.id && editingCell?.pieceId === col.id;
+                          const isSelected = !isEditing && anchorCell?.rowIndex === sIdx && anchorCell?.colIndex === cIdx;
 
                           return (
                             <td 
                               key={`${col._type}-${col.id}`} 
                               className={cn(
-                                "border-r border-b border-stone-200 text-center transition-all",
-                                isKit || !isTabEditable ? "cursor-default bg-[#C2714F]/[0.03]" : "cursor-pointer",
+                                "border-r border-b border-stone-200 text-center transition-all relative",
+                                isKit || !isTabEditable ? "cursor-default bg-[#C2714F]/[0.03]" : "cursor-cell",
                                 val > 0 && !isKit ? "bg-stone-50/30" : "",
-                                isEditing && "ring-2 ring-inset ring-[#C2714F] z-10"
+                                isEditing && "ring-2 ring-inset ring-[#C2714F] z-10",
+                                isSelected && "ring-2 ring-inset ring-blue-500 z-10 bg-blue-50/50"
                               )}
-                              onClick={() => !isKit && isTabEditable && startEditing(store.id, col.id, val)}
+                              onClick={() => {
+                                if (isKit || !isTabEditable) return;
+                                setAnchorCell({ rowIndex: sIdx, colIndex: cIdx });
+                              }}
+                              onDoubleClick={() => !isKit && isTabEditable && startEditing(store.id, col.id, val)}
                             >
                               {isEditing ? (
                                 <input
