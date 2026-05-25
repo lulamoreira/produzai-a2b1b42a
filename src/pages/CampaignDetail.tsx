@@ -263,7 +263,7 @@ const CampaignDetail = () => {
             <TabsTrigger value="pieces">{t("tabs.pieces", "Peças")}</TabsTrigger>
             <TabsTrigger value="matrix">{t("tabs.rateio", "Rateio")}</TabsTrigger>
             {isAdmin && <TabsTrigger value="budgets">{t("tabs.cotacoes", "Cotações")}</TabsTrigger>}
-            <TabsTrigger value="occurrences">{t("occurrences.portal.title")}</TabsTrigger>
+            <TabsTrigger value="occurrences">{t("occurrences.title", "Ocorrências")}</TabsTrigger>
             <TabsTrigger value="scheduling" className="hidden">Agendamento</TabsTrigger>
             <TabsTrigger value="installations" className="hidden">Instalações</TabsTrigger>
             <TabsTrigger value="approvals" className="hidden">Aprovações</TabsTrigger>
