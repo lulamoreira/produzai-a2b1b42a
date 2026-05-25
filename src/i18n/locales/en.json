@@ -738,7 +738,9 @@
     "next": "Next"
   },
   "installations": {
+    "photosSentShort": "Photos sent",
     "title": "Installations",
+
     "newInstallation": "New Installation",
     "empty": "No installations found",
     "installer": "Installer",
