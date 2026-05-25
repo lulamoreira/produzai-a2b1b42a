@@ -1,0 +1,11 @@
+{
+  "pieces": {
+    "registered": "Pieces registered"
+  },
+  "stores": {
+    "totalStores": "Total stores"
+  },
+  "installations": {
+    "photosSentShort": "Photos sent"
+  }
+}
