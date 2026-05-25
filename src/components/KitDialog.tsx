@@ -242,16 +242,44 @@ export function CreateKitDialog({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-md flex flex-col max-h-[90vh] p-0 overflow-hidden">
-        <DialogHeader className="p-6 pb-2">
-          <DialogTitle>{step === "name" ? t("pieces.newKit") : `${t("common.kit")}: ${kitName}`}</DialogTitle>
-          <DialogDescription>
-            {step === "name"
-              ? t("pieces.kitNameDesc")
-              : t("pieces.kitPiecesDesc")}
-          </DialogDescription>
-        </DialogHeader>
+        <div className="p-6 pb-2 border-b">
+          <DialogHeader>
+            <DialogTitle>{step === "name" ? t("pieces.newKit") : `${t("common.kit")}: ${kitName}`}</DialogTitle>
+            <DialogDescription>
+              {step === "name"
+                ? t("pieces.kitNameDesc")
+                : t("pieces.kitPiecesDesc")}
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto p-6 pt-0 space-y-4">
+          {step === "pieces" && (
+            <div className="mt-4 space-y-4">
+              {/* Kit image (Fixed in header) */}
+              {createdKit && (
+                <KitImageSection
+                  imageUrl={createdKit.image_url}
+                  kitId={createdKit.id}
+                  kitName={kitName}
+                  canEdit
+                  onImageUpdated={async (url) => {
+                    const updated = await onUpdateKit({ id: createdKit.id, image_url: url });
+                    setCreatedKit(updated);
+                  }}
+                />
+              )}
+
+              {/* Search bar (Fixed in header) */}
+              <Input
+                placeholder="Buscar peça por nome, código ou categoria..."
+                value={createSearch}
+                onChange={(e) => setCreateSearch(e.target.value)}
+                className="h-9 text-sm"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-6 space-y-4">
           {step === "name" ? (
             <div className="space-y-4">
               <div>
@@ -277,30 +305,6 @@ export function CreateKitDialog({
             </div>
           ) : (
             <div className="space-y-4">
-              {/* Kit image */}
-              {createdKit && (
-                <KitImageSection
-                  imageUrl={createdKit.image_url}
-                  kitId={createdKit.id}
-                  kitName={kitName}
-                  canEdit
-                  onImageUpdated={async (url) => {
-                    const updated = await onUpdateKit({ id: createdKit.id, image_url: url });
-                    setCreatedKit(updated);
-                  }}
-                />
-              )}
-
-              {/* Search bar */}
-              <div>
-                <Input
-                  placeholder="Buscar peça por nome, código ou categoria..."
-                  value={createSearch}
-                  onChange={(e) => setCreateSearch(e.target.value)}
-                  className="h-9 text-sm"
-                />
-              </div>
-
               {selectedPieceIds.length > 0 && (
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-muted-foreground">{t("pieces.includedPieces")} ({selectedPieceIds.length})</label>
@@ -348,7 +352,7 @@ export function CreateKitDialog({
         </div>
         
         {step === "pieces" && (
-          <div className="p-6 pt-0">
+          <div className="p-6 pt-0 border-t">
             <Button onClick={handleClose} className="w-full">
               {t("common.saveAndExit")}
             </Button>
