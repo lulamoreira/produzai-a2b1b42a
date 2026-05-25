@@ -260,9 +260,49 @@ export default function MatrixTab({
                          {(Object.values(pieceFilters).some(s => s.size > 0) || Object.values(storeFilters).some(s => s.size > 0)) && (
                            <span className="ml-1 px-1.5 py-0.5 rounded-full bg-brand-500 text-white text-[10px]">!</span>
                          )}
-                       </Button>
+                        </Button>
+                        
+                        <DropdownMenu>
+                           <DropdownMenuTrigger asChild>
+                             <Button variant="outline" size="sm" className="h-8 text-xs gap-1.5 min-w-[120px]">
+                               <ArrowUpDown className="w-3.5 h-3.5" />
+                               <span className="hidden sm:inline">{t("common.sortBy", "Ordenar por")}:</span>
+                               <span className="font-semibold">{getSortLabel(storeSortField)}</span>
+                             </Button>
+                           </DropdownMenuTrigger>
+                           <DropdownMenuContent align="start" className="w-56 max-h-[300px] overflow-y-auto">
+                             <DropdownMenuItem onClick={() => handleSortChange("name")} className="flex items-center justify-between">
+                               <span>{t("stores.name", "Nome")}</span>
+                               {storeSortField === "name" && <Check className="w-3.5 h-3.5" />}
+                             </DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => handleSortChange("city")} className="flex items-center justify-between">
+                               <span>{t("stores.city", "Cidade")}</span>
+                               {storeSortField === "city" && <Check className="w-3.5 h-3.5" />}
+                             </DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => handleSortChange("state")} className="flex items-center justify-between">
+                               <span>{t("stores.state", "Estado")}</span>
+                               {storeSortField === "state" && <Check className="w-3.5 h-3.5" />}
+                             </DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => handleSortChange("store_model")} className="flex items-center justify-between">
+                               <span>{t("pieces.storeModelLabel", "Categoria de Loja")}</span>
+                               {storeSortField === "store_model" && <Check className="w-3.5 h-3.5" />}
+                             </DropdownMenuItem>
+                             
+                             {customFieldLabels.length > 0 && (
+                               <>
+                                 <DropdownMenuSeparator />
+                                 {customFieldLabels.map((cf) => (
+                                   <DropdownMenuItem key={cf.index} onClick={() => handleSortChange(`custom_field_${cf.index}`)} className="flex items-center justify-between">
+                                     <span>{cf.label}</span>
+                                     {storeSortField === `custom_field_${cf.index}` && <Check className="w-3.5 h-3.5" />}
+                                   </DropdownMenuItem>
+                                 ))}
+                               </>
+                             )}
+                           </DropdownMenuContent>
+                        </DropdownMenu>
 
-                       <div className="flex-1" />
+                        <div className="flex-1" />
 
                        <Button 
                           variant="outline" 
