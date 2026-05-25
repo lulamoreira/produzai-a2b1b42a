@@ -443,6 +443,12 @@ export default function SortablePiecesTable({
         <Table className="min-w-[700px]">
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10 p-2 text-center">
+                <Checkbox 
+                  checked={pieces.length > 0 && pieces.filter(p => !p.kit_only).every(p => selectedPieceIds?.includes(p.id))}
+                  onCheckedChange={(checked) => onToggleSelectAll?.(!!checked)}
+                />
+              </TableHead>
               {canEditPieces && <TableHead className="w-8" />}
               {(!visibleColumns || visibleColumns.code) && (
                 <TableHead className="w-[70px]">{t("common.code")}</TableHead>
@@ -504,6 +510,8 @@ export default function SortablePiecesTable({
                     kitCategory={row.type === "kit" ? getKitCategory(row.data) : ""}
                     customFieldLabels={customFieldLabels}
                     visibleColumns={visibleColumns}
+                    selectedPieceIds={selectedPieceIds}
+                    onToggleSelection={onToggleSelection}
                   />
                 );
               })}
