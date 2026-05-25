@@ -166,7 +166,7 @@ export default function MatrixTab({
                   </TabsTrigger>
                 </TabsList>
                 
-                {isAdminOrMaster && (
+                {isAdminOrMaster && hasNegotiationRateio && (
                   <Button 
                     variant="ghost" 
                     size="sm" 
