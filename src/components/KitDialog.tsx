@@ -436,6 +436,9 @@ export function KitDetailDialog({
   const [kitNameInput, setKitNameInput] = useState("");
   const [addPieceSearch, setAddPieceSearch] = useState("");
   const [dragOverPieceId, setDragOverPieceId] = useState<string | null>(null);
+  const [isEditingLocation, setIsEditingLocation] = useState(false);
+  const [locationInput, setLocationInput] = useState("");
+  const [savingLocation, setSavingLocation] = useState(false);
   const [localImageUrl, setLocalImageUrl] = useState<string | null | undefined>(undefined);
   const [localKitName, setLocalKitName] = useState<string | undefined>(undefined);
   const [localCategory, setLocalCategory] = useState<string | null | undefined>(undefined);
@@ -484,6 +487,36 @@ export function KitDetailDialog({
       specification: p.specification || "",
       installation_instructions: p.installation_instructions || "",
     });
+  };
+
+  const handleSaveLocation = async () => {
+    if (!kit || !onUpdateKit || !onUpdatePiece) return;
+    const novaLocalizacao = locationInput.trim().toUpperCase();
+    if (novaLocalizacao === (kit.category || "")) {
+      setIsEditingLocation(false);
+      return;
+    }
+
+    setSavingLocation(true);
+    try {
+      // 1. Update kit location
+      setLocalCategory(novaLocalizacao);
+      await onUpdateKit({ id: kit.id, category: novaLocalizacao });
+
+      // 2. Update all pieces in the kit
+      const pieceUpdates = piecesInKit.map(kp => 
+        onUpdatePiece({ id: kp.piece_id, category: novaLocalizacao })
+      );
+      
+      await Promise.allSettled(pieceUpdates);
+      
+      toast.success(t("pieces.kitLocationUpdated"));
+      setIsEditingLocation(false);
+    } catch (error) {
+      console.error("Error updating kit location:", error);
+    } finally {
+      setSavingLocation(false);
+    }
   };
 
   const saveEditPiece = async () => {
@@ -594,7 +627,44 @@ export function KitDetailDialog({
                 </span>
               )}
             </DialogTitle>
-            <DialogDescription>{t("pieces.pieceCountInKit", { count: piecesInKit.length })}</DialogDescription>
+            <div className="flex items-center gap-2 mt-1">
+              {isEditingLocation ? (
+                <div className="flex items-center gap-2 flex-1">
+                  <Input
+                    value={locationInput}
+                    onChange={(e) => setLocationInput(e.target.value)}
+                    className="h-7 text-xs"
+                    placeholder={t("pieces.kitLocation")}
+                    autoFocus
+                    onKeyDown={(e) => e.key === "Enter" && handleSaveLocation()}
+                  />
+                  <Button size="sm" className="h-7 text-[10px] px-2" onClick={handleSaveLocation} disabled={savingLocation}>
+                    {t("common.save")}
+                  </Button>
+                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setIsEditingLocation(false)} disabled={savingLocation}>
+                    <X className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground group/loc">
+                  <span className="flex items-center gap-1">
+                    <Edit3 className="w-3 h-3" />
+                    {effectiveCategory || t("pieces.kitLocation")}
+                  </span>
+                  {canEdit && onUpdateKit && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-5 w-5 opacity-0 group-hover/loc:opacity-100 transition-opacity" 
+                      onClick={() => { setLocationInput(kit.category || ""); setIsEditingLocation(true); }}
+                    >
+                      <Pencil className="w-2.5 h-2.5" />
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+            <DialogDescription className="mt-2">{t("pieces.pieceCountInKit", { count: piecesInKit.length })}</DialogDescription>
           </DialogHeader>
 
           {/* Kit image (Fixed in header) */}
