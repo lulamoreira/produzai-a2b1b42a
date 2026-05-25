@@ -124,6 +124,21 @@ export default function RateioTabV2({
   
   const [isAutomationOpen, setIsAutomationOpen] = useState(false);
   const [isExecutingAutomation, setIsExecutingAutomation] = useState(false);
+  
+  const gridContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+
+  const scrollToFirst = () => {
+    gridContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const scrollToLast = () => {
+    const container = gridContainerRef.current;
+    if (container) {
+      container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+    }
+  };
 
   const versionTabs = useMemo(() => {
     const tabs: { id: string; label: string; isVigente?: boolean; type?: string; parent?: string }[] = [{ id: "original", label: "Rateio Original", type: "original" }];
@@ -249,6 +264,31 @@ export default function RateioTabV2({
 
     return result;
   }, [stores, storeSearch, storeFilters, sortConfig, storeSortField]);
+
+  useEffect(() => {
+    const container = gridContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      setShowScrollTop(scrollTop > 200);
+      // Show bottom button if we are not at the very end (with some buffer)
+      setShowScrollBottom(scrollTop + clientHeight < scrollHeight - 100);
+    };
+
+    container.addEventListener("scroll", handleScroll);
+    // Initial check
+    handleScroll();
+    
+    // Also check when data changes
+    const observer = new ResizeObserver(handleScroll);
+    observer.observe(container);
+
+    return () => {
+      container.removeEventListener("scroll", handleScroll);
+      observer.disconnect();
+    };
+  }, [filteredStores]);
 
   // Build unified columns (pieces + kits) ordered like the Pieces module
   // (display_order, piece-before-kit on ties). Kit-only pieces are hidden.
@@ -840,7 +880,32 @@ export default function RateioTabV2({
               </div>
 
               {/* Spreadsheet Table */}
-              <div className="flex-1 overflow-auto relative custom-scrollbar">
+              <div ref={gridContainerRef} className="flex-1 overflow-auto relative custom-scrollbar">
+                {/* Floating Navigation Buttons */}
+                <div className="fixed right-12 bottom-24 flex flex-col gap-2 z-50">
+                  {showScrollTop && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 rounded-full shadow-lg bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 transition-all animate-in fade-in slide-in-from-right-4"
+                      onClick={scrollToFirst}
+                      title="Primeira Loja"
+                    >
+                      <ChevronUp className="w-4 h-4 text-stone-600 dark:text-stone-400" />
+                    </Button>
+                  )}
+                  {showScrollBottom && (
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-9 w-9 rounded-full shadow-lg bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-800 hover:bg-stone-50 dark:hover:bg-stone-800 transition-all animate-in fade-in slide-in-from-right-4"
+                      onClick={scrollToLast}
+                      title="Última Loja"
+                    >
+                      <ChevronDown className="w-4 h-4 text-stone-600 dark:text-stone-400" />
+                    </Button>
+                  )}
+                </div>
                 <table className="border-collapse min-w-full">
                   <thead className="sticky top-0 z-30 bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
                     {/* Group Labels Row */}
