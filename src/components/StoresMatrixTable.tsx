@@ -67,16 +67,28 @@ function buildColumns(customFieldLabels: { label: string; index: number; type?: 
 
 // ─── LocalStorage helpers ────────────────────────────────
 
-function loadColumnOrder(clientId: string): string[] | null {
+function loadColumnOrder(id: string): string[] | null {
   try {
-    const raw = localStorage.getItem(`store_col_order_${clientId}`);
+    const raw = localStorage.getItem(`store_col_order_${id}`);
     return raw ? JSON.parse(raw) : null;
   } catch { return null; }
 }
 
-function saveColumnOrder(clientId: string, order: string[]) {
-  localStorage.setItem(`store_col_order_${clientId}`, JSON.stringify(order));
+function saveColumnOrder(id: string, order: string[]) {
+  localStorage.setItem(`store_col_order_${id}`, JSON.stringify(order));
 }
+
+function loadSortState(id: string): { key: string; dir: "asc" | "desc" } | null {
+  try {
+    const raw = localStorage.getItem(`store_sort_state_${id}`);
+    return raw ? JSON.parse(raw) : null;
+  } catch { return null; }
+}
+
+function saveSortState(id: string, state: { key: string; dir: "asc" | "desc" }) {
+  localStorage.setItem(`store_sort_state_${id}`, JSON.stringify(state));
+}
+
 
 // ─── Draggable Header Cell ──────────────────────────────
 
