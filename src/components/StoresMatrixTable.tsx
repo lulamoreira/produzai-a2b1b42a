@@ -765,7 +765,7 @@ export default function StoresMatrixTable({
                     const boolVal = (store as any)[col.storeField];
                     const isTrue = boolVal === "true" || boolVal === true;
                     return (
-                      <TableCell key={col.key} className="p-1 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100">
+                      <TableCell key={col.key} className={cn("p-1 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 cursor-cell transition-all", isAnchor && "ring-2 ring-inset ring-blue-500 z-[6]")} onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}>
                         {canEdit ? (
                           <div className="flex items-center justify-center gap-1.5 px-1 py-0.5 min-h-[28px]">
                             <Switch
