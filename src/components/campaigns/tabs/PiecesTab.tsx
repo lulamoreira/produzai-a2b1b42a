@@ -579,7 +579,7 @@ export default function PiecesTab({
         }}
         onDuplicate={(p: any) => {}}
         onDuplicateKit={(k: any) => {}}
-        onReorder={() => {}}
+        onReorder={handleReorder}
         customFieldLabels={customFieldLabels}
         visibleColumns={visibleColumns}
         selectedPieceIds={selectedPieceIds}
