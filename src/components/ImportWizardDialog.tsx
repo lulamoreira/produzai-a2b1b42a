@@ -310,8 +310,8 @@ export default function ImportWizardDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {trigger}
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl h-[90vh] flex flex-col p-0 overflow-hidden">
+        <DialogHeader className="p-6">
           <DialogTitle className="flex items-center gap-2">
             <Upload className="w-5 h-5" />
             {t("common.import")} {mode === "stores" ? t("modules.stores") : t("modules.pieces")}
@@ -326,6 +326,7 @@ export default function ImportWizardDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex-1 overflow-y-auto px-6">
         {/* ─── STEP 1 ─── */}
         {step === 1 && (
           <div className="space-y-4 py-2">
@@ -498,6 +499,7 @@ export default function ImportWizardDialog({
           </div>
         )}
 
+
         {/* ─── STEP 3 ─── */}
         {step === 3 && (
           <div className="space-y-3 py-2">
@@ -575,8 +577,10 @@ export default function ImportWizardDialog({
             )}
           </div>
         )}
+        </div>
+        <DialogFooter className="flex-row justify-between sm:justify-between gap-2 p-6 pt-2 border-t mt-auto bg-background sticky bottom-0 z-20">
 
-        <DialogFooter className="flex-row justify-between sm:justify-between gap-2">
+
           <Button
             variant="outline"
             size="sm"
