@@ -559,7 +559,7 @@ export default function PiecesTab({
                 title={selectedPieceIds.length < 2 ? t("pieces.minPiecesForKit") : ""}
               >
                 <Package className="w-3.5 h-3.5" />
-                {t("pieces.groupInKit") || "Agrupar em Kit"}
+                {t("pieces.groupInKit")}
               </Button>
               <Button 
                 size="icon" 
@@ -752,16 +752,16 @@ function ConvertSelectionToKitDialog({
             <div className="flex items-center space-x-2 p-3 rounded-lg border border-border bg-muted/20">
               <RadioGroupItem value="new" id="mode-new" />
               <Label htmlFor="mode-new" className="flex-1 cursor-pointer">
-                <span className="font-medium">{t("pieces.createNewKit") || "Criar novo kit"}</span>
-                <p className="text-xs text-muted-foreground">{t("pieces.createNewKitSub") || "Cria um novo agrupamento para estas peças"}</p>
+                <span className="font-medium">{t("pieces.createNewKit")}</span>
+                <p className="text-xs text-muted-foreground">{t("pieces.createNewKitSub")}</p>
               </Label>
             </div>
             {existingKits.length > 0 && (
               <div className="flex items-center space-x-2 p-3 rounded-lg border border-border bg-muted/20">
                 <RadioGroupItem value="existing" id="mode-existing" />
                 <Label htmlFor="mode-existing" className="flex-1 cursor-pointer">
-                  <span className="font-medium">{t("pieces.addToExistingKit") || "Adicionar a kit existente"}</span>
-                  <p className="text-xs text-muted-foreground">{t("pieces.addToExistingKitSub") || "Inclui as peças em um kit já cadastrado"}</p>
+                  <span className="font-medium">{t("pieces.addToExistingKit")}</span>
+                  <p className="text-xs text-muted-foreground">{t("pieces.addToExistingKitSub")}</p>
                 </Label>
               </div>
             )}
@@ -769,10 +769,10 @@ function ConvertSelectionToKitDialog({
 
           {mode === "existing" && (
             <div className="space-y-2 animate-in fade-in slide-in-from-top-2">
-              <Label className="text-xs">{t("pieces.selectKit") || "Selecionar Kit"}</Label>
+              <Label className="text-xs">{t("pieces.selectKit")}</Label>
               <Select value={selectedKitId} onValueChange={setSelectedKitId}>
                 <SelectTrigger>
-                  <SelectValue placeholder={t("pieces.selectKitPlaceholder") || "Escolha um kit..."} />
+                  <SelectValue placeholder={t("pieces.selectKitPlaceholder")} />
                 </SelectTrigger>
                 <SelectContent>
                   {existingKits.map(k => (
