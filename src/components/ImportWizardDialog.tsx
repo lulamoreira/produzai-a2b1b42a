@@ -121,7 +121,7 @@ export default function ImportWizardDialog({
         key: `custom_field_${idx}`,
         label: name,
         isCustom: true
-      };
+      } as SystemField;
     }).filter((f): f is SystemField => f !== null);
   }, [client, mode]);
 
