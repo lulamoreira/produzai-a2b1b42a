@@ -159,36 +159,60 @@ export default function PiecesTab({
     if (!addPiece?.mutateAsync) return;
     
     const total = rows.length;
+    let importedCount = 0;
+    let skippedCount = 0;
+
     for (let i = 0; i < total; i++) {
       const row = rows[i];
-      const pieceName = row.name || "Sem nome";
+      const name = (row.name ?? "").trim();
       
-      options.onProgress?.(i + 1, total, pieceName);
+      if (!name) {
+        skippedCount++;
+        continue;
+      }
+
+      options.onProgress?.(i + 1, total, `Peça: ${name}`);
       
       try {
         const pieceData = {
-          ...row,
-          code: row.code?.trim() || `PCA-${Date.now()}-${i}`,
           campaign_id: campaignId,
+          name: name,
+          code: row.code?.trim() || `PCA-${Date.now()}-${i}`,
+          category: row.category ?? null,
+          size: row.size ?? null,
+          specification: row.specification ?? null,
+          store_category: row.store_category ?? null,
+          installation_instructions: row.installation_instructions ?? null,
+          sub_location: row.sub_location ?? null,
+          kit_only: ["true", "1", "sim", "yes"].includes(String(row.kit_only ?? "").toLowerCase()),
           is_deleted: false,
           display_order: i,
-          kit_only: ['true', '1', 'sim', 'yes'].includes(String(row.kit_only).toLowerCase())
+          custom_field_1: row.custom_field_1 ?? null,
+          custom_field_2: row.custom_field_2 ?? null,
+          custom_field_3: row.custom_field_3 ?? null,
+          custom_field_4: row.custom_field_4 ?? null,
+          custom_field_5: row.custom_field_5 ?? null,
         };
         
         if (options.updateExisting && row.code) {
           const existing = pieces.find(p => p.code === row.code);
           if (existing && updatePiece?.mutateAsync) {
             await updatePiece.mutateAsync({ id: existing.id, ...pieceData });
+            importedCount++;
             continue;
           }
         }
         
         await addPiece.mutateAsync(pieceData);
+        importedCount++;
       } catch (error) {
-        console.error(`Error importing piece ${pieceName}:`, error);
+        console.error(`Error importing piece ${name}:`, error);
       }
     }
     
+    toast.success(`Importação concluída: ${importedCount} peças importadas.${skippedCount > 0 ? ` ${skippedCount} linhas ignoradas (sem nome).` : ""}`);
+    
+    qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
     if (refetch) {
       await refetch();
     }
