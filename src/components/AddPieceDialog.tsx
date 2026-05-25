@@ -188,7 +188,7 @@ const AddPieceDialog = ({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="max-h-[90vh] sm:max-w-[600px] p-0 flex flex-col overflow-hidden">
+      <DialogContent className="flex flex-col max-h-[90vh] overflow-hidden sm:max-w-[600px] p-0">
         <div className="p-6 pb-2 border-b shrink-0">
           <DialogHeader>
             <DialogTitle className="font-display">
@@ -198,7 +198,7 @@ const AddPieceDialog = ({
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="flex-1 overflow-y-auto p-6 space-y-4">
+          <div className="overflow-y-auto flex-1 px-6 py-4 space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground">{t("common.code")}</label>
@@ -310,7 +310,7 @@ const AddPieceDialog = ({
             </div>
           </div>
 
-          <div className="p-6 pt-4 border-t flex gap-3 shrink-0">
+          <div className="border-t pt-4 px-6 pb-6 shrink-0 flex gap-3">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)} disabled={uploading}>
               {t("common.cancel")}
             </Button>
