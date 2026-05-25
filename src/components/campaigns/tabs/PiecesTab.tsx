@@ -22,6 +22,7 @@ import ImportPiecesFromCampaignDialog from "@/components/ImportPiecesFromCampaig
 import BulkDeletePiecesDialog from "@/components/BulkDeletePiecesDialog";
 import ManageLocationsDialog from "@/components/ManageLocationsDialog";
 import { OrderByLocationDialog } from "@/components/OrderByLocationDialog";
+import ImportWizardDialog from "@/components/ImportWizardDialog";
 
 interface PiecesTabProps {
   campaignId: string;
@@ -100,6 +101,40 @@ export default function PiecesTab({
 
   const visiblePieces = useMemo(() => pieces.filter(p => !p.kit_only), [pieces]);
   const kitOnlyPieces = useMemo(() => pieces.filter(p => p.kit_only), [pieces]);
+
+  const handlePiecesImport = async (rows: Record<string, any>[], options: { updateExisting: boolean; onProgress?: (curr: number, total: number, name?: string) => void }) => {
+    if (!addPiece?.mutateAsync) return;
+    
+    const total = rows.length;
+    for (let i = 0; i < total; i++) {
+      const row = rows[i];
+      const pieceName = row.name || "Sem nome";
+      
+      options.onProgress?.(i + 1, total, pieceName);
+      
+      try {
+        const pieceData = {
+          ...row,
+          campaign_id: campaignId,
+          client_id: clientId,
+          kit_only: row.kit_only === "true" || row.kit_only === true || row.kit_only === "Sim"
+        };
+        
+        // Check if piece already exists by code in this campaign if updateExisting is true
+        if (options.updateExisting && row.code) {
+          const existing = pieces.find(p => p.code === row.code);
+          if (existing && updatePiece?.mutateAsync) {
+            await updatePiece.mutateAsync({ id: existing.id, ...pieceData });
+            continue;
+          }
+        }
+        
+        await addPiece.mutateAsync(pieceData);
+      } catch (error) {
+        console.error(`Error importing piece ${pieceName}:`, error);
+      }
+    }
+  };
 
   const countsByLocation = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -286,6 +321,15 @@ export default function PiecesTab({
           onReorderKitPieces={(updates) => reorderKitPieces?.mutateAsync?.(updates)}
         />
       )}
+      
+      <ImportWizardDialog
+        open={pieceImportOpen}
+        onOpenChange={setPieceImportOpen}
+        mode="pieces"
+        clientId={clientId}
+        existingItems={pieces.map(p => ({ id: p.id, name: p.name || p.code }))}
+        onImport={handlePiecesImport}
+      />
     </div>
   );
 }
