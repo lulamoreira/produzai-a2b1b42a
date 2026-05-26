@@ -539,6 +539,25 @@ export default function RateioTabV2({
   const saveCell = (cell: { storeId: string; pieceId: string }, rawValue: string) => {
     const qty = Math.max(0, parseInt(rawValue, 10) || 0);
     const isKit = kits?.some((k: any) => k.id === cell.pieceId);
+    
+    // Optimistic update - do it synchronously
+    setLocalQtyOverrides(prev => {
+      const next = { ...prev };
+      if (isKit) {
+        const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === cell.pieceId);
+        kpList.forEach(kp => {
+          const key = `${cell.storeId}-${kp.piece_id}`;
+          const val = qty * (kp.quantity || 1);
+          if (val > 0) next[key] = val;
+          else delete next[key];
+        });
+      } else {
+        const key = `${cell.storeId}-${cell.pieceId}`;
+        if (qty > 0) next[key] = qty;
+        else delete next[key];
+      }
+      return next;
+    });
 
     if (isKit) {
       const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === cell.pieceId);
@@ -571,15 +590,14 @@ export default function RateioTabV2({
     const col = columns[colIndex];
     if (!store || !col) return;
 
-    const targetValue = getVisibleCellQty(store.id, col.id);
     const current = editingCellRef.current;
-    const valueToSave = editValueRef.current ?? "";
-
     if (current && (current.storeId !== store.id || current.pieceId !== col.id)) {
-      saveCell(current, valueToSave);
+      saveCell(current, editValueRef.current ?? "");
     }
 
+    const targetValue = getVisibleCellQty(store.id, col.id);
     const nextValue = targetValue > 0 ? String(targetValue) : "";
+    
     editingCellRef.current = { storeId: store.id, pieceId: col.id };
     editValueRef.current = nextValue;
     setEditingCell({ storeId: store.id, pieceId: col.id });
