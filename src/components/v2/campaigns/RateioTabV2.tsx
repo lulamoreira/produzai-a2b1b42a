@@ -662,10 +662,18 @@ export default function RateioTabV2({
     const allUpserts = Array.from(allUpsertsMap.values());
     if (allUpserts.length === 0) return;
 
-    setIsApplyingPaste(true);
     const toastId = toast.loading("Aplicando colagem...");
 
     try {
+      setLocalQtyOverrides(prev => {
+        const next = { ...prev };
+        allUpserts.forEach(u => {
+          const key = `${u.storeId}-${u.pieceId}`;
+          if (u.quantity > 0) next[key] = u.quantity;
+          else delete next[key];
+        });
+        return next;
+      });
       const CHUNK_SIZE = 500;
       for (let i = 0; i < allUpserts.length; i += CHUNK_SIZE) {
         const chunk = allUpserts.slice(i, i + CHUNK_SIZE);
@@ -686,8 +694,6 @@ export default function RateioTabV2({
     } catch (err: any) {
       console.error("Erro confirmPaste:", err);
       toast.error(`Erro ao aplicar: ${err?.message || 'desconhecido'}`, { id: toastId });
-    } finally {
-      setIsApplyingPaste(false);
     }
   };
 
