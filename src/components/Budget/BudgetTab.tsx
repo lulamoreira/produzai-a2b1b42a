@@ -839,7 +839,7 @@ ${sharedMaterials.map((m: any) => `🔸 ${m.title || m.file_name}
 
 ▸ 1️⃣  Acesse o portal de cotação pelo link abaixo
 ▸ 2️⃣  Preencha o preço unitário de cada peça/kit
-▸ 3️⃣  Informe os valores de instalação e frete
+▸ 3️⃣  Informe os valores de instalação e embalagem / frete
 ▸ 4️⃣  Clique em ENVIAR ao concluir a cotação
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -864,7 +864,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     const materialsLine = sharedMaterials.length > 0
       ? `\n\n📎 Material de apoio para download:\n${sharedMaterials.map((m: any) => `• ${m.title || m.file_name}: ${m.file_url}`).join('\n')}`
       : '';
-    const msg = `Olá ${sup.contact_name}! A ${agencyName} convidou ${sup.company_name} para participar do processo de cotação da campanha ${campaignName}.\n\nPara acessar a planilha e preencher seus preços, acesse o link abaixo:\n${portalUrl}\n\nPrazo para envio: ${deadlineStr}${materialsLine}\n\nInstruções:\n1) Acesse o link acima\n2) Preencha o preço unitário de cada peça\n3) Informe os valores de instalação e frete\n4) Clique em ENVIAR quando concluir\n\nDúvidas? Entre em contato conosco.`;
+    const msg = `Olá ${sup.contact_name}! A ${agencyName} convidou ${sup.company_name} para participar do processo de cotação da campanha ${campaignName}.\n\nPara acessar a planilha e preencher seus preços, acesse o link abaixo:\n${portalUrl}\n\nPrazo para envio: ${deadlineStr}${materialsLine}\n\nInstruções:\n1) Acesse o link acima\n2) Preencha o preço unitário de cada peça\n3) Informe os valores de instalação e embalagem / frete\n4) Clique em ENVIAR quando concluir\n\nDúvidas? Entre em contato conosco.`;
     const phone = sup.phone.replace(/\D/g, "");
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
   };
@@ -2698,7 +2698,7 @@ Qualquer dúvida, estamos à disposição.
                     <AdminInlineNumberInput
                       initial={detailCosts?.freight_value != null ? Number(detailCosts.freight_value) : null}
                       onSave={(v) => upsertAdminExtra("freight_value", v)}
-                      ariaLabel="Valor de frete"
+                      ariaLabel="Valor de embalagem / frete"
                       className="justify-start"
                     />
                   ) : (

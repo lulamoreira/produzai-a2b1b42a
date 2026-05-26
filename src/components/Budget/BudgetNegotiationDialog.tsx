@@ -708,7 +708,7 @@ export default function BudgetNegotiationDialog({
                 )}
                 {applyResidualToFreight && (
                   <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-800 p-2 text-xs">
-                    ⚠️ Diferença de arredondamento de {fmtCurrency(residual)} adicionada ao frete para atingir o teto exato.
+                    ⚠️ Diferença de arredondamento de {fmtCurrency(residual)} adicionada à embalagem / frete para atingir o teto exato.
                   </div>
                 )}
               </div>

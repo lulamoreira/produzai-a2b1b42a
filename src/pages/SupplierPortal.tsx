@@ -977,7 +977,7 @@ const SupplierPortal = () => {
               </p>
               <p>
                 Ao final, informe os valores de <strong>instalação</strong> e{" "}
-                <strong>frete/despacho</strong>, se aplicáveis.
+                <strong>embalagem / frete / despacho</strong>, se aplicáveis.
               </p>
               <p>
                 Quando tudo estiver pronto, clique em{" "}
