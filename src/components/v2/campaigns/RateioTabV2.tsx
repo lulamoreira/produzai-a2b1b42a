@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect, memo } from "react";
 import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
@@ -60,6 +60,123 @@ interface RateioTabV2Props {
   hasAnyAdjustment: boolean;
   setActiveSection: (section: string) => void;
 }
+
+const RateioRow = memo(({ 
+  store, 
+  sIdx, 
+  columns, 
+  kits, 
+  kitQtyMap, 
+  visibleQtyMap, 
+  isEditingRow,
+  editingCell, 
+  anchorCell, 
+  isTabEditable, 
+  switchToCell, 
+  inputRef, 
+  editValue, 
+  setEditValue,
+  editValueRef,
+  handlePieceBlur, 
+  handleEditorKeyDown, 
+  handleExcelPaste, 
+  closeEditing 
+}: any) => {
+  return (
+    <tr className="group even:bg-stone-100/80 odd:bg-white hover:bg-[#C2714F]/[0.08] transition-colors">
+      <td 
+        className="bg-white group-hover:bg-stone-50/50 border-r border-b border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]" 
+        style={{ position: 'sticky', left: 0, zIndex: 20 }}
+      >
+        <div className="flex items-center gap-3">
+          <div 
+            className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0"
+            style={{ 
+              backgroundColor: getStateColor(store.state).bg, 
+              color: getStateColor(store.state).text 
+            }}
+          >
+            {store.state}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-stone-900 text-xs truncate">{store.name}</span>
+              {store.nickname && (
+                <span className="text-[10px] text-stone-400 truncate">({store.nickname})</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              <StoreIcon className="w-3 h-3 text-stone-300 shrink-0" />
+              <Badge variant="secondary" className="bg-stone-100 text-stone-500 border-none text-[9px] h-4 px-1.5 font-bold uppercase">
+                {store.store_model || "PADRÃO"}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </td>
+      {columns.map((col: any, cIdx: number) => {
+        const isKit = col._type === "kit";
+        const val = isKit
+          ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
+          : (visibleQtyMap[`${store.id}-${col.id}`] || 0);
+        const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === col.id;
+        const isSelected = !isEditing && anchorCell?.rowIndex === sIdx && anchorCell?.colIndex === cIdx;
+
+        return (
+          <td 
+            key={`${col._type}-${col.id}`} 
+            className={cn(
+              "border-r border-b border-stone-200 text-center transition-all relative",
+              !isTabEditable ? "cursor-default" : "cursor-cell",
+              isKit && "bg-[#C2714F]/[0.03]",
+              val > 0 && !isKit && "bg-stone-50/30",
+              isEditing && "ring-2 ring-inset ring-[#C2714F] z-10",
+              isSelected && "ring-2 ring-inset ring-blue-500 z-10 bg-blue-50/50"
+            )}
+            onClick={() => {
+              if (!isTabEditable) return;
+              switchToCell(sIdx, cIdx);
+            }}
+          >
+            {isEditing ? (
+              <input
+                ref={inputRef}
+                type="text"
+                className="w-full h-full bg-transparent text-center text-xs font-bold focus:outline-none"
+                value={editValue}
+                onChange={(e) => {
+                  editValueRef.current = e.target.value;
+                  setEditValue(e.target.value);
+                }}
+                onBlur={handlePieceBlur}
+                onKeyDown={(e) => handleEditorKeyDown(e, sIdx, cIdx)}
+                 onPaste={(e) => {
+                  const text = e.clipboardData.getData('text/plain');
+                  if (text.includes('\t') || text.includes('\n')) {
+                    e.preventDefault();
+                    closeEditing(false);
+                    handleExcelPaste(text, { rowIndex: sIdx, colIndex: cIdx });
+                  }
+                }}
+              />
+            ) : (
+              <div className={cn(
+                "w-full h-full min-h-[48px] flex items-center justify-center text-xs transition-all",
+                val > 0 
+                  ? (isKit ? "text-[#C2714F] font-black" : "text-stone-900 font-black scale-110") 
+                  : "text-stone-200 font-medium"
+              )}>
+                {val > 0 ? val : "—"}
+              </div>
+            )}
+          </td>
+        );
+      })}
+    </tr>
+  );
+});
+
+RateioRow.displayName = "RateioRow";
 
 export default function RateioTabV2({
   campaignId,
@@ -338,7 +455,9 @@ export default function RateioTabV2({
     setLocalQtyOverrides({});
   }, [campaignId, rateioSource, activeAdjustment?.id, winnerSupplierId]);
 
-  const visibleQtyMap = useMemo(() => ({ ...qtyMap, ...localQtyOverrides }), [qtyMap, localQtyOverrides]);
+  const visibleQtyMap = useMemo(() => {
+    return { ...qtyMap, ...localQtyOverrides };
+  }, [qtyMap, localQtyOverrides]);
 
   // Pre-compute kit quantity per store from components (read-only display)
   const kitQtyMap = useMemo(() => {
@@ -399,6 +518,7 @@ export default function RateioTabV2({
   const editingCellRef = useRef<{ storeId: string; pieceId: string } | null>(null);
   const editValueRef = useRef("");
   const skipBlurSaveRef = useRef(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const getVisibleCellQty = useCallback((storeId: string, pieceId: string) => {
     const isKit = kits?.some((k: any) => k.id === pieceId);
@@ -413,6 +533,12 @@ export default function RateioTabV2({
     });
     return () => cancelAnimationFrame(rafId);
   }, [editingCell]);
+
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, []);
 
   const applyWithHistory = async (
     upserts: RateioUpsert[],
@@ -536,6 +662,25 @@ export default function RateioTabV2({
   const saveCell = (cell: { storeId: string; pieceId: string }, rawValue: string) => {
     const qty = Math.max(0, parseInt(rawValue, 10) || 0);
     const isKit = kits?.some((k: any) => k.id === cell.pieceId);
+    
+    // Optimistic update - do it synchronously
+    setLocalQtyOverrides(prev => {
+      const next = { ...prev };
+      if (isKit) {
+        const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === cell.pieceId);
+        kpList.forEach(kp => {
+          const key = `${cell.storeId}-${kp.piece_id}`;
+          const val = qty * (kp.quantity || 1);
+          if (val > 0) next[key] = val;
+          else delete next[key];
+        });
+      } else {
+        const key = `${cell.storeId}-${cell.pieceId}`;
+        if (qty > 0) next[key] = qty;
+        else delete next[key];
+      }
+      return next;
+    });
 
     if (isKit) {
       const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === cell.pieceId);
@@ -568,15 +713,14 @@ export default function RateioTabV2({
     const col = columns[colIndex];
     if (!store || !col) return;
 
-    const targetValue = getVisibleCellQty(store.id, col.id);
     const current = editingCellRef.current;
-    const valueToSave = editValueRef.current ?? "";
-
     if (current && (current.storeId !== store.id || current.pieceId !== col.id)) {
-      saveCell(current, valueToSave);
+      saveCell(current, editValueRef.current ?? "");
     }
 
+    const targetValue = getVisibleCellQty(store.id, col.id);
     const nextValue = targetValue > 0 ? String(targetValue) : "";
+    
     editingCellRef.current = { storeId: store.id, pieceId: col.id };
     editValueRef.current = nextValue;
     setEditingCell({ storeId: store.id, pieceId: col.id });
@@ -1284,9 +1428,9 @@ export default function RateioTabV2({
                               )}
                               <div className="text-sm font-black text-stone-900 leading-none">{col.code}</div>
                               {isKit && (
-                                <div className="text-[9px] font-bold text-[#C2714F] leading-none uppercase">KIT</div>
+                                <div className="text-[10px] font-black text-[#C2714F] leading-none uppercase mb-0.5">KIT</div>
                               )}
-                              <div className="text-[10px] text-stone-500 font-medium leading-tight text-center px-1 whitespace-normal break-words">
+                              <div className="text-xs text-stone-700 font-bold leading-tight text-center px-1 min-h-[32px] flex items-center justify-center">
                                 {col.name}
                               </div>
                             </div>
@@ -1296,103 +1440,35 @@ export default function RateioTabV2({
                     </tr>
                   </thead>
                   <tbody className="bg-white">
-                    {filteredStores.map((store, sIdx) => (
-                      <tr key={store.id} className="group even:bg-stone-100/80 odd:bg-white hover:bg-[#C2714F]/[0.08] transition-colors">
-                        <td 
-                          className="bg-white group-hover:bg-stone-50/50 border-r border-b border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]" 
-                          style={{ position: 'sticky', left: 0, zIndex: 20 }}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div 
-                              className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0"
-                              style={{ 
-                                backgroundColor: getStateColor(store.state).bg, 
-                                color: getStateColor(store.state).text 
-                              }}
-                            >
-                              {store.state}
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-1.5">
-                                <span className="font-semibold text-stone-900 text-xs truncate">{store.name}</span>
-                                {store.nickname && (
-                                  <span className="text-[10px] text-stone-400 truncate">({store.nickname})</span>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <StoreIcon className="w-3 h-3 text-stone-300 shrink-0" />
-                                <Badge variant="secondary" className="bg-stone-100 text-stone-500 border-none text-[9px] h-4 px-1.5 font-bold uppercase">
-                                  {store.store_model || "PADRÃO"}
-                                </Badge>
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        {columns.map((col, cIdx) => {
-                          const isKit = col._type === "kit";
-                          const val = isKit
-                            ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
-                            : (visibleQtyMap[`${store.id}-${col.id}`] || 0);
-                          const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === col.id;
-                          const isSelected = !isEditing && anchorCell?.rowIndex === sIdx && anchorCell?.colIndex === cIdx;
-
-                          return (
-                            <td 
-                              key={`${col._type}-${col.id}`} 
-                              className={cn(
-                                "border-r border-b border-stone-200 text-center transition-all relative",
-                                !isTabEditable ? "cursor-default" : "cursor-cell",
-                                isKit && "bg-[#C2714F]/[0.03]",
-                                val > 0 && !isKit && "bg-stone-50/30",
-                                isEditing && "ring-2 ring-inset ring-[#C2714F] z-10",
-                                isSelected && "ring-2 ring-inset ring-blue-500 z-10 bg-blue-50/50"
-                              )}
-                              onMouseDown={() => {
-                                if (editingCellRef.current) skipBlurSaveRef.current = true;
-                              }}
-                              onClick={() => {
-                                if (!isTabEditable) return;
-                                switchToCell(sIdx, cIdx);
-                              }}
-                            >
-                              {isEditing ? (
-                                <input
-                                  ref={inputRef}
-                                  type="text"
-                                  className="w-full h-full bg-transparent text-center text-xs font-bold focus:outline-none"
-                                  value={editValue}
-                                  onChange={(e) => {
-                                    editValueRef.current = e.target.value;
-                                    setEditValue(e.target.value);
-                                  }}
-                                  onBlur={handlePieceBlur}
-                                  onKeyDown={(e) => handleEditorKeyDown(e, sIdx, cIdx)}
-                                   onPaste={(e) => {
-                                    const text = e.clipboardData.getData('text/plain');
-                                    // Se for multi-célula (tem tab ou newline), interceptamos para o handleExcelPaste
-                                    if (text.includes('\t') || text.includes('\n')) {
-                                      e.preventDefault();
-                                      closeEditing(false);
-                                      handleExcelPaste(text, { rowIndex: sIdx, colIndex: cIdx });
-                                    }
-                                    // Se for valor único, deixamos o comportamento nativo do input
-                                  }}
-                                />
-                              ) : (
-                                <div className={cn(
-                                  "w-full h-full min-h-[48px] flex items-center justify-center text-xs transition-all",
-                                  val > 0 
-                                    ? (isKit ? "text-[#C2714F] font-black" : "text-stone-900 font-black scale-110") 
-                                    : "text-stone-200 font-medium"
-                                )}>
-                                  {val > 0 ? val : "—"}
-                                </div>
-                              )}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
+                    {filteredStores.map((store, sIdx) => {
+                      const isEditingRow = editingCell?.storeId === store.id;
+                      const isAnchorRow = anchorCell?.rowIndex === sIdx;
+                      
+                      return (
+                        <RateioRow
+                          key={store.id}
+                          store={store}
+                          sIdx={sIdx}
+                          columns={columns}
+                          kits={kits}
+                          kitQtyMap={kitQtyMap}
+                          visibleQtyMap={visibleQtyMap}
+                          isEditingRow={isEditingRow}
+                          editingCell={isEditingRow ? editingCell : null}
+                          anchorCell={isAnchorRow ? anchorCell : null}
+                          isTabEditable={isTabEditable}
+                          switchToCell={switchToCell}
+                          inputRef={inputRef}
+                          editValue={isEditingRow ? editValue : ""}
+                          setEditValue={setEditValue}
+                          editValueRef={editValueRef}
+                          handlePieceBlur={handlePieceBlur}
+                          handleEditorKeyDown={handleEditorKeyDown}
+                          handleExcelPaste={handleExcelPaste}
+                          closeEditing={closeEditing}
+                        />
+                      );
+                    })}
                   </tbody>
                   {/* Table Footer with Totals */}
                   <tfoot 
