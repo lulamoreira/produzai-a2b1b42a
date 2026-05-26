@@ -459,6 +459,36 @@ export default function RateioTabV2({
     return { ...qtyMap, ...localQtyOverrides };
   }, [qtyMap, localQtyOverrides]);
 
+  // Cleanup overrides that have been confirmed by the server
+  useEffect(() => {
+    setLocalQtyOverrides(prev => {
+      let changed = false;
+      const next = { ...prev };
+      for (const key in next) {
+        if (qtyMap[key] === next[key]) {
+          delete next[key];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [qtyMap]);
+
+  // Grouped quantities per store for performance
+  const storeQtyMaps = useMemo(() => {
+    const maps: Record<string, Record<string, number>> = {};
+    for (const s of stores) {
+      maps[s.id] = {};
+    }
+    for (const key in visibleQtyMap) {
+      const [sId, pId] = key.split('-');
+      if (maps[sId]) {
+        maps[sId][pId] = visibleQtyMap[key];
+      }
+    }
+    return maps;
+  }, [stores, visibleQtyMap]);
+
   // Pre-compute kit quantity per store from components (read-only display)
   const kitQtyMap = useMemo(() => {
     const map: Record<string, number> = {};
