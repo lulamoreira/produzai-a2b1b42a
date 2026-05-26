@@ -859,7 +859,7 @@ export default function RateioTabV2({
       .filter(c => !c.isIgnored && c.itemType === 'kit')
       .forEach(c => {
         const val = Math.round(c.newValue);
-        const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === c.pieceId);
+        const kpList = (activeKitPieces || []).filter((kp: any) => kp.kit_id === c.pieceId);
         kpList.forEach((kp: any) => {
           setUpsert(c.storeId, kp.piece_id, val * (kp.quantity || 1));
         });
