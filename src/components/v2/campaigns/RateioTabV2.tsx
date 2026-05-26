@@ -33,6 +33,7 @@ import { getStateColor } from "@/lib/stateColors";
 import { applyRateioBulk, type RateioUpsert } from "@/lib/applyRateioBulk";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { buildRateioPasteOperations, parseRateioClipboard, type RateioPasteChange } from "@/lib/rateioPaste";
 
 interface RateioTabV2Props {
   campaignId: string;
@@ -810,44 +811,15 @@ export default function RateioTabV2({
     }
   };
 
-  const parseExcelTSV = (text: string): (number | null | undefined)[][] => {
-    const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    const trimmed = normalized.replace(/\n$/, '');
-    return trimmed.split('\n').map(line =>
-      line.split('\t').map(cell => {
-        const raw = cell.trim();
-        if (raw === '') return undefined; // VAZIO = pular silenciosamente
-        const cleaned = raw.replace(/\./g, '').replace(',', '.');
-        const numValue = parseFloat(cleaned);
-        return isNaN(numValue) ? null : numValue; // null = texto inválido, marca ignorado
-      })
-    );
-  };
-
-  const applyPasteChanges = async (changes: any[]) => {
-    const allUpsertsMap = new Map<string, RateioUpsert>();
-
-    const setUpsert = (storeId: string, pieceId: string, qty: number) => {
-      const key = `${storeId}-${pieceId}`;
-      allUpsertsMap.set(key, { campaignId, storeId, pieceId, quantity: qty });
-    };
-
-    changes
-      .filter(c => !c.isIgnored)
-      .forEach(c => {
-        const val = Math.round(c.newValue);
-        if (c.itemType === 'kit') {
-          const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === c.pieceId);
-          kpList.forEach((kp: any) => {
-            setUpsert(c.storeId, kp.piece_id, val * (kp.quantity || 1));
-          });
-        } else {
-          setUpsert(c.storeId, c.pieceId, val);
-        }
-      });
-
-    const allUpserts = Array.from(allUpsertsMap.values());
-    if (allUpserts.length === 0) return;
+  const applyPasteChanges = async (changes: RateioPasteChange[]) => {
+    const operations = buildRateioPasteOperations(changes, kitPieces || []);
+    const allUpserts = operations
+      .filter((op) => op.quantity > 0)
+      .map((op) => ({ campaignId, ...op }));
+    const allDeletes = operations
+      .filter((op) => op.quantity <= 0)
+      .map((op) => ({ campaignId, storeId: op.storeId, pieceId: op.pieceId }));
+    if (operations.length === 0) return;
 
     const toastId = toast.loading("Aplicando colagem...");
 
@@ -856,6 +828,9 @@ export default function RateioTabV2({
         const next = { ...prev };
         allUpserts.forEach(u => {
           next[`${u.storeId}-${u.pieceId}`] = u.quantity;
+        });
+        allDeletes.forEach(d => {
+          next[`${d.storeId}-${d.pieceId}`] = 0;
         });
         return next;
       });
@@ -869,12 +844,21 @@ export default function RateioTabV2({
           adjustmentId: activeAdjustment?.id
         });
       }
+      for (let i = 0; i < allDeletes.length; i += CHUNK_SIZE) {
+        const chunk = allDeletes.slice(i, i + CHUNK_SIZE);
+        await applyRateioBulk([], chunk, {
+          isNegotiationView: rateioSource === 'negotiation',
+          negotiationSupplierId: winnerSupplierId,
+          isAdjustmentView: rateioSource === 'adjustment',
+          adjustmentId: activeAdjustment?.id
+        });
+      }
       
       queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
       queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
       queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
       
-      toast.success(`${allUpserts.length} células atualizadas`, { id: toastId });
+      toast.success(`${operations.length} células atualizadas`, { id: toastId });
       setAnchorCell(null);
     } catch (err: any) {
       console.error("Erro confirmPaste:", err);
@@ -883,8 +867,8 @@ export default function RateioTabV2({
   };
 
   const handleExcelPaste = useCallback((text: string, anchor: { rowIndex: number; colIndex: number }) => {
-    const parsedData = parseExcelTSV(text);
-    const changes: any[] = [];
+    const parsedData = parseRateioClipboard(text);
+    const changes: RateioPasteChange[] = [];
 
     const rowCount = parsedData.length;
     const colCount = rowCount > 0 ? Math.max(...parsedData.map(r => r.length)) : 0;
