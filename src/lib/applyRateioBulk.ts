@@ -147,16 +147,30 @@ export async function applyRateioBulk(
       }
     }
     if (deletes.length > 0) {
-      for (let i = 0; i < deletes.length; i += 500) {
-        const chunk = deletes.slice(i, i + 500);
-        await Promise.all(chunk.map(async (d) => {
-          const { error } = await supabase
-            .from('campaign_store_pieces')
-            .delete()
-            .eq('campaign_id', d.campaignId)
-            .eq('store_id', d.storeId)
-            .eq('piece_id', d.pieceId);
-          if (error) throw error;
+      // Group deletes by (campaignId, storeId) and use IN(piece_ids) to drastically
+      // reduce HTTP calls — avoids "Failed to fetch" from browser connection limits.
+      const byKey = new Map<string, { campaignId: string; storeId: string; pieceIds: string[] }>();
+      for (const d of deletes) {
+        const k = `${d.campaignId}|${d.storeId}`;
+        const entry = byKey.get(k) ?? { campaignId: d.campaignId, storeId: d.storeId, pieceIds: [] };
+        entry.pieceIds.push(d.pieceId);
+        byKey.set(k, entry);
+      }
+      const entries = Array.from(byKey.values());
+      const CONCURRENCY = 4;
+      for (let i = 0; i < entries.length; i += CONCURRENCY) {
+        const batch = entries.slice(i, i + CONCURRENCY);
+        await Promise.all(batch.map(async (e) => {
+          for (let j = 0; j < e.pieceIds.length; j += 200) {
+            const slice = e.pieceIds.slice(j, j + 200);
+            const { error } = await supabase
+              .from('campaign_store_pieces')
+              .delete()
+              .eq('campaign_id', e.campaignId)
+              .eq('store_id', e.storeId)
+              .in('piece_id', slice);
+            if (error) throw error;
+          }
         }));
       }
     }
