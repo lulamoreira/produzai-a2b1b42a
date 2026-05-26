@@ -388,13 +388,30 @@ export default function RateioTabV2({
   const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
   const [editValue, setEditValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const editingCellRef = useRef<{ storeId: string; pieceId: string } | null>(null);
+  const editValueRef = useRef("");
+  const skipBlurSaveRef = useRef(false);
+  const [localQtyOverrides, setLocalQtyOverrides] = useState<Record<string, number>>({});
 
-  const startEditing = (storeId: string, pieceId: string, currentVal: number) => {
-    if (!canEditCampaignStores || !isTabEditable) return;
-    setEditingCell({ storeId, pieceId });
-    setEditValue(currentVal === 0 ? "" : String(currentVal));
-    setTimeout(() => inputRef.current?.focus(), 0);
-  };
+  useEffect(() => {
+    setLocalQtyOverrides({});
+  }, [campaignId, rateioSource, activeAdjustment?.id, winnerSupplierId]);
+
+  const visibleQtyMap = useMemo(() => ({ ...qtyMap, ...localQtyOverrides }), [qtyMap, localQtyOverrides]);
+
+  const getVisibleCellQty = useCallback((storeId: string, pieceId: string) => {
+    const isKit = kits?.some((k: any) => k.id === pieceId);
+    return isKit ? (kitQtyMap[`${storeId}-${pieceId}`] || 0) : (visibleQtyMap[`${storeId}-${pieceId}`] || 0);
+  }, [kits, kitQtyMap, visibleQtyMap]);
+
+  useEffect(() => {
+    if (!editingCell) return;
+    const rafId = requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [editingCell]);
 
   const applyWithHistory = async (
     upserts: RateioUpsert[],
