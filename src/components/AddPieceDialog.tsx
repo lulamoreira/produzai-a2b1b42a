@@ -7,6 +7,7 @@ import { Plus, Upload, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -60,6 +61,9 @@ const AddPieceDialog = ({
     custom_field_3: "",
     custom_field_4: "",
     custom_field_5: "",
+    kit_only: false,
+    is_new: false,
+    store_category: "",
   });
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -88,6 +92,9 @@ const AddPieceDialog = ({
         custom_field_3: initialPiece.custom_field_3 || "",
         custom_field_4: initialPiece.custom_field_4 || "",
         custom_field_5: initialPiece.custom_field_5 || "",
+        kit_only: initialPiece.kit_only ?? false,
+        is_new: initialPiece.is_new ?? false,
+        store_category: initialPiece.store_category || "",
       });
       setPreviewUrl(initialPiece.image_url || null);
     } else {
@@ -106,6 +113,9 @@ const AddPieceDialog = ({
         custom_field_3: "",
         custom_field_4: "",
         custom_field_5: "",
+        kit_only: false,
+        is_new: false,
+        store_category: "",
       });
       setPreviewUrl(null);
     }
@@ -173,13 +183,16 @@ const AddPieceDialog = ({
       custom_field_3: form.custom_field_3 || null,
       custom_field_4: form.custom_field_4 || null,
       custom_field_5: form.custom_field_5 || null,
+      store_category: form.store_category || null,
     };
 
     try {
       if (initialPiece) {
         await updatePieceAction.mutateAsync({
           id: initialPiece.id,
-          ...pieceData
+          ...pieceData,
+          kit_only: form.kit_only,
+          is_new: form.is_new,
         });
         toast.success(t("pieces.pieceUpdated"));
       } else {
@@ -187,7 +200,8 @@ const AddPieceDialog = ({
           ...pieceData,
           display_order: maxCode + 1,
           is_mockup: false,
-          kit_only: false,
+          kit_only: form.kit_only,
+          is_new: form.is_new,
         });
       }
       setOpen(false);
