@@ -1157,10 +1157,16 @@ export default function RateioTabV2({
                   )}
                 </div>
                 <table className="min-w-full" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
-                  <thead className="sticky top-0 z-30 bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
+                  <thead 
+                    className="bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.05)]"
+                    style={{ position: 'sticky', top: 0, zIndex: 30 }}
+                  >
                     {/* Group Labels Row */}
                     <tr>
-                      <th className="w-[300px] sticky left-0 z-40 bg-white border-r border-stone-200" />
+                      <th 
+                        className="w-[300px] bg-white border-r border-stone-200" 
+                        style={{ position: 'sticky', left: 0, top: 0, zIndex: 50 }}
+                      />
                       {pieceGroups.map((group, gIdx) => (
                         <th 
                           key={gIdx} 
@@ -1173,7 +1179,10 @@ export default function RateioTabV2({
                     </tr>
                     {/* Piece Headers Row */}
                     <tr>
-                      <th className="w-[300px] sticky left-0 z-40 bg-white p-4 border-r border-b border-stone-200 text-left align-top">
+                      <th 
+                        className="w-[300px] bg-white p-4 border-r border-b border-stone-200 text-left align-top" 
+                        style={{ position: 'sticky', left: 0, top: 0, zIndex: 50 }}
+                      >
                         <div className="flex items-center justify-between mb-1">
                           <div className="text-xs font-bold text-stone-400 uppercase tracking-widest">Loja</div>
                           <div className="flex items-center gap-1">
@@ -1231,7 +1240,10 @@ export default function RateioTabV2({
                   <tbody className="bg-white">
                     {filteredStores.map((store, sIdx) => (
                       <tr key={store.id} className="group even:bg-stone-100/80 odd:bg-white hover:bg-[#C2714F]/[0.08] transition-colors">
-                        <td className="sticky left-0 z-20 bg-white group-hover:bg-stone-50/50 border-r border-b border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">
+                        <td 
+                          className="bg-white group-hover:bg-stone-50/50 border-r border-b border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]" 
+                          style={{ position: 'sticky', left: 0, zIndex: 20 }}
+                        >
                           <div className="flex items-center gap-3">
                             <div 
                               className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0"
@@ -1316,9 +1328,15 @@ export default function RateioTabV2({
                     ))}
                   </tbody>
                   {/* Table Footer with Totals */}
-                  <tfoot className="sticky bottom-0 z-30 bg-stone-50 shadow-[0_-1px_0_0_rgba(0,0,0,0.05)]">
+                  <tfoot 
+                    className="bg-stone-50 shadow-[0_-1px_0_0_rgba(0,0,0,0.05)]"
+                    style={{ position: 'sticky', bottom: 0, zIndex: 30 }}
+                  >
                     <tr>
-                      <td className="sticky left-0 z-20 bg-stone-50 border-r border-t border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">
+                      <td 
+                        className="bg-stone-50 border-r border-t border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]" 
+                        style={{ position: 'sticky', left: 0, bottom: 0, zIndex: 40 }}
+                      >
                         <div className="text-xs font-black text-stone-900 uppercase tracking-widest text-right pr-4">TOTAL</div>
                       </td>
                       {columns.map((col) => {
