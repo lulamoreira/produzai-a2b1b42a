@@ -114,7 +114,15 @@ const parsePriceInput = (value: string): number | null => {
 
 const priceToInput = (value: number | null | undefined) => {
   if (value == null) return "";
-  return value.toLocaleString("pt-BR", { maximumFractionDigits: 4 });
+  return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const focusPriceInput = (index: number) => {
+  const el = document.querySelector<HTMLInputElement>(`input[data-price-input="${index}"]`);
+  if (el) {
+    el.focus();
+    el.select();
+  }
 };
 
 /* ─── CSS confetti keyframes ─────────────────────────────── */
@@ -1120,7 +1128,13 @@ const SupplierPortal = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayRows.map((row) => {
+                  {(() => {
+                    const editableKeys = displayRows.filter((r) => r.editable && r.pieceId).map((r) => r.key);
+                    const editableIndexMap = new Map<string, number>(editableKeys.map((k, i) => [k, i]));
+                    const totalEditable = editableKeys.length;
+                    return displayRows.map((row) => {
+                    const __editableIndex = editableIndexMap.has(row.key) ? editableIndexMap.get(row.key)! : -1;
+                    const __totalEditable = totalEditable;
                     if (row.type === "kit_header") {
                       return (
                         <TableRow key={row.key} className="bg-muted/50 border-t-2">
@@ -1218,10 +1232,29 @@ const SupplierPortal = () => {
                               <Input
                                 inputMode="decimal"
                                 placeholder="0,00"
+                                data-price-input={__editableIndex}
                                 className="h-10 min-w-0 flex-1 border-0 bg-transparent px-2 text-right font-semibold text-foreground shadow-none focus-visible:ring-0"
                                 disabled={isLocked}
                                 value={row.pieceId ? priceInputs[row.pieceId] ?? "" : ""}
-                                onFocus={markFilling}
+                                onFocus={(e) => { markFilling(); e.currentTarget.select(); }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || (e.key === "ArrowDown" && !e.shiftKey)) {
+                                    e.preventDefault();
+                                    e.currentTarget.blur();
+                                    const next = e.shiftKey ? __editableIndex - 1 : __editableIndex + 1;
+                                    if (next >= 0 && next < __totalEditable) {
+                                      setTimeout(() => focusPriceInput(next), 0);
+                                    }
+                                  } else if (e.key === "ArrowUp") {
+                                    e.preventDefault();
+                                    e.currentTarget.blur();
+                                    if (__editableIndex - 1 >= 0) {
+                                      setTimeout(() => focusPriceInput(__editableIndex - 1), 0);
+                                    }
+                                  } else if (e.key === "Escape") {
+                                    e.currentTarget.blur();
+                                  }
+                                }}
                                 onChange={(e) => {
                                   if (!row.pieceId) return;
                                   const raw = e.target.value.replace(/[^0-9.,]/g, "");
@@ -1327,7 +1360,8 @@ const SupplierPortal = () => {
                         )}
                       </React.Fragment>
                     );
-                  })}
+                  });
+                  })()}
                   {displayRows.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
