@@ -3,131 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Precify3D - Calculadora de Impressão</title>
+    <title>Precify3D - Precificação 3D</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        body { background-color: #07071a; color: white; }
-        .card { background-color: #111128; border-radius: 1rem; border: 1px solid #1f1f3a; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-thumb { background: #1f1f3a; border-radius: 4px; }
+        body { background-color: #07071a; color: #ffffff; font-family: sans-serif; }
+        .card { background-color: #111128; border-radius: 12px; border: 1px solid #1f1f3a; }
+        .scrollbar-custom::-webkit-scrollbar { width: 8px; }
+        .scrollbar-custom::-webkit-scrollbar-thumb { background: #1f1f3a; border-radius: 4px; }
         .text-accent { color: #f97316; }
         .bg-accent { background-color: #f97316; }
-        .fade-in { animation: fadeIn 0.3s ease-in; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .border-accent { border-color: #f97316; }
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        input, select, textarea { background: #07071a !important; border: 1px solid #1f1f3a !important; padding: 0.5rem; border-radius: 6px; }
     </style>
 </head>
 <body>
     <div id="root"></div>
     <script type="text/babel">
-        const { useState, useEffect, useMemo } = React;
+        const { useState, useEffect } = React;
 
         const App = () => {
-            const [activeTab, setActiveTab] = useState('calc');
-            
-            // Initial Config State
-            const [config, setConfig] = useState(() => {
-                const saved = localStorage.getItem('precify3d_cfg');
-                return saved ? JSON.parse(saved) : {
-                    energiaKwh: 0.85,
-                    potenciaW: 300,
-                    maoDeObraHora: 25,
-                    desgasteMaquina: 5,
-                    margemPadrao: 50,
-                    falhaPadrao: 10,
-                    embalagemPadrao: 5,
-                    taxaPlataformaPadrao: 0,
-                    materiais: [
-                        {id: 1, name: 'PLA', price: 80},
-                        {id: 2, name: 'PLA+', price: 95},
-                        {id: 3, name: 'ABS', price: 90},
-                        {id: 4, name: 'PETG', price: 100},
-                        {id: 5, name: 'TPU', price: 130},
-                        {id: 6, name: 'PLA Silk', price: 110},
-                        {id: 7, name: 'Resina Std', price: 150},
-                        {id: 8, name: 'Resina ABS-Like', price: 180}
-                    ]
-                };
+            const [activeTab, setActiveTab] = useState('calculadora');
+            const [config, setConfig] = useState(() => JSON.parse(localStorage.getItem('precify3d_cfg')) || {
+                kwh: 0.85, watts: 300, maoObra: 25, desgaste: 5, 
+                margem: 50, falha: 10, embalagem: 5, taxa: 0,
+                materiais: [
+                    {name: 'PLA', price: 80}, {name: 'PLA+', price: 95}, {name: 'ABS', price: 90}, 
+                    {name: 'PETG', price: 100}, {name: 'TPU', price: 130}, {name: 'PLA Silk', price: 110}, 
+                    {name: 'Resina Std', price: 150}, {name: 'Resina ABS-Like', price: 180}
+                ]
             });
+            const [history, setHistory] = useState(() => JSON.parse(localStorage.getItem('precify3d_history')) || []);
 
             useEffect(() => localStorage.setItem('precify3d_cfg', JSON.stringify(config)), [config]);
+            useEffect(() => localStorage.setItem('precify3d_history', JSON.stringify(history)), [history]);
 
             return (
-                <div className="max-w-6xl mx-auto p-4 md:p-8">
-                    <header className="flex justify-between items-center mb-8">
-                        <h1 className="text-3xl font-bold text-accent">Precify3D</h1>
-                        <nav className="flex gap-4">
-                            {['calc', 'config', 'history'].map(t => (
-                                <button key={t} onClick={() => setActiveTab(t)} className={`px-4 py-2 rounded-full ${activeTab === t ? 'bg-accent' : 'bg-[#111128]'}`}>
-                                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                <div className="max-w-6xl mx-auto p-4">
+                    <header className="flex items-center justify-between py-6">
+                        <h1 className="text-2xl font-bold text-accent">Precify3D</h1>
+                        <nav className="flex gap-2">
+                            {['calculadora', 'configurações', 'histórico'].map(tab => (
+                                <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2 rounded-lg capitalize ${activeTab === tab ? 'bg-accent' : 'bg-[#111128]'}`}>
+                                    {tab}
                                 </button>
                             ))}
                         </nav>
                     </header>
-
-                    <main>
-                        {activeTab === 'calc' && <Calculator config={config} />}
-                        {activeTab === 'config' && <Settings config={config} setConfig={setConfig} />}
-                        {activeTab === 'history' && <History />}
-                    </main>
+                    {activeTab === 'calculadora' && <Calculadora config={config} setHistory={setHistory} />}
+                    {activeTab === 'configurações' && <Configuracoes config={config} setConfig={setConfig} />}
+                    {activeTab === 'histórico' && <Historico history={history} setHistory={setHistory} />}
+                    <footer className="fixed bottom-4 right-4 text-accent text-xs">Auto-save ativo</footer>
                 </div>
             );
         };
 
-        const Calculator = ({ config }) => {
-            const [form, setForm] = useState({
-                cliente: '', peca: '', materialId: 1, peso: '', horas: '', minutos: '', 
-                falha: config.falhaPadrao, margem: config.margemPadrao, desconto: 0, embalagem: config.embalagemPadrao, 
-                taxaPlataforma: 0, marketplace: 'none'
-            });
-            const [result, setResult] = useState(null);
+        const Calculadora = ({ config, setHistory }) => {
+            const [form, setForm] = useState({cliente:'', peca:'', material: config.materiais[0], peso:'', horas:'', min:'', falha: config.falha, margem: config.margem, desconto:0, embalagem: config.embalagem, taxa: 0, obs:'', market:'none'});
+            const [res, setRes] = useState(null);
+            const [errors, setErrors] = useState({});
 
             const calculate = () => {
-                if(!form.peso || !form.horas) return alert("Preencha peso e tempo!");
-                
-                const material = config.materiais.find(m => m.id == form.materialId);
-                const totalHoras = parseFloat(form.horas) + (parseFloat(form.minutos || 0) / 60);
-                
-                const pesoEfetivo = form.peso * (1 + form.falha / 100);
-                const custoMaterial = (pesoEfetivo / 1000) * material.price;
-                const custoEnergia = (config.potenciaW / 1000) * totalHoras * config.energiaKwh;
-                const custoMaoDeObra = totalHoras * config.maoDeObraHora;
-                const custoMaquina = totalHoras * config.desgasteMaquina;
-                const subtotal = custoMaterial + custoEnergia + custoMaoDeObra + custoMaquina + parseFloat(form.embalagem);
-                
-                const margem = subtotal * (form.margem / 100);
-                const baseTaxa = subtotal + margem;
-                const taxaPlataforma = baseTaxa * (form.taxaPlataforma / 100);
-                const desconto = (subtotal + margem + taxaPlataforma) * (form.desconto / 100);
-                const precoFinal = subtotal + margem + taxaPlataforma - desconto;
-                
-                setResult({ subtotal, custoMaterial, custoEnergia, custoMaoDeObra, custoMaquina, margem, taxaPlataforma, desconto, precoFinal });
+                let errs = {};
+                if(!form.peso) errs.peso = true;
+                if(!form.horas && !form.min) errs.tempo = true;
+                setErrors(errs);
+                if(Object.keys(errs).length) return;
+
+                const tH = parseFloat(form.horas || 0) + (parseFloat(form.min || 0)/60);
+                const pEf = form.peso * (1 + form.falha/100);
+                const cMat = (pEf/1000) * form.material.price;
+                const cEn = (config.watts/1000) * tH * config.kwh;
+                const cMao = tH * config.maoObra;
+                const cMaq = tH * config.desgaste;
+                const sub = cMat + cEn + cMao + cMaq + parseFloat(form.embalagem);
+                const marg = sub * (form.margem/100);
+                const tax = (sub + marg) * (form.taxa/100);
+                const desc = (sub + marg + tax) * (form.desconto/100);
+                const final = sub + marg + tax - desc;
+
+                setRes({cMat, cEn, cMao, cMaq, sub, marg, tax, desc, final, tH, pEf});
             };
 
             return (
                 <div className="grid md:grid-cols-2 gap-8">
                     <div className="card p-6 space-y-4">
-                        <input className="w-full bg-[#07071a] p-3 rounded" placeholder="Cliente" onChange={e => setForm({...form, cliente: e.target.value})} />
-                        <select className="w-full bg-[#07071a] p-3 rounded" onChange={e => setForm({...form, materialId: e.target.value})}>
-                            {config.materiais.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                        <input className="w-full" placeholder="Cliente" onChange={e=>setForm({...form, cliente:e.target.value})} />
+                        <select className="w-full" onChange={e=>setForm({...form, material: config.materiais[e.target.selectedIndex]})}>
+                            {config.materiais.map((m,i) => <option key={i}>{m.name}</option>)}
                         </select>
-                        <div className="grid grid-cols-2 gap-2">
-                            <input type="number" className="bg-[#07071a] p-3 rounded" placeholder="Peso (g)" onChange={e => setForm({...form, peso: e.target.value})} />
-                            <div className="flex gap-1">
-                                <input type="number" className="bg-[#07071a] p-3 w-1/2 rounded" placeholder="h" onChange={e => setForm({...form, horas: e.target.value})} />
-                                <input type="number" className="bg-[#07071a] p-3 w-1/2 rounded" placeholder="min" onChange={e => setForm({...form, minutos: e.target.value})} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div><input className={`w-full ${errors.peso ? 'border-red-500' : ''}`} type="number" placeholder="Peso (g)" onChange={e=>setForm({...form, peso:e.target.value})} /></div>
+                            <div className="flex gap-2">
+                                <input className={`w-1/2 ${errors.tempo ? 'border-red-500' : ''}`} type="number" placeholder="h" onChange={e=>setForm({...form, horas:e.target.value})} />
+                                <input className={`w-1/2 ${errors.tempo ? 'border-red-500' : ''}`} type="number" placeholder="min" onChange={e=>setForm({...form, min:e.target.value})} />
                             </div>
                         </div>
-                        <button onClick={calculate} className="w-full bg-accent py-3 rounded font-bold">⚡ Calcular Preço</button>
+                        <button className="w-full bg-accent p-3 rounded font-bold" onClick={calculate}>⚡ Calcular Preço</button>
                     </div>
-                    {result && (
+                    {res && (
                         <div className="card p-6 fade-in border-accent border-2">
-                            <h2 className="text-2xl font-bold mb-4">Preço Final: R$ {result.precoFinal.toFixed(2)}</h2>
-                            <div className="space-y-2 text-sm text-gray-400">
-                                <p>Custo Material: R$ {result.custoMaterial.toFixed(2)}</p>
-                                <p>Outros Custos: R$ {(result.custoEnergia + result.custoMaoDeObra + result.custoMaquina).toFixed(2)}</p>
+                            <h2 className="text-xl font-bold text-accent">Preço Final: R$ {res.final.toFixed(2)}</h2>
+                            <div className="text-sm space-y-1 mt-4">
+                                <p>Custo Mat: R$ {res.cMat.toFixed(2)}</p>
+                                <p>Energia: R$ {res.cEn.toFixed(2)}</p>
+                                <p>Mão de obra: R$ {res.cMao.toFixed(2)}</p>
+                                <button className="w-full bg-accent mt-4 p-2 rounded" onClick={() => setHistory(h => [...h, {...form, ...res, date: new Date().toLocaleString()}])}>💾 Salvar</button>
                             </div>
                         </div>
                     )}
@@ -135,12 +120,10 @@
             );
         };
 
-        const Settings = ({ config, setConfig }) => <div className="card p-6">Configurações em construção...</div>;
-        const History = () => <div className="card p-6">Histórico em construção...</div>;
+        const Configuracoes = ({ config, setConfig }) => <div className="card p-6">Configurações pendentes...</div>;
+        const Historico = ({ history, setHistory }) => <div className="card p-6">Histórico pendentes...</div>;
 
-        const container = document.getElementById('root');
-        const root = ReactDOM.createRoot(container);
-        root.render(<App />);
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
