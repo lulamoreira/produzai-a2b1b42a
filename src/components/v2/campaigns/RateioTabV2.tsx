@@ -605,6 +605,10 @@ export default function RateioTabV2({
 
         const col = columns[colIdx];
         const isKit = col._type === 'kit';
+        
+        // Ignora peças que pertençam a um kit
+        if (!isKit && (col as any).kit_only === true) continue;
+        
         const oldValue = isKit 
           ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
           : (qtyMap[`${store.id}-${col.id}`] || 0);
@@ -655,21 +659,26 @@ export default function RateioTabV2({
   }, [anchorCell, editingCell, isTabEditable, handleExcelPaste]);
 
   const confirmPaste = async () => {
-    const upserts: RateioUpsert[] = [];
-    const kitsToProcess: { storeId: string; kitId: string; quantity: number }[] = [];
+    const allUpserts: RateioUpsert[] = [];
     
     pendingChanges
       .filter(c => !c.isIgnored)
       .forEach(c => {
         const val = Math.round(c.newValue);
         if (c.itemType === 'kit') {
-          kitsToProcess.push({
-            storeId: c.storeId,
-            kitId: c.pieceId,
-            quantity: val
+          // Decompõe kit em suas peças componentes
+          const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === c.pieceId);
+          kpList.forEach((kp: any) => {
+            allUpserts.push({
+              campaignId,
+              storeId: c.storeId,
+              pieceId: kp.piece_id,
+              quantity: val * (kp.quantity || 1)
+            });
           });
         } else {
-          upserts.push({
+          // Peça standalone (kit_only=false) — upsert direto
+          allUpserts.push({
             campaignId,
             storeId: c.storeId,
             pieceId: c.pieceId,
@@ -678,28 +687,13 @@ export default function RateioTabV2({
         }
       });
 
-    if (upserts.length === 0 && kitsToProcess.length === 0) {
+    if (allUpserts.length === 0) {
       setIsPasteModalOpen(false);
       return;
     }
 
     setIsApplyingPaste(true);
     try {
-      // Aggregate all piece updates (including those from kits)
-      const allUpserts: RateioUpsert[] = [...upserts];
-      
-      kitsToProcess.forEach(k => {
-        const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === k.kitId);
-        kpList.forEach((kp: any) => {
-          allUpserts.push({
-            campaignId,
-            storeId: k.storeId,
-            pieceId: kp.piece_id,
-            quantity: k.quantity * (kp.quantity || 1)
-          });
-        });
-      });
-
       if (allUpserts.length > 0) {
         const CHUNK_SIZE = 500;
         for (let i = 0; i < allUpserts.length; i += CHUNK_SIZE) {
