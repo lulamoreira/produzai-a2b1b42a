@@ -108,17 +108,6 @@ export default function RateioTabV2({
   
   // Excel Paste state
   const [anchorCell, setAnchorCell] = useState<{ rowIndex: number; colIndex: number } | null>(null);
-  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
-  const [pendingChanges, setPendingChanges] = useState<{ 
-    storeId: string; 
-    pieceId: string; 
-    oldValue: number; 
-    newValue: number; 
-    storeName: string; 
-    pieceName: string;
-    isIgnored: boolean;
-    itemType: 'piece' | 'kit';
-  }[]>([]);
   const [isApplyingPaste, setIsApplyingPaste] = useState(false);
   const [storeSearch, setStoreSearch] = useState("");
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
@@ -1415,77 +1404,6 @@ export default function RateioTabV2({
         </div>
       )}
 
-      <AlertDialog open={isPasteModalOpen} onOpenChange={setIsPasteModalOpen}>
-        <AlertDialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
-          <AlertDialogHeader>
-            <AlertDialogTitle>Colar dados do Excel</AlertDialogTitle>
-            <AlertDialogDescription>
-              Você está prestes a preencher {pendingChanges.filter(c => !c.isIgnored).length} células.
-              {pendingChanges.some(c => c.oldValue > 0) && (
-                <span className="block mt-1 text-amber-600 font-medium">
-                  Aviso: {pendingChanges.filter(c => c.oldValue > 0).length} células com valores existentes serão sobrescritas.
-                </span>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          <div className="flex-1 overflow-auto my-4 border rounded-md">
-            <Table>
-              <TableHeader className="bg-stone-50 sticky top-0">
-                <TableRow>
-                  <TableHead className="text-xs">Loja</TableHead>
-                  <TableHead className="text-xs">Peça</TableHead>
-                  <TableHead className="text-xs text-center">Valor atual</TableHead>
-                  <TableHead className="text-xs text-center">Novo valor</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pendingChanges.slice(0, 10).map((change, idx) => (
-                  <TableRow key={idx}>
-                    <TableCell className="text-xs font-medium">{change.storeName}</TableCell>
-                    <TableCell className="text-xs">{change.pieceName}</TableCell>
-                    <TableCell className="text-xs text-center text-stone-400">{change.oldValue || "—"}</TableCell>
-                    <TableCell className={cn(
-                      "text-xs text-center font-bold",
-                      change.isIgnored ? "text-red-500" : "text-stone-900"
-                    )}>
-                      {change.isIgnored ? "ignorado" : change.newValue}
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {pendingChanges.length > 10 && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-xs text-center text-stone-500 bg-stone-50/50 italic py-2">
-                      ... e mais {pendingChanges.length - 10} células
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
-
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isApplyingPaste}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={(e) => {
-                e.preventDefault();
-                confirmPaste();
-              }}
-              disabled={isApplyingPaste}
-              className="bg-[#C2714F] hover:bg-[#A35D3F]"
-            >
-              {isApplyingPaste ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Aplicando...
-                </>
-              ) : (
-                "Confirmar colagem"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       <MatrixAutomationDialog 
         open={isAutomationOpen}
