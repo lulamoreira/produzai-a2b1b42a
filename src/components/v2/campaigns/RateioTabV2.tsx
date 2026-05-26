@@ -401,6 +401,7 @@ export default function RateioTabV2({
   const editingCellRef = useRef<{ storeId: string; pieceId: string } | null>(null);
   const editValueRef = useRef("");
   const skipBlurSaveRef = useRef(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const getVisibleCellQty = useCallback((storeId: string, pieceId: string) => {
     const isKit = kits?.some((k: any) => k.id === pieceId);
