@@ -67,7 +67,7 @@ const RateioRow = memo(({
   columns, 
   kits, 
   kitQtyMap, 
-  visibleQtyMap, 
+  storeQtyMap, 
   isEditingRow,
   editingCell, 
   anchorCell, 
@@ -118,7 +118,7 @@ const RateioRow = memo(({
         const isKit = col._type === "kit";
         const val = isKit
           ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
-          : (visibleQtyMap[`${store.id}-${col.id}`] || 0);
+          : (storeQtyMap[col.id] || 0);
         const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === col.id;
         const isSelected = !isEditing && anchorCell?.rowIndex === sIdx && anchorCell?.colIndex === cIdx;
 
@@ -459,6 +459,36 @@ export default function RateioTabV2({
     return { ...qtyMap, ...localQtyOverrides };
   }, [qtyMap, localQtyOverrides]);
 
+  // Cleanup overrides that have been confirmed by the server
+  useEffect(() => {
+    setLocalQtyOverrides(prev => {
+      let changed = false;
+      const next = { ...prev };
+      for (const key in next) {
+        if (qtyMap[key] === next[key]) {
+          delete next[key];
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, [qtyMap]);
+
+  // Grouped quantities per store for performance
+  const storeQtyMaps = useMemo(() => {
+    const maps: Record<string, Record<string, number>> = {};
+    for (const s of stores) {
+      maps[s.id] = {};
+    }
+    for (const key in visibleQtyMap) {
+      const [sId, pId] = key.split('-');
+      if (maps[sId]) {
+        maps[sId][pId] = visibleQtyMap[key];
+      }
+    }
+    return maps;
+  }, [stores, visibleQtyMap]);
+
   // Pre-compute kit quantity per store from components (read-only display)
   const kitQtyMap = useMemo(() => {
     const map: Record<string, number> = {};
@@ -566,11 +596,11 @@ export default function RateioTabV2({
     setLocalQtyOverrides(prev => {
       const next = { ...prev };
       upserts.forEach(u => {
-        const key = `${u.storeId}-${u.pieceId}`;
-        if (u.quantity > 0) next[key] = u.quantity;
-        else delete next[key];
+        next[`${u.storeId}-${u.pieceId}`] = u.quantity;
       });
-      deletes.forEach(d => delete next[`${d.storeId}-${d.pieceId}`]);
+      deletes.forEach(d => {
+        next[`${d.storeId}-${d.pieceId}`] = 0;
+      });
       return next;
     });
 
@@ -671,13 +701,11 @@ export default function RateioTabV2({
         kpList.forEach(kp => {
           const key = `${cell.storeId}-${kp.piece_id}`;
           const val = qty * (kp.quantity || 1);
-          if (val > 0) next[key] = val;
-          else delete next[key];
+          next[key] = val;
         });
       } else {
         const key = `${cell.storeId}-${cell.pieceId}`;
-        if (qty > 0) next[key] = qty;
-        else delete next[key];
+        next[key] = qty;
       }
       return next;
     });
@@ -823,9 +851,7 @@ export default function RateioTabV2({
       setLocalQtyOverrides(prev => {
         const next = { ...prev };
         allUpserts.forEach(u => {
-          const key = `${u.storeId}-${u.pieceId}`;
-          if (u.quantity > 0) next[key] = u.quantity;
-          else delete next[key];
+          next[`${u.storeId}-${u.pieceId}`] = u.quantity;
         });
         return next;
       });
@@ -1455,7 +1481,7 @@ export default function RateioTabV2({
                           columns={columns}
                           kits={kits}
                           kitQtyMap={kitQtyMap}
-                          visibleQtyMap={visibleQtyMap}
+                          storeQtyMap={storeQtyMaps[store.id] || {}}
                           isEditingRow={isEditingRow}
                           editingCell={isEditingRow ? editingCell : null}
                           anchorCell={isAnchorRow ? anchorCell : null}
