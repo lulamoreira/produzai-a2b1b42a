@@ -504,9 +504,10 @@ export default function RateioTabV2({
         if (colIdx >= columns.length) return;
         
         const col = columns[colIdx];
-        if (col._type === 'kit') return; // Cannot paste into kits
-
-        const oldValue = qtyMap[`${store.id}-${col.id}`] || 0;
+        const isKit = col._type === 'kit';
+        const oldValue = isKit 
+          ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
+          : (qtyMap[`${store.id}-${col.id}`] || 0);
         
         changes.push({
           storeId: store.id,
@@ -515,7 +516,8 @@ export default function RateioTabV2({
           newValue: val ?? 0,
           storeName: store.name,
           pieceName: col.name,
-          isIgnored: val === null
+          isIgnored: val === null,
+          itemType: col._type
         });
       });
     });
@@ -524,7 +526,7 @@ export default function RateioTabV2({
       setPendingChanges(changes);
       setIsPasteModalOpen(true);
     }
-  }, [filteredStores, columns, qtyMap]);
+  }, [filteredStores, columns, qtyMap, kitQtyMap]);
 
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
