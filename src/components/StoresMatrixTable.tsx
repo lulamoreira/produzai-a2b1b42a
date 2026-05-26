@@ -177,6 +177,7 @@ interface EditableCellProps {
   onSave: (storeId: string, field: string, value: string) => void;
   onCancel: () => void;
   onNavigate: (dir: "up" | "down" | "left" | "right") => void;
+  onPaste?: (e: React.ClipboardEvent) => void;
   cellRef: (el: HTMLElement | null) => void;
   suggestions: string[];
 }
@@ -190,6 +191,7 @@ const EditableCell = React.memo(function EditableCell({
   onSave,
   onCancel,
   onNavigate,
+  onPaste,
   cellRef,
   suggestions,
 }: EditableCellProps) {
@@ -281,6 +283,7 @@ const EditableCell = React.memo(function EditableCell({
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
+          onPaste={onPaste}
           className="h-7 text-xs min-w-[60px] px-1.5"
           autoComplete="off"
         />
@@ -847,6 +850,11 @@ export default function StoresMatrixTable({
                         onSave={handleSave}
                         onCancel={handleCancel}
                         onNavigate={navigateToCell}
+                        onPaste={(e) => {
+                          e.preventDefault();
+                          const text = e.clipboardData.getData('text/plain');
+                          handleExcelPaste(text, { rowIndex, colKey: col.storeField });
+                        }}
                         suggestions={suggestionsMap[col.storeField] || []}
                         cellRef={(el) => {
                           const key = getCellKey(store.id, col.storeField);

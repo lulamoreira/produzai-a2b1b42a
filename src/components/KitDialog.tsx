@@ -423,6 +423,12 @@ interface KitDetailDialogProps {
   onDuplicatePiece?: (piece: CampaignPiece) => Promise<void>;
 }
 
+const parseExcelTSV = (text: string): string[][] => {
+  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const trimmed = normalized.replace(/\n$/, '');
+  return trimmed.split('\n').map(line => line.split('\t').map(cell => cell.trim()));
+};
+
 export function KitDetailDialog({
   open, onOpenChange, kit, kitPieces, allPieces, existingKits = [], canEdit,
   pieceLocations = [], pieceSubLocations = [],
@@ -966,6 +972,24 @@ export function KitDetailDialog({
                           onChange={(e) => {
                             const val = parseInt(e.target.value) || 1;
                             onUpdateKitPiece({ id: kp.id, quantity: Math.max(1, val) });
+                          }}
+                          onPaste={(e) => {
+                            e.preventDefault();
+                            const text = e.clipboardData.getData('text/plain');
+                            const rows = parseExcelTSV(text);
+                            // Pega a primeira coluna de cada linha como quantidade
+                            const values = rows
+                              .map(r => parseInt(r[0], 10))
+                              .filter(v => !isNaN(v) && v >= 1);
+                            if (values.length === 0) return;
+                            // Aplica os valores sequencialmente nas peças a partir da posição atual
+                            const currentIndex = piecesInKit.findIndex(p => p.id === kp.id);
+                            values.forEach((val, i) => {
+                              const target = piecesInKit[currentIndex + i];
+                              if (target && onUpdateKitPiece) {
+                                onUpdateKitPiece({ id: target.id, quantity: val });
+                              }
+                            });
                           }}
                           className="w-12 h-7 text-center text-xs p-0"
                         />
