@@ -42,10 +42,11 @@ export function useAdjustmentRateio(adjustmentId: string | null | undefined) {
       ]);
 
       const adjPieces = (piecesRes.data as any[]) || [];
-      // adj_piece_id -> source_piece_id
+      const adjKitsData = (adjKitsRes.data as any[]) || [];
+      
       const adjToSource = new Map<string, string>();
-      // source_piece_id -> adj_piece_id (for writing)
       const sourceToAdj = new Map<string, string>();
+      const adjKitToSource = new Map<string, string>();
       
       for (const p of adjPieces) {
         if (!p.is_deleted && p.source_piece_id) {
@@ -53,6 +54,12 @@ export function useAdjustmentRateio(adjustmentId: string | null | undefined) {
           const adjId = String(p.id);
           adjToSource.set(adjId, srcId);
           sourceToAdj.set(srcId, adjId);
+        }
+      }
+
+      for (const k of adjKitsData) {
+        if (k.source_kit_id) {
+          adjKitToSource.set(String(k.id), String(k.source_kit_id));
         }
       }
 
