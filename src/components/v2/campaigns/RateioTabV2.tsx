@@ -596,11 +596,11 @@ export default function RateioTabV2({
     setLocalQtyOverrides(prev => {
       const next = { ...prev };
       upserts.forEach(u => {
-        const key = `${u.storeId}-${u.pieceId}`;
-        if (u.quantity > 0) next[key] = u.quantity;
-        else delete next[key];
+        next[`${u.storeId}-${u.pieceId}`] = u.quantity;
       });
-      deletes.forEach(d => delete next[`${d.storeId}-${d.pieceId}`]);
+      deletes.forEach(d => {
+        next[`${d.storeId}-${d.pieceId}`] = 0;
+      });
       return next;
     });
 
