@@ -4,7 +4,7 @@ import {
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
   Search, Filter, Download, Sparkles, Copy, MoreHorizontal, Lock, CheckCircle2,
   Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw, X,
-  ArrowUpDown, Check, Loader2
+  ArrowUpDown, Check, Loader2, Upload, FileDown
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ import { applyRateioBulk, type RateioUpsert } from "@/lib/applyRateioBulk";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { buildRateioPasteOperations, parseRateioClipboard, type RateioPasteChange } from "@/lib/rateioPaste";
+import { exportRateioSpreadsheet, parseRateioSpreadsheet } from '@/lib/rateioSpreadsheet';
 
 interface RateioTabV2Props {
   campaignId: string;
@@ -235,6 +236,9 @@ export default function RateioTabV2({
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [isApplyingPaste, setIsApplyingPaste] = useState(false);
   const [pendingChanges, setPendingChanges] = useState<RateioPasteChange[]>([]);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   // Undo/Redo history
   const [history, setHistory] = useState<{ storeId: string; pieceId: string; oldVal: number; newVal: number }[][]>([]);
@@ -968,8 +972,52 @@ export default function RateioTabV2({
     // You might want to refresh data here, but react-query usually handles it via mutations
   };
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await exportRateioSpreadsheet({
+        stores: filteredStores,
+        columns,
+        qtyMap: visibleQtyMap,
+        kitQtyMap,
+        campaignName: campaign?.name ?? 'campanha',
+      });
+      toast.success('Planilha exportada com sucesso');
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao exportar planilha');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setIsImporting(true);
+    try {
+      const validStoreIds  = new Set(stores.map((s: any) => s.id));
+      const validPieceIds  = new Set(pieces.map((p: any) => p.id));
+      const validKitIds    = new Set((kits || []).map((k: any) => k.id));
 
+      const upserts = await parseRateioSpreadsheet({
+        file,
+        campaignId,
+        validStoreIds,
+        validPieceIds,
+        validKitIds,
+        activeKitPieces: activeKitPieces || [],
+      });
+
+      await applyWithHistory(upserts, [], `${upserts.length} células importadas com sucesso`);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message ?? 'Erro ao importar planilha');
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-white">
@@ -1129,6 +1177,37 @@ export default function RateioTabV2({
                       </Button>
                     </>
                   )}
+
+                  {/* Input oculto para upload */}
+                  <input
+                    ref={importInputRef}
+                    type="file"
+                    accept=".xlsx"
+                    className="hidden"
+                    onChange={handleImportFile}
+                  />
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 text-xs gap-1.5 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
+                    onClick={handleExport}
+                    disabled={isExporting}
+                  >
+                    <FileDown className="w-3.5 h-3.5" />
+                    {isExporting ? 'Exportando...' : 'Exportar Modelo'}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 text-xs gap-1.5 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
+                    onClick={() => importInputRef.current?.click()}
+                    disabled={isImporting || !isTabEditable}
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    {isImporting ? 'Importando...' : 'Importar Planilha'}
+                  </Button>
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
