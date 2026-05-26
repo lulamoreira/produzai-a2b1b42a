@@ -245,14 +245,33 @@ const AddPieceDialog = ({
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">{t("pieces.measures")}</label>
-              <Input
-                required
-                placeholder={t("pieces.pieceSizePlaceholder")}
-                value={form.size}
-                onChange={(e) => setForm({ ...form, size: e.target.value })}
-              />
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Largura</label>
+                <Input
+                  required
+                  value={form.width}
+                  onChange={(e) => setForm({ ...form, width: e.target.value })}
+                  placeholder="Ex: 40"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Altura</label>
+                <Input
+                  required
+                  value={form.height}
+                  onChange={(e) => setForm({ ...form, height: e.target.value })}
+                  placeholder="Ex: 10"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Comprimento</label>
+                <Input
+                  value={form.length}
+                  onChange={(e) => setForm({ ...form, length: e.target.value })}
+                  placeholder="Ex: 5 (opcional)"
+                />
+              </div>
             </div>
 
             {customFieldLabels?.map((label, i) => {
