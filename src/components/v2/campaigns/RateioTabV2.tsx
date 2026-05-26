@@ -1020,7 +1020,7 @@ export default function RateioTabV2({
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-white">
+    <div className="flex flex-col h-full bg-white">
       {/* Top Navigation for Spreadsheet/Dashboard */}
       <div className="flex items-center justify-between px-6 py-2 border-b border-stone-200">
         <Tabs value={rateioView} onValueChange={setRateioView} className="w-auto">
