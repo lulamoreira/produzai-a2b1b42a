@@ -37,13 +37,17 @@ export function useAdjustmentRateio(adjustmentId: string | null | undefined) {
       ]);
 
       const adjPieces = (piecesRes.data as any[]) || [];
-      // Map adjustment_piece.id -> source_piece_id (only for non-deleted pieces
-      // that map back to a base campaign piece).
+      // adj_piece_id -> source_piece_id
       const adjToSource = new Map<string, string>();
-      const adjKits = new Map<string, string>(); // adj_kit_id -> source_kit_id (need kits)
+      // source_piece_id -> adj_piece_id (for writing)
+      const sourceToAdj = new Map<string, string>();
+      
       for (const p of adjPieces) {
         if (!p.is_deleted && p.source_piece_id) {
-          adjToSource.set(String(p.id), String(p.source_piece_id));
+          const srcId = String(p.source_piece_id);
+          const adjId = String(p.id);
+          adjToSource.set(adjId, srcId);
+          sourceToAdj.set(srcId, adjId);
         }
       }
 
@@ -54,10 +58,6 @@ export function useAdjustmentRateio(adjustmentId: string | null | undefined) {
         qtyMap[`${row.store_id}-${srcPieceId}`] = Number(row.quantity) || 0;
       }
 
-      // Kit pieces quantity map — adjustment kit_id is internal; the consumer
-      // currently aggregates kit qty via base kitPieces, so we also build a
-      // remap of adj kit_piece quantities keyed by source_piece_id so callers
-      // can override the per-kit-piece quantity.
       const kitPiecesQty: Record<string, number> = {};
       for (const kp of (kitPiecesRes.data as any[]) || []) {
         const srcPieceId = adjToSource.get(String(kp.piece_id));
@@ -65,7 +65,7 @@ export function useAdjustmentRateio(adjustmentId: string | null | undefined) {
         kitPiecesQty[`${kp.kit_id}-${srcPieceId}`] = Number(kp.quantity) || 0;
       }
 
-      return { qtyMap, kitPiecesQty };
+      return { qtyMap, kitPiecesQty, sourceToAdj };
     },
   });
 }
