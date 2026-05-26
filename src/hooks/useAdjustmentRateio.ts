@@ -79,6 +79,7 @@ export function useAdjustmentRateio(adjustmentId: string | null | undefined) {
         adjKitPieces.push({
           ...kp,
           piece_id: srcPieceId, // map back to source for UI consistency
+          kit_id: adjKitToSource.get(String(kp.kit_id)) || kp.kit_id, // map back to source kit id
         });
       }
 
