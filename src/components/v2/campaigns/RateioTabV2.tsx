@@ -593,17 +593,23 @@ export default function RateioTabV2({
     const parsedData = parseExcelTSV(text);
     const changes: typeof pendingChanges = [];
 
-    parsedData.forEach((row, rIdx) => {
-      const storeIdx = anchor.rowIndex + rIdx;
-      if (storeIdx >= filteredStores.length) return;
+    const rowCount = parsedData.length;
+    const colCount = rowCount > 0 ? Math.max(...parsedData.map(r => r.length)) : 0;
+
+    for (let rowOffset = 0; rowOffset < rowCount; rowOffset++) {
+      const storeIdx = anchor.rowIndex + rowOffset;
+      if (storeIdx >= filteredStores.length) break;
       
       const store = filteredStores[storeIdx];
+      const rowData = parsedData[rowOffset];
       
-      row.forEach((val, cIdx) => {
-        const colIdx = anchor.colIndex + cIdx;
-        // Limit pasting to exactly the number of columns provided in the clipboard
-        if (colIdx >= columns.length || cIdx >= row.length) return;
+      for (let colOffset = 0; colOffset < colCount; colOffset++) {
+        const colIdx = anchor.colIndex + colOffset;
+        if (colIdx >= columns.length) break;
         
+        const val = rowData[colOffset];
+        if (val === undefined) continue;
+
         const col = columns[colIdx];
         const isKit = col._type === 'kit';
         const oldValue = isKit 
@@ -620,8 +626,8 @@ export default function RateioTabV2({
           isIgnored: val === null,
           itemType: col._type
         });
-      });
-    });
+      }
+    }
 
     if (changes.length > 0) {
       setPendingChanges(changes);
