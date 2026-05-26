@@ -818,7 +818,6 @@ export default function StoresMatrixTable({
                                 </TooltipTrigger>
                                 <TooltipContent side="bottom" className="text-[10px] py-1 px-2 z-50">
                                   <div className="flex items-center gap-1.5">
-                                    <kbd className="bg-muted px-1 rounded border">Ctrl+V</kbd> para colar • <kbd className="bg-muted px-1 rounded border">Esc</kbd>
                                   </div>
                                 </TooltipContent>
                               </Tooltip>
