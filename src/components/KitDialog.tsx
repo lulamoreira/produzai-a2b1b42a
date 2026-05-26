@@ -423,6 +423,12 @@ interface KitDetailDialogProps {
   onDuplicatePiece?: (piece: CampaignPiece) => Promise<void>;
 }
 
+const parseExcelTSV = (text: string): string[][] => {
+  const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  const trimmed = normalized.replace(/\n$/, '');
+  return trimmed.split('\n').map(line => line.split('\t').map(cell => cell.trim()));
+};
+
 export function KitDetailDialog({
   open, onOpenChange, kit, kitPieces, allPieces, existingKits = [], canEdit,
   pieceLocations = [], pieceSubLocations = [],
