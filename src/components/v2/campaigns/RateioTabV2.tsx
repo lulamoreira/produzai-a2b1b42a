@@ -115,6 +115,7 @@ export default function RateioTabV2({
     storeName: string; 
     pieceName: string;
     isIgnored: boolean;
+    itemType: 'piece' | 'kit';
   }[]>([]);
   const [isApplyingPaste, setIsApplyingPaste] = useState(false);
   const [storeSearch, setStoreSearch] = useState("");
