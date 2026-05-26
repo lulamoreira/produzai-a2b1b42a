@@ -149,11 +149,21 @@ const AddPieceDialog = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!form.width || !form.height) {
+      toast.error("Largura e Altura são obrigatórios.");
+      return;
+    }
+
+    const size = [form.width, form.height, form.length]
+      .map(v => v?.trim())
+      .filter(Boolean)
+      .join("×");
+
     const pieceData = {
       code: Number(form.code) || (maxCode + 1),
       category: form.category.toUpperCase(),
       name: form.name,
-      size: form.size,
+      size: size,
       image_url: form.image_url || null,
       specification: form.specification,
       installation_instructions: form.installation_instructions,
