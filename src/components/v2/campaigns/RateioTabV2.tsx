@@ -332,6 +332,14 @@ export default function RateioTabV2({
     });
   }, [pieces, kits, pieceFilters]);
 
+  const [localQtyOverrides, setLocalQtyOverrides] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    setLocalQtyOverrides({});
+  }, [campaignId, rateioSource, activeAdjustment?.id, winnerSupplierId]);
+
+  const visibleQtyMap = useMemo(() => ({ ...qtyMap, ...localQtyOverrides }), [qtyMap, localQtyOverrides]);
+
   // Pre-compute kit quantity per store from components (read-only display)
   const kitQtyMap = useMemo(() => {
     const map: Record<string, number> = {};
@@ -341,7 +349,7 @@ export default function RateioTabV2({
       for (const s of stores) {
         const q = Math.min(
           ...kpList.map((kp: any) => {
-            const baseQty = qtyMap[`${s.id}-${kp.piece_id}`] || 0;
+            const baseQty = visibleQtyMap[`${s.id}-${kp.piece_id}`] || 0;
             return Math.floor(baseQty / (kp.quantity || 1));
           })
         );
@@ -349,7 +357,7 @@ export default function RateioTabV2({
       }
     }
     return map;
-  }, [kits, kitPieces, stores, qtyMap]);
+  }, [kits, kitPieces, stores, visibleQtyMap]);
 
   // Compute column totals
   const columnTotals = useMemo(() => {
@@ -361,13 +369,13 @@ export default function RateioTabV2({
         if (isKit) {
           total += kitQtyMap[`${store.id}-${col.id}`] || 0;
         } else {
-          total += qtyMap[`${store.id}-${col.id}`] || 0;
+          total += visibleQtyMap[`${store.id}-${col.id}`] || 0;
         }
       });
       totals[`${col._type}-${col.id}`] = total;
     });
     return totals;
-  }, [columns, stores, qtyMap, kitQtyMap]);
+  }, [columns, stores, visibleQtyMap, kitQtyMap]);
 
   // Group columns by store_category label, preserving sorted order (no global re-sort)
   const pieceGroups = useMemo(() => {
