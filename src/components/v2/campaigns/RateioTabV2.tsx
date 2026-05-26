@@ -338,7 +338,9 @@ export default function RateioTabV2({
     setLocalQtyOverrides({});
   }, [campaignId, rateioSource, activeAdjustment?.id, winnerSupplierId]);
 
-  const visibleQtyMap = useMemo(() => ({ ...qtyMap, ...localQtyOverrides }), [qtyMap, localQtyOverrides]);
+  const visibleQtyMap = useMemo(() => {
+    return { ...qtyMap, ...localQtyOverrides };
+  }, [qtyMap, localQtyOverrides]);
 
   // Pre-compute kit quantity per store from components (read-only display)
   const kitQtyMap = useMemo(() => {
