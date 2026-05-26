@@ -561,10 +561,24 @@ export default function RateioTabV2({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter") saveEdit();
+    if (e.key === "Enter") {
+      e.preventDefault();
+      saveEdit();
+      // Mover para a linha de baixo (lógica já existente em outros lugares ou a ser reforçada)
+      if (anchorCell) {
+        setAnchorCell(prev => prev ? { ...prev, rowIndex: prev.rowIndex + 1 } : null);
+      }
+    }
+    if (e.key === "Tab") {
+      e.preventDefault();
+      saveEdit();
+      // Mover para a coluna da direita
+      if (anchorCell) {
+        setAnchorCell(prev => prev ? { ...prev, colIndex: prev.colIndex + 1 } : null);
+      }
+    }
     if (e.key === "Escape") {
       setEditingCell(null);
-      setAnchorCell(null);
     }
   };
 
@@ -582,9 +596,63 @@ export default function RateioTabV2({
     );
   };
 
+  const applyPasteChanges = async (changes: any[]) => {
+    const allUpsertsMap = new Map<string, RateioUpsert>();
+
+    const setUpsert = (storeId: string, pieceId: string, qty: number) => {
+      const key = `${storeId}-${pieceId}`;
+      allUpsertsMap.set(key, { campaignId, storeId, pieceId, quantity: qty });
+    };
+
+    changes
+      .filter(c => !c.isIgnored)
+      .forEach(c => {
+        const val = Math.round(c.newValue);
+        if (c.itemType === 'kit') {
+          const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === c.pieceId);
+          kpList.forEach((kp: any) => {
+            setUpsert(c.storeId, kp.piece_id, val * (kp.quantity || 1));
+          });
+        } else {
+          setUpsert(c.storeId, c.pieceId, val);
+        }
+      });
+
+    const allUpserts = Array.from(allUpsertsMap.values());
+    if (allUpserts.length === 0) return;
+
+    setIsApplyingPaste(true);
+    const toastId = toast.loading("Aplicando colagem...");
+
+    try {
+      const CHUNK_SIZE = 500;
+      for (let i = 0; i < allUpserts.length; i += CHUNK_SIZE) {
+        const chunk = allUpserts.slice(i, i + CHUNK_SIZE);
+        await applyRateioBulk(chunk, [], {
+          isNegotiationView: rateioSource === 'negotiation',
+          negotiationSupplierId: winnerSupplierId,
+          isAdjustmentView: rateioSource === 'adjustment',
+          adjustmentId: activeAdjustment?.id
+        });
+      }
+      
+      queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
+      
+      toast.success(`${allUpserts.length} células atualizadas`, { id: toastId });
+      setAnchorCell(null);
+    } catch (err: any) {
+      console.error("Erro confirmPaste:", err);
+      toast.error(`Erro ao aplicar: ${err?.message || 'desconhecido'}`, { id: toastId });
+    } finally {
+      setIsApplyingPaste(false);
+    }
+  };
+
   const handleExcelPaste = useCallback((text: string, anchor: { rowIndex: number; colIndex: number }) => {
     const parsedData = parseExcelTSV(text);
-    const changes: typeof pendingChanges = [];
+    const changes: any[] = [];
 
     const rowCount = parsedData.length;
     const colCount = rowCount > 0 ? Math.max(...parsedData.map(r => r.length)) : 0;
@@ -605,8 +673,6 @@ export default function RateioTabV2({
 
         const col = columns[colIdx];
         const isKit = col._type === 'kit';
-        
-        // Ignora peças que pertençam a um kit
         if (!isKit && (col as any).kit_only === true) continue;
         
         const oldValue = isKit 
@@ -627,10 +693,9 @@ export default function RateioTabV2({
     }
 
     if (changes.length > 0) {
-      setPendingChanges(changes);
-      setIsPasteModalOpen(true);
+      applyPasteChanges(changes);
     }
-  }, [filteredStores, columns, qtyMap, kitQtyMap]);
+  }, [filteredStores, columns, qtyMap, kitQtyMap, kitPieces, campaignId, rateioSource, winnerSupplierId, activeAdjustment, queryClient]);
 
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
@@ -1290,8 +1355,8 @@ export default function RateioTabV2({
                               onClick={() => {
                                 if (!isTabEditable) return;
                                 setAnchorCell({ rowIndex: sIdx, colIndex: cIdx });
+                                startEditing(store.id, col.id, val);
                               }}
-                              onDoubleClick={() => isTabEditable && startEditing(store.id, col.id, val)}
                             >
                               {isEditing ? (
                                 <input
@@ -1302,11 +1367,15 @@ export default function RateioTabV2({
                                   onChange={(e) => setEditValue(e.target.value)}
                                   onBlur={saveEdit}
                                   onKeyDown={handleKeyDown}
-                                  onPaste={(e) => {
-                                    e.preventDefault();
+                                   onPaste={(e) => {
                                     const text = e.clipboardData.getData('text/plain');
-                                    console.log("Paste on cell:", { rowIndex: sIdx, colIndex: cIdx });
-                                    handleExcelPaste(text, { rowIndex: sIdx, colIndex: cIdx });
+                                    // Se for multi-célula (tem tab ou newline), interceptamos para o handleExcelPaste
+                                    if (text.includes('\t') || text.includes('\n')) {
+                                      e.preventDefault();
+                                      handleExcelPaste(text, { rowIndex: sIdx, colIndex: cIdx });
+                                      setEditingCell(null);
+                                    }
+                                    // Se for valor único, deixamos o comportamento nativo do input
                                   }}
                                 />
                               ) : (
@@ -1392,11 +1461,11 @@ export default function RateioTabV2({
         </div>
       </div>
 
-      {anchorCell && (
+      {anchorCell && !editingCell && (
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-stone-900 text-white px-4 py-2 rounded-full text-xs font-medium shadow-2xl z-[100] flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4">
           <div className="flex items-center gap-2">
             <Clipboard className="w-3.5 h-3.5 text-[#C2714F]" />
-            <span>Pressione <strong>Ctrl+V</strong> para colar do Excel</span>
+            <span>Pressione <strong>Ctrl+V</strong> para colar em bloco</span>
           </div>
           <div className="w-px h-3 bg-stone-700" />
           <button 
