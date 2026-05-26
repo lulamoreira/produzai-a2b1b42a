@@ -118,7 +118,7 @@ const RateioRow = memo(({
         const isKit = col._type === "kit";
         const val = isKit
           ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
-          : (visibleQtyMap[`${store.id}-${col.id}`] || 0);
+          : (storeQtyMap[col.id] || 0);
         const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === col.id;
         const isSelected = !isEditing && anchorCell?.rowIndex === sIdx && anchorCell?.colIndex === cIdx;
 
