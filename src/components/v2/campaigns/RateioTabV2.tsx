@@ -1176,6 +1176,7 @@ export default function RateioTabV2({
                           key={gIdx} 
                           colSpan={group.items.length} 
                           className="bg-stone-50 border-b border-r border-stone-200 text-[10px] font-bold text-stone-500 py-1 text-center uppercase tracking-widest"
+                          style={{ position: 'sticky', top: 0, zIndex: 30 }}
                         >
                           {group.label}
                         </th>
@@ -1185,7 +1186,7 @@ export default function RateioTabV2({
                     <tr>
                       <th 
                         className="w-[300px] bg-white p-4 border-r border-b border-stone-200 text-left align-top" 
-                        style={{ position: 'sticky', left: 0, top: 0, zIndex: 50 }}
+                        style={{ position: 'sticky', left: 0, top: 28, zIndex: 50 }}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <div className="text-xs font-bold text-stone-400 uppercase tracking-widest">Loja</div>
@@ -1215,7 +1216,11 @@ export default function RateioTabV2({
                         const isKit = col._type === "kit";
                         const img = col.image_url || col.image_report_url || undefined;
                         return (
-                          <th key={`${col._type}-${col.id}`} className="min-w-[120px] max-w-[200px] p-2 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50">
+                          <th 
+                            key={`${col._type}-${col.id}`} 
+                            className="min-w-[120px] max-w-[200px] p-2 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50"
+                            style={{ position: 'sticky', top: 28, zIndex: 25 }}
+                          >
                             <div className="flex flex-col items-center gap-1.5">
                               {img ? (
                                 <img 
