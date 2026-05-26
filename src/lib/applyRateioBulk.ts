@@ -107,16 +107,27 @@ export async function applyRateioBulk(
       }
     }
     if (deletes.length > 0) {
-      for (let i = 0; i < deletes.length; i += 500) {
-        const chunk = deletes.slice(i, i + 500);
-        await Promise.all(chunk.map(async (d) => {
-          const { error } = await supabase
-            .from('budget_negotiation_store_pieces' as never)
-            .delete()
-            .eq('supplier_id', negotiationSupplierId)
-            .eq('store_id', d.storeId)
-            .eq('piece_id', d.pieceId);
-          if (error) throw error;
+      const byStore = new Map<string, string[]>();
+      for (const d of deletes) {
+        const arr = byStore.get(d.storeId) ?? [];
+        arr.push(d.pieceId);
+        byStore.set(d.storeId, arr);
+      }
+      const entries = Array.from(byStore.entries());
+      const CONCURRENCY = 4;
+      for (let i = 0; i < entries.length; i += CONCURRENCY) {
+        const batch = entries.slice(i, i + CONCURRENCY);
+        await Promise.all(batch.map(async ([storeId, pieceIds]) => {
+          for (let j = 0; j < pieceIds.length; j += 200) {
+            const slice = pieceIds.slice(j, j + 200);
+            const { error } = await supabase
+              .from('budget_negotiation_store_pieces' as never)
+              .delete()
+              .eq('supplier_id', negotiationSupplierId)
+              .eq('store_id', storeId)
+              .in('piece_id', slice);
+            if (error) throw error;
+          }
         }));
       }
     }
