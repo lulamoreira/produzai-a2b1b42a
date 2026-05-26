@@ -114,7 +114,15 @@ const parsePriceInput = (value: string): number | null => {
 
 const priceToInput = (value: number | null | undefined) => {
   if (value == null) return "";
-  return value.toLocaleString("pt-BR", { maximumFractionDigits: 4 });
+  return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+};
+
+const focusPriceInput = (index: number) => {
+  const el = document.querySelector<HTMLInputElement>(`input[data-price-input="${index}"]`);
+  if (el) {
+    el.focus();
+    el.select();
+  }
 };
 
 /* ─── CSS confetti keyframes ─────────────────────────────── */
