@@ -1129,16 +1129,19 @@ export default function RateioTabV2({
                           <DropdownMenuItem 
                             className="text-xs cursor-pointer"
                             onClick={async () => {
-                              if (!confirm("Deseja realmente limpar todo o rateio desta versão?")) return;
+                              if (!confirm("Deseja realmente zerar todas as células do rateio desta versão?")) return;
                               const deletes: { campaignId: string; storeId: string; pieceId: string }[] = [];
+                              const seen = new Set<string>();
                               stores.forEach(s => {
                                 pieces.forEach(p => {
-                                  if (qtyMap[`${s.id}-${p.id}`]) {
-                                    deletes.push({ campaignId, storeId: s.id, pieceId: p.id });
-                                  }
+                                  const key = `${s.id}-${p.id}`;
+                                  if (seen.has(key)) return;
+                                  seen.add(key);
+                                  deletes.push({ campaignId, storeId: s.id, pieceId: p.id });
                                 });
                               });
-                              await applyWithHistory([], deletes, "Rateio limpo com sucesso");
+                              setLocalQtyOverrides({});
+                              await applyWithHistory([], deletes, "Rateio zerado com sucesso");
                             }}
                           >
                             <X className="w-4 h-4 mr-2" />
