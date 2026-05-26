@@ -276,15 +276,16 @@ const AddPieceDialog = ({
                   list="piece-categories-list"
                   placeholder={t("pieces.pieceCategoryPlaceholder")}
                   value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  onChange={(e) => setForm({ ...form, category: e.target.value.toUpperCase() })}
                 />
                 <datalist id="piece-categories-list">
                   {Array.from(
-                    new Set(
-                      (Array.isArray(existingPieces) ? existingPieces : [])
+                    new Set([
+                      ...allCategories,
+                      ...(Array.isArray(existingPieces) ? existingPieces : [])
                         .map((p: any) => (p.category || "").toString().trim().toUpperCase())
                         .filter(Boolean)
-                    )
+                    ])
                   )
                     .sort()
                     .map((cat) => (
