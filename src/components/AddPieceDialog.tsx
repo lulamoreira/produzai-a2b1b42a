@@ -7,6 +7,7 @@ import { Plus, Upload, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Dialog,
   DialogContent,
@@ -60,6 +61,9 @@ const AddPieceDialog = ({
     custom_field_3: "",
     custom_field_4: "",
     custom_field_5: "",
+    kit_only: false,
+    is_new: false,
+    store_category: "",
   });
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -88,6 +92,9 @@ const AddPieceDialog = ({
         custom_field_3: initialPiece.custom_field_3 || "",
         custom_field_4: initialPiece.custom_field_4 || "",
         custom_field_5: initialPiece.custom_field_5 || "",
+        kit_only: initialPiece.kit_only ?? false,
+        is_new: initialPiece.is_new ?? false,
+        store_category: initialPiece.store_category || "",
       });
       setPreviewUrl(initialPiece.image_url || null);
     } else {
@@ -106,6 +113,9 @@ const AddPieceDialog = ({
         custom_field_3: "",
         custom_field_4: "",
         custom_field_5: "",
+        kit_only: false,
+        is_new: false,
+        store_category: "",
       });
       setPreviewUrl(null);
     }
@@ -173,13 +183,16 @@ const AddPieceDialog = ({
       custom_field_3: form.custom_field_3 || null,
       custom_field_4: form.custom_field_4 || null,
       custom_field_5: form.custom_field_5 || null,
+      store_category: form.store_category || null,
     };
 
     try {
       if (initialPiece) {
         await updatePieceAction.mutateAsync({
           id: initialPiece.id,
-          ...pieceData
+          ...pieceData,
+          kit_only: form.kit_only,
+          is_new: form.is_new,
         });
         toast.success(t("pieces.pieceUpdated"));
       } else {
@@ -187,7 +200,8 @@ const AddPieceDialog = ({
           ...pieceData,
           display_order: maxCode + 1,
           is_mockup: false,
-          kit_only: false,
+          kit_only: form.kit_only,
+          is_new: form.is_new,
         });
       }
       setOpen(false);
@@ -272,6 +286,44 @@ const AddPieceDialog = ({
                   placeholder="Ex: 5 (opcional)"
                 />
               </div>
+            </div>
+
+            {/* Kit piece toggle — only show when creating new piece OR when editing a kit_only piece */}
+            {(!initialPiece || initialPiece.kit_only) && (
+              <div className="flex items-center justify-between p-3 rounded-lg border border-primary/20 bg-primary/5">
+                <div>
+                  <label className="text-xs font-medium text-foreground">Peça de Kit</label>
+                  <p className="text-[10px] text-muted-foreground">
+                    Peças de kit são componentes internos de um Kit. Cada peça de kit pertence a exatamente um kit e não aparece no rateio individualmente.
+                  </p>
+                </div>
+                <Switch
+                  checked={form.kit_only}
+                  onCheckedChange={(val) => setForm({ ...form, kit_only: val })}
+                />
+              </div>
+            )}
+            {/* Is New toggle */}
+            <div className="flex items-center justify-between p-3 rounded-lg border border-green-500/20 bg-green-500/5">
+              <div>
+                <label className="text-xs font-medium text-foreground">Peça Nova</label>
+                <p className="text-[10px] text-muted-foreground">
+                  Marque se esta é uma peça nova nesta campanha (exibe badge "Novo").
+                </p>
+              </div>
+              <Switch
+                checked={form.is_new}
+                onCheckedChange={(val) => setForm({ ...form, is_new: val })}
+              />
+            </div>
+            {/* Store category (Modelo de Loja) */}
+            <div className="space-y-2">
+              <label className="text-xs font-medium text-muted-foreground">Modelo de Loja</label>
+              <Input
+                value={form.store_category}
+                onChange={(e) => setForm({ ...form, store_category: e.target.value })}
+                placeholder="Ex: CONCEITO, PREMIUM (deixe vazio para todas as lojas)"
+              />
             </div>
 
             {customFieldLabels?.map((label, i) => {
