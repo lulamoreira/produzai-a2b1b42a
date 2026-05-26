@@ -1074,8 +1074,9 @@ export default function RateioTabV2({
                               key={`${col._type}-${col.id}`} 
                               className={cn(
                                 "border-r border-b border-stone-200 text-center transition-all relative",
-                                !isTabEditable ? "cursor-default bg-[#C2714F]/[0.03]" : "cursor-cell",
-                                val > 0 ? "bg-stone-50/30" : "",
+                                !isTabEditable ? "cursor-default" : "cursor-cell",
+                                isKit && "bg-[#C2714F]/[0.03]",
+                                val > 0 && !isKit && "bg-stone-50/30",
                                 isEditing && "ring-2 ring-inset ring-[#C2714F] z-10",
                                 isSelected && "ring-2 ring-inset ring-blue-500 z-10 bg-blue-50/50"
                               )}
