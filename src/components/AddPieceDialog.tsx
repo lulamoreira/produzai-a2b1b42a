@@ -244,10 +244,24 @@ const AddPieceDialog = ({
                 <label className="text-xs font-medium text-muted-foreground">{t("common.category")}</label>
                 <Input
                   required
+                  list="piece-categories-list"
                   placeholder={t("pieces.pieceCategoryPlaceholder")}
                   value={form.category}
                   onChange={(e) => setForm({ ...form, category: e.target.value })}
                 />
+                <datalist id="piece-categories-list">
+                  {Array.from(
+                    new Set(
+                      (Array.isArray(existingPieces) ? existingPieces : [])
+                        .map((p: any) => (p.category || "").toString().trim().toUpperCase())
+                        .filter(Boolean)
+                    )
+                  )
+                    .sort()
+                    .map((cat) => (
+                      <option key={cat} value={cat} />
+                    ))}
+                </datalist>
               </div>
             </div>
             <div className="space-y-2">
