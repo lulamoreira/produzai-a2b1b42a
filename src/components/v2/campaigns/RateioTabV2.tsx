@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
   Search, Filter, Download, Sparkles, Copy, MoreHorizontal, Lock, CheckCircle2,
-  Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw, X, Clipboard,
+  Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw, X,
   ArrowUpDown, Check
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,16 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { 
   Table, 
   TableBody, 
@@ -40,7 +30,6 @@ import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { exportRateioGrid } from "@/lib/exportRateioGrid";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getStateColor } from "@/lib/stateColors";
-import { useUpdateCampaignStorePiece } from "@/hooks/useMultiClientData";
 import { applyRateioBulk, type RateioUpsert } from "@/lib/applyRateioBulk";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -100,7 +89,6 @@ export default function RateioTabV2({
 }: RateioTabV2Props) {
   const { t } = useTranslation();
   const { isAdminOrMaster } = useUserRole();
-  const updatePieceQty = useUpdateCampaignStorePiece();
   const queryClient = useQueryClient();
   
   const [rateioView, setRateioView] = useState("planilha");
@@ -108,7 +96,6 @@ export default function RateioTabV2({
   
   // Excel Paste state
   const [anchorCell, setAnchorCell] = useState<{ rowIndex: number; colIndex: number } | null>(null);
-  const [isApplyingPaste, setIsApplyingPaste] = useState(false);
   const [storeSearch, setStoreSearch] = useState("");
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
