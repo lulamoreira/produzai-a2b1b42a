@@ -686,7 +686,7 @@ export default function RateioTabV2({
     setIsApplyingPaste(true);
     try {
       // Aggregate all piece updates (including those from kits)
-      const allUpserts = [...upserts];
+      const allUpserts: RateioUpsert[] = [...upserts];
       
       kitsToProcess.forEach(k => {
         const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === k.kitId);
@@ -701,14 +701,30 @@ export default function RateioTabV2({
       });
 
       if (allUpserts.length > 0) {
-        await applyWithHistory(allUpserts, [], `${allUpserts.length} células atualizadas com sucesso`);
+        const CHUNK_SIZE = 500;
+        for (let i = 0; i < allUpserts.length; i += CHUNK_SIZE) {
+          const chunk = allUpserts.slice(i, i + CHUNK_SIZE);
+          await applyRateioBulk(chunk, [], {
+            isNegotiationView: rateioSource === 'negotiation',
+            negotiationSupplierId: winnerSupplierId,
+            isAdjustmentView: rateioSource === 'adjustment',
+            adjustmentId: activeAdjustment?.id
+          });
+        }
+        
+        // Refresh maps after bulk operations
+        queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
+        queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
+        queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
+        
+        toast.success(`${allUpserts.length} células atualizadas com sucesso`);
       }
       
       setIsPasteModalOpen(false);
       setAnchorCell(null);
-    } catch (err) {
-      console.error("Erro detalhado (confirmPaste):", err);
-      toast.error("Erro ao aplicar colagem do Excel");
+    } catch (err: any) {
+      console.error("Erro confirmPaste:", err);
+      toast.error(`Erro ao aplicar colagem: ${err?.message || 'desconhecido'}`);
     } finally {
       setIsApplyingPaste(false);
     }
