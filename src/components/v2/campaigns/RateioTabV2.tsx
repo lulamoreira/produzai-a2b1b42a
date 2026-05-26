@@ -1157,10 +1157,16 @@ export default function RateioTabV2({
                   )}
                 </div>
                 <table className="min-w-full" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
-                  <thead className="sticky top-0 z-30 bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
+                  <thead 
+                    className="bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.05)]"
+                    style={{ position: 'sticky', top: 0, zIndex: 30 }}
+                  >
                     {/* Group Labels Row */}
                     <tr>
-                      <th className="w-[300px] sticky left-0 z-40 bg-white border-r border-stone-200" />
+                      <th 
+                        className="w-[300px] bg-white border-r border-stone-200" 
+                        style={{ position: 'sticky', left: 0, top: 0, zIndex: 50 }}
+                      />
                       {pieceGroups.map((group, gIdx) => (
                         <th 
                           key={gIdx} 
