@@ -708,7 +708,7 @@ export default function RateioTabV2({
       setIsPasteModalOpen(false);
       setAnchorCell(null);
     } catch (err) {
-      console.error("Erro ao colar dados:", err);
+      console.error("Erro detalhado (confirmPaste):", err);
       toast.error("Erro ao aplicar colagem do Excel");
     } finally {
       setIsApplyingPaste(false);
