@@ -461,8 +461,9 @@ export function KitDetailDialog({
     .map(kp => ({ ...kp, piece: allPieces.find(p => p.id === kp.piece_id) }))
     .filter(kp => kp.piece) : [];
 
+  // Exclude pieces already in ANY kit (not just the current one) — each piece can only be in one kit
   const kitOnlyPiecesNotInKit = kit ? allPieces.filter(
-    p => p.kit_only && p.campaign_id === kit.campaign_id && !piecesInKit.some(kp => kp.piece_id === p.id)
+    p => p.kit_only && p.campaign_id === kit.campaign_id && !kitPieces.some(kp => kp.piece_id === p.id)
   ) : [];
 
   const filteredAddPieces = useMemo(() => {
