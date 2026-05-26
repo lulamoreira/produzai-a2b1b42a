@@ -131,11 +131,14 @@ export async function parseRateioSpreadsheet({
   const pieceCols = colMap.filter(c => c.type === 'piece');
   const kitCols   = colMap.filter(c => c.type === 'kit');
 
-  // Map com last-write-wins — kits processados depois sobrescrevem peças
-  const allUpsertsMap = new Map<string, RateioUpsert>();
-  const set = (storeId: string, pieceId: string, quantity: number) => {
-    allUpsertsMap.set(`${storeId}|${pieceId}`, { campaignId, storeId, pieceId, quantity });
-  };
+  // Mapas separados:
+  //  - pieceWrites: peças standalone (last-write-wins; cada peça é uma única coluna)
+  //  - kitWrites:   peças escritas via decomposição de kits — acumuladas com MAX para
+  //                 evitar que kits irmãos que compartilham componentes se sobrescrevam
+  //                 com 0. Ex.: KIT TOPO P e KIT TOPO M compartilham as mesmas peças;
+  //                 se P=2 e M=0, o MAX preserva o valor 2.
+  const pieceWrites = new Map<string, number>();
+  const kitWrites = new Map<string, number>();
 
   // Linhas de dados: a partir da linha 3
   for (let r = 3; r <= (ws.actualRowCount ?? ws.rowCount); r++) {
@@ -147,18 +150,32 @@ export async function parseRateioSpreadsheet({
     for (const col of pieceCols) {
       const rawVal = row.getCell(col.colIndex).value;
       const qty = Math.max(0, Math.round(Number(rawVal) || 0));
-      set(storeId, col.id, qty);
+      pieceWrites.set(`${storeId}|${col.id}`, qty);
     }
 
-    // 2ª passagem: kits — decompõe em peças componentes (sobrescreve peça se houver conflito)
+    // 2ª passagem: kits — decompõe em peças componentes acumulando MAX
     for (const col of kitCols) {
       const rawVal = row.getCell(col.colIndex).value;
       const kitQty = Math.max(0, Math.round(Number(rawVal) || 0));
       const kpList = activeKitPieces.filter(kp => kp.kit_id === col.id);
       for (const kp of kpList) {
-        set(storeId, kp.piece_id, kitQty * (kp.quantity || 1));
+        const key = `${storeId}|${kp.piece_id}`;
+        const v = kitQty * (kp.quantity || 1);
+        const prev = kitWrites.get(key);
+        kitWrites.set(key, prev === undefined ? v : Math.max(prev, v));
       }
     }
+  }
+
+  // Merge final: kit SEMPRE vence peça (quando há conflito na mesma piece_id)
+  const allUpsertsMap = new Map<string, RateioUpsert>();
+  for (const [key, qty] of pieceWrites) {
+    const [storeId, pieceId] = key.split('|');
+    allUpsertsMap.set(key, { campaignId, storeId, pieceId, quantity: qty });
+  }
+  for (const [key, qty] of kitWrites) {
+    const [storeId, pieceId] = key.split('|');
+    allUpsertsMap.set(key, { campaignId, storeId, pieceId, quantity: qty });
   }
 
   const upserts = Array.from(allUpsertsMap.values());
