@@ -528,10 +528,23 @@ export function KitDetailDialog({
 
   const saveEditPiece = async () => {
     if (!editingPieceId || !onUpdatePiece) return;
+    const trimmedName = editForm.name.trim();
+    if (!trimmedName) {
+      toast.error("O nome da peça não pode estar vazio.");
+      return;
+    }
+    // Validate: kit piece names must be unique across all kit-only pieces
+    const duplicate = allPieces.find(
+      p => p.kit_only && p.id !== editingPieceId && p.name.trim().toLowerCase() === trimmedName.toLowerCase()
+    );
+    if (duplicate) {
+      toast.error(`Já existe uma peça de kit com o nome "${duplicate.name}". Peças de kit devem ter nomes únicos — cada peça só pode pertencer a um kit.`);
+      return;
+    }
     const size = [editForm.width, editForm.height, editForm.length].filter(Boolean).join(" x ");
     await onUpdatePiece({
       id: editingPieceId,
-      name: editForm.name,
+      name: trimmedName,
       category: editForm.category,
       size,
       store_category: editForm.store_category || null,
