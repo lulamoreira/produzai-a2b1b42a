@@ -13,6 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { 
   Table, 
   TableBody, 
@@ -222,6 +226,11 @@ export default function RateioTabV2({
   const [isAutomationOpen, setIsAutomationOpen] = useState(false);
   const [isExecutingAutomation, setIsExecutingAutomation] = useState(false);
   const [copyQtyOpen, setCopyQtyOpen] = useState(false);
+  
+  // Excel Paste Modal state
+  const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
+  const [isApplyingPaste, setIsApplyingPaste] = useState(false);
+  const [pendingChanges, setPendingChanges] = useState<RateioPasteChange[]>([]);
 
   // Undo/Redo history
   const [history, setHistory] = useState<{ storeId: string; pieceId: string; oldVal: number; newVal: number }[][]>([]);
@@ -811,59 +820,60 @@ export default function RateioTabV2({
     }
   };
 
-  const applyPasteChanges = async (changes: RateioPasteChange[]) => {
-    const operations = buildRateioPasteOperations(changes, kitPieces || []);
-    const allUpserts = operations
-      .filter((op) => op.quantity > 0)
-      .map((op) => ({ campaignId, ...op }));
-    const allDeletes = operations
-      .filter((op) => op.quantity <= 0)
-      .map((op) => ({ campaignId, storeId: op.storeId, pieceId: op.pieceId }));
-    if (operations.length === 0) return;
+  const confirmPaste = async () => {
+    // Map garante que cada (storeId, pieceId) só aparece uma vez — last-write-wins.
+    // Processamos PEÇAS primeiro, depois KITS, para que a decomposição do kit
+    // sobrescreva o valor direto da peça quando houver conflito.
+    const allUpsertsMap = new Map<string, RateioUpsert>();
 
-    const toastId = toast.loading("Aplicando colagem...");
-
-    try {
-      setLocalQtyOverrides(prev => {
-        const next = { ...prev };
-        allUpserts.forEach(u => {
-          next[`${u.storeId}-${u.pieceId}`] = u.quantity;
-        });
-        allDeletes.forEach(d => {
-          next[`${d.storeId}-${d.pieceId}`] = 0;
-        });
-        return next;
+    const setUpsert = (storeId: string, pieceId: string, quantity: number) => {
+      allUpsertsMap.set(`${storeId}|${pieceId}`, {
+        campaignId,
+        storeId,
+        pieceId,
+        quantity,
       });
-      const CHUNK_SIZE = 500;
-      for (let i = 0; i < allUpserts.length; i += CHUNK_SIZE) {
-        const chunk = allUpserts.slice(i, i + CHUNK_SIZE);
-        await applyRateioBulk(chunk, [], {
-          isNegotiationView: rateioSource === 'negotiation',
-          negotiationSupplierId: winnerSupplierId,
-          isAdjustmentView: rateioSource === 'adjustment',
-          adjustmentId: activeAdjustment?.id
+    };
+
+    // 1ª passagem: peças diretas
+    pendingChanges
+      .filter(c => !c.isIgnored && c.itemType === 'piece')
+      .forEach(c => setUpsert(c.storeId, c.pieceId, Math.round(c.newValue)));
+
+    // 2ª passagem: kits — decompõe em peças componentes (sobreescreve se houver conflito)
+    pendingChanges
+      .filter(c => !c.isIgnored && c.itemType === 'kit')
+      .forEach(c => {
+        const val = Math.round(c.newValue);
+        const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === c.pieceId);
+        kpList.forEach((kp: any) => {
+          setUpsert(c.storeId, kp.piece_id, val * (kp.quantity || 1));
         });
-      }
-      for (let i = 0; i < allDeletes.length; i += CHUNK_SIZE) {
-        const chunk = allDeletes.slice(i, i + CHUNK_SIZE);
-        await applyRateioBulk([], chunk, {
-          isNegotiationView: rateioSource === 'negotiation',
-          negotiationSupplierId: winnerSupplierId,
-          isAdjustmentView: rateioSource === 'adjustment',
-          adjustmentId: activeAdjustment?.id
-        });
-      }
-      
-      queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
-      queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
-      queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
-      
-      toast.success(`${operations.length} células atualizadas`, { id: toastId });
-      setAnchorCell(null);
-    } catch (err: any) {
-      console.error("Erro confirmPaste:", err);
-      toast.error(`Erro ao aplicar: ${err?.message || 'desconhecido'}`, { id: toastId });
+      });
+
+    const allUpserts = Array.from(allUpsertsMap.values());
+
+    if (allUpserts.length === 0) {
+      setIsPasteModalOpen(false);
+      return;
     }
+
+    setIsApplyingPaste(true);
+    try {
+      await applyWithHistory(allUpserts, [], `${allUpserts.length} células atualizadas com sucesso`);
+      setIsPasteModalOpen(false);
+      setAnchorCell(null);
+    } catch (err) {
+      console.error("Erro detalhado (confirmPaste):", err);
+      toast.error("Erro ao aplicar colagem do Excel");
+    } finally {
+      setIsApplyingPaste(false);
+    }
+  };
+
+  const applyPasteChanges = async (changes: RateioPasteChange[]) => {
+    setPendingChanges(changes);
+    setIsPasteModalOpen(true);
   };
 
   const handleExcelPaste = useCallback((text: string, anchor: { rowIndex: number; colIndex: number }) => {
@@ -1593,6 +1603,94 @@ export default function RateioTabV2({
           await applyWithHistory(upserts, deletes, label);
         }}
       />
+
+      <Dialog open={isPasteModalOpen} onOpenChange={setIsPasteModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-2">
+            <DialogTitle className="flex items-center gap-2">
+              <Copy className="w-5 h-5 text-[#C2714F]" />
+              Confirmar colagem de valores
+            </DialogTitle>
+            <DialogDescription>
+              Revise as alterações detectadas na sua planilha antes de confirmar a atualização no sistema.
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="flex-1 px-6">
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-stone-50 rounded-lg p-3 border border-stone-200">
+                  <div className="text-[10px] font-bold text-stone-400 uppercase mb-1">Total de células</div>
+                  <div className="text-2xl font-black text-stone-900">{pendingChanges.length}</div>
+                </div>
+                <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-100">
+                  <div className="text-[10px] font-bold text-emerald-600 uppercase mb-1">Lojas afetadas</div>
+                  <div className="text-2xl font-black text-emerald-700">
+                    {new Set(pendingChanges.map(c => c.storeId)).size}
+                  </div>
+                </div>
+              </div>
+
+              <div className="border rounded-md overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-stone-100">
+                    <TableRow>
+                      <TableHead className="text-[10px] h-8 font-bold uppercase">Loja</TableHead>
+                      <TableHead className="text-[10px] h-8 font-bold uppercase">Item</TableHead>
+                      <TableHead className="text-[10px] h-8 font-bold uppercase text-center">De</TableHead>
+                      <TableHead className="text-[10px] h-8 font-bold uppercase text-center">Para</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pendingChanges.slice(0, 50).map((c, idx) => (
+                      <TableRow key={idx} className="h-9">
+                        <TableCell className="text-xs py-1 font-medium truncate max-w-[150px]">{c.storeName}</TableCell>
+                        <TableCell className="text-xs py-1">
+                          <div className="flex items-center gap-1.5">
+                            <Badge variant="outline" className="text-[9px] h-4 px-1 leading-none">
+                              {c.itemType === 'kit' ? 'KIT' : 'PEÇA'}
+                            </Badge>
+                            <span className="truncate max-w-[150px]">{c.pieceName}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs py-1 text-center text-stone-400">{c.oldValue ?? 0}</TableCell>
+                        <TableCell className="text-xs py-1 text-center font-bold text-emerald-600">{Math.round(c.newValue)}</TableCell>
+                      </TableRow>
+                    ))}
+                    {pendingChanges.length > 50 && (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-[10px] text-center text-stone-400 bg-stone-50/50 italic py-2">
+                          + {pendingChanges.length - 50} outras alterações...
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          </ScrollArea>
+
+          <DialogFooter className="p-6 bg-stone-50 border-t border-stone-100 gap-2">
+            <Button variant="ghost" onClick={() => setIsPasteModalOpen(false)} disabled={isApplyingPaste}>
+              Cancelar
+            </Button>
+            <Button 
+              className="bg-[#C2714F] hover:bg-[#A35D3F] text-white" 
+              onClick={confirmPaste} 
+              disabled={isApplyingPaste}
+            >
+              {isApplyingPaste ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Aplicando...
+                </>
+              ) : (
+                <>Confirmar colagem ({pendingChanges.length})</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

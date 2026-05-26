@@ -55,10 +55,18 @@ export async function applyRateioBulk(
           };
         })
         .filter(Boolean) as any[];
-      for (let i = 0; i < payload.length; i += 500) {
+
+      // Dedup safety net: elimina duplicatas por (adjustment_id, store_id, piece_id)
+      const seen = new Map<string, typeof payload[0]>();
+      for (const row of payload) {
+        seen.set(`${row.adjustment_id}|${row.store_id}|${row.piece_id}`, row);
+      }
+      const dedupedPayload = Array.from(seen.values());
+
+      for (let i = 0; i < dedupedPayload.length; i += 500) {
         const { error } = await supabase
           .from('campaign_adjustment_store_pieces' as never)
-          .upsert(payload.slice(i, i + 500) as never, { onConflict: 'adjustment_id,store_id,piece_id' });
+          .upsert(dedupedPayload.slice(i, i + 500) as never, { onConflict: 'adjustment_id,store_id,piece_id' });
         if (error) throw error;
       }
     }
@@ -99,10 +107,18 @@ export async function applyRateioBulk(
         piece_id: u.pieceId,
         quantity: u.quantity,
       }));
-      for (let i = 0; i < payload.length; i += 500) {
+
+      // Dedup safety net: elimina duplicatas por (supplier_id, store_id, piece_id)
+      const seen = new Map<string, typeof payload[0]>();
+      for (const row of payload) {
+        seen.set(`${row.supplier_id}|${row.store_id}|${row.piece_id}`, row);
+      }
+      const dedupedPayload = Array.from(seen.values());
+
+      for (let i = 0; i < dedupedPayload.length; i += 500) {
         const { error } = await supabase
           .from('budget_negotiation_store_pieces' as never)
-          .upsert(payload.slice(i, i + 500) as never, { onConflict: 'supplier_id,store_id,piece_id' });
+          .upsert(dedupedPayload.slice(i, i + 500) as never, { onConflict: 'supplier_id,store_id,piece_id' });
         if (error) throw error;
       }
     }
@@ -139,10 +155,18 @@ export async function applyRateioBulk(
         piece_id: u.pieceId,
         quantity: u.quantity,
       }));
-      for (let i = 0; i < payload.length; i += 500) {
+
+      // Dedup safety net: elimina duplicatas por (campaign_id, store_id, piece_id)
+      const seen = new Map<string, typeof payload[0]>();
+      for (const row of payload) {
+        seen.set(`${row.campaign_id}|${row.store_id}|${row.piece_id}`, row);
+      }
+      const dedupedPayload = Array.from(seen.values());
+
+      for (let i = 0; i < dedupedPayload.length; i += 500) {
         const { error } = await supabase
           .from('campaign_store_pieces')
-          .upsert(payload.slice(i, i + 500), { onConflict: 'campaign_id,store_id,piece_id' });
+          .upsert(dedupedPayload.slice(i, i + 500), { onConflict: 'campaign_id,store_id,piece_id' });
         if (error) throw error;
       }
     }
