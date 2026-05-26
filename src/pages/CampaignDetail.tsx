@@ -43,6 +43,7 @@ import CampaignBackupDialog from "@/components/CampaignBackupDialog";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
