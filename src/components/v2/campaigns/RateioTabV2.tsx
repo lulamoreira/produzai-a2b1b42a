@@ -1066,7 +1066,7 @@ export default function RateioTabV2({
                           const val = isKit
                             ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
                             : (qtyMap[`${store.id}-${col.id}`] || 0);
-                          const isEditing = !isKit && editingCell?.storeId === store.id && editingCell?.pieceId === col.id;
+                          const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === col.id;
                           const isSelected = !isEditing && anchorCell?.rowIndex === sIdx && anchorCell?.colIndex === cIdx;
 
                           return (
