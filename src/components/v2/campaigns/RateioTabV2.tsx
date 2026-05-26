@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -35,7 +35,9 @@ import { cn } from "@/lib/utils";
 import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters, type FilterLogicMode } from "@/components/MatrixFilterSidebar";
 import MatrixDistributionDashboard from "@/components/Matrix/MatrixDistributionDashboard";
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
+import CopyQuantitiesDialog from "@/components/Matrix/CopyQuantitiesDialog";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
+import { exportRateioGrid } from "@/lib/exportRateioGrid";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getStateColor } from "@/lib/stateColors";
 import { useUpdateCampaignStorePiece } from "@/hooks/useMultiClientData";
@@ -125,6 +127,11 @@ export default function RateioTabV2({
   
   const [isAutomationOpen, setIsAutomationOpen] = useState(false);
   const [isExecutingAutomation, setIsExecutingAutomation] = useState(false);
+  const [copyQtyOpen, setCopyQtyOpen] = useState(false);
+
+  // Undo/Redo history
+  const [history, setHistory] = useState<{ storeId: string; pieceId: string; oldVal: number; newVal: number }[][]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
   
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -413,6 +420,114 @@ export default function RateioTabV2({
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
+  const applyWithHistory = async (
+    upserts: RateioUpsert[],
+    deletes: { campaignId: string; storeId: string; pieceId: string }[],
+    label?: string
+  ) => {
+    const changes: { storeId: string; pieceId: string; oldVal: number; newVal: number }[] = [];
+    
+    upserts.forEach(u => {
+      const oldVal = qtyMap[`${u.storeId}-${u.pieceId}`] || 0;
+      if (oldVal !== u.quantity) {
+        changes.push({ storeId: u.storeId, pieceId: u.pieceId, oldVal, newVal: u.quantity });
+      }
+    });
+
+    deletes.forEach(d => {
+      const oldVal = qtyMap[`${d.storeId}-${d.pieceId}`] || 0;
+      if (oldVal !== 0) {
+        changes.push({ storeId: d.storeId, pieceId: d.pieceId, oldVal, newVal: 0 });
+      }
+    });
+
+    if (changes.length === 0) return;
+
+    try {
+      await applyRateioBulk(upserts, deletes, {
+        isNegotiationView: rateioSource === 'negotiation',
+        negotiationSupplierId: winnerSupplierId,
+        isAdjustmentView: rateioSource === 'adjustment',
+        adjustmentId: activeAdjustment?.id
+      });
+
+      const newHistory = [...history.slice(0, historyIndex + 1), changes].slice(-20);
+      setHistory(newHistory);
+      setHistoryIndex(newHistory.length - 1);
+
+      queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
+      if (label) toast.success(label);
+    } catch (err) {
+      console.error("Erro ao aplicar alterações:", err);
+      toast.error("Erro ao aplicar alterações");
+      throw err;
+    }
+  };
+
+  const handleUndo = async () => {
+    if (historyIndex < 0) return;
+    const entry = history[historyIndex];
+    const upserts: RateioUpsert[] = entry.map(e => ({
+      campaignId,
+      storeId: e.storeId,
+      pieceId: e.pieceId,
+      quantity: e.oldVal
+    })).filter(u => u.quantity > 0);
+    
+    const deletes = entry
+      .filter(e => e.oldVal === 0)
+      .map(e => ({ campaignId, storeId: e.storeId, pieceId: e.pieceId }));
+
+    try {
+      await applyRateioBulk(upserts, deletes, {
+        isNegotiationView: rateioSource === 'negotiation',
+        negotiationSupplierId: winnerSupplierId,
+        isAdjustmentView: rateioSource === 'adjustment',
+        adjustmentId: activeAdjustment?.id
+      });
+      setHistoryIndex(historyIndex - 1);
+      queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
+      toast.success("Desfeito");
+    } catch (err) {
+      toast.error("Erro ao desfazer");
+    }
+  };
+
+  const handleRedo = async () => {
+    if (historyIndex >= history.length - 1) return;
+    const entry = history[historyIndex + 1];
+    const upserts: RateioUpsert[] = entry.map(e => ({
+      campaignId,
+      storeId: e.storeId,
+      pieceId: e.pieceId,
+      quantity: e.newVal
+    })).filter(u => u.quantity > 0);
+    
+    const deletes = entry
+      .filter(e => e.newVal === 0)
+      .map(e => ({ campaignId, storeId: e.storeId, pieceId: e.pieceId }));
+
+    try {
+      await applyRateioBulk(upserts, deletes, {
+        isNegotiationView: rateioSource === 'negotiation',
+        negotiationSupplierId: winnerSupplierId,
+        isAdjustmentView: rateioSource === 'adjustment',
+        adjustmentId: activeAdjustment?.id
+      });
+      setHistoryIndex(historyIndex + 1);
+      queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
+      toast.success("Refeito");
+    } catch (err) {
+      toast.error("Erro ao refazer");
+    }
+  };
+
   const saveKitQty = async (storeId: string, kitId: string, quantity: number) => {
     const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === kitId);
     if (kpList.length === 0) return;
@@ -424,21 +539,7 @@ export default function RateioTabV2({
       quantity: quantity * (kp.quantity || 1)
     }));
 
-    try {
-      await applyRateioBulk(upserts, [], {
-        isNegotiationView: rateioSource === 'negotiation',
-        negotiationSupplierId: winnerSupplierId,
-        isAdjustmentView: rateioSource === 'adjustment',
-        adjustmentId: activeAdjustment?.id
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
-      queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
-      queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
-    } catch (err) {
-      console.error("Erro ao atualizar kit:", err);
-      toast.error("Erro ao atualizar kit");
-    }
+    await applyWithHistory(upserts, []);
   };
 
   const saveEdit = async () => {
@@ -447,15 +548,14 @@ export default function RateioTabV2({
     const qty = parseInt(editValue, 10) || 0;
     
     try {
-      // Check if it's a kit
       const isKit = kits?.some(k => k.id === pieceId);
       if (isKit) {
         await saveKitQty(storeId, pieceId, qty);
       } else {
-        await updatePieceQty.mutateAsync({ campaignId, storeId, pieceId, quantity: qty });
+        await applyWithHistory([{ campaignId, storeId, pieceId, quantity: qty }], []);
       }
     } catch (err) {
-      toast.error("Erro ao atualizar quantidade");
+      // toast already shown in applyWithHistory
     }
     setEditingCell(null);
   };
@@ -587,18 +687,7 @@ export default function RateioTabV2({
 
     setIsApplyingPaste(true);
     try {
-      await applyRateioBulk(upserts, [], {
-        isNegotiationView: rateioSource === 'negotiation',
-        negotiationSupplierId: winnerSupplierId,
-        isAdjustmentView: rateioSource === 'adjustment',
-        adjustmentId: activeAdjustment?.id
-      });
-      
-      queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
-      queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
-      queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
-      
-      toast.success(`${upserts.length} células atualizadas com sucesso`);
+      await applyWithHistory(upserts, [], `${upserts.length} células atualizadas com sucesso`);
       setIsPasteModalOpen(false);
       setAnchorCell(null);
     } catch (err) {
@@ -730,8 +819,24 @@ export default function RateioTabV2({
                   {isTabEditable && (
                     <>
                       <div className="flex items-center bg-stone-100 rounded-lg p-0.5">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-stone-900"><Undo2 className="w-3.5 h-3.5" /></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-stone-400 hover:text-stone-900"><Redo2 className="w-3.5 h-3.5" /></Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className={cn("h-8 w-8", historyIndex < 0 ? "text-stone-300" : "text-stone-600 hover:text-stone-900")}
+                          onClick={handleUndo}
+                          disabled={historyIndex < 0}
+                        >
+                          <Undo2 className="w-3.5 h-3.5" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className={cn("h-8 w-8", historyIndex >= history.length - 1 ? "text-stone-300" : "text-stone-600 hover:text-stone-900")}
+                          onClick={handleRedo}
+                          disabled={historyIndex >= history.length - 1}
+                        >
+                          <Redo2 className="w-3.5 h-3.5" />
+                        </Button>
                       </div>
 
                       <Button 
@@ -749,7 +854,12 @@ export default function RateioTabV2({
                         {t("rateio.matrixAutomation", "AUTOMAÇÃO DE MATRIZ")}
                       </Button>
 
-                      <Button variant="outline" size="sm" className="h-9 text-xs gap-2 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="h-9 text-xs gap-2 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
+                        onClick={() => setCopyQtyOpen(true)}
+                      >
                         <Copy className="w-3.5 h-3.5" />
                         {t("rateio.copyQuantities", "COPIAR QUANTIDADES")}
                       </Button>
@@ -768,7 +878,10 @@ export default function RateioTabV2({
                       <DropdownMenuItem onClick={() => exportMatrixExcelJS(stores, pieces, qtyMap, campaign.name, kits, kitPieces, undefined, [], [], pieces, agency?.name, client?.name)} className="text-xs py-2 cursor-pointer">
                         {t("rateio.exportRateio", "EXPORTAR RATEIO")}
                       </DropdownMenuItem>
-                      <DropdownMenuItem className="text-xs py-2 cursor-pointer">
+                      <DropdownMenuItem 
+                        onClick={() => exportRateioGrid(pieces, kits, kitPieces, stores, qtyMap, campaign.name, client.name, agency.name)} 
+                        className="text-xs py-2 cursor-pointer"
+                      >
                         {t("rateio.exportByStore", "EXPORTAR RATEIO POR LOJA")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -780,9 +893,60 @@ export default function RateioTabV2({
                         {activeTabData?.type === "adjustment" ? "AJUSTE" : activeTabData?.type === "negotiation" ? "NEGOCIAÇÃO" : "ORIGINAL"}
                       </Badge>
                       
-                      <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg border border-stone-200 shadow-sm">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg border border-stone-200 shadow-sm">
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-56">
+                          <DropdownMenuItem 
+                            className="text-xs cursor-pointer"
+                            onClick={async () => {
+                              if (!confirm("Deseja realmente limpar todo o rateio desta versão?")) return;
+                              const deletes = Object.keys(qtyMap).map(key => {
+                                const [storeId, pieceId] = key.split("-");
+                                return { campaignId, storeId, pieceId };
+                              });
+                              await applyWithHistory([], deletes, "Rateio limpo com sucesso");
+                            }}
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            Limpar todo o rateio
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-xs cursor-pointer"
+                            onClick={async () => {
+                              if (!confirm("Deseja preencher com 1 em todas as células vazias?")) return;
+                              const upserts: RateioUpsert[] = [];
+                              stores.forEach(s => {
+                                pieces.forEach(p => {
+                                  if (!p.kit_only && !qtyMap[`${s.id}-${p.id}`]) {
+                                    upserts.push({ campaignId, storeId: s.id, pieceId: p.id, quantity: 1 });
+                                  }
+                                });
+                              });
+                              await applyWithHistory(upserts, [], "Rateio preenchido");
+                            }}
+                          >
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Preencher vazios com 1
+                          </DropdownMenuItem>
+                          
+                          {rateioSource === 'negotiation' && (
+                            <>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem 
+                                className="text-xs cursor-pointer text-amber-600 focus:text-amber-600"
+                                onClick={handleResetNegotiationRateio}
+                              >
+                                <RefreshCw className="w-4 h-4 mr-2" />
+                                Restaurar original
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </>
                   )}
                 </div>
@@ -1283,6 +1447,28 @@ export default function RateioTabV2({
         adjustmentId={activeAdjustment?.id}
         isNegotiationView={activeTabData?.type === "negotiation"}
         negotiationSupplierId={winnerSupplierId}
+      />
+      <CopyQuantitiesDialog 
+        open={copyQtyOpen}
+        onOpenChange={setCopyQtyOpen}
+        campaignId={campaignId}
+        stores={stores}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        qtyMap={qtyMap}
+        onComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
+          queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
+          queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
+        }}
+        isNegotiationView={rateioSource === 'negotiation'}
+        negotiationSupplierId={winnerSupplierId}
+        isAdjustmentView={rateioSource === 'adjustment'}
+        adjustmentId={activeAdjustment?.id}
+        runBulkWithHistory={async (label, upserts, deletes) => {
+          await applyWithHistory(upserts, deletes, label);
+        }}
       />
     </div>
   );
