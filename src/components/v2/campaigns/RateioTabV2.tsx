@@ -555,14 +555,30 @@ export default function RateioTabV2({
   }, [anchorCell, editingCell, isTabEditable, handleExcelPaste]);
 
   const confirmPaste = async () => {
-    const upserts = pendingChanges
+    const upserts: RateioUpsert[] = [];
+    
+    pendingChanges
       .filter(c => !c.isIgnored)
-      .map(c => ({
-        campaignId,
-        storeId: c.storeId,
-        pieceId: c.pieceId,
-        quantity: c.newValue
-      }));
+      .forEach(c => {
+        if (c.itemType === 'kit') {
+          const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === c.pieceId);
+          kpList.forEach((kp: any) => {
+            upserts.push({
+              campaignId,
+              storeId: c.storeId,
+              pieceId: kp.piece_id,
+              quantity: c.newValue * (kp.quantity || 1)
+            });
+          });
+        } else {
+          upserts.push({
+            campaignId,
+            storeId: c.storeId,
+            pieceId: c.pieceId,
+            quantity: c.newValue
+          });
+        }
+      });
 
     if (upserts.length === 0) {
       setIsPasteModalOpen(false);
