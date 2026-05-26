@@ -531,7 +531,7 @@ export default function RateioTabV2({
       }
     }
     return map;
-  }, [kits, kitPieces, filteredStores, visibleQtyMap]);
+  }, [kits, activeKitPieces, filteredStores, visibleQtyMap]);
 
   // Compute column totals
   const columnTotals = useMemo(() => {
