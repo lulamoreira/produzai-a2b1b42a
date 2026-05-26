@@ -484,7 +484,7 @@ export default function RateioTabV2({
     columns.forEach(col => {
       let total = 0;
       const isKit = col._type === "kit";
-      stores.forEach(store => {
+      filteredStores.forEach(store => {
         if (isKit) {
           total += kitQtyMap[`${store.id}-${col.id}`] || 0;
         } else {
@@ -494,7 +494,7 @@ export default function RateioTabV2({
       totals[`${col._type}-${col.id}`] = total;
     });
     return totals;
-  }, [columns, stores, visibleQtyMap, kitQtyMap]);
+  }, [columns, filteredStores, visibleQtyMap, kitQtyMap]);
 
   // Group columns by store_category label, preserving sorted order (no global re-sort)
   const pieceGroups = useMemo(() => {
