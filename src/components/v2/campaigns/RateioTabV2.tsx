@@ -1080,10 +1080,10 @@ export default function RateioTabV2({
                                 isSelected && "ring-2 ring-inset ring-blue-500 z-10 bg-blue-50/50"
                               )}
                               onClick={() => {
-                                if (isKit || !isTabEditable) return;
+                                if (!isTabEditable) return;
                                 setAnchorCell({ rowIndex: sIdx, colIndex: cIdx });
                               }}
-                              onDoubleClick={() => !isKit && isTabEditable && startEditing(store.id, col.id, val)}
+                              onDoubleClick={() => isTabEditable && startEditing(store.id, col.id, val)}
                             >
                               {isEditing ? (
                                 <input
