@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger 
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
@@ -1447,6 +1447,28 @@ export default function RateioTabV2({
         adjustmentId={activeAdjustment?.id}
         isNegotiationView={activeTabData?.type === "negotiation"}
         negotiationSupplierId={winnerSupplierId}
+      />
+      <CopyQuantitiesDialog 
+        open={copyQtyOpen}
+        onOpenChange={setCopyQtyOpen}
+        campaignId={campaignId}
+        stores={stores}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        qtyMap={qtyMap}
+        onComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
+          queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
+          queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
+        }}
+        isNegotiationView={rateioSource === 'negotiation'}
+        negotiationSupplierId={winnerSupplierId}
+        isAdjustmentView={rateioSource === 'adjustment'}
+        adjustmentId={activeAdjustment?.id}
+        runBulkWithHistory={async (label, upserts, deletes) => {
+          await applyWithHistory(upserts, deletes, label);
+        }}
       />
     </div>
   );
