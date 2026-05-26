@@ -663,7 +663,8 @@ export default function RateioTabV2({
         isNegotiationView: rateioSource === 'negotiation',
         negotiationSupplierId: winnerSupplierId,
         isAdjustmentView: rateioSource === 'adjustment',
-        adjustmentId: activeAdjustment?.id
+        adjustmentId: activeAdjustment?.id,
+        srcToAdjPieceId
       });
       setHistoryIndex(historyIndex - 1);
       queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
