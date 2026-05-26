@@ -177,7 +177,11 @@ export function CreateKitDialog({
     return maxCode + 1;
   }, [existingKits]);
 
-  const availablePieces = kitOnlyPieces.filter(p => !selectedPieceIds.includes(p.id));
+  // Exclude pieces already selected in this new kit OR already assigned to any existing kit
+  const alreadyInAnyKit = new Set((allKitPieces ?? []).map(kp => kp.piece_id));
+  const availablePieces = kitOnlyPieces.filter(
+    p => !selectedPieceIds.includes(p.id) && !alreadyInAnyKit.has(p.id)
+  );
 
   const filteredAvailablePieces = useMemo(() => {
     if (!createSearch.trim()) return availablePieces;
