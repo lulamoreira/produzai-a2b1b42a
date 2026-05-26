@@ -611,7 +611,7 @@ export default function BudgetNegotiationDialog({
                     className={`rounded-md border p-3 text-left text-sm transition-colors ${adjustScope === "pieces_only" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}
                   >
                     <div className="font-semibold">Somente peças</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">Frete e instalação ficam fixos</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Embalagem / frete e instalação ficam fixos</div>
                   </button>
                   <button
                     type="button"
