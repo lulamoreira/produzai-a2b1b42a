@@ -1176,6 +1176,7 @@ export default function RateioTabV2({
                           key={gIdx} 
                           colSpan={group.items.length} 
                           className="bg-stone-50 border-b border-r border-stone-200 text-[10px] font-bold text-stone-500 py-1 text-center uppercase tracking-widest"
+                          style={{ position: 'sticky', top: 0, zIndex: 30 }}
                         >
                           {group.label}
                         </th>
