@@ -309,45 +309,24 @@ const CampaignDetail = () => {
               />
             </TabsContent>
             <TabsContent value="matrix">
-              {version === "v2" ? (
-                <RateioTabV2 
-                  campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
-                  pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={matrixQtyMap}
-                  canEditCampaignStores={true} 
-                  activeAdjustment={activeAdjustment} 
-                  hasNegotiationRateio={hasNegotiationRateio}
-                  winnerSupplierId={winnerSupplierId} 
-                  winnerSupplierName={winnerSupplierName} 
-                  rateioSource={resolvedRateioSource}
-                  setRateioSource={setRateioSource}
-                  vigenteSource={vigenteSource} 
-                  isViewingVigente={isViewingVigente}
-                  handleResetNegotiationRateio={() => {}} 
-                  handleCancelNegotiationRateio={() => {}}
-                  isNegotiationView={false} 
-                  hasAnyAdjustment={!!activeAdjustment} 
-                  setActiveSection={setActiveSection}
-                />
-              ) : (
-                <MatrixTab 
-                  campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
-                  pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={matrixQtyMap}
-                  canEditCampaignStores={true} 
-                  activeAdjustment={activeAdjustment} 
-                  hasNegotiationRateio={hasNegotiationRateio}
-                  winnerSupplierId={winnerSupplierId} 
-                  winnerSupplierName={winnerSupplierName} 
-                  rateioSource={resolvedRateioSource}
-                  setRateioSource={setRateioSource}
-                  vigenteSource={vigenteSource} 
-                  isViewingVigente={isViewingVigente}
-                  handleResetNegotiationRateio={() => {}} 
-                  handleCancelNegotiationRateio={() => {}}
-                  isNegotiationView={false} 
-                  hasAnyAdjustment={!!activeAdjustment} 
-                  setActiveSection={setActiveSection}
-                />
-              )}
+              <MatrixTab 
+                campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
+                pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={matrixQtyMap}
+                canEditCampaignStores={true} 
+                activeAdjustment={activeAdjustment} 
+                hasNegotiationRateio={hasNegotiationRateio}
+                winnerSupplierId={winnerSupplierId} 
+                winnerSupplierName={winnerSupplierName} 
+                rateioSource={resolvedRateioSource}
+                setRateioSource={setRateioSource}
+                vigenteSource={vigenteSource} 
+                isViewingVigente={isViewingVigente}
+                handleResetNegotiationRateio={() => {}} 
+                handleCancelNegotiationRateio={() => {}}
+                isNegotiationView={false} 
+                hasAnyAdjustment={!!activeAdjustment} 
+                setActiveSection={setActiveSection}
+              />
             </TabsContent>
             <TabsContent value="adjustments">
               <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">Carregando aba...</div>}>
