@@ -735,6 +735,7 @@ export default function PiecesTab({
         kitOnlyPieces={pieces}
         existingKits={kits}
         existingPieces={pieces}
+        allKitPieces={kitPieces}
         onCreateKit={(k: any) => addKit?.mutateAsync?.(k)}
         onAddKitPiece={(kp: any) => addKitPiece?.mutateAsync?.(kp)}
         onUpdateKit={(k: any) => updateKit?.mutateAsync?.(k)}

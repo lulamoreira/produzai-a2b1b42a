@@ -146,6 +146,7 @@ interface CreateKitDialogProps {
   kitOnlyPieces: CampaignPiece[];
   existingKits: CampaignKit[];
   existingPieces?: CampaignPiece[];
+  allKitPieces?: CampaignKitPiece[];
   onCreateKit: (kit: { campaign_id: string; name: string; code: number; is_new?: boolean; display_order?: number }) => Promise<CampaignKit>;
   onAddKitPiece: (kitPiece: { kit_id: string; piece_id: string }) => Promise<void>;
   onUpdateKit: (kit: { id: string; image_url?: string | null; is_new?: boolean }) => Promise<CampaignKit>;
@@ -154,7 +155,7 @@ interface CreateKitDialogProps {
 }
 
 export function CreateKitDialog({
-  open, onOpenChange, campaignId, kitOnlyPieces, existingKits, existingPieces = [], onCreateKit, onAddKitPiece, onUpdateKit, onUpdatePiece, preSelectedPieceIds = [], displayOrder,
+  open, onOpenChange, campaignId, kitOnlyPieces, existingKits, existingPieces = [], allKitPieces = [], onCreateKit, onAddKitPiece, onUpdateKit, onUpdatePiece, preSelectedPieceIds = [], displayOrder,
 }: CreateKitDialogProps & { displayOrder?: number }) {
   const { t } = useTranslation();
   const [step, setStep] = useState<"name" | "pieces">("name");
@@ -176,7 +177,11 @@ export function CreateKitDialog({
     return maxCode + 1;
   }, [existingKits]);
 
-  const availablePieces = kitOnlyPieces.filter(p => !selectedPieceIds.includes(p.id));
+  // Exclude pieces already selected in this new kit OR already assigned to any existing kit
+  const alreadyInAnyKit = new Set((allKitPieces ?? []).map(kp => kp.piece_id));
+  const availablePieces = kitOnlyPieces.filter(
+    p => !selectedPieceIds.includes(p.id) && !alreadyInAnyKit.has(p.id)
+  );
 
   const filteredAvailablePieces = useMemo(() => {
     if (!createSearch.trim()) return availablePieces;
@@ -461,8 +466,9 @@ export function KitDetailDialog({
     .map(kp => ({ ...kp, piece: allPieces.find(p => p.id === kp.piece_id) }))
     .filter(kp => kp.piece) : [];
 
+  // Exclude pieces already in ANY kit (not just the current one) — each piece can only be in one kit
   const kitOnlyPiecesNotInKit = kit ? allPieces.filter(
-    p => p.kit_only && p.campaign_id === kit.campaign_id && !piecesInKit.some(kp => kp.piece_id === p.id)
+    p => p.kit_only && p.campaign_id === kit.campaign_id && !kitPieces.some(kp => kp.piece_id === p.id)
   ) : [];
 
   const filteredAddPieces = useMemo(() => {
@@ -527,10 +533,23 @@ export function KitDetailDialog({
 
   const saveEditPiece = async () => {
     if (!editingPieceId || !onUpdatePiece) return;
+    const trimmedName = editForm.name.trim();
+    if (!trimmedName) {
+      toast.error("O nome da peça não pode estar vazio.");
+      return;
+    }
+    // Validate: kit piece names must be unique across all kit-only pieces
+    const duplicate = allPieces.find(
+      p => p.kit_only && p.id !== editingPieceId && p.name.trim().toLowerCase() === trimmedName.toLowerCase()
+    );
+    if (duplicate) {
+      toast.error(`Já existe uma peça de kit com o nome "${duplicate.name}". Peças de kit devem ter nomes únicos — cada peça só pode pertencer a um kit.`);
+      return;
+    }
     const size = [editForm.width, editForm.height, editForm.length].filter(Boolean).join(" x ");
     await onUpdatePiece({
       id: editingPieceId,
-      name: editForm.name,
+      name: trimmedName,
       category: editForm.category,
       size,
       store_category: editForm.store_category || null,
