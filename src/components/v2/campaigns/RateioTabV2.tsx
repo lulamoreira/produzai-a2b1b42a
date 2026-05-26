@@ -399,13 +399,6 @@ export default function RateioTabV2({
   const editingCellRef = useRef<{ storeId: string; pieceId: string } | null>(null);
   const editValueRef = useRef("");
   const skipBlurSaveRef = useRef(false);
-  const [localQtyOverrides, setLocalQtyOverrides] = useState<Record<string, number>>({});
-
-  useEffect(() => {
-    setLocalQtyOverrides({});
-  }, [campaignId, rateioSource, activeAdjustment?.id, winnerSupplierId]);
-
-  const visibleQtyMap = useMemo(() => ({ ...qtyMap, ...localQtyOverrides }), [qtyMap, localQtyOverrides]);
 
   const getVisibleCellQty = useCallback((storeId: string, pieceId: string) => {
     const isKit = kits?.some((k: any) => k.id === pieceId);
