@@ -39,7 +39,7 @@ import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getStateColor } from "@/lib/stateColors";
 import { useUpdateCampaignStorePiece } from "@/hooks/useMultiClientData";
-import { applyRateioBulk } from "@/lib/applyRateioBulk";
+import { applyRateioBulk, type RateioUpsert } from "@/lib/applyRateioBulk";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
