@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
   Search, Filter, Download, Sparkles, Copy, MoreHorizontal, Lock, CheckCircle2,
-  Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw, X, Clipboard,
+  Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw, X,
   ArrowUpDown, Check
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,16 +13,6 @@ import { Badge } from "@/components/ui/badge";
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { 
   Table, 
   TableBody, 
@@ -40,7 +30,6 @@ import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { exportRateioGrid } from "@/lib/exportRateioGrid";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getStateColor } from "@/lib/stateColors";
-import { useUpdateCampaignStorePiece } from "@/hooks/useMultiClientData";
 import { applyRateioBulk, type RateioUpsert } from "@/lib/applyRateioBulk";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -100,7 +89,6 @@ export default function RateioTabV2({
 }: RateioTabV2Props) {
   const { t } = useTranslation();
   const { isAdminOrMaster } = useUserRole();
-  const updatePieceQty = useUpdateCampaignStorePiece();
   const queryClient = useQueryClient();
   
   const [rateioView, setRateioView] = useState("planilha");
@@ -108,7 +96,6 @@ export default function RateioTabV2({
   
   // Excel Paste state
   const [anchorCell, setAnchorCell] = useState<{ rowIndex: number; colIndex: number } | null>(null);
-  const [isApplyingPaste, setIsApplyingPaste] = useState(false);
   const [storeSearch, setStoreSearch] = useState("");
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
@@ -345,6 +332,14 @@ export default function RateioTabV2({
     });
   }, [pieces, kits, pieceFilters]);
 
+  const [localQtyOverrides, setLocalQtyOverrides] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    setLocalQtyOverrides({});
+  }, [campaignId, rateioSource, activeAdjustment?.id, winnerSupplierId]);
+
+  const visibleQtyMap = useMemo(() => ({ ...qtyMap, ...localQtyOverrides }), [qtyMap, localQtyOverrides]);
+
   // Pre-compute kit quantity per store from components (read-only display)
   const kitQtyMap = useMemo(() => {
     const map: Record<string, number> = {};
@@ -354,7 +349,7 @@ export default function RateioTabV2({
       for (const s of stores) {
         const q = Math.min(
           ...kpList.map((kp: any) => {
-            const baseQty = qtyMap[`${s.id}-${kp.piece_id}`] || 0;
+            const baseQty = visibleQtyMap[`${s.id}-${kp.piece_id}`] || 0;
             return Math.floor(baseQty / (kp.quantity || 1));
           })
         );
@@ -362,7 +357,7 @@ export default function RateioTabV2({
       }
     }
     return map;
-  }, [kits, kitPieces, stores, qtyMap]);
+  }, [kits, kitPieces, stores, visibleQtyMap]);
 
   // Compute column totals
   const columnTotals = useMemo(() => {
@@ -374,13 +369,13 @@ export default function RateioTabV2({
         if (isKit) {
           total += kitQtyMap[`${store.id}-${col.id}`] || 0;
         } else {
-          total += qtyMap[`${store.id}-${col.id}`] || 0;
+          total += visibleQtyMap[`${store.id}-${col.id}`] || 0;
         }
       });
       totals[`${col._type}-${col.id}`] = total;
     });
     return totals;
-  }, [columns, stores, qtyMap, kitQtyMap]);
+  }, [columns, stores, visibleQtyMap, kitQtyMap]);
 
   // Group columns by store_category label, preserving sorted order (no global re-sort)
   const pieceGroups = useMemo(() => {
@@ -401,13 +396,23 @@ export default function RateioTabV2({
   const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
   const [editValue, setEditValue] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
+  const editingCellRef = useRef<{ storeId: string; pieceId: string } | null>(null);
+  const editValueRef = useRef("");
+  const skipBlurSaveRef = useRef(false);
 
-  const startEditing = (storeId: string, pieceId: string, currentVal: number) => {
-    if (!canEditCampaignStores || !isTabEditable) return;
-    setEditingCell({ storeId, pieceId });
-    setEditValue(currentVal === 0 ? "" : String(currentVal));
-    setTimeout(() => inputRef.current?.focus(), 0);
-  };
+  const getVisibleCellQty = useCallback((storeId: string, pieceId: string) => {
+    const isKit = kits?.some((k: any) => k.id === pieceId);
+    return isKit ? (kitQtyMap[`${storeId}-${pieceId}`] || 0) : (visibleQtyMap[`${storeId}-${pieceId}`] || 0);
+  }, [kits, kitQtyMap, visibleQtyMap]);
+
+  useEffect(() => {
+    if (!editingCell) return;
+    const rafId = requestAnimationFrame(() => {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [editingCell]);
 
   const applyWithHistory = async (
     upserts: RateioUpsert[],
@@ -417,20 +422,31 @@ export default function RateioTabV2({
     const changes: { storeId: string; pieceId: string; oldVal: number; newVal: number }[] = [];
     
     upserts.forEach(u => {
-      const oldVal = qtyMap[`${u.storeId}-${u.pieceId}`] || 0;
+      const oldVal = visibleQtyMap[`${u.storeId}-${u.pieceId}`] || 0;
       if (oldVal !== u.quantity) {
         changes.push({ storeId: u.storeId, pieceId: u.pieceId, oldVal, newVal: u.quantity });
       }
     });
 
     deletes.forEach(d => {
-      const oldVal = qtyMap[`${d.storeId}-${d.pieceId}`] || 0;
+      const oldVal = visibleQtyMap[`${d.storeId}-${d.pieceId}`] || 0;
       if (oldVal !== 0) {
         changes.push({ storeId: d.storeId, pieceId: d.pieceId, oldVal, newVal: 0 });
       }
     });
 
     if (changes.length === 0) return;
+
+    setLocalQtyOverrides(prev => {
+      const next = { ...prev };
+      upserts.forEach(u => {
+        const key = `${u.storeId}-${u.pieceId}`;
+        if (u.quantity > 0) next[key] = u.quantity;
+        else delete next[key];
+      });
+      deletes.forEach(d => delete next[`${d.storeId}-${d.pieceId}`]);
+      return next;
+    });
 
     try {
       await applyRateioBulk(upserts, deletes, {
@@ -517,57 +533,104 @@ export default function RateioTabV2({
     }
   };
 
-  const saveKitQty = async (storeId: string, kitId: string, quantity: number) => {
-    const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === kitId);
-    if (kpList.length === 0) return;
+  const saveCell = (cell: { storeId: string; pieceId: string }, rawValue: string) => {
+    const qty = Math.max(0, parseInt(rawValue, 10) || 0);
+    const isKit = kits?.some((k: any) => k.id === cell.pieceId);
 
-    const upserts = kpList.map((kp: any) => ({
-      campaignId,
-      storeId,
-      pieceId: kp.piece_id,
-      quantity: quantity * (kp.quantity || 1)
-    }));
+    if (isKit) {
+      const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === cell.pieceId);
+      if (kpList.length === 0) return;
 
-    await applyWithHistory(upserts, []);
-  };
-
-  const saveEdit = async () => {
-    if (!editingCell) return;
-    const { storeId, pieceId } = editingCell;
-    const qty = parseInt(editValue, 10) || 0;
-    
-    try {
-      const isKit = kits?.some(k => k.id === pieceId);
-      if (isKit) {
-        await saveKitQty(storeId, pieceId, qty);
-      } else {
-        await applyWithHistory([{ campaignId, storeId, pieceId, quantity: qty }], []);
-      }
-    } catch (err) {
-      // toast already shown in applyWithHistory
+      const targets = kpList.map((kp: any) => ({
+        campaignId,
+        storeId: cell.storeId,
+        pieceId: kp.piece_id,
+        quantity: qty * (kp.quantity || 1)
+      }));
+      const upserts = targets.filter((t) => t.quantity > 0);
+      const deletes = targets
+        .filter((t) => t.quantity <= 0)
+        .map((t) => ({ campaignId, storeId: t.storeId, pieceId: t.pieceId }));
+      void applyWithHistory(upserts, deletes);
+      return;
     }
-    setEditingCell(null);
+
+    if (qty > 0) {
+      void applyWithHistory([{ campaignId, storeId: cell.storeId, pieceId: cell.pieceId, quantity: qty }], []);
+    } else {
+      void applyWithHistory([], [{ campaignId, storeId: cell.storeId, pieceId: cell.pieceId }]);
+    }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const switchToCell = (rowIndex: number, colIndex: number) => {
+    if (!canEditCampaignStores || !isTabEditable) return;
+    const store = filteredStores[rowIndex];
+    const col = columns[colIndex];
+    if (!store || !col) return;
+
+    const targetValue = getVisibleCellQty(store.id, col.id);
+    const current = editingCellRef.current;
+    const valueToSave = editValueRef.current ?? "";
+
+    if (current && (current.storeId !== store.id || current.pieceId !== col.id)) {
+      saveCell(current, valueToSave);
+    }
+
+    const nextValue = targetValue > 0 ? String(targetValue) : "";
+    editingCellRef.current = { storeId: store.id, pieceId: col.id };
+    editValueRef.current = nextValue;
+    setEditingCell({ storeId: store.id, pieceId: col.id });
+    setEditValue(nextValue);
+    setAnchorCell({ rowIndex, colIndex });
+  };
+
+  const closeEditing = (save = true) => {
+    const current = editingCellRef.current;
+    if (current && save) {
+      saveCell(current, editValueRef.current ?? "");
+    }
+    editingCellRef.current = null;
+    editValueRef.current = "";
+    setEditingCell(null);
+    setEditValue("");
+  };
+
+  const handlePieceBlur = () => {
+    if (skipBlurSaveRef.current) {
+      skipBlurSaveRef.current = false;
+      return;
+    }
+    closeEditing(true);
+  };
+
+  const navigateFromCell = (rowIndex: number, colIndex: number, dRow: number, dCol: number) => {
+    const nextRow = Math.max(0, Math.min(filteredStores.length - 1, rowIndex + dRow));
+    const nextCol = Math.max(0, Math.min(columns.length - 1, colIndex + dCol));
+    switchToCell(nextRow, nextCol);
+  };
+
+  const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, colIndex: number) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      saveEdit();
-      // Mover para a linha de baixo (lógica já existente em outros lugares ou a ser reforçada)
-      if (anchorCell) {
-        setAnchorCell(prev => prev ? { ...prev, rowIndex: prev.rowIndex + 1 } : null);
-      }
-    }
-    if (e.key === "Tab") {
+      navigateFromCell(rowIndex, colIndex, 1, 0);
+    } else if (e.key === "Tab") {
       e.preventDefault();
-      saveEdit();
-      // Mover para a coluna da direita
-      if (anchorCell) {
-        setAnchorCell(prev => prev ? { ...prev, colIndex: prev.colIndex + 1 } : null);
-      }
-    }
-    if (e.key === "Escape") {
-      setEditingCell(null);
+      navigateFromCell(rowIndex, colIndex, 0, e.shiftKey ? -1 : 1);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      navigateFromCell(rowIndex, colIndex, -1, 0);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      navigateFromCell(rowIndex, colIndex, 1, 0);
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      navigateFromCell(rowIndex, colIndex, 0, -1);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      navigateFromCell(rowIndex, colIndex, 0, 1);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      closeEditing(false);
     }
   };
 
@@ -610,10 +673,18 @@ export default function RateioTabV2({
     const allUpserts = Array.from(allUpsertsMap.values());
     if (allUpserts.length === 0) return;
 
-    setIsApplyingPaste(true);
     const toastId = toast.loading("Aplicando colagem...");
 
     try {
+      setLocalQtyOverrides(prev => {
+        const next = { ...prev };
+        allUpserts.forEach(u => {
+          const key = `${u.storeId}-${u.pieceId}`;
+          if (u.quantity > 0) next[key] = u.quantity;
+          else delete next[key];
+        });
+        return next;
+      });
       const CHUNK_SIZE = 500;
       for (let i = 0; i < allUpserts.length; i += CHUNK_SIZE) {
         const chunk = allUpserts.slice(i, i + CHUNK_SIZE);
@@ -634,8 +705,6 @@ export default function RateioTabV2({
     } catch (err: any) {
       console.error("Erro confirmPaste:", err);
       toast.error(`Erro ao aplicar: ${err?.message || 'desconhecido'}`, { id: toastId });
-    } finally {
-      setIsApplyingPaste(false);
     }
   };
 
@@ -666,7 +735,7 @@ export default function RateioTabV2({
         
         const oldValue = isKit 
           ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
-          : (qtyMap[`${store.id}-${col.id}`] || 0);
+          : (visibleQtyMap[`${store.id}-${col.id}`] || 0);
         
         changes.push({
           storeId: store.id,
@@ -684,7 +753,7 @@ export default function RateioTabV2({
     if (changes.length > 0) {
       applyPasteChanges(changes);
     }
-  }, [filteredStores, columns, qtyMap, kitQtyMap, kitPieces, campaignId, rateioSource, winnerSupplierId, activeAdjustment, queryClient]);
+  }, [filteredStores, columns, visibleQtyMap, kitQtyMap, kitPieces, campaignId, rateioSource, winnerSupplierId, activeAdjustment, queryClient]);
 
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
@@ -1263,7 +1332,7 @@ export default function RateioTabV2({
                           const isKit = col._type === "kit";
                           const val = isKit
                             ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
-                            : (qtyMap[`${store.id}-${col.id}`] || 0);
+                            : (visibleQtyMap[`${store.id}-${col.id}`] || 0);
                           const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === col.id;
                           const isSelected = !isEditing && anchorCell?.rowIndex === sIdx && anchorCell?.colIndex === cIdx;
 
@@ -1278,10 +1347,12 @@ export default function RateioTabV2({
                                 isEditing && "ring-2 ring-inset ring-[#C2714F] z-10",
                                 isSelected && "ring-2 ring-inset ring-blue-500 z-10 bg-blue-50/50"
                               )}
+                              onMouseDown={() => {
+                                if (editingCellRef.current) skipBlurSaveRef.current = true;
+                              }}
                               onClick={() => {
                                 if (!isTabEditable) return;
-                                setAnchorCell({ rowIndex: sIdx, colIndex: cIdx });
-                                startEditing(store.id, col.id, val);
+                                switchToCell(sIdx, cIdx);
                               }}
                             >
                               {isEditing ? (
@@ -1290,16 +1361,19 @@ export default function RateioTabV2({
                                   type="text"
                                   className="w-full h-full bg-transparent text-center text-xs font-bold focus:outline-none"
                                   value={editValue}
-                                  onChange={(e) => setEditValue(e.target.value)}
-                                  onBlur={saveEdit}
-                                  onKeyDown={handleKeyDown}
+                                  onChange={(e) => {
+                                    editValueRef.current = e.target.value;
+                                    setEditValue(e.target.value);
+                                  }}
+                                  onBlur={handlePieceBlur}
+                                  onKeyDown={(e) => handleEditorKeyDown(e, sIdx, cIdx)}
                                    onPaste={(e) => {
                                     const text = e.clipboardData.getData('text/plain');
                                     // Se for multi-célula (tem tab ou newline), interceptamos para o handleExcelPaste
                                     if (text.includes('\t') || text.includes('\n')) {
                                       e.preventDefault();
+                                      closeEditing(false);
                                       handleExcelPaste(text, { rowIndex: sIdx, colIndex: cIdx });
-                                      setEditingCell(null);
                                     }
                                     // Se for valor único, deixamos o comportamento nativo do input
                                   }}
@@ -1386,24 +1460,6 @@ export default function RateioTabV2({
           )}
         </div>
       </div>
-
-      {anchorCell && !editingCell && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-stone-900 text-white px-4 py-2 rounded-full text-xs font-medium shadow-2xl z-[100] flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4">
-          <div className="flex items-center gap-2">
-            <Clipboard className="w-3.5 h-3.5 text-[#C2714F]" />
-            <span>Pressione <strong>Ctrl+V</strong> para colar em bloco</span>
-          </div>
-          <div className="w-px h-3 bg-stone-700" />
-          <button 
-            onClick={() => setAnchorCell(null)}
-            className="text-stone-400 hover:text-white transition-colors flex items-center gap-1"
-          >
-            <span>Esc para cancelar</span>
-            <X className="w-3 h-3" />
-          </button>
-        </div>
-      )}
-
 
       <MatrixAutomationDialog 
         open={isAutomationOpen}
