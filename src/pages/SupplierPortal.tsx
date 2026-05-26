@@ -1128,7 +1128,13 @@ const SupplierPortal = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                  {(() => { let __editableIdx = -1; return null; })()}
+                  {(() => null)()}
                   {displayRows.map((row) => {
+                    const __editableIndex = row.editable && row.pieceId
+                      ? displayRows.filter((r, i) => r.editable && r.pieceId && i <= displayRows.indexOf(row)).length - 1
+                      : -1;
+                    const __totalEditable = displayRows.filter((r) => r.editable && r.pieceId).length;
                     if (row.type === "kit_header") {
                       return (
                         <TableRow key={row.key} className="bg-muted/50 border-t-2">
