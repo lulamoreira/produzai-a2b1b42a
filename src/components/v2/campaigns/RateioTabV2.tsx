@@ -474,14 +474,18 @@ export default function RateioTabV2({
     });
   }, [qtyMap]);
 
-  // Grouped quantities per store for performance
+  // Grouped quantities per store for performance.
+  // NOTE: keys are `${storeUuid}-${pieceUuid}` and UUIDs themselves contain
+  // hyphens, so `key.split('-')` is unsafe. UUIDs are always 36 chars, so
+  // the storeId is key[0..36) and the pieceId is key[37..).
   const storeQtyMaps = useMemo(() => {
     const maps: Record<string, Record<string, number>> = {};
     for (const s of stores) {
       maps[s.id] = {};
     }
     for (const key in visibleQtyMap) {
-      const [sId, pId] = key.split('-');
+      const sId = key.slice(0, 36);
+      const pId = key.slice(37);
       if (maps[sId]) {
         maps[sId][pId] = visibleQtyMap[key];
       }
