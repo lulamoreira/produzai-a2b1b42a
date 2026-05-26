@@ -72,11 +72,14 @@ const AddPieceDialog = ({
 
   useEffect(() => {
     if (initialPiece) {
+      const [w, h, l] = (initialPiece.size || "").split(/[x×]/i).map((s: string) => s.trim());
       setForm({
         code: String(initialPiece.code || ""),
         category: initialPiece.category || "",
         name: initialPiece.name || "",
-        size: initialPiece.size || "",
+        width: w || "",
+        height: h || "",
+        length: l || "",
         image_url: initialPiece.image_url || "",
         specification: initialPiece.specification || t("pieces.videManual"),
         installation_instructions: initialPiece.installation_instructions || t("pieces.noSpecificInfo"),
@@ -92,7 +95,9 @@ const AddPieceDialog = ({
         code: "", 
         category: "", 
         name: "", 
-        size: "", 
+        width: "",
+        height: "",
+        length: "",
         image_url: "", 
         specification: t("pieces.videManual"), 
         installation_instructions: t("pieces.noSpecificInfo"),
