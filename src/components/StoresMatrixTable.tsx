@@ -283,6 +283,7 @@ const EditableCell = React.memo(function EditableCell({
           onChange={handleChange}
           onKeyDown={handleKeyDown}
           onBlur={handleBlur}
+          onPaste={onPaste}
           className="h-7 text-xs min-w-[60px] px-1.5"
           autoComplete="off"
         />
