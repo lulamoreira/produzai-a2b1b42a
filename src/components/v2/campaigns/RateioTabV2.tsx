@@ -584,14 +584,6 @@ export default function RateioTabV2({
 
   const handleExcelPaste = useCallback((text: string, anchor: { rowIndex: number; colIndex: number }) => {
     const parsedData = parseExcelTSV(text);
-    console.log("===PASTE DEBUG===");
-    console.log("Anchor:", anchor);
-    console.log("Total filteredStores:", filteredStores.length);
-    console.log("Primeiras 5 lojas (sorted order):", filteredStores.slice(0, 5).map(s => ({ idx: filteredStores.indexOf(s), id: s.id, name: s.name })));
-    console.log("Coluna alvo:", columns[anchor.colIndex]);
-    console.log("Total linhas no TSV:", parsedData.length);
-    console.log("Primeiros 5 valores do TSV:", parsedData.slice(0, 5).map(r => r[0]));
-    console.log("Últimos 5 valores do TSV:", parsedData.slice(-5).map(r => r[0]));
     const changes: typeof pendingChanges = [];
 
     const rowCount = parsedData.length;
@@ -669,41 +661,26 @@ export default function RateioTabV2({
   const confirmPaste = async () => {
     const allUpsertsMap = new Map<string, RateioUpsert>();
 
-    const addUpsert = (storeId: string, pieceId: string, qty: number) => {
+    // Last-write-wins: simplesmente sobrescreve. Nada de somar.
+    const setUpsert = (storeId: string, pieceId: string, qty: number) => {
       const key = `${storeId}-${pieceId}`;
-      const existing = allUpsertsMap.get(key);
-      if (existing) {
-        existing.quantity = (existing.quantity || 0) + qty;
-      } else {
-        allUpsertsMap.set(key, {
-          campaignId,
-          storeId,
-          pieceId,
-          quantity: qty
-        });
-      }
+      allUpsertsMap.set(key, { campaignId, storeId, pieceId, quantity: qty });
     };
-    
+
     pendingChanges
       .filter(c => !c.isIgnored)
       .forEach(c => {
         const val = Math.round(c.newValue);
         if (c.itemType === 'kit') {
-          // Decompõe kit — somando quando peça aparece em outros kits
           const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === c.pieceId);
           kpList.forEach((kp: any) => {
-            addUpsert(c.storeId, kp.piece_id, val * (kp.quantity || 1));
+            setUpsert(c.storeId, kp.piece_id, val * (kp.quantity || 1));
           });
         } else {
-          // Peça standalone (kit_only=false)
-          addUpsert(c.storeId, c.pieceId, val);
+          setUpsert(c.storeId, c.pieceId, val);
         }
       });
 
-    console.log("===UPSERTS PRONTOS===");
-    console.log("Total upserts no Map:", allUpsertsMap.size);
-    console.log("Primeiros 3:", Array.from(allUpsertsMap.values()).slice(0, 3));
-    console.log("Últimos 3:", Array.from(allUpsertsMap.values()).slice(-3));
     const allUpserts = Array.from(allUpsertsMap.values());
 
     if (allUpserts.length === 0) {
@@ -711,18 +688,12 @@ export default function RateioTabV2({
       return;
     }
 
-    console.log("===CONFIRM PASTE===");
-    console.log("Total pendingChanges:", pendingChanges.length);
-    console.log("Não ignoradas:", pendingChanges.filter(c => !c.isIgnored).length);
-    console.log("Primeiras 3 mudanças:", pendingChanges.slice(0, 3));
-    console.log("Últimas 3 mudanças:", pendingChanges.slice(-3));
     setIsApplyingPaste(true);
     try {
       if (allUpserts.length > 0) {
         const CHUNK_SIZE = 500;
         for (let i = 0; i < allUpserts.length; i += CHUNK_SIZE) {
           const chunk = allUpserts.slice(i, i + CHUNK_SIZE);
-          console.log(`===CHUNK ${i / CHUNK_SIZE + 1}===`, "size:", chunk.length, "first:", chunk[0], "last:", chunk[chunk.length-1]);
           await applyRateioBulk(chunk, [], {
             isNegotiationView: rateioSource === 'negotiation',
             negotiationSupplierId: winnerSupplierId,
