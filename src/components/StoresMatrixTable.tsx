@@ -177,6 +177,7 @@ interface EditableCellProps {
   onSave: (storeId: string, field: string, value: string) => void;
   onCancel: () => void;
   onNavigate: (dir: "up" | "down" | "left" | "right") => void;
+  onPaste?: (e: React.ClipboardEvent) => void;
   cellRef: (el: HTMLElement | null) => void;
   suggestions: string[];
 }
