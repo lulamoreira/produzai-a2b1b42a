@@ -972,8 +972,52 @@ export default function RateioTabV2({
     // You might want to refresh data here, but react-query usually handles it via mutations
   };
 
+  const handleExport = async () => {
+    setIsExporting(true);
+    try {
+      await exportRateioSpreadsheet({
+        stores: filteredStores,
+        columns,
+        qtyMap: visibleQtyMap,
+        kitQtyMap,
+        campaignName: campaign?.name ?? 'campanha',
+      });
+      toast.success('Planilha exportada com sucesso');
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao exportar planilha');
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = '';
+    setIsImporting(true);
+    try {
+      const validStoreIds  = new Set(stores.map((s: any) => s.id));
+      const validPieceIds  = new Set(pieces.map((p: any) => p.id));
+      const validKitIds    = new Set((kits || []).map((k: any) => k.id));
 
+      const upserts = await parseRateioSpreadsheet({
+        file,
+        campaignId,
+        validStoreIds,
+        validPieceIds,
+        validKitIds,
+        activeKitPieces: activeKitPieces || [],
+      });
+
+      await applyWithHistory(upserts, [], `${upserts.length} células importadas com sucesso`);
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message ?? 'Erro ao importar planilha');
+    } finally {
+      setIsImporting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col h-full overflow-hidden bg-white">
