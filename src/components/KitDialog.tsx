@@ -146,6 +146,7 @@ interface CreateKitDialogProps {
   kitOnlyPieces: CampaignPiece[];
   existingKits: CampaignKit[];
   existingPieces?: CampaignPiece[];
+  allKitPieces?: CampaignKitPiece[];
   onCreateKit: (kit: { campaign_id: string; name: string; code: number; is_new?: boolean; display_order?: number }) => Promise<CampaignKit>;
   onAddKitPiece: (kitPiece: { kit_id: string; piece_id: string }) => Promise<void>;
   onUpdateKit: (kit: { id: string; image_url?: string | null; is_new?: boolean }) => Promise<CampaignKit>;
@@ -154,7 +155,7 @@ interface CreateKitDialogProps {
 }
 
 export function CreateKitDialog({
-  open, onOpenChange, campaignId, kitOnlyPieces, existingKits, existingPieces = [], onCreateKit, onAddKitPiece, onUpdateKit, onUpdatePiece, preSelectedPieceIds = [], displayOrder,
+  open, onOpenChange, campaignId, kitOnlyPieces, existingKits, existingPieces = [], allKitPieces = [], onCreateKit, onAddKitPiece, onUpdateKit, onUpdatePiece, preSelectedPieceIds = [], displayOrder,
 }: CreateKitDialogProps & { displayOrder?: number }) {
   const { t } = useTranslation();
   const [step, setStep] = useState<"name" | "pieces">("name");
