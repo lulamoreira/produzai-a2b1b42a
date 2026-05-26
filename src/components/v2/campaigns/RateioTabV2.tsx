@@ -656,38 +656,54 @@ export default function RateioTabV2({
 
   const confirmPaste = async () => {
     const upserts: RateioUpsert[] = [];
+    const kitsToProcess: { storeId: string; kitId: string; quantity: number }[] = [];
     
     pendingChanges
       .filter(c => !c.isIgnored)
       .forEach(c => {
+        const val = Math.round(c.newValue);
         if (c.itemType === 'kit') {
-          const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === c.pieceId);
-          kpList.forEach((kp: any) => {
-            upserts.push({
-              campaignId,
-              storeId: c.storeId,
-              pieceId: kp.piece_id,
-              quantity: c.newValue * (kp.quantity || 1)
-            });
+          kitsToProcess.push({
+            storeId: c.storeId,
+            kitId: c.pieceId,
+            quantity: val
           });
         } else {
           upserts.push({
             campaignId,
             storeId: c.storeId,
             pieceId: c.pieceId,
-            quantity: c.newValue
+            quantity: val
           });
         }
       });
 
-    if (upserts.length === 0) {
+    if (upserts.length === 0 && kitsToProcess.length === 0) {
       setIsPasteModalOpen(false);
       return;
     }
 
     setIsApplyingPaste(true);
     try {
-      await applyWithHistory(upserts, [], `${upserts.length} células atualizadas com sucesso`);
+      // Aggregate all piece updates (including those from kits)
+      const allUpserts = [...upserts];
+      
+      kitsToProcess.forEach(k => {
+        const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === k.kitId);
+        kpList.forEach((kp: any) => {
+          allUpserts.push({
+            campaignId,
+            storeId: k.storeId,
+            pieceId: kp.piece_id,
+            quantity: k.quantity * (kp.quantity || 1)
+          });
+        });
+      });
+
+      if (allUpserts.length > 0) {
+        await applyWithHistory(allUpserts, [], `${allUpserts.length} células atualizadas com sucesso`);
+      }
+      
       setIsPasteModalOpen(false);
       setAnchorCell(null);
     } catch (err) {
