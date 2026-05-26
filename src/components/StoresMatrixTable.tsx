@@ -191,6 +191,7 @@ const EditableCell = React.memo(function EditableCell({
   onSave,
   onCancel,
   onNavigate,
+  onPaste,
   cellRef,
   suggestions,
 }: EditableCellProps) {
