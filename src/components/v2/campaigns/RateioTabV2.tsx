@@ -460,7 +460,7 @@ export default function RateioTabV2({
       queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
       if (label) toast.success(label);
     } catch (err) {
-      console.error("Erro ao aplicar alterações:", err);
+      console.error("Erro detalhado (applyWithHistory):", err);
       toast.error("Erro ao aplicar alterações");
       throw err;
     }
@@ -601,7 +601,8 @@ export default function RateioTabV2({
       
       row.forEach((val, cIdx) => {
         const colIdx = anchor.colIndex + cIdx;
-        if (colIdx >= columns.length) return;
+        // Limit pasting to exactly the number of columns provided in the clipboard
+        if (colIdx >= columns.length || cIdx >= row.length) return;
         
         const col = columns[colIdx];
         const isKit = col._type === 'kit';
@@ -707,7 +708,7 @@ export default function RateioTabV2({
       setIsPasteModalOpen(false);
       setAnchorCell(null);
     } catch (err) {
-      console.error("Erro ao colar dados:", err);
+      console.error("Erro detalhado (confirmPaste):", err);
       toast.error("Erro ao aplicar colagem do Excel");
     } finally {
       setIsApplyingPaste(false);
@@ -1278,6 +1279,7 @@ export default function RateioTabV2({
                                   onPaste={(e) => {
                                     e.preventDefault();
                                     const text = e.clipboardData.getData('text/plain');
+                                    console.log("Paste on cell:", { rowIndex: sIdx, colIndex: cIdx });
                                     handleExcelPaste(text, { rowIndex: sIdx, colIndex: cIdx });
                                   }}
                                 />
