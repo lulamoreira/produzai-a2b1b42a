@@ -534,8 +534,8 @@ export default function BudgetNegotiationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-3xl max-h-[90vh] overflow-y-auto p-4 sm:p-6">
-        <DialogHeader>
+      <DialogContent className="w-[95vw] max-w-3xl max-h-[90dvh] flex flex-col p-0">
+        <DialogHeader className="px-4 sm:px-6 pt-4 sm:pt-6 shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <TrendingDown className="w-5 h-5 text-primary" />
             Negociação — {supplier.company_name}
@@ -545,6 +545,7 @@ export default function BudgetNegotiationDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-2">
         <Tabs defaultValue="define">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="define">Definir teto</TabsTrigger>
@@ -742,8 +743,9 @@ export default function BudgetNegotiationDialog({
             )}
           </TabsContent>
         </Tabs>
+        </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2 sm:flex-wrap">
+        <DialogFooter className="flex-col sm:flex-row gap-2 sm:flex-wrap border-t pt-4 px-4 sm:px-6 pb-4 sm:pb-6 shrink-0">
           {status && (
             <Button variant="outline" onClick={handleRevert} disabled={busy} className="gap-1.5 sm:mr-auto">
               <XCircle className="w-4 h-4" />
