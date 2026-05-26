@@ -1020,7 +1020,7 @@ export default function RateioTabV2({
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden bg-white">
+    <div className="flex flex-col h-full bg-white">
       {/* Top Navigation for Spreadsheet/Dashboard */}
       <div className="flex items-center justify-between px-6 py-2 border-b border-stone-200">
         <Tabs value={rateioView} onValueChange={setRateioView} className="w-auto">
@@ -1049,7 +1049,7 @@ export default function RateioTabV2({
         )}
       </div>
 
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 relative">
         <MatrixFilterSidebar
           collapsed={filterSidebarCollapsed}
           onCollapsedChange={setFilterSidebarCollapsed}
@@ -1063,9 +1063,9 @@ export default function RateioTabV2({
           onFilterLogicModeChange={setFilterLogicMode}
         />
 
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col">
           {rateioView === "planilha" ? (
-            <div className="flex flex-col h-full overflow-hidden">
+            <div className="flex flex-col h-full">
               {/* Excel-like Version Tabs */}
               <div className="bg-white border-b border-stone-200 px-4 pt-3 flex items-end gap-1 overflow-x-auto no-scrollbar">
                 {versionTabs.map((tab) => {
@@ -1447,7 +1447,7 @@ export default function RateioTabV2({
               </div>
 
               {/* Spreadsheet Table */}
-              <div ref={gridContainerRef} className="flex-1 overflow-auto relative custom-scrollbar">
+              <div ref={gridContainerRef} className="flex-1 overflow-x-auto relative custom-scrollbar">
                 {/* Floating Navigation Buttons */}
                 <div className="fixed right-12 bottom-24 flex flex-col gap-2 z-50">
                   {showScrollTop && (
