@@ -437,6 +437,17 @@ export default function RateioTabV2({
 
     if (changes.length === 0) return;
 
+    setLocalQtyOverrides(prev => {
+      const next = { ...prev };
+      upserts.forEach(u => {
+        const key = `${u.storeId}-${u.pieceId}`;
+        if (u.quantity > 0) next[key] = u.quantity;
+        else delete next[key];
+      });
+      deletes.forEach(d => delete next[`${d.storeId}-${d.pieceId}`]);
+      return next;
+    });
+
     try {
       await applyRateioBulk(upserts, deletes, {
         isNegotiationView: rateioSource === 'negotiation',
