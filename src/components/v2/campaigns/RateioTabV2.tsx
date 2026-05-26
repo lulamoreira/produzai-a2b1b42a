@@ -1049,7 +1049,7 @@ export default function RateioTabV2({
         )}
       </div>
 
-      <div className="flex flex-1 overflow-hidden relative">
+      <div className="flex flex-1 relative">
         <MatrixFilterSidebar
           collapsed={filterSidebarCollapsed}
           onCollapsedChange={setFilterSidebarCollapsed}
