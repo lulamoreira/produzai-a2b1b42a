@@ -65,8 +65,7 @@ export function useAdjustmentRateio(adjustmentId: string | null | undefined) {
 
       const qtyMap: Record<string, number> = {};
       for (const row of (storePiecesRows as any[]) || []) {
-        const srcPieceId = adjToSource.get(String(row.piece_id));
-        if (!srcPieceId) continue;
+        const srcPieceId = adjToSource.get(String(row.piece_id)) ?? String(row.piece_id);
         qtyMap[`${row.store_id}-${srcPieceId}`] = Number(row.quantity) || 0;
       }
 

@@ -46,7 +46,8 @@ export async function applyRateioBulk(
       const payload = upserts
         .map(u => {
           const adjPid = srcToAdjPieceId?.get(u.pieceId);
-          if (srcToAdjPieceId && !adjPid) return null; // piece not in adjustment (e.g. removed)
+          // Se não há mapeamento, salva com o ID de origem diretamente
+          // (peças componentes de kit podem não estar no campaign_adjustment_pieces)
           return {
             adjustment_id: adjustmentId,
             store_id: u.storeId,
