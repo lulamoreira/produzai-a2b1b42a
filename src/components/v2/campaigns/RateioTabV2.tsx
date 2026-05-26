@@ -1216,7 +1216,11 @@ export default function RateioTabV2({
                         const isKit = col._type === "kit";
                         const img = col.image_url || col.image_report_url || undefined;
                         return (
-                          <th key={`${col._type}-${col.id}`} className="min-w-[120px] max-w-[200px] p-2 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50">
+                          <th 
+                            key={`${col._type}-${col.id}`} 
+                            className="min-w-[120px] max-w-[200px] p-2 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50"
+                            style={{ position: 'sticky', top: 28, zIndex: 25 }}
+                          >
                             <div className="flex flex-col items-center gap-1.5">
                               {img ? (
                                 <img 
