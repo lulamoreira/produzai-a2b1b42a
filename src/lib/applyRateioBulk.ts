@@ -63,25 +63,30 @@ export async function applyRateioBulk(
       }
     }
     if (deletes.length > 0) {
-      const deleteIds = deletes.map(d => translate(d.pieceId)).filter(Boolean);
-      const storeIds = Array.from(new Set(deletes.map(d => d.storeId)));
-      
-      // If we have many deletes, we might need a more complex query, but usually deletes are per store or per piece.
-      // For a "Clear All" type of operation, we can delete by adjustment_id.
-      // However, to be safe and compatible with the existing interface:
-      for (let i = 0; i < deletes.length; i += 500) {
-        const chunk = deletes.slice(i, i + 500);
-        // We need to delete specific combinations. Supabase doesn't support batch delete with multiple conditions easily
-        // without an RPC or complex filters. But we can at least group them by store if that helps, or just do them in parallel.
-        await Promise.all(chunk.map(async (d) => {
-          const adjPid = translate(d.pieceId);
-          const { error } = await supabase
-            .from('campaign_adjustment_store_pieces' as never)
-            .delete()
-            .eq('adjustment_id', adjustmentId)
-            .eq('store_id', d.storeId)
-            .eq('piece_id', adjPid);
-          if (error) throw error;
+      // Group by store_id and delete using IN(piece_ids) to reduce request count.
+      const byStore = new Map<string, string[]>();
+      for (const d of deletes) {
+        const adjPid = translate(d.pieceId);
+        if (!adjPid) continue;
+        const arr = byStore.get(d.storeId) ?? [];
+        arr.push(adjPid);
+        byStore.set(d.storeId, arr);
+      }
+      const entries = Array.from(byStore.entries());
+      const CONCURRENCY = 4;
+      for (let i = 0; i < entries.length; i += CONCURRENCY) {
+        const batch = entries.slice(i, i + CONCURRENCY);
+        await Promise.all(batch.map(async ([storeId, pieceIds]) => {
+          for (let j = 0; j < pieceIds.length; j += 200) {
+            const slice = pieceIds.slice(j, j + 200);
+            const { error } = await supabase
+              .from('campaign_adjustment_store_pieces' as never)
+              .delete()
+              .eq('adjustment_id', adjustmentId)
+              .eq('store_id', storeId)
+              .in('piece_id', slice);
+            if (error) throw error;
+          }
         }));
       }
     }
@@ -102,16 +107,27 @@ export async function applyRateioBulk(
       }
     }
     if (deletes.length > 0) {
-      for (let i = 0; i < deletes.length; i += 500) {
-        const chunk = deletes.slice(i, i + 500);
-        await Promise.all(chunk.map(async (d) => {
-          const { error } = await supabase
-            .from('budget_negotiation_store_pieces' as never)
-            .delete()
-            .eq('supplier_id', negotiationSupplierId)
-            .eq('store_id', d.storeId)
-            .eq('piece_id', d.pieceId);
-          if (error) throw error;
+      const byStore = new Map<string, string[]>();
+      for (const d of deletes) {
+        const arr = byStore.get(d.storeId) ?? [];
+        arr.push(d.pieceId);
+        byStore.set(d.storeId, arr);
+      }
+      const entries = Array.from(byStore.entries());
+      const CONCURRENCY = 4;
+      for (let i = 0; i < entries.length; i += CONCURRENCY) {
+        const batch = entries.slice(i, i + CONCURRENCY);
+        await Promise.all(batch.map(async ([storeId, pieceIds]) => {
+          for (let j = 0; j < pieceIds.length; j += 200) {
+            const slice = pieceIds.slice(j, j + 200);
+            const { error } = await supabase
+              .from('budget_negotiation_store_pieces' as never)
+              .delete()
+              .eq('supplier_id', negotiationSupplierId)
+              .eq('store_id', storeId)
+              .in('piece_id', slice);
+            if (error) throw error;
+          }
         }));
       }
     }
@@ -131,16 +147,30 @@ export async function applyRateioBulk(
       }
     }
     if (deletes.length > 0) {
-      for (let i = 0; i < deletes.length; i += 500) {
-        const chunk = deletes.slice(i, i + 500);
-        await Promise.all(chunk.map(async (d) => {
-          const { error } = await supabase
-            .from('campaign_store_pieces')
-            .delete()
-            .eq('campaign_id', d.campaignId)
-            .eq('store_id', d.storeId)
-            .eq('piece_id', d.pieceId);
-          if (error) throw error;
+      // Group deletes by (campaignId, storeId) and use IN(piece_ids) to drastically
+      // reduce HTTP calls — avoids "Failed to fetch" from browser connection limits.
+      const byKey = new Map<string, { campaignId: string; storeId: string; pieceIds: string[] }>();
+      for (const d of deletes) {
+        const k = `${d.campaignId}|${d.storeId}`;
+        const entry = byKey.get(k) ?? { campaignId: d.campaignId, storeId: d.storeId, pieceIds: [] };
+        entry.pieceIds.push(d.pieceId);
+        byKey.set(k, entry);
+      }
+      const entries = Array.from(byKey.values());
+      const CONCURRENCY = 4;
+      for (let i = 0; i < entries.length; i += CONCURRENCY) {
+        const batch = entries.slice(i, i + CONCURRENCY);
+        await Promise.all(batch.map(async (e) => {
+          for (let j = 0; j < e.pieceIds.length; j += 200) {
+            const slice = e.pieceIds.slice(j, j + 200);
+            const { error } = await supabase
+              .from('campaign_store_pieces')
+              .delete()
+              .eq('campaign_id', e.campaignId)
+              .eq('store_id', e.storeId)
+              .in('piece_id', slice);
+            if (error) throw error;
+          }
         }));
       }
     }
