@@ -28,6 +28,18 @@ export async function applyRateioBulk(
   options: RateioBulkOptions
 ): Promise<void> {
   const { isNegotiationView, negotiationSupplierId, isAdjustmentView, adjustmentId, srcToAdjPieceId } = options;
+  
+  // ━━━ REDE DE SEGURANÇA: deduplica upserts pela chave única ━━━
+  // O Postgres não permite múltiplos upserts da mesma chave em um único comando.
+  // Aqui aplicamos "último vence" como fallback. Se o caller precisar de soma,
+  // ele deve agregar ANTES de chamar esta função.
+  const dedupedMap = new Map<string, RateioUpsert>();
+  for (const u of upserts) {
+    const key = `${u.campaignId}|${u.storeId}|${u.pieceId}`;
+    dedupedMap.set(key, u);
+  }
+  upserts = Array.from(dedupedMap.values());
+  
   if (isAdjustmentView && adjustmentId) {
     const translate = (pid: string) => srcToAdjPieceId?.get(pid) ?? pid;
     if (upserts.length > 0) {
