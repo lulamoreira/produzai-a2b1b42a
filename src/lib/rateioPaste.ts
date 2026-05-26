@@ -31,7 +31,7 @@ export function parseRateioClipboard(text: string): RateioClipboardValue[][] {
   return trimmed.split("\n").map((line) =>
     line.split("\t").map((cell) => {
       const raw = cell.trim();
-      if (raw === "") return 0;
+      if (raw === "") return null;
       const cleaned = raw.replace(/\./g, "").replace(",", ".");
       const numValue = parseFloat(cleaned);
       return Number.isFinite(numValue) ? numValue : null;
