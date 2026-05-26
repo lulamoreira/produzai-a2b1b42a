@@ -64,6 +64,8 @@ interface RateioTabV2Props {
   isNegotiationView: boolean;
   hasAnyAdjustment: boolean;
   setActiveSection: (section: string) => void;
+  srcToAdjPieceId?: Map<string, string>;
+  adjKitPieces?: any[];
 }
 
 const RateioRow = memo(({ 
@@ -207,7 +209,9 @@ export default function RateioTabV2({
   handleCancelNegotiationRateio,
   isNegotiationView,
   hasAnyAdjustment,
-  setActiveSection
+  setActiveSection,
+  srcToAdjPieceId,
+  adjKitPieces
 }: RateioTabV2Props) {
   const { t } = useTranslation();
   const { isAdminOrMaster } = useUserRole();
@@ -503,11 +507,18 @@ export default function RateioTabV2({
     return maps;
   }, [stores, visibleQtyMap]);
 
+  const activeKitPieces = useMemo(() => {
+    if (rateioSource === 'adjustment' && adjKitPieces && adjKitPieces.length > 0) {
+      return adjKitPieces;
+    }
+    return kitPieces;
+  }, [rateioSource, adjKitPieces, kitPieces]);
+
   // Pre-compute kit quantity per store from components (read-only display)
   const kitQtyMap = useMemo(() => {
     const map: Record<string, number> = {};
     for (const kit of kits || []) {
-      const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === kit.id);
+      const kpList = (activeKitPieces || []).filter((kp: any) => kp.kit_id === kit.id);
       if (kpList.length === 0) continue;
       for (const s of filteredStores) {
         const q = Math.min(
@@ -520,7 +531,7 @@ export default function RateioTabV2({
       }
     }
     return map;
-  }, [kits, kitPieces, filteredStores, visibleQtyMap]);
+  }, [kits, activeKitPieces, filteredStores, visibleQtyMap]);
 
   // Compute column totals
   const columnTotals = useMemo(() => {
@@ -623,7 +634,8 @@ export default function RateioTabV2({
         isNegotiationView: rateioSource === 'negotiation',
         negotiationSupplierId: winnerSupplierId,
         isAdjustmentView: rateioSource === 'adjustment',
-        adjustmentId: activeAdjustment?.id
+        adjustmentId: activeAdjustment?.id,
+        srcToAdjPieceId
       });
 
       const newHistory = [...history.slice(0, historyIndex + 1), changes].slice(-20);
@@ -660,7 +672,8 @@ export default function RateioTabV2({
         isNegotiationView: rateioSource === 'negotiation',
         negotiationSupplierId: winnerSupplierId,
         isAdjustmentView: rateioSource === 'adjustment',
-        adjustmentId: activeAdjustment?.id
+        adjustmentId: activeAdjustment?.id,
+        srcToAdjPieceId
       });
       setHistoryIndex(historyIndex - 1);
       queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
@@ -691,7 +704,8 @@ export default function RateioTabV2({
         isNegotiationView: rateioSource === 'negotiation',
         negotiationSupplierId: winnerSupplierId,
         isAdjustmentView: rateioSource === 'adjustment',
-        adjustmentId: activeAdjustment?.id
+        adjustmentId: activeAdjustment?.id,
+        srcToAdjPieceId
       });
       setHistoryIndex(historyIndex + 1);
       queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
@@ -711,7 +725,7 @@ export default function RateioTabV2({
     setLocalQtyOverrides(prev => {
       const next = { ...prev };
       if (isKit) {
-        const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === cell.pieceId);
+        const kpList = (activeKitPieces || []).filter((kp: any) => kp.kit_id === cell.pieceId);
         kpList.forEach(kp => {
           const key = `${cell.storeId}-${kp.piece_id}`;
           const val = qty * (kp.quantity || 1);
@@ -725,7 +739,7 @@ export default function RateioTabV2({
     });
 
     if (isKit) {
-      const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === cell.pieceId);
+      const kpList = (activeKitPieces || []).filter((kp: any) => kp.kit_id === cell.pieceId);
       if (kpList.length === 0) return;
 
       const targets = kpList.map((kp: any) => ({
@@ -845,7 +859,7 @@ export default function RateioTabV2({
       .filter(c => !c.isIgnored && c.itemType === 'kit')
       .forEach(c => {
         const val = Math.round(c.newValue);
-        const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === c.pieceId);
+        const kpList = (activeKitPieces || []).filter((kp: any) => kp.kit_id === c.pieceId);
         kpList.forEach((kp: any) => {
           setUpsert(c.storeId, kp.piece_id, val * (kp.quantity || 1));
         });
@@ -921,7 +935,7 @@ export default function RateioTabV2({
     if (changes.length > 0) {
       applyPasteChanges(changes);
     }
-  }, [filteredStores, columns, visibleQtyMap, kitQtyMap, kitPieces, campaignId, rateioSource, winnerSupplierId, activeAdjustment, queryClient]);
+  }, [filteredStores, columns, visibleQtyMap, kitQtyMap, activeKitPieces, campaignId, rateioSource, winnerSupplierId, activeAdjustment, queryClient]);
 
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
