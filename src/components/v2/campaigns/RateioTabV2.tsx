@@ -518,7 +518,7 @@ export default function RateioTabV2({
   const kitQtyMap = useMemo(() => {
     const map: Record<string, number> = {};
     for (const kit of kits || []) {
-      const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === kit.id);
+      const kpList = (activeKitPieces || []).filter((kp: any) => kp.kit_id === kit.id);
       if (kpList.length === 0) continue;
       for (const s of filteredStores) {
         const q = Math.min(
