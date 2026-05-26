@@ -208,7 +208,8 @@ export default function RateioTabV2({
   handleCancelNegotiationRateio,
   isNegotiationView,
   hasAnyAdjustment,
-  setActiveSection
+  setActiveSection,
+  srcToAdjPieceId
 }: RateioTabV2Props) {
   const { t } = useTranslation();
   const { isAdminOrMaster } = useUserRole();
