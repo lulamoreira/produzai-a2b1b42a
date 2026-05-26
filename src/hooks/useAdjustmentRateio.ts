@@ -59,13 +59,18 @@ export function useAdjustmentRateio(adjustmentId: string | null | undefined) {
       }
 
       const kitPiecesQty: Record<string, number> = {};
+      const adjKitPieces: any[] = [];
       for (const kp of (kitPiecesRes.data as any[]) || []) {
         const srcPieceId = adjToSource.get(String(kp.piece_id));
         if (!srcPieceId) continue;
         kitPiecesQty[`${kp.kit_id}-${srcPieceId}`] = Number(kp.quantity) || 0;
+        adjKitPieces.push({
+          ...kp,
+          piece_id: srcPieceId, // map back to source for UI consistency
+        });
       }
 
-      return { qtyMap, kitPiecesQty, sourceToAdj };
+      return { qtyMap, kitPiecesQty, sourceToAdj, adjKitPieces };
     },
   });
 }
