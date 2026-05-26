@@ -1341,7 +1341,8 @@ const SupplierPortal = () => {
                         )}
                       </React.Fragment>
                     );
-                  })}
+                  });
+                  })()}
                   {displayRows.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
