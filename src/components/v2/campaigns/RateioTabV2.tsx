@@ -507,6 +507,13 @@ export default function RateioTabV2({
     return maps;
   }, [stores, visibleQtyMap]);
 
+  const activeKitPieces = useMemo(() => {
+    if (rateioSource === 'adjustment' && adjKitPieces && adjKitPieces.length > 0) {
+      return adjKitPieces;
+    }
+    return kitPieces;
+  }, [rateioSource, adjKitPieces, kitPieces]);
+
   // Pre-compute kit quantity per store from components (read-only display)
   const kitQtyMap = useMemo(() => {
     const map: Record<string, number> = {};
