@@ -850,6 +850,11 @@ export default function StoresMatrixTable({
                         onSave={handleSave}
                         onCancel={handleCancel}
                         onNavigate={navigateToCell}
+                        onPaste={(e) => {
+                          e.preventDefault();
+                          const text = e.clipboardData.getData('text/plain');
+                          handleExcelPaste(text, { rowIndex, colKey: col.storeField });
+                        }}
                         suggestions={suggestionsMap[col.storeField] || []}
                         cellRef={(el) => {
                           const key = getCellKey(store.id, col.storeField);
