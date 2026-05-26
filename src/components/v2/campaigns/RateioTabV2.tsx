@@ -422,14 +422,14 @@ export default function RateioTabV2({
     const changes: { storeId: string; pieceId: string; oldVal: number; newVal: number }[] = [];
     
     upserts.forEach(u => {
-      const oldVal = qtyMap[`${u.storeId}-${u.pieceId}`] || 0;
+      const oldVal = visibleQtyMap[`${u.storeId}-${u.pieceId}`] || 0;
       if (oldVal !== u.quantity) {
         changes.push({ storeId: u.storeId, pieceId: u.pieceId, oldVal, newVal: u.quantity });
       }
     });
 
     deletes.forEach(d => {
-      const oldVal = qtyMap[`${d.storeId}-${d.pieceId}`] || 0;
+      const oldVal = visibleQtyMap[`${d.storeId}-${d.pieceId}`] || 0;
       if (oldVal !== 0) {
         changes.push({ storeId: d.storeId, pieceId: d.pieceId, oldVal, newVal: 0 });
       }
