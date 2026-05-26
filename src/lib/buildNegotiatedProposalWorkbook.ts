@@ -305,7 +305,7 @@ export async function buildNegotiatedProposalWorkbook(
   };
   addTotal1("Total dos Itens", totals.itemsNegotiated);
   addTotal1("Instalação", totals.installationNegotiated);
-  addTotal1("Frete / Despacho", totals.freightNegotiated);
+  addTotal1("Embalagem / Frete / Despacho", totals.freightNegotiated);
   addTotal1("TOTAL GERAL NEGOCIADO", totals.totalNegotiated, true);
 
   const freightDelta = totals.freightNegotiated - totals.freightOriginal;
@@ -313,7 +313,7 @@ export async function buildNegotiatedProposalWorkbook(
 
   if (isRoundingResidual) {
     const noteRow = ws1.addRow([
-      "* Ajuste de arredondamento aplicado ao frete para atingir o teto negociado exato.",
+      "* Ajuste de arredondamento aplicado à embalagem / frete para atingir o teto negociado exato.",
     ]);
     ws1.mergeCells(`A${noteRow.number}:F${noteRow.number}`);
     const nc = noteRow.getCell(1);
@@ -372,7 +372,7 @@ export async function buildNegotiatedProposalWorkbook(
   const summary = [
     ["", "Original", "Negociado", "Δ / Economia"],
     ["Instalação", totals.installationOriginal, totals.installationNegotiated, totals.installationOriginal - totals.installationNegotiated],
-    ["Frete", totals.freightOriginal, totals.freightNegotiated, totals.freightOriginal - totals.freightNegotiated],
+    ["Embalagem / Frete", totals.freightOriginal, totals.freightNegotiated, totals.freightOriginal - totals.freightNegotiated],
     ["Total Geral", totals.totalOriginal, totals.totalNegotiated, totals.savings],
   ];
   summary.forEach((rowVals, i) => {
@@ -508,7 +508,7 @@ export async function buildNegotiatedProposalWorkbook(
     if (dTotal !== 0) r.getCell(10).font = { color: { argb: dTotal > 0 ? RED_FONT : GREEN_FONT }, bold: true };
   }
 
-  const totRow = ws3.addRow(["SUBTOTAL ITENS (sem frete/instalação)", "", "", "", "", "", "", totH, totI, totJ]);
+  const totRow = ws3.addRow(["SUBTOTAL ITENS (sem embalagem / frete / instalação)", "", "", "", "", "", "", totH, totI, totJ]);
   totRow.height = 22;
   totRow.eachCell({ includeEmpty: true }, (cell, col) => {
     cell.font = { bold: true };
@@ -533,7 +533,7 @@ export async function buildNegotiatedProposalWorkbook(
     }
   };
   addExtra("Instalação", totals.installationOriginal, totals.installationNegotiated);
-  addExtra("Frete / Despacho", totals.freightOriginal, totals.freightNegotiated, isRoundingResidual);
+  addExtra("Embalagem / Frete / Despacho", totals.freightOriginal, totals.freightNegotiated, isRoundingResidual);
 
   const grand = ws3.addRow(["TOTAL GERAL", "", "", "", "", "", "", totals.totalOriginal, totals.totalNegotiated, totals.totalNegotiated - totals.totalOriginal]);
   grand.height = 26;
@@ -546,7 +546,7 @@ export async function buildNegotiatedProposalWorkbook(
 
   if (isRoundingResidual) {
     const noteRow = ws3.addRow([
-      "* Ajuste de arredondamento aplicado ao frete para atingir o teto negociado exato.",
+      "* Ajuste de arredondamento aplicado à embalagem / frete para atingir o teto negociado exato.",
     ]);
     ws3.mergeCells(`A${noteRow.number}:J${noteRow.number}`);
     const nc = noteRow.getCell(1);

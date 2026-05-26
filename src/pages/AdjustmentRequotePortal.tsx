@@ -468,7 +468,7 @@ export default function AdjustmentRequotePortal() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium text-muted-foreground">Frete</label>
+                  <label className="text-xs font-medium text-muted-foreground">Embalagem / Frete</label>
                   <div className="text-xs text-muted-foreground mb-1">
                     Anterior: {fmtBRL(data.baseline_extras.freight)}
                   </div>

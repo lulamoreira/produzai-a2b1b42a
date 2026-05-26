@@ -441,7 +441,7 @@ export default function BudgetNegotiationDialog({
   const handleAutoApply = async () => {
     if (targetNum <= 0) { toast.error("Defina um teto máximo válido."); return; }
     if (piecesOnlyInvalid) {
-      toast.error("O teto é menor que frete + instalação somados.");
+      toast.error("O teto é menor que embalagem / frete + instalação somados.");
       return;
     }
     setBusy(true);
@@ -573,7 +573,7 @@ export default function BudgetNegotiationDialog({
                 />
               </div>
               <div className="rounded-md border bg-muted/30 p-2 text-xs space-y-1">
-                <div className="flex justify-between"><span className="text-muted-foreground">Frete + Instalação:</span><span className="font-mono">{fmtCurrency(fixedCosts)}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Embalagem / Frete + Instalação:</span><span className="font-mono">{fmtCurrency(fixedCosts)}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Total das peças:</span><span className="font-mono">{fmtCurrency(currentPiecesTotal)}</span></div>
                 <div className="flex justify-between font-semibold"><span>Total geral atual:</span><span className="font-mono">{fmtCurrency(currentTotal)}</span></div>
               </div>
@@ -611,7 +611,7 @@ export default function BudgetNegotiationDialog({
                     className={`rounded-md border p-3 text-left text-sm transition-colors ${adjustScope === "pieces_only" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}
                   >
                     <div className="font-semibold">Somente peças</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">Frete e instalação ficam fixos</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Embalagem / frete e instalação ficam fixos</div>
                   </button>
                   <button
                     type="button"
@@ -619,12 +619,12 @@ export default function BudgetNegotiationDialog({
                     className={`rounded-md border p-3 text-left text-sm transition-colors ${adjustScope === "all" ? "border-primary bg-primary/5" : "border-border hover:bg-muted/40"}`}
                   >
                     <div className="font-semibold">Tudo</div>
-                    <div className="text-xs text-muted-foreground mt-0.5">Peças + frete + instalação</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">Peças + embalagem / frete + instalação</div>
                   </button>
                 </div>
                 {piecesOnlyInvalid && (
                   <div className="text-xs text-red-700 dark:text-red-400 font-medium">
-                    O teto é menor que frete + instalação somados ({fmtCurrency(fixedCosts)}).
+                    O teto é menor que embalagem / frete + instalação somados ({fmtCurrency(fixedCosts)}).
                   </div>
                 )}
               </div>
@@ -682,7 +682,7 @@ export default function BudgetNegotiationDialog({
                             </TableCell>
                           </TableRow>
                           <TableRow>
-                            <TableCell>Frete</TableCell>
+                            <TableCell>Embalagem / Frete</TableCell>
                             <TableCell className="text-right text-muted-foreground">—</TableCell>
                             <TableCell className="text-right font-mono">{fmtCurrency(toNum(supplierEC.freight_value))}</TableCell>
                             <TableCell className={`text-right font-mono font-semibold ${applyResidualToFreight ? "text-amber-700" : "text-primary"}`}>
@@ -703,12 +703,12 @@ export default function BudgetNegotiationDialog({
                 </div>
                 {adjustScope === "pieces_only" && (
                   <div className="text-xs text-muted-foreground italic">
-                    Frete + Instalação: {fmtCurrency(fixedCosts)} (fixo) — Ajuste aplicado apenas nas peças.
+                    Embalagem / Frete + Instalação: {fmtCurrency(fixedCosts)} (fixo) — Ajuste aplicado apenas nas peças.
                   </div>
                 )}
                 {applyResidualToFreight && (
                   <div className="rounded-md border border-amber-300 bg-amber-50 text-amber-800 p-2 text-xs">
-                    ⚠️ Diferença de arredondamento de {fmtCurrency(residual)} adicionada ao frete para atingir o teto exato.
+                    ⚠️ Diferença de arredondamento de {fmtCurrency(residual)} adicionada à embalagem / frete para atingir o teto exato.
                   </div>
                 )}
               </div>

@@ -117,7 +117,7 @@ export default function BudgetSupplierHistorySheet({
                       )}
                       {(e.snapshot.extra_costs?.freight_value || 0) > 0 && (
                         <TableRow>
-                          <TableCell className="text-xs italic text-muted-foreground">Frete</TableCell>
+                          <TableCell className="text-xs italic text-muted-foreground">Embalagem / Frete</TableCell>
                           <TableCell className="text-xs text-right tabular-nums">{fmt(e.snapshot.extra_costs?.freight_value)}</TableCell>
                         </TableRow>
                       )}

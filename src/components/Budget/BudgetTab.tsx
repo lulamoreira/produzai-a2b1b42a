@@ -839,7 +839,7 @@ ${sharedMaterials.map((m: any) => `🔸 ${m.title || m.file_name}
 
 ▸ 1️⃣  Acesse o portal de cotação pelo link abaixo
 ▸ 2️⃣  Preencha o preço unitário de cada peça/kit
-▸ 3️⃣  Informe os valores de instalação e frete
+▸ 3️⃣  Informe os valores de instalação e embalagem / frete
 ▸ 4️⃣  Clique em ENVIAR ao concluir a cotação
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -864,7 +864,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     const materialsLine = sharedMaterials.length > 0
       ? `\n\n📎 Material de apoio para download:\n${sharedMaterials.map((m: any) => `• ${m.title || m.file_name}: ${m.file_url}`).join('\n')}`
       : '';
-    const msg = `Olá ${sup.contact_name}! A ${agencyName} convidou ${sup.company_name} para participar do processo de cotação da campanha ${campaignName}.\n\nPara acessar a planilha e preencher seus preços, acesse o link abaixo:\n${portalUrl}\n\nPrazo para envio: ${deadlineStr}${materialsLine}\n\nInstruções:\n1) Acesse o link acima\n2) Preencha o preço unitário de cada peça\n3) Informe os valores de instalação e frete\n4) Clique em ENVIAR quando concluir\n\nDúvidas? Entre em contato conosco.`;
+    const msg = `Olá ${sup.contact_name}! A ${agencyName} convidou ${sup.company_name} para participar do processo de cotação da campanha ${campaignName}.\n\nPara acessar a planilha e preencher seus preços, acesse o link abaixo:\n${portalUrl}\n\nPrazo para envio: ${deadlineStr}${materialsLine}\n\nInstruções:\n1) Acesse o link acima\n2) Preencha o preço unitário de cada peça\n3) Informe os valores de instalação e embalagem / frete\n4) Clique em ENVIAR quando concluir\n\nDúvidas? Entre em contato conosco.`;
     const phone = sup.phone.replace(/\D/g, "");
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
   };
@@ -1389,7 +1389,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                           <span className="font-medium tabular-nums">{fmtCurrency(production)}</span>
                         </div>
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-muted-foreground">Frete</span>
+                          <span className="text-muted-foreground">Embalagem / Frete</span>
                           <span className="font-medium tabular-nums">{fmtCurrency(freight)}</span>
                         </div>
                         <div className="flex items-center justify-between text-[11px]">
@@ -1421,7 +1421,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                           <span className="font-medium tabular-nums">{fmtCurrency(production)}</span>
                         </div>
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-muted-foreground">Frete</span>
+                          <span className="text-muted-foreground">Embalagem / Frete</span>
                           <span className="font-medium tabular-nums">{fmtCurrency(freight)}</span>
                         </div>
                         <div className="flex items-center justify-between text-[11px]">
@@ -1828,7 +1828,7 @@ Qualquer dúvida, estamos à disposição.
                         </div>
                         {(partial.installation > 0 || partial.freight > 0) && (
                           <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                            <span>Frete + Inst.</span>
+                            <span>Embalagem / Frete + Inst.</span>
                             <span>{fmtCurrency(partial.installation + partial.freight)}</span>
                           </div>
                         )}
@@ -2031,7 +2031,7 @@ Qualquer dúvida, estamos à disposição.
                       <TableHead className="text-xs text-center">Preenchimento</TableHead>
                       <TableHead className="text-xs text-right">Σ Peças</TableHead>
                       <TableHead className="text-xs text-right">Instalação</TableHead>
-                      <TableHead className="text-xs text-right">Frete</TableHead>
+                      <TableHead className="text-xs text-right">Embalagem / Frete</TableHead>
                       <TableHead className="text-xs text-right">Total Geral</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -2693,12 +2693,12 @@ Qualquer dúvida, estamos à disposição.
               </Card>
               <Card>
                 <CardContent className="pt-3 pb-3 space-y-1">
-                  <p className="text-xs text-muted-foreground">Frete</p>
+                  <p className="text-xs text-muted-foreground">Embalagem / Frete</p>
                   {isAdminOrMaster ? (
                     <AdminInlineNumberInput
                       initial={detailCosts?.freight_value != null ? Number(detailCosts.freight_value) : null}
                       onSave={(v) => upsertAdminExtra("freight_value", v)}
-                      ariaLabel="Valor de frete"
+                      ariaLabel="Valor de embalagem / frete"
                       className="justify-start"
                     />
                   ) : (
@@ -3189,7 +3189,7 @@ function RequoteTotalsBreakdown({ requote }: { requote: AdjustmentBudgetRequest 
         <span className="font-medium">{fmt(installation)}</span>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-muted-foreground">Frete</span>
+        <span className="text-muted-foreground">Embalagem / Frete</span>
         <span className="font-medium">{fmt(freight)}</span>
       </div>
       <div className="flex items-center justify-between pt-1 border-t">

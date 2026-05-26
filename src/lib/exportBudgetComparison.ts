@@ -190,7 +190,7 @@ export async function exportBudgetComparison(params: ExportBudgetComparisonParam
   summary.addRow(["Moeda", params.currencyCode, "Budget", params.budgetAmount ?? "", "Fornecedores", params.suppliers.length]);
   summary.getCell("D2").numFmt = money;
   summary.addRow([]);
-  styleHeader(summary.addRow(["Fornecedor", "Contato", "E-mail", "Status", "Itens", "Instalação", "Frete", "Total Geral", "Diferença vs Budget"]));
+  styleHeader(summary.addRow(["Fornecedor", "Contato", "E-mail", "Status", "Itens", "Instalação", "Embalagem / Frete", "Total Geral", "Diferença vs Budget"]));
 
   params.suppliers.forEach((supplier, index) => {
     const totals = supplierTotals.get(supplier.id) ?? { items: 0, installation: 0, freight: 0, grand: 0 };
