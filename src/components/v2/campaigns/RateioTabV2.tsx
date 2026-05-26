@@ -568,23 +568,16 @@ export default function RateioTabV2({
     }
   };
 
-  const parseExcelTSV = (text: string): (number | null)[][] => {
-    // Normaliza quebras de linha: \r\n e \r viram \n
+  const parseExcelTSV = (text: string): (number | null | undefined)[][] => {
     const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    
-    // Remove linha vazia no final (Excel adiciona \n no final)
     const trimmed = normalized.replace(/\n$/, '');
-    
-    // Divide em linhas
-    const lines = trimmed.split('\n');
-    
-    return lines.map(line => 
+    return trimmed.split('\n').map(line =>
       line.split('\t').map(cell => {
-        // Para valores numéricos do rateio, após o split, converta para número
-        // Remove pontos de milhar e troca vírgula por ponto decimal
-        const cleaned = cell.trim().replace(/\./g, '').replace(',', '.');
+        const raw = cell.trim();
+        if (raw === '') return undefined; // VAZIO = pular silenciosamente
+        const cleaned = raw.replace(/\./g, '').replace(',', '.');
         const numValue = parseFloat(cleaned);
-        return isNaN(numValue) ? null : numValue;
+        return isNaN(numValue) ? null : numValue; // null = texto inválido, marca ignorado
       })
     );
   };
