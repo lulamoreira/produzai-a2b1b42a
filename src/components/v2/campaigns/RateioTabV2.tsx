@@ -1439,29 +1439,35 @@ export default function RateioTabV2({
                     </tr>
                   </thead>
                   <tbody className="bg-white">
-                    {filteredStores.map((store, sIdx) => (
-                      <RateioRow
-                        key={store.id}
-                        store={store}
-                        sIdx={sIdx}
-                        columns={columns}
-                        kits={kits}
-                        kitQtyMap={kitQtyMap}
-                        visibleQtyMap={visibleQtyMap}
-                        editingCell={editingCell}
-                        anchorCell={anchorCell}
-                        isTabEditable={isTabEditable}
-                        switchToCell={switchToCell}
-                        inputRef={inputRef}
-                        editValue={editValue}
-                        setEditValue={setEditValue}
-                        editValueRef={editValueRef}
-                        handlePieceBlur={handlePieceBlur}
-                        handleEditorKeyDown={handleEditorKeyDown}
-                        handleExcelPaste={handleExcelPaste}
-                        closeEditing={closeEditing}
-                      />
-                    ))}
+                    {filteredStores.map((store, sIdx) => {
+                      const isEditingRow = editingCell?.storeId === store.id;
+                      const isAnchorRow = anchorCell?.rowIndex === sIdx;
+                      
+                      return (
+                        <RateioRow
+                          key={store.id}
+                          store={store}
+                          sIdx={sIdx}
+                          columns={columns}
+                          kits={kits}
+                          kitQtyMap={kitQtyMap}
+                          visibleQtyMap={visibleQtyMap}
+                          isEditingRow={isEditingRow}
+                          editingCell={isEditingRow ? editingCell : null}
+                          anchorCell={isAnchorRow ? anchorCell : null}
+                          isTabEditable={isTabEditable}
+                          switchToCell={switchToCell}
+                          inputRef={inputRef}
+                          editValue={isEditingRow ? editValue : ""}
+                          setEditValue={setEditValue}
+                          editValueRef={editValueRef}
+                          handlePieceBlur={handlePieceBlur}
+                          handleEditorKeyDown={handleEditorKeyDown}
+                          handleExcelPaste={handleExcelPaste}
+                          closeEditing={closeEditing}
+                        />
+                      );
+                    })}
                   </tbody>
                   {/* Table Footer with Totals */}
                   <tfoot 
