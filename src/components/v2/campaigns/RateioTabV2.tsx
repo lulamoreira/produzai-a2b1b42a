@@ -835,9 +835,9 @@ export default function RateioTabV2({
   };
 
   const confirmPaste = async () => {
-    // Map garante que cada (storeId, pieceId) só aparece uma vez — last-write-wins.
-    // Processamos PEÇAS primeiro, depois KITS, para que a decomposição do kit
-    // sobrescreva o valor direto da peça quando houver conflito.
+    // Map garante que cada (storeId, pieceId) só aparece UMA VEZ.
+    // Processamos peças diretas primeiro, kits depois —
+    // assim o valor do kit (191) sobrescreve o da peça direta (ex: 39 ou 128).
     const allUpsertsMap = new Map<string, RateioUpsert>();
 
     const setUpsert = (storeId: string, pieceId: string, quantity: number) => {
@@ -854,12 +854,12 @@ export default function RateioTabV2({
       .filter(c => !c.isIgnored && c.itemType === 'piece')
       .forEach(c => setUpsert(c.storeId, c.pieceId, Math.round(c.newValue)));
 
-    // 2ª passagem: kits — decompõe em peças componentes (sobreescreve se houver conflito)
+    // 2ª passagem: kits — decompõe em peças componentes e SOBRESCREVE se houver conflito
     pendingChanges
       .filter(c => !c.isIgnored && c.itemType === 'kit')
       .forEach(c => {
         const val = Math.round(c.newValue);
-        const kpList = (activeKitPieces || []).filter((kp: any) => kp.kit_id === c.pieceId);
+        const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === c.pieceId);
         kpList.forEach((kp: any) => {
           setUpsert(c.storeId, kp.piece_id, val * (kp.quantity || 1));
         });

@@ -57,16 +57,16 @@ export async function applyRateioBulk(
         .filter(Boolean) as any[];
 
       // Dedup safety net: elimina duplicatas por (adjustment_id, store_id, piece_id)
-      const seen = new Map<string, typeof payload[0]>();
+      const seenMap = new Map<string, typeof payload[0]>();
       for (const row of payload) {
-        seen.set(`${row.adjustment_id}|${row.store_id}|${row.piece_id}`, row);
+        seenMap.set(`${row.adjustment_id}|${row.store_id}|${row.piece_id}`, row);
       }
-      const dedupedPayload = Array.from(seen.values());
+      const safePayload = Array.from(seenMap.values());
 
-      for (let i = 0; i < dedupedPayload.length; i += 500) {
+      for (let i = 0; i < safePayload.length; i += 500) {
         const { error } = await supabase
           .from('campaign_adjustment_store_pieces' as never)
-          .upsert(dedupedPayload.slice(i, i + 500) as never, { onConflict: 'adjustment_id,store_id,piece_id' });
+          .upsert(safePayload.slice(i, i + 500) as never, { onConflict: 'adjustment_id,store_id,piece_id' });
         if (error) throw error;
       }
     }
@@ -109,16 +109,16 @@ export async function applyRateioBulk(
       }));
 
       // Dedup safety net: elimina duplicatas por (supplier_id, store_id, piece_id)
-      const seen = new Map<string, typeof payload[0]>();
+      const seenMap = new Map<string, typeof payload[0]>();
       for (const row of payload) {
-        seen.set(`${row.supplier_id}|${row.store_id}|${row.piece_id}`, row);
+        seenMap.set(`${row.supplier_id}|${row.store_id}|${row.piece_id}`, row);
       }
-      const dedupedPayload = Array.from(seen.values());
+      const safePayload = Array.from(seenMap.values());
 
-      for (let i = 0; i < dedupedPayload.length; i += 500) {
+      for (let i = 0; i < safePayload.length; i += 500) {
         const { error } = await supabase
           .from('budget_negotiation_store_pieces' as never)
-          .upsert(dedupedPayload.slice(i, i + 500) as never, { onConflict: 'supplier_id,store_id,piece_id' });
+          .upsert(safePayload.slice(i, i + 500) as never, { onConflict: 'supplier_id,store_id,piece_id' });
         if (error) throw error;
       }
     }
@@ -157,16 +157,16 @@ export async function applyRateioBulk(
       }));
 
       // Dedup safety net: elimina duplicatas por (campaign_id, store_id, piece_id)
-      const seen = new Map<string, typeof payload[0]>();
+      const seenMap = new Map<string, typeof payload[0]>();
       for (const row of payload) {
-        seen.set(`${row.campaign_id}|${row.store_id}|${row.piece_id}`, row);
+        seenMap.set(`${row.campaign_id}|${row.store_id}|${row.piece_id}`, row);
       }
-      const dedupedPayload = Array.from(seen.values());
+      const safePayload = Array.from(seenMap.values());
 
-      for (let i = 0; i < dedupedPayload.length; i += 500) {
+      for (let i = 0; i < safePayload.length; i += 500) {
         const { error } = await supabase
           .from('campaign_store_pieces')
-          .upsert(dedupedPayload.slice(i, i + 500), { onConflict: 'campaign_id,store_id,piece_id' });
+          .upsert(safePayload.slice(i, i + 500), { onConflict: 'campaign_id,store_id,piece_id' });
         if (error) throw error;
       }
     }
