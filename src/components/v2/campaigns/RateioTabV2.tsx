@@ -1156,7 +1156,7 @@ export default function RateioTabV2({
                     </Button>
                   )}
                 </div>
-                <table className="border-collapse min-w-full">
+                <table className="min-w-full" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
                   <thead className="sticky top-0 z-30 bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.05)]">
                     {/* Group Labels Row */}
                     <tr>
