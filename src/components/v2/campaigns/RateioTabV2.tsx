@@ -819,7 +819,7 @@ export default function RateioTabV2({
     const allDeletes = operations
       .filter((op) => op.quantity <= 0)
       .map((op) => ({ campaignId, storeId: op.storeId, pieceId: op.pieceId }));
-    if (allUpserts.length === 0) return;
+    if (operations.length === 0) return;
 
     const toastId = toast.loading("Aplicando colagem...");
 
@@ -867,8 +867,8 @@ export default function RateioTabV2({
   };
 
   const handleExcelPaste = useCallback((text: string, anchor: { rowIndex: number; colIndex: number }) => {
-    const parsedData = parseExcelTSV(text);
-    const changes: any[] = [];
+    const parsedData = parseRateioClipboard(text);
+    const changes: RateioPasteChange[] = [];
 
     const rowCount = parsedData.length;
     const colCount = rowCount > 0 ? Math.max(...parsedData.map(r => r.length)) : 0;
