@@ -122,6 +122,34 @@ const AddPieceDialog = ({
     }
   }, [initialPiece, open, t]);
 
+  useEffect(() => {
+    const fetchAllCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("campaign_pieces")
+          .select("category")
+          .not("category", "is", null)
+          .neq("category", "");
+
+        if (error) throw error;
+
+        const uniqueCats = Array.from(
+          new Set(
+            data.map((p: any) => p.category.toString().trim().toUpperCase())
+          )
+        ).sort();
+        
+        setAllCategories(uniqueCats);
+      } catch (error) {
+        console.error("Error fetching all categories:", error);
+      }
+    };
+
+    if (open) {
+      fetchAllCategories();
+    }
+  }, [open]);
+
   const maxCode = Array.isArray(existingPieces) 
     ? existingPieces.reduce((max, p) => Math.max(max, Number(p.code) || 0), 0) 
     : 0;
