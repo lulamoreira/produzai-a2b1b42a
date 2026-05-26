@@ -743,8 +743,9 @@ export default function BudgetNegotiationDialog({
             )}
           </TabsContent>
         </Tabs>
+        </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2 sm:flex-wrap">
+        <DialogFooter className="flex-col sm:flex-row gap-2 sm:flex-wrap border-t pt-4 px-4 sm:px-6 pb-4 sm:pb-6 shrink-0">
           {status && (
             <Button variant="outline" onClick={handleRevert} disabled={busy} className="gap-1.5 sm:mr-auto">
               <XCircle className="w-4 h-4" />
