@@ -701,13 +701,11 @@ export default function RateioTabV2({
         kpList.forEach(kp => {
           const key = `${cell.storeId}-${kp.piece_id}`;
           const val = qty * (kp.quantity || 1);
-          if (val > 0) next[key] = val;
-          else delete next[key];
+          next[key] = val;
         });
       } else {
         const key = `${cell.storeId}-${cell.pieceId}`;
-        if (qty > 0) next[key] = qty;
-        else delete next[key];
+        next[key] = qty;
       }
       return next;
     });
