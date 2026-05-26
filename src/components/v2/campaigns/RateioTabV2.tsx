@@ -1041,6 +1041,11 @@ export default function RateioTabV2({
                                   onChange={(e) => setEditValue(e.target.value)}
                                   onBlur={saveEdit}
                                   onKeyDown={handleKeyDown}
+                                  onPaste={(e) => {
+                                    e.preventDefault();
+                                    const text = e.clipboardData.getData('text/plain');
+                                    handleExcelPaste(text, { rowIndex: sIdx, colIndex: cIdx });
+                                  }}
                                 />
                               ) : (
                                 <div className={cn(
