@@ -306,7 +306,7 @@ export default function BudgetWinnerDialog({
             </div>
           </div>
 
-          <DialogFooter className="flex-col sm:flex-row gap-2">
+          <DialogFooter className="flex-col sm:flex-row gap-2 border-t pt-4 px-6 pb-6 shrink-0">
             <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>
               <X className="w-4 h-4 mr-1" /> {t("budgets.cancel")}
             </Button>
