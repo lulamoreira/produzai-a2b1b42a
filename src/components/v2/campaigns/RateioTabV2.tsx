@@ -735,7 +735,7 @@ export default function RateioTabV2({
         
         const oldValue = isKit 
           ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
-          : (qtyMap[`${store.id}-${col.id}`] || 0);
+          : (visibleQtyMap[`${store.id}-${col.id}`] || 0);
         
         changes.push({
           storeId: store.id,
