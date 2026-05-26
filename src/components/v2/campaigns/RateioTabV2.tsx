@@ -725,7 +725,7 @@ export default function RateioTabV2({
     setLocalQtyOverrides(prev => {
       const next = { ...prev };
       if (isKit) {
-        const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === cell.pieceId);
+        const kpList = (activeKitPieces || []).filter((kp: any) => kp.kit_id === cell.pieceId);
         kpList.forEach(kp => {
           const key = `${cell.storeId}-${kp.piece_id}`;
           const val = qty * (kp.quantity || 1);
@@ -739,7 +739,7 @@ export default function RateioTabV2({
     });
 
     if (isKit) {
-      const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === cell.pieceId);
+      const kpList = (activeKitPieces || []).filter((kp: any) => kp.kit_id === cell.pieceId);
       if (kpList.length === 0) return;
 
       const targets = kpList.map((kp: any) => ({
