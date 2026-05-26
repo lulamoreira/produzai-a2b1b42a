@@ -1332,7 +1332,7 @@ export default function RateioTabV2({
                           const isKit = col._type === "kit";
                           const val = isKit
                             ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
-                            : (qtyMap[`${store.id}-${col.id}`] || 0);
+                            : (visibleQtyMap[`${store.id}-${col.id}`] || 0);
                           const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === col.id;
                           const isSelected = !isEditing && anchorCell?.rowIndex === sIdx && anchorCell?.colIndex === cIdx;
 
@@ -1347,10 +1347,12 @@ export default function RateioTabV2({
                                 isEditing && "ring-2 ring-inset ring-[#C2714F] z-10",
                                 isSelected && "ring-2 ring-inset ring-blue-500 z-10 bg-blue-50/50"
                               )}
+                              onMouseDown={() => {
+                                if (editingCellRef.current) skipBlurSaveRef.current = true;
+                              }}
                               onClick={() => {
                                 if (!isTabEditable) return;
-                                setAnchorCell({ rowIndex: sIdx, colIndex: cIdx });
-                                startEditing(store.id, col.id, val);
+                                switchToCell(sIdx, cIdx);
                               }}
                             >
                               {isEditing ? (
@@ -1359,16 +1361,19 @@ export default function RateioTabV2({
                                   type="text"
                                   className="w-full h-full bg-transparent text-center text-xs font-bold focus:outline-none"
                                   value={editValue}
-                                  onChange={(e) => setEditValue(e.target.value)}
-                                  onBlur={saveEdit}
-                                  onKeyDown={handleKeyDown}
+                                  onChange={(e) => {
+                                    editValueRef.current = e.target.value;
+                                    setEditValue(e.target.value);
+                                  }}
+                                  onBlur={handlePieceBlur}
+                                  onKeyDown={(e) => handleEditorKeyDown(e, sIdx, cIdx)}
                                    onPaste={(e) => {
                                     const text = e.clipboardData.getData('text/plain');
                                     // Se for multi-célula (tem tab ou newline), interceptamos para o handleExcelPaste
                                     if (text.includes('\t') || text.includes('\n')) {
                                       e.preventDefault();
+                                      closeEditing(false);
                                       handleExcelPaste(text, { rowIndex: sIdx, colIndex: cIdx });
-                                      setEditingCell(null);
                                     }
                                     // Se for valor único, deixamos o comportamento nativo do input
                                   }}
