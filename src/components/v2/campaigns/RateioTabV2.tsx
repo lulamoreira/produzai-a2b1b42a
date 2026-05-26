@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect, memo } from "react";
 import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
