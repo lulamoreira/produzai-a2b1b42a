@@ -465,7 +465,7 @@ export default function RateioTabV2({
     for (const kit of kits || []) {
       const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === kit.id);
       if (kpList.length === 0) continue;
-      for (const s of stores) {
+      for (const s of filteredStores) {
         const q = Math.min(
           ...kpList.map((kp: any) => {
             const baseQty = visibleQtyMap[`${s.id}-${kp.piece_id}`] || 0;
@@ -476,7 +476,7 @@ export default function RateioTabV2({
       }
     }
     return map;
-  }, [kits, kitPieces, stores, visibleQtyMap]);
+  }, [kits, kitPieces, filteredStores, visibleQtyMap]);
 
   // Compute column totals
   const columnTotals = useMemo(() => {
