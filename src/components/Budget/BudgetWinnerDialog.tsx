@@ -206,8 +206,8 @@ export default function BudgetWinnerDialog({
   return (
     <>
       <Dialog open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
+        <DialogContent className="max-w-lg flex flex-col max-h-[90dvh] p-0">
+          <DialogHeader className="px-6 pt-6 shrink-0">
             <DialogTitle className="flex items-center gap-2">
               <Trophy className="w-5 h-5 text-amber-500" />
               Declarar vencedor do certame
@@ -219,7 +219,7 @@ export default function BudgetWinnerDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-2">
+          <div className="space-y-4 flex-1 overflow-y-auto px-6 py-2">
             <div className="space-y-1.5">
               <Label htmlFor="winner-email">E-mail(s) do fornecedor *</Label>
               <EmailRecipientsInput
