@@ -937,9 +937,13 @@ export default function RateioTabV2({
                             className="text-xs cursor-pointer"
                             onClick={async () => {
                               if (!confirm("Deseja realmente limpar todo o rateio desta versão?")) return;
-                              const deletes = Object.keys(qtyMap).map(key => {
-                                const [storeId, pieceId] = key.split("-");
-                                return { campaignId, storeId, pieceId };
+                              const deletes: { campaignId: string; storeId: string; pieceId: string }[] = [];
+                              stores.forEach(s => {
+                                pieces.forEach(p => {
+                                  if (qtyMap[`${s.id}-${p.id}`]) {
+                                    deletes.push({ campaignId, storeId: s.id, pieceId: p.id });
+                                  }
+                                });
                               });
                               await applyWithHistory([], deletes, "Rateio limpo com sucesso");
                             }}
