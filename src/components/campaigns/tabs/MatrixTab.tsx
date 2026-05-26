@@ -403,7 +403,7 @@ export default function MatrixTab({
                                <>
                                  <PieceThumbnail imageUrl={col.data.image_url} name={col.data.name} size="sm" />
                                  <span className="text-[10px] font-bold">{col.data.code}</span>
-                                 <span className="text-[9px] text-muted-foreground line-clamp-1 max-w-[70px]">{col.data.name}</span>
+                                <span className="text-[9px] text-muted-foreground text-center break-words max-w-[80px] leading-tight" title={col.data.name}>{col.data.name}</span>
                                </>
                              ) : (
                                <>
@@ -411,7 +411,7 @@ export default function MatrixTab({
                                    <Package className="w-4 h-4 text-primary" />
                                  </div>
                                  <span className="text-[10px] font-bold text-primary">{col.data.code}</span>
-                                 <span className="text-[9px] text-muted-foreground line-clamp-1 max-w-[70px]">{col.data.name}</span>
+                                 <span className="text-[9px] text-muted-foreground text-center break-words max-w-[80px] leading-tight" title={col.data.name}>{col.data.name}</span>
                                </>
                              )}
                            </div>
