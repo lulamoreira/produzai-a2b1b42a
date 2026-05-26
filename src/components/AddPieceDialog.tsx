@@ -49,7 +49,9 @@ const AddPieceDialog = ({
     code: "", 
     category: "", 
     name: "", 
-    size: "", 
+    width: "",
+    height: "",
+    length: "",
     image_url: "", 
     specification: t("pieces.videManual"), 
     installation_instructions: t("pieces.noSpecificInfo"),
@@ -70,11 +72,14 @@ const AddPieceDialog = ({
 
   useEffect(() => {
     if (initialPiece) {
+      const [w, h, l] = (initialPiece.size || "").split(/[x×]/i).map((s: string) => s.trim());
       setForm({
         code: String(initialPiece.code || ""),
         category: initialPiece.category || "",
         name: initialPiece.name || "",
-        size: initialPiece.size || "",
+        width: w || "",
+        height: h || "",
+        length: l || "",
         image_url: initialPiece.image_url || "",
         specification: initialPiece.specification || t("pieces.videManual"),
         installation_instructions: initialPiece.installation_instructions || t("pieces.noSpecificInfo"),
@@ -90,7 +95,9 @@ const AddPieceDialog = ({
         code: "", 
         category: "", 
         name: "", 
-        size: "", 
+        width: "",
+        height: "",
+        length: "",
         image_url: "", 
         specification: t("pieces.videManual"), 
         installation_instructions: t("pieces.noSpecificInfo"),
@@ -142,11 +149,21 @@ const AddPieceDialog = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!form.width || !form.height) {
+      toast.error("Largura e Altura são obrigatórios.");
+      return;
+    }
+
+    const size = [form.width, form.height, form.length]
+      .map(v => v?.trim())
+      .filter(Boolean)
+      .join("×");
+
     const pieceData = {
       code: Number(form.code) || (maxCode + 1),
       category: form.category.toUpperCase(),
       name: form.name,
-      size: form.size,
+      size: size,
       image_url: form.image_url || null,
       specification: form.specification,
       installation_instructions: form.installation_instructions,
@@ -228,14 +245,33 @@ const AddPieceDialog = ({
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">{t("pieces.measures")}</label>
-              <Input
-                required
-                placeholder={t("pieces.pieceSizePlaceholder")}
-                value={form.size}
-                onChange={(e) => setForm({ ...form, size: e.target.value })}
-              />
+            <div className="grid grid-cols-3 gap-2">
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Largura</label>
+                <Input
+                  required
+                  value={form.width}
+                  onChange={(e) => setForm({ ...form, width: e.target.value })}
+                  placeholder="Ex: 40"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Altura</label>
+                <Input
+                  required
+                  value={form.height}
+                  onChange={(e) => setForm({ ...form, height: e.target.value })}
+                  placeholder="Ex: 10"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Comprimento</label>
+                <Input
+                  value={form.length}
+                  onChange={(e) => setForm({ ...form, length: e.target.value })}
+                  placeholder="Ex: 5 (opcional)"
+                />
+              </div>
             </div>
 
             {customFieldLabels?.map((label, i) => {
