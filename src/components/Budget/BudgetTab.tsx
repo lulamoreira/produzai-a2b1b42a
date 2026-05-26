@@ -1389,7 +1389,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                           <span className="font-medium tabular-nums">{fmtCurrency(production)}</span>
                         </div>
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-muted-foreground">Frete</span>
+                          <span className="text-muted-foreground">Embalagem / Frete</span>
                           <span className="font-medium tabular-nums">{fmtCurrency(freight)}</span>
                         </div>
                         <div className="flex items-center justify-between text-[11px]">
@@ -1421,7 +1421,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                           <span className="font-medium tabular-nums">{fmtCurrency(production)}</span>
                         </div>
                         <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-muted-foreground">Frete</span>
+                          <span className="text-muted-foreground">Embalagem / Frete</span>
                           <span className="font-medium tabular-nums">{fmtCurrency(freight)}</span>
                         </div>
                         <div className="flex items-center justify-between text-[11px]">
@@ -1828,7 +1828,7 @@ Qualquer dúvida, estamos à disposição.
                         </div>
                         {(partial.installation > 0 || partial.freight > 0) && (
                           <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                            <span>Frete + Inst.</span>
+                            <span>Embalagem / Frete + Inst.</span>
                             <span>{fmtCurrency(partial.installation + partial.freight)}</span>
                           </div>
                         )}
@@ -2031,7 +2031,7 @@ Qualquer dúvida, estamos à disposição.
                       <TableHead className="text-xs text-center">Preenchimento</TableHead>
                       <TableHead className="text-xs text-right">Σ Peças</TableHead>
                       <TableHead className="text-xs text-right">Instalação</TableHead>
-                      <TableHead className="text-xs text-right">Frete</TableHead>
+                      <TableHead className="text-xs text-right">Embalagem / Frete</TableHead>
                       <TableHead className="text-xs text-right">Total Geral</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -2693,7 +2693,7 @@ Qualquer dúvida, estamos à disposição.
               </Card>
               <Card>
                 <CardContent className="pt-3 pb-3 space-y-1">
-                  <p className="text-xs text-muted-foreground">Frete</p>
+                  <p className="text-xs text-muted-foreground">Embalagem / Frete</p>
                   {isAdminOrMaster ? (
                     <AdminInlineNumberInput
                       initial={detailCosts?.freight_value != null ? Number(detailCosts.freight_value) : null}
@@ -3189,7 +3189,7 @@ function RequoteTotalsBreakdown({ requote }: { requote: AdjustmentBudgetRequest 
         <span className="font-medium">{fmt(installation)}</span>
       </div>
       <div className="flex items-center justify-between">
-        <span className="text-muted-foreground">Frete</span>
+        <span className="text-muted-foreground">Embalagem / Frete</span>
         <span className="font-medium">{fmt(freight)}</span>
       </div>
       <div className="flex items-center justify-between pt-1 border-t">

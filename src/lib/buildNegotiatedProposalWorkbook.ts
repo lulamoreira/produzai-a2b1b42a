@@ -305,7 +305,7 @@ export async function buildNegotiatedProposalWorkbook(
   };
   addTotal1("Total dos Itens", totals.itemsNegotiated);
   addTotal1("Instalação", totals.installationNegotiated);
-  addTotal1("Frete / Despacho", totals.freightNegotiated);
+  addTotal1("Embalagem / Frete / Despacho", totals.freightNegotiated);
   addTotal1("TOTAL GERAL NEGOCIADO", totals.totalNegotiated, true);
 
   const freightDelta = totals.freightNegotiated - totals.freightOriginal;
@@ -372,7 +372,7 @@ export async function buildNegotiatedProposalWorkbook(
   const summary = [
     ["", "Original", "Negociado", "Δ / Economia"],
     ["Instalação", totals.installationOriginal, totals.installationNegotiated, totals.installationOriginal - totals.installationNegotiated],
-    ["Frete", totals.freightOriginal, totals.freightNegotiated, totals.freightOriginal - totals.freightNegotiated],
+    ["Embalagem / Frete", totals.freightOriginal, totals.freightNegotiated, totals.freightOriginal - totals.freightNegotiated],
     ["Total Geral", totals.totalOriginal, totals.totalNegotiated, totals.savings],
   ];
   summary.forEach((rowVals, i) => {
@@ -533,7 +533,7 @@ export async function buildNegotiatedProposalWorkbook(
     }
   };
   addExtra("Instalação", totals.installationOriginal, totals.installationNegotiated);
-  addExtra("Frete / Despacho", totals.freightOriginal, totals.freightNegotiated, isRoundingResidual);
+  addExtra("Embalagem / Frete / Despacho", totals.freightOriginal, totals.freightNegotiated, isRoundingResidual);
 
   const grand = ws3.addRow(["TOTAL GERAL", "", "", "", "", "", "", totals.totalOriginal, totals.totalNegotiated, totals.totalNegotiated - totals.totalOriginal]);
   grand.height = 26;

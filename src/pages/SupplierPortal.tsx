@@ -857,7 +857,7 @@ const SupplierPortal = () => {
                   <span className="font-medium">{fmt(extraCosts.installation_value)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Frete/Despacho</span>
+                  <span className="text-muted-foreground">Embalagem / Frete / Despacho</span>
                   <span className="font-medium">{fmt(extraCosts.freight_value)}</span>
                 </div>
                 <div className="border-t pt-2 flex justify-between font-bold">
@@ -1360,7 +1360,7 @@ const SupplierPortal = () => {
                 />
               </div>
               <div>
-                <label className="text-sm text-muted-foreground mb-1 block">Frete / Despacho (R$)</label>
+                <label className="text-sm text-muted-foreground mb-1 block">Embalagem / Frete / Despacho (R$)</label>
                 <Input
                   type="number" step="0.01" min="0" placeholder="0,00" disabled={isLocked}
                   value={extraCosts.freight_value ?? ""}
@@ -1382,7 +1382,7 @@ const SupplierPortal = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Geral da Cotação</p>
-                <p className="text-xs text-muted-foreground mt-0.5">(Itens + Instalação + Frete)</p>
+                <p className="text-xs text-muted-foreground mt-0.5">(Itens + Instalação + Embalagem / Frete)</p>
               </div>
               <span className="text-2xl font-bold text-primary">{fmt(grandTotal)}</span>
             </div>
