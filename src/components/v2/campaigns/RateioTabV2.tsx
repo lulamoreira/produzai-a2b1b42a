@@ -1178,6 +1178,37 @@ export default function RateioTabV2({
                     </>
                   )}
 
+                  {/* Input oculto para upload */}
+                  <input
+                    ref={importInputRef}
+                    type="file"
+                    accept=".xlsx"
+                    className="hidden"
+                    onChange={handleImportFile}
+                  />
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 text-xs gap-1.5 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
+                    onClick={handleExport}
+                    disabled={isExporting}
+                  >
+                    <FileDown className="w-3.5 h-3.5" />
+                    {isExporting ? 'Exportando...' : 'Exportar Modelo'}
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-9 text-xs gap-1.5 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
+                    onClick={() => importInputRef.current?.click()}
+                    disabled={isImporting || !isTabEditable}
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    {isImporting ? 'Importando...' : 'Importar Planilha'}
+                  </Button>
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="outline" size="sm" className="h-9 text-xs gap-2 rounded-lg border-stone-200 shadow-sm">
