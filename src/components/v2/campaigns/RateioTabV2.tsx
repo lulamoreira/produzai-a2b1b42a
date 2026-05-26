@@ -1179,7 +1179,10 @@ export default function RateioTabV2({
                     </tr>
                     {/* Piece Headers Row */}
                     <tr>
-                      <th className="w-[300px] sticky left-0 z-40 bg-white p-4 border-r border-b border-stone-200 text-left align-top">
+                      <th 
+                        className="w-[300px] bg-white p-4 border-r border-b border-stone-200 text-left align-top" 
+                        style={{ position: 'sticky', left: 0, top: 0, zIndex: 50 }}
+                      >
                         <div className="flex items-center justify-between mb-1">
                           <div className="text-xs font-bold text-stone-400 uppercase tracking-widest">Loja</div>
                           <div className="flex items-center gap-1">
