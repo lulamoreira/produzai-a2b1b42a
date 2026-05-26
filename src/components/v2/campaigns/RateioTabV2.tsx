@@ -723,69 +723,6 @@ export default function RateioTabV2({
     };
   }, [anchorCell, editingCell, isTabEditable, handleExcelPaste]);
 
-  const confirmPaste = async () => {
-    const allUpsertsMap = new Map<string, RateioUpsert>();
-
-    // Last-write-wins: simplesmente sobrescreve. Nada de somar.
-    const setUpsert = (storeId: string, pieceId: string, qty: number) => {
-      const key = `${storeId}-${pieceId}`;
-      allUpsertsMap.set(key, { campaignId, storeId, pieceId, quantity: qty });
-    };
-
-    pendingChanges
-      .filter(c => !c.isIgnored)
-      .forEach(c => {
-        const val = Math.round(c.newValue);
-        if (c.itemType === 'kit') {
-          const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === c.pieceId);
-          kpList.forEach((kp: any) => {
-            setUpsert(c.storeId, kp.piece_id, val * (kp.quantity || 1));
-          });
-        } else {
-          setUpsert(c.storeId, c.pieceId, val);
-        }
-      });
-
-    const allUpserts = Array.from(allUpsertsMap.values());
-
-    if (allUpserts.length === 0) {
-      setIsPasteModalOpen(false);
-      return;
-    }
-
-    setIsApplyingPaste(true);
-    try {
-      if (allUpserts.length > 0) {
-        const CHUNK_SIZE = 500;
-        for (let i = 0; i < allUpserts.length; i += CHUNK_SIZE) {
-          const chunk = allUpserts.slice(i, i + CHUNK_SIZE);
-          await applyRateioBulk(chunk, [], {
-            isNegotiationView: rateioSource === 'negotiation',
-            negotiationSupplierId: winnerSupplierId,
-            isAdjustmentView: rateioSource === 'adjustment',
-            adjustmentId: activeAdjustment?.id
-          });
-        }
-        
-        // Refresh maps after bulk operations
-        queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
-        queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
-        queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
-        
-        toast.success(`${allUpserts.length} células atualizadas com sucesso`);
-      }
-      
-      setIsPasteModalOpen(false);
-      setAnchorCell(null);
-    } catch (err: any) {
-      console.error("Erro confirmPaste:", err);
-      toast.error(`Erro ao aplicar colagem: ${err?.message || 'desconhecido'}`);
-    } finally {
-      setIsApplyingPaste(false);
-    }
-  };
-
-
   const handleAutomationComplete = () => {
     setIsAutomationOpen(false);
     // You might want to refresh data here, but react-query usually handles it via mutations
