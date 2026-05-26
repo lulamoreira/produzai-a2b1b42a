@@ -236,6 +236,9 @@ export default function RateioTabV2({
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
   const [isApplyingPaste, setIsApplyingPaste] = useState(false);
   const [pendingChanges, setPendingChanges] = useState<RateioPasteChange[]>([]);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   // Undo/Redo history
   const [history, setHistory] = useState<{ storeId: string; pieceId: string; oldVal: number; newVal: number }[][]>([]);
