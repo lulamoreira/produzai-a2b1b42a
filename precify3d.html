@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precify3D - Calculadora de Impressão</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { background-color: #07071a; color: white; }
+        .card { background-color: #111128; border-radius: 1rem; border: 1px solid #1f1f3a; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #1f1f3a; border-radius: 4px; }
+        .text-accent { color: #f97316; }
+        .bg-accent { background-color: #f97316; }
+        .fade-in { animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        const App = () => {
+            const [activeTab, setActiveTab] = useState('calc');
+            
+            // Initial Config State
+            const [config, setConfig] = useState(() => {
+                const saved = localStorage.getItem('precify3d_cfg');
+                return saved ? JSON.parse(saved) : {
+                    energiaKwh: 0.85,
+                    potenciaW: 300,
+                    maoDeObraHora: 25,
+                    desgasteMaquina: 5,
+                    margemPadrao: 50,
+                    falhaPadrao: 10,
+                    embalagemPadrao: 5,
+                    taxaPlataformaPadrao: 0,
+                    materiais: [
+                        {id: 1, name: 'PLA', price: 80},
+                        {id: 2, name: 'PLA+', price: 95},
+                        {id: 3, name: 'ABS', price: 90},
+                        {id: 4, name: 'PETG', price: 100},
+                        {id: 5, name: 'TPU', price: 130},
+                        {id: 6, name: 'PLA Silk', price: 110},
+                        {id: 7, name: 'Resina Std', price: 150},
+                        {id: 8, name: 'Resina ABS-Like', price: 180}
+                    ]
+                };
+            });
+
+            useEffect(() => localStorage.setItem('precify3d_cfg', JSON.stringify(config)), [config]);
+
+            return (
+                <div className="max-w-6xl mx-auto p-4 md:p-8">
+                    <header className="flex justify-between items-center mb-8">
+                        <h1 className="text-3xl font-bold text-accent">Precify3D</h1>
+                        <nav className="flex gap-4">
+                            {['calc', 'config', 'history'].map(t => (
+                                <button key={t} onClick={() => setActiveTab(t)} className={`px-4 py-2 rounded-full ${activeTab === t ? 'bg-accent' : 'bg-[#111128]'}`}>
+                                    {t.charAt(0).toUpperCase() + t.slice(1)}
+                                </button>
+                            ))}
+                        </nav>
+                    </header>
+
+                    <main>
+                        {activeTab === 'calc' && <Calculator config={config} />}
+                        {activeTab === 'config' && <Settings config={config} setConfig={setConfig} />}
+                        {activeTab === 'history' && <History />}
+                    </main>
+                </div>
+            );
+        };
+
+        const Calculator = ({ config }) => {
+            const [form, setForm] = useState({
+                cliente: '', peca: '', materialId: 1, peso: '', horas: '', minutos: '', 
+                falha: config.falhaPadrao, margem: config.margemPadrao, desconto: 0, embalagem: config.embalagemPadrao, 
+                taxaPlataforma: 0, marketplace: 'none'
+            });
+            const [result, setResult] = useState(null);
+
+            const calculate = () => {
+                if(!form.peso || !form.horas) return alert("Preencha peso e tempo!");
+                
+                const material = config.materiais.find(m => m.id == form.materialId);
+                const totalHoras = parseFloat(form.horas) + (parseFloat(form.minutos || 0) / 60);
+                
+                const pesoEfetivo = form.peso * (1 + form.falha / 100);
+                const custoMaterial = (pesoEfetivo / 1000) * material.price;
+                const custoEnergia = (config.potenciaW / 1000) * totalHoras * config.energiaKwh;
+                const custoMaoDeObra = totalHoras * config.maoDeObraHora;
+                const custoMaquina = totalHoras * config.desgasteMaquina;
+                const subtotal = custoMaterial + custoEnergia + custoMaoDeObra + custoMaquina + parseFloat(form.embalagem);
+                
+                const margem = subtotal * (form.margem / 100);
+                const baseTaxa = subtotal + margem;
+                const taxaPlataforma = baseTaxa * (form.taxaPlataforma / 100);
+                const desconto = (subtotal + margem + taxaPlataforma) * (form.desconto / 100);
+                const precoFinal = subtotal + margem + taxaPlataforma - desconto;
+                
+                setResult({ subtotal, custoMaterial, custoEnergia, custoMaoDeObra, custoMaquina, margem, taxaPlataforma, desconto, precoFinal });
+            };
+
+            return (
+                <div className="grid md:grid-cols-2 gap-8">
+                    <div className="card p-6 space-y-4">
+                        <input className="w-full bg-[#07071a] p-3 rounded" placeholder="Cliente" onChange={e => setForm({...form, cliente: e.target.value})} />
+                        <select className="w-full bg-[#07071a] p-3 rounded" onChange={e => setForm({...form, materialId: e.target.value})}>
+                            {config.materiais.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+                        </select>
+                        <div className="grid grid-cols-2 gap-2">
+                            <input type="number" className="bg-[#07071a] p-3 rounded" placeholder="Peso (g)" onChange={e => setForm({...form, peso: e.target.value})} />
+                            <div className="flex gap-1">
+                                <input type="number" className="bg-[#07071a] p-3 w-1/2 rounded" placeholder="h" onChange={e => setForm({...form, horas: e.target.value})} />
+                                <input type="number" className="bg-[#07071a] p-3 w-1/2 rounded" placeholder="min" onChange={e => setForm({...form, minutos: e.target.value})} />
+                            </div>
+                        </div>
+                        <button onClick={calculate} className="w-full bg-accent py-3 rounded font-bold">⚡ Calcular Preço</button>
+                    </div>
+                    {result && (
+                        <div className="card p-6 fade-in border-accent border-2">
+                            <h2 className="text-2xl font-bold mb-4">Preço Final: R$ {result.precoFinal.toFixed(2)}</h2>
+                            <div className="space-y-2 text-sm text-gray-400">
+                                <p>Custo Material: R$ {result.custoMaterial.toFixed(2)}</p>
+                                <p>Outros Custos: R$ {(result.custoEnergia + result.custoMaoDeObra + result.custoMaquina).toFixed(2)}</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const Settings = ({ config, setConfig }) => <div className="card p-6">Configurações em construção...</div>;
+        const History = () => <div className="card p-6">Histórico em construção...</div>;
+
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
+        root.render(<App />);
+    </script>
+</body>
+</html>
