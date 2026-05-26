@@ -67,6 +67,7 @@ const AddPieceDialog = ({
   });
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [allCategories, setAllCategories] = useState<string[]>([]);
   
   const addCampaignPiece = useAddCampaignPiece();
   const updateCampaignPiece = useUpdateCampaignPiece();
@@ -120,6 +121,34 @@ const AddPieceDialog = ({
       setPreviewUrl(null);
     }
   }, [initialPiece, open, t]);
+
+  useEffect(() => {
+    const fetchAllCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("campaign_pieces")
+          .select("category")
+          .not("category", "is", null)
+          .neq("category", "");
+
+        if (error) throw error;
+
+        const uniqueCats = Array.from(
+          new Set(
+            data.map((p: any) => p.category.toString().trim().toUpperCase())
+          )
+        ).sort();
+        
+        setAllCategories(uniqueCats);
+      } catch (error) {
+        console.error("Error fetching all categories:", error);
+      }
+    };
+
+    if (open) {
+      fetchAllCategories();
+    }
+  }, [open]);
 
   const maxCode = Array.isArray(existingPieces) 
     ? existingPieces.reduce((max, p) => Math.max(max, Number(p.code) || 0), 0) 
@@ -247,15 +276,16 @@ const AddPieceDialog = ({
                   list="piece-categories-list"
                   placeholder={t("pieces.pieceCategoryPlaceholder")}
                   value={form.category}
-                  onChange={(e) => setForm({ ...form, category: e.target.value })}
+                  onChange={(e) => setForm({ ...form, category: e.target.value.toUpperCase() })}
                 />
                 <datalist id="piece-categories-list">
                   {Array.from(
-                    new Set(
-                      (Array.isArray(existingPieces) ? existingPieces : [])
+                    new Set([
+                      ...allCategories,
+                      ...(Array.isArray(existingPieces) ? existingPieces : [])
                         .map((p: any) => (p.category || "").toString().trim().toUpperCase())
                         .filter(Boolean)
-                    )
+                    ])
                   )
                     .sort()
                     .map((cat) => (
