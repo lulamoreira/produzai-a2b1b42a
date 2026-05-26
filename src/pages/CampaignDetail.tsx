@@ -328,6 +328,7 @@ const CampaignDetail = () => {
                   hasAnyAdjustment={!!activeAdjustment} 
                   setActiveSection={setActiveSection}
                   srcToAdjPieceId={adjustmentRateio?.sourceToAdj}
+                  adjKitPieces={adjustmentRateio?.adjKitPieces}
                 />
               ) : (
                 <MatrixTab 
