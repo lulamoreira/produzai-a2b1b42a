@@ -1232,10 +1232,29 @@ const SupplierPortal = () => {
                               <Input
                                 inputMode="decimal"
                                 placeholder="0,00"
+                                data-price-input={__editableIndex}
                                 className="h-10 min-w-0 flex-1 border-0 bg-transparent px-2 text-right font-semibold text-foreground shadow-none focus-visible:ring-0"
                                 disabled={isLocked}
                                 value={row.pieceId ? priceInputs[row.pieceId] ?? "" : ""}
-                                onFocus={markFilling}
+                                onFocus={(e) => { markFilling(); e.currentTarget.select(); }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter" || (e.key === "ArrowDown" && !e.shiftKey)) {
+                                    e.preventDefault();
+                                    e.currentTarget.blur();
+                                    const next = e.shiftKey ? __editableIndex - 1 : __editableIndex + 1;
+                                    if (next >= 0 && next < __totalEditable) {
+                                      setTimeout(() => focusPriceInput(next), 0);
+                                    }
+                                  } else if (e.key === "ArrowUp") {
+                                    e.preventDefault();
+                                    e.currentTarget.blur();
+                                    if (__editableIndex - 1 >= 0) {
+                                      setTimeout(() => focusPriceInput(__editableIndex - 1), 0);
+                                    }
+                                  } else if (e.key === "Escape") {
+                                    e.currentTarget.blur();
+                                  }
+                                }}
                                 onChange={(e) => {
                                   if (!row.pieceId) return;
                                   const raw = e.target.value.replace(/[^0-9.,]/g, "");
