@@ -568,23 +568,16 @@ export default function RateioTabV2({
     }
   };
 
-  const parseExcelTSV = (text: string): (number | null)[][] => {
-    // Normaliza quebras de linha: \r\n e \r viram \n
+  const parseExcelTSV = (text: string): (number | null | undefined)[][] => {
     const normalized = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-    
-    // Remove linha vazia no final (Excel adiciona \n no final)
     const trimmed = normalized.replace(/\n$/, '');
-    
-    // Divide em linhas
-    const lines = trimmed.split('\n');
-    
-    return lines.map(line => 
+    return trimmed.split('\n').map(line =>
       line.split('\t').map(cell => {
-        // Para valores numéricos do rateio, após o split, converta para número
-        // Remove pontos de milhar e troca vírgula por ponto decimal
-        const cleaned = cell.trim().replace(/\./g, '').replace(',', '.');
+        const raw = cell.trim();
+        if (raw === '') return undefined; // VAZIO = pular silenciosamente
+        const cleaned = raw.replace(/\./g, '').replace(',', '.');
         const numValue = parseFloat(cleaned);
-        return isNaN(numValue) ? null : numValue;
+        return isNaN(numValue) ? null : numValue; // null = texto inválido, marca ignorado
       })
     );
   };
@@ -624,7 +617,7 @@ export default function RateioTabV2({
           storeName: store.name,
           pieceName: col.name,
           isIgnored: val === null,
-          itemType: col._type
+          itemType: col._type as 'piece' | 'kit'
         });
       }
     }
@@ -693,7 +686,7 @@ export default function RateioTabV2({
     setIsApplyingPaste(true);
     try {
       // Aggregate all piece updates (including those from kits)
-      const allUpserts = [...upserts];
+      const allUpserts: RateioUpsert[] = [...upserts];
       
       kitsToProcess.forEach(k => {
         const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === k.kitId);
@@ -708,14 +701,30 @@ export default function RateioTabV2({
       });
 
       if (allUpserts.length > 0) {
-        await applyWithHistory(allUpserts, [], `${allUpserts.length} células atualizadas com sucesso`);
+        const CHUNK_SIZE = 500;
+        for (let i = 0; i < allUpserts.length; i += CHUNK_SIZE) {
+          const chunk = allUpserts.slice(i, i + CHUNK_SIZE);
+          await applyRateioBulk(chunk, [], {
+            isNegotiationView: rateioSource === 'negotiation',
+            negotiationSupplierId: winnerSupplierId,
+            isAdjustmentView: rateioSource === 'adjustment',
+            adjustmentId: activeAdjustment?.id
+          });
+        }
+        
+        // Refresh maps after bulk operations
+        queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
+        queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
+        queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
+        
+        toast.success(`${allUpserts.length} células atualizadas com sucesso`);
       }
       
       setIsPasteModalOpen(false);
       setAnchorCell(null);
-    } catch (err) {
-      console.error("Erro detalhado (confirmPaste):", err);
-      toast.error("Erro ao aplicar colagem do Excel");
+    } catch (err: any) {
+      console.error("Erro confirmPaste:", err);
+      toast.error(`Erro ao aplicar colagem: ${err?.message || 'desconhecido'}`);
     } finally {
       setIsApplyingPaste(false);
     }
