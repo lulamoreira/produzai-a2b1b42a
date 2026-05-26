@@ -3,7 +3,10 @@ export type RateioClipboardValue = number | null;
 export type RateioPasteChange = {
   storeId: string;
   pieceId: string;
+  oldValue?: number;
   newValue: number;
+  storeName?: string;
+  pieceName?: string;
   isIgnored?: boolean;
   itemType: "piece" | "kit";
 };
