@@ -935,7 +935,7 @@ export default function RateioTabV2({
     if (changes.length > 0) {
       applyPasteChanges(changes);
     }
-  }, [filteredStores, columns, visibleQtyMap, kitQtyMap, kitPieces, campaignId, rateioSource, winnerSupplierId, activeAdjustment, queryClient]);
+  }, [filteredStores, columns, visibleQtyMap, kitQtyMap, activeKitPieces, campaignId, rateioSource, winnerSupplierId, activeAdjustment, queryClient]);
 
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
