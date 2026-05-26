@@ -789,6 +789,7 @@ export default function PiecesTab({
           onUpdateKit={(k) => updateKit?.mutateAsync?.(k)}
           onUpdateKitPiece={(kp) => updateKitPiece?.mutateAsync?.(kp)}
           onReorderKitPieces={(updates) => reorderKitPieces?.mutateAsync?.(updates)}
+          onUpdatePiece={(p) => updatePiece?.mutateAsync?.(p)}
         />
       )}
       
