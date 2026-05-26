@@ -64,6 +64,7 @@ interface RateioTabV2Props {
   isNegotiationView: boolean;
   hasAnyAdjustment: boolean;
   setActiveSection: (section: string) => void;
+  srcToAdjPieceId?: Map<string, string>;
 }
 
 const RateioRow = memo(({ 
