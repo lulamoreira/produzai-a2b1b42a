@@ -1279,6 +1279,7 @@ export default function RateioTabV2({
                                   onPaste={(e) => {
                                     e.preventDefault();
                                     const text = e.clipboardData.getData('text/plain');
+                                    console.log("Paste on cell:", { rowIndex: sIdx, colIndex: cIdx });
                                     handleExcelPaste(text, { rowIndex: sIdx, colIndex: cIdx });
                                   }}
                                 />
