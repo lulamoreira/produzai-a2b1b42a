@@ -625,7 +625,8 @@ export default function RateioTabV2({
         isNegotiationView: rateioSource === 'negotiation',
         negotiationSupplierId: winnerSupplierId,
         isAdjustmentView: rateioSource === 'adjustment',
-        adjustmentId: activeAdjustment?.id
+        adjustmentId: activeAdjustment?.id,
+        srcToAdjPieceId
       });
 
       const newHistory = [...history.slice(0, historyIndex + 1), changes].slice(-20);
