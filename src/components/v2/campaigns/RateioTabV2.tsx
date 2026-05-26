@@ -460,7 +460,7 @@ export default function RateioTabV2({
       queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
       if (label) toast.success(label);
     } catch (err) {
-      console.error("Erro ao aplicar alterações:", err);
+      console.error("Erro detalhado (applyWithHistory):", err);
       toast.error("Erro ao aplicar alterações");
       throw err;
     }
