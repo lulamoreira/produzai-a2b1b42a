@@ -1328,9 +1328,15 @@ export default function RateioTabV2({
                     ))}
                   </tbody>
                   {/* Table Footer with Totals */}
-                  <tfoot className="sticky bottom-0 z-30 bg-stone-50 shadow-[0_-1px_0_0_rgba(0,0,0,0.05)]">
+                  <tfoot 
+                    className="bg-stone-50 shadow-[0_-1px_0_0_rgba(0,0,0,0.05)]"
+                    style={{ position: 'sticky', bottom: 0, zIndex: 30 }}
+                  >
                     <tr>
-                      <td className="sticky left-0 z-20 bg-stone-50 border-r border-t border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]">
+                      <td 
+                        className="bg-stone-50 border-r border-t border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]" 
+                        style={{ position: 'sticky', left: 0, bottom: 0, zIndex: 40 }}
+                      >
                         <div className="text-xs font-black text-stone-900 uppercase tracking-widest text-right pr-4">TOTAL</div>
                       </td>
                       {columns.map((col) => {
