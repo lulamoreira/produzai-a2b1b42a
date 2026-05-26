@@ -1069,11 +1069,11 @@ const SupplierPortal = () => {
                         {icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">
+                        <p className="text-sm font-medium text-foreground break-words whitespace-normal">
                           {mat.title || mat.file_name}
                         </p>
                         {mat.file_name && mat.title && (
-                          <p className="text-[11px] text-muted-foreground truncate">{mat.file_name}</p>
+                          <p className="text-[11px] text-muted-foreground break-words whitespace-normal">{mat.file_name}</p>
                         )}
                       </div>
                       <a
@@ -1191,7 +1191,7 @@ const SupplierPortal = () => {
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                   <Badge variant="outline" className="text-[10px] shrink-0">#{row.code}</Badge>
-                                  <span className="font-medium text-sm truncate">{row.name}</span>
+                                  <span className="font-medium text-sm break-words whitespace-normal">{row.name}</span>
                                   {hasSuggestion && (
                                     <Badge className="bg-warning/15 text-warning border-warning/30 text-[9px]">Modificação sugerida</Badge>
                                   )}
