@@ -38,6 +38,7 @@ import { applyRateioBulk, type RateioUpsert } from "@/lib/applyRateioBulk";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { buildRateioPasteOperations, parseRateioClipboard, type RateioPasteChange } from "@/lib/rateioPaste";
+import { exportRateioSpreadsheet, parseRateioSpreadsheet } from '@/lib/rateioSpreadsheet';
 
 interface RateioTabV2Props {
   campaignId: string;
