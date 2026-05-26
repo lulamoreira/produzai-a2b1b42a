@@ -61,6 +61,122 @@ interface RateioTabV2Props {
   setActiveSection: (section: string) => void;
 }
 
+const RateioRow = memo(({ 
+  store, 
+  sIdx, 
+  columns, 
+  kits, 
+  kitQtyMap, 
+  visibleQtyMap, 
+  editingCell, 
+  anchorCell, 
+  isTabEditable, 
+  switchToCell, 
+  inputRef, 
+  editValue, 
+  setEditValue,
+  editValueRef,
+  handlePieceBlur, 
+  handleEditorKeyDown, 
+  handleExcelPaste, 
+  closeEditing 
+}: any) => {
+  return (
+    <tr className="group even:bg-stone-100/80 odd:bg-white hover:bg-[#C2714F]/[0.08] transition-colors">
+      <td 
+        className="bg-white group-hover:bg-stone-50/50 border-r border-b border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]" 
+        style={{ position: 'sticky', left: 0, zIndex: 20 }}
+      >
+        <div className="flex items-center gap-3">
+          <div 
+            className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0"
+            style={{ 
+              backgroundColor: getStateColor(store.state).bg, 
+              color: getStateColor(store.state).text 
+            }}
+          >
+            {store.state}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5">
+              <span className="font-semibold text-stone-900 text-xs truncate">{store.name}</span>
+              {store.nickname && (
+                <span className="text-[10px] text-stone-400 truncate">({store.nickname})</span>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              <StoreIcon className="w-3 h-3 text-stone-300 shrink-0" />
+              <Badge variant="secondary" className="bg-stone-100 text-stone-500 border-none text-[9px] h-4 px-1.5 font-bold uppercase">
+                {store.store_model || "PADRÃO"}
+              </Badge>
+            </div>
+          </div>
+        </div>
+      </td>
+      {columns.map((col: any, cIdx: number) => {
+        const isKit = col._type === "kit";
+        const val = isKit
+          ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
+          : (visibleQtyMap[`${store.id}-${col.id}`] || 0);
+        const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === col.id;
+        const isSelected = !isEditing && anchorCell?.rowIndex === sIdx && anchorCell?.colIndex === cIdx;
+
+        return (
+          <td 
+            key={`${col._type}-${col.id}`} 
+            className={cn(
+              "border-r border-b border-stone-200 text-center transition-all relative",
+              !isTabEditable ? "cursor-default" : "cursor-cell",
+              isKit && "bg-[#C2714F]/[0.03]",
+              val > 0 && !isKit && "bg-stone-50/30",
+              isEditing && "ring-2 ring-inset ring-[#C2714F] z-10",
+              isSelected && "ring-2 ring-inset ring-blue-500 z-10 bg-blue-50/50"
+            )}
+            onClick={() => {
+              if (!isTabEditable) return;
+              switchToCell(sIdx, cIdx);
+            }}
+          >
+            {isEditing ? (
+              <input
+                ref={inputRef}
+                type="text"
+                className="w-full h-full bg-transparent text-center text-xs font-bold focus:outline-none"
+                value={editValue}
+                onChange={(e) => {
+                  editValueRef.current = e.target.value;
+                  setEditValue(e.target.value);
+                }}
+                onBlur={handlePieceBlur}
+                onKeyDown={(e) => handleEditorKeyDown(e, sIdx, cIdx)}
+                 onPaste={(e) => {
+                  const text = e.clipboardData.getData('text/plain');
+                  if (text.includes('\t') || text.includes('\n')) {
+                    e.preventDefault();
+                    closeEditing(false);
+                    handleExcelPaste(text, { rowIndex: sIdx, colIndex: cIdx });
+                  }
+                }}
+              />
+            ) : (
+              <div className={cn(
+                "w-full h-full min-h-[48px] flex items-center justify-center text-xs transition-all",
+                val > 0 
+                  ? (isKit ? "text-[#C2714F] font-black" : "text-stone-900 font-black scale-110") 
+                  : "text-stone-200 font-medium"
+              )}>
+                {val > 0 ? val : "—"}
+              </div>
+            )}
+          </td>
+        );
+      })}
+    </tr>
+  );
+});
+
+RateioRow.displayName = "RateioRow";
+
 export default function RateioTabV2({
   campaignId,
   clientId,
