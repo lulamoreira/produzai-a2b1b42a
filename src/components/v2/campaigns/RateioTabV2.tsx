@@ -39,7 +39,7 @@ import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { useUserRole } from "@/hooks/useUserRole";
 import { getStateColor } from "@/lib/stateColors";
 import { useUpdateCampaignStorePiece } from "@/hooks/useMultiClientData";
-import { applyRateioBulk } from "@/lib/applyRateioBulk";
+import { applyRateioBulk, type RateioUpsert } from "@/lib/applyRateioBulk";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
@@ -115,6 +115,7 @@ export default function RateioTabV2({
     storeName: string; 
     pieceName: string;
     isIgnored: boolean;
+    itemType: 'piece' | 'kit';
   }[]>([]);
   const [isApplyingPaste, setIsApplyingPaste] = useState(false);
   const [storeSearch, setStoreSearch] = useState("");
@@ -412,13 +413,47 @@ export default function RateioTabV2({
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
+  const saveKitQty = async (storeId: string, kitId: string, quantity: number) => {
+    const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === kitId);
+    if (kpList.length === 0) return;
+
+    const upserts = kpList.map((kp: any) => ({
+      campaignId,
+      storeId,
+      pieceId: kp.piece_id,
+      quantity: quantity * (kp.quantity || 1)
+    }));
+
+    try {
+      await applyRateioBulk(upserts, [], {
+        isNegotiationView: rateioSource === 'negotiation',
+        negotiationSupplierId: winnerSupplierId,
+        isAdjustmentView: rateioSource === 'adjustment',
+        adjustmentId: activeAdjustment?.id
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
+    } catch (err) {
+      console.error("Erro ao atualizar kit:", err);
+      toast.error("Erro ao atualizar kit");
+    }
+  };
+
   const saveEdit = async () => {
     if (!editingCell) return;
     const { storeId, pieceId } = editingCell;
     const qty = parseInt(editValue, 10) || 0;
     
     try {
-      await updatePieceQty.mutateAsync({ campaignId, storeId, pieceId, quantity: qty });
+      // Check if it's a kit
+      const isKit = kits?.some(k => k.id === pieceId);
+      if (isKit) {
+        await saveKitQty(storeId, pieceId, qty);
+      } else {
+        await updatePieceQty.mutateAsync({ campaignId, storeId, pieceId, quantity: qty });
+      }
     } catch (err) {
       toast.error("Erro ao atualizar quantidade");
     }
@@ -469,9 +504,10 @@ export default function RateioTabV2({
         if (colIdx >= columns.length) return;
         
         const col = columns[colIdx];
-        if (col._type === 'kit') return; // Cannot paste into kits
-
-        const oldValue = qtyMap[`${store.id}-${col.id}`] || 0;
+        const isKit = col._type === 'kit';
+        const oldValue = isKit 
+          ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
+          : (qtyMap[`${store.id}-${col.id}`] || 0);
         
         changes.push({
           storeId: store.id,
@@ -480,7 +516,8 @@ export default function RateioTabV2({
           newValue: val ?? 0,
           storeName: store.name,
           pieceName: col.name,
-          isIgnored: val === null
+          isIgnored: val === null,
+          itemType: col._type
         });
       });
     });
@@ -489,7 +526,7 @@ export default function RateioTabV2({
       setPendingChanges(changes);
       setIsPasteModalOpen(true);
     }
-  }, [filteredStores, columns, qtyMap]);
+  }, [filteredStores, columns, qtyMap, kitQtyMap]);
 
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
@@ -518,14 +555,30 @@ export default function RateioTabV2({
   }, [anchorCell, editingCell, isTabEditable, handleExcelPaste]);
 
   const confirmPaste = async () => {
-    const upserts = pendingChanges
+    const upserts: RateioUpsert[] = [];
+    
+    pendingChanges
       .filter(c => !c.isIgnored)
-      .map(c => ({
-        campaignId,
-        storeId: c.storeId,
-        pieceId: c.pieceId,
-        quantity: c.newValue
-      }));
+      .forEach(c => {
+        if (c.itemType === 'kit') {
+          const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === c.pieceId);
+          kpList.forEach((kp: any) => {
+            upserts.push({
+              campaignId,
+              storeId: c.storeId,
+              pieceId: kp.piece_id,
+              quantity: c.newValue * (kp.quantity || 1)
+            });
+          });
+        } else {
+          upserts.push({
+            campaignId,
+            storeId: c.storeId,
+            pieceId: c.pieceId,
+            quantity: c.newValue
+          });
+        }
+      });
 
     if (upserts.length === 0) {
       setIsPasteModalOpen(false);
@@ -1013,7 +1066,7 @@ export default function RateioTabV2({
                           const val = isKit
                             ? (kitQtyMap[`${store.id}-${col.id}`] || 0)
                             : (qtyMap[`${store.id}-${col.id}`] || 0);
-                          const isEditing = !isKit && editingCell?.storeId === store.id && editingCell?.pieceId === col.id;
+                          const isEditing = editingCell?.storeId === store.id && editingCell?.pieceId === col.id;
                           const isSelected = !isEditing && anchorCell?.rowIndex === sIdx && anchorCell?.colIndex === cIdx;
 
                           return (
@@ -1021,16 +1074,17 @@ export default function RateioTabV2({
                               key={`${col._type}-${col.id}`} 
                               className={cn(
                                 "border-r border-b border-stone-200 text-center transition-all relative",
-                                isKit || !isTabEditable ? "cursor-default bg-[#C2714F]/[0.03]" : "cursor-cell",
-                                val > 0 && !isKit ? "bg-stone-50/30" : "",
+                                !isTabEditable ? "cursor-default" : "cursor-cell",
+                                isKit && "bg-[#C2714F]/[0.03]",
+                                val > 0 && !isKit && "bg-stone-50/30",
                                 isEditing && "ring-2 ring-inset ring-[#C2714F] z-10",
                                 isSelected && "ring-2 ring-inset ring-blue-500 z-10 bg-blue-50/50"
                               )}
                               onClick={() => {
-                                if (isKit || !isTabEditable) return;
+                                if (!isTabEditable) return;
                                 setAnchorCell({ rowIndex: sIdx, colIndex: cIdx });
                               }}
-                              onDoubleClick={() => !isKit && isTabEditable && startEditing(store.id, col.id, val)}
+                              onDoubleClick={() => isTabEditable && startEditing(store.id, col.id, val)}
                             >
                               {isEditing ? (
                                 <input
