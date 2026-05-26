@@ -659,33 +659,40 @@ export default function RateioTabV2({
   }, [anchorCell, editingCell, isTabEditable, handleExcelPaste]);
 
   const confirmPaste = async () => {
-    const allUpserts: RateioUpsert[] = [];
+    const allUpsertsMap = new Map<string, RateioUpsert>();
+
+    const addUpsert = (storeId: string, pieceId: string, qty: number) => {
+      const key = `${storeId}-${pieceId}`;
+      const existing = allUpsertsMap.get(key);
+      if (existing) {
+        existing.quantity = (existing.quantity || 0) + qty;
+      } else {
+        allUpsertsMap.set(key, {
+          campaignId,
+          storeId,
+          pieceId,
+          quantity: qty
+        });
+      }
+    };
     
     pendingChanges
       .filter(c => !c.isIgnored)
       .forEach(c => {
         const val = Math.round(c.newValue);
         if (c.itemType === 'kit') {
-          // Decompõe kit em suas peças componentes
+          // Decompõe kit — somando quando peça aparece em outros kits
           const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === c.pieceId);
           kpList.forEach((kp: any) => {
-            allUpserts.push({
-              campaignId,
-              storeId: c.storeId,
-              pieceId: kp.piece_id,
-              quantity: val * (kp.quantity || 1)
-            });
+            addUpsert(c.storeId, kp.piece_id, val * (kp.quantity || 1));
           });
         } else {
-          // Peça standalone (kit_only=false) — upsert direto
-          allUpserts.push({
-            campaignId,
-            storeId: c.storeId,
-            pieceId: c.pieceId,
-            quantity: val
-          });
+          // Peça standalone (kit_only=false)
+          addUpsert(c.storeId, c.pieceId, val);
         }
       });
+
+    const allUpserts = Array.from(allUpsertsMap.values());
 
     if (allUpserts.length === 0) {
       setIsPasteModalOpen(false);
