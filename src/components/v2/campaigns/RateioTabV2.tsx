@@ -522,57 +522,104 @@ export default function RateioTabV2({
     }
   };
 
-  const saveKitQty = async (storeId: string, kitId: string, quantity: number) => {
-    const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === kitId);
-    if (kpList.length === 0) return;
+  const saveCell = (cell: { storeId: string; pieceId: string }, rawValue: string) => {
+    const qty = Math.max(0, parseInt(rawValue, 10) || 0);
+    const isKit = kits?.some((k: any) => k.id === cell.pieceId);
 
-    const upserts = kpList.map((kp: any) => ({
-      campaignId,
-      storeId,
-      pieceId: kp.piece_id,
-      quantity: quantity * (kp.quantity || 1)
-    }));
+    if (isKit) {
+      const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === cell.pieceId);
+      if (kpList.length === 0) return;
 
-    await applyWithHistory(upserts, []);
-  };
-
-  const saveEdit = async () => {
-    if (!editingCell) return;
-    const { storeId, pieceId } = editingCell;
-    const qty = parseInt(editValue, 10) || 0;
-    
-    try {
-      const isKit = kits?.some(k => k.id === pieceId);
-      if (isKit) {
-        await saveKitQty(storeId, pieceId, qty);
-      } else {
-        await applyWithHistory([{ campaignId, storeId, pieceId, quantity: qty }], []);
-      }
-    } catch (err) {
-      // toast already shown in applyWithHistory
+      const targets = kpList.map((kp: any) => ({
+        campaignId,
+        storeId: cell.storeId,
+        pieceId: kp.piece_id,
+        quantity: qty * (kp.quantity || 1)
+      }));
+      const upserts = targets.filter((t) => t.quantity > 0);
+      const deletes = targets
+        .filter((t) => t.quantity <= 0)
+        .map((t) => ({ campaignId, storeId: t.storeId, pieceId: t.pieceId }));
+      void applyWithHistory(upserts, deletes);
+      return;
     }
-    setEditingCell(null);
+
+    if (qty > 0) {
+      void applyWithHistory([{ campaignId, storeId: cell.storeId, pieceId: cell.pieceId, quantity: qty }], []);
+    } else {
+      void applyWithHistory([], [{ campaignId, storeId: cell.storeId, pieceId: cell.pieceId }]);
+    }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const switchToCell = (rowIndex: number, colIndex: number) => {
+    if (!canEditCampaignStores || !isTabEditable) return;
+    const store = filteredStores[rowIndex];
+    const col = columns[colIndex];
+    if (!store || !col) return;
+
+    const targetValue = getVisibleCellQty(store.id, col.id);
+    const current = editingCellRef.current;
+    const valueToSave = editValueRef.current ?? "";
+
+    if (current && (current.storeId !== store.id || current.pieceId !== col.id)) {
+      saveCell(current, valueToSave);
+    }
+
+    const nextValue = targetValue > 0 ? String(targetValue) : "";
+    editingCellRef.current = { storeId: store.id, pieceId: col.id };
+    editValueRef.current = nextValue;
+    setEditingCell({ storeId: store.id, pieceId: col.id });
+    setEditValue(nextValue);
+    setAnchorCell({ rowIndex, colIndex });
+  };
+
+  const closeEditing = (save = true) => {
+    const current = editingCellRef.current;
+    if (current && save) {
+      saveCell(current, editValueRef.current ?? "");
+    }
+    editingCellRef.current = null;
+    editValueRef.current = "";
+    setEditingCell(null);
+    setEditValue("");
+  };
+
+  const handlePieceBlur = () => {
+    if (skipBlurSaveRef.current) {
+      skipBlurSaveRef.current = false;
+      return;
+    }
+    closeEditing(true);
+  };
+
+  const navigateFromCell = (rowIndex: number, colIndex: number, dRow: number, dCol: number) => {
+    const nextRow = Math.max(0, Math.min(filteredStores.length - 1, rowIndex + dRow));
+    const nextCol = Math.max(0, Math.min(columns.length - 1, colIndex + dCol));
+    switchToCell(nextRow, nextCol);
+  };
+
+  const handleEditorKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, rowIndex: number, colIndex: number) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      saveEdit();
-      // Mover para a linha de baixo (lógica já existente em outros lugares ou a ser reforçada)
-      if (anchorCell) {
-        setAnchorCell(prev => prev ? { ...prev, rowIndex: prev.rowIndex + 1 } : null);
-      }
-    }
-    if (e.key === "Tab") {
+      navigateFromCell(rowIndex, colIndex, 1, 0);
+    } else if (e.key === "Tab") {
       e.preventDefault();
-      saveEdit();
-      // Mover para a coluna da direita
-      if (anchorCell) {
-        setAnchorCell(prev => prev ? { ...prev, colIndex: prev.colIndex + 1 } : null);
-      }
-    }
-    if (e.key === "Escape") {
-      setEditingCell(null);
+      navigateFromCell(rowIndex, colIndex, 0, e.shiftKey ? -1 : 1);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      navigateFromCell(rowIndex, colIndex, -1, 0);
+    } else if (e.key === "ArrowDown") {
+      e.preventDefault();
+      navigateFromCell(rowIndex, colIndex, 1, 0);
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      navigateFromCell(rowIndex, colIndex, 0, -1);
+    } else if (e.key === "ArrowRight") {
+      e.preventDefault();
+      navigateFromCell(rowIndex, colIndex, 0, 1);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      closeEditing(false);
     }
   };
 
