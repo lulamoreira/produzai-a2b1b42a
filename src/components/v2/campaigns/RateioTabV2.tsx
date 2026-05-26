@@ -417,6 +417,12 @@ export default function RateioTabV2({
     return () => cancelAnimationFrame(rafId);
   }, [editingCell]);
 
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    };
+  }, []);
+
   const applyWithHistory = async (
     upserts: RateioUpsert[],
     deletes: { campaignId: string; storeId: string; pieceId: string }[],
