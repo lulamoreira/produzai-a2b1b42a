@@ -413,13 +413,47 @@ export default function RateioTabV2({
     setTimeout(() => inputRef.current?.focus(), 0);
   };
 
+  const saveKitQty = async (storeId: string, kitId: string, quantity: number) => {
+    const kpList = (kitPieces || []).filter((kp: any) => kp.kit_id === kitId);
+    if (kpList.length === 0) return;
+
+    const upserts = kpList.map((kp: any) => ({
+      campaignId,
+      storeId,
+      pieceId: kp.piece_id,
+      quantity: quantity * (kp.quantity || 1)
+    }));
+
+    try {
+      await applyRateioBulk(upserts, [], {
+        isNegotiationView: rateioSource === 'negotiation',
+        negotiationSupplierId: winnerSupplierId,
+        isAdjustmentView: rateioSource === 'adjustment',
+        adjustmentId: activeAdjustment?.id
+      });
+      
+      queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
+    } catch (err) {
+      console.error("Erro ao atualizar kit:", err);
+      toast.error("Erro ao atualizar kit");
+    }
+  };
+
   const saveEdit = async () => {
     if (!editingCell) return;
     const { storeId, pieceId } = editingCell;
     const qty = parseInt(editValue, 10) || 0;
     
     try {
-      await updatePieceQty.mutateAsync({ campaignId, storeId, pieceId, quantity: qty });
+      // Check if it's a kit
+      const isKit = kits?.some(k => k.id === pieceId);
+      if (isKit) {
+        await saveKitQty(storeId, pieceId, qty);
+      } else {
+        await updatePieceQty.mutateAsync({ campaignId, storeId, pieceId, quantity: qty });
+      }
     } catch (err) {
       toast.error("Erro ao atualizar quantidade");
     }
