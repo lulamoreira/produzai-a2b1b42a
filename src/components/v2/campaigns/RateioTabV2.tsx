@@ -68,6 +68,7 @@ const RateioRow = memo(({
   kits, 
   kitQtyMap, 
   visibleQtyMap, 
+  isEditingRow,
   editingCell, 
   anchorCell, 
   isTabEditable, 
