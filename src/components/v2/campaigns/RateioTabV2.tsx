@@ -617,7 +617,7 @@ export default function RateioTabV2({
           storeName: store.name,
           pieceName: col.name,
           isIgnored: val === null,
-          itemType: col._type
+          itemType: col._type as 'piece' | 'kit'
         });
       }
     }
