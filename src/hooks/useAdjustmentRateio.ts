@@ -17,7 +17,7 @@ export function useAdjustmentRateio(adjustmentId: string | null | undefined) {
     queryKey: ["adjustment_rateio_qty_map", adjustmentId],
     enabled: !!adjustmentId,
     queryFn: async () => {
-      const [piecesRes, storePiecesRows, kitPiecesRes] = await Promise.all([
+      const [piecesRes, storePiecesRows, kitPiecesRes, adjKitsRes] = await Promise.all([
         supabase
           .from("campaign_adjustment_pieces")
           .select("id, source_piece_id, is_deleted")
@@ -34,6 +34,11 @@ export function useAdjustmentRateio(adjustmentId: string | null | undefined) {
           .from("campaign_adjustment_kit_pieces" as never)
           .select("kit_id, piece_id, quantity")
           .eq("adjustment_id", adjustmentId!),
+        supabase
+          .from("campaign_adjustment_kits")
+          .select("id, source_kit_id")
+          .eq("adjustment_id", adjustmentId!)
+          .eq("is_deleted", false),
       ]);
 
       const adjPieces = (piecesRes.data as any[]) || [];
