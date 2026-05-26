@@ -1481,7 +1481,7 @@ export default function RateioTabV2({
                           columns={columns}
                           kits={kits}
                           kitQtyMap={kitQtyMap}
-                          visibleQtyMap={visibleQtyMap}
+                          storeQtyMap={storeQtyMaps[store.id] || {}}
                           isEditingRow={isEditingRow}
                           editingCell={isEditingRow ? editingCell : null}
                           anchorCell={isAnchorRow ? anchorCell : null}
