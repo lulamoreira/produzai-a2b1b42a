@@ -67,6 +67,7 @@ const AddPieceDialog = ({
   });
   const [uploading, setUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [allCategories, setAllCategories] = useState<string[]>([]);
   
   const addCampaignPiece = useAddCampaignPiece();
   const updateCampaignPiece = useUpdateCampaignPiece();
