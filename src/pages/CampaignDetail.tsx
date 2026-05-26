@@ -43,6 +43,7 @@ import CampaignBackupDialog from "@/components/CampaignBackupDialog";
 
 const CampaignDetail = () => {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
@@ -304,7 +305,117 @@ const CampaignDetail = () => {
                 canEditPieces={true} canDeletePieces={true} pieceLocations={pieceLocations} pieceSubLocations={pieceSubLocations}
                 addPiece={addPiece} updatePiece={updatePiece} deletePiece={deletePiece} addKit={addKit} updateKit={updateKit} deleteKit={deleteKit}
                 addKitPiece={addKitPiece} updateKitPiece={updateKitPiece} deleteKitPiece={deleteKitPiece} reorderKitPieces={reorderKitPieces}
-                handleRecodificar={() => {}} handleReviewPieceCodes={() => {}} handleDistributePiece={() => {}}
+                handleRecodificar={async () => {
+                  if (!confirm(t("pieces.confirmRecode", "Deseja realmente recodificar todas as peças e kits? Isso atribuirá novos códigos sequenciais baseados na ordem de exibição."))) return;
+                  
+                  const toastId = toast.loading("Recodificando...");
+                  try {
+                    const allItems = [
+                      ...pieces.map(p => ({ id: p.id, type: 'piece', display_order: p.display_order })),
+                      ...kits.map(k => ({ id: k.id, type: 'kit', display_order: k.display_order }))
+                    ].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+
+                    for (let i = 0; i < allItems.length; i++) {
+                      const item = allItems[i];
+                      const newCode = i + 1;
+                      if (item.type === 'piece') {
+                        await updatePiece.mutateAsync({ id: item.id, code: newCode });
+                      } else {
+                        await updateKit.mutateAsync({ id: item.id, code: newCode });
+                      }
+                    }
+
+                    toast.success("Recodificação concluída!", { id: toastId });
+                  } catch (error: any) {
+                    toast.error("Erro ao recodificar: " + error.message, { id: toastId });
+                  }
+                }} 
+                handleReviewPieceCodes={() => {
+                  const codes = new Map<number, string[]>();
+                  const missing: string[] = [];
+
+                  pieces.forEach(p => {
+                    if (!p.code) missing.push(`Peça: ${p.name}`);
+                    else {
+                      const existing = codes.get(p.code) || [];
+                      existing.push(`Peça: ${p.name}`);
+                      codes.set(p.code, existing);
+                    }
+                  });
+
+                  kits.forEach(k => {
+                    if (!k.code) missing.push(`Kit: ${k.name}`);
+                    else {
+                      const existing = codes.get(k.code) || [];
+                      existing.push(`Kit: ${k.name}`);
+                      codes.set(k.code, existing);
+                    }
+                  });
+
+                  const duplicates = Array.from(codes.entries()).filter(([_, items]) => items.length > 1);
+
+                  if (duplicates.length === 0 && missing.length === 0) {
+                    toast.success("Nenhum problema encontrado nos códigos!");
+                  } else {
+                    let msg = "";
+                    if (duplicates.length > 0) {
+                      msg += "Códigos duplicados encontrados:\n" + duplicates.map(([code, items]) => `Código ${code}: ${items.join(", ")}`).join("\n");
+                    }
+                    if (missing.length > 0) {
+                      msg += (msg ? "\n\n" : "") + "Peças/Kits sem código:\n" + missing.join(", ");
+                    }
+                    alert(msg);
+                  }
+                }} 
+                handleDistributePiece={async (piece: any) => {
+                  const isDistributed = stores.some(s => qtyMap[`${s.id}-${piece.id}`] > 0);
+                  
+                  if (isDistributed) {
+                    if (!confirm(`Deseja remover a peça "${piece.name}" de todas as lojas?`)) return;
+                    const toastId = toast.loading("Removendo distribuição...");
+                    try {
+                      const distributedStores = stores.filter(s => qtyMap[`${s.id}-${piece.id}`] > 0);
+                      for (const store of distributedStores) {
+                        await supabase
+                          .from("campaign_store_pieces")
+                          .delete()
+                          .eq("campaign_id", campaignId)
+                          .eq("store_id", store.id)
+                          .eq("piece_id", piece.id);
+                      }
+                      queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
+                      toast.success("Distribuição removida!", { id: toastId });
+                    } catch (error: any) {
+                      toast.error("Erro ao remover: " + error.message, { id: toastId });
+                    }
+                    return;
+                  }
+
+                  if (!confirm(`Deseja distribuir a peça "${piece.name}" para todas as lojas compatíveis?`)) return;
+                  
+                  const toastId = toast.loading("Distribuindo...");
+                  try {
+                    const compatibleStores = stores.filter(s => !piece.store_category || s.store_model === piece.store_category);
+                    
+                    const upserts = compatibleStores.map(store => ({
+                      campaign_id: campaignId,
+                      store_id: store.id,
+                      piece_id: piece.id,
+                      quantity: 1
+                    }));
+
+                    const { error } = await supabase
+                      .from("campaign_store_pieces")
+                      .upsert(upserts, { onConflict: "campaign_id,store_id,piece_id" });
+
+                    if (error) throw error;
+                    
+                    queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces", campaignId] });
+                    toast.success("Distribuição concluída!", { id: toastId });
+                  } catch (error: any) {
+                    toast.error("Erro ao distribuir: " + error.message, { id: toastId });
+                  }
+                }}
                 refetch={refetchPieces}
               />
             </TabsContent>
