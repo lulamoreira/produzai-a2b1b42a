@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
   Search, Filter, Download, Sparkles, Copy, MoreHorizontal, Lock, CheckCircle2,
-  Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw, X, Clipboard,
+  Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw, X,
   ArrowUpDown, Check
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -1460,24 +1460,6 @@ export default function RateioTabV2({
           )}
         </div>
       </div>
-
-      {anchorCell && !editingCell && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 bg-stone-900 text-white px-4 py-2 rounded-full text-xs font-medium shadow-2xl z-[100] flex items-center gap-3 animate-in fade-in slide-in-from-bottom-4">
-          <div className="flex items-center gap-2">
-            <Clipboard className="w-3.5 h-3.5 text-[#C2714F]" />
-            <span>Pressione <strong>Ctrl+V</strong> para colar em bloco</span>
-          </div>
-          <div className="w-px h-3 bg-stone-700" />
-          <button 
-            onClick={() => setAnchorCell(null)}
-            className="text-stone-400 hover:text-white transition-colors flex items-center gap-1"
-          >
-            <span>Esc para cancelar</span>
-            <X className="w-3 h-3" />
-          </button>
-        </div>
-      )}
-
 
       <MatrixAutomationDialog 
         open={isAutomationOpen}
