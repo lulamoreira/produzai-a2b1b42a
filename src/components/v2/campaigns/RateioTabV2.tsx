@@ -601,7 +601,8 @@ export default function RateioTabV2({
       
       row.forEach((val, cIdx) => {
         const colIdx = anchor.colIndex + cIdx;
-        if (colIdx >= columns.length) return;
+        // Limit pasting to exactly the number of columns provided in the clipboard
+        if (colIdx >= columns.length || cIdx >= row.length) return;
         
         const col = columns[colIdx];
         const isKit = col._type === 'kit';
