@@ -242,7 +242,11 @@ export function BatchInviteForm() {
       { Nome: "João Silva", Email: "joao@empresa.com", Papel: "Editor", Agência: "" },
       { Nome: "Maria Santos", Email: "maria@empresa.com", Papel: "Gerente", Agência: "" }
     ];
-    downloadCsv("modelo_convites.csv", rows);
+    const ws = XLSX.utils.json_to_sheet(rows);
+    ws["!cols"] = [{ wch: 25 }, { wch: 30 }, { wch: 15 }, { wch: 25 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Convites");
+    XLSX.writeFile(wb, "modelo_convites.xlsx");
   };
 
   const handleReview = () => {
