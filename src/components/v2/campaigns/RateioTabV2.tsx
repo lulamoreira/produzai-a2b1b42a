@@ -1553,9 +1553,10 @@ export default function RateioTabV2({
                                   <span className="text-[9px] font-black text-[#C2714F] uppercase">KIT</span>
                                 )}
                               </div>
-                              <div className="text-[10px] text-stone-600 font-semibold leading-tight text-center line-clamp-2">
+                              <div className="text-[10px] text-stone-600 font-semibold leading-tight text-center whitespace-normal break-words">
                                 {col.name}
                               </div>
+
                             </div>
                           </th>
                         );
