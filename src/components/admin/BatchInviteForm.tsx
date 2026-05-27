@@ -238,12 +238,55 @@ export function BatchInviteForm() {
   };
 
   const downloadTemplate = () => {
-    const rows = [
-      { Nome: "João Silva", Email: "joao@empresa.com", Papel: "Editor", Agência: "" },
-      { Nome: "Maria Santos", Email: "maria@empresa.com", Papel: "Gerente", Agência: "" }
+    // Prefill from selected defaults (if user changed them from initial state)
+    const defaultRoleLabel =
+      ROLES.find(r => r.value === globalConfig.role)?.shortLabel || "Editor";
+    const defaultAgencyName =
+      globalConfig.agency_id !== "none"
+        ? agencies.find(a => a.id === globalConfig.agency_id)?.name || ""
+        : "";
+
+    // Build authorizations string from selected campaign access
+    const authorizationsStr = campaignAccess
+      .filter((a: any) => a.campaign_id)
+      .map((a: any) => {
+        const camp = allCampaigns.find((c: any) => c.id === a.campaign_id);
+        const campLabel = camp
+          ? `${camp.clients?.agencies?.name || ""} / ${camp.clients?.name || ""} / ${camp.name}`
+          : a.campaign_id;
+        const catLabel = a.category_id
+          ? categories.find((c: any) => c.id === a.category_id)?.name || ""
+          : "";
+        return catLabel ? `${campLabel} [${catLabel}]` : campLabel;
+      })
+      .join(" ; ");
+
+    const sampleRows = [
+      {
+        Nome: "João Silva",
+        Email: "joao@empresa.com",
+        Papel: defaultRoleLabel,
+        Agência: defaultAgencyName,
+        Autorizações: authorizationsStr,
+      },
+      {
+        Nome: "Maria Santos",
+        Email: "maria@empresa.com",
+        Papel: defaultRoleLabel,
+        Agência: defaultAgencyName,
+        Autorizações: authorizationsStr,
+      },
     ];
-    const ws = XLSX.utils.json_to_sheet(rows);
-    ws["!cols"] = [{ wch: 25 }, { wch: 30 }, { wch: 15 }, { wch: 25 }];
+    const ws = XLSX.utils.json_to_sheet(sampleRows, {
+      header: ["Nome", "Email", "Papel", "Agência", "Autorizações"],
+    });
+    ws["!cols"] = [
+      { wch: 25 },
+      { wch: 30 },
+      { wch: 15 },
+      { wch: 25 },
+      { wch: 60 },
+    ];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Convites");
     XLSX.writeFile(wb, "modelo_convites.xlsx");
