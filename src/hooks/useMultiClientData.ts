@@ -470,7 +470,7 @@ export function useClientStores(clientId: string | undefined) {
       return await supabasePaginate<ClientStore>((from, to) =>
         supabase
           .from("client_stores")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("client_id", clientId)
           .order("name")
           .range(from, to) as any
@@ -766,7 +766,7 @@ export function useCampaignStorePieces(campaignId: string | undefined) {
       return supabasePaginate<CampaignStorePiece>((from, to) =>
         supabase
           .from("campaign_store_pieces")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("campaign_id", campaignId)
           .order("id", { ascending: true })
           .range(from, to) as any
