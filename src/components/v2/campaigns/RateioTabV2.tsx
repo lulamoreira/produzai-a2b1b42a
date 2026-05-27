@@ -1270,16 +1270,20 @@ export default function RateioTabV2({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuItem onClick={() => exportMatrixExcelJS(stores, pieces, qtyMap, campaign.name, kits, kitPieces, undefined, [], [], pieces, agency?.name, client?.name)} className="text-xs py-2 cursor-pointer">
+                      <DropdownMenuItem 
+                        onClick={() => exportMatrixExcelJS(filteredStores, filteredPieces, visibleQtyMap, campaign.name, filteredKits, activeKitPieces, undefined, [], [], pieces, agency?.name, client?.name)} 
+                        className="text-xs py-2 cursor-pointer"
+                      >
                         {t("rateio.exportRateio", "EXPORTAR RATEIO")}
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        onClick={() => exportRateioGrid(pieces, kits, kitPieces, stores, qtyMap, campaign.name, client.name, agency.name)} 
+                        onClick={() => exportRateioGrid(filteredPieces, filteredKits, activeKitPieces, filteredStores, visibleQtyMap, campaign.name, client.name, agency.name)} 
                         className="text-xs py-2 cursor-pointer"
                       >
                         {t("rateio.exportByStore", "EXPORTAR RATEIO POR LOJA")}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
+
                   </DropdownMenu>
 
                   {isTabEditable && (
