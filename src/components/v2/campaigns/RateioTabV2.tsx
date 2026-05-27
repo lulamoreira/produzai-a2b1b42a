@@ -1063,9 +1063,10 @@ export default function RateioTabV2({
           onFilterLogicModeChange={setFilterLogicMode}
         />
 
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
           {rateioView === "planilha" ? (
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col h-full min-h-0 overflow-hidden">
+
               {/* Excel-like Version Tabs */}
               <div className="bg-white border-b border-stone-200 px-4 pt-3 flex items-end gap-1 overflow-x-auto no-scrollbar">
                 {versionTabs.map((tab) => {
