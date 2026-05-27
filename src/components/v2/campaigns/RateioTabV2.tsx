@@ -1100,7 +1100,7 @@ export default function RateioTabV2({
 
               {/* Rateio Header Banner */}
               <div className={cn(
-                "px-6 py-3 border-b flex flex-col md:flex-row md:items-center justify-between gap-4",
+                "px-6 py-1.5 border-b flex flex-col md:flex-row md:items-center justify-between gap-2",
                 isTabEditable 
                   ? "bg-emerald-50/60 border-emerald-100" 
                   : "bg-amber-50/50 border-amber-100"
