@@ -252,6 +252,15 @@ export default function RateioTabV2({
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
 
+  const rowVirtualizer = useVirtualizer({
+    count: filteredStores.length,
+    getScrollElement: () => gridContainerRef.current,
+    estimateSize: () => 48,
+    overscan: 10,
+  });
+
+  const virtualRows = rowVirtualizer.getVirtualItems();
+
   const scrollToFirst = () => {
     gridContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   };
