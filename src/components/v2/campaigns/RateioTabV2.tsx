@@ -227,6 +227,7 @@ export default function RateioTabV2({
   // Excel Paste state
   const [anchorCell, setAnchorCell] = useState<{ rowIndex: number; colIndex: number } | null>(null);
   const [storeSearch, setStoreSearch] = useState("");
+  const deferredStoreSearch = useDeferredValue(storeSearch);
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
   const [filterLogicMode, setFilterLogicMode] = useState<FilterLogicMode>("and");
