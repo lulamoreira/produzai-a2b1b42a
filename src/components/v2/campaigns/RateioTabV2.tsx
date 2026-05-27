@@ -1304,7 +1304,7 @@ export default function RateioTabV2({
               </div>
 
               {/* Filters Row */}
-              <div className="px-6 py-2 border-b border-stone-100 bg-white flex items-center gap-3">
+              <div className="px-6 py-1 border-b border-stone-100 bg-white flex items-center gap-3">
                 <div className="relative flex-1 max-w-xs">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
                   <Input 
