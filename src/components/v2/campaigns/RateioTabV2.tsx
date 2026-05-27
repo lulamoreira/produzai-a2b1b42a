@@ -346,7 +346,7 @@ export default function RateioTabV2({
   // Filter stores
   const filteredStores = useMemo(() => {
     let result = stores.filter(s => {
-      const q = storeSearch.toLowerCase().trim();
+      const q = deferredStoreSearch.toLowerCase().trim();
       const matchesSearch = !q || Object.values(s).some(val => 
         (typeof val === 'string' || typeof val === 'number') && 
         val.toString().toLowerCase().includes(q)
