@@ -537,18 +537,17 @@ export default function RateioTabV2({
     const map: Record<string, number> = {};
     if (!kits?.length || !activeKitPieces?.length) return map;
 
-    // Pre-group kit pieces by kit_id for faster lookup
     const kitPiecesByKit = (activeKitPieces || []).reduce((acc: Record<string, any[]>, kp: any) => {
       if (!acc[kp.kit_id]) acc[kp.kit_id] = [];
       acc[kp.kit_id].push(kp);
       return acc;
     }, {});
-
+    // Use all stores (not filteredStores) so that the store search filter
+    // does not invalidate kit quantities — only columnTotals needs filtering.
     for (const kit of kits) {
       const kpList = kitPiecesByKit[kit.id];
       if (!kpList || kpList.length === 0) continue;
-
-      for (const s of filteredStores) {
+      for (const s of stores) {
         let minQty = Infinity;
         for (const kp of kpList) {
           const baseQty = visibleQtyMap[`${s.id}-${kp.piece_id}`] || 0;
@@ -559,7 +558,7 @@ export default function RateioTabV2({
       }
     }
     return map;
-  }, [kits, activeKitPieces, filteredStores, visibleQtyMap]);
+  }, [kits, activeKitPieces, stores, visibleQtyMap]);
 
   // Compute column totals in a more optimized way
   const columnTotals = useMemo(() => {
