@@ -1155,7 +1155,7 @@ export default function RateioTabV2({
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="h-9 text-xs gap-2 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
+                        className="h-8 text-xs gap-2 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
                         onClick={() => setIsAutomationOpen(true)}
                         disabled={isExecutingAutomation}
                       >
@@ -1170,7 +1170,7 @@ export default function RateioTabV2({
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="h-9 text-xs gap-2 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
+                        className="h-8 text-xs gap-2 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
                         onClick={() => setCopyQtyOpen(true)}
                       >
                         <Copy className="w-3.5 h-3.5" />
@@ -1191,7 +1191,7 @@ export default function RateioTabV2({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-9 text-xs gap-1.5 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
+                    className="h-8 text-xs gap-1.5 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
                     onClick={handleExport}
                     disabled={isExporting}
                   >
@@ -1202,7 +1202,7 @@ export default function RateioTabV2({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-9 text-xs gap-1.5 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
+                    className="h-8 text-xs gap-1.5 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
                     onClick={() => importInputRef.current?.click()}
                     disabled={isImporting || !isTabEditable}
                   >
@@ -1212,7 +1212,7 @@ export default function RateioTabV2({
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-9 text-xs gap-2 rounded-lg border-stone-200 shadow-sm">
+                      <Button variant="outline" size="sm" className="h-8 text-xs gap-2 rounded-lg border-stone-200 shadow-sm">
                         <Download className="w-3.5 h-3.5" />
                         {t("common.export", "Exportar")}
                         <ChevronDown className="w-3 h-3" />
@@ -1233,13 +1233,13 @@ export default function RateioTabV2({
 
                   {isTabEditable && (
                     <>
-                      <Badge variant="secondary" className="bg-stone-100 text-stone-500 border-none text-[10px] h-9 px-3 font-bold uppercase rounded-lg">
+                      <Badge variant="secondary" className="bg-stone-100 text-stone-500 border-none text-[10px] h-8 px-2.5 font-bold uppercase rounded-lg">
                         {activeTabData?.type === "adjustment" ? "AJUSTE" : activeTabData?.type === "negotiation" ? "NEGOCIAÇÃO" : "ORIGINAL"}
                       </Badge>
                       
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg border border-stone-200 shadow-sm">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg border border-stone-200 shadow-sm">
                             <MoreHorizontal className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
