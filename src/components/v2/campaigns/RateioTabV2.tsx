@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect, memo } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
