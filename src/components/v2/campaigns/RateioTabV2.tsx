@@ -523,37 +523,53 @@ export default function RateioTabV2({
   // Pre-compute kit quantity per store from components (read-only display)
   const kitQtyMap = useMemo(() => {
     const map: Record<string, number> = {};
-    for (const kit of kits || []) {
-      const kpList = (activeKitPieces || []).filter((kp: any) => kp.kit_id === kit.id);
-      if (kpList.length === 0) continue;
+    if (!kits?.length || !activeKitPieces?.length) return map;
+
+    // Pre-group kit pieces by kit_id for faster lookup
+    const kitPiecesByKit = (activeKitPieces || []).reduce((acc: Record<string, any[]>, kp: any) => {
+      if (!acc[kp.kit_id]) acc[kp.kit_id] = [];
+      acc[kp.kit_id].push(kp);
+      return acc;
+    }, {});
+
+    for (const kit of kits) {
+      const kpList = kitPiecesByKit[kit.id];
+      if (!kpList || kpList.length === 0) continue;
+
       for (const s of filteredStores) {
-        const q = Math.min(
-          ...kpList.map((kp: any) => {
-            const baseQty = visibleQtyMap[`${s.id}-${kp.piece_id}`] || 0;
-            return Math.floor(baseQty / (kp.quantity || 1));
-          })
-        );
-        map[`${s.id}-${kit.id}`] = Number.isFinite(q) ? q : 0;
+        let minQty = Infinity;
+        for (const kp of kpList) {
+          const baseQty = visibleQtyMap[`${s.id}-${kp.piece_id}`] || 0;
+          const kitCompQty = Math.floor(baseQty / (kp.quantity || 1));
+          if (kitCompQty < minQty) minQty = kitCompQty;
+        }
+        map[`${s.id}-${kit.id}`] = minQty === Infinity ? 0 : minQty;
       }
     }
     return map;
   }, [kits, activeKitPieces, filteredStores, visibleQtyMap]);
 
-  // Compute column totals
+  // Compute column totals in a more optimized way
   const columnTotals = useMemo(() => {
     const totals: Record<string, number> = {};
+    if (!columns.length || !filteredStores.length) return totals;
+
+    // Initialize totals
     columns.forEach(col => {
-      let total = 0;
-      const isKit = col._type === "kit";
-      filteredStores.forEach(store => {
-        if (isKit) {
-          total += kitQtyMap[`${store.id}-${col.id}`] || 0;
-        } else {
-          total += visibleQtyMap[`${store.id}-${col.id}`] || 0;
-        }
-      });
-      totals[`${col._type}-${col.id}`] = total;
+      totals[`${col._type}-${col.id}`] = 0;
     });
+
+    // Single pass over stores and columns
+    for (const store of filteredStores) {
+      for (const col of columns) {
+        const key = `${col._type}-${col.id}`;
+        if (col._type === "kit") {
+          totals[key] += kitQtyMap[`${store.id}-${col.id}`] || 0;
+        } else {
+          totals[key] += visibleQtyMap[`${store.id}-${col.id}`] || 0;
+        }
+      }
+    }
     return totals;
   }, [columns, filteredStores, visibleQtyMap, kitQtyMap]);
 
