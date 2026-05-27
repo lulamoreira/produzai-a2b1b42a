@@ -491,6 +491,17 @@ export default function RateioTabV2({
     });
   }, [pieces, kits, pieceFilters]);
 
+  const filteredPieces = useMemo(() => 
+    columns.filter(c => c._type === "piece").map(c => c.raw),
+    [columns]
+  );
+
+  const filteredKits = useMemo(() => 
+    columns.filter(c => c._type === "kit").map(c => c.raw),
+    [columns]
+  );
+
+
   const [localQtyOverrides, setLocalQtyOverrides] = useState<Record<string, number>>({});
 
   useEffect(() => {
