@@ -675,9 +675,19 @@ export function BatchInviteForm() {
                         .../join/{inv.token.substring(0, 8)}
                       </div>
                       <Button variant="ghost" size="icon" onClick={() => {
+                        const joinUrl = `${window.location.origin}/join/${inv.token}`;
+                        const subject = encodeURIComponent(`Você foi convidado para o ProduzAI`);
+                        const body = encodeURIComponent(
+                          `Olá, ${inv.name}!\n\nVocê foi convidado por ${displayName} para acessar o ProduzAI.\n\nLink: ${joinUrl}`
+                        );
+                        window.open(`mailto:${inv.email}?subject=${subject}&body=${body}`);
+                      }} className="h-8 w-8 text-stone-400 hover:text-stone-900" title="Enviar por email">
+                        <Mail size={14} />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => {
                         navigator.clipboard.writeText(`${window.location.origin}/join/${inv.token}`);
                         toast.success(t("invite.linkCopied"));
-                      }} className="h-8 w-8 text-stone-400 hover:text-stone-900">
+                      }} className="h-8 w-8 text-stone-400 hover:text-stone-900" title="Copiar link">
                         <Copy size={14} />
                       </Button>
                     </div>
@@ -685,11 +695,8 @@ export function BatchInviteForm() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <Button variant="outline" onClick={openEmails} className="gap-2 border-stone-200">
-                  <Mail size={18} /> {t("invite.batch.openEmails")}
-                </Button>
-                <Button variant="outline" onClick={downloadResults} className="gap-2 border-stone-200">
+              <div>
+                <Button variant="outline" onClick={downloadResults} className="w-full gap-2 border-stone-200">
                   <Download size={18} /> {t("invite.batch.downloadLinks")}
                 </Button>
               </div>
