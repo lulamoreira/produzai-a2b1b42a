@@ -1609,7 +1609,12 @@ export default function RateioTabV2({
                     </tr>
                   </thead>
                   <tbody className="bg-white">
-                    {filteredStores.map((store, sIdx) => {
+                    {virtualRows.length > 0 && virtualRows[0].start > 0 && (
+                      <tr><td colSpan={columns.length + 1} style={{ height: virtualRows[0].start }} /></tr>
+                    )}
+                    {virtualRows.map((virtualRow) => {
+                      const store = filteredStores[virtualRow.index];
+                      const sIdx = virtualRow.index;
                       const isEditingRow = editingCell?.storeId === store.id;
                       const isAnchorRow = anchorCell?.rowIndex === sIdx;
                       
@@ -1638,6 +1643,9 @@ export default function RateioTabV2({
                         />
                       );
                     })}
+                    {virtualRows.length > 0 && (rowVirtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end) > 0 && (
+                      <tr><td colSpan={columns.length + 1} style={{ height: rowVirtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end }} /></tr>
+                    )}
                   </tbody>
                   {/* Table Footer with Totals */}
                   <tfoot 
