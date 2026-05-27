@@ -1068,7 +1068,7 @@ export default function RateioTabV2({
             <div className="flex flex-col h-full min-h-0 overflow-hidden">
 
               {/* Excel-like Version Tabs */}
-              <div className="bg-white border-b border-stone-200 px-4 pt-3 flex items-end gap-1 overflow-x-auto no-scrollbar">
+              <div className="bg-white border-b border-stone-200 px-4 pt-1.5 flex items-end gap-1 overflow-x-auto no-scrollbar">
                 {versionTabs.map((tab) => {
                   const isActive = activeVersionTab === tab.id;
                   const isCurrentVigente = tab.isVigente;
