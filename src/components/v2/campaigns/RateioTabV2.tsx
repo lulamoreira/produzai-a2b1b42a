@@ -67,6 +67,7 @@ interface RateioTabV2Props {
   setActiveSection: (section: string) => void;
   srcToAdjPieceId?: Map<string, string>;
   adjKitPieces?: any[];
+  isLoadingQuantities?: boolean;
 }
 
 const RateioRow = memo(({ 
