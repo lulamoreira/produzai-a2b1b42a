@@ -563,7 +563,7 @@ export function useCampaignPieces(campaignId: string | undefined) {
       return await supabasePaginate<CampaignPiece>((from, to) =>
         supabase
           .from("campaign_pieces")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("campaign_id", campaignId)
           .eq("is_deleted", false)
           .order("display_order")
@@ -1201,7 +1201,7 @@ export function useCampaignStoreStatus(campaignId: string | undefined) {
       return await supabasePaginate<CampaignStoreStatus>((from, to) =>
         supabase
           .from("campaign_store_status")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("campaign_id", campaignId)
           .range(from, to) as any
       );
