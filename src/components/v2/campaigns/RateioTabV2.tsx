@@ -1100,6 +1100,7 @@ export default function RateioTabV2({
           onStoreFiltersChange={setStoreFilters}
           filterLogicMode={filterLogicMode}
           onFilterLogicModeChange={setFilterLogicMode}
+          customFieldLabels={customFieldLabels.map((cf) => ({ key: `custom_field_${cf.index}` as any, label: cf.label }))}
         />
 
         <div className="flex-1 flex flex-col min-w-0 min-h-0 overflow-hidden">
