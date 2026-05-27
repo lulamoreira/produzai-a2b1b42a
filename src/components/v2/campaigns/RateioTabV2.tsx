@@ -1448,7 +1448,7 @@ export default function RateioTabV2({
               </div>
 
               {/* Spreadsheet Table */}
-              <div ref={gridContainerRef} className="flex-1 overflow-x-auto relative custom-scrollbar">
+              <div ref={gridContainerRef} className="flex-1 min-h-0 overflow-auto relative custom-scrollbar">
                 {/* Floating Navigation Buttons */}
                 <div className="fixed right-12 bottom-24 flex flex-col gap-2 z-50">
                   {showScrollTop && (
