@@ -213,7 +213,8 @@ export default function RateioTabV2({
   hasAnyAdjustment,
   setActiveSection,
   srcToAdjPieceId,
-  adjKitPieces
+  adjKitPieces,
+  isLoadingQuantities
 }: RateioTabV2Props) {
   const { t } = useTranslation();
   const { isAdminOrMaster } = useUserRole();
