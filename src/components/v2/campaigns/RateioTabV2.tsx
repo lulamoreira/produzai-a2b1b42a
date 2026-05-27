@@ -357,7 +357,17 @@ export default function RateioTabV2({
       if (storeFilters.city.size > 0 && !storeFilters.city.has(s.city)) return false;
       if (storeFilters.state.size > 0 && !storeFilters.state.has(s.state?.trim())) return false;
       if (storeFilters.store_model.size > 0 && !storeFilters.store_model.has(s.store_model)) return false;
-      
+
+      // Custom field filters
+      for (let i = 1; i <= 15; i++) {
+        const key = `custom_field_${i}` as keyof typeof storeFilters;
+        const set = storeFilters[key] as Set<string> | undefined;
+        if (set && set.size > 0) {
+          const val = (s as any)[key];
+          if (!val || !set.has(val)) return false;
+        }
+      }
+
       return matchesSearch;
     });
 
