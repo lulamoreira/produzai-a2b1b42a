@@ -66,7 +66,7 @@ const CampaignDetail = () => {
 
   const { data: stores = [] } = useClientStores(clientId);
   const { data: pieces = [], refetch: refetchPieces } = useCampaignPieces(campaignId);
-  const { data: storePieces = [] } = useCampaignStorePieces(campaignId);
+  const { data: storePieces = [], isLoading: loadingStorePieces, isFetching: fetchingStorePieces } = useCampaignStorePieces(campaignId);
   const { data: kits = [] } = useCampaignKits(campaignId);
   const { data: kitPieces = [] } = useCampaignKitPieces(campaignId);
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
@@ -440,6 +440,7 @@ const CampaignDetail = () => {
                   setActiveSection={setActiveSection}
                   srcToAdjPieceId={adjustmentRateio?.sourceToAdj}
                   adjKitPieces={adjustmentRateio?.adjKitPieces}
+                  isLoadingQuantities={loadingStorePieces || fetchingStorePieces}
                 />
               ) : (
                 <MatrixTab 

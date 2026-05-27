@@ -67,6 +67,7 @@ interface RateioTabV2Props {
   setActiveSection: (section: string) => void;
   srcToAdjPieceId?: Map<string, string>;
   adjKitPieces?: any[];
+  isLoadingQuantities?: boolean;
 }
 
 const RateioRow = memo(({ 
@@ -212,7 +213,8 @@ export default function RateioTabV2({
   hasAnyAdjustment,
   setActiveSection,
   srcToAdjPieceId,
-  adjKitPieces
+  adjKitPieces,
+  isLoadingQuantities
 }: RateioTabV2Props) {
   const { t } = useTranslation();
   const { isAdminOrMaster } = useUserRole();
@@ -1449,6 +1451,20 @@ export default function RateioTabV2({
 
               {/* Spreadsheet Table */}
               <div ref={gridContainerRef} className="flex-1 min-h-0 overflow-auto relative custom-scrollbar">
+                {/* Loading overlay for quantities */}
+                {isLoadingQuantities && (
+                  <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/70 dark:bg-stone-900/70 backdrop-blur-sm pointer-events-none animate-in fade-in">
+                    <div className="flex flex-col items-center gap-3 px-6 py-4 rounded-xl bg-white dark:bg-stone-900 shadow-lg border border-stone-200 dark:border-stone-800">
+                      <Loader2 className="h-6 w-6 animate-spin text-[#8C6F4E]" />
+                      <p className="text-sm font-medium text-stone-700 dark:text-stone-200">
+                        Carregando quantidades...
+                      </p>
+                      <p className="text-[11px] text-stone-400">
+                        Seus dados estão sendo recuperados. Aguarde um instante.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 {/* Floating Navigation Buttons */}
                 <div className="fixed right-12 bottom-24 flex flex-col gap-2 z-50">
                   {showScrollTop && (
