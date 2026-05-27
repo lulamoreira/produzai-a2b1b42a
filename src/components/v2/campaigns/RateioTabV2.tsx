@@ -1078,7 +1078,7 @@ export default function RateioTabV2({
                       key={tab.id}
                       onClick={() => setRateioSource(tab.id as "original" | "negotiation" | "adjustment")}
                       className={cn(
-                        "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-all whitespace-nowrap",
+                        "flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-t-lg transition-all whitespace-nowrap",
                         isActive 
                           ? "bg-white border border-stone-200 border-b-white text-stone-900 -mb-px z-10 shadow-[0_-2px_10px_rgba(0,0,0,0.02)]" 
                           : "bg-stone-50 text-stone-500 hover:bg-stone-100 hover:text-stone-700"
