@@ -440,6 +440,7 @@ const CampaignDetail = () => {
                   setActiveSection={setActiveSection}
                   srcToAdjPieceId={adjustmentRateio?.sourceToAdj}
                   adjKitPieces={adjustmentRateio?.adjKitPieces}
+                  isLoadingQuantities={loadingStorePieces || fetchingStorePieces}
                 />
               ) : (
                 <MatrixTab 
