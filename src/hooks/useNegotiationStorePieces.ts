@@ -28,7 +28,7 @@ export function useNegotiationStorePieces(
       return supabasePaginate<NegotiationStorePiece>((from, to) =>
         supabase
           .from("budget_negotiation_store_pieces" as never)
-          .select("id, supplier_id, campaign_id, store_id, piece_id, quantity")
+          .select("id, supplier_id, campaign_id, store_id, piece_id, quantity", { count: "exact" })
           .eq("supplier_id", supplierId as string)
           .range(from, to) as any
       );
