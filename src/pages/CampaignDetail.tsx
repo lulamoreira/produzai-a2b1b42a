@@ -419,7 +419,7 @@ const CampaignDetail = () => {
                 refetch={refetchPieces}
               />
             </TabsContent>
-            <TabsContent value="matrix" className="h-[calc(100vh-220px)]">
+            <TabsContent value="matrix" className="h-[calc(100vh-160px)]">
               {version === "v2" ? (
                 <RateioTabV2 
                   campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}

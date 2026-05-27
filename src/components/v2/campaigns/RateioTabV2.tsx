@@ -1022,7 +1022,7 @@ export default function RateioTabV2({
   return (
     <div className="flex flex-col h-full bg-white overflow-hidden">
       {/* Top Navigation for Spreadsheet/Dashboard */}
-      <div className="flex items-center justify-between px-6 py-2 border-b border-stone-200">
+      <div className="flex items-center justify-between px-6 py-1 border-b border-stone-200">
         <Tabs value={rateioView} onValueChange={setRateioView} className="w-auto">
           <TabsList className="bg-stone-100 h-9 p-1">
             <TabsTrigger value="planilha" className="text-xs gap-2 px-3 h-7 data-[state=active]:bg-white data-[state=active]:shadow-sm">
@@ -1068,7 +1068,7 @@ export default function RateioTabV2({
             <div className="flex flex-col h-full min-h-0 overflow-hidden">
 
               {/* Excel-like Version Tabs */}
-              <div className="bg-white border-b border-stone-200 px-4 pt-3 flex items-end gap-1 overflow-x-auto no-scrollbar">
+              <div className="bg-white border-b border-stone-200 px-4 pt-1.5 flex items-end gap-1 overflow-x-auto no-scrollbar">
                 {versionTabs.map((tab) => {
                   const isActive = activeVersionTab === tab.id;
                   const isCurrentVigente = tab.isVigente;
@@ -1078,7 +1078,7 @@ export default function RateioTabV2({
                       key={tab.id}
                       onClick={() => setRateioSource(tab.id as "original" | "negotiation" | "adjustment")}
                       className={cn(
-                        "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-t-lg transition-all whitespace-nowrap",
+                        "flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded-t-lg transition-all whitespace-nowrap",
                         isActive 
                           ? "bg-white border border-stone-200 border-b-white text-stone-900 -mb-px z-10 shadow-[0_-2px_10px_rgba(0,0,0,0.02)]" 
                           : "bg-stone-50 text-stone-500 hover:bg-stone-100 hover:text-stone-700"
@@ -1100,7 +1100,7 @@ export default function RateioTabV2({
 
               {/* Rateio Header Banner */}
               <div className={cn(
-                "px-6 py-3 border-b flex flex-col md:flex-row md:items-center justify-between gap-4",
+                "px-6 py-1.5 border-b flex flex-col md:flex-row md:items-center justify-between gap-2",
                 isTabEditable 
                   ? "bg-emerald-50/60 border-emerald-100" 
                   : "bg-amber-50/50 border-amber-100"
@@ -1155,7 +1155,7 @@ export default function RateioTabV2({
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="h-9 text-xs gap-2 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
+                        className="h-8 text-xs gap-2 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
                         onClick={() => setIsAutomationOpen(true)}
                         disabled={isExecutingAutomation}
                       >
@@ -1170,7 +1170,7 @@ export default function RateioTabV2({
                       <Button 
                         variant="outline" 
                         size="sm" 
-                        className="h-9 text-xs gap-2 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
+                        className="h-8 text-xs gap-2 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
                         onClick={() => setCopyQtyOpen(true)}
                       >
                         <Copy className="w-3.5 h-3.5" />
@@ -1191,7 +1191,7 @@ export default function RateioTabV2({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-9 text-xs gap-1.5 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
+                    className="h-8 text-xs gap-1.5 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
                     onClick={handleExport}
                     disabled={isExporting}
                   >
@@ -1202,7 +1202,7 @@ export default function RateioTabV2({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-9 text-xs gap-1.5 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
+                    className="h-8 text-xs gap-1.5 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
                     onClick={() => importInputRef.current?.click()}
                     disabled={isImporting || !isTabEditable}
                   >
@@ -1212,7 +1212,7 @@ export default function RateioTabV2({
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="sm" className="h-9 text-xs gap-2 rounded-lg border-stone-200 shadow-sm">
+                      <Button variant="outline" size="sm" className="h-8 text-xs gap-2 rounded-lg border-stone-200 shadow-sm">
                         <Download className="w-3.5 h-3.5" />
                         {t("common.export", "Exportar")}
                         <ChevronDown className="w-3 h-3" />
@@ -1233,13 +1233,13 @@ export default function RateioTabV2({
 
                   {isTabEditable && (
                     <>
-                      <Badge variant="secondary" className="bg-stone-100 text-stone-500 border-none text-[10px] h-9 px-3 font-bold uppercase rounded-lg">
+                      <Badge variant="secondary" className="bg-stone-100 text-stone-500 border-none text-[10px] h-8 px-2.5 font-bold uppercase rounded-lg">
                         {activeTabData?.type === "adjustment" ? "AJUSTE" : activeTabData?.type === "negotiation" ? "NEGOCIAÇÃO" : "ORIGINAL"}
                       </Badge>
                       
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg border border-stone-200 shadow-sm">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg border border-stone-200 shadow-sm">
                             <MoreHorizontal className="w-4 h-4" />
                           </Button>
                         </DropdownMenuTrigger>
@@ -1304,7 +1304,7 @@ export default function RateioTabV2({
               </div>
 
               {/* Filters Row */}
-              <div className="px-6 py-2 border-b border-stone-100 bg-white flex items-center gap-3">
+              <div className="px-6 py-1 border-b border-stone-100 bg-white flex items-center gap-3">
                 <div className="relative flex-1 max-w-xs">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
                   <Input 
@@ -1499,11 +1499,11 @@ export default function RateioTabV2({
                     {/* Piece Headers Row */}
                     <tr>
                       <th 
-                        className="w-[300px] bg-white p-4 border-r border-b border-stone-200 text-left align-top" 
-                        style={{ position: 'sticky', left: 0, top: 28, zIndex: 50 }}
+                        className="w-[300px] bg-white px-3 py-2 border-r border-b border-stone-200 text-left align-top" 
+                        style={{ position: 'sticky', left: 0, top: 22, zIndex: 50 }}
                       >
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="text-xs font-bold text-stone-400 uppercase tracking-widest">Loja</div>
+                        <div className="flex items-center justify-between">
+                          <div className="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Loja</div>
                           <div className="flex items-center gap-1">
                             <Button 
                               variant="ghost" 
@@ -1524,7 +1524,6 @@ export default function RateioTabV2({
                             </Button>
                           </div>
                         </div>
-                        <div className="text-[10px] text-stone-400 font-medium leading-tight">Total de peças distribuídas por ponto de venda</div>
                       </th>
                       {columns.map((col) => {
                         const isKit = col._type === "kit";
@@ -1532,32 +1531,35 @@ export default function RateioTabV2({
                         return (
                           <th 
                             key={`${col._type}-${col.id}`} 
-                            className="min-w-[120px] max-w-[200px] p-2 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50"
-                            style={{ position: 'sticky', top: 28, zIndex: 25 }}
+                            className="min-w-[110px] max-w-[180px] px-1.5 py-1 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50"
+                            style={{ position: 'sticky', top: 22, zIndex: 25 }}
                           >
-                            <div className="flex flex-col items-center gap-1.5">
+                            <div className="flex flex-col items-center gap-1">
                               {img ? (
                                 <img 
                                   src={img} 
                                   alt={col.name} 
-                                  className="w-12 h-12 rounded-lg object-cover border border-stone-100 shadow-sm" 
+                                  className="w-8 h-8 rounded-md object-cover border border-stone-100 shadow-sm" 
                                 />
                               ) : (
-                                <div className="w-12 h-12 rounded-lg bg-stone-100 flex items-center justify-center">
-                                  <Table2 className="w-4 h-4 text-stone-300" />
+                                <div className="w-8 h-8 rounded-md bg-stone-100 flex items-center justify-center">
+                                  <Table2 className="w-3.5 h-3.5 text-stone-300" />
                                 </div>
                               )}
-                              <div className="text-sm font-black text-stone-900 leading-none">{col.code}</div>
-                              {isKit && (
-                                <div className="text-[10px] font-black text-[#C2714F] leading-none uppercase mb-0.5">KIT</div>
-                              )}
-                              <div className="text-xs text-stone-700 font-bold leading-tight text-center px-1 min-h-[32px] flex items-center justify-center">
+                              <div className="flex items-center gap-1 leading-none">
+                                <span className="text-xs font-black text-stone-900">{col.code}</span>
+                                {isKit && (
+                                  <span className="text-[9px] font-black text-[#C2714F] uppercase">KIT</span>
+                                )}
+                              </div>
+                              <div className="text-[10px] text-stone-600 font-semibold leading-tight text-center line-clamp-2">
                                 {col.name}
                               </div>
                             </div>
                           </th>
                         );
                       })}
+
                     </tr>
                   </thead>
                   <tbody className="bg-white">
