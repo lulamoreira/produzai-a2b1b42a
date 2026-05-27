@@ -470,7 +470,7 @@ export function useClientStores(clientId: string | undefined) {
       return await supabasePaginate<ClientStore>((from, to) =>
         supabase
           .from("client_stores")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("client_id", clientId)
           .order("name")
           .range(from, to) as any
@@ -563,7 +563,7 @@ export function useCampaignPieces(campaignId: string | undefined) {
       return await supabasePaginate<CampaignPiece>((from, to) =>
         supabase
           .from("campaign_pieces")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("campaign_id", campaignId)
           .eq("is_deleted", false)
           .order("display_order")
@@ -766,7 +766,7 @@ export function useCampaignStorePieces(campaignId: string | undefined) {
       return supabasePaginate<CampaignStorePiece>((from, to) =>
         supabase
           .from("campaign_store_pieces")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("campaign_id", campaignId)
           .order("id", { ascending: true })
           .range(from, to) as any
@@ -1201,7 +1201,7 @@ export function useCampaignStoreStatus(campaignId: string | undefined) {
       return await supabasePaginate<CampaignStoreStatus>((from, to) =>
         supabase
           .from("campaign_store_status")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("campaign_id", campaignId)
           .range(from, to) as any
       );

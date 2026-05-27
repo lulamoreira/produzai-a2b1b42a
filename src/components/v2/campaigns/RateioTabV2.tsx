@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback, useRef, useEffect, memo } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect, memo, useDeferredValue } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
@@ -226,6 +227,7 @@ export default function RateioTabV2({
   // Excel Paste state
   const [anchorCell, setAnchorCell] = useState<{ rowIndex: number; colIndex: number } | null>(null);
   const [storeSearch, setStoreSearch] = useState("");
+  const deferredStoreSearch = useDeferredValue(storeSearch);
   const [pieceFilters, setPieceFilters] = useState<PieceFilters>({ ...EMPTY_FILTERS });
   const [storeFilters, setStoreFilters] = useState<StoreFilters>({ ...EMPTY_STORE_FILTERS });
   const [filterLogicMode, setFilterLogicMode] = useState<FilterLogicMode>("and");
@@ -249,6 +251,7 @@ export default function RateioTabV2({
   const gridContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
+
 
   const scrollToFirst = () => {
     gridContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
@@ -344,7 +347,7 @@ export default function RateioTabV2({
   // Filter stores
   const filteredStores = useMemo(() => {
     let result = stores.filter(s => {
-      const q = storeSearch.toLowerCase().trim();
+      const q = deferredStoreSearch.toLowerCase().trim();
       const matchesSearch = !q || Object.values(s).some(val => 
         (typeof val === 'string' || typeof val === 'number') && 
         val.toString().toLowerCase().includes(q)
@@ -384,7 +387,16 @@ export default function RateioTabV2({
     });
 
     return result;
-  }, [stores, storeSearch, storeFilters, sortConfig, storeSortField]);
+  }, [stores, deferredStoreSearch, storeFilters, sortConfig, storeSortField]);
+
+  const rowVirtualizer = useVirtualizer({
+    count: filteredStores.length,
+    getScrollElement: () => gridContainerRef.current,
+    estimateSize: () => 48,
+    overscan: 10,
+  });
+
+  const virtualRows = rowVirtualizer.getVirtualItems();
 
   useEffect(() => {
     const container = gridContainerRef.current;
@@ -523,37 +535,53 @@ export default function RateioTabV2({
   // Pre-compute kit quantity per store from components (read-only display)
   const kitQtyMap = useMemo(() => {
     const map: Record<string, number> = {};
-    for (const kit of kits || []) {
-      const kpList = (activeKitPieces || []).filter((kp: any) => kp.kit_id === kit.id);
-      if (kpList.length === 0) continue;
+    if (!kits?.length || !activeKitPieces?.length) return map;
+
+    // Pre-group kit pieces by kit_id for faster lookup
+    const kitPiecesByKit = (activeKitPieces || []).reduce((acc: Record<string, any[]>, kp: any) => {
+      if (!acc[kp.kit_id]) acc[kp.kit_id] = [];
+      acc[kp.kit_id].push(kp);
+      return acc;
+    }, {});
+
+    for (const kit of kits) {
+      const kpList = kitPiecesByKit[kit.id];
+      if (!kpList || kpList.length === 0) continue;
+
       for (const s of filteredStores) {
-        const q = Math.min(
-          ...kpList.map((kp: any) => {
-            const baseQty = visibleQtyMap[`${s.id}-${kp.piece_id}`] || 0;
-            return Math.floor(baseQty / (kp.quantity || 1));
-          })
-        );
-        map[`${s.id}-${kit.id}`] = Number.isFinite(q) ? q : 0;
+        let minQty = Infinity;
+        for (const kp of kpList) {
+          const baseQty = visibleQtyMap[`${s.id}-${kp.piece_id}`] || 0;
+          const kitCompQty = Math.floor(baseQty / (kp.quantity || 1));
+          if (kitCompQty < minQty) minQty = kitCompQty;
+        }
+        map[`${s.id}-${kit.id}`] = minQty === Infinity ? 0 : minQty;
       }
     }
     return map;
   }, [kits, activeKitPieces, filteredStores, visibleQtyMap]);
 
-  // Compute column totals
+  // Compute column totals in a more optimized way
   const columnTotals = useMemo(() => {
     const totals: Record<string, number> = {};
+    if (!columns.length || !filteredStores.length) return totals;
+
+    // Initialize totals
     columns.forEach(col => {
-      let total = 0;
-      const isKit = col._type === "kit";
-      filteredStores.forEach(store => {
-        if (isKit) {
-          total += kitQtyMap[`${store.id}-${col.id}`] || 0;
-        } else {
-          total += visibleQtyMap[`${store.id}-${col.id}`] || 0;
-        }
-      });
-      totals[`${col._type}-${col.id}`] = total;
+      totals[`${col._type}-${col.id}`] = 0;
     });
+
+    // Single pass over stores and columns
+    for (const store of filteredStores) {
+      for (const col of columns) {
+        const key = `${col._type}-${col.id}`;
+        if (col._type === "kit") {
+          totals[key] += kitQtyMap[`${store.id}-${col.id}`] || 0;
+        } else {
+          totals[key] += visibleQtyMap[`${store.id}-${col.id}`] || 0;
+        }
+      }
+    }
     return totals;
   }, [columns, filteredStores, visibleQtyMap, kitQtyMap]);
 
@@ -1581,7 +1609,12 @@ export default function RateioTabV2({
                     </tr>
                   </thead>
                   <tbody className="bg-white">
-                    {filteredStores.map((store, sIdx) => {
+                    {virtualRows.length > 0 && virtualRows[0].start > 0 && (
+                      <tr><td colSpan={columns.length + 1} style={{ height: virtualRows[0].start }} /></tr>
+                    )}
+                    {virtualRows.map((virtualRow) => {
+                      const store = filteredStores[virtualRow.index];
+                      const sIdx = virtualRow.index;
                       const isEditingRow = editingCell?.storeId === store.id;
                       const isAnchorRow = anchorCell?.rowIndex === sIdx;
                       
@@ -1610,6 +1643,9 @@ export default function RateioTabV2({
                         />
                       );
                     })}
+                    {virtualRows.length > 0 && (rowVirtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end) > 0 && (
+                      <tr><td colSpan={columns.length + 1} style={{ height: rowVirtualizer.getTotalSize() - virtualRows[virtualRows.length - 1].end }} /></tr>
+                    )}
                   </tbody>
                   {/* Table Footer with Totals */}
                   <tfoot 
