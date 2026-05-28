@@ -136,7 +136,7 @@ Deno.serve(async (req) => {
     // 4. Mark invite as used
     await admin
       .from('invites')
-      .update({ used_by: user.id, used_at: new Date().toISOString() })
+      .update({ used_at: new Date().toISOString() })
       .eq('id', invite.id);
 
     // 5. Populate agency_id and client_id on the user's profile
