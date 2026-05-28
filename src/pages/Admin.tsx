@@ -299,8 +299,9 @@ const AdminApprovals = () => {
             <div key={u.user_id} className={cn("rounded-xl border p-3", bg)}>
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-foreground text-sm truncate">{capitalizeName(u.display_name) || "Sem nome"}</p>
-                  <p className="text-xs text-foreground/70">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
+                  <p className="font-bold text-stone-900 text-base truncate">{capitalizeName(u.display_name) || "Sem nome"}</p>
+                  <p className="text-xs text-stone-700 font-medium">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
+
 
                 </div>
                 <Badge variant="outline" className={cn(
