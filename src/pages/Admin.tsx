@@ -155,7 +155,7 @@ const AdminHome = () => {
   );
 };
 
-};
+
 
 const AdminUsers = () => {
   const { t } = useTranslation();
