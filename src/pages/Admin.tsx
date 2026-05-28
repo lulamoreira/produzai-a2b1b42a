@@ -282,7 +282,75 @@ const AdminApprovals = () => {
         </div>
       </div>
 
-      <div className="border rounded-xl overflow-hidden bg-card">
+      {/* Mobile: cards */}
+      <div className="md:hidden space-y-3">
+        {sorted.map((u) => {
+          const isCurrentUser = u.user_id === user?.id;
+          const bg =
+            u.approval_status === "pending"
+              ? "bg-amber-500/5 border-amber-500/20"
+              : u.approval_status === "rejected"
+              ? "bg-red-500/5 border-red-500/20"
+              : "bg-emerald-500/5 border-emerald-500/20";
+          return (
+            <div key={u.user_id} className={cn("rounded-xl border p-3", bg)}>
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">{capitalizeName(u.display_name) || "Sem nome"}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
+                </div>
+                <Badge variant="outline" className={cn(
+                  "shrink-0",
+                  u.approval_status === "approved" && "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
+                  u.approval_status === "pending" && "bg-amber-500/10 text-amber-700 border-amber-500/30",
+                  u.approval_status === "rejected" && "bg-red-500/10 text-red-700 border-red-500/30",
+                )}>
+                  {u.approval_status === "approved" ? "Aprovado" : u.approval_status === "pending" ? "Pendente" : "Rejeitado"}
+                </Badge>
+              </div>
+              {isCurrentUser ? (
+                <span className="text-xs text-muted-foreground italic">Você</span>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={u.approval_status}
+                    onValueChange={(val) => updateStatus.mutate({ userId: u.user_id, status: val as ApprovalStatus })}
+                  >
+                    <SelectTrigger className="flex-1 h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="approved">Aprovar</SelectItem>
+                      <SelectItem value="rejected">Rejeitar</SelectItem>
+                      <SelectItem value="pending">Pendente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {isAdmin && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-destructive">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+                          <AlertDialogDescription>Esta ação é permanente.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteUser.mutate(u.user_id)} className="bg-destructive">Excluir</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop/tablet: table */}
+      <div className="hidden md:block border rounded-xl overflow-hidden bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -361,6 +429,7 @@ const AdminApprovals = () => {
           </TableBody>
         </Table>
       </div>
+
     </div>
   );
 };
