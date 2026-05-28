@@ -257,9 +257,10 @@ const AdminApprovals = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold">Aprovação de Novos Usuários</h2>
-        <p className="text-sm text-muted-foreground">Gerencie as solicitações de acesso ao sistema.</p>
+        <h2 className="text-xl font-bold text-stone-900">Aprovação de Novos Usuários</h2>
+        <p className="text-sm text-stone-600">Gerencie as solicitações de acesso ao sistema.</p>
       </div>
+
 
       <div className="grid gap-4 md:grid-cols-3">
         <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700">
@@ -299,8 +300,9 @@ const AdminApprovals = () => {
             <div key={u.user_id} className={cn("rounded-xl border p-3", bg)}>
               <div className="flex items-start justify-between gap-2 mb-2">
                 <div className="min-w-0 flex-1">
-                  <p className="font-semibold text-foreground text-sm truncate">{capitalizeName(u.display_name) || "Sem nome"}</p>
-                  <p className="text-xs text-foreground/70">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
+                  <p className="font-bold text-stone-900 text-base truncate">{capitalizeName(u.display_name) || "Sem nome"}</p>
+                  <p className="text-xs text-stone-700 font-medium">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
+
 
                 </div>
                 <Badge variant="outline" className={cn(
