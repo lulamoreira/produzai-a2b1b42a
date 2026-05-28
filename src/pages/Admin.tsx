@@ -96,56 +96,57 @@ const AdminHome = () => {
   
   const pendingApprovals = approvals.filter(u => u.approval_status === "pending").length;
 
-  const stats = [
-    { label: "Usuários Ativos", value: users.length, icon: Users, color: "text-blue-600", bg: "bg-blue-100" },
+  const stats: Array<{ label: string; value: number; icon: typeof Users; color: string; bg: string; tab: string }> = [
+    { label: "Usuários Ativos", value: users.length, icon: Users, color: "text-blue-600", bg: "bg-blue-100", tab: "users" },
     { label: "Aprovações Pendentes", value: pendingApprovals, icon: UserCheck, color: "text-amber-600", bg: "bg-amber-100", tab: "approvals" },
-    { label: "Novas Mensagens", value: "80%", icon: MessageSquare, color: "text-emerald-600", bg: "bg-emerald-100", tab: "messages" },
   ];
 
-  const quickActions = ADMIN_MENU_ITEMS.filter(item => 
+  const quickActions = ADMIN_MENU_ITEMS.filter(item =>
     (item.access === "all" || isAdmin) && item.key !== "home"
-  ).slice(0, 6);
+  );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">Painel Administrativo</h2>
-        <p className="text-muted-foreground mt-1">Gerencie usuários, permissões e configurações globais do sistema.</p>
+        <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Painel Administrativo</h2>
+        <p className="text-sm md:text-base text-muted-foreground mt-1">Gerencie usuários, permissões e configurações globais do sistema.</p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 grid-cols-2">
         {stats.map((stat, i) => (
-          <div 
-            key={i} 
-            className="p-6 bg-card border rounded-xl shadow-sm cursor-pointer hover:border-primary transition-colors"
+          <button
+            key={i}
+            type="button"
             onClick={() => stat.tab && setSearchParams({ tab: stat.tab })}
+            className="p-4 md:p-6 bg-card border rounded-xl shadow-sm hover:border-primary hover:shadow-md transition-all text-left"
           >
-            <div className="flex items-center gap-4">
-              <div className={cn("p-3 rounded-lg", stat.bg)}>
-                <stat.icon className={cn("w-6 h-6", stat.color)} />
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className={cn("p-2 md:p-3 rounded-lg shrink-0", stat.bg)}>
+                <stat.icon className={cn("w-5 h-5 md:w-6 md:h-6", stat.color)} />
               </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">{stat.label}</p>
-                <p className="text-2xl font-bold">{stat.value}</p>
+              <div className="min-w-0">
+                <p className="text-[11px] md:text-sm font-medium text-muted-foreground leading-tight">{stat.label}</p>
+                <p className="text-xl md:text-2xl font-bold">{stat.value}</p>
               </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
+
       <div>
-        <h3 className="text-lg font-semibold mb-4">Acesso Rápido</h3>
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+        <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Acesso Rápido</h3>
+        <div className="grid gap-2 md:gap-4 grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
           {quickActions.map((item) => (
             <button
               key={item.key}
               onClick={() => setSearchParams({ tab: item.key })}
-              className="p-4 bg-card border rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-muted transition-colors text-center"
+              className="p-3 md:p-4 bg-card border rounded-xl flex flex-col items-center justify-center gap-2 hover:bg-muted hover:border-primary transition-colors text-center min-h-[88px]"
             >
               <div className="p-2 bg-primary/10 rounded-full">
-                <item.icon className="w-5 h-5 text-primary" />
+                <item.icon className="w-4 h-4 md:w-5 md:h-5 text-primary" />
               </div>
-              <span className="text-sm font-medium">{item.label}</span>
+              <span className="text-xs md:text-sm font-medium leading-tight">{item.label}</span>
             </button>
           ))}
         </div>
@@ -153,6 +154,8 @@ const AdminHome = () => {
     </div>
   );
 };
+
+
 
 const AdminUsers = () => {
   const { t } = useTranslation();
@@ -282,7 +285,75 @@ const AdminApprovals = () => {
         </div>
       </div>
 
-      <div className="border rounded-xl overflow-hidden bg-card">
+      {/* Mobile: cards */}
+      <div className="md:hidden space-y-3">
+        {sorted.map((u) => {
+          const isCurrentUser = u.user_id === user?.id;
+          const bg =
+            u.approval_status === "pending"
+              ? "bg-amber-500/5 border-amber-500/20"
+              : u.approval_status === "rejected"
+              ? "bg-red-500/5 border-red-500/20"
+              : "bg-emerald-500/5 border-emerald-500/20";
+          return (
+            <div key={u.user_id} className={cn("rounded-xl border p-3", bg)}>
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium text-sm truncate">{capitalizeName(u.display_name) || "Sem nome"}</p>
+                  <p className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
+                </div>
+                <Badge variant="outline" className={cn(
+                  "shrink-0",
+                  u.approval_status === "approved" && "bg-emerald-500/10 text-emerald-700 border-emerald-500/30",
+                  u.approval_status === "pending" && "bg-amber-500/10 text-amber-700 border-amber-500/30",
+                  u.approval_status === "rejected" && "bg-red-500/10 text-red-700 border-red-500/30",
+                )}>
+                  {u.approval_status === "approved" ? "Aprovado" : u.approval_status === "pending" ? "Pendente" : "Rejeitado"}
+                </Badge>
+              </div>
+              {isCurrentUser ? (
+                <span className="text-xs text-muted-foreground italic">Você</span>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={u.approval_status}
+                    onValueChange={(val) => updateStatus.mutate({ userId: u.user_id, status: val as ApprovalStatus })}
+                  >
+                    <SelectTrigger className="flex-1 h-9 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="approved">Aprovar</SelectItem>
+                      <SelectItem value="rejected">Rejeitar</SelectItem>
+                      <SelectItem value="pending">Pendente</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {isAdmin && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-destructive">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Excluir usuário?</AlertDialogTitle>
+                          <AlertDialogDescription>Esta ação é permanente.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteUser.mutate(u.user_id)} className="bg-destructive">Excluir</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop/tablet: table */}
+      <div className="hidden md:block border rounded-xl overflow-hidden bg-card">
         <Table>
           <TableHeader>
             <TableRow>
@@ -361,6 +432,7 @@ const AdminApprovals = () => {
           </TableBody>
         </Table>
       </div>
+
     </div>
   );
 };
