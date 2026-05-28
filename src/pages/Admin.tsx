@@ -96,10 +96,9 @@ const AdminHome = () => {
   
   const pendingApprovals = approvals.filter(u => u.approval_status === "pending").length;
 
-  const stats = [
+  const stats: Array<{ label: string; value: number; icon: typeof Users; color: string; bg: string; tab: string }> = [
     { label: "Usuários Ativos", value: users.length, icon: Users, color: "text-blue-600", bg: "bg-blue-100", tab: "users" },
     { label: "Aprovações Pendentes", value: pendingApprovals, icon: UserCheck, color: "text-amber-600", bg: "bg-amber-100", tab: "approvals" },
-    { label: "Mensagens", value: <MessageSquare className="w-5 h-5" />, icon: MessageSquare, color: "text-emerald-600", bg: "bg-emerald-100", tab: "messages" },
   ];
 
   const quickActions = ADMIN_MENU_ITEMS.filter(item =>
@@ -113,26 +112,27 @@ const AdminHome = () => {
         <p className="text-sm md:text-base text-muted-foreground mt-1">Gerencie usuários, permissões e configurações globais do sistema.</p>
       </div>
 
-      <div className="grid gap-3 grid-cols-3">
+      <div className="grid gap-3 grid-cols-2">
         {stats.map((stat, i) => (
           <button
             key={i}
             type="button"
             onClick={() => stat.tab && setSearchParams({ tab: stat.tab })}
-            className="p-3 md:p-6 bg-card border rounded-xl shadow-sm hover:border-primary hover:shadow-md transition-all text-left"
+            className="p-4 md:p-6 bg-card border rounded-xl shadow-sm hover:border-primary hover:shadow-md transition-all text-left"
           >
-            <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-4">
-              <div className={cn("p-2 md:p-3 rounded-lg w-fit", stat.bg)}>
-                <stat.icon className={cn("w-4 h-4 md:w-6 md:h-6", stat.color)} />
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className={cn("p-2 md:p-3 rounded-lg shrink-0", stat.bg)}>
+                <stat.icon className={cn("w-5 h-5 md:w-6 md:h-6", stat.color)} />
               </div>
               <div className="min-w-0">
-                <p className="text-[10px] md:text-sm font-medium text-muted-foreground uppercase md:normal-case tracking-wider md:tracking-normal leading-tight">{stat.label}</p>
-                <p className="text-xl md:text-2xl font-bold">{typeof stat.value === "number" ? stat.value : stat.label === "Mensagens" ? "" : stat.value}</p>
+                <p className="text-[11px] md:text-sm font-medium text-muted-foreground leading-tight">{stat.label}</p>
+                <p className="text-xl md:text-2xl font-bold">{stat.value}</p>
               </div>
             </div>
           </button>
         ))}
       </div>
+
 
       <div>
         <h3 className="text-base md:text-lg font-semibold mb-3 md:mb-4">Acesso Rápido</h3>
