@@ -1,70 +1,51 @@
 project_id = "dryngkjeerlssebnpymb"
 
-[functions.cnpjlookup]
-verify_jwt = false
-
-[functions.backup-restore]
-verify_jwt = false
-
-[functions.campaign-backup]
-verify_jwt = false
-
-[functions.cep-lookup]
-verify_jwt = false
-
-[functions.delete-user]
-verify_jwt = false
-
-[functions.notify-occurrence]
-verify_jwt = false
-
-[functions.matrix-ai-fill]
-verify_jwt = false
-
-[functions.process-email-queue]
-verify_jwt = true
-
-[functions.send-transactional-email]
-verify_jwt = false
-
-[functions.preview-transactional-email]
-verify_jwt = false
-
-[functions.render-transactional-email]
-verify_jwt = false
-
-[functions.handle-email-unsubscribe]
-verify_jwt = false
-
-[functions.handle-email-suppression]
-verify_jwt = false
-
-[functions.installer-send-message]
-verify_jwt = false
-
-[functions.installer-read-messages]
-verify_jwt = false
-
-[functions.duplicate-kit]
-verify_jwt = false
-
-[functions.validate-store-token]
-verify_jwt = false
-
-[functions.ai-field-mapping]
-verify_jwt = false
-
-[functions.validate-install-code]
-verify_jwt = false
-
-[functions.upload-installation-photo]
-verify_jwt = false
-
-[functions.complete-installation]
-verify_jwt = false
-
-[functions.validate-team-code]
-verify_jwt = false
-
-[functions.delete-installation-photo]
-verify_jwt = false
+[functions]
+  [functions.ai-field-mapping]
+    verify_jwt = false
+  [functions.auth-email-hook]
+    verify_jwt = false
+  [functions.backup-restore]
+    verify_jwt = false
+  [functions.campaign-backup]
+    verify_jwt = false
+  [functions.cep-lookup]
+    verify_jwt = false
+  [functions.cnpjlookup]
+    verify_jwt = false
+  [functions.complete-installation]
+    verify_jwt = false
+  [functions.delete-installation-photo]
+    verify_jwt = false
+  [functions.delete-user]
+    verify_jwt = false
+  [functions.duplicate-kit]
+    verify_jwt = false
+  [functions.handle-email-suppression]
+    verify_jwt = false
+  [functions.handle-email-unsubscribe]
+    verify_jwt = false
+  [functions.installer-read-messages]
+    verify_jwt = false
+  [functions.installer-send-message]
+    verify_jwt = false
+  [functions.matrix-ai-fill]
+    verify_jwt = false
+  [functions.notify-occurrence]
+    verify_jwt = false
+  [functions.preview-transactional-email]
+    verify_jwt = false
+  [functions.process-email-queue]
+    verify_jwt = true
+  [functions.render-transactional-email]
+    verify_jwt = false
+  [functions.send-transactional-email]
+    verify_jwt = false
+  [functions.upload-installation-photo]
+    verify_jwt = false
+  [functions.validate-install-code]
+    verify_jwt = false
+  [functions.validate-store-token]
+    verify_jwt = false
+  [functions.validate-team-code]
+    verify_jwt = false
