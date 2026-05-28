@@ -45,12 +45,13 @@ Deno.serve(async (req) => {
     const { data: invite, error: invErr } = await admin
       .from('invites')
       .select('*')
+    // Find the invite
+    const { data: invite, error: invErr } = await admin
+      .from('invites')
+      .select('*')
       .eq('token', token)
-      .is('used_by', null)
+      .is('used_at', null)
       .single();
-
-    if (invErr || !invite) {
-      return new Response(JSON.stringify({ error: 'Invalid or already used invite' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
