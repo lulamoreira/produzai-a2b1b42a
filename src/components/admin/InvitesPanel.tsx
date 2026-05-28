@@ -173,9 +173,9 @@ export function InvitesPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <h2 className="text-xl font-semibold text-stone-900">{t("invite.panelTitle")}</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <InviteForm />
           <BatchInviteForm />
         </div>
@@ -189,8 +189,52 @@ export function InvitesPanel() {
           <InviteForm />
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-stone-200 overflow-hidden shadow-sm">
-          <table className="w-full text-left">
+        <>
+          {/* Mobile: cards */}
+          <div className="space-y-3 md:hidden">
+            {invites.map((invite: any) => {
+              const isPending = !invite.used_at && new Date(invite.expires_at) > new Date();
+              return (
+                <div key={invite.id} className="bg-white rounded-xl border border-stone-200 shadow-sm p-4 space-y-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium text-stone-900 truncate">{invite.name}</div>
+                      <div className="text-stone-400 text-xs truncate">{invite.email}</div>
+                    </div>
+                    {getStatusBadge(invite)}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-xs">
+                    {getRoleBadge(invite.role)}
+                    {invite.agency?.name && (
+                      <span className="text-stone-500 truncate">{invite.agency.name}</span>
+                    )}
+                  </div>
+                  <div className="flex items-center justify-between text-[11px] text-stone-400">
+                    <span>Enviado: {formatters.dateShort(invite.created_at)}</span>
+                    <span>Válido até: {formatters.dateShort(invite.expires_at)}</span>
+                  </div>
+                  {isPending && (
+                    <div className="flex justify-end gap-1 pt-1 border-t border-stone-100">
+                      <Button variant="ghost" size="icon" onClick={() => handleResend(invite)} className="h-9 w-9 text-stone-500">
+                        <RefreshCcw size={16} />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleCopyLink(invite.token)} className="h-9 w-9 text-stone-500">
+                        <Copy size={16} />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleCancel(invite.id)} className="h-9 w-9 text-red-500">
+                        <Trash2 size={16} />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop / tablet: table */}
+          <div className="hidden md:block bg-white rounded-xl border border-stone-200 overflow-hidden shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
             <thead className="bg-stone-50 border-b border-stone-200">
               <tr>
                 <th className="px-6 py-4 text-xs font-bold text-stone-400 uppercase tracking-wider">Convidado</th>
@@ -293,9 +337,13 @@ export function InvitesPanel() {
                 );
               })}
             </tbody>
-          </table>
-        </div>
+              </table>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
+}
+
 }
