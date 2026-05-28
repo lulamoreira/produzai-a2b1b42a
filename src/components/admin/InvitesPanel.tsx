@@ -345,12 +345,22 @@ export function InvitesPanel() {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            onClick={() => handleResend(invite)}
-                            title={t("invite.resend")}
+                            onClick={() => handleRegenerate(invite)}
+                            title="Gerar novo link"
                             className="h-8 w-8 text-stone-400 hover:text-[#C2714F]"
                           >
                             <RefreshCcw size={16} />
                           </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleResend(invite)}
+                            title={t("invite.resend")}
+                            className="h-8 w-8 text-stone-400 hover:text-[#C2714F]"
+                          >
+                            <Mail size={16} />
+                          </Button>
+
                           <Button 
                             variant="ghost" 
                             size="icon" 
