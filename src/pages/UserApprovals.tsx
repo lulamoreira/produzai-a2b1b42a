@@ -152,101 +152,179 @@ const UserApprovals = () => {
         ) : sorted.length === 0 ? (
           <p className="text-muted-foreground text-center py-12">Nenhum usuário encontrado.</p>
         ) : (
-          <div className="border border-border rounded-lg overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead>Cadastro</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sorted.map((u) => {
-                  const cfg = statusConfig[u.approval_status];
-                  const isCurrentUser = u.user_id === user?.id;
-                  return (
-                    <TableRow
-                      key={u.user_id}
-                      className={
-                        u.approval_status === "pending"
-                          ? "bg-yellow-500/5"
-                          : u.approval_status === "rejected"
-                          ? "bg-red-500/5"
-                          : "bg-green-500/5"
-                      }
-                    >
-                      <TableCell>
-                        <p className="font-medium text-foreground text-sm">{capitalizeName(u.display_name) || "Sem nome"}</p>
-                        <p className="text-xs text-muted-foreground">{u.user_id.slice(0, 8)}…</p>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {new Date(u.created_at).toLocaleDateString("pt-BR")}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={`gap-1 ${cfg.color}`}>
-                          {cfg.icon} {cfg.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          {isCurrentUser ? (
-                            <span className="text-xs text-muted-foreground italic">Você</span>
-                          ) : (
-                            <>
-                              <Select
-                                value={u.approval_status}
-                                onValueChange={(val) =>
-                                  updateStatus.mutate({ userId: u.user_id, status: val as ApprovalStatus })
-                                }
-                              >
-                                <SelectTrigger className="w-full sm:w-[140px] h-8 text-xs">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="approved">✅ Aprovar</SelectItem>
-                                  <SelectItem value="rejected">❌ Rejeitar</SelectItem>
-                                  <SelectItem value="pending">⏳ Pendente</SelectItem>
-                                </SelectContent>
-                              </Select>
-                              {isAdmin && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <Trash2 className="w-4 h-4 text-destructive" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Excluir usuário "{u.display_name || "Sem nome"}"?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Esta ação é permanente. O usuário e todos os seus acessos serão removidos do sistema.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => deleteUser.mutate(u.user_id)}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                      SIM, excluir
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+          <>
+            {/* Mobile: cards */}
+            <div className="md:hidden space-y-3">
+              {sorted.map((u) => {
+                const cfg = statusConfig[u.approval_status];
+                const isCurrentUser = u.user_id === user?.id;
+                const bg =
+                  u.approval_status === "pending"
+                    ? "bg-yellow-500/5 border-yellow-500/20"
+                    : u.approval_status === "rejected"
+                    ? "bg-red-500/5 border-red-500/20"
+                    : "bg-green-500/5 border-green-500/20";
+                return (
+                  <div key={u.user_id} className={`rounded-lg border p-3 ${bg}`}>
+                    <div className="flex items-start justify-between gap-2 mb-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-foreground text-sm truncate">{capitalizeName(u.display_name) || "Sem nome"}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
+                      </div>
+                      <Badge variant="outline" className={`gap-1 shrink-0 ${cfg.color}`}>
+                        {cfg.icon} {cfg.label}
+                      </Badge>
+                    </div>
+                    {isCurrentUser ? (
+                      <span className="text-xs text-muted-foreground italic">Você</span>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Select
+                          value={u.approval_status}
+                          onValueChange={(val) =>
+                            updateStatus.mutate({ userId: u.user_id, status: val as ApprovalStatus })
+                          }
+                        >
+                          <SelectTrigger className="flex-1 h-9 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="approved">✅ Aprovar</SelectItem>
+                            <SelectItem value="rejected">❌ Rejeitar</SelectItem>
+                            <SelectItem value="pending">⏳ Pendente</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {isAdmin && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0">
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir usuário "{u.display_name || "Sem nome"}"?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Esta ação é permanente. O usuário e todos os seus acessos serão removidos do sistema.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteUser.mutate(u.user_id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  SIM, excluir
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Desktop/tablet: table */}
+            <div className="hidden md:block border border-border rounded-lg overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Usuário</TableHead>
+                    <TableHead>Cadastro</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sorted.map((u) => {
+                    const cfg = statusConfig[u.approval_status];
+                    const isCurrentUser = u.user_id === user?.id;
+                    return (
+                      <TableRow
+                        key={u.user_id}
+                        className={
+                          u.approval_status === "pending"
+                            ? "bg-yellow-500/5"
+                            : u.approval_status === "rejected"
+                            ? "bg-red-500/5"
+                            : "bg-green-500/5"
+                        }
+                      >
+                        <TableCell>
+                          <p className="font-medium text-foreground text-sm">{capitalizeName(u.display_name) || "Sem nome"}</p>
+                          <p className="text-xs text-muted-foreground">{u.user_id.slice(0, 8)}…</p>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {new Date(u.created_at).toLocaleDateString("pt-BR")}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={`gap-1 ${cfg.color}`}>
+                            {cfg.icon} {cfg.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            {isCurrentUser ? (
+                              <span className="text-xs text-muted-foreground italic">Você</span>
+                            ) : (
+                              <>
+                                <Select
+                                  value={u.approval_status}
+                                  onValueChange={(val) =>
+                                    updateStatus.mutate({ userId: u.user_id, status: val as ApprovalStatus })
+                                  }
+                                >
+                                  <SelectTrigger className="w-full sm:w-[140px] h-8 text-xs">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="approved">✅ Aprovar</SelectItem>
+                                    <SelectItem value="rejected">❌ Rejeitar</SelectItem>
+                                    <SelectItem value="pending">⏳ Pendente</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                {isAdmin && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                      <Trash2 className="w-4 h-4 text-destructive" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Excluir usuário "{u.display_name || "Sem nome"}"?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Esta ação é permanente. O usuário e todos os seus acessos serão removidos do sistema.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => deleteUser.mutate(u.user_id)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      >
+                                        SIM, excluir
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
+
       </div>
     </AppLayout>
   );
