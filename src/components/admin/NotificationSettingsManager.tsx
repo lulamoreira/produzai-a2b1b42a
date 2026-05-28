@@ -100,7 +100,57 @@ export default function NotificationSettingsManager() {
         Configure quem recebe cada tipo de notificação. Alterações têm efeito imediato.
       </p>
 
-      <div className="overflow-x-auto">
+      {/* Mobile: cards por evento */}
+      <div className="md:hidden space-y-3">
+        {EVENTOS.map((evento) => (
+          <div key={evento.type} className="rounded-xl border bg-card p-3">
+            <p className="font-medium text-sm mb-3">{evento.label}</p>
+
+            {roleColunas.length > 0 && (
+              <div className="space-y-2 mb-3">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Por papel</p>
+                {roleColunas.map((col) => {
+                  const setting = settings.find(
+                    (s) => s.event_type === evento.type && s.role_scope === col.scope
+                  );
+                  return (
+                    <div key={col.scope} className="flex items-center justify-between text-sm">
+                      <span>{col.label}</span>
+                      <Switch
+                        checked={setting?.enabled ?? false}
+                        onCheckedChange={(val) => updateSetting(evento.type, col.scope, val)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {categories.length > 0 && (
+              <div className="space-y-2 pt-3 border-t">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Por categoria</p>
+                {categories.map((cat) => {
+                  const setting = settings.find(
+                    (s) => s.event_type === evento.type && s.category_id === cat.id
+                  );
+                  return (
+                    <div key={cat.id} className="flex items-center justify-between text-sm">
+                      <span className="truncate pr-2">{cat.name}</span>
+                      <Switch
+                        checked={setting?.enabled ?? false}
+                        onCheckedChange={(val) => updateCategorySetting(evento.type, cat.id, val)}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop/tablet: tabela */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b">
@@ -121,7 +171,6 @@ export default function NotificationSettingsManager() {
             {EVENTOS.map((evento) => (
               <tr key={evento.type} className="border-b border-border/40 hover:bg-muted/30">
                 <td className="py-3 pr-4 font-medium">{evento.label}</td>
-                {/* Role-based columns */}
                 {roleColunas.map((col) => {
                   const setting = settings.find(
                     (s) => s.event_type === evento.type && s.role_scope === col.scope
@@ -135,7 +184,6 @@ export default function NotificationSettingsManager() {
                     </td>
                   );
                 })}
-                {/* Category-based columns */}
                 {categories.map((cat) => {
                   const setting = settings.find(
                     (s) => s.event_type === evento.type && s.category_id === cat.id
@@ -163,3 +211,4 @@ export default function NotificationSettingsManager() {
     </div>
   );
 }
+
