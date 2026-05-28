@@ -248,14 +248,20 @@ export function InvitesPanel() {
                           <Copy size={14} className="mr-1" /> Copiar
                         </Button>
                       </div>
-                      <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" onClick={() => handleResend(invite)} className="h-9 w-9 text-stone-500" title={t("invite.resend")}>
-                          <RefreshCcw size={16} />
+                      <div className="flex justify-between items-center gap-1">
+                        <Button variant="outline" size="sm" onClick={() => handleRegenerate(invite)} className="h-8 text-xs text-[#C2714F] border-[#C2714F]/30 hover:bg-[#FDF0EB]">
+                          <RefreshCcw size={13} className="mr-1" /> Gerar novo link
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleCancel(invite.id)} className="h-9 w-9 text-red-500" title={t("invite.cancel")}>
-                          <Trash2 size={16} />
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button variant="ghost" size="icon" onClick={() => handleResend(invite)} className="h-9 w-9 text-stone-500" title={t("invite.resend")}>
+                            <Mail size={16} />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleCancel(invite.id)} className="h-9 w-9 text-red-500" title={t("invite.cancel")}>
+                            <Trash2 size={16} />
+                          </Button>
+                        </div>
                       </div>
+
                     </div>
                   )}
 
