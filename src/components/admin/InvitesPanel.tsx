@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -43,8 +43,28 @@ export function InvitesPanel() {
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data ?? [];
-    }
+    },
+    refetchOnWindowFocus: true,
+    refetchOnMount: 'always',
+    staleTime: 0,
   });
+
+  // Realtime: refresh the panel the moment any invite is accepted/changed
+  useEffect(() => {
+    const channel = supabase
+      .channel('invites-panel-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'invites' },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['invites'] });
+        }
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const { data: categories = [] } = usePermissionCategories();
   const { data: allCampaigns = [] } = useQuery({
