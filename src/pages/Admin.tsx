@@ -257,9 +257,10 @@ const AdminApprovals = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-bold">Aprovação de Novos Usuários</h2>
-        <p className="text-sm text-muted-foreground">Gerencie as solicitações de acesso ao sistema.</p>
+        <h2 className="text-xl font-bold text-stone-900">Aprovação de Novos Usuários</h2>
+        <p className="text-sm text-stone-600">Gerencie as solicitações de acesso ao sistema.</p>
       </div>
+
 
       <div className="grid gap-4 md:grid-cols-3">
         <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-700">
