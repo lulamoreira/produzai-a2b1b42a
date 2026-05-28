@@ -163,6 +163,27 @@ export function InvitesPanel() {
     }
   };
 
+  const handleRegenerate = async (invite: any) => {
+    if (!window.confirm("Gerar um novo link? O link anterior deixará de funcionar.")) return;
+    try {
+      const newToken = (crypto as any).randomUUID();
+      const newExpiry = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString();
+      const { error } = await supabase
+        .from('invites')
+        .update({ token: newToken, expires_at: newExpiry, used_at: null })
+        .eq('id', invite.id);
+      if (error) throw error;
+      const url = `${window.location.origin}/join/${newToken}`;
+      await navigator.clipboard.writeText(url).catch(() => {});
+      toast.success("Novo link gerado e copiado");
+      queryClient.invalidateQueries({ queryKey: ['invites'] });
+    } catch (err) {
+      console.error(err);
+      toast.error(t("common.error"));
+    }
+  };
+
+
   if (isLoading) {
     return (
       <div className="flex justify-center py-12">
