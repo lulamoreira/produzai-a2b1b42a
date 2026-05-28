@@ -88,7 +88,14 @@ const JoinPage = () => {
       
       if (invokeError) console.error("Error invoking confirm-invite:", invokeError);
 
-      // 3. Insert profile
+      // 2b. Sign in to establish a session so RLS-protected inserts below work
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: invite.email,
+        password,
+      });
+      if (signInError) throw signInError;
+
+
       const { error: profileError } = await (supabase.from('profiles') as any).insert({
         user_id: authData.user.id,
         display_name: name || invite.name,
