@@ -214,18 +214,30 @@ export function InvitesPanel() {
                     <span>Válido até: {formatters.dateShort(invite.expires_at)}</span>
                   </div>
                   {isPending && (
-                    <div className="flex justify-end gap-1 pt-1 border-t border-stone-100">
-                      <Button variant="ghost" size="icon" onClick={() => handleResend(invite)} className="h-9 w-9 text-stone-500">
-                        <RefreshCcw size={16} />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleCopyLink(invite.token)} className="h-9 w-9 text-stone-500">
-                        <Copy size={16} />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleCancel(invite.id)} className="h-9 w-9 text-red-500">
-                        <Trash2 size={16} />
-                      </Button>
+                    <div className="space-y-2 pt-2 border-t border-stone-100">
+                      <div className="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Link do convite</div>
+                      <div className="flex items-center gap-2">
+                        <input
+                          readOnly
+                          value={`${window.location.origin}/join/${invite.token}`}
+                          onFocus={(e) => e.currentTarget.select()}
+                          className="flex-1 min-w-0 text-[11px] bg-stone-50 border border-stone-200 rounded-md px-2 py-1.5 text-stone-700 font-mono truncate"
+                        />
+                        <Button variant="outline" size="sm" onClick={() => handleCopyLink(invite.token)} className="h-8 px-2 shrink-0">
+                          <Copy size={14} className="mr-1" /> Copiar
+                        </Button>
+                      </div>
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleResend(invite)} className="h-9 w-9 text-stone-500" title={t("invite.resend")}>
+                          <RefreshCcw size={16} />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleCancel(invite.id)} className="h-9 w-9 text-red-500" title={t("invite.cancel")}>
+                          <Trash2 size={16} />
+                        </Button>
+                      </div>
                     </div>
                   )}
+
                 </div>
               );
             })}
