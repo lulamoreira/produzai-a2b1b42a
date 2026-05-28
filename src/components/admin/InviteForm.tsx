@@ -196,7 +196,11 @@ export function InviteForm() {
           {t("invite.newInvite")}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[550px] max-h-[90dvh] overflow-y-auto p-0">
+        <div className="p-6">
+        <DialogHeader>
+          <DialogTitle>Novo Convite</DialogTitle>
+        </DialogHeader>
         <DialogHeader>
           <DialogTitle>Novo Convite</DialogTitle>
         </DialogHeader>
