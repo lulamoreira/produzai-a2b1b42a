@@ -35,7 +35,6 @@ export function InvitesPanel() {
   const queryClient = useQueryClient();
 
   const { data: invites = [], isLoading } = useQuery({
-  const { data: invites = [], isLoading } = useQuery({
     queryKey: ['invites'],
     queryFn: async () => {
       const { data, error } = await supabase
