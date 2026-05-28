@@ -168,8 +168,9 @@ const UserApprovals = () => {
                   <div key={u.user_id} className={`rounded-lg border p-3 ${bg}`}>
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-foreground text-sm truncate">{capitalizeName(u.display_name) || "Sem nome"}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
+                        <p className="font-semibold text-foreground text-sm truncate">{capitalizeName(u.display_name) || "Sem nome"}</p>
+                        <p className="text-xs text-foreground/70">{new Date(u.created_at).toLocaleDateString("pt-BR")}</p>
+
                       </div>
                       <Badge variant="outline" className={`gap-1 shrink-0 ${cfg.color}`}>
                         {cfg.icon} {cfg.label}
