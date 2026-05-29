@@ -597,9 +597,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
       className="grid grid-cols-2 gap-2"
       ref={(el) => {
         if (el) {
-          requestAnimationFrame(() => {
-            el.scrollIntoView({ block: "nearest", behavior: "smooth" });
-          });
+          el.scrollIntoView({ block: "nearest", behavior: "auto" });
         }
       }}
     >
