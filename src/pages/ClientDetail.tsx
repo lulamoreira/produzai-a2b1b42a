@@ -1,6 +1,9 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { useMyAccessibleClientIds } from "@/hooks/useMyAccessibleClientIds";
+import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
 import { supabase } from "@/integrations/supabase/client";
 import {
   useClient, useCampaigns, useAddCampaign, useDeleteCampaign, useUpdateCampaign, useReorderCampaigns,
@@ -321,6 +324,21 @@ const ClientDetail = () => {
   const { agencyId, clientId } = useParams<{ agencyId: string; clientId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+  const { clientIds, isLoading: loadingAccess } = useMyAccessibleClientIds();
+  const { data: allCampaignAccess = [] } = useUserCampaignAccess();
+
+  const canViewClient = clientIds === null || (clientId ? clientIds.includes(clientId) : false);
+
+  const myCampaignIds = allCampaignAccess
+    .filter(a => a.user_id === user?.id && !a.suspended)
+    .map(a => a.campaign_id);
+
+  useEffect(() => {
+    if (loadingAccess) return;
+    if (!canViewClient) navigate('/');
+  }, [loadingAccess, canViewClient, navigate]);
+
   // Permission checks replace isAdmin for granular access control
   const { hasPermission: canEditCampaigns } = useClientPermission(clientId, "can_edit_campaigns");
   const { hasPermission: canDeleteCampaigns } = useClientPermission(clientId, "can_delete_campaigns");
