@@ -1,6 +1,9 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
+import { useMyAccessibleClientIds } from "@/hooks/useMyAccessibleClientIds";
+import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
 import { supabase } from "@/integrations/supabase/client";
 import {
   useClient, useCampaigns, useAddCampaign, useDeleteCampaign, useUpdateCampaign, useReorderCampaigns,
@@ -321,6 +324,21 @@ const ClientDetail = () => {
   const { agencyId, clientId } = useParams<{ agencyId: string; clientId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
+  const { clientIds, isLoading: loadingAccess } = useMyAccessibleClientIds();
+  const { data: allCampaignAccess = [] } = useUserCampaignAccess();
+
+  const canViewClient = clientIds === null || (clientId ? clientIds.includes(clientId) : false);
+
+  const myCampaignIds = allCampaignAccess
+    .filter(a => a.user_id === user?.id && !a.suspended)
+    .map(a => a.campaign_id);
+
+  useEffect(() => {
+    if (loadingAccess) return;
+    if (!canViewClient) navigate('/');
+  }, [loadingAccess, canViewClient, navigate]);
+
   // Permission checks replace isAdmin for granular access control
   const { hasPermission: canEditCampaigns } = useClientPermission(clientId, "can_edit_campaigns");
   const { hasPermission: canDeleteCampaigns } = useClientPermission(clientId, "can_delete_campaigns");
@@ -331,6 +349,11 @@ const ClientDetail = () => {
   useLanguage((client as any)?.language);
   const { t } = useTranslation();
   const { data: campaigns = [], isLoading: loadingCampaigns } = useCampaigns(clientId);
+  
+  const displayCampaigns = clientIds === null
+    ? campaigns
+    : campaigns.filter(c => myCampaignIds.includes(c.id) ||
+        (clientIds?.includes(clientId!) && !myCampaignIds.length));
   const { data: favoriteIds } = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
 
@@ -514,12 +537,18 @@ const ClientDetail = () => {
   const handleCampaignDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = campaigns.findIndex((c) => c.id === active.id);
-    const newIndex = campaigns.findIndex((c) => c.id === over.id);
+    
+    const displayCampaigns = clientIds === null
+      ? campaigns
+      : campaigns.filter(c => myCampaignIds.includes(c.id) ||
+          (clientIds?.includes(clientId!) && !myCampaignIds.length));
+
+    const oldIndex = displayCampaigns.findIndex((c) => c.id === active.id);
+    const newIndex = displayCampaigns.findIndex((c) => c.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
-    const reordered = arrayMove(campaigns, oldIndex, newIndex);
+    const reordered = arrayMove(displayCampaigns, oldIndex, newIndex);
     reorderCampaigns.mutate(reordered.map((c, i) => ({ id: c.id, display_order: i })));
-  }, [campaigns, reorderCampaigns]);
+  }, [campaigns, displayCampaigns, reorderCampaigns]);
 
   const handleAddCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1060,7 +1089,9 @@ const ClientDetail = () => {
               <Megaphone className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <p className="text-xl sm:text-2xl font-bold text-foreground">{campaigns.length}</p>
+              <p className="text-xl sm:text-2xl font-bold text-foreground">
+                {displayCampaigns.length}
+              </p>
               <p className="text-[11px] text-muted-foreground">{t("clientDashboard.campaignCount")}</p>
             </div>
           </div>
@@ -1094,80 +1125,82 @@ const ClientDetail = () => {
         </div>
 
         {/* ─── Campaigns View (default) ─── */}
-        {!new URLSearchParams(location.search).has("tab") && (
-          <>
-            <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
-              <DialogContent>
-                <DialogHeader><DialogTitle>{t("clientDashboard.newCampaign")}</DialogTitle></DialogHeader>
-                <form onSubmit={handleAddCampaign} className="space-y-4">
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("clientDashboard.campaignNameLabel")} *</label>
-                    <Input 
-                      value={campaignName} 
-                      onChange={(e) => setCampaignName(e.target.value)} 
-                      onBlur={(e) => setCampaignName(capitalizeName(e.target.value))}
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-2 block">{t("clientDashboard.campaignColorLabel")}</label>
-                    <div className="grid grid-cols-8 gap-1.5">
-                      {CAMPAIGN_COLORS.map((c) => (
-                        <button
-                          type="button"
-                          key={c}
-                          className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${campaignColor === c ? "border-foreground scale-110 ring-2 ring-primary/30" : "border-transparent"}`}
-                          style={{ backgroundColor: c }}
-                          onClick={() => setCampaignColor(c)}
-                        />
-                      ))}
+        {!new URLSearchParams(location.search).has("tab") && (() => {
+          return (
+            <>
+              <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
+                <DialogContent>
+                  <DialogHeader><DialogTitle>{t("clientDashboard.newCampaign")}</DialogTitle></DialogHeader>
+                  <form onSubmit={handleAddCampaign} className="space-y-4">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("clientDashboard.campaignNameLabel")} *</label>
+                      <Input 
+                        value={campaignName} 
+                        onChange={(e) => setCampaignName(e.target.value)} 
+                        onBlur={(e) => setCampaignName(capitalizeName(e.target.value))}
+                        required 
+                      />
                     </div>
-                  </div>
-                  <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addCampaign.isPending}>{t("clientDashboard.create")}</Button>
-                </form>
-              </DialogContent>
-            </Dialog>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-2 block">{t("clientDashboard.campaignColorLabel")}</label>
+                      <div className="grid grid-cols-8 gap-1.5">
+                        {CAMPAIGN_COLORS.map((c) => (
+                          <button
+                            type="button"
+                            key={c}
+                            className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${campaignColor === c ? "border-foreground scale-110 ring-2 ring-primary/30" : "border-transparent"}`}
+                            style={{ backgroundColor: c }}
+                            onClick={() => setCampaignColor(c)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addCampaign.isPending}>{t("clientDashboard.create")}</Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
 
-            {loadingCampaigns ? (
-              <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
-            ) : campaigns.length === 0 ? (
-              <div className="bg-white rounded-xl border border-stone-200 border-dashed mt-6">
-                <EmptyStateV2
-                  icon={Megaphone}
-                  title={t("campaigns.emptyTitle")}
-                  description={t("campaigns.emptyDescription")}
-                  action={canEditCampaigns ? { 
-                    label: t("campaigns.newCampaign"), 
-                    onClick: () => setCampaignDialogOpen(true) 
-                  } : undefined}
-                />
-              </div>
-            ) : (
-              <div className="mt-6">
-                <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
-                  <SortableContext items={campaigns.map((c) => c.id)} strategy={rectSortingStrategy}>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {campaigns.map((c) => (
-                        <SortableCampaignCard
-                          key={c.id}
-                          campaign={c}
-                          canDelete={canDeleteCampaigns}
-                          canEdit={canEditCampaigns}
-                          onNavigate={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
-                          onDelete={() => deleteCampaign.mutate(c.id)}
-                          onColorChange={(color) => updateCampaign.mutate({ id: c.id, color })}
-                          isFavorited={favoriteIds?.has(c.id) ?? false}
-                          onToggleFavorite={() => toggleFavorite.mutate({ campaignId: c.id, isFavorited: favoriteIds?.has(c.id) ?? false })}
-                          showFavorite={true}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-              </div>
-            )}
-          </>
-        )}
+              {loadingCampaigns ? (
+                <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
+              ) : campaigns.length === 0 ? (
+                <div className="bg-white rounded-xl border border-stone-200 border-dashed mt-6">
+                  <EmptyStateV2
+                    icon={Megaphone}
+                    title={t("campaigns.emptyTitle")}
+                    description={t("campaigns.emptyDescription")}
+                    action={canEditCampaigns ? { 
+                      label: t("campaigns.newCampaign"), 
+                      onClick: () => setCampaignDialogOpen(true) 
+                    } : undefined}
+                  />
+                </div>
+              ) : (
+                <div className="mt-6">
+                  <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
+                    <SortableContext items={displayCampaigns.map((c) => c.id)} strategy={rectSortingStrategy}>
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {displayCampaigns.map((c) => (
+                          <SortableCampaignCard
+                            key={c.id}
+                            campaign={c}
+                            canDelete={canDeleteCampaigns}
+                            canEdit={canEditCampaigns}
+                            onNavigate={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
+                            onDelete={() => deleteCampaign.mutate(c.id)}
+                            onColorChange={(color) => updateCampaign.mutate({ id: c.id, color })}
+                            isFavorited={favoriteIds?.has(c.id) ?? false}
+                            onToggleFavorite={() => toggleFavorite.mutate({ campaignId: c.id, isFavorited: favoriteIds?.has(c.id) ?? false })}
+                            showFavorite={true}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                </div>
+              )}
+            </>
+          );
+        })()}
 
         {/* ─── Stores View ─── */}
         {new URLSearchParams(location.search).get("tab") === "stores" && (
