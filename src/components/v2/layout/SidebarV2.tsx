@@ -98,12 +98,6 @@ export function SidebarV2() {
     return Array.from(map.values());
   }, [isLimited, limitedCampaigns]);
 
-  const effectiveSingleCampaign = useMemo(() => {
-    if (!campaignData || !isLimited) return campaignData;
-    const myAccess = limitedCampaigns.find(lc => lc.campaignId === campaignData.id);
-    if (!myAccess) return { ...campaignData, modules: [] };
-    return { ...campaignData, modules: myAccess.modules };
-  }, [campaignData, isLimited, limitedCampaigns]);
 
   // Fetch contextual names
   const { data: agencyData } = useQuery({
@@ -148,6 +142,13 @@ export function SidebarV2() {
     },
     enabled: !!campaignId,
   });
+
+  const effectiveSingleCampaign = useMemo(() => {
+    if (!campaignData || !isLimited) return campaignData;
+    const myAccess = limitedCampaigns.find(lc => lc.campaignId === campaignData.id);
+    if (!myAccess) return { ...campaignData, modules: [] };
+    return { ...campaignData, modules: myAccess.modules };
+  }, [campaignData, isLimited, limitedCampaigns]);
 
   const { data: clientCampaigns = [] } = useQuery({
     queryKey: ["sidebar-v2-client-campaigns", clientId],
