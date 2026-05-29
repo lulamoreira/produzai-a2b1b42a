@@ -1090,13 +1090,7 @@ const ClientDetail = () => {
             </div>
             <div>
               <p className="text-xl sm:text-2xl font-bold text-foreground">
-                {(() => {
-                  const myCount = clientIds === null
-                    ? campaigns.length
-                    : campaigns.filter(c => myCampaignIds.includes(c.id) ||
-                        (clientIds?.includes(clientId!) && !myCampaignIds.length)).length;
-                  return myCount;
-                })()}
+                {displayCampaigns.length}
               </p>
               <p className="text-[11px] text-muted-foreground">{t("clientDashboard.campaignCount")}</p>
             </div>
@@ -1132,11 +1126,6 @@ const ClientDetail = () => {
 
         {/* ─── Campaigns View (default) ─── */}
         {!new URLSearchParams(location.search).has("tab") && (() => {
-          const displayCampaigns = clientIds === null
-            ? campaigns
-            : campaigns.filter(c => myCampaignIds.includes(c.id) ||
-                (clientIds?.includes(clientId!) && !myCampaignIds.length));
-          
           return (
             <>
               <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
