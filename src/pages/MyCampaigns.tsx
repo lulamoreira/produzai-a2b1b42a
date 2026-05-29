@@ -3,7 +3,7 @@ import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Store, Grid3X3, LayoutList, CalendarDays, LogOut, Package, Camera, Building2, Star, ArrowRight, Palette, GitMerge } from "lucide-react";
+import { Store, Grid3X3, LayoutList, CalendarDays, LogOut, Package, Camera, Building2, Star, ArrowRight, Palette, GitMerge, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import AppLayout from "@/components/AppLayout";
@@ -20,7 +20,6 @@ const MyCampaigns = () => {
   const hasFavorites = favorites && favorites.length > 0;
 
   // Modules exposed in the limited "Minhas Campanhas" grid.
-  // - `occurrences` (legacy) is intentionally excluded — replaced by Loja a Loja › Ocorrências.
   // - `budgets` is Admin-only and never shown to limited users.
   const MODULE_META: Record<string, { label: string; icon: React.ElementType }> = {
     stores: { label: t("modules.stores"), icon: Store },
@@ -29,6 +28,7 @@ const MyCampaigns = () => {
     scheduling: { label: t("modules.scheduling"), icon: CalendarDays },
     installations: { label: t("modules.installations"), icon: Camera },
     loja_a_loja: { label: "Loja a Loja", icon: Building2 },
+    occurrences: { label: t("modules.occurrences", "Ocorrências"), icon: AlertTriangle },
     mockup: { label: t("modules.mockup", "Mockup"), icon: Palette },
     adjustments: { label: t("modules.adjustments", "Ajustes"), icon: GitMerge },
   };
