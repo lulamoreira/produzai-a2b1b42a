@@ -745,7 +745,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           <select
             value={filterState}
             onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); }}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[100px] max-w-[150px] h-9"
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[140px] sm:max-w-[160px] h-9"
           >
             <option value="">{t("filters.allStates")}</option>
             {states.map((s) => (
@@ -755,7 +755,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           <select
             value={filterApproval}
             onChange={(e) => setFilterApproval(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[100px] max-w-[160px] h-9"
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[140px] sm:max-w-[160px] h-9"
           >
             <option value="">{t("filters.approvals")}</option>
             <option value="approved">{t("filters.approved")}</option>
@@ -766,7 +766,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           <select
             value={filterResponsibility}
             onChange={(e) => setFilterResponsibility(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[100px] max-w-[160px] h-9"
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[140px] sm:max-w-[160px] h-9"
           >
             <option value="">{t("filters.responsible")}</option>
             <option value="team">{t("scheduling.teamLabel")}</option>
@@ -776,7 +776,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             type="date"
             value={filterDate}
             onChange={(e) => setFilterDate(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[120px] max-w-[160px] h-9"
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[140px] sm:max-w-[160px] h-9"
             title={t("common.filter")}
           />
           {filterDate && (
