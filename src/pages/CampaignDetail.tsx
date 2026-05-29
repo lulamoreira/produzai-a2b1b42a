@@ -299,6 +299,7 @@ const CampaignDetail = () => {
                 canEditCampaign={true} 
                 canViewSchedules={hasModule("scheduling")} 
                 canViewInstallations={hasModule("installations")}
+                canViewOccurrences={hasModule("occurrences")}
                 lalPerms={lalPerms} 
                 canViewStores={hasModule("stores")} 
                 canViewCampaignStores={hasModule("matrix")}

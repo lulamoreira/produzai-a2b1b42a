@@ -16,6 +16,7 @@ interface SummaryTabProps {
   canEditCampaign: boolean;
   canViewSchedules: boolean;
   canViewInstallations: boolean;
+  canViewOccurrences: boolean;
   lalPerms: any;
   canViewStores: boolean;
   canViewCampaignStores: boolean;
@@ -39,6 +40,7 @@ export default function SummaryTab({
   canEditCampaign,
   canViewSchedules,
   canViewInstallations,
+  canViewOccurrences,
   lalPerms,
   canViewStores,
   canViewCampaignStores,
@@ -124,7 +126,7 @@ export default function SummaryTab({
           { key: "installations", label: t("modules.installations"), icon: Camera, visible: canViewInstallations, color: "#7B5E3A" },
           { key: "loja_a_loja", label: t("modules.loja_a_loja"), icon: LayoutGrid, visible: lalPerms.canViewModule, color: "#5B7B5E" },
           { key: "stores", label: t("modules.stores"), icon: Store, visible: canViewStores || canViewCampaignStores, color: "#6B4F2E" },
-          { key: "occurrences", label: t("modules.occurrences"), icon: AlertTriangle, visible: lalPerms.ocorrencias.canView, color: "#7A3B2E" },
+          { key: "occurrences", label: t("modules.occurrences"), icon: AlertTriangle, visible: canViewOccurrences, color: "#7A3B2E" },
           { key: "budgets", label: t("modules.budgets"), icon: DollarSign, visible: isAdmin, color: "#4A5568" },
           { key: "adjustments", label: "Ajustes", icon: Layers, visible: isAdminOrMaster, color: "#6E5A7A" },
           { key: "pieces", label: t("modules.pieces"), icon: LayoutList, visible: canViewPieces, color: "#A07850" },
