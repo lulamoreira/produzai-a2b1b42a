@@ -30,7 +30,7 @@ import {
   ChevronDown, ChevronRight, Edit3, Plus, Trash2,
   PauseCircle, PlayCircle, Building2, KeyRound, Shield, Megaphone,
   User as UserIcon, Mail, Phone, Briefcase, Calendar, Languages, Palette, MessageCircle, IdCard,
-  Eye, LogIn, Lock,
+  Eye, LogIn, Lock, RefreshCw, Copy, Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -207,6 +207,43 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
     }
   };
 
+  const generatePassword = () => {
+    const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    const lower = "abcdefghijkmnpqrstuvwxyz";
+    const nums = "23456789";
+    const syms = "!@#$%&*?";
+    const all = upper + lower + nums + syms;
+    const pick = (s: string) => s[Math.floor(Math.random() * s.length)];
+    let pwd = pick(upper) + pick(lower) + pick(nums) + pick(syms);
+    for (let i = 0; i < 8; i++) pwd += pick(all);
+    pwd = pwd.split("").sort(() => Math.random() - 0.5).join("");
+    setNewPassword(pwd);
+    toast.success("Senha gerada!");
+  };
+
+  const copyPassword = async () => {
+    if (!newPassword) return;
+    try {
+      await navigator.clipboard.writeText(newPassword);
+      toast.success("Senha copiada!");
+    } catch {
+      toast.error("Não foi possível copiar.");
+    }
+  };
+
+  const sharePassword = async () => {
+    if (!newPassword) return;
+    const text = `Sua nova senha de acesso: ${newPassword}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Nova senha", text });
+      } catch {/* cancelado */}
+    } else {
+      await navigator.clipboard.writeText(text);
+      toast.success("Mensagem copiada para compartilhar!");
+    }
+  };
+
   const roleBadge = () => {
     if (userInfo.role === "admin") return <Badge variant="default" className="text-[10px] uppercase tracking-wider">Admin</Badge>;
     if (userInfo.role === "master") return <Badge variant="outline" className="text-[10px] uppercase tracking-wider bg-orange-500/15 text-orange-700 border-orange-500/30">Master</Badge>;
@@ -359,14 +396,29 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                         Defina uma nova senha temporária para o usuário. Ele poderá entrar imediatamente com esta nova senha.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <div className="py-4">
+                    <div className="py-4 space-y-2">
                       <Input
-                        type="password"
+                        type="text"
                         placeholder="Nova senha (mín. 6 caracteres)"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
+                        className="font-mono"
                         autoFocus
                       />
+                      <div className="flex flex-wrap gap-2">
+                        <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={generatePassword}>
+                          <RefreshCw className="w-3.5 h-3.5" /> Gerar senha
+                        </Button>
+                        <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={copyPassword} disabled={!newPassword}>
+                          <Copy className="w-3.5 h-3.5" /> Copiar
+                        </Button>
+                        <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={sharePassword} disabled={!newPassword}>
+                          <Share2 className="w-3.5 h-3.5" /> Compartilhar
+                        </Button>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Gera uma senha forte de 12 caracteres com maiúsculas, minúsculas, números e símbolos.
+                      </p>
                     </div>
                     <AlertDialogFooter>
                       <AlertDialogCancel onClick={() => { setResettingPassword(false); setNewPassword(""); }}>Cancelar</AlertDialogCancel>
