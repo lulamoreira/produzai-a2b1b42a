@@ -165,12 +165,20 @@ const AdminUsers = () => {
   const { data: allCampaignAccess = [] } = useUserCampaignAccess();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filteredUsers = searchQuery.trim()
-    ? users.filter(u =>
-        (u.display_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.user_id.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : users;
+  const filteredUsers = useMemo(() => {
+    let result = searchQuery.trim()
+      ? users.filter(u =>
+          (u.display_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+          u.user_id.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : users;
+
+    return [...result].sort((a, b) => {
+      const nameA = (a.display_name || "").toLowerCase();
+      const nameB = (b.display_name || "").toLowerCase();
+      return nameA.localeCompare(nameB, "pt-BR");
+    });
+  }, [users, searchQuery]);
 
   return (
     <div className="space-y-6">
