@@ -1121,74 +1121,75 @@ const ClientDetail = () => {
           return (
             <>
               <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
-              <DialogContent>
-                <DialogHeader><DialogTitle>{t("clientDashboard.newCampaign")}</DialogTitle></DialogHeader>
-                <form onSubmit={handleAddCampaign} className="space-y-4">
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("clientDashboard.campaignNameLabel")} *</label>
-                    <Input 
-                      value={campaignName} 
-                      onChange={(e) => setCampaignName(e.target.value)} 
-                      onBlur={(e) => setCampaignName(capitalizeName(e.target.value))}
-                      required 
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-muted-foreground mb-2 block">{t("clientDashboard.campaignColorLabel")}</label>
-                    <div className="grid grid-cols-8 gap-1.5">
-                      {CAMPAIGN_COLORS.map((c) => (
-                        <button
-                          type="button"
-                          key={c}
-                          className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${campaignColor === c ? "border-foreground scale-110 ring-2 ring-primary/30" : "border-transparent"}`}
-                          style={{ backgroundColor: c }}
-                          onClick={() => setCampaignColor(c)}
-                        />
-                      ))}
+                <DialogContent>
+                  <DialogHeader><DialogTitle>{t("clientDashboard.newCampaign")}</DialogTitle></DialogHeader>
+                  <form onSubmit={handleAddCampaign} className="space-y-4">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("clientDashboard.campaignNameLabel")} *</label>
+                      <Input 
+                        value={campaignName} 
+                        onChange={(e) => setCampaignName(e.target.value)} 
+                        onBlur={(e) => setCampaignName(capitalizeName(e.target.value))}
+                        required 
+                      />
                     </div>
-                  </div>
-                  <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addCampaign.isPending}>{t("clientDashboard.create")}</Button>
-                </form>
-              </DialogContent>
-            </Dialog>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground mb-2 block">{t("clientDashboard.campaignColorLabel")}</label>
+                      <div className="grid grid-cols-8 gap-1.5">
+                        {CAMPAIGN_COLORS.map((c) => (
+                          <button
+                            type="button"
+                            key={c}
+                            className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${campaignColor === c ? "border-foreground scale-110 ring-2 ring-primary/30" : "border-transparent"}`}
+                            style={{ backgroundColor: c }}
+                            onClick={() => setCampaignColor(c)}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addCampaign.isPending}>{t("clientDashboard.create")}</Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
 
-            {loadingCampaigns ? (
-              <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
-            ) : campaigns.length === 0 ? (
-              <div className="bg-white rounded-xl border border-stone-200 border-dashed mt-6">
-                <EmptyStateV2
-                  icon={Megaphone}
-                  title={t("campaigns.emptyTitle")}
-                  description={t("campaigns.emptyDescription")}
-                  action={canEditCampaigns ? { 
-                    label: t("campaigns.newCampaign"), 
-                    onClick: () => setCampaignDialogOpen(true) 
-                  } : undefined}
-                />
-              </div>
-            ) : (
-              <div className="mt-6">
-                <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
-                  <SortableContext items={displayCampaigns.map((c) => c.id)} strategy={rectSortingStrategy}>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {displayCampaigns.map((c) => (
-                        <SortableCampaignCard
-                          key={c.id}
-                          campaign={c}
-                          canDelete={canDeleteCampaigns}
-                          canEdit={canEditCampaigns}
-                          onNavigate={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
-                          onDelete={() => deleteCampaign.mutate(c.id)}
-                          onColorChange={(color) => updateCampaign.mutate({ id: c.id, color })}
-                          isFavorited={favoriteIds?.has(c.id) ?? false}
-                          onToggleFavorite={() => toggleFavorite.mutate({ campaignId: c.id, isFavorited: favoriteIds?.has(c.id) ?? false })}
-                          showFavorite={true}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </DndContext>
-              </div>
+              {loadingCampaigns ? (
+                <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
+              ) : campaigns.length === 0 ? (
+                <div className="bg-white rounded-xl border border-stone-200 border-dashed mt-6">
+                  <EmptyStateV2
+                    icon={Megaphone}
+                    title={t("campaigns.emptyTitle")}
+                    description={t("campaigns.emptyDescription")}
+                    action={canEditCampaigns ? { 
+                      label: t("campaigns.newCampaign"), 
+                      onClick: () => setCampaignDialogOpen(true) 
+                    } : undefined}
+                  />
+                </div>
+              ) : (
+                <div className="mt-6">
+                  <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
+                    <SortableContext items={displayCampaigns.map((c) => c.id)} strategy={rectSortingStrategy}>
+                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                        {displayCampaigns.map((c) => (
+                          <SortableCampaignCard
+                            key={c.id}
+                            campaign={c}
+                            canDelete={canDeleteCampaigns}
+                            canEdit={canEditCampaigns}
+                            onNavigate={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
+                            onDelete={() => deleteCampaign.mutate(c.id)}
+                            onColorChange={(color) => updateCampaign.mutate({ id: c.id, color })}
+                            isFavorited={favoriteIds?.has(c.id) ?? false}
+                            onToggleFavorite={() => toggleFavorite.mutate({ campaignId: c.id, isFavorited: favoriteIds?.has(c.id) ?? false })}
+                            showFavorite={true}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                </div>
+              )}
             </>
           );
         })()}
