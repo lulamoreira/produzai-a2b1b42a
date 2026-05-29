@@ -23,6 +23,8 @@ import { HistoryShortcutProvider } from "@/lib/undo/HistoryShortcutProvider";
 import { GlobalSearchMount } from "@/components/sidebar/GlobalSearch";
 import { PreviewUserProvider } from "@/hooks/usePreviewUser";
 import { PreviewUserBanner } from "@/components/PreviewUserBanner";
+import { UserActivityTracker } from "@/components/UserActivityTracker";
+
 
 // Lazy-loaded page components (one chunk per route)
 const AgencySelect = lazy(() => import("./pages/AgencySelect"));
@@ -238,6 +240,7 @@ const App = () => (
             <PreviewUserProvider>
             <SidebarStateProvider>
             <ErrorBoundary>
+              <UserActivityTracker />
               <PreviewUserBanner />
               <Suspense fallback={<RouteFallback />}>
                 <Routes>
