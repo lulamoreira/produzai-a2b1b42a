@@ -276,49 +276,6 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
 
   const totalAccesses = userAccesses.length + userAgencyAccesses.length + userCampaignAccesses.length;
 
-  const AccessRow = ({ label, icon, suspended, categoryId, onChangeCategory, onToggleSuspend, onDelete, deleteTitle, deleteDesc }: {
-    label: string; icon: React.ReactNode; suspended: boolean; categoryId: string | null;
-    onChangeCategory: (val: string) => void; onToggleSuspend: () => void; onDelete: () => void;
-    deleteTitle: string; deleteDesc: string;
-  }) => (
-    <div className={`flex flex-col gap-2 p-2.5 rounded-lg border ${suspended ? "opacity-50 bg-muted/30 border-border" : "bg-muted/10 border-border"}`}>
-      <div className="flex items-center gap-2 min-w-0">
-        {icon}
-        <span className="text-sm text-foreground flex-1 min-w-0 truncate">{label}</span>
-      </div>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-        <Select value={categoryId || ""} onValueChange={onChangeCategory}>
-          <SelectTrigger className="h-9 text-xs flex-1 min-w-[120px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
-          <SelectContent>
-            {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <div className="flex items-center gap-2 justify-end">
-          <Badge variant="outline" className={`text-[10px] shrink-0 ${suspended ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/30" : "bg-green-500/10 text-green-700 border-green-500/30"}`}>
-            {suspended ? "Suspenso" : "Ativo"}
-          </Badge>
-          <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" title={suspended ? "Reativar" : "Suspender"} onClick={onToggleSuspend}>
-            {suspended ? <PlayCircle className="w-4 h-4 text-green-600" /> : <PauseCircle className="w-4 h-4 text-yellow-600" />}
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0"><Trash2 className="w-4 h-4 text-destructive" /></Button>
-            </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{deleteTitle}</AlertDialogTitle>
-              <AlertDialogDescription>{deleteDesc}</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Remover</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="border border-border rounded-xl bg-card overflow-hidden transition-shadow hover:shadow-md">
@@ -570,6 +527,7 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                       return <AccessRow key={a.id} label={ag?.name || "—"}
                         icon={<Building2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
                         suspended={a.suspended} categoryId={a.category_id}
+                        categories={categories}
                         onChangeCategory={val => updateAgencyAccess.mutate({ id: a.id, category_id: val })}
                         onToggleSuspend={() => updateAgencyAccess.mutate({ id: a.id, suspended: !a.suspended })}
                         onDelete={() => deleteAgencyAccess.mutate(a.id)}
@@ -618,6 +576,7 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                       <AccessRow key={a.id} label={getClientLabel(a.client_id)}
                         icon={<KeyRound className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
                         suspended={a.suspended} categoryId={a.category_id}
+                        categories={categories}
                         onChangeCategory={val => updateClientAccess.mutate({ id: a.id, can_edit: false, category_id: val })}
                         onToggleSuspend={() => updateClientAccess.mutate({ id: a.id, can_edit: a.can_edit, suspended: !a.suspended })}
                         onDelete={() => deleteClientAccess.mutate(a.id)}
@@ -918,42 +877,6 @@ function UserProfileDetails({ userId, agencies, clients, isAdmin }: {
     }
   };
 
-  const Field = ({ icon, label, value, field, type = "text" }: { 
-    icon: React.ReactNode; 
-    label: string; 
-    value: React.ReactNode;
-    field?: keyof typeof formData;
-    type?: string;
-  }) => (
-    <div className="flex items-start gap-2 min-w-0">
-      <div className="mt-0.5 text-muted-foreground shrink-0">{icon}</div>
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{label}</p>
-        {isEditing && field ? (
-          field === "phone_is_whatsapp" ? (
-            <div className="flex items-center gap-2 mt-1">
-              <input 
-                type="checkbox" 
-                checked={formData[field] as boolean} 
-                onChange={e => setFormData(prev => ({ ...prev, [field]: e.target.checked }))}
-                className="w-3.5 h-3.5"
-              />
-              <span className="text-[10px] text-muted-foreground">WhatsApp?</span>
-            </div>
-          ) : (
-            <Input 
-              className="h-7 text-xs mt-1" 
-              value={formData[field] as string} 
-              onChange={e => setFormData(prev => ({ ...prev, [field]: e.target.value }))}
-            />
-          )
-        ) : (
-          <p className="text-xs text-foreground truncate">{value || <span className="text-muted-foreground italic">—</span>}</p>
-        )}
-      </div>
-    </div>
-  );
-
   return (
     <div className="px-5 py-4 bg-muted/10 border-b border-border">
       <div className="flex items-center gap-2 mb-3">
@@ -1014,10 +937,10 @@ function UserProfileDetails({ userId, agencies, clients, isAdmin }: {
         )}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <Field icon={<UserIcon className="w-3.5 h-3.5" />} label="Nome" value={profile.display_name} field="display_name" />
-        <Field icon={<UserIcon className="w-3.5 h-3.5" />} label="Apelido" value={profile.nickname} field="nickname" />
-        <Field icon={<Mail className="w-3.5 h-3.5" />} label="E-mail" value={email} />
-        <Field
+        <ProfileField icon={<UserIcon className="w-3.5 h-3.5" />} label="Nome" value={profile.display_name} field="display_name" isEditing={isEditing} formData={formData} setFormData={setFormData} />
+        <ProfileField icon={<UserIcon className="w-3.5 h-3.5" />} label="Apelido" value={profile.nickname} field="nickname" isEditing={isEditing} formData={formData} setFormData={setFormData} />
+        <ProfileField icon={<Mail className="w-3.5 h-3.5" />} label="E-mail" value={email} isEditing={isEditing} formData={formData} setFormData={setFormData} />
+        <ProfileField
           icon={<Phone className="w-3.5 h-3.5" />}
           label="Telefone"
           field="phone"
@@ -1029,16 +952,104 @@ function UserProfileDetails({ userId, agencies, clients, isAdmin }: {
               </span>
             ) : null
           }
+          isEditing={isEditing} formData={formData} setFormData={setFormData}
         />
-        {isEditing && <Field icon={<MessageCircle className="w-3.5 h-3.5" />} label="WhatsApp?" value={null} field="phone_is_whatsapp" />}
-        <Field icon={<Briefcase className="w-3.5 h-3.5" />} label="Cargo" value={profile.job_title} field="job_title" />
-        <Field icon={<Building2 className="w-3.5 h-3.5" />} label="Empresa" value={profile.company} field="company" />
-        <Field icon={<Languages className="w-3.5 h-3.5" />} label="Idioma" value={profile.preferred_language ? langLabel[profile.preferred_language] || profile.preferred_language : null} />
-        <Field icon={<Palette className="w-3.5 h-3.5" />} label="Tema (matiz)" value={profile.theme_hue != null ? `${profile.theme_hue}°` : null} />
-        <Field icon={<Building2 className="w-3.5 h-3.5" />} label="Agência vinculada" value={agencyName} />
-        <Field icon={<KeyRound className="w-3.5 h-3.5" />} label="Cliente vinculado" value={clientName} />
-        <Field icon={<Calendar className="w-3.5 h-3.5" />} label="Cadastrado em" value={fmtDate(profile.created_at)} />
-        <Field icon={<Calendar className="w-3.5 h-3.5" />} label="Atualizado em" value={fmtDate(profile.updated_at)} />
+        {isEditing && <ProfileField icon={<MessageCircle className="w-3.5 h-3.5" />} label="WhatsApp?" value={null} field="phone_is_whatsapp" isEditing={isEditing} formData={formData} setFormData={setFormData} />}
+        <ProfileField icon={<Briefcase className="w-3.5 h-3.5" />} label="Cargo" value={profile.job_title} field="job_title" isEditing={isEditing} formData={formData} setFormData={setFormData} />
+        <ProfileField icon={<Building2 className="w-3.5 h-3.5" />} label="Empresa" value={profile.company} field="company" isEditing={isEditing} formData={formData} setFormData={setFormData} />
+        <ProfileField icon={<Languages className="w-3.5 h-3.5" />} label="Idioma" value={profile.preferred_language ? langLabel[profile.preferred_language] || profile.preferred_language : null} isEditing={isEditing} formData={formData} setFormData={setFormData} />
+        <ProfileField icon={<Palette className="w-3.5 h-3.5" />} label="Tema (matiz)" value={profile.theme_hue != null ? `${profile.theme_hue}°` : null} isEditing={isEditing} formData={formData} setFormData={setFormData} />
+        <ProfileField icon={<Building2 className="w-3.5 h-3.5" />} label="Agência vinculada" value={agencyName} isEditing={isEditing} formData={formData} setFormData={setFormData} />
+        <ProfileField icon={<KeyRound className="w-3.5 h-3.5" />} label="Cliente vinculado" value={clientName} isEditing={isEditing} formData={formData} setFormData={setFormData} />
+        <ProfileField icon={<Calendar className="w-3.5 h-3.5" />} label="Cadastrado em" value={fmtDate(profile.created_at)} isEditing={isEditing} formData={formData} setFormData={setFormData} />
+        <ProfileField icon={<Calendar className="w-3.5 h-3.5" />} label="Atualizado em" value={fmtDate(profile.updated_at)} isEditing={isEditing} formData={formData} setFormData={setFormData} />
+      </div>
+    </div>
+  );
+}
+
+function AccessRow({ label, icon, suspended, categoryId, categories, onChangeCategory, onToggleSuspend, onDelete, deleteTitle, deleteDesc }: {
+  label: string; icon: React.ReactNode; suspended: boolean; categoryId: string | null;
+  categories: Array<PermissionCategory>;
+  onChangeCategory: (val: string) => void; onToggleSuspend: () => void; onDelete: () => void;
+  deleteTitle: string; deleteDesc: string;
+}) {
+  return (
+    <div className={`flex flex-col gap-2 p-2.5 rounded-lg border ${suspended ? "opacity-50 bg-muted/30 border-border" : "bg-muted/10 border-border"}`}>
+      <div className="flex items-center gap-2 min-w-0">
+        {icon}
+        <span className="text-sm text-foreground flex-1 min-w-0 truncate">{label}</span>
+      </div>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+        <Select value={categoryId || ""} onValueChange={onChangeCategory}>
+          <SelectTrigger className="h-9 text-xs flex-1 min-w-[120px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
+          <SelectContent>
+            {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <div className="flex items-center gap-2 justify-end">
+          <Badge variant="outline" className={`text-[10px] shrink-0 ${suspended ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/30" : "bg-green-500/10 text-green-700 border-green-500/30"}`}>
+            {suspended ? "Suspenso" : "Ativo"}
+          </Badge>
+          <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" title={suspended ? "Reativar" : "Suspender"} onClick={onToggleSuspend}>
+            {suspended ? <PlayCircle className="w-4 h-4 text-green-600" /> : <PauseCircle className="w-4 h-4 text-yellow-600" />}
+          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0"><Trash2 className="w-4 h-4 text-destructive" /></Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{deleteTitle}</AlertDialogTitle>
+                <AlertDialogDescription>{deleteDesc}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Remover</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ProfileField({ icon, label, value, field, isEditing, formData, setFormData }: { 
+  icon: React.ReactNode; 
+  label: string; 
+  value: React.ReactNode;
+  field?: string;
+  isEditing: boolean;
+  formData: any;
+  setFormData: React.Dispatch<React.SetStateAction<any>>;
+}) {
+  return (
+    <div className="flex items-start gap-2 min-w-0">
+      <div className="mt-0.5 text-muted-foreground shrink-0">{icon}</div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{label}</p>
+        {isEditing && field ? (
+          field === "phone_is_whatsapp" ? (
+            <div className="flex items-center gap-2 mt-1">
+              <input 
+                type="checkbox" 
+                checked={!!formData[field]} 
+                onChange={e => setFormData((prev: any) => ({ ...prev, [field]: e.target.checked }))}
+                className="w-3.5 h-3.5"
+              />
+              <span className="text-[10px] text-muted-foreground">WhatsApp?</span>
+            </div>
+          ) : (
+            <Input 
+              className="h-7 text-xs mt-1" 
+              value={formData[field] || ""} 
+              onChange={e => setFormData((prev: any) => ({ ...prev, [field]: e.target.value }))}
+            />
+          )
+        ) : (
+          <p className="text-xs text-foreground truncate">{value || <span className="text-muted-foreground italic">—</span>}</p>
+        )}
       </div>
     </div>
   );
