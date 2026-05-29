@@ -30,7 +30,7 @@ import {
   ChevronDown, ChevronRight, Edit3, Plus, Trash2,
   PauseCircle, PlayCircle, Building2, KeyRound, Shield, Megaphone,
   User as UserIcon, Mail, Phone, Briefcase, Calendar, Languages, Palette, MessageCircle, IdCard,
-  Eye, LogIn, Lock, RefreshCw, Copy, Share2,
+  Eye, LogIn, Lock, RefreshCw, Copy, Share2, UserX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
