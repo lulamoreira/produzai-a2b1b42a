@@ -285,7 +285,7 @@ const CampaignDetail = () => {
         />
 
         <Tabs value={activeSection || "summary"} onValueChange={setActiveSection} className="w-full">
-          <TabsList className="mb-4 flex w-full max-w-full overflow-x-auto whitespace-nowrap justify-start gap-1 h-auto">
+          <TabsList className="mb-4 flex w-full max-w-full overflow-x-auto whitespace-nowrap justify-start gap-1 h-auto [&>*]:shrink-0">
             <TabsTrigger value="summary">{t("tabs.summary", "Resumo")}</TabsTrigger>
             {hasModule("pieces") && <TabsTrigger value="pieces">{t("tabs.pieces", "Peças")}</TabsTrigger>}
             {hasModule("matrix") && <TabsTrigger value="matrix">{t("tabs.rateio", "Rateio")}</TabsTrigger>}
