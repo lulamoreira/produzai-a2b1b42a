@@ -733,7 +733,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     <div className="space-y-4">
       {/* Filters — Primary row */}
       <div className="flex gap-2 items-center flex-wrap lg:flex-nowrap">
-          <div className="relative w-[200px] shrink-0">
+          <div className="relative w-full sm:w-[200px] sm:shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t("stores.searchAll")}
@@ -745,7 +745,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           <select
             value={filterState}
             onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); }}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[100px] max-w-[150px] h-9"
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[140px] sm:max-w-[160px] h-9"
           >
             <option value="">{t("filters.allStates")}</option>
             {states.map((s) => (
@@ -755,7 +755,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           <select
             value={filterApproval}
             onChange={(e) => setFilterApproval(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[100px] max-w-[160px] h-9"
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[140px] sm:max-w-[160px] h-9"
           >
             <option value="">{t("filters.approvals")}</option>
             <option value="approved">{t("filters.approved")}</option>
@@ -766,7 +766,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           <select
             value={filterResponsibility}
             onChange={(e) => setFilterResponsibility(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[100px] max-w-[160px] h-9"
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[140px] sm:max-w-[160px] h-9"
           >
             <option value="">{t("filters.responsible")}</option>
             <option value="team">{t("scheduling.teamLabel")}</option>
@@ -776,7 +776,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             type="date"
             value={filterDate}
             onChange={(e) => setFilterDate(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground min-w-[120px] max-w-[160px] h-9"
+            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[140px] sm:max-w-[160px] h-9"
             title={t("common.filter")}
           />
           {filterDate && (
@@ -934,25 +934,20 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         return (
           <>
             <div
-              className="flex flex-nowrap whitespace-nowrap items-baseline overflow-x-auto"
+              className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1 rounded-md"
               style={{
-                padding: "10px 16px",
+                padding: "8px",
                 background: "var(--bg-surface)",
-                borderBottom: "1px solid var(--border-subtle)",
-                whiteSpace: "nowrap",
-                WebkitOverflowScrolling: "touch",
-                gap: 0,
+                border: "1px solid var(--border-subtle)",
               }}
             >
-              {items.map((m, idx) => (
+              {items.map((m) => (
                 <button
                   key={m.key}
                   type="button"
                   onClick={() => setSummaryFilter(prev => prev === m.key ? "" : m.key)}
-                  className="inline-flex items-baseline gap-1 transition-colors rounded-md hover:bg-[var(--bg-muted)]"
+                  className="flex flex-col items-center justify-center text-center gap-0.5 rounded-md py-2 px-1 min-w-0 transition-colors hover:bg-[var(--bg-muted)]"
                   style={{
-                    padding: "2px 14px",
-                    borderRight: idx < items.length - 1 ? "1px solid var(--border-subtle)" : "none",
                     cursor: "pointer",
                     ...(summaryFilter === m.key ? { backgroundColor: "var(--bg-muted)" } : {}),
                   }}
@@ -960,16 +955,23 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   <span
                     className="font-bold leading-none"
                     style={{
-                      fontSize: m.isTotal ? 24 : 20,
-                      color: m.dangerWhenPositive && m.value > 0 ? "var(--s-danger)" : m.isTotal ? "var(--text-primary)" : "var(--text-secondary)",
+                      fontSize: m.isTotal ? 22 : 18,
+                      color: m.dangerWhenPositive && m.value > 0 ? "var(--s-danger)" : "var(--text-primary)",
                     }}
                   >
                     {m.value}
                   </span>
-                  <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>{m.label}</span>
+                  <span
+                    className="leading-tight truncate max-w-full"
+                    style={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 500 }}
+                    title={m.label}
+                  >
+                    {m.label}
+                  </span>
                 </button>
               ))}
             </div>
+
             {summaryFilter && summaryFilter !== "total" && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>{t("filters.filteringBy")} <strong className="text-foreground">{
