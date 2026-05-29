@@ -98,6 +98,7 @@ export function SidebarV2() {
     return Array.from(map.values());
   }, [isLimited, limitedCampaigns]);
 
+
   // Fetch contextual names
   const { data: agencyData } = useQuery({
     queryKey: ["sidebar-v2-agency", agencyId],
@@ -141,6 +142,13 @@ export function SidebarV2() {
     },
     enabled: !!campaignId,
   });
+
+  const effectiveSingleCampaign = useMemo(() => {
+    if (!campaignData || !isLimited) return campaignData;
+    const myAccess = limitedCampaigns.find(lc => lc.campaignId === campaignData.id);
+    if (!myAccess) return { ...campaignData, modules: [] };
+    return { ...campaignData, modules: myAccess.modules };
+  }, [campaignData, isLimited, limitedCampaigns]);
 
   const { data: clientCampaigns = [] } = useQuery({
     queryKey: ["sidebar-v2-client-campaigns", clientId],
@@ -517,12 +525,12 @@ export function SidebarV2() {
           )}
 
           {/* Campaign Context: Modules */}
-          {campaignId && !collapsed && campaignData && (
+          {campaignId && !collapsed && effectiveSingleCampaign && (
             <div className="space-y-1">
               <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
                 Módulos da Campanha
               </div>
-              <CampaignItem camp={campaignData} agencyId={agencyId!} clientId={clientId!} />
+              <CampaignItem camp={effectiveSingleCampaign} agencyId={agencyId!} clientId={clientId!} />
             </div>
           )}
 
