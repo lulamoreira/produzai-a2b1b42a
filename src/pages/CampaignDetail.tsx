@@ -545,13 +545,15 @@ const CampaignDetail = () => {
                   currencyCode="BRL" isAdminOrMaster={isAdminOrMaster}
                 />
               </TabsContent>
-              <TabsContent value="stores">
-                <StoresTab 
-                  campaignId={campaignId!} clientId={clientId!} stores={stores}
-                  canEditStores={true} canEditCampaignStores={true} isLimitedMode={isLimitedMode}
-                  onOpenEditStore={() => {}} agencyName={agency?.name || ""} clientName={client?.name || ""}
-                />
-              </TabsContent>
+              {hasModule("stores") && (
+                <TabsContent value="stores">
+                  <StoresTab 
+                    campaignId={campaignId!} clientId={clientId!} stores={stores}
+                    canEditStores={true} canEditCampaignStores={true} isLimitedMode={isLimitedMode}
+                    onOpenEditStore={() => {}} agencyName={agency?.name || ""} clientName={client?.name || ""}
+                  />
+                </TabsContent>
+              )}
               <TabsContent value="history">
                 <HistoryTab campaignId={campaignId!} />
               </TabsContent>
