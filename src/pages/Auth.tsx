@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Mail, Lock, User, Eye, EyeOff, Wand2 } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Wand2, Building2 } from "lucide-react";
 import produzaiIcon from "@/assets/produzai-icon.svg";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { toast } from "sonner";
@@ -30,6 +30,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [company, setCompany] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [forgotPassword, setForgotPassword] = useState(false);
@@ -90,7 +91,7 @@ const Auth = () => {
         email,
         password,
         options: {
-          data: { display_name: displayName },
+          data: { display_name: displayName, company: company.trim() },
           emailRedirectTo: window.location.origin
         }
       });
@@ -181,7 +182,8 @@ const Auth = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && !forgotPassword && !magicLink &&
-              <div className="space-y-1">
+              <>
+                <div className="space-y-1">
                   <label className="text-sm font-medium text-foreground">
                     {t("auth.whatIsYourName")}
                   </label>
@@ -195,6 +197,22 @@ const Auth = () => {
                     required={!isLogin} />
                   </div>
                 </div>
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-foreground">
+                    Empresa
+                  </label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                    placeholder="Nome da sua empresa"
+                    value={company}
+                    onChange={(e) => setCompany(e.target.value)}
+                    className="pl-10"
+                    required={!isLogin}
+                    maxLength={120} />
+                  </div>
+                </div>
+              </>
               }
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

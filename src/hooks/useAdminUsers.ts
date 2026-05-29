@@ -7,6 +7,7 @@ export type UserWithRole = {
   user_id: string;
   email: string;
   display_name: string | null;
+  company: string | null;
   role: AppRole;
   created_at: string;
 };
@@ -18,7 +19,7 @@ export function useAdminUsers() {
       // Fetch profiles
       const { data: profiles, error: pErr } = await supabase
         .from("profiles")
-        .select("user_id, display_name, created_at");
+        .select("user_id, display_name, company, created_at");
       if (pErr) throw pErr;
 
       // Fetch roles
@@ -33,6 +34,7 @@ export function useAdminUsers() {
         user_id: p.user_id,
         email: "", // will be enriched if needed
         display_name: p.display_name,
+        company: (p as any).company ?? null,
         role: roleMap.get(p.user_id) ?? "viewer",
         created_at: p.created_at,
       })) as UserWithRole[];
