@@ -296,9 +296,14 @@ const CampaignDetail = () => {
             <TabsContent value="summary">
               <SummaryTab 
                 campaignId={campaignId!} stores={stores} visiblePieces={pieces} kits={kits}
-                canEditCampaign={true} canViewSchedules={true} canViewInstallations={true}
-                lalPerms={lalPerms} canViewStores={true} canViewCampaignStores={true}
-                isAdmin={isAdmin} isAdminOrMaster={isAdminOrMaster} canViewPieces={true}
+                canEditCampaign={true} 
+                canViewSchedules={hasModule("scheduling")} 
+                canViewInstallations={hasModule("installations")}
+                lalPerms={lalPerms} 
+                canViewStores={hasModule("stores")} 
+                canViewCampaignStores={hasModule("matrix")}
+                isAdmin={isAdmin} isAdminOrMaster={isAdminOrMaster} 
+                canViewPieces={hasModule("pieces")}
                 onNavigate={setActiveSection}
                 campaignKpis={campaignKpis}
               />
