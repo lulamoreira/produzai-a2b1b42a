@@ -469,6 +469,52 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                   </AlertDialogContent>
                 </AlertDialog>
               )}
+              {isAdmin && (
+                <AlertDialog open={deletingUser} onOpenChange={(v) => { if (!isDeleting) { setDeletingUser(v); if (!v) setDeleteConfirmText(""); } }}>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      onClick={(e) => e.stopPropagation()}
+                      title="Excluir usuário"
+                      className="h-8 px-2.5 inline-flex items-center justify-center gap-1.5 rounded-md border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950/40 dark:border-red-800 dark:text-red-300 transition-colors text-xs font-medium"
+                    >
+                      <UserX className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Excluir</span>
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-destructive">Excluir usuário {capitalizeName(userInfo.display_name) || ""}?</AlertDialogTitle>
+                      <AlertDialogDescription className="space-y-2">
+                        <span className="block">
+                          Esta ação é <strong>permanente</strong>. O usuário perderá acesso ao sistema imediatamente e não poderá mais entrar.
+                        </span>
+                        <span className="block text-foreground">
+                          ✓ Todo o histórico de ações, registros, comentários e dados criados por este usuário <strong>serão preservados</strong> no sistema.
+                        </span>
+                        <span className="block">
+                          Para confirmar, digite <strong className="text-foreground">EXCLUIR</strong> abaixo:
+                        </span>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <Input
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="EXCLUIR"
+                      autoComplete="off"
+                    />
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={(e) => { e.preventDefault(); handleDeleteUser(); }}
+                        disabled={deleteConfirmText !== "EXCLUIR" || isDeleting}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {isDeleting ? "Excluindo..." : "Excluir definitivamente"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
             </>
           )}
         </div>
