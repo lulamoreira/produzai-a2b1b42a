@@ -794,7 +794,7 @@ function UserProfileDetails({ userId, agencies, clients, isAdmin }: {
   clients: Array<{ id: string; name: string; agency_id: string }>;
   isAdmin: boolean;
 }) {
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isLoading, isError } = useQuery({
     queryKey: ["user_profile_details", userId],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -806,6 +806,7 @@ function UserProfileDetails({ userId, agencies, clients, isAdmin }: {
       return data;
     },
     staleTime: 60_000,
+    retry: 1,
   });
 
   const { data: email } = useQuery({
@@ -821,6 +822,14 @@ function UserProfileDetails({ userId, agencies, clients, isAdmin }: {
     return (
       <div className="px-5 py-3 bg-muted/10 border-b border-border">
         <p className="text-xs text-muted-foreground">Carregando dados...</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="px-5 py-3 bg-muted/10 border-b border-border">
+        <p className="text-xs text-destructive">Erro ao carregar dados do perfil. Tente fechar e abrir novamente.</p>
       </div>
     );
   }
