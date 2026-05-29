@@ -20,6 +20,7 @@ import {
 } from "@/hooks/useMultiClientData";
 import { useClientPermission } from "@/hooks/useClientPermission";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { useLojaALojaPermissions } from "@/hooks/useLojaALojaPermissions";
 import { toast } from "sonner";
 import AppLayout from "@/components/AppLayout";
