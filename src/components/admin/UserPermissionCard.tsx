@@ -293,6 +293,14 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
               )}
             </div>
           )}
+          {userInfo.company ? (
+            <p className="text-xs font-semibold text-primary truncate flex items-center gap-1 mt-0.5">
+              <Building2 className="w-3 h-3 shrink-0" />
+              {userInfo.company}
+            </p>
+          ) : (
+            <p className="text-xs italic text-amber-700 truncate mt-0.5">Empresa não informada</p>
+          )}
           <p className="text-[11px] text-muted-foreground mt-0.5">{userInfo.user_id.slice(0, 8)}…</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
