@@ -276,49 +276,6 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
 
   const totalAccesses = userAccesses.length + userAgencyAccesses.length + userCampaignAccesses.length;
 
-  const AccessRow = ({ label, icon, suspended, categoryId, onChangeCategory, onToggleSuspend, onDelete, deleteTitle, deleteDesc }: {
-    label: string; icon: React.ReactNode; suspended: boolean; categoryId: string | null;
-    onChangeCategory: (val: string) => void; onToggleSuspend: () => void; onDelete: () => void;
-    deleteTitle: string; deleteDesc: string;
-  }) => (
-    <div className={`flex flex-col gap-2 p-2.5 rounded-lg border ${suspended ? "opacity-50 bg-muted/30 border-border" : "bg-muted/10 border-border"}`}>
-      <div className="flex items-center gap-2 min-w-0">
-        {icon}
-        <span className="text-sm text-foreground flex-1 min-w-0 truncate">{label}</span>
-      </div>
-      <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-        <Select value={categoryId || ""} onValueChange={onChangeCategory}>
-          <SelectTrigger className="h-9 text-xs flex-1 min-w-[120px]"><SelectValue placeholder="Categoria" /></SelectTrigger>
-          <SelectContent>
-            {categories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}
-          </SelectContent>
-        </Select>
-        <div className="flex items-center gap-2 justify-end">
-          <Badge variant="outline" className={`text-[10px] shrink-0 ${suspended ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/30" : "bg-green-500/10 text-green-700 border-green-500/30"}`}>
-            {suspended ? "Suspenso" : "Ativo"}
-          </Badge>
-          <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0" title={suspended ? "Reativar" : "Suspender"} onClick={onToggleSuspend}>
-            {suspended ? <PlayCircle className="w-4 h-4 text-green-600" /> : <PauseCircle className="w-4 h-4 text-yellow-600" />}
-          </Button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0"><Trash2 className="w-4 h-4 text-destructive" /></Button>
-            </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>{deleteTitle}</AlertDialogTitle>
-              <AlertDialogDescription>{deleteDesc}</AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Remover</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-        </div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="border border-border rounded-xl bg-card overflow-hidden transition-shadow hover:shadow-md">
