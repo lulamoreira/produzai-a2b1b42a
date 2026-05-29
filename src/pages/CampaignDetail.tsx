@@ -277,8 +277,8 @@ const CampaignDetail = () => {
         <Tabs value={activeSection || "summary"} onValueChange={setActiveSection} className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="summary">{t("tabs.summary", "Resumo")}</TabsTrigger>
-            <TabsTrigger value="pieces">{t("tabs.pieces", "Peças")}</TabsTrigger>
-            <TabsTrigger value="matrix">{t("tabs.rateio", "Rateio")}</TabsTrigger>
+            {hasModule("pieces") && <TabsTrigger value="pieces">{t("tabs.pieces", "Peças")}</TabsTrigger>}
+            {hasModule("matrix") && <TabsTrigger value="matrix">{t("tabs.rateio", "Rateio")}</TabsTrigger>}
             {isAdmin && <TabsTrigger value="budgets">{t("tabs.cotacoes", "Cotações")}</TabsTrigger>}
             <TabsTrigger value="occurrences">{t("occurrences.title", "Ocorrências")}</TabsTrigger>
             <TabsTrigger value="scheduling" className="hidden">Agendamento</TabsTrigger>
