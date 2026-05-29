@@ -133,6 +133,14 @@ const CampaignDetail = () => {
     navigate(`${location.pathname}${params.toString() ? `?${params}` : ""}`, { replace: true, state: location.state });
   }, [location, navigate]);
 
+  useEffect(() => {
+    if (!isLimited || !activeSection || activeSection === "summary") return;
+    if (userModules.length === 0) return;
+    if (!userModules.includes(activeSection)) {
+      setActiveSection(userModules[0] ?? "summary");
+    }
+  }, [activeSection, isLimited, userModules, setActiveSection]);
+
   const qtyMap = useMemo(() => {
     const map: Record<string, number> = {};
     storePieces.forEach((sp) => { map[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0; });
