@@ -87,6 +87,9 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
   const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(null);
   const [resettingPassword, setResettingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  const [deletingUser, setDeletingUser] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { data: campaignsForClient = [] } = useCampaigns(newCampaignClientId || undefined);
 
