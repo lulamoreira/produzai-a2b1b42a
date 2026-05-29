@@ -164,21 +164,29 @@ const AdminUsers = () => {
   const { data: allAgencyAccess = [] } = useUserAgencyAccess();
   const { data: allCampaignAccess = [] } = useUserCampaignAccess();
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"name" | "role" | "company">("name");
 
   const filteredUsers = useMemo(() => {
     let result = searchQuery.trim()
       ? users.filter(u =>
           (u.display_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-          u.user_id.toLowerCase().includes(searchQuery.toLowerCase())
+          u.user_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (u.company || "").toLowerCase().includes(searchQuery.toLowerCase())
         )
       : users;
 
     return [...result].sort((a, b) => {
+      if (sortBy === "role") {
+        return (a.role || "").localeCompare(b.role || "", "pt-BR");
+      }
+      if (sortBy === "company") {
+        return (a.company || "").localeCompare(b.company || "", "pt-BR");
+      }
       const nameA = (a.display_name || "").toLowerCase();
       const nameB = (b.display_name || "").toLowerCase();
       return nameA.localeCompare(nameB, "pt-BR");
     });
-  }, [users, searchQuery]);
+  }, [users, searchQuery, sortBy]);
 
   return (
     <div className="space-y-6">
@@ -190,14 +198,29 @@ const AdminUsers = () => {
         <CreateUserDialog />
       </div>
 
-      <div className="relative">
-        <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Buscar usuário por nome ou ID..."
-          value={searchQuery}
-          onChange={e => setSearchQuery(e.target.value)}
-          className="pl-9"
-        />
+      <div className="flex flex-col md:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar usuário por nome, ID ou empresa..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">Ordenar por:</span>
+          <Select value={sortBy} onValueChange={(val: any) => setSortBy(val)}>
+            <SelectTrigger className="w-[140px] h-10">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="name">Nome</SelectItem>
+              <SelectItem value="role">Categoria</SelectItem>
+              <SelectItem value="company">Empresa</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {loadingUsers ? (
