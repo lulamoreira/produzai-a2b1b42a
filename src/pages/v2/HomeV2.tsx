@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useDisplayName } from "@/components/AppHeader";
@@ -38,14 +38,14 @@ import { useUserRole } from "@/hooks/useUserRole";
 export function HomeV2() {
   const { t } = useTranslation();
   const { user } = useAuth();
-  const { role, isAdminOrMaster } = useUserRole();
+  const { role, isAdmin, isMaster, isAdminOrMaster, isLoading: loadingRole } = useUserRole();
   const navigate = useNavigate();
   const { displayName } = useDisplayName();
   const formatters = useFormatters();
   const [selectedKpi, setSelectedKpi] = useState<string | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
 
-  const { data: userAgency } = useQuery({
+  const { data: userAgency, isLoading: loadingAgency } = useQuery({
     queryKey: ["user-agency-id", user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
@@ -58,6 +58,11 @@ export function HomeV2() {
     },
     enabled: !!user?.id
   });
+
+  useEffect(() => {
+    if (loadingRole || loadingAgency || isAdminOrMaster) return;
+    navigate(userAgency ? `/agency/${userAgency}` : '/my-campaigns');
+  }, [loadingRole, loadingAgency, isAdminOrMaster, userAgency, navigate]);
 
   const { data: dashboardData, isLoading: loadingKpis } = useQuery({
     queryKey: ["v2-dashboard-data", role, userAgency, isAdminOrMaster],
@@ -265,6 +270,14 @@ export function HomeV2() {
   };
 
   const userName = (displayName || user?.email?.split("@")[0] || t("header.user")).trim().split(/\s+/)[0];
+
+  if (!isAdminOrMaster) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto animate-in fade-in duration-500">
