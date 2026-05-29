@@ -309,7 +309,7 @@ export function SidebarV2() {
       if (mod.requires === "admin_or_master" && !isAdminOrMaster) return false;
       if (mod.hideForLimited && isLimited) return false;
       if (mod.requiresCampaignModule && camp.modules && !camp.modules.includes(mod.requiresCampaignModule)) return false;
-      // Note: we can't easily check camp.modules for non-limited users without more fetch, but sidebar v1 filters it
+      if (isLimited && camp.modules && camp.modules.length > 0 && !camp.modules.includes(mod.key)) return false;
       return true;
     }).map(mod => ({
       key: mod.key,
