@@ -1,17 +1,17 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
-import { useMyAccessibleClientIds } from "@/hooks/useMyAccessibleClientIds";
-import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import {
   useClient, useCampaigns, useAddCampaign, useDeleteCampaign, useUpdateCampaign, useReorderCampaigns,
   useClientStores, useAddClientStore, useImportClientStores, useDeleteClientStore,
   useUpdateClient, useUpdateClientStore, fetchAddressByCep, fetchCnpjData,
   useClientStoreModels, useAddClientStoreModel, useDeleteClientStoreModel,
+  useUserClientAccess,
   type ClientStore, type Campaign,
 } from "@/hooks/useMultiClientData";
+import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
 import { useClientPermission } from "@/hooks/useClientPermission";
 import { EmptyStateV2 } from "@/components/v2/ui/EmptyStateV2";
 import { Button } from "@/components/ui/button";
@@ -502,7 +502,6 @@ const ClientDetail = () => {
   const [deleteAllStoresOpen, setDeleteAllStoresOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkDeleteProgress, setBulkDeleteProgress] = useState({ current: 0, total: 0 });
-  const { isAdminOrMaster } = useUserRole();
 
   // Custom field labels
   const [customLabels, setCustomLabels] = useState<Record<string, string>>({
@@ -560,10 +559,9 @@ const ClientDetail = () => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     
-    const displayCampaigns = clientIds === null
+    const displayCampaigns = isAdminOrMaster
       ? campaigns
-      : campaigns.filter(c => myCampaignIds.includes(c.id) ||
-          (clientIds?.includes(clientId!) && !myCampaignIds.length));
+      : campaigns.filter(c => myCampaignIds.includes(c.id));
 
     const oldIndex = displayCampaigns.findIndex((c) => c.id === active.id);
     const newIndex = displayCampaigns.findIndex((c) => c.id === over.id);
