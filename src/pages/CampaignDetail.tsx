@@ -261,7 +261,8 @@ const CampaignDetail = () => {
 
   return (
     <AppLayout breadcrumbs={[{ label: campaign.name }]}>
-      <div className="container mx-auto py-6">
+      <div className="container mx-auto py-6 px-3 sm:px-6">
+
         <CampaignHeader 
           campaign={campaign} agency={agency} client={client} 
           isAdminOrMaster={isAdminOrMaster} canEditCampaign={true}
