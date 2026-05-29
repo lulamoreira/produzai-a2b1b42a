@@ -532,12 +532,18 @@ const ClientDetail = () => {
   const handleCampaignDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = campaigns.findIndex((c) => c.id === active.id);
-    const newIndex = campaigns.findIndex((c) => c.id === over.id);
+    
+    const displayCampaigns = clientIds === null
+      ? campaigns
+      : campaigns.filter(c => myCampaignIds.includes(c.id) ||
+          (clientIds?.includes(clientId!) && !myCampaignIds.length));
+
+    const oldIndex = displayCampaigns.findIndex((c) => c.id === active.id);
+    const newIndex = displayCampaigns.findIndex((c) => c.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
-    const reordered = arrayMove(campaigns, oldIndex, newIndex);
+    const reordered = arrayMove(displayCampaigns, oldIndex, newIndex);
     reorderCampaigns.mutate(reordered.map((c, i) => ({ id: c.id, display_order: i })));
-  }, [campaigns, reorderCampaigns]);
+  }, [campaigns, displayCampaigns, reorderCampaigns]);
 
   const handleAddCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
