@@ -164,21 +164,29 @@ const AdminUsers = () => {
   const { data: allAgencyAccess = [] } = useUserAgencyAccess();
   const { data: allCampaignAccess = [] } = useUserCampaignAccess();
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"name" | "role" | "company">("name");
 
   const filteredUsers = useMemo(() => {
     let result = searchQuery.trim()
       ? users.filter(u =>
           (u.display_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-          u.user_id.toLowerCase().includes(searchQuery.toLowerCase())
+          u.user_id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (u.company || "").toLowerCase().includes(searchQuery.toLowerCase())
         )
       : users;
 
     return [...result].sort((a, b) => {
+      if (sortBy === "role") {
+        return (a.role || "").localeCompare(b.role || "", "pt-BR");
+      }
+      if (sortBy === "company") {
+        return (a.company || "").localeCompare(b.company || "", "pt-BR");
+      }
       const nameA = (a.display_name || "").toLowerCase();
       const nameB = (b.display_name || "").toLowerCase();
       return nameA.localeCompare(nameB, "pt-BR");
     });
-  }, [users, searchQuery]);
+  }, [users, searchQuery, sortBy]);
 
   return (
     <div className="space-y-6">
