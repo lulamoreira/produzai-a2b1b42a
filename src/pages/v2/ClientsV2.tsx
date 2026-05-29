@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
+import { useMyAccessibleClientIds } from "@/hooks/useMyAccessibleClientIds";
 import { useClients, type Client } from "@/hooks/useMultiClientData";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +37,7 @@ export default function ClientsV2({ onAddClick }: { onAddClick: () => void }) {
   const { isAdmin } = useUserRole();
   const { data: clients = [], isLoading } = useClients(agencyId);
   const [search, setSearch] = useState("");
+  const { clientIds, isLoading: loadingAccess } = useMyAccessibleClientIds();
 
   const { data: agencyInfo } = useQuery({
     queryKey: ["agency_name", agencyId],
@@ -59,7 +61,11 @@ export default function ClientsV2({ onAddClick }: { onAddClick: () => void }) {
     },
   });
 
-  const filtered = clients.filter((c) =>
+  const accessFiltered = clientIds === null
+    ? clients
+    : clients.filter(c => clientIds.includes(c.id));
+
+  const filtered = accessFiltered.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase())
   );
 
