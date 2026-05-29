@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useDisplayName } from "@/components/AppHeader";
@@ -38,6 +39,8 @@ import { useUserRole } from "@/hooks/useUserRole";
 export function HomeV2() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { data: allAgencyAccess = [], isLoading: loadingAgencyAccessTable } = useUserAgencyAccess();
+  const myAgencyAccess = allAgencyAccess.filter(a => a.user_id === user?.id && !a.suspended);
   const { role, isAdmin, isMaster, isAdminOrMaster, isLoading: loadingRole } = useUserRole();
   const navigate = useNavigate();
   const { displayName } = useDisplayName();
@@ -60,9 +63,13 @@ export function HomeV2() {
   });
 
   useEffect(() => {
-    if (loadingRole || loadingAgency || isAdminOrMaster) return;
-    navigate(userAgency ? `/agency/${userAgency}` : '/my-campaigns');
-  }, [loadingRole, loadingAgency, isAdminOrMaster, userAgency, navigate]);
+    if (loadingRole || loadingAgencyAccessTable || isAdminOrMaster) return;
+    if (myAgencyAccess.length > 0) {
+      navigate(`/agency/${myAgencyAccess[0].agency_id}`);
+    } else {
+      navigate('/my-campaigns');
+    }
+  }, [loadingRole, loadingAgencyAccessTable, isAdminOrMaster, myAgencyAccess, navigate]);
 
   const { data: dashboardData, isLoading: loadingKpis } = useQuery({
     queryKey: ["v2-dashboard-data", role, userAgency, isAdminOrMaster],
