@@ -10,6 +10,8 @@ export type UserWithRole = {
   company: string | null;
   role: AppRole;
   created_at: string;
+  login_count?: number;
+  last_seen_at?: string;
 };
 
 export function useAdminUsers() {
@@ -19,7 +21,7 @@ export function useAdminUsers() {
       // Fetch profiles
       const { data: profiles, error: pErr } = await supabase
         .from("profiles")
-        .select("user_id, display_name, company, created_at");
+        .select("user_id, display_name, company, created_at, login_count, last_seen_at");
       if (pErr) throw pErr;
 
       // Fetch roles
@@ -37,6 +39,8 @@ export function useAdminUsers() {
         company: (p as any).company ?? null,
         role: roleMap.get(p.user_id) ?? "viewer",
         created_at: p.created_at,
+        login_count: (p as any).login_count ?? 0,
+        last_seen_at: (p as any).last_seen_at ?? null,
       })) as UserWithRole[];
     },
     staleTime: 5 * 60 * 1000, // reference data — rarely changes

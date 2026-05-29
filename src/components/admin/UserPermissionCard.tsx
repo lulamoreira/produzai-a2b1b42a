@@ -320,8 +320,17 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
               <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={handleSaveName}>OK</Button>
             </div>
           ) : (
-            <div className="flex items-center gap-1.5 group">
-              <p className="font-semibold text-foreground text-sm truncate">{capitalizeName(userInfo.display_name) || "Sem nome"}</p>
+            <div className="flex items-center gap-2 group">
+              <div className="relative">
+                <p className="font-semibold text-foreground text-sm truncate">{capitalizeName(userInfo.display_name) || "Sem nome"}</p>
+                {userInfo.last_seen_at && (new Date().getTime() - new Date(userInfo.last_seen_at).getTime()) < 5 * 60 * 1000 && (
+                  <span className="absolute -left-3 top-1.5 w-2 h-2 rounded-full bg-green-500 animate-pulse" title="Online agora" />
+                )}
+              </div>
+              <div className="flex items-center gap-1 bg-muted/50 px-1.5 py-0.5 rounded text-[10px] text-muted-foreground font-mono" title="Quantidade de acessos">
+                <LogIn className="w-2.5 h-2.5" />
+                {userInfo.login_count || 0}
+              </div>
               {canEditName && (
                 <button className="opacity-0 group-hover:opacity-100 transition-opacity"
                   onClick={e => { e.stopPropagation(); setEditingName(true); setNameValue(userInfo.display_name || ""); }}>
