@@ -30,7 +30,7 @@ import {
   ChevronDown, ChevronRight, Edit3, Plus, Trash2,
   PauseCircle, PlayCircle, Building2, KeyRound, Shield, Megaphone,
   User as UserIcon, Mail, Phone, Briefcase, Calendar, Languages, Palette, MessageCircle, IdCard,
-  Eye, LogIn, Lock, RefreshCw, Copy, Share2,
+  Eye, LogIn, Lock, RefreshCw, Copy, Share2, UserX,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -87,6 +87,9 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
   const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(null);
   const [resettingPassword, setResettingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  const [deletingUser, setDeletingUser] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { data: campaignsForClient = [] } = useCampaigns(newCampaignClientId || undefined);
 
@@ -241,6 +244,27 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
     } else {
       await navigator.clipboard.writeText(text);
       toast.success("Mensagem copiada para compartilhar!");
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    setIsDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { userId: userInfo.user_id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success("Usuário excluído. Histórico de ações preservado.");
+      setDeletingUser(false);
+      setDeleteConfirmText("");
+      queryClient.invalidateQueries({ queryKey: ["admin_users_list"] });
+      queryClient.invalidateQueries({ queryKey: ["admin_users"] });
+      queryClient.invalidateQueries({ queryKey: ["all_users_approval"] });
+    } catch (e: any) {
+      toast.error(`Erro ao excluir: ${e.message}`);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -440,6 +464,52 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                         disabled={!newPassword || newPassword.length < 6}
                       >
                         Salvar Nova Senha
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              {isAdmin && (
+                <AlertDialog open={deletingUser} onOpenChange={(v) => { if (!isDeleting) { setDeletingUser(v); if (!v) setDeleteConfirmText(""); } }}>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      onClick={(e) => e.stopPropagation()}
+                      title="Excluir usuário"
+                      className="h-8 px-2.5 inline-flex items-center justify-center gap-1.5 rounded-md border border-red-300 bg-red-50 text-red-700 hover:bg-red-100 dark:bg-red-950/40 dark:border-red-800 dark:text-red-300 transition-colors text-xs font-medium"
+                    >
+                      <UserX className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Excluir</span>
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="text-destructive">Excluir usuário {capitalizeName(userInfo.display_name) || ""}?</AlertDialogTitle>
+                      <AlertDialogDescription className="space-y-2">
+                        <span className="block">
+                          Esta ação é <strong>permanente</strong>. O usuário perderá acesso ao sistema imediatamente e não poderá mais entrar.
+                        </span>
+                        <span className="block text-foreground">
+                          ✓ Todo o histórico de ações, registros, comentários e dados criados por este usuário <strong>serão preservados</strong> no sistema.
+                        </span>
+                        <span className="block">
+                          Para confirmar, digite <strong className="text-foreground">EXCLUIR</strong> abaixo:
+                        </span>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <Input
+                      value={deleteConfirmText}
+                      onChange={(e) => setDeleteConfirmText(e.target.value)}
+                      placeholder="EXCLUIR"
+                      autoComplete="off"
+                    />
+                    <AlertDialogFooter>
+                      <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={(e) => { e.preventDefault(); handleDeleteUser(); }}
+                        disabled={deleteConfirmText !== "EXCLUIR" || isDeleting}
+                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      >
+                        {isDeleting ? "Excluindo..." : "Excluir definitivamente"}
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
