@@ -349,6 +349,11 @@ const ClientDetail = () => {
   useLanguage((client as any)?.language);
   const { t } = useTranslation();
   const { data: campaigns = [], isLoading: loadingCampaigns } = useCampaigns(clientId);
+  
+  const displayCampaigns = clientIds === null
+    ? campaigns
+    : campaigns.filter(c => myCampaignIds.includes(c.id) ||
+        (clientIds?.includes(clientId!) && !myCampaignIds.length));
   const { data: favoriteIds } = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
 
