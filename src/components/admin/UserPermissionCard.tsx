@@ -30,7 +30,7 @@ import {
   ChevronDown, ChevronRight, Edit3, Plus, Trash2,
   PauseCircle, PlayCircle, Building2, KeyRound, Shield, Megaphone,
   User as UserIcon, Mail, Phone, Briefcase, Calendar, Languages, Palette, MessageCircle, IdCard,
-  Eye, LogIn, Lock,
+  Eye, LogIn, Lock, RefreshCw, Copy, Share2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -204,6 +204,43 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
       setNewPassword("");
     } catch (e: any) {
       toast.error(`Erro: ${e.message}`);
+    }
+  };
+
+  const generatePassword = () => {
+    const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+    const lower = "abcdefghijkmnpqrstuvwxyz";
+    const nums = "23456789";
+    const syms = "!@#$%&*?";
+    const all = upper + lower + nums + syms;
+    const pick = (s: string) => s[Math.floor(Math.random() * s.length)];
+    let pwd = pick(upper) + pick(lower) + pick(nums) + pick(syms);
+    for (let i = 0; i < 8; i++) pwd += pick(all);
+    pwd = pwd.split("").sort(() => Math.random() - 0.5).join("");
+    setNewPassword(pwd);
+    toast.success("Senha gerada!");
+  };
+
+  const copyPassword = async () => {
+    if (!newPassword) return;
+    try {
+      await navigator.clipboard.writeText(newPassword);
+      toast.success("Senha copiada!");
+    } catch {
+      toast.error("Não foi possível copiar.");
+    }
+  };
+
+  const sharePassword = async () => {
+    if (!newPassword) return;
+    const text = `Sua nova senha de acesso: ${newPassword}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Nova senha", text });
+      } catch {/* cancelado */}
+    } else {
+      await navigator.clipboard.writeText(text);
+      toast.success("Mensagem copiada para compartilhar!");
     }
   };
 
