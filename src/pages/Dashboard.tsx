@@ -1,10 +1,11 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useClients, useAddClient, useUpdateClient, useDeleteClient, useReorderClients, type Client } from "@/hooks/useMultiClientData";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useUserAgencyAccess } from "@/hooks/useUserAgencyAccess";
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -196,10 +197,20 @@ function SortableClientCard({
 const Dashboard = () => {
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isAdminOrMaster } = useUserRole();
   const navigate = useNavigate();
   const { agencyId } = useParams<{ agencyId: string }>();
+  const { data: allAgencyAccess = [], isLoading: loadingAgencyAccess } = useUserAgencyAccess();
+  const hasAccessToThisAgency = isAdminOrMaster ||
+    allAgencyAccess.some(
+      a => a.agency_id === agencyId && a.user_id === user?.id && !a.suspended
+    );
   const { data: clients = [], isLoading } = useClients(agencyId);
+
+  useEffect(() => {
+    if (loadingAgencyAccess) return;
+    if (!hasAccessToThisAgency) navigate('/', { replace: true });
+  }, [loadingAgencyAccess, hasAccessToThisAgency, navigate]);
 
   const { data: agencyInfo } = useQuery({
     queryKey: ["agency_name", agencyId],
@@ -286,6 +297,10 @@ const Dashboard = () => {
   const handleColorChange = (clientId: string, color: string) => {
     updateClient.mutate({ id: clientId, color } as any);
   };
+
+  if (!isAdminOrMaster && (loadingAgencyAccess || !hasAccessToThisAgency)) {
+    return null;
+  }
 
   if (isLoading) {
     return (

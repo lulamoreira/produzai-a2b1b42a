@@ -1,17 +1,17 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
-import { useMyAccessibleClientIds } from "@/hooks/useMyAccessibleClientIds";
-import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import {
   useClient, useCampaigns, useAddCampaign, useDeleteCampaign, useUpdateCampaign, useReorderCampaigns,
   useClientStores, useAddClientStore, useImportClientStores, useDeleteClientStore,
   useUpdateClient, useUpdateClientStore, fetchAddressByCep, fetchCnpjData,
   useClientStoreModels, useAddClientStoreModel, useDeleteClientStoreModel,
+  useUserClientAccess,
   type ClientStore, type Campaign,
 } from "@/hooks/useMultiClientData";
+import { useUserCampaignAccess } from "@/hooks/useUserCampaignAccess";
 import { useClientPermission } from "@/hooks/useClientPermission";
 import { EmptyStateV2 } from "@/components/v2/ui/EmptyStateV2";
 import { Button } from "@/components/ui/button";
@@ -325,18 +325,40 @@ const ClientDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { clientIds, isLoading: loadingAccess } = useMyAccessibleClientIds();
+  const { isAdminOrMaster } = useUserRole();
+
+  const { data: allClientAccess = [], isLoading: loadingClientAccess } = useUserClientAccess();
   const { data: allCampaignAccess = [] } = useUserCampaignAccess();
 
-  const canViewClient = clientIds === null || (clientId ? clientIds.includes(clientId) : false);
+  const myDirectClientIds = allClientAccess
+    .filter(a => a.user_id === user?.id && !a.suspended)
+    .map(a => a.client_id);
 
   const myCampaignIds = allCampaignAccess
     .filter(a => a.user_id === user?.id && !a.suspended)
     .map(a => a.campaign_id);
 
+  const { data: campaignClientIds = [], isLoading: loadingCampaignClients } = useQuery({
+    queryKey: ["my-campaign-client-ids", [...myCampaignIds].sort().join(",")],
+    enabled: !isAdminOrMaster && myCampaignIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("campaigns")
+        .select("client_id")
+        .in("id", myCampaignIds);
+      return [...new Set((data || []).map((c: any) => c.client_id).filter(Boolean))];
+    },
+  });
+
+  const loadingAccess = loadingClientAccess || loadingCampaignClients;
+  const allAccessibleClientIds = [
+    ...new Set([...myDirectClientIds, ...campaignClientIds])
+  ];
+  const canViewClient = isAdminOrMaster || (clientId ? allAccessibleClientIds.includes(clientId) : false);
+
   useEffect(() => {
     if (loadingAccess) return;
-    if (!canViewClient) navigate('/');
+    if (!canViewClient) navigate('/', { replace: true });
   }, [loadingAccess, canViewClient, navigate]);
 
   // Permission checks replace isAdmin for granular access control
@@ -349,11 +371,11 @@ const ClientDetail = () => {
   useLanguage((client as any)?.language);
   const { t } = useTranslation();
   const { data: campaigns = [], isLoading: loadingCampaigns } = useCampaigns(clientId);
-  
-  const displayCampaigns = clientIds === null
+
+  const displayCampaigns = isAdminOrMaster
     ? campaigns
-    : campaigns.filter(c => myCampaignIds.includes(c.id) ||
-        (clientIds?.includes(clientId!) && !myCampaignIds.length));
+    : campaigns.filter(c => myCampaignIds.includes(c.id));
+
   const { data: favoriteIds } = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
 
@@ -480,7 +502,6 @@ const ClientDetail = () => {
   const [deleteAllStoresOpen, setDeleteAllStoresOpen] = useState(false);
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [bulkDeleteProgress, setBulkDeleteProgress] = useState({ current: 0, total: 0 });
-  const { isAdminOrMaster } = useUserRole();
 
   // Custom field labels
   const [customLabels, setCustomLabels] = useState<Record<string, string>>({
@@ -538,10 +559,9 @@ const ClientDetail = () => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     
-    const displayCampaigns = clientIds === null
+    const displayCampaigns = isAdminOrMaster
       ? campaigns
-      : campaigns.filter(c => myCampaignIds.includes(c.id) ||
-          (clientIds?.includes(clientId!) && !myCampaignIds.length));
+      : campaigns.filter(c => myCampaignIds.includes(c.id));
 
     const oldIndex = displayCampaigns.findIndex((c) => c.id === active.id);
     const newIndex = displayCampaigns.findIndex((c) => c.id === over.id);
@@ -854,6 +874,10 @@ const ClientDetail = () => {
   ];
   const customFieldsParsed = customFieldLabelsRaw.map(parseFieldLabel);
 
+  if (!isAdminOrMaster && (loadingAccess || !canViewClient)) {
+    return null;
+  }
+
   if (loadingClient) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -1125,82 +1149,80 @@ const ClientDetail = () => {
         </div>
 
         {/* ─── Campaigns View (default) ─── */}
-        {!new URLSearchParams(location.search).has("tab") && (() => {
-          return (
-            <>
-              <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
-                <DialogContent>
-                  <DialogHeader><DialogTitle>{t("clientDashboard.newCampaign")}</DialogTitle></DialogHeader>
-                  <form onSubmit={handleAddCampaign} className="space-y-4">
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("clientDashboard.campaignNameLabel")} *</label>
-                      <Input 
-                        value={campaignName} 
-                        onChange={(e) => setCampaignName(e.target.value)} 
-                        onBlur={(e) => setCampaignName(capitalizeName(e.target.value))}
-                        required 
-                      />
+        {!new URLSearchParams(location.search).has("tab") && (
+          <>
+            <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
+              <DialogContent>
+                <DialogHeader><DialogTitle>{t("clientDashboard.newCampaign")}</DialogTitle></DialogHeader>
+                <form onSubmit={handleAddCampaign} className="space-y-4">
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-1 block">{t("clientDashboard.campaignNameLabel")} *</label>
+                    <Input 
+                      value={campaignName} 
+                      onChange={(e) => setCampaignName(e.target.value)} 
+                      onBlur={(e) => setCampaignName(capitalizeName(e.target.value))}
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-medium text-muted-foreground mb-2 block">{t("clientDashboard.campaignColorLabel")}</label>
+                    <div className="grid grid-cols-8 gap-1.5">
+                      {CAMPAIGN_COLORS.map((c) => (
+                        <button
+                          type="button"
+                          key={c}
+                          className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${campaignColor === c ? "border-foreground scale-110 ring-2 ring-primary/30" : "border-transparent"}`}
+                          style={{ backgroundColor: c }}
+                          onClick={() => setCampaignColor(c)}
+                        />
+                      ))}
                     </div>
-                    <div>
-                      <label className="text-xs font-medium text-muted-foreground mb-2 block">{t("clientDashboard.campaignColorLabel")}</label>
-                      <div className="grid grid-cols-8 gap-1.5">
-                        {CAMPAIGN_COLORS.map((c) => (
-                          <button
-                            type="button"
-                            key={c}
-                            className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${campaignColor === c ? "border-foreground scale-110 ring-2 ring-primary/30" : "border-transparent"}`}
-                            style={{ backgroundColor: c }}
-                            onClick={() => setCampaignColor(c)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addCampaign.isPending}>{t("clientDashboard.create")}</Button>
-                  </form>
-                </DialogContent>
-              </Dialog>
+                  </div>
+                  <Button type="submit" className="w-full bg-primary text-primary-foreground hover:bg-primary/90" disabled={addCampaign.isPending}>{t("clientDashboard.create")}</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
 
-              {loadingCampaigns ? (
-                <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
-              ) : campaigns.length === 0 ? (
-                <div className="bg-white rounded-xl border border-stone-200 border-dashed mt-6">
-                  <EmptyStateV2
-                    icon={Megaphone}
-                    title={t("campaigns.emptyTitle")}
-                    description={t("campaigns.emptyDescription")}
-                    action={canEditCampaigns ? { 
-                      label: t("campaigns.newCampaign"), 
-                      onClick: () => setCampaignDialogOpen(true) 
-                    } : undefined}
-                  />
-                </div>
-              ) : (
-                <div className="mt-6">
-                  <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
-                    <SortableContext items={displayCampaigns.map((c) => c.id)} strategy={rectSortingStrategy}>
-                      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {displayCampaigns.map((c) => (
-                          <SortableCampaignCard
-                            key={c.id}
-                            campaign={c}
-                            canDelete={canDeleteCampaigns}
-                            canEdit={canEditCampaigns}
-                            onNavigate={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
-                            onDelete={() => deleteCampaign.mutate(c.id)}
-                            onColorChange={(color) => updateCampaign.mutate({ id: c.id, color })}
-                            isFavorited={favoriteIds?.has(c.id) ?? false}
-                            onToggleFavorite={() => toggleFavorite.mutate({ campaignId: c.id, isFavorited: favoriteIds?.has(c.id) ?? false })}
-                            showFavorite={true}
-                          />
-                        ))}
-                      </div>
-                    </SortableContext>
-                  </DndContext>
-                </div>
-              )}
-            </>
-          );
-        })()}
+            {loadingCampaigns ? (
+              <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
+            ) : displayCampaigns.length === 0 ? (
+              <div className="bg-white rounded-xl border border-stone-200 border-dashed mt-6">
+                <EmptyStateV2
+                  icon={Megaphone}
+                  title={t("campaigns.emptyTitle")}
+                  description={t("campaigns.emptyDescription")}
+                  action={canEditCampaigns ? { 
+                    label: t("campaigns.newCampaign"), 
+                    onClick: () => setCampaignDialogOpen(true) 
+                  } : undefined}
+                />
+              </div>
+            ) : (
+              <div className="mt-6">
+                <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
+                  <SortableContext items={displayCampaigns.map((c) => c.id)} strategy={rectSortingStrategy}>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {displayCampaigns.map((c) => (
+                        <SortableCampaignCard
+                          key={c.id}
+                          campaign={c}
+                          canDelete={canDeleteCampaigns}
+                          canEdit={canEditCampaigns}
+                          onNavigate={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
+                          onDelete={() => deleteCampaign.mutate(c.id)}
+                          onColorChange={(color) => updateCampaign.mutate({ id: c.id, color })}
+                          isFavorited={favoriteIds?.has(c.id) ?? false}
+                          onToggleFavorite={() => toggleFavorite.mutate({ campaignId: c.id, isFavorited: favoriteIds?.has(c.id) ?? false })}
+                          showFavorite={true}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              </div>
+            )}
+          </>
+        )}
 
         {/* ─── Stores View ─── */}
         {new URLSearchParams(location.search).get("tab") === "stores" && (
