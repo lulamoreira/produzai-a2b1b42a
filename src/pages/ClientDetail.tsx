@@ -1114,6 +1114,14 @@ const ClientDetail = () => {
         {/* ─── Campaigns View (default) ─── */}
         {!new URLSearchParams(location.search).has("tab") && (
           <>
+            {(() => {
+              const displayCampaigns = clientIds === null
+                ? campaigns
+                : campaigns.filter(c => myCampaignIds.includes(c.id) ||
+                    (clientIds?.includes(clientId!) && !myCampaignIds.length));
+              
+              return (
+                <>
             <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
               <DialogContent>
                 <DialogHeader><DialogTitle>{t("clientDashboard.newCampaign")}</DialogTitle></DialogHeader>
@@ -1163,9 +1171,9 @@ const ClientDetail = () => {
             ) : (
               <div className="mt-6">
                 <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
-                  <SortableContext items={campaigns.map((c) => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={displayCampaigns.map((c) => c.id)} strategy={rectSortingStrategy}>
                     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                      {campaigns.map((c) => (
+                      {displayCampaigns.map((c) => (
                         <SortableCampaignCard
                           key={c.id}
                           campaign={c}
@@ -1184,6 +1192,9 @@ const ClientDetail = () => {
                 </DndContext>
               </div>
             )}
+                </>
+              );
+            })()}
           </>
         )}
 
