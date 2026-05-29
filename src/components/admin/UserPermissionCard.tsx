@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { capitalizeName } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole, type AppRole } from "@/hooks/useUserRole";
@@ -393,7 +393,7 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
       {expanded && (
         <div className="border-t border-border">
           {/* Profile Details */}
-          <UserProfileDetails userId={userInfo.user_id} agencies={agencies} clients={clients} />
+          <UserProfileDetails userId={userInfo.user_id} agencies={agencies} clients={clients} isAdmin={isAdmin} />
 
           {/* Role Selector */}
           {canChangeRole && (
@@ -650,10 +650,11 @@ function CampaignAccessRow({ access, clients, agencies, categories, onChangeCate
 }
 
 // Sub-component to fetch and display user's full profile data
-function UserProfileDetails({ userId, agencies, clients }: {
+function UserProfileDetails({ userId, agencies, clients, isAdmin }: {
   userId: string;
   agencies: Array<{ id: string; name: string }>;
   clients: Array<{ id: string; name: string; agency_id: string }>;
+  isAdmin: boolean;
 }) {
   const { data: profile, isLoading } = useQuery({
     queryKey: ["user_profile_details", userId],
@@ -700,12 +701,107 @@ function UserProfileDetails({ userId, agencies, clients }: {
   const agencyName = profile.agency_id ? agencies.find(a => a.id === profile.agency_id)?.name : null;
   const clientName = profile.client_id ? clients.find(c => c.id === profile.client_id)?.name : null;
 
-  const Field = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) => (
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    display_name: "",
+    nickname: "",
+    phone: "",
+    phone_is_whatsapp: false,
+    job_title: "",
+    company: "",
+    approval_status: "pending" as "approved" | "pending" | "rejected",
+  });
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        display_name: profile.display_name || "",
+        nickname: profile.nickname || "",
+        phone: profile.phone || "",
+        phone_is_whatsapp: profile.phone_is_whatsapp || false,
+        job_title: profile.job_title || "",
+        company: profile.company || "",
+        approval_status: (profile.approval_status as any) || "pending",
+      });
+    }
+  }, [profile]);
+
+  const handleUpdate = async () => {
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        display_name: formData.display_name,
+        nickname: formData.nickname,
+        phone: formData.phone,
+        phone_is_whatsapp: formData.phone_is_whatsapp,
+        job_title: formData.job_title,
+        company: formData.company,
+        approval_status: formData.approval_status,
+      })
+      .eq("user_id", userId);
+
+    if (error) {
+      toast.error("Erro ao atualizar perfil: " + error.message);
+    } else {
+      toast.success("Perfil atualizado com sucesso!");
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ["user_profile_details", userId] });
+      queryClient.invalidateQueries({ queryKey: ["admin_users_list"] });
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    try {
+      // In a real app, you might want a specialized edge function to handle 
+      // full user deletion (auth.users + cleanup). 
+      // For now we delete from profiles which is what the user probably means by "apagar"
+      // Or if they mean deleting the Auth user, we would need a service role function.
+      const { error } = await supabase.functions.invoke("delete-user", {
+        body: { userId },
+      });
+
+      if (error) throw error;
+      
+      toast.success("Usuário excluído com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["admin_users_list"] });
+    } catch (e: any) {
+      toast.error("Erro ao excluir usuário: " + e.message);
+    }
+  };
+
+  const Field = ({ icon, label, value, field, type = "text" }: { 
+    icon: React.ReactNode; 
+    label: string; 
+    value: React.ReactNode;
+    field?: keyof typeof formData;
+    type?: string;
+  }) => (
     <div className="flex items-start gap-2 min-w-0">
       <div className="mt-0.5 text-muted-foreground shrink-0">{icon}</div>
       <div className="min-w-0 flex-1">
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{label}</p>
-        <p className="text-xs text-foreground truncate">{value || <span className="text-muted-foreground italic">—</span>}</p>
+        {isEditing && field ? (
+          field === "phone_is_whatsapp" ? (
+            <div className="flex items-center gap-2 mt-1">
+              <input 
+                type="checkbox" 
+                checked={formData[field] as boolean} 
+                onChange={e => setFormData(prev => ({ ...prev, [field]: e.target.checked }))}
+                className="w-3.5 h-3.5"
+              />
+              <span className="text-[10px] text-muted-foreground">WhatsApp?</span>
+            </div>
+          ) : (
+            <Input 
+              className="h-7 text-xs mt-1" 
+              value={formData[field] as string} 
+              onChange={e => setFormData(prev => ({ ...prev, [field]: e.target.value }))}
+            />
+          )
+        ) : (
+          <p className="text-xs text-foreground truncate">{value || <span className="text-muted-foreground italic">—</span>}</p>
+        )}
       </div>
     </div>
   );
@@ -715,17 +811,68 @@ function UserProfileDetails({ userId, agencies, clients }: {
       <div className="flex items-center gap-2 mb-3">
         <IdCard className="w-4 h-4 text-primary" />
         <h4 className="text-sm font-semibold text-foreground">Dados do usuário</h4>
-        <Badge variant="outline" className="text-[10px] ml-auto">
-          {profile.approval_status === "approved" ? "Aprovado" : profile.approval_status === "pending" ? "Pendente" : profile.approval_status || "—"}
-        </Badge>
+        
+        {isEditing ? (
+          <Select value={formData.approval_status} onValueChange={v => setFormData(prev => ({ ...prev, approval_status: v as any }))}>
+            <SelectTrigger className="h-7 text-[10px] w-24 ml-auto"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="approved">Aprovado</SelectItem>
+              <SelectItem value="pending">Pendente</SelectItem>
+              <SelectItem value="rejected">Rejeitado</SelectItem>
+            </SelectContent>
+          </Select>
+        ) : (
+          <Badge variant="outline" className="text-[10px] ml-auto">
+            {profile.approval_status === "approved" ? "Aprovado" : profile.approval_status === "pending" ? "Pendente" : profile.approval_status || "—"}
+          </Badge>
+        )}
+
+        {isAdmin && (
+          <div className="flex items-center gap-1">
+            {isEditing ? (
+              <>
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px]" onClick={() => setIsEditing(false)}>Cancelar</Button>
+                <Button size="sm" className="h-7 px-2 text-[10px]" onClick={handleUpdate}>Salvar</Button>
+              </>
+            ) : (
+              <>
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px]" onClick={() => setIsEditing(true)}>
+                  <Edit3 className="w-3 h-3 mr-1" /> Editar
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10">
+                      <Trash2 className="w-3 h-3 mr-1" /> Excluir
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir Usuário?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação excluirá permanentemente o usuário e todos os seus dados. Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Confirmar Exclusão
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
+          </div>
+        )}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        <Field icon={<UserIcon className="w-3.5 h-3.5" />} label="Nome" value={profile.display_name} />
-        <Field icon={<UserIcon className="w-3.5 h-3.5" />} label="Apelido" value={profile.nickname} />
+        <Field icon={<UserIcon className="w-3.5 h-3.5" />} label="Nome" value={profile.display_name} field="display_name" />
+        <Field icon={<UserIcon className="w-3.5 h-3.5" />} label="Apelido" value={profile.nickname} field="nickname" />
         <Field icon={<Mail className="w-3.5 h-3.5" />} label="E-mail" value={email} />
         <Field
           icon={<Phone className="w-3.5 h-3.5" />}
           label="Telefone"
+          field="phone"
           value={
             profile.phone ? (
               <span className="inline-flex items-center gap-1">
@@ -735,8 +882,9 @@ function UserProfileDetails({ userId, agencies, clients }: {
             ) : null
           }
         />
-        <Field icon={<Briefcase className="w-3.5 h-3.5" />} label="Cargo" value={profile.job_title} />
-        <Field icon={<Building2 className="w-3.5 h-3.5" />} label="Empresa" value={profile.company} />
+        {isEditing && <Field icon={<MessageCircle className="w-3.5 h-3.5" />} label="WhatsApp?" value={null} field="phone_is_whatsapp" />}
+        <Field icon={<Briefcase className="w-3.5 h-3.5" />} label="Cargo" value={profile.job_title} field="job_title" />
+        <Field icon={<Building2 className="w-3.5 h-3.5" />} label="Empresa" value={profile.company} field="company" />
         <Field icon={<Languages className="w-3.5 h-3.5" />} label="Idioma" value={profile.preferred_language ? langLabel[profile.preferred_language] || profile.preferred_language : null} />
         <Field icon={<Palette className="w-3.5 h-3.5" />} label="Tema (matiz)" value={profile.theme_hue != null ? `${profile.theme_hue}°` : null} />
         <Field icon={<Building2 className="w-3.5 h-3.5" />} label="Agência vinculada" value={agencyName} />
