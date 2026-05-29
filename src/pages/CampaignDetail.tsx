@@ -557,15 +557,19 @@ const CampaignDetail = () => {
               <TabsContent value="history">
                 <HistoryTab campaignId={campaignId!} />
               </TabsContent>
-              <TabsContent value="mockup">
-                <MockupTab 
-                  campaignId={campaignId!} campaignName={campaign.name} 
-                  pieces={pieces} kits={kits} kitPieces={kitPieces} 
-                />
-              </TabsContent>
-              <TabsContent value="loja_a_loja">
-                <LojaALojaTab campaignId={campaignId!} clientId={clientId!} lalPerms={lalPerms} />
-              </TabsContent>
+              {hasModule("mockup") && (
+                <TabsContent value="mockup">
+                  <MockupTab 
+                    campaignId={campaignId!} campaignName={campaign.name} 
+                    pieces={pieces} kits={kits} kitPieces={kitPieces} 
+                  />
+                </TabsContent>
+              )}
+              {hasModule("loja_a_loja") && (
+                <TabsContent value="loja_a_loja">
+                  <LojaALojaTab campaignId={campaignId!} clientId={clientId!} lalPerms={lalPerms} />
+                </TabsContent>
+              )}
             </Suspense>
           </TabErrorBoundary>
 
