@@ -181,10 +181,11 @@ const MyCampaigns = () => {
                   <p className="text-xs text-muted-foreground">{c.clientName}</p>
                 </div>
                 <ModuleGrid
-                  items={c.modules.map((mod) => {
+                  items={(c.modules.map((mod) => {
                     const meta = MODULE_META[mod];
                     return meta ? { key: mod, label: meta.label, icon: meta.icon } : null;
-                  }).filter(Boolean) as any}
+                  }).filter(Boolean) as { key: string; label: string; icon: React.ElementType }[])
+                    .sort((a, b) => a.label.localeCompare(b.label, undefined, { sensitivity: "base" }))}
                   onSelect={(mod) => handleNavigate(c, mod)}
                 />
               </div>
