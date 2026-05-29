@@ -58,6 +58,7 @@ const CampaignDetail = () => {
   const userModules = myCampaignAccess?.modules ?? [];
   const hasModule = (mod: string) => !isLimited || userModules.includes(mod);
 
+
   const lalPerms = useLojaALojaPermissions(campaignId, clientId);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
   const { data: client } = useClient(clientId);
@@ -131,6 +132,14 @@ const CampaignDetail = () => {
     
     navigate(`${location.pathname}${params.toString() ? `?${params}` : ""}`, { replace: true, state: location.state });
   }, [location, navigate]);
+
+  useEffect(() => {
+    if (!isLimited || !activeSection || activeSection === "summary") return;
+    if (userModules.length === 0) return;
+    if (!userModules.includes(activeSection)) {
+      setActiveSection(userModules[0] ?? "summary");
+    }
+  }, [activeSection, isLimited, userModules, setActiveSection]);
 
   const qtyMap = useMemo(() => {
     const map: Record<string, number> = {};
@@ -280,16 +289,16 @@ const CampaignDetail = () => {
             {hasModule("pieces") && <TabsTrigger value="pieces">{t("tabs.pieces", "Peças")}</TabsTrigger>}
             {hasModule("matrix") && <TabsTrigger value="matrix">{t("tabs.rateio", "Rateio")}</TabsTrigger>}
             {isAdmin && <TabsTrigger value="budgets">{t("tabs.cotacoes", "Cotações")}</TabsTrigger>}
-            <TabsTrigger value="occurrences">{t("occurrences.title", "Ocorrências")}</TabsTrigger>
-            <TabsTrigger value="scheduling" className="hidden">Agendamento</TabsTrigger>
-            <TabsTrigger value="installations" className="hidden">Instalações</TabsTrigger>
+            {hasModule("occurrences") && <TabsTrigger value="occurrences">{t("occurrences.title", "Ocorrências")}</TabsTrigger>}
+            {hasModule("scheduling") && <TabsTrigger value="scheduling" className="hidden">Agendamento</TabsTrigger>}
+            {hasModule("installations") && <TabsTrigger value="installations" className="hidden">Instalações</TabsTrigger>}
             <TabsTrigger value="approvals" className="hidden">Aprovações</TabsTrigger>
-            <TabsTrigger value="adjustments" className="hidden">Ajustes</TabsTrigger>
+            {hasModule("adjustments") && <TabsTrigger value="adjustments" className="hidden">Ajustes</TabsTrigger>}
 
-            <TabsTrigger value="stores" className="hidden">Lojas</TabsTrigger>
+            {hasModule("stores") && <TabsTrigger value="stores" className="hidden">Lojas</TabsTrigger>}
             <TabsTrigger value="history" className="hidden">Histórico</TabsTrigger>
-            <TabsTrigger value="mockup" className="hidden">Mockup</TabsTrigger>
-            <TabsTrigger value="loja_a_loja" className="hidden">Loja a Loja</TabsTrigger>
+            {hasModule("mockup") && <TabsTrigger value="mockup" className="hidden">Mockup</TabsTrigger>}
+            {hasModule("loja_a_loja") && <TabsTrigger value="loja_a_loja" className="hidden">Loja a Loja</TabsTrigger>}
           </TabsList>
 
           <TabErrorBoundary>
