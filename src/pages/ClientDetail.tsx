@@ -325,18 +325,40 @@ const ClientDetail = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const { clientIds, isLoading: loadingAccess } = useMyAccessibleClientIds();
+  const { isAdminOrMaster } = useUserRole();
+
+  const { data: allClientAccess = [], isLoading: loadingClientAccess } = useUserClientAccess();
   const { data: allCampaignAccess = [] } = useUserCampaignAccess();
 
-  const canViewClient = clientIds === null || (clientId ? clientIds.includes(clientId) : false);
+  const myDirectClientIds = allClientAccess
+    .filter(a => a.user_id === user?.id && !a.suspended)
+    .map(a => a.client_id);
 
   const myCampaignIds = allCampaignAccess
     .filter(a => a.user_id === user?.id && !a.suspended)
     .map(a => a.campaign_id);
 
+  const { data: campaignClientIds = [], isLoading: loadingCampaignClients } = useQuery({
+    queryKey: ["my-campaign-client-ids", [...myCampaignIds].sort().join(",")],
+    enabled: !isAdminOrMaster && myCampaignIds.length > 0,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("campaigns")
+        .select("client_id")
+        .in("id", myCampaignIds);
+      return [...new Set((data || []).map((c: any) => c.client_id).filter(Boolean))];
+    },
+  });
+
+  const loadingAccess = loadingClientAccess || loadingCampaignClients;
+  const allAccessibleClientIds = [
+    ...new Set([...myDirectClientIds, ...campaignClientIds])
+  ];
+  const canViewClient = isAdminOrMaster || (clientId ? allAccessibleClientIds.includes(clientId) : false);
+
   useEffect(() => {
     if (loadingAccess) return;
-    if (!canViewClient) navigate('/');
+    if (!canViewClient) navigate('/', { replace: true });
   }, [loadingAccess, canViewClient, navigate]);
 
   // Permission checks replace isAdmin for granular access control
@@ -349,11 +371,11 @@ const ClientDetail = () => {
   useLanguage((client as any)?.language);
   const { t } = useTranslation();
   const { data: campaigns = [], isLoading: loadingCampaigns } = useCampaigns(clientId);
-  
-  const displayCampaigns = clientIds === null
+
+  const displayCampaigns = isAdminOrMaster
     ? campaigns
-    : campaigns.filter(c => myCampaignIds.includes(c.id) ||
-        (clientIds?.includes(clientId!) && !myCampaignIds.length));
+    : campaigns.filter(c => myCampaignIds.includes(c.id));
+
   const { data: favoriteIds } = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
 
@@ -853,6 +875,10 @@ const ClientDetail = () => {
     (client as any)?.custom_field_15_label,
   ];
   const customFieldsParsed = customFieldLabelsRaw.map(parseFieldLabel);
+
+  if (!isAdminOrMaster && (loadingAccess || !canViewClient)) {
+    return null;
+  }
 
   if (loadingClient) {
     return (
