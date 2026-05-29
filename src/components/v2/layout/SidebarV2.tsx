@@ -527,19 +527,25 @@ export function SidebarV2() {
           )}
 
 
-          {/* Limited User: List allowed clients/campaigns */}
-          {isLimited && !collapsed && limitedClientGroups.map(group => (
-            <div key={group.clientId} className="pt-2">
-              <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-400">
-                {group.clientName}
+          {/* Limited User: List allowed clients/campaigns (excluding the active campaign already shown in "Módulos da Campanha") */}
+          {isLimited && !collapsed && limitedClientGroups
+            .map(group => ({
+              ...group,
+              campaigns: group.campaigns.filter(c => c.campaignId !== campaignId),
+            }))
+            .filter(group => group.campaigns.length > 0)
+            .map(group => (
+              <div key={group.clientId} className="pt-2">
+                <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-400">
+                  {group.clientName}
+                </div>
+                <div className="space-y-1 mt-1">
+                  {group.campaigns.map(camp => (
+                    <CampaignItem key={camp.campaignId} camp={{ ...camp, id: camp.campaignId, name: camp.campaignName }} agencyId={group.agencyId} clientId={group.clientId} />
+                  ))}
+                </div>
               </div>
-              <div className="space-y-1 mt-1">
-                {group.campaigns.map(camp => (
-                  <CampaignItem key={camp.campaignId} camp={{ ...camp, id: camp.campaignId, name: camp.campaignName }} agencyId={group.agencyId} clientId={group.clientId} />
-                ))}
-              </div>
-            </div>
-          ))}
+            ))}
 
           {/* Admin Section */}
           {isAdminOrMaster && (
