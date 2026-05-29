@@ -934,25 +934,20 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         return (
           <>
             <div
-              className="flex flex-nowrap whitespace-nowrap items-baseline overflow-x-auto"
+              className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1 rounded-md"
               style={{
-                padding: "10px 16px",
+                padding: "8px",
                 background: "var(--bg-surface)",
-                borderBottom: "1px solid var(--border-subtle)",
-                whiteSpace: "nowrap",
-                WebkitOverflowScrolling: "touch",
-                gap: 0,
+                border: "1px solid var(--border-subtle)",
               }}
             >
-              {items.map((m, idx) => (
+              {items.map((m) => (
                 <button
                   key={m.key}
                   type="button"
                   onClick={() => setSummaryFilter(prev => prev === m.key ? "" : m.key)}
-                  className="inline-flex items-baseline gap-1 transition-colors rounded-md hover:bg-[var(--bg-muted)]"
+                  className="flex flex-col items-center justify-center text-center gap-0.5 rounded-md py-2 px-1 min-w-0 transition-colors hover:bg-[var(--bg-muted)]"
                   style={{
-                    padding: "2px 14px",
-                    borderRight: idx < items.length - 1 ? "1px solid var(--border-subtle)" : "none",
                     cursor: "pointer",
                     ...(summaryFilter === m.key ? { backgroundColor: "var(--bg-muted)" } : {}),
                   }}
@@ -960,16 +955,23 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   <span
                     className="font-bold leading-none"
                     style={{
-                      fontSize: m.isTotal ? 24 : 20,
-                      color: m.dangerWhenPositive && m.value > 0 ? "var(--s-danger)" : m.isTotal ? "var(--text-primary)" : "var(--text-secondary)",
+                      fontSize: m.isTotal ? 22 : 18,
+                      color: m.dangerWhenPositive && m.value > 0 ? "var(--s-danger)" : "var(--text-primary)",
                     }}
                   >
                     {m.value}
                   </span>
-                  <span style={{ fontSize: 11, color: "var(--text-muted)", fontWeight: 400 }}>{m.label}</span>
+                  <span
+                    className="leading-tight truncate max-w-full"
+                    style={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 500 }}
+                    title={m.label}
+                  >
+                    {m.label}
+                  </span>
                 </button>
               ))}
             </div>
+
             {summaryFilter && summaryFilter !== "total" && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>{t("filters.filteringBy")} <strong className="text-foreground">{
