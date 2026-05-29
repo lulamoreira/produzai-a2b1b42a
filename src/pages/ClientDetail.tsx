@@ -1078,7 +1078,15 @@ const ClientDetail = () => {
               <Megaphone className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <p className="text-xl sm:text-2xl font-bold text-foreground">{campaigns.length}</p>
+              <p className="text-xl sm:text-2xl font-bold text-foreground">
+                {(() => {
+                  const myCount = clientIds === null
+                    ? campaigns.length
+                    : campaigns.filter(c => myCampaignIds.includes(c.id) ||
+                        (clientIds?.includes(clientId!) && !myCampaignIds.length)).length;
+                  return myCount;
+                })()}
+              </p>
               <p className="text-[11px] text-muted-foreground">{t("clientDashboard.campaignCount")}</p>
             </div>
           </div>
