@@ -20,6 +20,7 @@ import {
 } from "@/hooks/useMultiClientData";
 import { useClientPermission } from "@/hooks/useClientPermission";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { useLojaALojaPermissions } from "@/hooks/useLojaALojaPermissions";
 import { toast } from "sonner";
 import AppLayout from "@/components/AppLayout";
@@ -52,6 +53,11 @@ const CampaignDetail = () => {
   const { version } = useUIVersion();
 
   const { isAdmin, isAdminOrMaster } = useUserRole();
+  const { isLimited, campaigns: myCampaigns } = useUserDirectAccess();
+  const myCampaignAccess = myCampaigns.find(c => c.campaignId === campaignId);
+  const userModules = myCampaignAccess?.modules ?? [];
+  const hasModule = (mod: string) => !isLimited || userModules.includes(mod);
+
   const lalPerms = useLojaALojaPermissions(campaignId, clientId);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
   const { data: client } = useClient(clientId);
@@ -271,8 +277,8 @@ const CampaignDetail = () => {
         <Tabs value={activeSection || "summary"} onValueChange={setActiveSection} className="w-full">
           <TabsList className="mb-4">
             <TabsTrigger value="summary">{t("tabs.summary", "Resumo")}</TabsTrigger>
-            <TabsTrigger value="pieces">{t("tabs.pieces", "Peças")}</TabsTrigger>
-            <TabsTrigger value="matrix">{t("tabs.rateio", "Rateio")}</TabsTrigger>
+            {hasModule("pieces") && <TabsTrigger value="pieces">{t("tabs.pieces", "Peças")}</TabsTrigger>}
+            {hasModule("matrix") && <TabsTrigger value="matrix">{t("tabs.rateio", "Rateio")}</TabsTrigger>}
             {isAdmin && <TabsTrigger value="budgets">{t("tabs.cotacoes", "Cotações")}</TabsTrigger>}
             <TabsTrigger value="occurrences">{t("occurrences.title", "Ocorrências")}</TabsTrigger>
             <TabsTrigger value="scheduling" className="hidden">Agendamento</TabsTrigger>
@@ -290,9 +296,14 @@ const CampaignDetail = () => {
             <TabsContent value="summary">
               <SummaryTab 
                 campaignId={campaignId!} stores={stores} visiblePieces={pieces} kits={kits}
-                canEditCampaign={true} canViewSchedules={true} canViewInstallations={true}
-                lalPerms={lalPerms} canViewStores={true} canViewCampaignStores={true}
-                isAdmin={isAdmin} isAdminOrMaster={isAdminOrMaster} canViewPieces={true}
+                canEditCampaign={true} 
+                canViewSchedules={hasModule("scheduling")} 
+                canViewInstallations={hasModule("installations")}
+                lalPerms={lalPerms} 
+                canViewStores={hasModule("stores")} 
+                canViewCampaignStores={hasModule("matrix")}
+                isAdmin={isAdmin} isAdminOrMaster={isAdminOrMaster} 
+                canViewPieces={hasModule("pieces")}
                 onNavigate={setActiveSection}
                 campaignKpis={campaignKpis}
               />
