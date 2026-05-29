@@ -53,6 +53,11 @@ const CampaignDetail = () => {
   const { version } = useUIVersion();
 
   const { isAdmin, isAdminOrMaster } = useUserRole();
+  const { isLimited, campaigns: myCampaigns } = useUserDirectAccess();
+  const myCampaignAccess = myCampaigns.find(c => c.campaignId === campaignId);
+  const userModules = myCampaignAccess?.modules ?? [];
+  const hasModule = (mod: string) => !isLimited || userModules.includes(mod);
+
   const lalPerms = useLojaALojaPermissions(campaignId, clientId);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
   const { data: client } = useClient(clientId);
