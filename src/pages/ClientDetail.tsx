@@ -1152,6 +1152,8 @@ const ClientDetail = () => {
         {!new URLSearchParams(location.search).has("tab") && (() => {
           return (
             <>
+          return (
+            <>
               <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
                 <DialogContent>
                   <DialogHeader><DialogTitle>{t("clientDashboard.newCampaign")}</DialogTitle></DialogHeader>
