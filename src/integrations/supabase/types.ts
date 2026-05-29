@@ -3688,6 +3688,8 @@ export type Database = {
           first_login_at: string | null
           id: string
           job_title: string | null
+          last_seen_at: string | null
+          login_count: number | null
           loja_a_loja_tab_order: string[] | null
           name_confirmed: boolean
           nickname: string | null
@@ -3709,6 +3711,8 @@ export type Database = {
           first_login_at?: string | null
           id?: string
           job_title?: string | null
+          last_seen_at?: string | null
+          login_count?: number | null
           loja_a_loja_tab_order?: string[] | null
           name_confirmed?: boolean
           nickname?: string | null
@@ -3730,6 +3734,8 @@ export type Database = {
           first_login_at?: string | null
           id?: string
           job_title?: string | null
+          last_seen_at?: string | null
+          login_count?: number | null
           loja_a_loja_tab_order?: string[] | null
           name_confirmed?: boolean
           nickname?: string | null
