@@ -268,6 +268,7 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
     }
   };
 
+  const roleBadge = () => {
     if (userInfo.role === "admin") return <Badge variant="default" className="text-[10px] uppercase tracking-wider">Admin</Badge>;
     if (userInfo.role === "master") return <Badge variant="outline" className="text-[10px] uppercase tracking-wider bg-orange-500/15 text-orange-700 border-orange-500/30">Master</Badge>;
     return <Badge variant="outline" className="text-[10px] uppercase tracking-wider">Usuário</Badge>;
