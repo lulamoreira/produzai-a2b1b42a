@@ -484,19 +484,21 @@ const CampaignDetail = () => {
                 />
               )}
             </TabsContent>
-            <TabsContent value="adjustments">
-              <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">Carregando aba...</div>}>
-                <ApprovalsTab 
-                  campaignId={campaignId!} campaignName={campaign.name} pieces={pieces}
-                  kits={kits} kitPieces={kitPieces} storePieces={storePieces} stores={stores}
-                  agencyName={agency?.name || ""} clientName={client?.name || ""}
-                  currencyCode="BRL" isAdminOrMaster={isAdminOrMaster}
-                  winnerSupplierId={winnerSupplierId}
-                  hasNegotiationRateio={hasNegotiationRateio}
-                  onBackToBudgets={() => setActiveSection("budgets")}
-                />
-              </Suspense>
-            </TabsContent>
+            {hasModule("adjustments") && (
+              <TabsContent value="adjustments">
+                <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">Carregando aba...</div>}>
+                  <ApprovalsTab 
+                    campaignId={campaignId!} campaignName={campaign.name} pieces={pieces}
+                    kits={kits} kitPieces={kitPieces} storePieces={storePieces} stores={stores}
+                    agencyName={agency?.name || ""} clientName={client?.name || ""}
+                    currencyCode="BRL" isAdminOrMaster={isAdminOrMaster}
+                    winnerSupplierId={winnerSupplierId}
+                    hasNegotiationRateio={hasNegotiationRateio}
+                    onBackToBudgets={() => setActiveSection("budgets")}
+                  />
+                </Suspense>
+              </TabsContent>
+            )}
             <TabsContent value="budgets">
               <BudgetTab 
                 campaignId={campaignId!} clientId={clientId!} 
@@ -508,27 +510,33 @@ const CampaignDetail = () => {
 
 
             <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">Carregando aba...</div>}>
-              <TabsContent value="occurrences">
-                <OccurrencesTab 
-                  campaignId={campaignId!} 
-                  clientId={clientId!} 
-                  lalPerms={lalPerms} 
-                />
-              </TabsContent>
-              <TabsContent value="scheduling">
-                <SchedulingTab 
-                  campaignId={campaignId!} stores={stores} canEdit={true}
-                  agencyName={agency?.name || ""} clientName={client?.name || ""} 
-                  campaignName={campaign.name} clientId={clientId!} 
-                />
-              </TabsContent>
-              <TabsContent value="installations">
-                <InstallationsTab 
-                  campaignId={campaignId!} campaignName={campaign.name} stores={stores}
-                  canEdit={true} clientId={clientId!} agencyName={agency?.name || ""}
-                  clientName={client?.name || ""}
-                />
-              </TabsContent>
+              {hasModule("occurrences") && (
+                <TabsContent value="occurrences">
+                  <OccurrencesTab 
+                    campaignId={campaignId!} 
+                    clientId={clientId!} 
+                    lalPerms={lalPerms} 
+                  />
+                </TabsContent>
+              )}
+              {hasModule("scheduling") && (
+                <TabsContent value="scheduling">
+                  <SchedulingTab 
+                    campaignId={campaignId!} stores={stores} canEdit={true}
+                    agencyName={agency?.name || ""} clientName={client?.name || ""} 
+                    campaignName={campaign.name} clientId={clientId!} 
+                  />
+                </TabsContent>
+              )}
+              {hasModule("installations") && (
+                <TabsContent value="installations">
+                  <InstallationsTab 
+                    campaignId={campaignId!} campaignName={campaign.name} stores={stores}
+                    canEdit={true} clientId={clientId!} agencyName={agency?.name || ""}
+                    clientName={client?.name || ""}
+                  />
+                </TabsContent>
+              )}
               <TabsContent value="approvals">
                 <ApprovalsTab 
                   campaignId={campaignId!} campaignName={campaign.name} pieces={pieces}
@@ -537,25 +545,31 @@ const CampaignDetail = () => {
                   currencyCode="BRL" isAdminOrMaster={isAdminOrMaster}
                 />
               </TabsContent>
-              <TabsContent value="stores">
-                <StoresTab 
-                  campaignId={campaignId!} clientId={clientId!} stores={stores}
-                  canEditStores={true} canEditCampaignStores={true} isLimitedMode={isLimitedMode}
-                  onOpenEditStore={() => {}} agencyName={agency?.name || ""} clientName={client?.name || ""}
-                />
-              </TabsContent>
+              {hasModule("stores") && (
+                <TabsContent value="stores">
+                  <StoresTab 
+                    campaignId={campaignId!} clientId={clientId!} stores={stores}
+                    canEditStores={true} canEditCampaignStores={true} isLimitedMode={isLimitedMode}
+                    onOpenEditStore={() => {}} agencyName={agency?.name || ""} clientName={client?.name || ""}
+                  />
+                </TabsContent>
+              )}
               <TabsContent value="history">
                 <HistoryTab campaignId={campaignId!} />
               </TabsContent>
-              <TabsContent value="mockup">
-                <MockupTab 
-                  campaignId={campaignId!} campaignName={campaign.name} 
-                  pieces={pieces} kits={kits} kitPieces={kitPieces} 
-                />
-              </TabsContent>
-              <TabsContent value="loja_a_loja">
-                <LojaALojaTab campaignId={campaignId!} clientId={clientId!} lalPerms={lalPerms} />
-              </TabsContent>
+              {hasModule("mockup") && (
+                <TabsContent value="mockup">
+                  <MockupTab 
+                    campaignId={campaignId!} campaignName={campaign.name} 
+                    pieces={pieces} kits={kits} kitPieces={kitPieces} 
+                  />
+                </TabsContent>
+              )}
+              {hasModule("loja_a_loja") && (
+                <TabsContent value="loja_a_loja">
+                  <LojaALojaTab campaignId={campaignId!} clientId={clientId!} lalPerms={lalPerms} />
+                </TabsContent>
+              )}
             </Suspense>
           </TabErrorBoundary>
 
