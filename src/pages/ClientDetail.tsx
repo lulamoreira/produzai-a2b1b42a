@@ -1112,17 +1112,15 @@ const ClientDetail = () => {
         </div>
 
         {/* ─── Campaigns View (default) ─── */}
-        {!new URLSearchParams(location.search).has("tab") && (
-          <>
-            {(() => {
-              const displayCampaigns = clientIds === null
-                ? campaigns
-                : campaigns.filter(c => myCampaignIds.includes(c.id) ||
-                    (clientIds?.includes(clientId!) && !myCampaignIds.length));
-              
-              return (
-                <>
-            <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
+        {!new URLSearchParams(location.search).has("tab") && (() => {
+          const displayCampaigns = clientIds === null
+            ? campaigns
+            : campaigns.filter(c => myCampaignIds.includes(c.id) ||
+                (clientIds?.includes(clientId!) && !myCampaignIds.length));
+          
+          return (
+            <>
+              <Dialog open={campaignDialogOpen} onOpenChange={setCampaignDialogOpen}>
               <DialogContent>
                 <DialogHeader><DialogTitle>{t("clientDashboard.newCampaign")}</DialogTitle></DialogHeader>
                 <form onSubmit={handleAddCampaign} className="space-y-4">
@@ -1191,12 +1189,9 @@ const ClientDetail = () => {
                   </SortableContext>
                 </DndContext>
               </div>
-            )}
-                </>
-              );
-            })()}
-          </>
-        )}
+            </>
+          );
+        })()}
 
         {/* ─── Stores View ─── */}
         {new URLSearchParams(location.search).get("tab") === "stores" && (
