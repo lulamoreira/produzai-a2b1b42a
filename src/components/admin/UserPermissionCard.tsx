@@ -247,7 +247,27 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
     }
   };
 
-  const roleBadge = () => {
+  const handleDeleteUser = async () => {
+    setIsDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-user", {
+        body: { userId: userInfo.user_id },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success("Usuário excluído. Histórico de ações preservado.");
+      setDeletingUser(false);
+      setDeleteConfirmText("");
+      queryClient.invalidateQueries({ queryKey: ["admin_users_list"] });
+      queryClient.invalidateQueries({ queryKey: ["admin_users"] });
+      queryClient.invalidateQueries({ queryKey: ["all_users_approval"] });
+    } catch (e: any) {
+      toast.error(`Erro ao excluir: ${e.message}`);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
     if (userInfo.role === "admin") return <Badge variant="default" className="text-[10px] uppercase tracking-wider">Admin</Badge>;
     if (userInfo.role === "master") return <Badge variant="outline" className="text-[10px] uppercase tracking-wider bg-orange-500/15 text-orange-700 border-orange-500/30">Master</Badge>;
     return <Badge variant="outline" className="text-[10px] uppercase tracking-wider">Usuário</Badge>;
