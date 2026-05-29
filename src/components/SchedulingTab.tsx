@@ -733,7 +733,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     <div className="space-y-4">
       {/* Filters — Primary row */}
       <div className="flex gap-2 items-center flex-wrap lg:flex-nowrap">
-          <div className="relative w-[200px] shrink-0">
+          <div className="relative w-full sm:w-[200px] sm:shrink-0">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t("stores.searchAll")}
