@@ -818,6 +818,32 @@ function UserProfileDetails({ userId, agencies, clients, isAdmin }: {
     staleTime: 5 * 60_000,
   });
 
+  const queryClient = useQueryClient();
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    display_name: "",
+    nickname: "",
+    phone: "",
+    phone_is_whatsapp: false,
+    job_title: "",
+    company: "",
+    approval_status: "pending" as "approved" | "pending" | "rejected",
+  });
+
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        display_name: profile.display_name || "",
+        nickname: profile.nickname || "",
+        phone: profile.phone || "",
+        phone_is_whatsapp: profile.phone_is_whatsapp || false,
+        job_title: profile.job_title || "",
+        company: profile.company || "",
+        approval_status: (profile.approval_status as any) || "pending",
+      });
+    }
+  }, [profile]);
+
   if (isLoading) {
     return (
       <div className="px-5 py-3 bg-muted/10 border-b border-border">
@@ -848,31 +874,6 @@ function UserProfileDetails({ userId, agencies, clients, isAdmin }: {
   const agencyName = profile.agency_id ? agencies.find(a => a.id === profile.agency_id)?.name : null;
   const clientName = profile.client_id ? clients.find(c => c.id === profile.client_id)?.name : null;
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    display_name: "",
-    nickname: "",
-    phone: "",
-    phone_is_whatsapp: false,
-    job_title: "",
-    company: "",
-    approval_status: "pending" as "approved" | "pending" | "rejected",
-  });
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (profile) {
-      setFormData({
-        display_name: profile.display_name || "",
-        nickname: profile.nickname || "",
-        phone: profile.phone || "",
-        phone_is_whatsapp: profile.phone_is_whatsapp || false,
-        job_title: profile.job_title || "",
-        company: profile.company || "",
-        approval_status: (profile.approval_status as any) || "pending",
-      });
-    }
-  }, [profile]);
 
   const handleUpdate = async () => {
     const { error } = await supabase
