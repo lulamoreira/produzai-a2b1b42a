@@ -593,7 +593,16 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
   };
 
   const memberFormFields = (isNew: boolean) => (
-    <div className="grid grid-cols-2 gap-2">
+    <div
+      className="grid grid-cols-2 gap-2"
+      ref={(el) => {
+        if (el) {
+          requestAnimationFrame(() => {
+            el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+          });
+        }
+      }}
+    >
       <div className="space-y-1">
         <label className="text-xs font-medium">Nome *</label>
         <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} onBlur={(e) => setForm((f) => ({ ...f, name: normalizeMemberName(f.name) }))} className="h-7 text-xs" placeholder="Nome completo" />
@@ -629,7 +638,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
           <span className="text-[10px] text-muted-foreground">⭐ Líder da equipe</span>
         </div>
       </div>
-      <div className="col-span-2 flex gap-2">
+      <div className="col-span-2 sticky bottom-0 -mx-2 px-2 py-2 bg-background/95 backdrop-blur border-t flex gap-2 z-10">
         {isNew ? (
           <Button size="sm" className="h-7 text-xs" disabled={!form.name.trim() || !!cpfError} onClick={() => addMember.mutate()}>Salvar</Button>
         ) : (
