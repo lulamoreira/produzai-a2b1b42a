@@ -216,61 +216,6 @@ const AgencySelect = () => {
     return <Navigate to="/my-campaigns" replace />;
   }
 
-  const LogoUploadArea = ({ preview, logoUrl, onFileSelect, fileInputRef }: {
-    preview: string | null; logoUrl?: string | null; onFileSelect: (f: File | undefined) => void; fileInputRef: React.RefObject<HTMLInputElement>;
-  }) => (
-    <div>
-      <label className="text-xs font-medium text-muted-foreground mb-1 block">
-        Logo (quadrada, {MIN_LOGO_DIMENSION}–{MAX_LOGO_DIMENSION}px, máx {MAX_LOGO_SIZE_KB}KB)
-      </label>
-      <div
-        className="border-2 border-dashed border-border rounded-lg p-4 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-primary/50 transition-colors"
-        onClick={() => fileInputRef.current?.click()}
-      >
-        {(preview || logoUrl) ? (
-          <img src={preview || logoUrl!} alt="Logo" className="w-20 h-20 rounded-lg object-cover" />
-        ) : (
-          <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center">
-            <ImageIcon className="w-8 h-8 text-muted-foreground" />
-          </div>
-        )}
-        <span className="text-xs text-muted-foreground">Clique para selecionar</span>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/webp"
-          className="hidden"
-          onChange={(e) => onFileSelect(e.target.files?.[0])}
-        />
-      </div>
-    </div>
-  );
-
-  const ColorPicker = ({ value, onChange }: { value: string; onChange: (c: string) => void }) => (
-    <div>
-      <label className="text-xs font-medium text-muted-foreground mb-1 block">Cor da agência</label>
-      <div className="flex flex-wrap gap-2">
-        {PRESET_COLORS.map((c) => (
-          <button
-            key={c}
-            type="button"
-            className={`w-8 h-8 rounded-full border-2 transition-all ${value === c ? "border-foreground scale-110" : "border-transparent"}`}
-            style={{ backgroundColor: c }}
-            onClick={() => onChange(c)}
-          />
-        ))}
-        <label className="w-8 h-8 rounded-full border-2 border-dashed border-border flex items-center justify-center cursor-pointer hover:border-primary/50 transition-colors overflow-hidden relative">
-          <Palette className="w-4 h-4 text-muted-foreground" />
-          <input
-            type="color"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            className="absolute inset-0 opacity-0 cursor-pointer"
-          />
-        </label>
-      </div>
-    </div>
-  );
 
   const { version } = useUIVersion();
 
