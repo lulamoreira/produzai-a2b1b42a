@@ -709,7 +709,7 @@ function UserProfileDetails({ userId, agencies, clients, isAdmin }: {
     phone_is_whatsapp: false,
     job_title: "",
     company: "",
-    approval_status: "",
+    approval_status: "pending" as "approved" | "pending" | "rejected",
   });
   const queryClient = useQueryClient();
 
@@ -722,7 +722,7 @@ function UserProfileDetails({ userId, agencies, clients, isAdmin }: {
         phone_is_whatsapp: profile.phone_is_whatsapp || false,
         job_title: profile.job_title || "",
         company: profile.company || "",
-        approval_status: profile.approval_status || "pending",
+        approval_status: (profile.approval_status as any) || "pending",
       });
     }
   }, [profile]);
@@ -813,7 +813,7 @@ function UserProfileDetails({ userId, agencies, clients, isAdmin }: {
         <h4 className="text-sm font-semibold text-foreground">Dados do usuário</h4>
         
         {isEditing ? (
-          <Select value={formData.approval_status} onValueChange={v => setFormData(prev => ({ ...prev, approval_status: v }))}>
+          <Select value={formData.approval_status} onValueChange={v => setFormData(prev => ({ ...prev, approval_status: v as any }))}>
             <SelectTrigger className="h-7 text-[10px] w-24 ml-auto"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="approved">Aprovado</SelectItem>
