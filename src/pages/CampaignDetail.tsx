@@ -484,19 +484,21 @@ const CampaignDetail = () => {
                 />
               )}
             </TabsContent>
-            <TabsContent value="adjustments">
-              <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">Carregando aba...</div>}>
-                <ApprovalsTab 
-                  campaignId={campaignId!} campaignName={campaign.name} pieces={pieces}
-                  kits={kits} kitPieces={kitPieces} storePieces={storePieces} stores={stores}
-                  agencyName={agency?.name || ""} clientName={client?.name || ""}
-                  currencyCode="BRL" isAdminOrMaster={isAdminOrMaster}
-                  winnerSupplierId={winnerSupplierId}
-                  hasNegotiationRateio={hasNegotiationRateio}
-                  onBackToBudgets={() => setActiveSection("budgets")}
-                />
-              </Suspense>
-            </TabsContent>
+            {hasModule("adjustments") && (
+              <TabsContent value="adjustments">
+                <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">Carregando aba...</div>}>
+                  <ApprovalsTab 
+                    campaignId={campaignId!} campaignName={campaign.name} pieces={pieces}
+                    kits={kits} kitPieces={kitPieces} storePieces={storePieces} stores={stores}
+                    agencyName={agency?.name || ""} clientName={client?.name || ""}
+                    currencyCode="BRL" isAdminOrMaster={isAdminOrMaster}
+                    winnerSupplierId={winnerSupplierId}
+                    hasNegotiationRateio={hasNegotiationRateio}
+                    onBackToBudgets={() => setActiveSection("budgets")}
+                  />
+                </Suspense>
+              </TabsContent>
+            )}
             <TabsContent value="budgets">
               <BudgetTab 
                 campaignId={campaignId!} clientId={clientId!} 
