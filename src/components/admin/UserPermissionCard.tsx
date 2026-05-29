@@ -877,6 +877,65 @@ function UserProfileDetails({ userId, agencies, clients, isAdmin }: {
     }
   };
 
+  return (
+    <div className="px-5 py-4 bg-muted/10 border-b border-border">
+      <div className="flex items-center gap-2 mb-3">
+        <IdCard className="w-4 h-4 text-primary" />
+        <h4 className="text-sm font-semibold text-foreground">Dados do usuário</h4>
+        
+        {isEditing ? (
+          <Select value={formData.approval_status} onValueChange={v => setFormData(prev => ({ ...prev, approval_status: v as any }))}>
+            <SelectTrigger className="h-7 text-[10px] w-24 ml-auto"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="approved">Aprovado</SelectItem>
+              <SelectItem value="pending">Pendente</SelectItem>
+              <SelectItem value="rejected">Rejeitado</SelectItem>
+            </SelectContent>
+          </Select>
+        ) : (
+          <Badge variant="outline" className="text-[10px] ml-auto">
+            {profile.approval_status === "approved" ? "Aprovado" : profile.approval_status === "pending" ? "Pendente" : profile.approval_status || "—"}
+          </Badge>
+        )}
+
+        {isAdmin && (
+          <div className="flex items-center gap-1">
+            {isEditing ? (
+              <>
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px]" onClick={() => setIsEditing(false)}>Cancelar</Button>
+                <Button size="sm" className="h-7 px-2 text-[10px]" onClick={handleUpdate}>Salvar</Button>
+              </>
+            ) : (
+              <>
+                <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px]" onClick={() => setIsEditing(true)}>
+                  <Edit3 className="w-3 h-3 mr-1" /> Editar
+                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button size="sm" variant="ghost" className="h-7 px-2 text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10">
+                      <Trash2 className="w-3 h-3 mr-1" /> Excluir
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Excluir Usuário?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Esta ação excluirá permanentemente o usuário e todos os seus dados. Esta ação não pode ser desfeita.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        Confirmar Exclusão
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
+          </div>
+        )}
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         <ProfileField icon={<UserIcon className="w-3.5 h-3.5" />} label="Nome" value={profile.display_name} field="display_name" isEditing={isEditing} formData={formData} setFormData={setFormData} />
         <ProfileField icon={<UserIcon className="w-3.5 h-3.5" />} label="Apelido" value={profile.nickname} field="nickname" isEditing={isEditing} formData={formData} setFormData={setFormData} />
@@ -994,7 +1053,5 @@ function ProfileField({ icon, label, value, field, isEditing, formData, setFormD
       </div>
     </div>
   );
-}
-
 }
 
