@@ -141,61 +141,87 @@ export function HomeV2() {
     pendingApprovals: dashboardData?.pendingApprovals?.length || 0
   };
 
-  const { data: recentCampaigns, isLoading: loadingCampaigns } = useQuery({
-    queryKey: ["v2-recent-campaigns"],
+  const { data: recentCampaigns = [], isLoading: loadingCampaigns } = useQuery({
+    queryKey: ["v2-recent-campaigns", isAdmin, isMaster, userAgency],
+    enabled: isAdminOrMaster && !loadingAgency,
     queryFn: async () => {
+      if (isAdmin) {
+        const { data, error } = await supabase
+          .from("campaigns")
+          .select(`id, name, created_at, client_id, is_active, clients (name)`)
+          .order("created_at", { ascending: false })
+          .limit(6);
+        if (error) { console.error("Error fetching recent campaigns:", error); return []; }
+        return data || [];
+      }
+      // Master: filter by their agency's clients
+      if (!userAgency) return [];
+      const { data: clients } = await supabase
+        .from("clients").select("id").eq("agency_id", userAgency);
+      const clientIds = (clients || []).map((c: any) => c.id);
+      if (!clientIds.length) return [];
       const { data, error } = await supabase
         .from("campaigns")
-        .select(`
-          id, 
-          name, 
-          created_at,
-          client_id,
-          is_active,
-          clients (name)
-        `)
+        .select(`id, name, created_at, client_id, is_active, clients (name)`)
+        .in("client_id", clientIds)
         .order("created_at", { ascending: false })
         .limit(6);
-      
-      if (error) {
-        console.error("Error fetching recent campaigns:", error);
-        return [];
-      }
-      
+      if (error) { console.error("Error fetching recent campaigns:", error); return []; }
       return data || [];
     }
   });
 
-  const { data: recentActivity, isLoading: loadingActivity } = useQuery({
-    queryKey: ["v2-recent-activity"],
+  const { data: recentActivity = [], isLoading: loadingActivity } = useQuery({
+    queryKey: ["v2-recent-activity", isAdmin, isMaster, userAgency],
+    enabled: isAdminOrMaster && !loadingAgency,
     queryFn: async () => {
+      // Determine accessible campaign IDs for masters
+      let accessibleCampaignIds: string[] | null = null;
+      if (!isAdmin) {
+        if (!userAgency) return [];
+        const { data: clients } = await supabase
+          .from("clients").select("id").eq("agency_id", userAgency);
+        const clientIds = (clients || []).map((c: any) => c.id);
+        if (!clientIds.length) return [];
+        const { data: cams } = await supabase
+          .from("campaigns").select("id").in("client_id", clientIds);
+        accessibleCampaignIds = (cams || []).map((c: any) => c.id);
+        if (!accessibleCampaignIds.length) return [];
+      }
+
       const [activityLogRes, occurrencesRes, campaignsRes] = await Promise.all([
-        supabase.from("campaign_activity_log")
-          .select("*, campaigns(name, client_id, clients(name)), client_stores(name)")
-          .order("created_at", { ascending: false })
-          .limit(10),
-        supabase.from("occurrences")
-          .select("*, campaigns(name, client_id, clients(name)), client_stores(name)")
-          .order("created_at", { ascending: false })
-          .limit(5),
-        supabase.from("campaigns")
-          .select("*, clients(name)")
-          .order("created_at", { ascending: false })
-          .limit(5)
+        accessibleCampaignIds
+          ? supabase.from("campaign_activity_log")
+              .select("*, campaigns(name, client_id, clients(name)), client_stores(name)")
+              .in("campaign_id", accessibleCampaignIds)
+              .order("created_at", { ascending: false }).limit(10)
+          : supabase.from("campaign_activity_log")
+              .select("*, campaigns(name, client_id, clients(name)), client_stores(name)")
+              .order("created_at", { ascending: false }).limit(10),
+        accessibleCampaignIds
+          ? supabase.from("occurrences")
+              .select("*, campaigns(name, client_id, clients(name)), client_stores(name)")
+              .in("campaign_id", accessibleCampaignIds)
+              .order("created_at", { ascending: false }).limit(5)
+          : supabase.from("occurrences")
+              .select("*, campaigns(name, client_id, clients(name)), client_stores(name)")
+              .order("created_at", { ascending: false }).limit(5),
+        accessibleCampaignIds
+          ? supabase.from("campaigns")
+              .select("*, clients(name)")
+              .in("id", accessibleCampaignIds)
+              .order("created_at", { ascending: false }).limit(5)
+          : supabase.from("campaigns")
+              .select("*, clients(name)")
+              .order("created_at", { ascending: false }).limit(5),
       ]);
 
-      const userIds = [...new Set((activityLogRes.data || []).map(item => item.user_id).filter(Boolean))];
+      const userIds = [...new Set((activityLogRes.data || []).map((item: any) => item.user_id).filter(Boolean))];
       let profileMap: Record<string, string> = {};
-      
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
-          .from("profiles")
-          .select("user_id, display_name")
-          .in("user_id", userIds);
-        
-        profiles?.forEach(p => {
-          profileMap[p.user_id] = p.display_name;
-        });
+          .from("profiles").select("user_id, display_name").in("user_id", userIds);
+        profiles?.forEach((p: any) => { profileMap[p.user_id] = p.display_name; });
       }
 
       const activities: any[] = [];
@@ -206,14 +232,13 @@ export function HomeV2() {
         if (item.action?.includes("concluida")) icon = Package;
         if (item.action?.includes("foto")) icon = Megaphone;
         if (item.action?.includes("agendamento")) icon = CalendarIcon;
-
         activities.push({
           id: `log-${item.id}`,
           type: "activity",
           title: item.client_stores?.name || item.campaigns?.name || t("common.activity"),
           description: item.description || item.action,
           time: new Date(item.created_at),
-          icon: icon,
+          icon,
           campaignId: item.campaign_id,
           clientId: item.campaigns?.client_id,
           clientName: item.campaigns?.clients?.name,
@@ -258,7 +283,7 @@ export function HomeV2() {
         });
       });
 
-      return activities.sort((a, b) => b.time.getTime() - a.time.getTime());
+      return activities.sort((a: any, b: any) => b.time.getTime() - a.time.getTime());
     }
   });
 
