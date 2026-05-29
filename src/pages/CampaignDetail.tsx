@@ -58,13 +58,6 @@ const CampaignDetail = () => {
   const userModules = myCampaignAccess?.modules ?? [];
   const hasModule = (mod: string) => !isLimited || userModules.includes(mod);
 
-  useEffect(() => {
-    if (!isLimited || !activeSection || activeSection === "summary") return;
-    if (userModules.length === 0) return;
-    if (!userModules.includes(activeSection)) {
-      setActiveSection(userModules[0] ?? "summary");
-    }
-  }, [activeSection, isLimited, userModules, setActiveSection]);
 
   const lalPerms = useLojaALojaPermissions(campaignId, clientId);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
