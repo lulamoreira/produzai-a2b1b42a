@@ -510,27 +510,33 @@ const CampaignDetail = () => {
 
 
             <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">Carregando aba...</div>}>
-              <TabsContent value="occurrences">
-                <OccurrencesTab 
-                  campaignId={campaignId!} 
-                  clientId={clientId!} 
-                  lalPerms={lalPerms} 
-                />
-              </TabsContent>
-              <TabsContent value="scheduling">
-                <SchedulingTab 
-                  campaignId={campaignId!} stores={stores} canEdit={true}
-                  agencyName={agency?.name || ""} clientName={client?.name || ""} 
-                  campaignName={campaign.name} clientId={clientId!} 
-                />
-              </TabsContent>
-              <TabsContent value="installations">
-                <InstallationsTab 
-                  campaignId={campaignId!} campaignName={campaign.name} stores={stores}
-                  canEdit={true} clientId={clientId!} agencyName={agency?.name || ""}
-                  clientName={client?.name || ""}
-                />
-              </TabsContent>
+              {hasModule("occurrences") && (
+                <TabsContent value="occurrences">
+                  <OccurrencesTab 
+                    campaignId={campaignId!} 
+                    clientId={clientId!} 
+                    lalPerms={lalPerms} 
+                  />
+                </TabsContent>
+              )}
+              {hasModule("scheduling") && (
+                <TabsContent value="scheduling">
+                  <SchedulingTab 
+                    campaignId={campaignId!} stores={stores} canEdit={true}
+                    agencyName={agency?.name || ""} clientName={client?.name || ""} 
+                    campaignName={campaign.name} clientId={clientId!} 
+                  />
+                </TabsContent>
+              )}
+              {hasModule("installations") && (
+                <TabsContent value="installations">
+                  <InstallationsTab 
+                    campaignId={campaignId!} campaignName={campaign.name} stores={stores}
+                    canEdit={true} clientId={clientId!} agencyName={agency?.name || ""}
+                    clientName={client?.name || ""}
+                  />
+                </TabsContent>
+              )}
               <TabsContent value="approvals">
                 <ApprovalsTab 
                   campaignId={campaignId!} campaignName={campaign.name} pieces={pieces}
