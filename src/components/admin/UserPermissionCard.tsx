@@ -527,6 +527,7 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                       return <AccessRow key={a.id} label={ag?.name || "—"}
                         icon={<Building2 className="w-3.5 h-3.5 text-muted-foreground shrink-0" />}
                         suspended={a.suspended} categoryId={a.category_id}
+                        categories={categories}
                         onChangeCategory={val => updateAgencyAccess.mutate({ id: a.id, category_id: val })}
                         onToggleSuspend={() => updateAgencyAccess.mutate({ id: a.id, suspended: !a.suspended })}
                         onDelete={() => deleteAgencyAccess.mutate(a.id)}
