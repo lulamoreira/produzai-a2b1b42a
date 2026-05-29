@@ -30,7 +30,7 @@ import {
   ChevronDown, ChevronRight, Edit3, Plus, Trash2,
   PauseCircle, PlayCircle, Building2, KeyRound, Shield, Megaphone,
   User as UserIcon, Mail, Phone, Briefcase, Calendar, Languages, Palette, MessageCircle, IdCard,
-  Eye, LogIn,
+  Eye, LogIn, Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -85,6 +85,8 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
   const [newCampaignId, setNewCampaignId] = useState("");
   const [newCampaignCategoryId, setNewCampaignCategoryId] = useState("");
   const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(null);
+  const [resettingPassword, setResettingPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
 
   const { data: campaignsForClient = [] } = useCampaigns(newCampaignClientId || undefined);
 
@@ -181,6 +183,28 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
     sessionStorage.removeItem("preview_user_name");
     toast.success(`Entrando como ${capitalizeName(userInfo.display_name) || "usuário"}...`);
     window.location.assign("/");
+  };
+
+  const handleResetPassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      toast.error("A senha deve ter pelo menos 6 caracteres.");
+      return;
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke("reset-user-password", {
+        body: { userId: userInfo.user_id, newPassword },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      toast.success("Senha redefinida com sucesso!");
+      setResettingPassword(false);
+      setNewPassword("");
+    } catch (e: any) {
+      toast.error(`Erro: ${e.message}`);
+    }
   };
 
   const roleBadge = () => {
@@ -308,6 +332,49 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                   <LogIn className="w-3.5 h-3.5" />
                   <span className="hidden sm:inline">{impersonatingUserId === userInfo.user_id ? "Entrando..." : "Impersonar"}</span>
                 </button>
+              )}
+              {isAdmin && (
+                <AlertDialog open={resettingPassword} onOpenChange={setResettingPassword}>
+                  <AlertDialogTrigger asChild>
+                    <button
+                      title="Redefinir Senha"
+                      className="h-8 px-2.5 inline-flex items-center justify-center gap-1.5 rounded-md border border-gray-300 bg-gray-50 text-gray-800 hover:bg-gray-100 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-300 transition-colors text-xs font-medium"
+                    >
+                      <Lock className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">Senha</span>
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Redefinir senha para {userInfo.display_name}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Defina uma nova senha temporária para o usuário. Ele poderá entrar imediatamente com esta nova senha.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-4">
+                      <Input
+                        type="password"
+                        placeholder="Nova senha (mín. 6 caracteres)"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        autoFocus
+                      />
+                    </div>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel onClick={() => { setResettingPassword(false); setNewPassword(""); }}>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleResetPassword();
+                        }} 
+                        className="bg-primary"
+                        disabled={!newPassword || newPassword.length < 6}
+                      >
+                        Salvar Nova Senha
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               )}
             </>
           )}
