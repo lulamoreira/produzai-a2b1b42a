@@ -396,14 +396,29 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                         Defina uma nova senha temporária para o usuário. Ele poderá entrar imediatamente com esta nova senha.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <div className="py-4">
+                    <div className="py-4 space-y-2">
                       <Input
-                        type="password"
+                        type="text"
                         placeholder="Nova senha (mín. 6 caracteres)"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
+                        className="font-mono"
                         autoFocus
                       />
+                      <div className="flex flex-wrap gap-2">
+                        <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={generatePassword}>
+                          <RefreshCw className="w-3.5 h-3.5" /> Gerar senha
+                        </Button>
+                        <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={copyPassword} disabled={!newPassword}>
+                          <Copy className="w-3.5 h-3.5" /> Copiar
+                        </Button>
+                        <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={sharePassword} disabled={!newPassword}>
+                          <Share2 className="w-3.5 h-3.5" /> Compartilhar
+                        </Button>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Gera uma senha forte de 12 caracteres com maiúsculas, minúsculas, números e símbolos.
+                      </p>
                     </div>
                     <AlertDialogFooter>
                       <AlertDialogCancel onClick={() => { setResettingPassword(false); setNewPassword(""); }}>Cancelar</AlertDialogCancel>
