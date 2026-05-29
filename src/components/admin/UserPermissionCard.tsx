@@ -371,7 +371,14 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
           ) : (
             <p className="text-xs italic text-amber-700 truncate mt-0.5">Empresa não informada</p>
           )}
-          <p className="text-[11px] text-muted-foreground mt-0.5">{userInfo.user_id.slice(0, 8)}…</p>
+          <div className="flex items-center gap-2 mt-0.5">
+            <p className="text-[11px] text-muted-foreground">{userInfo.user_id.slice(0, 8)}…</p>
+            <span className="text-[10px] text-muted-foreground/40">•</span>
+            <div className="flex items-center gap-1 text-[11px] text-muted-foreground" title={`Entrou em: ${new Date(userInfo.created_at).toLocaleDateString("pt-BR")} às ${new Date(userInfo.created_at).toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' })}`}>
+              <Calendar className="w-3 h-3" />
+              {new Date(userInfo.created_at).toLocaleDateString("pt-BR")}
+            </div>
+          </div>
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {roleBadge()}
