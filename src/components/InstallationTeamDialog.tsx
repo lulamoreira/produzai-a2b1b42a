@@ -260,8 +260,8 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90dvh] flex flex-col gap-0 p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Users className="w-5 h-5" /> Equipes de Instalação
           </DialogTitle>
@@ -269,7 +269,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
 
         {/* Add team */}
         {canEdit && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 px-6 py-3 border-b shrink-0 bg-muted/20">
             <Input
               placeholder="Nome da equipe de instalação"
               value={newTeamName}
@@ -284,7 +284,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
         )}
 
         {/* Team list */}
-        <div className="space-y-2 mt-2">
+        <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-2">
           {teams.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhuma equipe cadastrada</p>}
           {teams.map((team) => (
             <div key={team.id} className="border rounded-lg overflow-hidden">
