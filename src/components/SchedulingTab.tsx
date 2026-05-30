@@ -846,8 +846,16 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             </PopoverContent>
           </Popover>
 
-          {/* More actions dropdown */}
-          <div className="ml-auto">
+          {/* View teams + More actions */}
+          <div className="ml-auto flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 text-xs gap-1 shrink-0"
+              onClick={() => setViewTeamsOpen(true)}
+            >
+              <Users className="w-3.5 h-3.5" /> Consultar Equipes
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9 text-xs gap-1 shrink-0">
