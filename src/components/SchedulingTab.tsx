@@ -1477,6 +1477,13 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         canEdit={canEdit}
       />
 
+      {/* Read-only Teams Consultation Dialog */}
+      <ViewTeamsDialog
+        open={viewTeamsOpen}
+        onOpenChange={setViewTeamsOpen}
+        campaignId={campaignId}
+      />
+
 
       {/* Per-card History */}
       <ScheduleHistorySheet
