@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
@@ -192,9 +192,10 @@ interface InstallationTeamDialogProps {
   onOpenChange: (open: boolean) => void;
   campaignId: string;
   canEdit: boolean;
+  initialTeamId?: string | null;
 }
 
-export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit }: InstallationTeamDialogProps) {
+export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit, initialTeamId }: InstallationTeamDialogProps) {
   const queryClient = useQueryClient();
   const { data: teams = [] } = useInstallationTeams(campaignId);
   const { data: teamStoreCounts = {} } = useQuery({
@@ -220,6 +221,24 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [editingTeamName, setEditingTeamName] = useState("");
+  const teamRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // When opened with a target team, auto-expand it and scroll into view
+  useEffect(() => {
+    if (open && initialTeamId) {
+      setSelectedTeamId(initialTeamId);
+      // wait a tick for the row to render
+      const t = setTimeout(() => {
+        const el = teamRefs.current[initialTeamId];
+        if (el) el.scrollIntoView({ block: "start", behavior: "smooth" });
+      }, 80);
+      return () => clearTimeout(t);
+    }
+    if (!open) {
+      setSelectedTeamId(null);
+      setEditingTeamId(null);
+    }
+  }, [open, initialTeamId]);
 
   const invalidateAll = () => {
     queryClient.invalidateQueries({ queryKey: ["installation_teams", campaignId] });
@@ -287,7 +306,14 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
         <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4 space-y-2">
           {teams.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">Nenhuma equipe cadastrada</p>}
           {teams.map((team) => (
-            <div key={team.id} className="border rounded-lg overflow-hidden">
+            <div
+              key={team.id}
+              ref={(el) => { teamRefs.current[team.id] = el; }}
+              className={cn(
+                "border rounded-lg overflow-hidden transition-shadow",
+                initialTeamId === team.id && selectedTeamId === team.id && "ring-2 ring-primary/40 shadow-sm"
+              )}
+            >
               <div
                 className={cn(
                   "flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-muted/50 transition-colors",

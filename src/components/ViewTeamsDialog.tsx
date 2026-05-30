@@ -18,9 +18,10 @@ interface ViewTeamsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   campaignId: string;
+  onEditTeam?: (teamId: string) => void;
 }
 
-export default function ViewTeamsDialog({ open, onOpenChange, campaignId }: ViewTeamsDialogProps) {
+export default function ViewTeamsDialog({ open, onOpenChange, campaignId, onEditTeam }: ViewTeamsDialogProps) {
   const { data: teams = [], isLoading: loadingTeams } = useInstallationTeams(campaignId);
   const { data: membersMap = {}, isLoading: loadingMembers } = useAllTeamMembers(campaignId);
   const { data: vehiclesMap = {}, isLoading: loadingVehicles } = useAllTeamVehicles(campaignId);
@@ -79,6 +80,12 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId }: View
     } else if (e.key === "End") {
       e.preventDefault();
       setActiveIdx(filteredTeams.length - 1);
+    } else if (e.key === "Enter" && onEditTeam) {
+      const target = filteredTeams[activeIdx];
+      if (target) {
+        e.preventDefault();
+        onEditTeam(target.id);
+      }
     }
   };
 
@@ -150,6 +157,7 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId }: View
               vehicles={vehiclesMap[team.id] || []}
               active={idx === activeIdx}
               onFocus={() => setActiveIdx(idx)}
+              onSelect={onEditTeam ? () => onEditTeam(team.id) : undefined}
               ref={(el) => (itemRefs.current[idx] = el)}
             />
           ))}
@@ -165,10 +173,11 @@ interface TeamViewCardProps {
   vehicles: TeamVehicle[];
   active: boolean;
   onFocus: () => void;
+  onSelect?: () => void;
 }
 
 const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function TeamViewCard(
-  { team, members, vehicles, active, onFocus },
+  { team, members, vehicles, active, onFocus, onSelect },
   ref,
 ) {
   const incomplete = isTeamIncomplete(members);
@@ -179,9 +188,12 @@ const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function Team
     <div
       ref={ref}
       tabIndex={-1}
-      onClick={onFocus}
+      onClick={() => {
+        onFocus();
+        onSelect?.();
+      }}
       className={cn(
-        "rounded-lg border bg-card transition-all cursor-pointer",
+        "rounded-lg border bg-card transition-all cursor-pointer hover:shadow-sm",
         active
           ? "border-primary ring-2 ring-primary/30 shadow-sm"
           : "border-border hover:border-primary/40",
