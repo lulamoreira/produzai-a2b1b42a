@@ -173,10 +173,11 @@ interface TeamViewCardProps {
   vehicles: TeamVehicle[];
   active: boolean;
   onFocus: () => void;
+  onSelect?: () => void;
 }
 
 const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function TeamViewCard(
-  { team, members, vehicles, active, onFocus },
+  { team, members, vehicles, active, onFocus, onSelect },
   ref,
 ) {
   const incomplete = isTeamIncomplete(members);
@@ -187,9 +188,12 @@ const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function Team
     <div
       ref={ref}
       tabIndex={-1}
-      onClick={onFocus}
+      onClick={() => {
+        onFocus();
+        onSelect?.();
+      }}
       className={cn(
-        "rounded-lg border bg-card transition-all cursor-pointer",
+        "rounded-lg border bg-card transition-all cursor-pointer hover:shadow-sm",
         active
           ? "border-primary ring-2 ring-primary/30 shadow-sm"
           : "border-border hover:border-primary/40",
