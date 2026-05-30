@@ -49,6 +49,7 @@ import InstallationTeamDialog, {
   type TeamMember,
   type TeamVehicle,
 } from "@/components/InstallationTeamDialog";
+import ViewTeamsDialog from "@/components/ViewTeamsDialog";
 
 export type SchedulingInitialFilter = { type: "summary"; value: "scheduled" };
 
