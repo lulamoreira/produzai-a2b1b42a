@@ -80,6 +80,12 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, onEdit
     } else if (e.key === "End") {
       e.preventDefault();
       setActiveIdx(filteredTeams.length - 1);
+    } else if (e.key === "Enter" && onEditTeam) {
+      const target = filteredTeams[activeIdx];
+      if (target) {
+        e.preventDefault();
+        onEditTeam(target.id);
+      }
     }
   };
 
@@ -151,6 +157,7 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, onEdit
               vehicles={vehiclesMap[team.id] || []}
               active={idx === activeIdx}
               onFocus={() => setActiveIdx(idx)}
+              onSelect={onEditTeam ? () => onEditTeam(team.id) : undefined}
               ref={(el) => (itemRefs.current[idx] = el)}
             />
           ))}
