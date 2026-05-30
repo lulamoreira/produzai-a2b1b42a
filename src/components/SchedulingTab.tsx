@@ -49,6 +49,7 @@ import InstallationTeamDialog, {
   type TeamMember,
   type TeamVehicle,
 } from "@/components/InstallationTeamDialog";
+import ViewTeamsDialog from "@/components/ViewTeamsDialog";
 
 export type SchedulingInitialFilter = { type: "summary"; value: "scheduled" };
 
@@ -120,6 +121,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
+  const [viewTeamsOpen, setViewTeamsOpen] = useState(false);
   const [filterApproval, setFilterApproval] = useState("");
   
   const [filterDate, setFilterDate] = useState("");
@@ -844,8 +846,16 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             </PopoverContent>
           </Popover>
 
-          {/* More actions dropdown */}
-          <div className="ml-auto">
+          {/* View teams + More actions */}
+          <div className="ml-auto flex items-center gap-1.5">
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 text-xs gap-1 shrink-0"
+              onClick={() => setViewTeamsOpen(true)}
+            >
+              <Users className="w-3.5 h-3.5" /> Consultar Equipes
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9 text-xs gap-1 shrink-0">
@@ -1465,6 +1475,13 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         onOpenChange={setTeamDialogOpen}
         campaignId={campaignId}
         canEdit={canEdit}
+      />
+
+      {/* Read-only Teams Consultation Dialog */}
+      <ViewTeamsDialog
+        open={viewTeamsOpen}
+        onOpenChange={setViewTeamsOpen}
+        campaignId={campaignId}
       />
 
 
