@@ -167,100 +167,93 @@ interface TeamViewCardProps {
   onFocus: () => void;
 }
 
-const TeamViewCard = (() => {
-  const Comp = ({ team, members, vehicles, active, onFocus, innerRef }: TeamViewCardProps & { innerRef: (el: HTMLDivElement | null) => void }) => {
-    const incomplete = isTeamIncomplete(members);
-    const leader = members.find((m) => m.is_leader);
-    const others = members.filter((m) => !m.is_leader);
+const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function TeamViewCard(
+  { team, members, vehicles, active, onFocus },
+  ref,
+) {
+  const incomplete = isTeamIncomplete(members);
+  const leader = members.find((m) => m.is_leader);
+  const others = members.filter((m) => !m.is_leader);
 
-    return (
-      <div
-        ref={innerRef}
-        tabIndex={-1}
-        onClick={onFocus}
-        className={cn(
-          "rounded-lg border bg-card transition-all cursor-pointer",
-          active
-            ? "border-primary ring-2 ring-primary/30 shadow-sm"
-            : "border-border hover:border-primary/40",
-        )}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 border-b bg-muted/40 rounded-t-lg flex-wrap">
-          <div className="flex items-center gap-2 min-w-0">
-            <Users className="w-4 h-4 text-primary shrink-0" />
-            <h3 className="font-semibold text-sm sm:text-base truncate">{team.name}</h3>
-            {incomplete && (
-              <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-500/40 gap-1">
-                <AlertTriangle className="w-3 h-3" /> Incompleta
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <Badge variant="secondary" className="text-[10px]">{members.length} instalador(es)</Badge>
-            {vehicles.length > 0 && (
-              <Badge variant="secondary" className="text-[10px]">{vehicles.length} veículo(s)</Badge>
-            )}
-          </div>
+  return (
+    <div
+      ref={ref}
+      tabIndex={-1}
+      onClick={onFocus}
+      className={cn(
+        "rounded-lg border bg-card transition-all cursor-pointer",
+        active
+          ? "border-primary ring-2 ring-primary/30 shadow-sm"
+          : "border-border hover:border-primary/40",
+      )}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 border-b bg-muted/40 rounded-t-lg flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
+          <Users className="w-4 h-4 text-primary shrink-0" />
+          <h3 className="font-semibold text-sm sm:text-base truncate">{team.name}</h3>
+          {incomplete && (
+            <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-500/40 gap-1">
+              <AlertTriangle className="w-3 h-3" /> Incompleta
+            </Badge>
+          )}
         </div>
-
-        <div className="px-3 sm:px-4 py-3 grid gap-3 sm:grid-cols-2">
-          {/* Members */}
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
-              Instaladores
-            </p>
-            {members.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">Nenhum instalador cadastrado</p>
-            ) : (
-              <ul className="space-y-1.5">
-                {leader && <MemberRow member={leader} isLeader />}
-                {others.map((m) => (
-                  <MemberRow key={m.id} member={m} />
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Vehicles */}
-          <div>
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
-              Veículos
-            </p>
-            {vehicles.length === 0 ? (
-              <p className="text-xs text-muted-foreground italic">Nenhum veículo cadastrado</p>
-            ) : (
-              <ul className="space-y-1.5">
-                {vehicles.map((v) => (
-                  <li key={v.id} className="flex items-start gap-2 text-xs">
-                    <Car className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
-                    <span className="min-w-0 break-words">
-                      <span className="font-medium">{v.name || "—"}</span>
-                      {(v.brand || v.color) && (
-                        <span className="text-muted-foreground"> · {[v.brand, v.color].filter(Boolean).join(" · ")}</span>
-                      )}
-                      {v.plate && (
-                        <span className="ml-1 px-1.5 py-0.5 rounded bg-muted text-[10px] font-mono">{v.plate}</span>
-                      )}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <Badge variant="secondary" className="text-[10px]">{members.length} instalador(es)</Badge>
+          {vehicles.length > 0 && (
+            <Badge variant="secondary" className="text-[10px]">{vehicles.length} veículo(s)</Badge>
+          )}
         </div>
       </div>
-    );
-  };
 
-  return Object.assign(
-    function TeamViewCardWrapper(props: TeamViewCardProps & { ref: (el: HTMLDivElement | null) => void }) {
-      const { ref, ...rest } = props as any;
-      return <Comp {...rest} innerRef={ref} />;
-    },
-    { displayName: "TeamViewCard" },
+      <div className="px-3 sm:px-4 py-3 grid gap-3 sm:grid-cols-2">
+        {/* Members */}
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
+            Instaladores
+          </p>
+          {members.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic">Nenhum instalador cadastrado</p>
+          ) : (
+            <ul className="space-y-1.5">
+              {leader && <MemberRow member={leader} isLeader />}
+              {others.map((m) => (
+                <MemberRow key={m.id} member={m} />
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {/* Vehicles */}
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground mb-1.5">
+            Veículos
+          </p>
+          {vehicles.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic">Nenhum veículo cadastrado</p>
+          ) : (
+            <ul className="space-y-1.5">
+              {vehicles.map((v) => (
+                <li key={v.id} className="flex items-start gap-2 text-xs">
+                  <Car className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+                  <span className="min-w-0 break-words">
+                    <span className="font-medium">{v.name || "—"}</span>
+                    {(v.brand || v.color) && (
+                      <span className="text-muted-foreground"> · {[v.brand, v.color].filter(Boolean).join(" · ")}</span>
+                    )}
+                    {v.plate && (
+                      <span className="ml-1 px-1.5 py-0.5 rounded bg-muted text-[10px] font-mono">{v.plate}</span>
+                    )}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
   );
-})();
+});
 
 function MemberRow({ member, isLeader }: { member: TeamMember; isLeader?: boolean }) {
   return (
