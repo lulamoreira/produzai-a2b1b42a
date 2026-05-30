@@ -121,6 +121,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [filterState, setFilterState] = useState("");
   const [filterCity, setFilterCity] = useState("");
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
+  const [teamDialogInitialId, setTeamDialogInitialId] = useState<string | null>(null);
   const [viewTeamsOpen, setViewTeamsOpen] = useState(false);
   const [filterApproval, setFilterApproval] = useState("");
   
@@ -1472,9 +1473,13 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       {/* Team Management Dialog */}
       <InstallationTeamDialog
         open={teamDialogOpen}
-        onOpenChange={setTeamDialogOpen}
+        onOpenChange={(o) => {
+          setTeamDialogOpen(o);
+          if (!o) setTeamDialogInitialId(null);
+        }}
         campaignId={campaignId}
         canEdit={canEdit}
+        initialTeamId={teamDialogInitialId}
       />
 
       {/* Read-only Teams Consultation Dialog */}
@@ -1482,7 +1487,15 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         open={viewTeamsOpen}
         onOpenChange={setViewTeamsOpen}
         campaignId={campaignId}
+        onEditTeam={(teamId) => {
+          setViewTeamsOpen(false);
+          setTeamDialogInitialId(teamId);
+          // small delay so the close animation doesn't clash with open
+          setTimeout(() => setTeamDialogOpen(true), 120);
+        }}
       />
+
+
 
 
       {/* Per-card History */}
