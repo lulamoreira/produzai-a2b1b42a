@@ -851,6 +851,30 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
 
           {/* View teams + More actions */}
           <div className="ml-auto flex items-center gap-1.5">
+            <div className="inline-flex rounded-md border border-border overflow-hidden h-9 shrink-0" role="group" aria-label="Modo de visualização">
+              <button
+                type="button"
+                onClick={() => setViewMode('card')}
+                className={cn(
+                  "px-2.5 flex items-center gap-1 text-xs transition-colors",
+                  viewMode === 'card' ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"
+                )}
+                title="Visualização em cards"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" /> Cards
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  "px-2.5 flex items-center gap-1 text-xs transition-colors border-l border-border",
+                  viewMode === 'list' ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"
+                )}
+                title="Visualização em listagem"
+              >
+                <ListIcon className="w-3.5 h-3.5" /> Listagem
+              </button>
+            </div>
             <Button
               variant="outline"
               size="sm"
