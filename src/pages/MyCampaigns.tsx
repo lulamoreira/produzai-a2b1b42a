@@ -57,8 +57,9 @@ const MyCampaigns = () => {
   }
 
   const handleNavigate = (campaign: typeof campaigns[0], module: string) => {
+    const qs = module && module !== "summary" ? `?section=${encodeURIComponent(module)}` : "";
     navigate(
-      `/agency/${campaign.agencyId}/clients/${campaign.clientId}/campaigns/${campaign.campaignId}`,
+      `/agency/${campaign.agencyId}/clients/${campaign.clientId}/campaigns/${campaign.campaignId}${qs}`,
       { state: { initialSection: module, limitedMode: true } }
     );
   };
