@@ -1507,6 +1507,10 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           else if (listSort.key === 'state') { av = (a.state || '').toLowerCase(); bv = (b.state || '').toLowerCase(); }
           else if (listSort.key === 'city') { av = (a.city || '').toLowerCase(); bv = (b.city || '').toLowerCase(); }
           else if (listSort.key === 'date') { av = `${aDate} ${aTime}`; bv = `${bDate} ${bTime}`; }
+          else if (listSort.key === 'team') { 
+            av = (sa?.team_id ? teamMap[sa.team_id]?.name : '').toLowerCase(); 
+            bv = (sb?.team_id ? teamMap[sb.team_id]?.name : '').toLowerCase(); 
+          }
           if (av < bv) return -1 * dir;
           if (av > bv) return 1 * dir;
           return 0;
