@@ -746,8 +746,10 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 bg-card border-border h-9 text-sm"
             />
+          </div>
 
           {/* All filters */}
+
           <Popover open={showMoreFilters} onOpenChange={setShowMoreFilters}>
             <PopoverTrigger asChild>
               <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 shrink-0">
