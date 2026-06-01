@@ -52,6 +52,16 @@ const JoinPage = lazy(() => import("./pages/JoinPage"));
 const WelcomePage = lazy(() => import("./pages/WelcomePage"));
 const FavoritesV2 = lazy(() => import("./pages/v2/FavoritesV2"));
 const AgenciesV2 = lazy(() => import("./pages/v2/AgenciesV2"));
+
+// Quitanda3dSHOP Pages
+const QuitandaDashboard = lazy(() => import("./pages/quitanda/DashboardPage"));
+const QuitandaDrops = lazy(() => import("./pages/quitanda/DropsPage"));
+const QuitandaSettings = lazy(() => import("./pages/quitanda/SettingsPage"));
+const QuitandaHistory = lazy(() => import("./pages/quitanda/DashboardPage")); // Placeholder
+const QuitandaFinancial = lazy(() => import("./pages/quitanda/DashboardPage")); // Placeholder
+
+import { QuitandaLayout } from "./layouts/QuitandaLayout";
+
 import { useUIVersion } from "@/hooks/useUIVersion";
 import { useFirstLogin } from "@/hooks/useFirstLogin";
 import AppLayout from "@/components/AppLayout";
