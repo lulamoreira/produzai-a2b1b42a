@@ -52,6 +52,17 @@ const JoinPage = lazy(() => import("./pages/JoinPage"));
 const WelcomePage = lazy(() => import("./pages/WelcomePage"));
 const FavoritesV2 = lazy(() => import("./pages/v2/FavoritesV2"));
 const AgenciesV2 = lazy(() => import("./pages/v2/AgenciesV2"));
+
+// Quitanda3dSHOP Pages
+const QuitandaDashboard = lazy(() => import("./pages/quitanda/DashboardPage"));
+const QuitandaDrops = lazy(() => import("./pages/quitanda/DropsPage"));
+const QuitandaSettings = lazy(() => import("./pages/quitanda/SettingsPage"));
+const QuitandaHistory = lazy(() => import("./pages/quitanda/DashboardPage")); // Placeholder
+const QuitandaFinancial = lazy(() => import("./pages/quitanda/FinancialPage"));
+
+
+import { QuitandaLayout } from "./layouts/QuitandaLayout";
+
 import { useUIVersion } from "@/hooks/useUIVersion";
 import { useFirstLogin } from "@/hooks/useFirstLogin";
 import AppLayout from "@/components/AppLayout";
@@ -244,10 +255,17 @@ const App = () => (
               <PreviewUserBanner />
               <Suspense fallback={<RouteFallback />}>
                 <Routes>
+                  {/* Quitanda3dSHOP Routes */}
+                  <Route path="/quitanda" element={<QuitandaLayout><QuitandaDashboard /></QuitandaLayout>} />
+                  <Route path="/quitanda/drops" element={<QuitandaLayout><QuitandaDrops /></QuitandaLayout>} />
+                  <Route path="/quitanda/historico" element={<QuitandaLayout><QuitandaHistory /></QuitandaLayout>} />
+                  <Route path="/quitanda/financeiro" element={<QuitandaLayout><QuitandaFinancial /></QuitandaLayout>} />
+                  <Route path="/quitanda/configuracoes" element={<QuitandaLayout><QuitandaSettings /></QuitandaLayout>} />
+
                   <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
                   <Route path="/join/:token" element={<JoinPage />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
+                  <Route path="/" element={<Navigate to="/quitanda" replace />} />
                   <Route path="/agencies" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
                   <Route path="/agency/:agencyId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/agency/:agencyId/clients" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />

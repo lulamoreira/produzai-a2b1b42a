@@ -14,7 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Geist", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["DM Sans", "Inter", "ui-sans-serif", "system-ui", "sans-serif"],
+        display: ["Sora", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["Geist Mono", "ui-monospace", "monospace"],
       },
       colors: {
