@@ -746,67 +746,68 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 bg-card border-border h-9 text-sm"
             />
-          </div>
-          <select
-            value={filterState}
-            onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); }}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[140px] sm:max-w-[160px] h-9"
-          >
-            <option value="">{t("filters.allStates")}</option>
-            {states.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-          <select
-            value={filterApproval}
-            onChange={(e) => setFilterApproval(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[140px] sm:max-w-[160px] h-9"
-          >
-            <option value="">{t("filters.approvals")}</option>
-            <option value="approved">{t("filters.approved")}</option>
-            <option value="pending">{t("filters.pendency")}</option>
-            <option value="rejected">{t("filters.rejected")}</option>
-            <option value="missing_os">{t("filters.missingOs")}</option>
-          </select>
-          <select
-            value={filterResponsibility}
-            onChange={(e) => setFilterResponsibility(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[140px] sm:max-w-[160px] h-9"
-          >
-            <option value="">{t("filters.responsible")}</option>
-            <option value="team">{t("scheduling.teamLabel")}</option>
-            <option value="client">{t("scheduling.client")}</option>
-          </select>
-          <input
-            type="date"
-            value={filterDate}
-            onChange={(e) => setFilterDate(e.target.value)}
-            className="px-2 py-1.5 text-xs sm:text-sm rounded-md border border-border bg-card text-foreground flex-1 min-w-[140px] sm:max-w-[160px] h-9"
-            title={t("common.filter")}
-          />
-          {filterDate && (
-            <Button variant="ghost" size="sm" className="h-7 px-1.5 text-xs text-muted-foreground" onClick={() => setFilterDate("")}>
-              ✕
-            </Button>
-          )}
 
-          {/* More filters */}
+          {/* All filters */}
           <Popover open={showMoreFilters} onOpenChange={setShowMoreFilters}>
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5">
+              <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5 shrink-0">
                 <SlidersHorizontal className="w-3.5 h-3.5" />
-                Mais filtros
+                Filtros
                 {secondaryFilterCount > 0 && (
                   <span className="badge-base badge-info ml-1">{secondaryFilterCount}</span>
                 )}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-72 p-4 space-y-3" align="start">
-              <p className="text-xs font-semibold text-foreground">Filtros avançados</p>
+            <PopoverContent className="w-80 p-4 space-y-3 max-h-[70vh] overflow-y-auto" align="start">
+              <p className="text-xs font-semibold text-foreground">Filtros</p>
+              <select
+                value={filterState}
+                onChange={(e) => { setFilterState(e.target.value); setFilterCity(""); }}
+                className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground"
+              >
+                <option value="">{t("filters.allStates")}</option>
+                {states.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
               <select value={filterCity} onChange={(e) => setFilterCity(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
                 <option value="">{t("filters.allCities")}</option>
                 {cities.map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
+              <select
+                value={filterApproval}
+                onChange={(e) => setFilterApproval(e.target.value)}
+                className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground"
+              >
+                <option value="">{t("filters.approvals")}</option>
+                <option value="approved">{t("filters.approved")}</option>
+                <option value="pending">{t("filters.pendency")}</option>
+                <option value="rejected">{t("filters.rejected")}</option>
+                <option value="missing_os">{t("filters.missingOs")}</option>
+              </select>
+              <select
+                value={filterResponsibility}
+                onChange={(e) => setFilterResponsibility(e.target.value)}
+                className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground"
+              >
+                <option value="">{t("filters.responsible")}</option>
+                <option value="team">{t("scheduling.teamLabel")}</option>
+                <option value="client">{t("scheduling.client")}</option>
+              </select>
+              <div className="flex gap-2 items-center">
+                <input
+                  type="date"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  className="flex-1 px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground"
+                  title={t("common.filter")}
+                />
+                {filterDate && (
+                  <Button variant="ghost" size="sm" className="h-7 px-1.5 text-xs text-muted-foreground" onClick={() => setFilterDate("")}>
+                    ✕
+                  </Button>
+                )}
+              </div>
               <select value={filterPeriod} onChange={(e) => setFilterPeriod(e.target.value)} className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground">
                 <option value="">{t("filters.period")}</option>
                 <option value="morning">{t("filters.periodMorning")}</option>
@@ -840,14 +841,16 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
               )}
               {secondaryFilterCount > 0 && (
                 <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => {
+                  setFilterState(""); setFilterApproval(""); setFilterDate("");
                   setFilterCity(""); setFilterPeriod(""); setFilterTeam("");
                   setFilterPreference(""); setFilterResponsibility(""); setFilterLocked(""); setFilterReschedule(""); setFilterModel("");
                 }}>
-                  Limpar filtros avançados
+                  Limpar filtros
                 </Button>
               )}
             </PopoverContent>
           </Popover>
+
 
           {/* View teams + More actions */}
           <div className="ml-auto flex items-center gap-1.5">
