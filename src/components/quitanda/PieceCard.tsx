@@ -61,7 +61,7 @@ export const PieceCard = ({ piece }: PieceCardProps) => {
     (availableAs === 'ambos' && (!priceFigura || !priceChaveiro));
 
   return (
-    <Card className="border-[#E5E7EB] rounded-[12px] shadow-sm overflow-hidden bg-white">
+    <Card className="border-[#E5E7EB] rounded-[16px] shadow-sm overflow-hidden bg-white transition-all duration-300">
       <div className="p-4">
         <div className="flex items-start gap-4">
           <div className="w-16 h-16 rounded-[8px] overflow-hidden bg-muted flex-shrink-0">
