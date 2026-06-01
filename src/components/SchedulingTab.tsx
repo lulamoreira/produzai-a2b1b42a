@@ -26,7 +26,7 @@ import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList, Lock, LockOpen, ChevronDown, ChevronUp, SlidersHorizontal, MoreHorizontal, RefreshCw } from "lucide-react";
+import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList, Lock, LockOpen, ChevronDown, ChevronUp, SlidersHorizontal, MoreHorizontal, RefreshCw, LayoutGrid, List as ListIcon, ArrowUp, ArrowDown } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -123,6 +123,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
   const [teamDialogInitialId, setTeamDialogInitialId] = useState<string | null>(null);
   const [viewTeamsOpen, setViewTeamsOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
+  const [listSort, setListSort] = useState<{ key: 'name' | 'state' | 'city' | 'date'; dir: 'asc' | 'desc' }>({ key: 'name', dir: 'asc' });
   const [filterApproval, setFilterApproval] = useState("");
   
   const [filterDate, setFilterDate] = useState("");
@@ -849,6 +851,30 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
 
           {/* View teams + More actions */}
           <div className="ml-auto flex items-center gap-1.5">
+            <div className="inline-flex rounded-md border border-border overflow-hidden h-9 shrink-0" role="group" aria-label="Modo de visualização">
+              <button
+                type="button"
+                onClick={() => setViewMode('card')}
+                className={cn(
+                  "px-2.5 flex items-center gap-1 text-xs transition-colors",
+                  viewMode === 'card' ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"
+                )}
+                title="Visualização em cards"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" /> Cards
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={cn(
+                  "px-2.5 flex items-center gap-1 text-xs transition-colors border-l border-border",
+                  viewMode === 'list' ? "bg-primary text-primary-foreground" : "bg-card text-foreground hover:bg-muted"
+                )}
+                title="Visualização em listagem"
+              >
+                <ListIcon className="w-3.5 h-3.5" /> Listagem
+              </button>
+            </div>
             <Button
               variant="outline"
               size="sm"
@@ -996,6 +1022,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       })()}
 
       {/* Store Cards */}
+      {viewMode === 'card' && (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
         {displayedStores.map((store) => {
           const schedule = scheduleMap[store.id];
@@ -1457,6 +1484,116 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           );
         })}
       </div>
+      )}
+
+      {viewMode === 'list' && (() => {
+        const sorted = [...displayedStores].sort((a, b) => {
+          const dir = listSort.dir === 'asc' ? 1 : -1;
+          const sa = scheduleMap[a.id];
+          const sb = scheduleMap[b.id];
+          const aResched = !!sa?.reschedule_enabled;
+          const bResched = !!sb?.reschedule_enabled;
+          const aDate = (aResched ? sa?.reschedule_date : sa?.scheduled_date) || '';
+          const bDate = (bResched ? sb?.reschedule_date : sb?.scheduled_date) || '';
+          const aTime = (aResched ? sa?.reschedule_time : sa?.scheduled_time) || '';
+          const bTime = (bResched ? sb?.reschedule_time : sb?.scheduled_time) || '';
+          let av = '', bv = '';
+          if (listSort.key === 'name') { av = (a.nickname || a.name || '').toLowerCase(); bv = (b.nickname || b.name || '').toLowerCase(); }
+          else if (listSort.key === 'state') { av = (a.state || '').toLowerCase(); bv = (b.state || '').toLowerCase(); }
+          else if (listSort.key === 'city') { av = (a.city || '').toLowerCase(); bv = (b.city || '').toLowerCase(); }
+          else if (listSort.key === 'date') { av = `${aDate} ${aTime}`; bv = `${bDate} ${bTime}`; }
+          if (av < bv) return -1 * dir;
+          if (av > bv) return 1 * dir;
+          return 0;
+        });
+        const toggleSort = (key: typeof listSort.key) => {
+          setListSort((s) => s.key === key ? { key, dir: s.dir === 'asc' ? 'desc' : 'asc' } : { key, dir: 'asc' });
+        };
+        const SortHeader = ({ k, label, className }: { k: typeof listSort.key; label: string; className?: string }) => (
+          <button
+            type="button"
+            onClick={() => toggleSort(k)}
+            className={cn("flex items-center gap-1 text-left font-medium text-xs uppercase tracking-wide text-muted-foreground hover:text-foreground transition-colors", className)}
+          >
+            {label}
+            {listSort.key === k ? (listSort.dir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <span className="w-3 h-3 inline-block opacity-30">↕</span>}
+          </button>
+        );
+        return (
+          <div className="card-base overflow-hidden p-0">
+            {/* Desktop table */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 border-b border-border">
+                  <tr>
+                    <th className="px-3 py-2 text-left"><SortHeader k="name" label="Loja" /></th>
+                    <th className="px-3 py-2 text-left"><SortHeader k="state" label="Estado" /></th>
+                    <th className="px-3 py-2 text-left"><SortHeader k="city" label="Cidade" /></th>
+                    <th className="px-3 py-2 text-left"><SortHeader k="date" label="Data / Horário" /></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sorted.map((store) => {
+                    const sc = scheduleMap[store.id];
+                    const isResched = !!sc?.reschedule_enabled;
+                    const dateStr = isResched ? sc?.reschedule_date : sc?.scheduled_date;
+                    const timeStr = isResched ? sc?.reschedule_time : sc?.scheduled_time;
+                    const dateFmt = dateStr ? format(new Date(dateStr + "T12:00:00"), "dd/MM/yyyy") : "—";
+                    return (
+                      <tr
+                        key={store.id}
+                        className="border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors cursor-pointer"
+                        onClick={() => setExpandedCards((prev) => { const n = new Set(prev); n.add(store.id); return n; })}
+                      >
+                        <td className="px-3 py-2">
+                          <div className="font-medium text-foreground">{store.nickname || store.name}</div>
+                          {store.store_code && <div className="text-[11px] text-muted-foreground">{store.store_code}</div>}
+                        </td>
+                        <td className="px-3 py-2">{store.state || "—"}</td>
+                        <td className="px-3 py-2">{store.city || "—"}</td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center gap-1.5">
+                            <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span>{dateFmt}</span>
+                            {timeStr && <><Clock className="w-3.5 h-3.5 text-muted-foreground ml-1" /><span>{timeStr}</span></>}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            {/* Mobile list */}
+            <div className="md:hidden divide-y divide-border">
+              {sorted.map((store) => {
+                const sc = scheduleMap[store.id];
+                const isResched = !!sc?.reschedule_enabled;
+                const dateStr = isResched ? sc?.reschedule_date : sc?.scheduled_date;
+                const timeStr = isResched ? sc?.reschedule_time : sc?.scheduled_time;
+                const dateFmt = dateStr ? format(new Date(dateStr + "T12:00:00"), "dd/MM/yyyy") : "—";
+                return (
+                  <div
+                    key={store.id}
+                    className="px-3 py-2 hover:bg-muted/30 transition-colors cursor-pointer"
+                    onClick={() => setExpandedCards((prev) => { const n = new Set(prev); n.add(store.id); return n; })}
+                  >
+                    <div className="font-medium text-foreground">{store.nickname || store.name}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {(store.state || "—")} · {(store.city || "—")}
+                    </div>
+                    <div className="text-xs text-foreground mt-1 flex items-center gap-1.5">
+                      <CalendarIcon className="w-3 h-3 text-muted-foreground" />{dateFmt}
+                      {timeStr && <><Clock className="w-3 h-3 text-muted-foreground ml-1" />{timeStr}</>}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
 
       {displayedStores.length === 0 && (
         <EmptyState
