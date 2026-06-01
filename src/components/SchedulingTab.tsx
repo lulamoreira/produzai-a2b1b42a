@@ -124,7 +124,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [teamDialogInitialId, setTeamDialogInitialId] = useState<string | null>(null);
   const [viewTeamsOpen, setViewTeamsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
-  const [listSort, setListSort] = useState<{ key: 'name' | 'state' | 'city' | 'date'; dir: 'asc' | 'desc' }>({ key: 'name', dir: 'asc' });
+  const [listSort, setListSort] = useState<{ key: 'name' | 'state' | 'city' | 'date' | 'team'; dir: 'asc' | 'desc' }>({ key: 'name', dir: 'asc' });
   const [filterApproval, setFilterApproval] = useState("");
   
   const [filterDate, setFilterDate] = useState("");
