@@ -58,7 +58,8 @@ const QuitandaDashboard = lazy(() => import("./pages/quitanda/DashboardPage"));
 const QuitandaDrops = lazy(() => import("./pages/quitanda/DropsPage"));
 const QuitandaSettings = lazy(() => import("./pages/quitanda/SettingsPage"));
 const QuitandaHistory = lazy(() => import("./pages/quitanda/DashboardPage")); // Placeholder
-const QuitandaFinancial = lazy(() => import("./pages/quitanda/DashboardPage")); // Placeholder
+const QuitandaFinancial = lazy(() => import("./pages/quitanda/FinancialPage"));
+
 
 import { QuitandaLayout } from "./layouts/QuitandaLayout";
 
