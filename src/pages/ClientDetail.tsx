@@ -1119,33 +1119,39 @@ const ClientDetail = () => {
               <p className="text-[11px] text-muted-foreground">{t("clientDashboard.campaignCount")}</p>
             </div>
           </div>
-          <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`)}>
-            <div className="w-10 h-10 rounded-lg bg-primary/80 flex items-center justify-center">
-              <Store className="w-5 h-5 text-primary-foreground" />
+          {isAdminOrMaster && (
+            <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`)}>
+              <div className="w-10 h-10 rounded-lg bg-primary/80 flex items-center justify-center">
+                <Store className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div>
+                <p className="text-xl sm:text-2xl font-bold text-foreground">{stores.length}</p>
+                <p className="text-[11px] text-muted-foreground">{t("clientDashboard.storeCount")}</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xl sm:text-2xl font-bold text-foreground">{stores.length}</p>
-              <p className="text-[11px] text-muted-foreground">{t("clientDashboard.storeCount")}</p>
+          )}
+          {isAdminOrMaster && (
+            <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=suppliers`)}>
+              <div className="w-10 h-10 rounded-lg bg-primary/60 flex items-center justify-center">
+                <Building2 className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div>
+                <p className="text-xl sm:text-2xl font-bold text-foreground">{suppliers.length}</p>
+                <p className="text-[11px] text-muted-foreground">Fornecedores</p>
+              </div>
             </div>
-          </div>
-          <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=suppliers`)}>
-            <div className="w-10 h-10 rounded-lg bg-primary/60 flex items-center justify-center">
-              <Building2 className="w-5 h-5 text-primary-foreground" />
+          )}
+          {isAdminOrMaster && (
+            <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=emails`)}>
+              <div className="w-10 h-10 rounded-lg bg-primary/50 flex items-center justify-center">
+                <Mail className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div>
+                <p className="text-xl sm:text-2xl font-bold text-foreground">∞</p>
+                <p className="text-[11px] text-muted-foreground">Memória de e-mails</p>
+              </div>
             </div>
-            <div>
-              <p className="text-xl sm:text-2xl font-bold text-foreground">{suppliers.length}</p>
-              <p className="text-[11px] text-muted-foreground">Fornecedores</p>
-            </div>
-          </div>
-          <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=emails`)}>
-            <div className="w-10 h-10 rounded-lg bg-primary/50 flex items-center justify-center">
-              <Mail className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <div>
-              <p className="text-xl sm:text-2xl font-bold text-foreground">∞</p>
-              <p className="text-[11px] text-muted-foreground">Memória de e-mails</p>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* ─── Campaigns View (default) ─── */}
