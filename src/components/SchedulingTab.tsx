@@ -124,7 +124,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [teamDialogInitialId, setTeamDialogInitialId] = useState<string | null>(null);
   const [viewTeamsOpen, setViewTeamsOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
-  const [listSort, setListSort] = useState<{ key: 'name' | 'state' | 'city' | 'date'; dir: 'asc' | 'desc' }>({ key: 'name', dir: 'asc' });
+  const [listSort, setListSort] = useState<{ key: 'name' | 'state' | 'city' | 'date' | 'team'; dir: 'asc' | 'desc' }>({ key: 'name', dir: 'asc' });
   const [filterApproval, setFilterApproval] = useState("");
   
   const [filterDate, setFilterDate] = useState("");
@@ -1507,6 +1507,10 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           else if (listSort.key === 'state') { av = (a.state || '').toLowerCase(); bv = (b.state || '').toLowerCase(); }
           else if (listSort.key === 'city') { av = (a.city || '').toLowerCase(); bv = (b.city || '').toLowerCase(); }
           else if (listSort.key === 'date') { av = `${aDate} ${aTime}`; bv = `${bDate} ${bTime}`; }
+          else if (listSort.key === 'team') { 
+            av = (sa?.team_id ? teamMap[sa.team_id]?.name : '').toLowerCase(); 
+            bv = (sb?.team_id ? teamMap[sb.team_id]?.name : '').toLowerCase(); 
+          }
           if (av < bv) return -1 * dir;
           if (av > bv) return 1 * dir;
           return 0;
@@ -1534,6 +1538,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     <th className="px-3 py-2 text-left"><SortHeader k="name" label="Loja" /></th>
                     <th className="px-3 py-2 text-left"><SortHeader k="state" label="Estado" /></th>
                     <th className="px-3 py-2 text-left"><SortHeader k="city" label="Cidade" /></th>
+                    <th className="px-3 py-2 text-left"><SortHeader k="team" label="Equipe" /></th>
                     <th className="px-3 py-2 text-left"><SortHeader k="date" label="Data / Horário" /></th>
                   </tr>
                 </thead>
@@ -1556,6 +1561,14 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         </td>
                         <td className="px-3 py-2">{store.state || "—"}</td>
                         <td className="px-3 py-2">{store.city || "—"}</td>
+                        <td className="px-3 py-2">
+                          {sc?.team_id ? (
+                            <div className="flex items-center gap-1.5">
+                              <Users className="w-3.5 h-3.5 text-muted-foreground" />
+                              <span className="truncate max-w-[150px]">{teamMap[sc.team_id]?.name || "Equipe Removida"}</span>
+                            </div>
+                          ) : "—"}
+                        </td>
                         <td className="px-3 py-2">
                           <div className="flex items-center gap-1.5">
                             <CalendarIcon className="w-3.5 h-3.5 text-muted-foreground" />
@@ -1586,6 +1599,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     <div className="font-medium text-foreground">{store.nickname || store.name}</div>
                     <div className="text-xs text-muted-foreground mt-0.5">
                       {(store.state || "—")} · {(store.city || "—")}
+                      {sc?.team_id && ` · ${teamMap[sc.team_id]?.name || "Equipe Removida"}`}
                     </div>
                     <div className="text-xs text-foreground mt-1 flex items-center gap-1.5">
                       <CalendarIcon className="w-3 h-3 text-muted-foreground" />{dateFmt}
