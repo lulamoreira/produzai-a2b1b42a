@@ -1538,6 +1538,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     <th className="px-3 py-2 text-left"><SortHeader k="name" label="Loja" /></th>
                     <th className="px-3 py-2 text-left"><SortHeader k="state" label="Estado" /></th>
                     <th className="px-3 py-2 text-left"><SortHeader k="city" label="Cidade" /></th>
+                    <th className="px-3 py-2 text-left"><SortHeader k="team" label="Equipe" /></th>
                     <th className="px-3 py-2 text-left"><SortHeader k="date" label="Data / Horário" /></th>
                   </tr>
                 </thead>
