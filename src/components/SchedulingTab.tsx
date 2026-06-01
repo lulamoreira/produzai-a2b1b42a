@@ -1022,6 +1022,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       })()}
 
       {/* Store Cards */}
+      {viewMode === 'card' && (
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
         {displayedStores.map((store) => {
           const schedule = scheduleMap[store.id];
