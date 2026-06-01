@@ -1599,6 +1599,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     <div className="font-medium text-foreground">{store.nickname || store.name}</div>
                     <div className="text-xs text-muted-foreground mt-0.5">
                       {(store.state || "—")} · {(store.city || "—")}
+                      {sc?.team_id && ` · ${teamMap[sc.team_id]?.name || "Equipe Removida"}`}
                     </div>
                     <div className="text-xs text-foreground mt-1 flex items-center gap-1.5">
                       <CalendarIcon className="w-3 h-3 text-muted-foreground" />{dateFmt}
