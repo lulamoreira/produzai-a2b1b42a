@@ -719,8 +719,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     toast.success(t("scheduling.teamsExported"));
   };
 
-  // Count active secondary filters
-  const secondaryFilterCount = [filterCity, filterPeriod, filterTeam, filterPreference, filterLocked, filterReschedule, filterModel].filter(Boolean).length;
+  // Count active filters (all filters live inside the Filtros popover, except search)
+  const secondaryFilterCount = [filterState, filterApproval, filterResponsibility, filterDate, filterCity, filterPeriod, filterTeam, filterPreference, filterLocked, filterReschedule, filterModel].filter(Boolean).length;
 
   // Approval badge helper
   const approvalBadgeClass = (status: ApprovalStatusValue) => {
