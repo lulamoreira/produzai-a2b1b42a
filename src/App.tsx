@@ -254,6 +254,13 @@ const App = () => (
               <PreviewUserBanner />
               <Suspense fallback={<RouteFallback />}>
                 <Routes>
+                  {/* Quitanda3dSHOP Routes */}
+                  <Route path="/quitanda" element={<QuitandaLayout><QuitandaDashboard /></QuitandaLayout>} />
+                  <Route path="/quitanda/drops" element={<QuitandaLayout><QuitandaDrops /></QuitandaLayout>} />
+                  <Route path="/quitanda/historico" element={<QuitandaLayout><QuitandaHistory /></QuitandaLayout>} />
+                  <Route path="/quitanda/financeiro" element={<QuitandaLayout><QuitandaFinancial /></QuitandaLayout>} />
+                  <Route path="/quitanda/configuracoes" element={<QuitandaLayout><QuitandaSettings /></QuitandaLayout>} />
+
                   <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
                   <Route path="/join/:token" element={<JoinPage />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
