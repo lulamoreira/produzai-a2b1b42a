@@ -265,7 +265,7 @@ const App = () => (
                   <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
                   <Route path="/join/:token" element={<JoinPage />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/" element={<Navigate to="/quitanda" replace />} />
+                  <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
                   <Route path="/agencies" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
                   <Route path="/agency/:agencyId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/agency/:agencyId/clients" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
