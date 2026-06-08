@@ -45,6 +45,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { 
+  Copy,
   Plus, 
   Search, 
   Trash2, 
@@ -61,8 +62,10 @@ import {
   List,
   Building2,
   User as UserIcon,
-  Loader2
+  Loader2,
+  Share2
 } from "lucide-react";
+import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 
 const AgencySuppliers = () => {
@@ -121,6 +124,10 @@ const AgencySuppliers = () => {
 
   const [isSearchingCep, setIsSearchingCep] = useState(false);
   const [cepError, setCepError] = useState("");
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteDays, setInviteDays] = useState(7);
+  const [generatingInvite, setGeneratingInvite] = useState(false);
+  const [generatedInvite, setGeneratedInvite] = useState<{ url: string; expiresAt: Date } | null>(null);
 
   const filteredSuppliers = useMemo(() => {
     return suppliers.filter(s => 
@@ -306,6 +313,66 @@ const AgencySuppliers = () => {
     setDialogOpen(false);
   };
 
+  const handleGenerateInvite = async () => {
+    if (!agencyId || !user) return;
+    setGeneratingInvite(true);
+    try {
+      const expiresAt = addDays(new Date(), inviteDays);
+      const { data, error } = await supabase
+        .from("supplier_invitations")
+        .insert([{
+          agency_id: agencyId,
+          created_by: user.id,
+          expires_at: expiresAt.toISOString(),
+          status: "pending"
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const url = `${window.location.origin}/convite/fornecedor/${data.token}`;
+      setGeneratedInvite({ url, expiresAt });
+    } catch (err: any) {
+      toast.error("Erro ao gerar convite: " + err.message);
+    } finally {
+      setGeneratingInvite(false);
+    }
+  };
+
+  const { data: agencyInfo } = useQuery({
+    queryKey: ["agency_name", agencyId],
+    queryFn: async () => {
+      if (!agencyId) return null;
+      const { data } = await supabase.from("agencies").select("name").eq("id", agencyId).maybeSingle();
+      return data;
+    },
+    enabled: !!agencyId,
+  });
+
+  const inviteText = generatedInvite && agencyInfo ? `Olá! 👋
+
+A *${agencyInfo.name}* convida você a se cadastrar como fornecedor parceiro em nossa plataforma.
+
+Clique no link abaixo para preencher seu cadastro — é rápido e não precisa criar conta:
+
+🔗 ${generatedInvite.url}
+
+O link estará disponível por ${inviteDays} dias, até ${format(generatedInvite.expiresAt, "dd/MM/yyyy")}.
+
+Qualquer dúvida, estamos à disposição!` : "";
+
+  const handleWhatsAppShare = () => {
+    if (!inviteText) return;
+    const url = `https://wa.me/?text=${encodeURIComponent(inviteText)}`;
+    window.open(url, "_blank");
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copiado para a área de transferência!");
+  };
+
   const toggleService = (service: string) => {
     setForm(f => ({
       ...f,
@@ -383,9 +450,21 @@ const AgencySuppliers = () => {
               </Button>
             </div>
           </div>
-          <Button onClick={handleOpenCreate} className="bg-primary text-primary-foreground h-10 px-4">
-            <Plus className="w-4 h-4 mr-2" /> Novo Fornecedor
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setGeneratedInvite(null);
+                setInviteDialogOpen(true);
+              }} 
+              className="h-10 px-4"
+            >
+              <Share2 className="w-4 h-4 mr-2" /> Convidar Fornecedor
+            </Button>
+            <Button onClick={handleOpenCreate} className="bg-primary text-primary-foreground h-10 px-4">
+              <Plus className="w-4 h-4 mr-2" /> Novo Fornecedor
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
@@ -811,18 +890,65 @@ const AgencySuppliers = () => {
             </form>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Convidar Fornecedor</DialogTitle>
+            </DialogHeader>
+            
+            {!generatedInvite ? (
+              <div className="space-y-6 py-4">
+                <div className="space-y-2">
+                  <Label>Link válido por quantos dias?</Label>
+                  <Input 
+                    type="number" 
+                    min={1} 
+                    max={90} 
+                    value={inviteDays} 
+                    onChange={e => setInviteDays(parseInt(e.target.value) || 7)} 
+                  />
+                  <p className="text-[10px] text-muted-foreground">Mínimo 1 dia, máximo 90 dias.</p>
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={handleGenerateInvite} 
+                  disabled={generatingInvite}
+                >
+                  {generatingInvite && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Gerar Link
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-6 py-4">
+                <div className="space-y-2">
+                  <Label>URL do Convite</Label>
+                  <div className="flex gap-2">
+                    <Input value={generatedInvite.url} readOnly />
+                    <Button variant="outline" size="icon" onClick={() => copyToClipboard(generatedInvite.url)}>
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Expira em {format(generatedInvite.expiresAt, "dd/MM/yyyy HH:mm")}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Texto para WhatsApp</Label>
+                  <div className="bg-muted p-3 rounded-md text-xs whitespace-pre-wrap border italic">
+                    {inviteText}
+                  </div>
+                </div>
+
+                <Button className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white" onClick={handleWhatsAppShare}>
+                  <MessageSquare className="w-4 h-4 mr-2" /> Enviar via WhatsApp
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
   );
 
-  const { data: agencyInfo } = useQuery({
-    queryKey: ["agency_name", agencyId],
-    queryFn: async () => {
-      if (!agencyId) return null;
-      const { data } = await supabase.from("agencies").select("name").eq("id", agencyId).maybeSingle();
-      return data;
-    },
-    enabled: !!agencyId,
-  });
 
   return (
     <AppLayout
