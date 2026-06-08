@@ -621,6 +621,7 @@ export default function MatrixAutomationDialog({
             pieceId: rp.pieceId, pieceName: rp.pieceName,
             currentQty, newQty: currentQty + rp.quantity, action: "keep",
           });
+          // newQty já contém currentQty + quantidade nova — handleExecute usa newQty diretamente
         } else {
           rows.push({
             storeId: store.id, storeName: store.name, group: "update",
