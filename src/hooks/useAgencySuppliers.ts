@@ -52,7 +52,11 @@ export function useAgencySuppliers(agencyId: string | undefined) {
         .eq("agency_id", agencyId)
         .order("company_name", { ascending: true });
       if (error) throw error;
-      return data as AgencySupplier[];
+      return (data || []).map(s => ({
+        ...s,
+        services: Array.isArray(s.services) ? s.services : [],
+        file_urls: Array.isArray(s.file_urls) ? s.file_urls : []
+      })) as AgencySupplier[];
     },
     enabled: !!agencyId,
   });
