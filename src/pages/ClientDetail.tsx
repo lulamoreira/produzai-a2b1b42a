@@ -234,7 +234,7 @@ function SortableCampaignCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className={cn(
-              "font-semibold text-base truncate min-w-0",
+              "font-semibold text-base min-w-0 break-words",
               campaign.is_active === false ? "text-muted-foreground" : "text-foreground"
             )}>
               {campaign.name}
@@ -250,7 +250,7 @@ function SortableCampaignCard({
             )}
             <CampaignActiveAdjustmentBadge campaignId={campaign.id} />
           </div>
-          <p className="text-xs mt-0.5 truncate text-muted-foreground">
+          <p className="text-xs mt-0.5 text-muted-foreground">
             {t("clientDashboard.createdAt") || "Criada em"} {new Date(campaign.created_at).toLocaleDateString()}
           </p>
 
