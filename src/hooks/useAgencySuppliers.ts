@@ -63,9 +63,10 @@ export function useAgencySuppliers(agencyId: string | undefined) {
       if (error) throw error;
       return (data || []).map(s => ({
         ...s,
-        services: Array.isArray(s.services) ? s.services : [],
-        file_urls: Array.isArray(s.file_urls) ? s.file_urls : []
-      })) as AgencySupplier[];
+        services: Array.isArray(s.services) ? (s.services as string[]) : [],
+        contacts: Array.isArray(s.contacts) ? (s.contacts as unknown as SupplierContact[]) : [],
+        file_urls: Array.isArray(s.file_urls) ? (s.file_urls as unknown as { name: string; url: string }[]) : []
+      })) as unknown as AgencySupplier[];
     },
     enabled: !!agencyId,
   });
