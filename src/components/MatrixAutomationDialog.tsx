@@ -2063,7 +2063,8 @@ export default function MatrixAutomationDialog({
             </div>
           </div>
         )}
-      </DialogContent>
+      </div>
+    </DialogContent>
 
       {/* ──── Overwrite confirmation dialog ──── */}
       <Dialog open={overwriteDialog.open} onOpenChange={(o) => setOverwriteDialog({ ...overwriteDialog, open: o })}>
