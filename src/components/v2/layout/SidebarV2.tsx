@@ -4,9 +4,11 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
+import { useV2Theme } from "@/hooks/useV2Theme";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
+
   ChevronLeft, 
   ChevronRight, 
   LogOut, 
@@ -40,12 +42,14 @@ import AquaIcon from "@/components/AquaIcon";
 
 export function SidebarV2() {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
+  const { theme } = useV2Theme();
   const location = useLocation();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { t } = useTranslation();
   const { user, signOut } = useAuth();
   const { isAdminOrMaster, isAdmin, isMaster } = useUserRole();
+
   const { isLimited, campaigns: limitedCampaigns } = useUserDirectAccess();
 
   const [collapsed, setCollapsed] = useState(() => {
@@ -263,8 +267,10 @@ export function SidebarV2() {
 
   const userInitial = user?.email?.[0]?.toUpperCase() || "U";
 
-  const NavItem = ({ item, isSubItem = false, activeOverride }: { item: any, isSubItem?: boolean, activeOverride?: boolean }) => {
+  const NavItem = ({ item, isSubItem = false, activeOverride, colorIndex }: { item: any, isSubItem?: boolean, activeOverride?: boolean, colorIndex?: number }) => {
     const isActive = activeOverride !== undefined ? activeOverride : (item.exact ? location.pathname === item.route : location.pathname.startsWith(item.route));
+    const isMulticolor = theme === "multicolor";
+    const customColor = isMulticolor && colorIndex !== undefined ? `var(--v2-color-${(colorIndex % 8) + 1})` : null;
     
     const content = (
       <NavLink
@@ -278,7 +284,7 @@ export function SidebarV2() {
         )}
         style={{ 
           background: isActive ? 'var(--v2-sidebar-active)' : 'transparent',
-          borderColor: isActive ? 'var(--v2-accent)' : 'transparent',
+          borderColor: isActive ? (customColor || 'var(--v2-accent)') : 'transparent',
           color: isActive ? 'var(--v2-sidebar-text)' : 'var(--v2-sidebar-muted)'
         }}
       >
@@ -289,7 +295,9 @@ export function SidebarV2() {
               "flex-shrink-0 transition-colors"
             )}
             style={{ 
-              color: isActive ? 'var(--v2-sidebar-text)' : (isSubItem && item.color ? item.color : 'inherit')
+              color: isActive 
+                ? 'var(--v2-sidebar-text)' 
+                : (isSubItem && item.color ? item.color : (customColor || 'inherit'))
             }}
           />
         )}
@@ -441,8 +449,8 @@ export function SidebarV2() {
         <TooltipProvider delayDuration={0}>
           {/* Main Nav */}
           <div className="space-y-1">
-            {mainNavItems.map((item) => (
-              <NavItem key={item.label} item={item} />
+            {mainNavItems.map((item, index) => (
+              <NavItem key={item.label} item={item} colorIndex={index} />
             ))}
           </div>
 
@@ -502,10 +510,12 @@ export function SidebarV2() {
               <NavItem 
                 item={{ label: t("sidebar.clients"), icon: Briefcase, route: `/agency/${effectiveAgencyId}/clients` }} 
                 activeOverride={location.pathname.startsWith(`/agency/${effectiveAgencyId}/clients`)}
+                colorIndex={3}
               />
               <NavItem
                 item={{ label: "Fornecedores", icon: Truck, route: `/agency/${effectiveAgencyId}/suppliers` }}
                 activeOverride={location.pathname.startsWith(`/agency/${effectiveAgencyId}/suppliers`)}
+                colorIndex={4}
               />
             </div>
           )}
@@ -609,6 +619,7 @@ export function SidebarV2() {
                     <NavItem 
                       item={item} 
                       activeOverride={(item as any).active} 
+                      colorIndex={5 + index}
                     />
                   </React.Fragment>
                 );
