@@ -480,15 +480,19 @@ export function SidebarV2() {
             </div>
           )}
 
-          {/* Agency Context: List Clients */}
+          {/* Agency Context: List Clients & Suppliers */}
           {agencyId && !clientId && !isLimited && !collapsed && (
             <div className="space-y-1">
               <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
-                {t("sidebar.clients")}
+                Agência
               </div>
               <NavItem 
                 item={{ label: t("sidebar.clients"), icon: Briefcase, route: `/agency/${agencyId}` }} 
-                activeOverride={location.pathname === `/agency/${agencyId}`}
+                activeOverride={location.pathname === `/agency/${agencyId}` || location.pathname === `/agency/${agencyId}/clients`}
+              />
+              <NavItem 
+                item={{ label: "Fornecedores", icon: Truck, route: "/suppliers" }} 
+                activeOverride={location.pathname === "/suppliers"}
               />
             </div>
           )}
