@@ -33,35 +33,35 @@
 }
 
 :root[data-v2-theme="multicolor"] {
-  --v2-bg: #FAFAFA;
+  --v2-bg: #F8F7FF;
   --v2-surface: #FFFFFF;
-  --v2-surface-raised: #F4F4F5;
-  --v2-border: #E4E4E7;
-  --v2-text: #18181B;
-  --v2-text-secondary: #52525B;
-  --v2-text-muted: #A1A1AA;
+  --v2-surface-raised: #F0EEFF;
+  --v2-border: #DDD6FE;
+  --v2-text: #1E1B4B;
+  --v2-text-secondary: #4C1D95;
+  --v2-text-muted: #8B5CF6;
   --v2-accent: #F97316;
   --v2-accent-hover: #EA580C;
   --v2-accent-foreground: #FFFFFF;
 
-  /* Sidebar */
-  --v2-sidebar-bg: #18181B;
-  --v2-sidebar-text: #F4F4F5;
-  --v2-sidebar-muted: #71717A;
-  --v2-sidebar-border: rgba(255,255,255,0.08);
-  --v2-sidebar-active-bg: rgba(255,255,255,0.12);
+  /* Sidebar vibrante com gradiente */
+  --v2-sidebar-bg: linear-gradient(160deg, #4F46E5 0%, #7C3AED 40%, #DB2777 100%);
+  --v2-sidebar-text: #FFFFFF;
+  --v2-sidebar-muted: rgba(255,255,255,0.55);
+  --v2-sidebar-border: rgba(255,255,255,0.15);
+  --v2-sidebar-active-bg: rgba(255,255,255,0.22);
   --v2-sidebar-active-text: #FFFFFF;
-  --v2-sidebar-hover-bg: rgba(255,255,255,0.06);
+  --v2-sidebar-hover-bg: rgba(255,255,255,0.12);
 
-  /* Cores múltiplas para ícones e destaques por seção */
-  --v2-color-1: #F97316;   /* laranja */
-  --v2-color-2: #22C55E;   /* verde */
-  --v2-color-3: #3B82F6;   /* azul */
-  --v2-color-4: #A855F7;   /* roxo */
-  --v2-color-5: #EF4444;   /* vermelho */
-  --v2-color-6: #EAB308;   /* amarelo */
-  --v2-color-7: #EC4899;   /* rosa */
-  --v2-color-8: #14B8A6;   /* teal */
+  /* Cores vivas para ícones e destaques */
+  --v2-color-1: #FF6B35;
+  --v2-color-2: #22D3EE;
+  --v2-color-3: #4ADE80;
+  --v2-color-4: #FACC15;
+  --v2-color-5: #F472B6;
+  --v2-color-6: #60A5FA;
+  --v2-color-7: #A78BFA;
+  --v2-color-8: #34D399;
 }
 
 /* Global overflow protection for v2 */
