@@ -47,6 +47,7 @@ const AdjustmentRequotePortal = lazy(() => import("./pages/AdjustmentRequotePort
 const StorePortal = lazy(() => import("./pages/StorePortal"));
 const OccurrencesPortal = lazy(() => import("./pages/OccurrencesPortal"));
 const HomeV2 = lazy(() => import("./pages/v2/HomeV2").then(m => ({ default: m.HomeV2 })));
+const AgencySuppliers = lazy(() => import("./pages/AgencySuppliers"));
 const ClientsV2 = lazy(() => import("./pages/v2/ClientsV2"));
 const JoinPage = lazy(() => import("./pages/JoinPage"));
 const WelcomePage = lazy(() => import("./pages/WelcomePage"));
@@ -280,6 +281,7 @@ const App = () => (
 
 
                   <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
+                  <Route path="/suppliers" element={<ProtectedRoute><AgencySuppliers /></ProtectedRoute>} />
                   <Route path="/favorites" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
                   <Route path="/installer" element={<ErrorBoundary><InstallerPortal /></ErrorBoundary>} />
                   <Route path="/instalador" element={<ErrorBoundary><InstallerPortal /></ErrorBoundary>} />
