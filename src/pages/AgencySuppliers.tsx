@@ -369,7 +369,7 @@ const AgencySuppliers = () => {
                 
                 <div className="space-y-3 text-sm">
                   <div className="flex items-start gap-2">
-                    <User className="w-4 h-4 text-muted-foreground mt-0.5" />
+                    <UserIcon className="w-4 h-4 text-muted-foreground mt-0.5" />
                     <span>{s.contact_name || "Sem contato"}</span>
                   </div>
                   {(s.phone || s.whatsapp) && (
