@@ -369,17 +369,20 @@ export default function AppSidebar() {
             <div className="my-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }} />
             
             {!collapsed && (
-              <div className="text-[10px] font-semibold uppercase tracking-wider px-3 mb-1 mt-1 opacity-50">
+              <button 
+                onClick={() => handleNavigate(`/agency/${effectiveAgencyId}`)}
+                className="text-[10px] font-semibold uppercase tracking-wider px-3 mb-1 mt-1 opacity-50 hover:opacity-100 transition-opacity w-full text-left"
+              >
                 Agência
-              </div>
+              </button>
             )}
 
             {!isLimited && (
               <button
-                onClick={() => handleNavigate(`/agency/${effectiveAgencyId}`)}
+                onClick={() => handleNavigate(`/agency/${effectiveAgencyId}/clients`)}
                 className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
-                style={itemStyle((location.pathname === `/agency/${effectiveAgencyId}`) && !isInsideClient)}
-                {...hoverHandlers((location.pathname === `/agency/${effectiveAgencyId}`) && !isInsideClient)}
+                style={itemStyle((location.pathname === `/agency/${effectiveAgencyId}/clients`) && !isInsideClient)}
+                {...hoverHandlers((location.pathname === `/agency/${effectiveAgencyId}/clients`) && !isInsideClient)}
                 title={collapsed ? t("sidebar.clients") : undefined}
               >
                 <AquaIcon icon={Briefcase} size="sm" color="#735A3D" />
