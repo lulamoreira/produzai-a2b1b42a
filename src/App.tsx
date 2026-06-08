@@ -53,6 +53,7 @@ const JoinPage = lazy(() => import("./pages/JoinPage"));
 const WelcomePage = lazy(() => import("./pages/WelcomePage"));
 const FavoritesV2 = lazy(() => import("./pages/v2/FavoritesV2"));
 const AgenciesV2 = lazy(() => import("./pages/v2/AgenciesV2"));
+const AgencyDashboard = lazy(() => import("./pages/v2/AgencyDashboard"));
 
 // Quitanda3dSHOP Pages
 const QuitandaDashboard = lazy(() => import("./pages/quitanda/DashboardPage"));
