@@ -100,7 +100,7 @@ const SupplierInvitePortal = () => {
             email: supplier.email || "",
             website: supplier.website || "",
             observations: supplier.observations || "",
-            services: Array.isArray(supplier.services) ? supplier.services : [],
+            services: Array.isArray(supplier.services) ? (supplier.services as string[]) : [],
             custom_service: "",
             file_urls: Array.isArray(supplier.file_urls) ? (supplier.file_urls as any[]) : [],
             contacts: Array.isArray(supplier.contacts) && supplier.contacts.length > 0
