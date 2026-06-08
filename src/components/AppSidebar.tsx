@@ -14,6 +14,7 @@ import { InviteUserDialog } from "@/components/sidebar/InviteUserDialog";
 import { CampaignNavItem } from "@/components/sidebar/CampaignNavItem";
 import { CAMPAIGN_MODULES, MODULE_ICONS, type UserMenuAction } from "@/lib/sidebarRegistry";
 import { openGlobalSearch } from "@/lib/globalSearchBus";
+import { cn } from "@/lib/utils";
 
 // lucide icons imported below with CAMPAIGN_MODULE_KEYS
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
@@ -369,41 +370,73 @@ export default function AppSidebar() {
         {/* ── Seção Agência (Clientes + Fornecedores) ── */}
         {effectiveAgencyId && (
           <>
+            {!collapsed && agencyName && (
+              <div 
+                className="px-3 py-1.5 mx-2 my-2 rounded-md bg-brand-400/10 border border-brand-400/20"
+                title={agencyName}
+              >
+                <p className="text-[10px] font-bold text-brand-400 uppercase tracking-tight truncate leading-tight">
+                  {agencyName}
+                </p>
+              </div>
+            )}
+            
             <div className="my-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }} />
+            
+            {!collapsed && (
+              <div className="text-[10px] font-semibold uppercase tracking-wider px-3 mb-2 mt-1 opacity-50">
+                Agência
+              </div>
+            )}
             
             {!collapsed && (
               <button 
                 onClick={() => handleNavigate(`/agency/${effectiveAgencyId}`)}
-                className="text-[10px] font-semibold uppercase tracking-wider px-3 mb-1 mt-1 opacity-50 hover:opacity-100 transition-opacity w-full text-left"
+                className={cn(
+                  "flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all w-full text-left group",
+                  location.pathname === `/agency/${effectiveAgencyId}` 
+                    ? "bg-[var(--sidebar-item-active)] text-[var(--sidebar-text-active)] shadow-sm" 
+                    : "text-[var(--sidebar-text)] hover:bg-[var(--sidebar-item-hover)] hover:text-[var(--sidebar-text-active)]"
+                )}
               >
-                Agência
+                <div 
+                  className={cn(
+                    "w-1.5 h-1.5 rounded-full",
+                    location.pathname === `/agency/${effectiveAgencyId}` ? "bg-brand-400" : "bg-stone-500 opacity-40 group-hover:opacity-100"
+                  )} 
+                />
+                <span className="text-[13px] font-bold tracking-tight uppercase">
+                  {agencyName || "Agência"}
+                </span>
               </button>
             )}
 
             {!isLimited && (
-              <button
-                onClick={() => handleNavigate(`/agency/${effectiveAgencyId}/clients`)}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
-                style={itemStyle((location.pathname === `/agency/${effectiveAgencyId}/clients`) && !isInsideClient)}
-                {...hoverHandlers((location.pathname === `/agency/${effectiveAgencyId}/clients`) && !isInsideClient)}
-                title={collapsed ? t("sidebar.clients") : undefined}
-              >
-                <AquaIcon icon={Briefcase} size="sm" color="#735A3D" />
-                {!collapsed && <span className="truncate font-medium">{t("sidebar.clients")}</span>}
-              </button>
-            )}
+              <>
+                <button
+                  onClick={() => handleNavigate(`/agency/${effectiveAgencyId}/clients`)}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+                  style={itemStyle((location.pathname === `/agency/${effectiveAgencyId}/clients`) && !isInsideClient)}
+                  {...hoverHandlers((location.pathname === `/agency/${effectiveAgencyId}/clients`) && !isInsideClient)}
+                  title={collapsed ? t("sidebar.clients") : undefined}
+                >
+                  <AquaIcon icon={Briefcase} size="sm" color="#735A3D" />
+                  {!collapsed && <span className="truncate font-medium">{t("sidebar.clients")}</span>}
+                </button>
 
-            {isAdminOrMaster && (
-              <button
-                onClick={() => handleNavigate("/suppliers")}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
-                style={itemStyle(location.pathname === "/suppliers")}
-                {...hoverHandlers(location.pathname === "/suppliers")}
-                title={collapsed ? "Fornecedores" : undefined}
-              >
-                <AquaIcon icon={Truck} size="sm" color="#4B5563" />
-                {!collapsed && <span className="truncate font-medium">Fornecedores</span>}
-              </button>
+                {isAdminOrMaster && (
+                  <button
+                    onClick={() => handleNavigate("/suppliers")}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+                    style={itemStyle(location.pathname === "/suppliers")}
+                    {...hoverHandlers(location.pathname === "/suppliers")}
+                    title={collapsed ? "Fornecedores" : undefined}
+                  >
+                    <AquaIcon icon={Truck} size="sm" color="#4B5563" />
+                    {!collapsed && <span className="truncate font-medium">Fornecedores</span>}
+                  </button>
+                )}
+              </>
             )}
           </>
         )}

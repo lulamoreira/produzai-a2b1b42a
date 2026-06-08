@@ -228,8 +228,7 @@ const AgencySuppliers = () => {
     }));
   };
 
-  return (
-    <AppLayout title="Fornecedores" breadcrumbs={[{ label: "Administração" }, { label: "Fornecedores" }]}>
+  const content = (
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2 flex-1 max-w-md">
@@ -560,6 +559,26 @@ const AgencySuppliers = () => {
           </DialogContent>
         </Dialog>
       </div>
+  );
+
+  const { data: agencyInfo } = useQuery({
+    queryKey: ["agency_name", agencyId],
+    queryFn: async () => {
+      if (!agencyId) return null;
+      const { data } = await supabase.from("agencies").select("name").eq("id", agencyId).maybeSingle();
+      return data;
+    },
+    enabled: !!agencyId,
+  });
+
+  return (
+    <AppLayout
+      breadcrumbs={[
+        { label: agencyInfo?.name || "Agência", href: `/agency/${agencyId}` },
+        { label: "Fornecedores" },
+      ]}
+    >
+      {content}
     </AppLayout>
   );
 };
