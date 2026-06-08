@@ -414,7 +414,7 @@ export function SidebarV2() {
         collapsed ? "w-16" : "w-[240px]"
       )}
       style={{ 
-        background: 'var(--v2-sidebar-bg)', 
+        background: theme === "multicolor" ? 'var(--v2-sidebar-bg)' : 'var(--v2-sidebar-bg)', 
         borderColor: 'var(--v2-border)' 
       }}
     >
