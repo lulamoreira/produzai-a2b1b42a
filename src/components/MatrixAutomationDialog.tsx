@@ -2077,7 +2077,7 @@ export default function MatrixAutomationDialog({
 
       {/* ──── Overwrite confirmation dialog ──── */}
       <Dialog open={overwriteDialog.open} onOpenChange={(o) => setOverwriteDialog({ ...overwriteDialog, open: o })}>
-        <DialogContent className="w-full max-w-sm">
+        <DialogContent className="w-full max-w-sm z-[9999] relative max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Valores existentes encontrados</DialogTitle>
           </DialogHeader>
@@ -2112,15 +2112,6 @@ export default function MatrixAutomationDialog({
               </button>
 
               <button
-                className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-destructive/50 hover:bg-destructive/5 transition-all text-left"
-                onClick={() => {
-                  setOverwriteDialog({ open: false, count: 0 });
-                  executePreview("replace");
-                }}
-              >
-                <div className="w-8 h-8 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
-                  <Trash2 className="w-4 h-4" />
-              <button
                 className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-blue-500/50 hover:bg-blue-50/5 transition-all text-left"
                 onClick={() => {
                   setOverwriteDialog({ open: false, count: 0 });
@@ -2137,7 +2128,17 @@ export default function MatrixAutomationDialog({
                   </p>
                 </div>
               </button>
-            </div>
+
+              <button
+                className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-destructive/50 hover:bg-destructive/5 transition-all text-left"
+                onClick={() => {
+                  setOverwriteDialog({ open: false, count: 0 });
+                  executePreview("replace");
+                }}
+              >
+                <div className="w-8 h-8 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
+                  <Trash2 className="w-4 h-4" />
+                </div>
                 <div>
                   <p className="text-sm font-semibold">Apagar e substituir tudo</p>
                   <p className="text-xs text-muted-foreground leading-relaxed">
