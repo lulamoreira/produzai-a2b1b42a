@@ -10,7 +10,8 @@ import {
   useUpdateAgencySupplier,
   useDeleteAgencySupplier,
   VISUAL_COMMUNICATION_SERVICES,
-  type AgencySupplier
+  type AgencySupplier,
+  type SupplierContact
 } from "@/hooks/useAgencySuppliers";
 import {
   Table,
