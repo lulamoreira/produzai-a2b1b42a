@@ -289,6 +289,13 @@ const AgencySuppliers = () => {
       services: finalServices,
       file_urls: form.file_urls,
       contacts: form.contacts,
+      cep: form.cep || null,
+      logradouro: form.logradouro || null,
+      numero: form.numero || null,
+      complemento: form.complemento || null,
+      bairro: form.bairro || null,
+      cidade: form.cidade || null,
+      estado: form.estado || null,
     };
 
     if (editingSupplier) {
