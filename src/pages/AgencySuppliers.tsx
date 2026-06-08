@@ -45,6 +45,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { 
+  Copy,
   Plus, 
   Search, 
   Trash2, 
@@ -61,8 +62,10 @@ import {
   List,
   Building2,
   User as UserIcon,
-  Loader2
+  Loader2,
+  Share2
 } from "lucide-react";
+import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 
 const AgencySuppliers = () => {
