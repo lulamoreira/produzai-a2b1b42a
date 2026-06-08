@@ -461,8 +461,11 @@ export function SidebarV2() {
               style={{ borderColor: 'rgba(255,255,255,0.1)' }}
             >
               <div 
-                className="text-[10px] font-bold uppercase tracking-wider mb-1"
-                style={{ color: 'var(--v2-sidebar-muted)' }}
+                className={cn(
+                  "text-[10px] font-bold uppercase tracking-wider mb-1",
+                  theme === "multicolor" && "bg-white/10 rounded px-2 py-0.5 text-white/90"
+                )}
+                style={{ color: theme === "multicolor" ? 'var(--v2-sidebar-section-label)' : 'var(--v2-sidebar-muted)' }}
               >
               </div>
               <div className="flex flex-col gap-0.5 text-xs">
@@ -503,7 +506,10 @@ export function SidebarV2() {
             <div className="space-y-1">
               <button
                 onClick={() => navigate(`/agency/${effectiveAgencyId}`)}
-                className="w-full text-left px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500 hover:text-stone-300 transition-colors cursor-pointer"
+                className={cn(
+                  "w-full text-left px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer",
+                  theme === "multicolor" ? "bg-white/10 rounded-sm mx-1 px-2 mb-1 text-white/90" : "text-stone-500 hover:text-stone-300"
+                )}
               >
                 Agência
               </button>
@@ -523,7 +529,10 @@ export function SidebarV2() {
           {/* Client Context: Stores, Emails, Campaigns */}
           {clientId && !campaignId && !isLimited && !collapsed && (
             <div className="space-y-1">
-              <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
+              <div className={cn(
+                "px-3 py-1 text-[10px] font-bold uppercase tracking-wider",
+                theme === "multicolor" ? "bg-white/10 rounded-sm mx-1 px-2 mb-1 text-white/90" : "text-stone-500"
+              )}>
                 Menu do Cliente
               </div>
               <NavItem 
@@ -540,7 +549,10 @@ export function SidebarV2() {
               />
               
               <div className="pt-2">
-                <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                <div className={cn(
+                  "px-3 py-1 text-[10px] font-bold uppercase tracking-wider",
+                  theme === "multicolor" ? "bg-white/10 rounded-sm mx-1 px-2 mb-1 text-white/90" : "text-stone-500"
+                )}>
                   {t("sidebar.campaigns")}
                 </div>
                 <div className="space-y-1 mt-1">
@@ -555,7 +567,10 @@ export function SidebarV2() {
           {/* Campaign Context: Modules */}
           {campaignId && !collapsed && effectiveSingleCampaign && (
             <div className="space-y-1">
-              <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
+              <div className={cn(
+                "px-3 py-1 text-[10px] font-bold uppercase tracking-wider",
+                theme === "multicolor" ? "bg-white/10 rounded-sm mx-1 px-2 mb-1 text-white/90" : "text-stone-500"
+              )}>
                 Módulos da Campanha
               </div>
               <CampaignItem camp={effectiveSingleCampaign} agencyId={agencyId!} clientId={clientId!} />
@@ -572,7 +587,10 @@ export function SidebarV2() {
             .filter(group => group.campaigns.length > 0)
             .map(group => (
               <div key={group.clientId} className="pt-2">
-                <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-brand-400">
+                <div className={cn(
+                  "px-3 py-1 text-[10px] font-bold uppercase tracking-wider",
+                  theme === "multicolor" ? "bg-white/10 rounded-sm mx-1 px-2 mb-1 text-white/90" : "text-brand-400"
+                )}>
                   {group.clientName}
                 </div>
                 <div className="space-y-1 mt-1">
@@ -587,7 +605,10 @@ export function SidebarV2() {
           {isAdminOrMaster && (
             <div className="space-y-1 pt-2">
               {!collapsed && (
-                <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                <div className={cn(
+                  "px-3 py-1 text-[10px] font-bold uppercase tracking-wider",
+                  theme === "multicolor" ? "bg-white/10 rounded-sm mx-1 px-2 mb-1 text-white/90" : "text-stone-500"
+                )}>
                   {t("sidebar.administration", "Administração")}
                 </div>
               )}
@@ -611,7 +632,10 @@ export function SidebarV2() {
                     {showSeparator && !collapsed && (
                       <div className="px-3 pt-3 pb-1">
                         <div className="h-px w-full bg-white/10 mb-2" />
-                        <div className="text-[10px] font-bold uppercase tracking-wider text-stone-500">
+                        <div className={cn(
+                          "text-[10px] font-bold uppercase tracking-wider",
+                          theme === "multicolor" ? "bg-white/10 rounded-sm mx-1 px-2 mb-1 text-white/90" : "text-stone-500"
+                        )}>
                           Sistema
                         </div>
                       </div>
