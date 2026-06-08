@@ -1244,6 +1244,7 @@ export default function MatrixAutomationDialog({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto p-6 pt-0 min-h-0">
+          {step === 1 && (
 
           <Tabs value={mainTab} onValueChange={setMainTab}>
             <TabsList className="w-full">
