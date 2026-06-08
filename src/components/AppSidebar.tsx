@@ -381,29 +381,31 @@ export default function AppSidebar() {
             )}
 
             {!isLimited && (
-              <button
-                onClick={() => handleNavigate(`/agency/${effectiveAgencyId}/clients`)}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
-                style={itemStyle((location.pathname === `/agency/${effectiveAgencyId}/clients`) && !isInsideClient)}
-                {...hoverHandlers((location.pathname === `/agency/${effectiveAgencyId}/clients`) && !isInsideClient)}
-                title={collapsed ? t("sidebar.clients") : undefined}
-              >
-                <AquaIcon icon={Briefcase} size="sm" color="#735A3D" />
-                {!collapsed && <span className="truncate font-medium">{t("sidebar.clients")}</span>}
-              </button>
-            )}
+              <>
+                <button
+                  onClick={() => handleNavigate(`/agency/${effectiveAgencyId}/clients`)}
+                  className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+                  style={itemStyle((location.pathname === `/agency/${effectiveAgencyId}/clients`) && !isInsideClient)}
+                  {...hoverHandlers((location.pathname === `/agency/${effectiveAgencyId}/clients`) && !isInsideClient)}
+                  title={collapsed ? t("sidebar.clients") : undefined}
+                >
+                  <AquaIcon icon={Briefcase} size="sm" color="#735A3D" />
+                  {!collapsed && <span className="truncate font-medium">{t("sidebar.clients")}</span>}
+                </button>
 
-            {isAdminOrMaster && (
-              <button
-                onClick={() => handleNavigate("/suppliers")}
-                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
-                style={itemStyle(location.pathname === "/suppliers")}
-                {...hoverHandlers(location.pathname === "/suppliers")}
-                title={collapsed ? "Fornecedores" : undefined}
-              >
-                <AquaIcon icon={Truck} size="sm" color="#4B5563" />
-                {!collapsed && <span className="truncate font-medium">Fornecedores</span>}
-              </button>
+                {isAdminOrMaster && (
+                  <button
+                    onClick={() => handleNavigate("/suppliers")}
+                    className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+                    style={itemStyle(location.pathname === "/suppliers")}
+                    {...hoverHandlers(location.pathname === "/suppliers")}
+                    title={collapsed ? "Fornecedores" : undefined}
+                  >
+                    <AquaIcon icon={Truck} size="sm" color="#4B5563" />
+                    {!collapsed && <span className="truncate font-medium">Fornecedores</span>}
+                  </button>
+                )}
+              </>
             )}
           </>
         )}
