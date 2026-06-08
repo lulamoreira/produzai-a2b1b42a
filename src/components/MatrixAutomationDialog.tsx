@@ -1211,7 +1211,7 @@ export default function MatrixAutomationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] w-[95vw] max-w-4xl h-[90dvh] max-h-[90dvh] overflow-auto overflow-x-auto relative">
+      <DialogContent className="sm:max-w-4xl">
         {executing && executionStatus && (
           <div className="absolute inset-0 z-[100] bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-4">
             <div className="w-full max-w-md space-y-6">
