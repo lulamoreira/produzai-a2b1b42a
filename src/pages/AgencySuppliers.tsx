@@ -60,7 +60,8 @@ import {
   LayoutGrid,
   List,
   Building2,
-  User as UserIcon
+  User as UserIcon,
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -109,7 +110,17 @@ const AgencySuppliers = () => {
     custom_service: "",
     file_urls: [] as { name: string; url: string }[],
     contacts: [{ nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }] as SupplierContact[],
+    cep: "",
+    logradouro: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
+    cidade: "",
+    estado: "",
   });
+
+  const [isSearchingCep, setIsSearchingCep] = useState(false);
+  const [cepError, setCepError] = useState("");
 
   const filteredSuppliers = useMemo(() => {
     return suppliers.filter(s => 
@@ -122,6 +133,7 @@ const AgencySuppliers = () => {
 
   const handleOpenCreate = () => {
     setEditingSupplier(null);
+    setCepError("");
     setForm({
       company_name: "",
       cnpj: "",
@@ -136,12 +148,20 @@ const AgencySuppliers = () => {
       custom_service: "",
       file_urls: [],
       contacts: [{ nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }],
+      cep: "",
+      logradouro: "",
+      numero: "",
+      complemento: "",
+      bairro: "",
+      cidade: "",
+      estado: "",
     });
     setDialogOpen(true);
   };
 
   const handleOpenEdit = (s: AgencySupplier) => {
     setEditingSupplier(s);
+    setCepError("");
     setForm({
       company_name: s.company_name,
       cnpj: s.cnpj || "",
@@ -158,8 +178,70 @@ const AgencySuppliers = () => {
       contacts: s.contacts && s.contacts.length > 0 
         ? s.contacts 
         : [{ nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }],
+      cep: s.cep || "",
+      logradouro: s.logradouro || "",
+      numero: s.numero || "",
+      complemento: s.complemento || "",
+      bairro: s.bairro || "",
+      cidade: s.cidade || "",
+      estado: s.estado || "",
     });
     setDialogOpen(true);
+  };
+
+  const handleCepSearch = async (cep: string) => {
+    const cleanedCep = cep.replace(/\D/g, "");
+    if (cleanedCep.length !== 8) return;
+
+    setIsSearchingCep(true);
+    setCepError("");
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cleanedCep}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        setCepError("CEP não encontrado. Preencha o endereço manualmente.");
+        setForm(f => ({
+          ...f,
+          logradouro: "",
+          bairro: "",
+          cidade: "",
+          estado: "",
+        }));
+      } else {
+        setForm(f => ({
+          ...f,
+          logradouro: data.logradouro,
+          bairro: data.bairro,
+          cidade: data.localidade,
+          estado: data.uf,
+        }));
+        // Focus on the number field
+        setTimeout(() => {
+          document.getElementById("numero")?.focus();
+        }, 100);
+      }
+    } catch (error) {
+      setCepError("Erro ao buscar CEP. Preencha o endereço manualmente.");
+    } finally {
+      setIsSearchingCep(false);
+    }
+  };
+
+  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, "");
+    if (value.length > 8) value = value.slice(0, 8);
+    
+    let formatted = value;
+    if (value.length > 5) {
+      formatted = `${value.slice(0, 5)}-${value.slice(5)}`;
+    }
+    
+    setForm(f => ({ ...f, cep: formatted }));
+    
+    if (value.length === 8) {
+      handleCepSearch(value);
+    }
   };
 
   const addContact = () => {
@@ -207,6 +289,13 @@ const AgencySuppliers = () => {
       services: finalServices,
       file_urls: form.file_urls,
       contacts: form.contacts,
+      cep: form.cep || null,
+      logradouro: form.logradouro || null,
+      numero: form.numero || null,
+      complemento: form.complemento || null,
+      bairro: form.bairro || null,
+      cidade: form.cidade || null,
+      estado: form.estado || null,
     };
 
     if (editingSupplier) {
@@ -558,13 +647,85 @@ const AgencySuppliers = () => {
                       ))}
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Endereço Completo</Label>
-                    <Input 
-                      id="address" 
-                      value={form.address}
-                      onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-                    />
+                  <div className="space-y-4 pt-2">
+                    <Label className="text-sm font-bold">Endereço</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2 relative">
+                        <Label htmlFor="cep">CEP</Label>
+                        <div className="relative">
+                          <Input 
+                            id="cep" 
+                            value={form.cep}
+                            onChange={handleCepChange}
+                            onBlur={(e) => handleCepSearch(e.target.value)}
+                            placeholder="00000-000"
+                            maxLength={9}
+                          />
+                          {isSearchingCep && (
+                            <Loader2 className="w-4 h-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                          )}
+                        </div>
+                        {cepError && (
+                          <p className="text-[10px] text-destructive absolute -bottom-4 left-0">{cepError}</p>
+                        )}
+                      </div>
+                      <div className="md:col-span-2 space-y-2">
+                        <Label htmlFor="logradouro">Logradouro</Label>
+                        <Input 
+                          id="logradouro" 
+                          value={form.logradouro}
+                          onChange={e => setForm(f => ({ ...f, logradouro: e.target.value }))}
+                          placeholder="Rua, Avenida, etc."
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="numero">Número</Label>
+                        <Input 
+                          id="numero" 
+                          value={form.numero}
+                          onChange={e => setForm(f => ({ ...f, numero: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="complemento">Complemento</Label>
+                        <Input 
+                          id="complemento" 
+                          value={form.complemento}
+                          onChange={e => setForm(f => ({ ...f, complemento: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="bairro">Bairro</Label>
+                        <Input 
+                          id="bairro" 
+                          value={form.bairro}
+                          onChange={e => setForm(f => ({ ...f, bairro: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="col-span-2 space-y-2">
+                        <Label htmlFor="cidade">Cidade</Label>
+                        <Input 
+                          id="cidade" 
+                          value={form.cidade}
+                          onChange={e => setForm(f => ({ ...f, cidade: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="estado">Estado (UF)</Label>
+                        <Input 
+                          id="estado" 
+                          value={form.estado}
+                          onChange={e => setForm(f => ({ ...f, estado: e.target.value }))}
+                          maxLength={2}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 

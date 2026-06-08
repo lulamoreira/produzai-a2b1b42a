@@ -105,14 +105,21 @@ export type Database = {
         Row: {
           address: string | null
           agency_id: string
+          bairro: string | null
+          cep: string | null
+          cidade: string | null
           cnpj: string | null
           company_name: string
+          complemento: string | null
           contact_name: string | null
           contacts: Json | null
           created_at: string
           email: string | null
+          estado: string | null
           file_urls: Json | null
           id: string
+          logradouro: string | null
+          numero: string | null
           observations: string | null
           phone: string | null
           services: Json | null
@@ -123,14 +130,21 @@ export type Database = {
         Insert: {
           address?: string | null
           agency_id: string
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
           cnpj?: string | null
           company_name: string
+          complemento?: string | null
           contact_name?: string | null
           contacts?: Json | null
           created_at?: string
           email?: string | null
+          estado?: string | null
           file_urls?: Json | null
           id?: string
+          logradouro?: string | null
+          numero?: string | null
           observations?: string | null
           phone?: string | null
           services?: Json | null
@@ -141,14 +155,21 @@ export type Database = {
         Update: {
           address?: string | null
           agency_id?: string
+          bairro?: string | null
+          cep?: string | null
+          cidade?: string | null
           cnpj?: string | null
           company_name?: string
+          complemento?: string | null
           contact_name?: string | null
           contacts?: Json | null
           created_at?: string
           email?: string | null
+          estado?: string | null
           file_urls?: Json | null
           id?: string
+          logradouro?: string | null
+          numero?: string | null
           observations?: string | null
           phone?: string | null
           services?: Json | null

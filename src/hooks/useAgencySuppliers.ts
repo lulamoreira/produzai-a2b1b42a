@@ -25,6 +25,13 @@ export type AgencySupplier = {
   services: string[];
   contacts: SupplierContact[];
   file_urls: { name: string; url: string }[];
+  cep: string | null;
+  logradouro: string | null;
+  numero: string | null;
+  complemento: string | null;
+  bairro: string | null;
+  cidade: string | null;
+  estado: string | null;
   created_at: string;
   updated_at: string;
 };
