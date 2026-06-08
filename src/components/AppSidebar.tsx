@@ -48,7 +48,7 @@ export default function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const qc = useQueryClient();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { isAdminOrMaster, isAdmin, isMaster } = useUserRole();
   const { isLimited, campaigns: limitedCampaigns } = useUserDirectAccess();
 
@@ -121,14 +121,26 @@ export default function AppSidebar() {
 
   const currentSection = new URLSearchParams(location.search).get("section");
 
+  // Fetch user profile for effective agency id
+  const { data: profile } = useQuery({
+    queryKey: ["user_profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("agency_id").eq("user_id", user?.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const effectiveAgencyId = agencyId || profile?.agency_id;
+
   // Fetch names for breadcrumb
   const { data: agencyName } = useQuery({
-    queryKey: ["sidebar-agency", agencyId],
+    queryKey: ["sidebar-agency", effectiveAgencyId],
     queryFn: async () => {
-      const { data } = await supabase.from("agencies").select("name").eq("id", agencyId!).maybeSingle();
+      const { data } = await supabase.from("agencies").select("name").eq("id", effectiveAgencyId!).maybeSingle();
       return data?.name ?? null;
     },
-    enabled: !!agencyId,
+    enabled: !!effectiveAgencyId,
     staleTime: 5 * 60 * 1000,
   });
 
@@ -349,38 +361,45 @@ export default function AppSidebar() {
           </button>
         )}
 
-        {/* ── Fornecedores (admin/master only) ── */}
-        {isAdminOrMaster && (
-          <button
-            onClick={() => handleNavigate("/suppliers")}
-            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
-            style={itemStyle(location.pathname === "/suppliers")}
-            {...hoverHandlers(location.pathname === "/suppliers")}
-            title={collapsed ? "Fornecedores" : undefined}
-          >
-            <AquaIcon icon={Truck} size="sm" color="#4B5563" />
-            {!collapsed && <span className="truncate font-medium">Fornecedores</span>}
-          </button>
-        )}
 
 
-        {/* Separator */}
-        {isInsideAgency && (
-          <div className="my-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }} />
-        )}
+        {/* ── Seção Agência (Clientes + Fornecedores) ── */}
+        {effectiveAgencyId && (
+          <>
+            <div className="my-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }} />
+            
+            {!collapsed && (
+              <div className="text-[10px] font-semibold uppercase tracking-wider px-3 mb-1 mt-1 opacity-50">
+                Agência
+              </div>
+            )}
 
-        {/* ── Clientes (when inside agency, hidden for limited users) ── */}
-        {isInsideAgency && !isLimited && (
-          <button
-            onClick={() => handleNavigate(`/agency/${agencyId}`)}
-            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
-            style={itemStyle(location.pathname === `/agency/${agencyId}` && !isInsideClient)}
-            {...hoverHandlers(location.pathname === `/agency/${agencyId}` && !isInsideClient)}
-            title={collapsed ? t("sidebar.clients") : undefined}
-          >
-            <AquaIcon icon={Briefcase} size="sm" color="#735A3D" />
-            {!collapsed && <span className="truncate font-medium">{t("sidebar.clients")}</span>}
-          </button>
+            {!isLimited && (
+              <button
+                onClick={() => handleNavigate(`/agency/${effectiveAgencyId}`)}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+                style={itemStyle((location.pathname === `/agency/${effectiveAgencyId}` || location.pathname === `/agency/${effectiveAgencyId}/clients`) && !isInsideClient)}
+                {...hoverHandlers((location.pathname === `/agency/${effectiveAgencyId}` || location.pathname === `/agency/${effectiveAgencyId}/clients`) && !isInsideClient)}
+                title={collapsed ? t("sidebar.clients") : undefined}
+              >
+                <AquaIcon icon={Briefcase} size="sm" color="#735A3D" />
+                {!collapsed && <span className="truncate font-medium">{t("sidebar.clients")}</span>}
+              </button>
+            )}
+
+            {isAdminOrMaster && (
+              <button
+                onClick={() => handleNavigate("/suppliers")}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+                style={itemStyle(location.pathname === "/suppliers")}
+                {...hoverHandlers(location.pathname === "/suppliers")}
+                title={collapsed ? "Fornecedores" : undefined}
+              >
+                <AquaIcon icon={Truck} size="sm" color="#4B5563" />
+                {!collapsed && <span className="truncate font-medium">Fornecedores</span>}
+              </button>
+            )}
+          </>
         )}
 
         {/* ── Limited user: render ALL permitted clients & campaigns ── */}

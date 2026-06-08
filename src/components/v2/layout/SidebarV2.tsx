@@ -22,7 +22,8 @@ import {
   ChevronDown,
   Briefcase,
   Shield,
-  ArrowLeft
+  ArrowLeft,
+  Truck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -98,15 +99,26 @@ export function SidebarV2() {
     return Array.from(map.values());
   }, [isLimited, limitedCampaigns]);
 
+  // Fetch user profile to get agency_id if not in URL
+  const { data: profile } = useQuery({
+    queryKey: ["user_profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("agency_id").eq("user_id", user?.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const effectiveAgencyId = agencyId || profile?.agency_id;
 
   // Fetch contextual names
   const { data: agencyData } = useQuery({
-    queryKey: ["sidebar-v2-agency", agencyId],
+    queryKey: ["sidebar-v2-agency", effectiveAgencyId],
     queryFn: async () => {
-      const { data } = await supabase.from("agencies").select("name").eq("id", agencyId!).maybeSingle();
+      const { data } = await supabase.from("agencies").select("name").eq("id", effectiveAgencyId!).maybeSingle();
       return data;
     },
-    enabled: !!agencyId,
+    enabled: !!effectiveAgencyId,
   });
 
   const { data: clientData } = useQuery({
@@ -479,15 +491,19 @@ export function SidebarV2() {
             </div>
           )}
 
-          {/* Agency Context: List Clients */}
-          {agencyId && !clientId && !isLimited && !collapsed && (
+          {/* Agency Context: List Clients & Suppliers */}
+          {effectiveAgencyId && !clientId && !isLimited && !collapsed && (
             <div className="space-y-1">
               <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
-                {t("sidebar.clients")}
+                Agência
               </div>
               <NavItem 
-                item={{ label: t("sidebar.clients"), icon: Briefcase, route: `/agency/${agencyId}` }} 
-                activeOverride={location.pathname === `/agency/${agencyId}`}
+                item={{ label: t("sidebar.clients"), icon: Briefcase, route: `/agency/${effectiveAgencyId}` }} 
+                activeOverride={location.pathname === `/agency/${effectiveAgencyId}` || location.pathname === `/agency/${effectiveAgencyId}/clients`}
+              />
+              <NavItem 
+                item={{ label: "Fornecedores", icon: Truck, route: "/suppliers" }} 
+                activeOverride={location.pathname === "/suppliers"}
               />
             </div>
           )}
