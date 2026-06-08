@@ -811,15 +811,16 @@ Qualquer dúvida, estamos à disposição!` : "";
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>Serviços Oferecidos</Label>
-                    <div className="grid grid-cols-2 gap-y-2 gap-x-4 border rounded-md p-3 max-h-[220px] overflow-y-auto bg-muted/30">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4 border rounded-md p-3 max-h-[300px] overflow-y-auto bg-muted/30">
                       {VISUAL_COMMUNICATION_SERVICES.map((s) => (
-                        <div key={s} className="flex items-center gap-2">
+                        <div key={s} className="flex items-start gap-2 py-1">
                           <Checkbox 
                             id={`service-${s}`} 
                             checked={form.services.includes(s)}
                             onCheckedChange={() => toggleService(s)}
+                            className="mt-0.5"
                           />
-                          <Label htmlFor={`service-${s}`} className="text-xs font-normal cursor-pointer line-clamp-1">{s}</Label>
+                          <Label htmlFor={`service-${s}`} className="text-xs font-normal cursor-pointer whitespace-normal break-words leading-tight">{s}</Label>
                         </div>
                       ))}
                     </div>

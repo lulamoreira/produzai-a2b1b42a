@@ -425,11 +425,11 @@ const SupplierInvitePortal = () => {
 
           <div className="space-y-4">
             <Label className="text-sm font-bold">Serviços Oferecidos</Label>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-y-2 gap-x-4 border rounded-md p-4 max-h-[220px] overflow-y-auto bg-muted/10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-y-2 gap-x-4 border rounded-md p-4 max-h-[300px] overflow-y-auto bg-muted/10">
               {VISUAL_COMMUNICATION_SERVICES.map((s) => (
-                <div key={s} className="flex items-center gap-2">
-                  <Checkbox id={`service-${s}`} checked={form.services.includes(s)} onCheckedChange={() => toggleService(s)} />
-                  <Label htmlFor={`service-${s}`} className="text-xs font-normal cursor-pointer line-clamp-1">{s}</Label>
+                <div key={s} className="flex items-start gap-2 py-1">
+                  <Checkbox id={`service-${s}`} checked={form.services.includes(s)} onCheckedChange={() => toggleService(s)} className="mt-0.5" />
+                  <Label htmlFor={`service-${s}`} className="text-xs font-normal cursor-pointer whitespace-normal break-words leading-tight">{s}</Label>
                 </div>
               ))}
             </div>
