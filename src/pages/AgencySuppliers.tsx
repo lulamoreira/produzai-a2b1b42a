@@ -123,7 +123,10 @@ const AgencySuppliers = () => {
   });
 
   const [isSearchingCep, setIsSearchingCep] = useState(false);
-  const [cepError, setCepError] = useState("");
+  const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [inviteDays, setInviteDays] = useState(7);
+  const [generatingInvite, setGeneratingInvite] = useState(false);
+  const [generatedInvite, setGeneratedInvite] = useState<{ url: string; expiresAt: Date } | null>(null);
 
   const filteredSuppliers = useMemo(() => {
     return suppliers.filter(s => 
