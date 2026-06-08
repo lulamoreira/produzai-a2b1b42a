@@ -80,7 +80,7 @@ const AgenciesV2 = ({ onAddClick, onEditClick }: { onAddClick?: () => void, onEd
             <div
               key={agency.id}
               className="bg-white rounded-xl border border-stone-200 shadow-sm hover:shadow-md transition-all p-5 cursor-pointer group flex flex-col items-center text-center"
-              onClick={() => navigate(`/agency/${agency.id}/clients`)}
+              onClick={() => navigate(`/agency/${agency.id}`)}
             >
               {agency.logo_url ? (
                 <img src={agency.logo_url} alt={agency.name} className="w-16 h-16 rounded-xl object-cover shadow-sm border border-stone-100" />
