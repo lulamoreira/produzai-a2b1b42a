@@ -2,6 +2,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+export type SupplierContact = {
+  nome: string;
+  funcao: string;
+  email: string;
+  telefone: string;
+  whatsapp: string;
+};
+
 export type AgencySupplier = {
   id: string;
   agency_id: string;
@@ -15,6 +23,7 @@ export type AgencySupplier = {
   website: string | null;
   observations: string | null;
   services: string[];
+  contacts: SupplierContact[];
   file_urls: { name: string; url: string }[];
   created_at: string;
   updated_at: string;
