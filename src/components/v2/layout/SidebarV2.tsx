@@ -492,14 +492,14 @@ export function SidebarV2() {
           )}
 
           {/* Agency Context: List Clients & Suppliers */}
-          {agencyId && !clientId && !isLimited && !collapsed && (
+          {effectiveAgencyId && !clientId && !isLimited && !collapsed && (
             <div className="space-y-1">
               <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-stone-500">
                 Agência
               </div>
               <NavItem 
-                item={{ label: t("sidebar.clients"), icon: Briefcase, route: `/agency/${agencyId}` }} 
-                activeOverride={location.pathname === `/agency/${agencyId}` || location.pathname === `/agency/${agencyId}/clients`}
+                item={{ label: t("sidebar.clients"), icon: Briefcase, route: `/agency/${effectiveAgencyId}` }} 
+                activeOverride={location.pathname === `/agency/${effectiveAgencyId}` || location.pathname === `/agency/${effectiveAgencyId}/clients`}
               />
               <NavItem 
                 item={{ label: "Fornecedores", icon: Truck, route: "/suppliers" }} 
