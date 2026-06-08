@@ -2120,7 +2120,24 @@ export default function MatrixAutomationDialog({
               >
                 <div className="w-8 h-8 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
                   <Trash2 className="w-4 h-4" />
+              <button
+                className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-blue-500/50 hover:bg-blue-50/5 transition-all text-left"
+                onClick={() => {
+                  setOverwriteDialog({ open: false, count: 0 });
+                  executePreview("sum");
+                }}
+              >
+                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <PlusCircle className="w-4 h-4" />
                 </div>
+                <div>
+                  <p className="text-sm font-semibold">Somar aos valores existentes</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Adiciona os novos valores definidos na automação aos valores já preenchidos nas células.
+                  </p>
+                </div>
+              </button>
+            </div>
                 <div>
                   <p className="text-sm font-semibold">Apagar e substituir tudo</p>
                   <p className="text-xs text-muted-foreground leading-relaxed">
