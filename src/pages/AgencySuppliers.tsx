@@ -407,18 +407,22 @@ const AgencySuppliers = () => {
                 <div className="space-y-3 text-sm">
                   <div className="flex items-start gap-2">
                     <UserIcon className="w-4 h-4 text-muted-foreground mt-0.5" />
-                    <span>{s.contact_name || "Sem contato"}</span>
+                    <span className="font-medium">
+                      {s.contacts && s.contacts.length > 0 
+                        ? `${s.contacts[0].nome}${s.contacts[0].funcao ? ` (${s.contacts[0].funcao})` : ""}`
+                        : s.contact_name || "Sem contato"}
+                    </span>
                   </div>
-                  {(s.phone || s.whatsapp) && (
+                  {(s.contacts?.[0]?.telefone || s.contacts?.[0]?.whatsapp || s.phone || s.whatsapp) && (
                     <div className="flex items-start gap-2">
                       <Phone className="w-4 h-4 text-muted-foreground mt-0.5" />
-                      <span>{s.phone || s.whatsapp}</span>
+                      <span>{s.contacts?.[0]?.telefone || s.contacts?.[0]?.whatsapp || s.phone || s.whatsapp}</span>
                     </div>
                   )}
-                  {s.email && (
+                  {(s.contacts?.[0]?.email || s.email) && (
                     <div className="flex items-start gap-2">
                       <Mail className="w-4 h-4 text-muted-foreground mt-0.5" />
-                      <span className="truncate">{s.email}</span>
+                      <span className="truncate">{s.contacts?.[0]?.email || s.email}</span>
                     </div>
                   )}
                   {s.address && (
