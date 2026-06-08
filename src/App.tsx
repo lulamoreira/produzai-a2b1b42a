@@ -27,6 +27,7 @@ import { UserActivityTracker } from "@/components/UserActivityTracker";
 
 
 // Lazy-loaded page components (one chunk per route)
+const SupplierInvitePortal = lazy(() => import("./pages/SupplierInvitePortal"));
 const AgencySelect = lazy(() => import("./pages/AgencySelect"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const ClientDetail = lazy(() => import("./pages/ClientDetail"));
