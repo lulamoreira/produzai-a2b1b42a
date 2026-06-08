@@ -450,9 +450,21 @@ Qualquer dúvida, estamos à disposição!` : "";
               </Button>
             </div>
           </div>
-          <Button onClick={handleOpenCreate} className="bg-primary text-primary-foreground h-10 px-4">
-            <Plus className="w-4 h-4 mr-2" /> Novo Fornecedor
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setGeneratedInvite(null);
+                setInviteDialogOpen(true);
+              }} 
+              className="h-10 px-4"
+            >
+              <Share2 className="w-4 h-4 mr-2" /> Convidar Fornecedor
+            </Button>
+            <Button onClick={handleOpenCreate} className="bg-primary text-primary-foreground h-10 px-4">
+              <Plus className="w-4 h-4 mr-2" /> Novo Fornecedor
+            </Button>
+          </div>
         </div>
 
         {isLoading ? (
