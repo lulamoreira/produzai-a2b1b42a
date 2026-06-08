@@ -243,8 +243,8 @@ const AddPieceDialog = ({
     <Dialog open={open} onOpenChange={setOpen}>
       {!controlledOpen && (
         <DialogTrigger asChild>
-          <Button size="sm" className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
-            <Plus className="w-4 h-4 mr-1" /> {t("pieces.newPiece")}
+          <Button size="sm" className="text-[10px] sm:text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground">
+            <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.newPiece")}
           </Button>
         </DialogTrigger>
       )}
