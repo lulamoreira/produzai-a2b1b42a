@@ -2034,6 +2034,7 @@ export type Database = {
       }
       client_email_memory: {
         Row: {
+          agency_id: string
           client_id: string
           contact_name: string | null
           created_at: string
@@ -2043,6 +2044,7 @@ export type Database = {
           usage_count: number
         }
         Insert: {
+          agency_id: string
           client_id: string
           contact_name?: string | null
           created_at?: string
@@ -2052,6 +2054,7 @@ export type Database = {
           usage_count?: number
         }
         Update: {
+          agency_id?: string
           client_id?: string
           contact_name?: string | null
           created_at?: string
@@ -2061,6 +2064,13 @@ export type Database = {
           usage_count?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "client_email_memory_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "client_email_memory_client_id_fkey"
             columns: ["client_id"]

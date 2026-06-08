@@ -3,9 +3,9 @@ import { useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
- * Memória de e-mails por cliente.
- * Carrega os e-mails já usados em qualquer diálogo de envio para esse cliente
- * (resolvido a partir do campaignId quando necessário) e expõe um helper
+ * Memória de e-mails por Agência.
+ * Carrega os e-mails já usados em qualquer diálogo de envio para esta agência
+ * (resolvido a partir do clientId ou campaignId) e expõe um helper
  * para registrar novos e-mails após cada envio.
  */
 export function useClientEmailMemory(opts: {
@@ -15,35 +15,37 @@ export function useClientEmailMemory(opts: {
   const queryClient = useQueryClient();
   const { clientId: clientIdProp, campaignId } = opts;
 
-  // Resolve clientId a partir do campaignId quando não passado
-  const clientIdQuery = useQuery({
-    queryKey: ["campaign_client_id", campaignId],
-    enabled: !clientIdProp && !!campaignId,
-    staleTime: 5 * 60_000,
+  // Resolve agencyId starting from clientId or campaignId
+  const agencyIdQuery = useQuery({
+    queryKey: ["resolve_agency_id", clientIdProp, campaignId],
+    staleTime: 10 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("campaigns")
-        .select("client_id")
-        .eq("id", campaignId!)
-        .maybeSingle();
-      if (error) throw error;
-      return data?.client_id ?? null;
+      if (clientIdProp) {
+        const { data } = await supabase.from("clients").select("agency_id").eq("id", clientIdProp).maybeSingle();
+        return data?.agency_id ?? null;
+      }
+      if (campaignId) {
+        const { data } = await supabase.from("campaigns").select("clients(agency_id)").eq("id", campaignId).maybeSingle();
+        return (data as any)?.clients?.agency_id ?? null;
+      }
+      return null;
     },
+    enabled: !!clientIdProp || !!campaignId,
   });
 
-  const clientId = clientIdProp ?? clientIdQuery.data ?? null;
+  const agencyId = agencyIdQuery.data;
 
   const listQuery = useQuery({
-    queryKey: ["client_email_memory", clientId],
-    enabled: !!clientId,
+    queryKey: ["agency_email_memory", agencyId],
+    enabled: !!agencyId,
     staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("client_email_memory" as any)
         .select("email, last_used_at, usage_count, contact_name")
-        .eq("client_id", clientId!)
+        .eq("agency_id", agencyId!)
         .order("last_used_at", { ascending: false })
-        .limit(500);
+        .limit(1000);
       if (error) throw error;
       return (data ?? []) as unknown as Array<{
         email: string;
@@ -54,28 +56,28 @@ export function useClientEmailMemory(opts: {
     },
   });
 
-  // Realtime: sincronizar nova memória entre abas/usuários
+  // Realtime: sincronizar nova memória entre abas/usuários da mesma agência
   useEffect(() => {
-    if (!clientId) return;
+    if (!agencyId) return;
     const ch = supabase
-      .channel(`client-email-memory-${clientId}`)
+      .channel(`agency-email-memory-${agencyId}`)
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
           table: "client_email_memory",
-          filter: `client_id=eq.${clientId}`,
+          filter: `agency_id=eq.${agencyId}`,
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ["client_email_memory", clientId] });
+          queryClient.invalidateQueries({ queryKey: ["agency_email_memory", agencyId] });
         }
       )
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
     };
-  }, [clientId, queryClient]);
+  }, [agencyId, queryClient]);
 
   const suggestions = useMemo(
     () => (listQuery.data ?? []).map((r) => r.email),
@@ -84,7 +86,17 @@ export function useClientEmailMemory(opts: {
 
   const recordMutation = useMutation({
     mutationFn: async (emails: string[]) => {
-      if (!clientId) return;
+      if (!clientIdProp && !campaignId) return;
+      // We still need a clientId to trigger record_client_emails, 
+      // but it will store with agency_id now.
+      let targetClientId = clientIdProp;
+      if (!targetClientId && campaignId) {
+        const { data } = await supabase.from("campaigns").select("client_id").eq("id", campaignId).maybeSingle();
+        targetClientId = data?.client_id;
+      }
+      
+      if (!targetClientId) return;
+
       const cleaned = Array.from(
         new Set(
           (emails || [])
@@ -94,39 +106,39 @@ export function useClientEmailMemory(opts: {
       );
       if (cleaned.length === 0) return;
       const { error } = await supabase.rpc("record_client_emails" as any, {
-        _client_id: clientId,
+        _client_id: targetClientId,
         _emails: cleaned,
       });
       if (error) throw error;
     },
     onSuccess: () => {
-      if (clientId) {
-        queryClient.invalidateQueries({ queryKey: ["client_email_memory", clientId] });
+      if (agencyId) {
+        queryClient.invalidateQueries({ queryKey: ["agency_email_memory", agencyId] });
       }
     },
   });
 
   const removeMutation = useMutation({
     mutationFn: async (email: string) => {
-      if (!clientId) return;
+      if (!agencyId) return;
       const norm = (email || "").trim().toLowerCase();
       const { error } = await supabase
         .from("client_email_memory" as any)
         .delete()
-        .eq("client_id", clientId)
+        .eq("agency_id", agencyId)
         .eq("email", norm);
       if (error) throw error;
     },
     onSuccess: () => {
-      if (clientId) {
-        queryClient.invalidateQueries({ queryKey: ["client_email_memory", clientId] });
+      if (agencyId) {
+        queryClient.invalidateQueries({ queryKey: ["agency_email_memory", agencyId] });
       }
     },
   });
 
   const updateMutation = useMutation({
     mutationFn: async ({ oldEmail, newEmail }: { oldEmail: string; newEmail: string }) => {
-      if (!clientId) return;
+      if (!agencyId) return;
       const oldNorm = (oldEmail || "").trim().toLowerCase();
       const newNorm = (newEmail || "").trim().toLowerCase();
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newNorm)) {
@@ -136,41 +148,41 @@ export function useClientEmailMemory(opts: {
       const { error } = await supabase
         .from("client_email_memory" as any)
         .update({ email: newNorm })
-        .eq("client_id", clientId)
+        .eq("agency_id", agencyId)
         .eq("email", oldNorm);
       if (error) throw error;
     },
     onSuccess: () => {
-      if (clientId) {
-        queryClient.invalidateQueries({ queryKey: ["client_email_memory", clientId] });
+      if (agencyId) {
+        queryClient.invalidateQueries({ queryKey: ["agency_email_memory", agencyId] });
       }
     },
   });
 
   const updateContactNameMutation = useMutation({
     mutationFn: async ({ email, contactName }: { email: string; contactName: string | null }) => {
-      if (!clientId) return;
+      if (!agencyId) return;
       const norm = (email || "").trim().toLowerCase();
       const trimmed = (contactName ?? "").trim();
       const { error } = await supabase
         .from("client_email_memory" as any)
         .update({ contact_name: trimmed === "" ? null : trimmed })
-        .eq("client_id", clientId)
+        .eq("agency_id", agencyId)
         .eq("email", norm);
       if (error) throw error;
     },
     onSuccess: () => {
-      if (clientId) {
-        queryClient.invalidateQueries({ queryKey: ["client_email_memory", clientId] });
+      if (agencyId) {
+        queryClient.invalidateQueries({ queryKey: ["agency_email_memory", agencyId] });
       }
     },
   });
 
   return {
-    clientId,
+    agencyId,
     suggestions,
     entries: listQuery.data ?? [],
-    isLoading: listQuery.isLoading || clientIdQuery.isLoading,
+    isLoading: listQuery.isLoading || agencyIdQuery.isLoading,
     record: (emails: string[]) => {
       // fire-and-forget; falhas não devem bloquear envios
       recordMutation.mutate(emails, {

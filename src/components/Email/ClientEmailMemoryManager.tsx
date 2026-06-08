@@ -147,7 +147,7 @@ export default function ClientEmailMemoryManager({ clientId, canEdit }: Props) {
       </div>
 
       <p className="text-xs text-muted-foreground mb-3">
-        Esta é a memória de e-mails usados em envios deste cliente. Os e-mails são sugeridos automaticamente nos formulários de envio de cotações, ajustes e aprovações.
+        Esta é a memória de e-mails usados em envios desta agência. Os e-mails são sugeridos automaticamente nos formulários de envio de cotações, ajustes e aprovações para todos os clientes.
       </p>
 
       {isLoading ? (
