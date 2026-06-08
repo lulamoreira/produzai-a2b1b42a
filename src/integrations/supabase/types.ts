@@ -4915,6 +4915,54 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_invitations: {
+        Row: {
+          agency_id: string
+          created_at: string | null
+          created_by: string | null
+          expires_at: string
+          id: string
+          status: string
+          supplier_id: string | null
+          token: string
+        }
+        Insert: {
+          agency_id: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at: string
+          id?: string
+          status?: string
+          supplier_id?: string | null
+          token?: string
+        }
+        Update: {
+          agency_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          expires_at?: string
+          id?: string
+          status?: string
+          supplier_id?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_invitations_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_invitations_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "agency_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supplier_spec_suggestions: {
         Row: {
           campaign_id: string
