@@ -48,6 +48,8 @@
   --v2-sidebar-bg: linear-gradient(160deg, #4F46E5 0%, #7C3AED 40%, #DB2777 100%);
   --v2-sidebar-text: #FFFFFF;
   --v2-sidebar-muted: rgba(255,255,255,0.55);
+  --v2-sidebar-section-label: rgba(255,255,255,0.95);
+  --v2-sidebar-section-bg: rgba(255,255,255,0.12);
   --v2-sidebar-border: rgba(255,255,255,0.15);
   --v2-sidebar-active-bg: rgba(255,255,255,0.22);
   --v2-sidebar-active-text: #FFFFFF;
