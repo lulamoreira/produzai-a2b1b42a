@@ -1211,7 +1211,7 @@ export default function MatrixAutomationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl">
+      <DialogContent className="flex h-[calc(100dvh-2rem)] max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0 sm:h-[90dvh] sm:max-h-[90dvh] sm:max-w-4xl">
         {executing && executionStatus && (
           <div className="absolute inset-0 z-[100] bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-4">
             <div className="w-full max-w-md space-y-6">
@@ -1235,13 +1235,16 @@ export default function MatrixAutomationDialog({
             </div>
           </div>
         )}
-        <DialogHeader>
+        <DialogHeader className="shrink-0 border-b bg-background px-6 pb-4 pt-6">
           <DialogTitle>{t("automation.title")}</DialogTitle>
           <DialogDescription>
             {step === 1 && mainTab === "new" && t("automation.step1Desc")}
             {step === 2 && t("automation.step2Desc")}
           </DialogDescription>
         </DialogHeader>
+
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-auto px-6 py-4 [scrollbar-gutter:stable]">
+          <div className="min-w-[720px] sm:min-w-0">
 
         {step === 1 && (
           <Tabs value={mainTab} onValueChange={setMainTab}>
@@ -1961,7 +1964,7 @@ export default function MatrixAutomationDialog({
                 <Check className="w-4 h-4" /> {t("automation.willUpdate")} ({uniqueUpdateStores} {t("automation.stores")})
               </h3>
               {updateRows.length > 0 && (
-                <div className="max-h-40 overflow-y-auto mt-1 border rounded">
+                <div className="max-h-40 overflow-auto mt-1 border rounded">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -2002,7 +2005,7 @@ export default function MatrixAutomationDialog({
                     {t("automation.keepAll")}
                   </Button>
                 </div>
-                <div className="max-h-40 overflow-y-auto border rounded">
+                <div className="max-h-40 overflow-auto border rounded">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -2062,6 +2065,8 @@ export default function MatrixAutomationDialog({
             </div>
           </div>
         )}
+          </div>
+        </div>
       </DialogContent>
 
       {/* ──── Overwrite confirmation dialog ──── */}
