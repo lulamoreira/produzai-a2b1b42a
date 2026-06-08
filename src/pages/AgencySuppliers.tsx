@@ -890,6 +890,62 @@ Qualquer dúvida, estamos à disposição!` : "";
             </form>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Convidar Fornecedor</DialogTitle>
+            </DialogHeader>
+            
+            {!generatedInvite ? (
+              <div className="space-y-6 py-4">
+                <div className="space-y-2">
+                  <Label>Link válido por quantos dias?</Label>
+                  <Input 
+                    type="number" 
+                    min={1} 
+                    max={90} 
+                    value={inviteDays} 
+                    onChange={e => setInviteDays(parseInt(e.target.value) || 7)} 
+                  />
+                  <p className="text-[10px] text-muted-foreground">Mínimo 1 dia, máximo 90 dias.</p>
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={handleGenerateInvite} 
+                  disabled={generatingInvite}
+                >
+                  {generatingInvite && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Gerar Link
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-6 py-4">
+                <div className="space-y-2">
+                  <Label>URL do Convite</Label>
+                  <div className="flex gap-2">
+                    <Input value={generatedInvite.url} readOnly />
+                    <Button variant="outline" size="icon" onClick={() => copyToClipboard(generatedInvite.url)}>
+                      <Copy className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">Expira em {format(generatedInvite.expiresAt, "dd/MM/yyyy HH:mm")}</p>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Texto para WhatsApp</Label>
+                  <div className="bg-muted p-3 rounded-md text-xs whitespace-pre-wrap border italic">
+                    {inviteText}
+                  </div>
+                </div>
+
+                <Button className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white" onClick={handleWhatsAppShare}>
+                  <MessageSquare className="w-4 h-4 mr-2" /> Enviar via WhatsApp
+                </Button>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
   );
 
