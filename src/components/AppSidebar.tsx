@@ -370,6 +370,17 @@ export default function AppSidebar() {
         {/* ── Seção Agência (Clientes + Fornecedores) ── */}
         {effectiveAgencyId && (
           <>
+            {!collapsed && agencyName && (
+              <div 
+                className="px-3 py-1.5 mx-2 my-2 rounded-md bg-brand-400/10 border border-brand-400/20"
+                title={agencyName}
+              >
+                <p className="text-[10px] font-bold text-brand-400 uppercase tracking-tight truncate leading-tight">
+                  {agencyName}
+                </p>
+              </div>
+            )}
+            
             <div className="my-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }} />
             
             {!collapsed && (
