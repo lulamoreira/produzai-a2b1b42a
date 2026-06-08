@@ -351,23 +351,43 @@ export default function AppSidebar() {
 
 
 
-        {/* Separator */}
+        {/* ── Seção Agência (Clientes + Fornecedores) ── */}
         {isInsideAgency && (
-          <div className="my-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }} />
-        )}
+          <>
+            <div className="my-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }} />
+            
+            {!collapsed && (
+              <div className="text-[10px] font-semibold uppercase tracking-wider px-3 mb-1 mt-1 opacity-50">
+                Agência
+              </div>
+            )}
 
-        {/* ── Clientes (when inside agency, hidden for limited users) ── */}
-        {isInsideAgency && !isLimited && (
-          <button
-            onClick={() => handleNavigate(`/agency/${agencyId}`)}
-            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
-            style={itemStyle(location.pathname === `/agency/${agencyId}` && !isInsideClient)}
-            {...hoverHandlers(location.pathname === `/agency/${agencyId}` && !isInsideClient)}
-            title={collapsed ? t("sidebar.clients") : undefined}
-          >
-            <AquaIcon icon={Briefcase} size="sm" color="#735A3D" />
-            {!collapsed && <span className="truncate font-medium">{t("sidebar.clients")}</span>}
-          </button>
+            {!isLimited && (
+              <button
+                onClick={() => handleNavigate(`/agency/${agencyId}`)}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+                style={itemStyle((location.pathname === `/agency/${agencyId}` || location.pathname === `/agency/${agencyId}/clients`) && !isInsideClient)}
+                {...hoverHandlers((location.pathname === `/agency/${agencyId}` || location.pathname === `/agency/${agencyId}/clients`) && !isInsideClient)}
+                title={collapsed ? t("sidebar.clients") : undefined}
+              >
+                <AquaIcon icon={Briefcase} size="sm" color="#735A3D" />
+                {!collapsed && <span className="truncate font-medium">{t("sidebar.clients")}</span>}
+              </button>
+            )}
+
+            {isAdminOrMaster && (
+              <button
+                onClick={() => handleNavigate("/suppliers")}
+                className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
+                style={itemStyle(location.pathname === "/suppliers")}
+                {...hoverHandlers(location.pathname === "/suppliers")}
+                title={collapsed ? "Fornecedores" : undefined}
+              >
+                <AquaIcon icon={Truck} size="sm" color="#4B5563" />
+                {!collapsed && <span className="truncate font-medium">Fornecedores</span>}
+              </button>
+            )}
+          </>
         )}
 
         {/* ── Limited user: render ALL permitted clients & campaigns ── */}
