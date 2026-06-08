@@ -33,20 +33,35 @@
 }
 
 :root[data-v2-theme="multicolor"] {
-  --v2-bg: #F0F4FF;
+  --v2-bg: #FAFAFA;
   --v2-surface: #FFFFFF;
-  --v2-border: #C7D2FE;
-  --v2-text-primary: #1E1B4B;
-  --v2-text-secondary: #6366F1;
-  --v2-text-muted: #A5B4FC;
-  --v2-accent: #7C3AED;
-  --v2-accent-hover: #6D28D9;
-  --v2-sidebar-bg: #1E1B4B;
-  --v2-sidebar-text: #EEF2FF;
-  --v2-sidebar-muted: #A5B4FC;
-  --v2-sidebar-active: #818CF8;
-  --v2-badge-bg: #EEF2FF;
-  --v2-badge-text: #3730A3;
+  --v2-surface-raised: #F4F4F5;
+  --v2-border: #E4E4E7;
+  --v2-text: #18181B;
+  --v2-text-secondary: #52525B;
+  --v2-text-muted: #A1A1AA;
+  --v2-accent: #F97316;
+  --v2-accent-hover: #EA580C;
+  --v2-accent-foreground: #FFFFFF;
+
+  /* Sidebar */
+  --v2-sidebar-bg: #18181B;
+  --v2-sidebar-text: #F4F4F5;
+  --v2-sidebar-muted: #71717A;
+  --v2-sidebar-border: rgba(255,255,255,0.08);
+  --v2-sidebar-active-bg: rgba(255,255,255,0.12);
+  --v2-sidebar-active-text: #FFFFFF;
+  --v2-sidebar-hover-bg: rgba(255,255,255,0.06);
+
+  /* Cores múltiplas para ícones e destaques por seção */
+  --v2-color-1: #F97316;   /* laranja */
+  --v2-color-2: #22C55E;   /* verde */
+  --v2-color-3: #3B82F6;   /* azul */
+  --v2-color-4: #A855F7;   /* roxo */
+  --v2-color-5: #EF4444;   /* vermelho */
+  --v2-color-6: #EAB308;   /* amarelo */
+  --v2-color-7: #EC4899;   /* rosa */
+  --v2-color-8: #14B8A6;   /* teal */
 }
 
 /* Global overflow protection for v2 */
