@@ -68,7 +68,7 @@ const AgencySuppliers = () => {
     queryKey: ["user_agency_id", user?.id],
     queryFn: async () => {
       const { data } = await supabase
-        .from("user_roles")
+        .from("profiles")
         .select("agency_id")
         .eq("user_id", user?.id)
         .maybeSingle();
@@ -270,7 +270,7 @@ const AgencySuppliers = () => {
           </div>
         ) : filteredSuppliers.length === 0 ? (
           <div className="text-center py-20 bg-card rounded-xl border border-dashed border-stone-300">
-            <Database className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
+            <Building2 className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
             <h3 className="text-lg font-medium">Nenhum fornecedor encontrado</h3>
             <p className="text-muted-foreground text-sm max-w-xs mx-auto mt-1">
               {searchTerm ? "Tente mudar os termos da busca." : "Comece cadastrando seu primeiro fornecedor da agência."}
@@ -297,8 +297,8 @@ const AgencySuppliers = () => {
                     <TableCell>
                       <div className="text-sm">{s.contact_name}</div>
                       <div className="flex items-center gap-2 mt-1">
-                        {s.phone && <Phone className="w-3 h-3 text-muted-foreground" title={s.phone} />}
-                        {s.email && <Mail className="w-3 h-3 text-muted-foreground" title={s.email} />}
+                        {s.phone && <Phone className="w-3 h-3 text-muted-foreground" />}
+                        {s.email && <Mail className="w-3 h-3 text-muted-foreground" />}
                       </div>
                     </TableCell>
                     <TableCell>
