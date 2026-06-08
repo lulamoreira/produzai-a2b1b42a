@@ -289,6 +289,9 @@ export default function AppSidebar() {
         agencyName={agencyName}
         clientName={clientName}
         campaignName={campaignName}
+        agencyId={effectiveAgencyId}
+        clientId={clientId}
+        campaignId={campaignId}
       />
 
       {/* Navigation */}
