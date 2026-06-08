@@ -608,11 +608,17 @@ export default function MatrixAutomationDialog({
       }
       for (const rp of resolvedPieces) {
         const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
-        if (!sobrescrever && currentQty > 0) {
+        if (strategy === "keep" && currentQty > 0) {
           rows.push({
             storeId: store.id, storeName: store.name, group: "update",
             pieceId: rp.pieceId, pieceName: rp.pieceName,
             currentQty, newQty: currentQty, action: "keep",
+          });
+        } else if (strategy === "sum" && currentQty > 0) {
+          rows.push({
+            storeId: store.id, storeName: store.name, group: "update",
+            pieceId: rp.pieceId, pieceName: rp.pieceName,
+            currentQty, newQty: currentQty + rp.quantity, action: "keep",
           });
         } else {
           rows.push({
