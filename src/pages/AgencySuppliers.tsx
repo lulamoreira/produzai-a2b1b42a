@@ -135,6 +135,7 @@ const AgencySuppliers = () => {
       services: [],
       custom_service: "",
       file_urls: [],
+      contacts: [{ nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }],
     });
     setDialogOpen(true);
   };
@@ -154,8 +155,33 @@ const AgencySuppliers = () => {
       services: (s.services as string[]) || [],
       custom_service: "",
       file_urls: (s.file_urls as { name: string; url: string }[]) || [],
+      contacts: s.contacts && s.contacts.length > 0 
+        ? s.contacts 
+        : [{ nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }],
     });
     setDialogOpen(true);
+  };
+
+  const addContact = () => {
+    setForm(f => ({
+      ...f,
+      contacts: [...f.contacts, { nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }]
+    }));
+  };
+
+  const removeContact = (index: number) => {
+    if (form.contacts.length <= 1) return;
+    setForm(f => ({
+      ...f,
+      contacts: f.contacts.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateContact = (index: number, field: keyof SupplierContact, value: string) => {
+    setForm(f => ({
+      ...f,
+      contacts: f.contacts.map((c, i) => i === index ? { ...c, [field]: value } : c)
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -180,6 +206,7 @@ const AgencySuppliers = () => {
       observations: form.observations || null,
       services: finalServices,
       file_urls: form.file_urls,
+      contacts: form.contacts,
     };
 
     if (editingSupplier) {
