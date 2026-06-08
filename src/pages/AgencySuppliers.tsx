@@ -647,13 +647,85 @@ const AgencySuppliers = () => {
                       ))}
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Endereço Completo</Label>
-                    <Input 
-                      id="address" 
-                      value={form.address}
-                      onChange={e => setForm(f => ({ ...f, address: e.target.value }))}
-                    />
+                  <div className="space-y-4 pt-2">
+                    <Label className="text-sm font-bold">Endereço</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2 relative">
+                        <Label htmlFor="cep">CEP</Label>
+                        <div className="relative">
+                          <Input 
+                            id="cep" 
+                            value={form.cep}
+                            onChange={handleCepChange}
+                            onBlur={(e) => handleCepSearch(e.target.value)}
+                            placeholder="00000-000"
+                            maxLength={9}
+                          />
+                          {isSearchingCep && (
+                            <Loader2 className="w-4 h-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                          )}
+                        </div>
+                        {cepError && (
+                          <p className="text-[10px] text-destructive absolute -bottom-4 left-0">{cepError}</p>
+                        )}
+                      </div>
+                      <div className="md:col-span-2 space-y-2">
+                        <Label htmlFor="logradouro">Logradouro</Label>
+                        <Input 
+                          id="logradouro" 
+                          value={form.logradouro}
+                          onChange={e => setForm(f => ({ ...f, logradouro: e.target.value }))}
+                          placeholder="Rua, Avenida, etc."
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="numero">Número</Label>
+                        <Input 
+                          id="numero" 
+                          value={form.numero}
+                          onChange={e => setForm(f => ({ ...f, numero: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="complemento">Complemento</Label>
+                        <Input 
+                          id="complemento" 
+                          value={form.complemento}
+                          onChange={e => setForm(f => ({ ...f, complemento: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="bairro">Bairro</Label>
+                        <Input 
+                          id="bairro" 
+                          value={form.bairro}
+                          onChange={e => setForm(f => ({ ...f, bairro: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="col-span-2 space-y-2">
+                        <Label htmlFor="cidade">Cidade</Label>
+                        <Input 
+                          id="cidade" 
+                          value={form.cidade}
+                          onChange={e => setForm(f => ({ ...f, cidade: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="estado">Estado (UF)</Label>
+                        <Input 
+                          id="estado" 
+                          value={form.estado}
+                          onChange={e => setForm(f => ({ ...f, estado: e.target.value }))}
+                          maxLength={2}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
 
