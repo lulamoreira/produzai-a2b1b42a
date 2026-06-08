@@ -559,7 +559,24 @@ const AgencySuppliers = () => {
             </form>
           </DialogContent>
         </Dialog>
-      </div>
+  const { data: agencyInfo } = useQuery({
+    queryKey: ["agency_name", agencyId],
+    queryFn: async () => {
+      if (!agencyId) return null;
+      const { data } = await supabase.from("agencies").select("name").eq("id", agencyId).maybeSingle();
+      return data;
+    },
+    enabled: !!agencyId,
+  });
+
+  return (
+    <AppLayout
+      breadcrumbs={[
+        { label: agencyInfo?.name || "Agência", href: `/agency/${agencyId}` },
+        { label: "Fornecedores" },
+      ]}
+    >
+      {content}
     </AppLayout>
   );
 };
