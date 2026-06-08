@@ -3,6 +3,9 @@ interface Props {
   agencyName?: string | null;
   clientName?: string | null;
   campaignName?: string | null;
+  agencyId?: string;
+  clientId?: string;
+  campaignId?: string;
 }
 
 export function SidebarBreadcrumb({ collapsed, agencyName, clientName, campaignName }: Props) {
