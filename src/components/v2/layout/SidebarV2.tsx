@@ -22,7 +22,8 @@ import {
   ChevronDown,
   Briefcase,
   Shield,
-  ArrowLeft
+  ArrowLeft,
+  Truck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
