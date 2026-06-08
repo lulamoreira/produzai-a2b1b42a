@@ -349,6 +349,20 @@ export default function AppSidebar() {
           </button>
         )}
 
+        {/* ── Fornecedores (admin/master only) ── */}
+        {isAdminOrMaster && (
+          <button
+            onClick={() => handleNavigate("/suppliers")}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
+            style={itemStyle(location.pathname === "/suppliers")}
+            {...hoverHandlers(location.pathname === "/suppliers")}
+            title={collapsed ? "Fornecedores" : undefined}
+          >
+            <AquaIcon icon={Truck} size="sm" color="#4B5563" />
+            {!collapsed && <span className="truncate font-medium">Fornecedores</span>}
+          </button>
+        )}
+
 
         {/* Separator */}
         {isInsideAgency && (
