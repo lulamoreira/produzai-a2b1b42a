@@ -313,6 +313,66 @@ const AgencySuppliers = () => {
     setDialogOpen(false);
   };
 
+  const handleGenerateInvite = async () => {
+    if (!agencyId || !user) return;
+    setGeneratingInvite(true);
+    try {
+      const expiresAt = addDays(new Date(), inviteDays);
+      const { data, error } = await supabase
+        .from("supplier_invitations")
+        .insert([{
+          agency_id: agencyId,
+          created_by: user.id,
+          expires_at: expiresAt.toISOString(),
+          status: "pending"
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      const url = `${window.location.origin}/convite/fornecedor/${data.token}`;
+      setGeneratedInvite({ url, expiresAt });
+    } catch (err: any) {
+      toast.error("Erro ao gerar convite: " + err.message);
+    } finally {
+      setGeneratingInvite(false);
+    }
+  };
+
+  const { data: agencyInfo } = useQuery({
+    queryKey: ["agency_name", agencyId],
+    queryFn: async () => {
+      if (!agencyId) return null;
+      const { data } = await supabase.from("agencies").select("name").eq("id", agencyId).maybeSingle();
+      return data;
+    },
+    enabled: !!agencyId,
+  });
+
+  const inviteText = generatedInvite && agencyInfo ? `Olá! 👋
+
+A *${agencyInfo.name}* convida você a se cadastrar como fornecedor parceiro em nossa plataforma.
+
+Clique no link abaixo para preencher seu cadastro — é rápido e não precisa criar conta:
+
+🔗 ${generatedInvite.url}
+
+O link estará disponível por ${inviteDays} dias, até ${format(generatedInvite.expiresAt, "dd/MM/yyyy")}.
+
+Qualquer dúvida, estamos à disposição!` : "";
+
+  const handleWhatsAppShare = () => {
+    if (!inviteText) return;
+    const url = `https://wa.me/?text=${encodeURIComponent(inviteText)}`;
+    window.open(url, "_blank");
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Copiado para a área de transferência!");
+  };
+
   const toggleService = (service: string) => {
     setForm(f => ({
       ...f,
