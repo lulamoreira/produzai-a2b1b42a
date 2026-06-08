@@ -60,7 +60,8 @@ import {
   LayoutGrid,
   List,
   Building2,
-  User as UserIcon
+  User as UserIcon,
+  Loader2
 } from "lucide-react";
 import { toast } from "sonner";
 
