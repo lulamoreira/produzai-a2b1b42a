@@ -290,6 +290,7 @@ const App = () => (
                   <Route path="/instalador" element={<ErrorBoundary><InstallerPortal /></ErrorBoundary>} />
                   <Route path="/orcamento/:token" element={<SupplierPortal />} />
                   <Route path="/recotacao/:token" element={<ErrorBoundary><AdjustmentRequotePortal /></ErrorBoundary>} />
+                  <Route path="/convite/fornecedor/:token" element={<SupplierInvitePortal />} />
                   <Route path="/loja/:token" element={<ErrorBoundary><StorePortal /></ErrorBoundary>} />
                   <Route path="/ocorrencias-portal/:campaignId" element={<OccurrencesPortal />} />
                   <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
