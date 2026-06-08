@@ -373,8 +373,8 @@ export default function AppSidebar() {
             <div className="my-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }} />
             
             {!collapsed && (
-              <div className="text-[10px] font-semibold uppercase tracking-wider px-3 mb-1 mt-1 opacity-50">
-                Agência
+              <div className="text-[10px] font-semibold uppercase tracking-wider px-3 mb-2 mt-1 opacity-50">
+                Módulos
               </div>
             )}
             
