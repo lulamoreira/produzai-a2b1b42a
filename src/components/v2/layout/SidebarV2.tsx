@@ -99,15 +99,26 @@ export function SidebarV2() {
     return Array.from(map.values());
   }, [isLimited, limitedCampaigns]);
 
+  // Fetch user profile to get agency_id if not in URL
+  const { data: profile } = useQuery({
+    queryKey: ["user_profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("agency_id").eq("user_id", user?.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const effectiveAgencyId = agencyId || profile?.agency_id;
 
   // Fetch contextual names
   const { data: agencyData } = useQuery({
-    queryKey: ["sidebar-v2-agency", agencyId],
+    queryKey: ["sidebar-v2-agency", effectiveAgencyId],
     queryFn: async () => {
-      const { data } = await supabase.from("agencies").select("name").eq("id", agencyId!).maybeSingle();
+      const { data } = await supabase.from("agencies").select("name").eq("id", effectiveAgencyId!).maybeSingle();
       return data;
     },
-    enabled: !!agencyId,
+    enabled: !!effectiveAgencyId,
   });
 
   const { data: clientData } = useQuery({
