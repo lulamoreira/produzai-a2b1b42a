@@ -228,8 +228,7 @@ const AgencySuppliers = () => {
     }));
   };
 
-  return (
-    <AppLayout title="Fornecedores" breadcrumbs={[{ label: "Administração" }, { label: "Fornecedores" }]}>
+  const content = (
       <div className="space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2 flex-1 max-w-md">
