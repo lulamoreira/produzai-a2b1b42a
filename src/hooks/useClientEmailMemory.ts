@@ -15,35 +15,37 @@ export function useClientEmailMemory(opts: {
   const queryClient = useQueryClient();
   const { clientId: clientIdProp, campaignId } = opts;
 
-  // Resolve clientId a partir do campaignId quando não passado
-  const clientIdQuery = useQuery({
-    queryKey: ["campaign_client_id", campaignId],
-    enabled: !clientIdProp && !!campaignId,
-    staleTime: 5 * 60_000,
+  // Resolve agencyId starting from clientId or campaignId
+  const agencyIdQuery = useQuery({
+    queryKey: ["resolve_agency_id", clientIdProp, campaignId],
+    staleTime: 10 * 60_000,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("campaigns")
-        .select("client_id")
-        .eq("id", campaignId!)
-        .maybeSingle();
-      if (error) throw error;
-      return data?.client_id ?? null;
+      if (clientIdProp) {
+        const { data } = await supabase.from("clients").select("agency_id").eq("id", clientIdProp).maybeSingle();
+        return data?.agency_id ?? null;
+      }
+      if (campaignId) {
+        const { data } = await supabase.from("campaigns").select("clients(agency_id)").eq("id", campaignId).maybeSingle();
+        return (data as any)?.clients?.agency_id ?? null;
+      }
+      return null;
     },
+    enabled: !!clientIdProp || !!campaignId,
   });
 
-  const clientId = clientIdProp ?? clientIdQuery.data ?? null;
+  const agencyId = agencyIdQuery.data;
 
   const listQuery = useQuery({
-    queryKey: ["client_email_memory", clientId],
-    enabled: !!clientId,
+    queryKey: ["agency_email_memory", agencyId],
+    enabled: !!agencyId,
     staleTime: 60_000,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("client_email_memory" as any)
         .select("email, last_used_at, usage_count, contact_name")
-        .eq("client_id", clientId!)
+        .eq("agency_id", agencyId!)
         .order("last_used_at", { ascending: false })
-        .limit(500);
+        .limit(1000);
       if (error) throw error;
       return (data ?? []) as unknown as Array<{
         email: string;
