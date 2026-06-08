@@ -40,7 +40,7 @@ export default function AgencyDashboard() {
       description: "Cadastre e gerencie os fornecedores da agência",
       icon: Truck,
       color: "bg-[#4B5563]",
-      path: "/suppliers",
+      path: `/agency/${agencyId}/suppliers`,
       roles: ["admin", "master"],
     },
   ];
