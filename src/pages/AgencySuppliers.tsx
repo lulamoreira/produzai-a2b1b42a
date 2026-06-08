@@ -108,6 +108,7 @@ const AgencySuppliers = () => {
     services: [] as string[],
     custom_service: "",
     file_urls: [] as { name: string; url: string }[],
+    contacts: [{ nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }] as SupplierContact[],
   });
 
   const filteredSuppliers = useMemo(() => {
