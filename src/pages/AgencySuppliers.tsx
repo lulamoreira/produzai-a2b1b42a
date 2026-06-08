@@ -558,6 +558,9 @@ const AgencySuppliers = () => {
             </form>
           </DialogContent>
         </Dialog>
+      </div>
+  );
+
   const { data: agencyInfo } = useQuery({
     queryKey: ["agency_name", agencyId],
     queryFn: async () => {
