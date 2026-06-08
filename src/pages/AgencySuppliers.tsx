@@ -473,39 +473,89 @@ const AgencySuppliers = () => {
                       onChange={e => setForm(f => ({ ...f, cnpj: e.target.value }))}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contact_name">Nome do Contato</Label>
-                    <Input 
-                      id="contact_name" 
-                      value={form.contact_name}
-                      onChange={e => setForm(f => ({ ...f, contact_name: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-mail</Label>
-                    <Input 
-                      id="email" 
-                      type="email"
-                      value={form.email}
-                      onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Telefone</Label>
-                      <Input 
-                        id="phone" 
-                        value={form.phone}
-                        onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                      />
+                  <div className="space-y-4 pt-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-bold">Contatos</Label>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={addContact}
+                        className="h-8 text-xs"
+                      >
+                        <Plus className="w-3 h-3 mr-1" /> Adicionar contato
+                      </Button>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="whatsapp">WhatsApp</Label>
-                      <Input 
-                        id="whatsapp" 
-                        value={form.whatsapp}
-                        onChange={e => setForm(f => ({ ...f, whatsapp: e.target.value }))}
-                      />
+                    
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                      {form.contacts.map((contact, index) => (
+                        <div key={index} className="p-3 border rounded-lg bg-muted/20 relative space-y-3">
+                          {form.contacts.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute top-1 right-1 h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => removeContact(index)}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-[10px] uppercase">Nome</Label>
+                              <Input
+                                value={contact.nome}
+                                onChange={e => updateContact(index, "nome", e.target.value)}
+                                className="h-8 text-xs"
+                                placeholder="Nome do contato"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[10px] uppercase">Função</Label>
+                              <Input
+                                value={contact.funcao}
+                                onChange={e => updateContact(index, "funcao", e.target.value)}
+                                className="h-8 text-xs"
+                                placeholder="Ex: Gerente Comercial"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <Label className="text-[10px] uppercase">E-mail</Label>
+                            <Input
+                              type="email"
+                              value={contact.email}
+                              onChange={e => updateContact(index, "email", e.target.value)}
+                              className="h-8 text-xs"
+                              placeholder="email@empresa.com"
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-[10px] uppercase">Telefone</Label>
+                              <Input
+                                value={contact.telefone}
+                                onChange={e => updateContact(index, "telefone", e.target.value)}
+                                className="h-8 text-xs"
+                                placeholder="(00) 0000-0000"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[10px] uppercase">WhatsApp</Label>
+                              <Input
+                                value={contact.whatsapp}
+                                onChange={e => updateContact(index, "whatsapp", e.target.value)}
+                                className="h-8 text-xs"
+                                placeholder="(00) 00000-0000"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <div className="space-y-2">
