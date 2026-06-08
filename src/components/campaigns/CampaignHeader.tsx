@@ -113,7 +113,7 @@ export function CampaignHeader({
               </Badge>
             )}
             
-            {isAdminOrMaster && (
+            {isAdminOrMaster && (activeSection === "summary" || !activeSection) && (
               <>
                 <Button
                   variant={isInactive ? "outline" : "destructive"}
