@@ -109,6 +109,7 @@ export const NAV_SECTIONS: NavSection[] = [
       { key: "users",     label: "Usuários",   labelKey: "sidebar.admin_users", route: "/admin",            icon: "Users",      requires: "admin_or_master" },
       { key: "approvals", label: "Aprovações", labelKey: "sidebar.approvals",   route: "/approvals",        icon: "CheckSquare", requires: "admin_or_master" },
       { key: "backup",    label: "Backup",     route: "/admin?tab=backup", icon: "Database",   requires: "admin" },
+      { key: "suppliers", label: "Fornecedores", labelKey: "sidebar.suppliers", route: "/suppliers", icon: "Database", requires: "admin_or_master" },
     ],
   },
 ];
