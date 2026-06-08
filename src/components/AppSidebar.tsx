@@ -14,6 +14,7 @@ import { InviteUserDialog } from "@/components/sidebar/InviteUserDialog";
 import { CampaignNavItem } from "@/components/sidebar/CampaignNavItem";
 import { CAMPAIGN_MODULES, MODULE_ICONS, type UserMenuAction } from "@/lib/sidebarRegistry";
 import { openGlobalSearch } from "@/lib/globalSearchBus";
+import { cn } from "@/lib/utils";
 
 // lucide icons imported below with CAMPAIGN_MODULE_KEYS
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
