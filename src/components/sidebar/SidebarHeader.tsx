@@ -22,7 +22,7 @@ interface Props {
 }
 
 export function SidebarHeader({
-  collapsed, onToggleCollapsed, onCloseMobile, onUserAction, agencyName, clientName, campaignName,
+  collapsed, onToggleCollapsed, onCloseMobile, onUserAction, agencyName, clientName, campaignName, agencyId, clientId, campaignId,
 }: Props) {
   const { t } = useTranslation();
   const { displayName, avatarUrl } = useDisplayName();
