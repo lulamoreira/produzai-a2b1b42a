@@ -380,7 +380,7 @@ export default function AppSidebar() {
                   location.pathname === `/agency/${effectiveAgencyId}` ? "text-brand-400 opacity-100" : "opacity-50 hover:opacity-100"
                 )}
               >
-                Agência
+                {agencyName}
               </button>
             )}
 
