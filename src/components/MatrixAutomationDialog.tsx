@@ -1218,7 +1218,12 @@ export default function MatrixAutomationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
-      <DialogContent className="flex h-[calc(100dvh-2rem)] max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0 sm:h-[90dvh] sm:max-h-[90dvh] sm:max-w-4xl">
+      <DialogContent 
+        className="flex h-[calc(100dvh-2rem)] max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0 sm:h-[90dvh] sm:max-h-[90dvh] sm:max-w-4xl"
+        onInteractOutside={(e) => {
+          if (overwriteDialog.open) e.preventDefault();
+        }}
+      >
         {executing && executionStatus && (
           <div className="absolute inset-0 z-[100] bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-4">
             <div className="w-full max-w-md space-y-6">
