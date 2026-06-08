@@ -10,7 +10,8 @@ import {
   useUpdateAgencySupplier,
   useDeleteAgencySupplier,
   VISUAL_COMMUNICATION_SERVICES,
-  type AgencySupplier
+  type AgencySupplier,
+  type SupplierContact
 } from "@/hooks/useAgencySuppliers";
 import {
   Table,
@@ -107,6 +108,7 @@ const AgencySuppliers = () => {
     services: [] as string[],
     custom_service: "",
     file_urls: [] as { name: string; url: string }[],
+    contacts: [{ nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }] as SupplierContact[],
   });
 
   const filteredSuppliers = useMemo(() => {
@@ -133,6 +135,7 @@ const AgencySuppliers = () => {
       services: [],
       custom_service: "",
       file_urls: [],
+      contacts: [{ nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }],
     });
     setDialogOpen(true);
   };
@@ -152,8 +155,33 @@ const AgencySuppliers = () => {
       services: (s.services as string[]) || [],
       custom_service: "",
       file_urls: (s.file_urls as { name: string; url: string }[]) || [],
+      contacts: s.contacts && s.contacts.length > 0 
+        ? s.contacts 
+        : [{ nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }],
     });
     setDialogOpen(true);
+  };
+
+  const addContact = () => {
+    setForm(f => ({
+      ...f,
+      contacts: [...f.contacts, { nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }]
+    }));
+  };
+
+  const removeContact = (index: number) => {
+    if (form.contacts.length <= 1) return;
+    setForm(f => ({
+      ...f,
+      contacts: f.contacts.filter((_, i) => i !== index)
+    }));
+  };
+
+  const updateContact = (index: number, field: keyof SupplierContact, value: string) => {
+    setForm(f => ({
+      ...f,
+      contacts: f.contacts.map((c, i) => i === index ? { ...c, [field]: value } : c)
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -178,6 +206,7 @@ const AgencySuppliers = () => {
       observations: form.observations || null,
       services: finalServices,
       file_urls: form.file_urls,
+      contacts: form.contacts,
     };
 
     if (editingSupplier) {
@@ -301,10 +330,14 @@ const AgencySuppliers = () => {
                       <div className="text-[10px] text-muted-foreground">{s.cnpj}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">{s.contact_name}</div>
+                      <div className="text-sm font-medium">
+                        {s.contacts && s.contacts.length > 0 
+                          ? `${s.contacts[0].nome}${s.contacts[0].funcao ? ` (${s.contacts[0].funcao})` : ""}`
+                          : s.contact_name || "Sem contato"}
+                      </div>
                       <div className="flex items-center gap-2 mt-1">
-                        {s.phone && <Phone className="w-3 h-3 text-muted-foreground" />}
-                        {s.email && <Mail className="w-3 h-3 text-muted-foreground" />}
+                        {(s.contacts?.[0]?.telefone || s.phone) && <Phone className="w-3 h-3 text-muted-foreground" />}
+                        {(s.contacts?.[0]?.email || s.email) && <Mail className="w-3 h-3 text-muted-foreground" />}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -374,18 +407,22 @@ const AgencySuppliers = () => {
                 <div className="space-y-3 text-sm">
                   <div className="flex items-start gap-2">
                     <UserIcon className="w-4 h-4 text-muted-foreground mt-0.5" />
-                    <span>{s.contact_name || "Sem contato"}</span>
+                    <span className="font-medium">
+                      {s.contacts && s.contacts.length > 0 
+                        ? `${s.contacts[0].nome}${s.contacts[0].funcao ? ` (${s.contacts[0].funcao})` : ""}`
+                        : s.contact_name || "Sem contato"}
+                    </span>
                   </div>
-                  {(s.phone || s.whatsapp) && (
+                  {(s.contacts?.[0]?.telefone || s.contacts?.[0]?.whatsapp || s.phone || s.whatsapp) && (
                     <div className="flex items-start gap-2">
                       <Phone className="w-4 h-4 text-muted-foreground mt-0.5" />
-                      <span>{s.phone || s.whatsapp}</span>
+                      <span>{s.contacts?.[0]?.telefone || s.contacts?.[0]?.whatsapp || s.phone || s.whatsapp}</span>
                     </div>
                   )}
-                  {s.email && (
+                  {(s.contacts?.[0]?.email || s.email) && (
                     <div className="flex items-start gap-2">
                       <Mail className="w-4 h-4 text-muted-foreground mt-0.5" />
-                      <span className="truncate">{s.email}</span>
+                      <span className="truncate">{s.contacts?.[0]?.email || s.email}</span>
                     </div>
                   )}
                   {s.address && (
@@ -436,39 +473,89 @@ const AgencySuppliers = () => {
                       onChange={e => setForm(f => ({ ...f, cnpj: e.target.value }))}
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="contact_name">Nome do Contato</Label>
-                    <Input 
-                      id="contact_name" 
-                      value={form.contact_name}
-                      onChange={e => setForm(f => ({ ...f, contact_name: e.target.value }))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">E-mail</Label>
-                    <Input 
-                      id="email" 
-                      type="email"
-                      value={form.email}
-                      onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Telefone</Label>
-                      <Input 
-                        id="phone" 
-                        value={form.phone}
-                        onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                      />
+                  <div className="space-y-4 pt-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm font-bold">Contatos</Label>
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={addContact}
+                        className="h-8 text-xs"
+                      >
+                        <Plus className="w-3 h-3 mr-1" /> Adicionar contato
+                      </Button>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="whatsapp">WhatsApp</Label>
-                      <Input 
-                        id="whatsapp" 
-                        value={form.whatsapp}
-                        onChange={e => setForm(f => ({ ...f, whatsapp: e.target.value }))}
-                      />
+                    
+                    <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
+                      {form.contacts.map((contact, index) => (
+                        <div key={index} className="p-3 border rounded-lg bg-muted/20 relative space-y-3">
+                          {form.contacts.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="absolute top-1 right-1 h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
+                              onClick={() => removeContact(index)}
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-[10px] uppercase">Nome</Label>
+                              <Input
+                                value={contact.nome}
+                                onChange={e => updateContact(index, "nome", e.target.value)}
+                                className="h-8 text-xs"
+                                placeholder="Nome do contato"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[10px] uppercase">Função</Label>
+                              <Input
+                                value={contact.funcao}
+                                onChange={e => updateContact(index, "funcao", e.target.value)}
+                                className="h-8 text-xs"
+                                placeholder="Ex: Gerente Comercial"
+                              />
+                            </div>
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <Label className="text-[10px] uppercase">E-mail</Label>
+                            <Input
+                              type="email"
+                              value={contact.email}
+                              onChange={e => updateContact(index, "email", e.target.value)}
+                              className="h-8 text-xs"
+                              placeholder="email@empresa.com"
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-1">
+                              <Label className="text-[10px] uppercase">Telefone</Label>
+                              <Input
+                                value={contact.telefone}
+                                onChange={e => updateContact(index, "telefone", e.target.value)}
+                                className="h-8 text-xs"
+                                placeholder="(00) 0000-0000"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-[10px] uppercase">WhatsApp</Label>
+                              <Input
+                                value={contact.whatsapp}
+                                onChange={e => updateContact(index, "whatsapp", e.target.value)}
+                                className="h-8 text-xs"
+                                placeholder="(00) 00000-0000"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                   <div className="space-y-2">

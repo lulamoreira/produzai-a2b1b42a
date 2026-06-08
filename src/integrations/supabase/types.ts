@@ -108,6 +108,7 @@ export type Database = {
           cnpj: string | null
           company_name: string
           contact_name: string | null
+          contacts: Json | null
           created_at: string
           email: string | null
           file_urls: Json | null
@@ -125,6 +126,7 @@ export type Database = {
           cnpj?: string | null
           company_name: string
           contact_name?: string | null
+          contacts?: Json | null
           created_at?: string
           email?: string | null
           file_urls?: Json | null
@@ -142,6 +144,7 @@ export type Database = {
           cnpj?: string | null
           company_name?: string
           contact_name?: string | null
+          contacts?: Json | null
           created_at?: string
           email?: string | null
           file_urls?: Json | null

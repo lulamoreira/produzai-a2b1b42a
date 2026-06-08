@@ -2,6 +2,14 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+export type SupplierContact = {
+  nome: string;
+  funcao: string;
+  email: string;
+  telefone: string;
+  whatsapp: string;
+};
+
 export type AgencySupplier = {
   id: string;
   agency_id: string;
@@ -15,6 +23,7 @@ export type AgencySupplier = {
   website: string | null;
   observations: string | null;
   services: string[];
+  contacts: SupplierContact[];
   file_urls: { name: string; url: string }[];
   created_at: string;
   updated_at: string;
@@ -54,9 +63,10 @@ export function useAgencySuppliers(agencyId: string | undefined) {
       if (error) throw error;
       return (data || []).map(s => ({
         ...s,
-        services: Array.isArray(s.services) ? s.services : [],
-        file_urls: Array.isArray(s.file_urls) ? s.file_urls : []
-      })) as AgencySupplier[];
+        services: Array.isArray(s.services) ? (s.services as string[]) : [],
+        contacts: Array.isArray(s.contacts) ? (s.contacts as unknown as SupplierContact[]) : [],
+        file_urls: Array.isArray(s.file_urls) ? (s.file_urls as unknown as { name: string; url: string }[]) : []
+      })) as unknown as AgencySupplier[];
     },
     enabled: !!agencyId,
   });
@@ -72,7 +82,7 @@ export function useAddAgencySupplier() {
         .select()
         .single();
       if (error) throw error;
-      return data as AgencySupplier;
+      return data as unknown as AgencySupplier;
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["agency_suppliers", data.agency_id] });
