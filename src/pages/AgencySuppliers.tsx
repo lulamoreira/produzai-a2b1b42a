@@ -66,8 +66,10 @@ import { toast } from "sonner";
 const AgencySuppliers = () => {
   const { user } = useAuth();
   
+  const { agencyId: agencyIdParam } = useParams<{ agencyId?: string }>();
+  
   // Fetch agency ID
-  const { data: agencyId } = useQuery({
+  const { data: profileAgencyId } = useQuery({
     queryKey: ["user_agency_id", user?.id],
     queryFn: async () => {
       const { data } = await supabase
@@ -77,8 +79,10 @@ const AgencySuppliers = () => {
         .maybeSingle();
       return data?.agency_id;
     },
-    enabled: !!user,
+    enabled: !!user && !agencyIdParam,
   });
+
+  const agencyId = agencyIdParam ?? profileAgencyId;
 
   const { data: suppliers = [], isLoading } = useAgencySuppliers(agencyId);
   const addSupplier = useAddAgencySupplier();
