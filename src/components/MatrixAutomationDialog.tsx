@@ -2077,13 +2077,27 @@ export default function MatrixAutomationDialog({
       </DialogContent>
 
       {/* ──── Overwrite confirmation dialog ──── */}
-      <Dialog open={overwriteDialog.open} onOpenChange={(o) => setOverwriteDialog({ ...overwriteDialog, open: o })}>
-        <DialogContent className="w-full max-w-sm z-[9999] relative max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Valores existentes encontrados</DialogTitle>
-          </DialogHeader>
+      {overwriteDialog.open && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60"
+            onClick={() => setOverwriteDialog({ open: false, count: 0 })}
+          />
+          {/* Modal */}
+          <div className="relative z-10 bg-background rounded-xl shadow-2xl w-full max-w-sm mx-4 max-h-[85vh] overflow-y-auto p-6 space-y-4">
+            {/* Fechar */}
+            <button
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
+              onClick={() => setOverwriteDialog({ open: false, count: 0 })}
+            >
+              <X className="w-4 h-4" />
+            </button>
 
-          <div className="space-y-4">
+            {/* Título */}
+            <h2 className="text-lg font-semibold">Valores existentes encontrados</h2>
+
+            {/* Aviso */}
             <div className="flex items-start gap-2.5 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-lg text-amber-700 dark:text-amber-400 text-sm">
               <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
               <p>
@@ -2094,69 +2108,61 @@ export default function MatrixAutomationDialog({
             <p className="text-sm font-medium">O que deseja fazer com os valores existentes?</p>
 
             <div className="space-y-2">
+              {/* Manter */}
               <button
                 className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-primary/50 hover:bg-muted/50 transition-all text-left"
-                onClick={() => {
-                  setOverwriteDialog({ open: false, count: 0 });
-                  executePreview("keep");
-                }}
+                onClick={() => { setOverwriteDialog({ open: false, count: 0 }); executePreview("keep"); }}
               >
                 <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
                   <Shield className="w-4 h-4" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold">Manter valores existentes</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Apenas preenche células que estão vazias. Não altera o que já foi preenchido.
-                  </p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Apenas preenche células que estão vazias. Não altera o que já foi preenchido.</p>
                 </div>
               </button>
 
-              <button
-                className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-blue-500/50 hover:bg-blue-50/5 transition-all text-left"
-                onClick={() => {
-                  setOverwriteDialog({ open: false, count: 0 });
-                  executePreview("sum");
-                }}
-              >
-                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                  <PlusCircle className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">Somar aos valores existentes</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Adiciona os novos valores definidos na automação aos valores já preenchidos nas células.
-                  </p>
-                </div>
-              </button>
-
+              {/* Substituir */}
               <button
                 className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-destructive/50 hover:bg-destructive/5 transition-all text-left"
-                onClick={() => {
-                  setOverwriteDialog({ open: false, count: 0 });
-                  executePreview("replace");
-                }}
+                onClick={() => { setOverwriteDialog({ open: false, count: 0 }); executePreview("replace"); }}
               >
                 <div className="w-8 h-8 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
                   <Trash2 className="w-4 h-4" />
                 </div>
                 <div>
                   <p className="text-sm font-semibold">Apagar e substituir tudo</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Substitui todos os valores existentes pelos novos definidos nesta automação.
-                  </p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Substitui todos os valores existentes pelos novos definidos nesta automação.</p>
+                </div>
+              </button>
+
+              {/* Somar */}
+              <button
+                className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-blue-500/50 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all text-left"
+                onClick={() => { setOverwriteDialog({ open: false, count: 0 }); executePreview("sum"); }}
+              >
+                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <PlusCircle className="w-4 h-4" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Somar aos valores existentes</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">Adiciona os novos valores da automação aos valores já preenchidos nas células.</p>
                 </div>
               </button>
             </div>
-          </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOverwriteDialog({ open: false, count: 0 })}>
-              Cancelar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <div className="flex justify-end pt-2">
+              <button
+                className="px-4 py-2 text-sm font-medium border rounded-lg hover:bg-muted transition-colors"
+                onClick={() => setOverwriteDialog({ open: false, count: 0 })}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       <GroupRunReviewDialog
         open={reviewDialog.open}
