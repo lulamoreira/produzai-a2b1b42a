@@ -101,6 +101,68 @@ export type Database = {
         }
         Relationships: []
       }
+      agency_suppliers: {
+        Row: {
+          address: string | null
+          agency_id: string
+          cnpj: string | null
+          company_name: string
+          contact_name: string | null
+          created_at: string
+          email: string | null
+          file_urls: Json | null
+          id: string
+          observations: string | null
+          phone: string | null
+          services: Json | null
+          updated_at: string
+          website: string | null
+          whatsapp: string | null
+        }
+        Insert: {
+          address?: string | null
+          agency_id: string
+          cnpj?: string | null
+          company_name: string
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          file_urls?: Json | null
+          id?: string
+          observations?: string | null
+          phone?: string | null
+          services?: Json | null
+          updated_at?: string
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Update: {
+          address?: string | null
+          agency_id?: string
+          cnpj?: string | null
+          company_name?: string
+          contact_name?: string | null
+          created_at?: string
+          email?: string | null
+          file_urls?: Json | null
+          id?: string
+          observations?: string | null
+          phone?: string | null
+          services?: Json | null
+          updated_at?: string
+          website?: string | null
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agency_suppliers_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_ui_settings: {
         Row: {
           id: number
