@@ -82,7 +82,7 @@ export function useAddAgencySupplier() {
         .select()
         .single();
       if (error) throw error;
-      return data as AgencySupplier;
+      return data as unknown as AgencySupplier;
     },
     onSuccess: (data) => {
       qc.invalidateQueries({ queryKey: ["agency_suppliers", data.agency_id] });
