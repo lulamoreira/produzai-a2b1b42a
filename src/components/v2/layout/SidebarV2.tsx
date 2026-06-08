@@ -456,7 +456,6 @@ export function SidebarV2() {
                 className="text-[10px] font-bold uppercase tracking-wider mb-1"
                 style={{ color: 'var(--v2-sidebar-muted)' }}
               >
-                Contexto
               </div>
               <div className="flex flex-col gap-0.5 text-xs">
                 {agencyData?.name && (
