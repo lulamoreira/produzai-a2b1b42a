@@ -1235,7 +1235,7 @@ export default function MatrixAutomationDialog({
             </div>
           </div>
         )}
-        <DialogHeader>
+        <DialogHeader className="p-6 pb-2 shrink-0">
           <DialogTitle>{t("automation.title")}</DialogTitle>
           <DialogDescription>
             {step === 1 && mainTab === "new" && t("automation.step1Desc")}
@@ -1243,7 +1243,8 @@ export default function MatrixAutomationDialog({
           </DialogDescription>
         </DialogHeader>
 
-        {step === 1 && (
+        <div className="flex-1 overflow-y-auto p-6 pt-0 min-h-0">
+
           <Tabs value={mainTab} onValueChange={setMainTab}>
             <TabsList className="w-full">
               <TabsTrigger value="new" className="flex-1 gap-1 text-xs">
