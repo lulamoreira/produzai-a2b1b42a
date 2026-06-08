@@ -1208,7 +1208,7 @@ const ClientDetail = () => {
               <div className="mt-6">
                 <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
                   <SortableContext items={displayCampaigns.map((c) => c.id)} strategy={rectSortingStrategy}>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1">
                       {displayCampaigns.map((c) => (
                         <SortableCampaignCard
                           key={c.id}
