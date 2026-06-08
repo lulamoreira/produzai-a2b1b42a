@@ -133,6 +133,7 @@ const AgencySuppliers = () => {
 
   const handleOpenCreate = () => {
     setEditingSupplier(null);
+    setCepError("");
     setForm({
       company_name: "",
       cnpj: "",
@@ -147,12 +148,20 @@ const AgencySuppliers = () => {
       custom_service: "",
       file_urls: [],
       contacts: [{ nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }],
+      cep: "",
+      logradouro: "",
+      numero: "",
+      complemento: "",
+      bairro: "",
+      cidade: "",
+      estado: "",
     });
     setDialogOpen(true);
   };
 
   const handleOpenEdit = (s: AgencySupplier) => {
     setEditingSupplier(s);
+    setCepError("");
     setForm({
       company_name: s.company_name,
       cnpj: s.cnpj || "",
@@ -169,8 +178,70 @@ const AgencySuppliers = () => {
       contacts: s.contacts && s.contacts.length > 0 
         ? s.contacts 
         : [{ nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }],
+      cep: s.cep || "",
+      logradouro: s.logradouro || "",
+      numero: s.numero || "",
+      complemento: s.complemento || "",
+      bairro: s.bairro || "",
+      cidade: s.cidade || "",
+      estado: s.estado || "",
     });
     setDialogOpen(true);
+  };
+
+  const handleCepSearch = async (cep: string) => {
+    const cleanedCep = cep.replace(/\D/g, "");
+    if (cleanedCep.length !== 8) return;
+
+    setIsSearchingCep(true);
+    setCepError("");
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cleanedCep}/json/`);
+      const data = await response.json();
+
+      if (data.erro) {
+        setCepError("CEP não encontrado. Preencha o endereço manualmente.");
+        setForm(f => ({
+          ...f,
+          logradouro: "",
+          bairro: "",
+          cidade: "",
+          estado: "",
+        }));
+      } else {
+        setForm(f => ({
+          ...f,
+          logradouro: data.logradouro,
+          bairro: data.bairro,
+          cidade: data.localidade,
+          estado: data.uf,
+        }));
+        // Focus on the number field
+        setTimeout(() => {
+          document.getElementById("numero")?.focus();
+        }, 100);
+      }
+    } catch (error) {
+      setCepError("Erro ao buscar CEP. Preencha o endereço manualmente.");
+    } finally {
+      setIsSearchingCep(false);
+    }
+  };
+
+  const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let value = e.target.value.replace(/\D/g, "");
+    if (value.length > 8) value = value.slice(0, 8);
+    
+    let formatted = value;
+    if (value.length > 5) {
+      formatted = `${value.slice(0, 5)}-${value.slice(5)}`;
+    }
+    
+    setForm(f => ({ ...f, cep: formatted }));
+    
+    if (value.length === 8) {
+      handleCepSearch(value);
+    }
   };
 
   const addContact = () => {
