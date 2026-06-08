@@ -364,7 +364,7 @@ export default function AppSidebar() {
 
 
         {/* ── Seção Agência (Clientes + Fornecedores) ── */}
-        {isInsideAgency && (
+        {effectiveAgencyId && (
           <>
             <div className="my-2" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }} />
             
@@ -376,10 +376,10 @@ export default function AppSidebar() {
 
             {!isLimited && (
               <button
-                onClick={() => handleNavigate(`/agency/${agencyId}`)}
+                onClick={() => handleNavigate(`/agency/${effectiveAgencyId}`)}
                 className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative"
-                style={itemStyle((location.pathname === `/agency/${agencyId}` || location.pathname === `/agency/${agencyId}/clients`) && !isInsideClient)}
-                {...hoverHandlers((location.pathname === `/agency/${agencyId}` || location.pathname === `/agency/${agencyId}/clients`) && !isInsideClient)}
+                style={itemStyle((location.pathname === `/agency/${effectiveAgencyId}` || location.pathname === `/agency/${effectiveAgencyId}/clients`) && !isInsideClient)}
+                {...hoverHandlers((location.pathname === `/agency/${effectiveAgencyId}` || location.pathname === `/agency/${effectiveAgencyId}/clients`) && !isInsideClient)}
                 title={collapsed ? t("sidebar.clients") : undefined}
               >
                 <AquaIcon icon={Briefcase} size="sm" color="#735A3D" />
