@@ -385,7 +385,7 @@ export default function AppSidebar() {
             
             {!collapsed && (
               <div className="text-[10px] font-semibold uppercase tracking-wider px-3 mb-2 mt-1 opacity-50">
-                Módulos
+                Agência
               </div>
             )}
             
