@@ -57,7 +57,8 @@ import {
   X,
   LayoutGrid,
   List,
-  Building2
+  Building2,
+  User
 } from "lucide-react";
 import { toast } from "sonner";
 
