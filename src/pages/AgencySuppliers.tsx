@@ -330,10 +330,14 @@ const AgencySuppliers = () => {
                       <div className="text-[10px] text-muted-foreground">{s.cnpj}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">{s.contact_name}</div>
+                      <div className="text-sm font-medium">
+                        {s.contacts && s.contacts.length > 0 
+                          ? `${s.contacts[0].nome}${s.contacts[0].funcao ? ` (${s.contacts[0].funcao})` : ""}`
+                          : s.contact_name || "Sem contato"}
+                      </div>
                       <div className="flex items-center gap-2 mt-1">
-                        {s.phone && <Phone className="w-3 h-3 text-muted-foreground" />}
-                        {s.email && <Mail className="w-3 h-3 text-muted-foreground" />}
+                        {(s.contacts?.[0]?.telefone || s.phone) && <Phone className="w-3 h-3 text-muted-foreground" />}
+                        {(s.contacts?.[0]?.email || s.email) && <Mail className="w-3 h-3 text-muted-foreground" />}
                       </div>
                     </TableCell>
                     <TableCell>
