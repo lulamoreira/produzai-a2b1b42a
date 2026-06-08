@@ -110,7 +110,17 @@ const AgencySuppliers = () => {
     custom_service: "",
     file_urls: [] as { name: string; url: string }[],
     contacts: [{ nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }] as SupplierContact[],
+    cep: "",
+    logradouro: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
+    cidade: "",
+    estado: "",
   });
+
+  const [isSearchingCep, setIsSearchingCep] = useState(false);
+  const [cepError, setCepError] = useState("");
 
   const filteredSuppliers = useMemo(() => {
     return suppliers.filter(s => 
