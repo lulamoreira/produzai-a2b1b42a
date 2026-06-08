@@ -53,6 +53,7 @@ const JoinPage = lazy(() => import("./pages/JoinPage"));
 const WelcomePage = lazy(() => import("./pages/WelcomePage"));
 const FavoritesV2 = lazy(() => import("./pages/v2/FavoritesV2"));
 const AgenciesV2 = lazy(() => import("./pages/v2/AgenciesV2"));
+const AgencyDashboard = lazy(() => import("./pages/v2/AgencyDashboard"));
 
 // Quitanda3dSHOP Pages
 const QuitandaDashboard = lazy(() => import("./pages/quitanda/DashboardPage"));
@@ -268,7 +269,7 @@ const App = () => (
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
                   <Route path="/agencies" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
-                  <Route path="/agency/:agencyId" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+                  <Route path="/agency/:agencyId" element={<ProtectedRoute><AgencyDashboard /></ProtectedRoute>} />
                   <Route path="/agency/:agencyId/clients" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                   <Route path="/agency/:agencyId/clients/:clientId" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
                   <Route path="/agency/:agencyId/clients/:clientId/campaigns" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />

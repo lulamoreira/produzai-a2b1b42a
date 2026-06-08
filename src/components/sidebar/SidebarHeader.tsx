@@ -16,10 +16,13 @@ interface Props {
   agencyName?: string | null;
   clientName?: string | null;
   campaignName?: string | null;
+  agencyId?: string;
+  clientId?: string;
+  campaignId?: string;
 }
 
 export function SidebarHeader({
-  collapsed, onToggleCollapsed, onCloseMobile, onUserAction, agencyName, clientName, campaignName,
+  collapsed, onToggleCollapsed, onCloseMobile, onUserAction, agencyName, clientName, campaignName, agencyId, clientId, campaignId,
 }: Props) {
   const { t } = useTranslation();
   const { displayName, avatarUrl } = useDisplayName();
@@ -152,6 +155,9 @@ export function SidebarHeader({
         agencyName={agencyName}
         clientName={clientName}
         campaignName={campaignName}
+        agencyId={agencyId}
+        clientId={clientId}
+        campaignId={campaignId}
       />
     </div>
   );
