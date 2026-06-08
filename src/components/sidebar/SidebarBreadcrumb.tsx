@@ -12,9 +12,7 @@ export function SidebarBreadcrumb({ collapsed, agencyName, clientName, campaignN
 
   return (
     <div className="px-3 py-2 border-b border-border/30 mb-1">
-      <div className="text-[10px] font-semibold uppercase tracking-wider opacity-50 mb-1">
-        Contexto
-      </div>
+      {/* Removido o rótulo "Contexto" conforme solicitado */}
       <div
         className="text-[11px] leading-snug flex flex-wrap items-start gap-x-1 gap-y-0.5"
         style={{
