@@ -382,11 +382,21 @@ export default function AppSidebar() {
               <button 
                 onClick={() => handleNavigate(`/agency/${effectiveAgencyId}`)}
                 className={cn(
-                  "text-[10px] font-semibold uppercase tracking-wider px-3 mb-1 mt-1 transition-all w-full text-left",
-                  location.pathname === `/agency/${effectiveAgencyId}` ? "text-brand-400 opacity-100" : "opacity-50 hover:opacity-100"
+                  "flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all w-full text-left group",
+                  location.pathname === `/agency/${effectiveAgencyId}` 
+                    ? "bg-[var(--sidebar-item-active)] text-[var(--sidebar-text-active)] shadow-sm" 
+                    : "text-[var(--sidebar-text)] hover:bg-[var(--sidebar-item-hover)] hover:text-[var(--sidebar-text-active)]"
                 )}
               >
-                {agencyName}
+                <div 
+                  className={cn(
+                    "w-1.5 h-1.5 rounded-full",
+                    location.pathname === `/agency/${effectiveAgencyId}` ? "bg-brand-400" : "bg-stone-500 opacity-40 group-hover:opacity-100"
+                  )} 
+                />
+                <span className="text-[13px] font-bold tracking-tight uppercase">
+                  {agencyName || "Agência"}
+                </span>
               </button>
             )}
 
