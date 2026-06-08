@@ -155,6 +155,9 @@ export function SidebarHeader({
         agencyName={agencyName}
         clientName={clientName}
         campaignName={campaignName}
+        agencyId={agencyId}
+        clientId={clientId}
+        campaignId={campaignId}
       />
     </div>
   );
