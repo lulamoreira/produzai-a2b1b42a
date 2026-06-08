@@ -503,8 +503,8 @@ export function SidebarV2() {
                 item={{ label: t("sidebar.clients"), icon: Briefcase, route: `/agency/${effectiveAgencyId}/clients` }} 
                 activeOverride={location.pathname.startsWith(`/agency/${effectiveAgencyId}/clients`)}
               />
-              <NavItem 
-                item={{ label: "Fornecedores", icon: Truck, route: `/agency/${effectiveAgencyId}/suppliers` }} 
+              <NavItem
+                item={{ label: "Fornecedores", icon: Truck, route: `/agency/${effectiveAgencyId}/suppliers` }}
                 activeOverride={location.pathname.startsWith(`/agency/${effectiveAgencyId}/suppliers`)}
               />
             </div>
