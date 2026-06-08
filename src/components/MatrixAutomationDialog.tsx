@@ -2097,7 +2097,7 @@ export default function MatrixAutomationDialog({
                 className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-primary/50 hover:bg-muted/50 transition-all text-left"
                 onClick={() => {
                   setOverwriteDialog({ open: false, count: 0 });
-                  executePreview(false);
+                  executePreview("keep");
                 }}
               >
                 <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
