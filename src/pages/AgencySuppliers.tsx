@@ -123,6 +123,7 @@ const AgencySuppliers = () => {
   });
 
   const [isSearchingCep, setIsSearchingCep] = useState(false);
+  const [cepError, setCepError] = useState("");
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [inviteDays, setInviteDays] = useState(7);
   const [generatingInvite, setGeneratingInvite] = useState(false);
