@@ -55,22 +55,32 @@ export default function SummaryTab({
   const { data: internalKpis } = useQuery({
     queryKey: ["campaign-summary-kpis", campaignId],
     queryFn: async () => {
-      const storesRes = await (supabase.from("client_stores") as any).select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
-      const piecesRes = await (supabase.from("pieces") as any).select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
-      const pendingInstallationsRes = await (supabase.from("campaign_schedules") as any).select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).is("completed_at", null);
-      const pendingApprovalsRes = await (supabase.from("user_approvals" as any).select("id", { count: "exact", head: true }) as any).eq("campaign_id", campaignId).eq("status", "pending");
+      // Find client_id first if not available in props (though it should be via parent)
+      const { data: campaign } = await supabase.from("campaigns").select("client_id").eq("id", campaignId).single();
+      const clientId = campaign?.client_id;
 
+      const storesRes = await supabase.from("client_stores").select("id", { count: "exact", head: true }).eq("client_id", clientId);
+      const piecesRes = await supabase.from("campaign_pieces").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).eq("is_deleted", false);
+      const kitsRes = await supabase.from("campaign_kits").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
+      const pendingInstallationsRes = await supabase.from("campaign_schedules").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).is("completed_at", null);
+      
       return {
         stores: storesRes.count || 0,
-        pieces: piecesRes.count || 0,
+        pieces: (piecesRes.count || 0) + (kitsRes.count || 0),
         pendingInstallations: pendingInstallationsRes.count || 0,
-        pendingApprovals: pendingApprovalsRes.count || 0
+        pendingApprovals: 0
       };
     },
     enabled: !!campaignId && !externalKpis
   });
 
-  const campaignKpis = externalKpis || internalKpis;
+  const baseKpis = externalKpis || internalKpis;
+  const campaignKpis = {
+    stores: baseKpis?.stores || stores?.length || 0,
+    pieces: baseKpis?.pieces || (visiblePieces?.length || 0) + (kits?.length || 0) || 0,
+    pendingInstallations: baseKpis?.pendingInstallations || 0,
+    pendingApprovals: baseKpis?.pendingApprovals || 0,
+  };
 
 
   return (
