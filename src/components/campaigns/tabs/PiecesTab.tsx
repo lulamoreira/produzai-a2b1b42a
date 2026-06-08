@@ -584,21 +584,16 @@ export default function PiecesTab({
                 </DropdownMenuContent>
               </DropdownMenu>
               
-              <div className="relative">
-                <Button size="sm" className="text-[10px] sm:text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setPieceDialogOpen(true)}>
-                  <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.newPiece")}
-                </Button>
-                <AddPieceDialog 
-                  open={pieceDialogOpen}
-                  onOpenChange={setPieceDialogOpen}
-                  existingPieces={pieces} 
-                  customFieldLabels={customFieldLabels} 
-                  campaignId={campaignId} 
-                  clientId={clientId} 
-                  addPieceMutation={addPiece}
-                  updatePieceMutation={updatePiece}
-                />
-              </div>
+              <AddPieceDialog 
+                open={pieceDialogOpen}
+                onOpenChange={setPieceDialogOpen}
+                existingPieces={pieces} 
+                customFieldLabels={customFieldLabels} 
+                campaignId={campaignId} 
+                clientId={clientId} 
+                addPieceMutation={addPiece}
+                updatePieceMutation={updatePiece}
+              />
 
               <Button size="sm" className="text-[10px] sm:text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setCreateKitDialogOpen(true)}>
                 <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.newKit")}
