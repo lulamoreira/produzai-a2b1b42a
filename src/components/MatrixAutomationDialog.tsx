@@ -1217,7 +1217,7 @@ export default function MatrixAutomationDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogContent className="flex h-[calc(100dvh-2rem)] max-h-[calc(100dvh-2rem)] w-[calc(100vw-2rem)] flex-col gap-0 overflow-hidden p-0 sm:h-[90dvh] sm:max-h-[90dvh] sm:max-w-4xl">
         {executing && executionStatus && (
           <div className="absolute inset-0 z-[100] bg-background/95 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center space-y-4">
@@ -2078,18 +2078,28 @@ export default function MatrixAutomationDialog({
 
       {/* ──── Overwrite confirmation dialog ──── */}
       {overwriteDialog.open && createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center">
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center"
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/60"
             onClick={() => setOverwriteDialog({ open: false, count: 0 })}
+            onPointerDown={(e) => e.stopPropagation()}
           />
           {/* Modal */}
-          <div className="relative z-10 bg-background rounded-xl shadow-2xl w-full max-w-sm mx-4 max-h-[85vh] overflow-y-auto p-6 space-y-4">
+          <div 
+            className="relative z-10 bg-background rounded-xl shadow-2xl w-full max-w-sm mx-4 max-h-[85vh] overflow-y-auto p-6 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+            onPointerDown={(e) => e.stopPropagation()}
+          >
             {/* Fechar */}
             <button
               className="absolute top-4 right-4 text-muted-foreground hover:text-foreground"
-              onClick={() => setOverwriteDialog({ open: false, count: 0 })}
+              onClick={(e) => { e.stopPropagation(); setOverwriteDialog({ open: false, count: 0 }); }}
             >
               <X className="w-4 h-4" />
             </button>
@@ -2111,7 +2121,7 @@ export default function MatrixAutomationDialog({
               {/* Manter */}
               <button
                 className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-primary/50 hover:bg-muted/50 transition-all text-left"
-                onClick={() => { setOverwriteDialog({ open: false, count: 0 }); executePreview("keep"); }}
+                onClick={(e) => { e.stopPropagation(); setOverwriteDialog({ open: false, count: 0 }); executePreview("keep"); }}
               >
                 <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
                   <Shield className="w-4 h-4" />
@@ -2125,7 +2135,7 @@ export default function MatrixAutomationDialog({
               {/* Substituir */}
               <button
                 className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-destructive/50 hover:bg-destructive/5 transition-all text-left"
-                onClick={() => { setOverwriteDialog({ open: false, count: 0 }); executePreview("replace"); }}
+                onClick={(e) => { e.stopPropagation(); setOverwriteDialog({ open: false, count: 0 }); executePreview("replace"); }}
               >
                 <div className="w-8 h-8 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
                   <Trash2 className="w-4 h-4" />
@@ -2139,7 +2149,7 @@ export default function MatrixAutomationDialog({
               {/* Somar */}
               <button
                 className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-blue-500/50 hover:bg-blue-50 dark:hover:bg-blue-950/20 transition-all text-left"
-                onClick={() => { setOverwriteDialog({ open: false, count: 0 }); executePreview("sum"); }}
+                onClick={(e) => { e.stopPropagation(); setOverwriteDialog({ open: false, count: 0 }); executePreview("sum"); }}
               >
                 <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
                   <PlusCircle className="w-4 h-4" />
@@ -2154,7 +2164,7 @@ export default function MatrixAutomationDialog({
             <div className="flex justify-end pt-2">
               <button
                 className="px-4 py-2 text-sm font-medium border rounded-lg hover:bg-muted transition-colors"
-                onClick={() => setOverwriteDialog({ open: false, count: 0 })}
+                onClick={(e) => { e.stopPropagation(); setOverwriteDialog({ open: false, count: 0 }); }}
               >
                 Cancelar
               </button>
