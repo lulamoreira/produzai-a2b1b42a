@@ -121,14 +121,26 @@ export default function AppSidebar() {
 
   const currentSection = new URLSearchParams(location.search).get("section");
 
+  // Fetch user profile for effective agency id
+  const { data: profile } = useQuery({
+    queryKey: ["user_profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("agency_id").eq("user_id", user?.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const effectiveAgencyId = agencyId || profile?.agency_id;
+
   // Fetch names for breadcrumb
   const { data: agencyName } = useQuery({
-    queryKey: ["sidebar-agency", agencyId],
+    queryKey: ["sidebar-agency", effectiveAgencyId],
     queryFn: async () => {
-      const { data } = await supabase.from("agencies").select("name").eq("id", agencyId!).maybeSingle();
+      const { data } = await supabase.from("agencies").select("name").eq("id", effectiveAgencyId!).maybeSingle();
       return data?.name ?? null;
     },
-    enabled: !!agencyId,
+    enabled: !!effectiveAgencyId,
     staleTime: 5 * 60 * 1000,
   });
 
