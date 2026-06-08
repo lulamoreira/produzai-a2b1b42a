@@ -374,7 +374,10 @@ export default function AppSidebar() {
             {!collapsed && (
               <button 
                 onClick={() => handleNavigate(`/agency/${effectiveAgencyId}`)}
-                className="text-[10px] font-semibold uppercase tracking-wider px-3 mb-1 mt-1 opacity-50 hover:opacity-100 transition-opacity w-full text-left"
+                className={cn(
+                  "text-[10px] font-semibold uppercase tracking-wider px-3 mb-1 mt-1 transition-all w-full text-left",
+                  location.pathname === `/agency/${effectiveAgencyId}` ? "text-brand-400 opacity-100" : "opacity-50 hover:opacity-100"
+                )}
               >
                 Agência
               </button>
