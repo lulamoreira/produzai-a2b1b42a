@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Plus, ArrowRight, Check, AlertTriangle, Eye, Save, FolderOpen, Play, Layers, Shield, Pencil, Loader2 } from "lucide-react";
+import { Trash2, Plus, ArrowRight, Check, AlertTriangle, Eye, Save, FolderOpen, Play, Layers, Shield, Pencil, Loader2, PlusCircle } from "lucide-react";
 import { toast } from "sonner";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -575,10 +575,10 @@ export default function MatrixAutomationDialog({
       return;
     }
 
-    executePreview(false);
+    executePreview("keep");
   };
 
-  const executePreview = (sobrescrever: boolean) => {
+  const executePreview = (strategy: "keep" | "replace" | "sum") => {
     const filtered = filtrarLojas(stores, filterGroup);
     const filteredIds = new Set(filtered.map(s => s.id));
     const nonMatchingStores = stores.filter(s => !filteredIds.has(s.id));
@@ -608,11 +608,17 @@ export default function MatrixAutomationDialog({
       }
       for (const rp of resolvedPieces) {
         const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
-        if (!sobrescrever && currentQty > 0) {
+        if (strategy === "keep" && currentQty > 0) {
           rows.push({
             storeId: store.id, storeName: store.name, group: "update",
             pieceId: rp.pieceId, pieceName: rp.pieceName,
             currentQty, newQty: currentQty, action: "keep",
+          });
+        } else if (strategy === "sum" && currentQty > 0) {
+          rows.push({
+            storeId: store.id, storeName: store.name, group: "update",
+            pieceId: rp.pieceId, pieceName: rp.pieceName,
+            currentQty, newQty: currentQty + rp.quantity, action: "keep",
           });
         } else {
           rows.push({
@@ -2091,7 +2097,7 @@ export default function MatrixAutomationDialog({
                 className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-primary/50 hover:bg-muted/50 transition-all text-left"
                 onClick={() => {
                   setOverwriteDialog({ open: false, count: 0 });
-                  executePreview(false);
+                  executePreview("keep");
                 }}
               >
                 <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
@@ -2109,12 +2115,29 @@ export default function MatrixAutomationDialog({
                 className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-destructive/50 hover:bg-destructive/5 transition-all text-left"
                 onClick={() => {
                   setOverwriteDialog({ open: false, count: 0 });
-                  executePreview(true);
+                  executePreview("replace");
                 }}
               >
                 <div className="w-8 h-8 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
                   <Trash2 className="w-4 h-4" />
+              <button
+                className="w-full flex items-start gap-3 p-3 rounded-lg border hover:border-blue-500/50 hover:bg-blue-50/5 transition-all text-left"
+                onClick={() => {
+                  setOverwriteDialog({ open: false, count: 0 });
+                  executePreview("sum");
+                }}
+              >
+                <div className="w-8 h-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                  <PlusCircle className="w-4 h-4" />
                 </div>
+                <div>
+                  <p className="text-sm font-semibold">Somar aos valores existentes</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Adiciona os novos valores definidos na automação aos valores já preenchidos nas células.
+                  </p>
+                </div>
+              </button>
+            </div>
                 <div>
                   <p className="text-sm font-semibold">Apagar e substituir tudo</p>
                   <p className="text-xs text-muted-foreground leading-relaxed">
