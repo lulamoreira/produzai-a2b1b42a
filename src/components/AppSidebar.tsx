@@ -48,7 +48,7 @@ export default function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
   const qc = useQueryClient();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const { isAdminOrMaster, isAdmin, isMaster } = useUserRole();
   const { isLimited, campaigns: limitedCampaigns } = useUserDirectAccess();
 
