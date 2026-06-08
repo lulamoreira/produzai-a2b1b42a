@@ -1,0 +1,1 @@
+ALTER TABLE public.agency_suppliers ADD COLUMN IF NOT EXISTS contacts JSONB DEFAULT '[]'::jsonb;
