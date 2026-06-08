@@ -578,7 +578,7 @@ export default function MatrixAutomationDialog({
     executePreview(false);
   };
 
-  const executePreview = (sobrescrever: boolean) => {
+  const executePreview = (strategy: "keep" | "replace" | "sum") => {
     const filtered = filtrarLojas(stores, filterGroup);
     const filteredIds = new Set(filtered.map(s => s.id));
     const nonMatchingStores = stores.filter(s => !filteredIds.has(s.id));
