@@ -273,6 +273,7 @@ const CampaignDetail = () => {
               await updateCampaign.mutateAsync({ id: campaignId!, name: formattedName });
             }
           }} onBackup={() => setBackupOpen(true)} onOpenSection={setActiveSection}
+          activeSection={activeSection || "summary"}
           pieces={pieces} kits={kits} kitPieces={kitPieces}
           activeAdjustment={activeAdjustment}
         />

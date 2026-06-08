@@ -30,6 +30,7 @@ interface CampaignHeaderProps {
   onRename: () => void;
   onBackup: () => void;
   onOpenSection: (section: string) => void;
+  activeSection?: string;
   pieces: any[];
   kits: any[];
   kitPieces: any[];
@@ -45,6 +46,7 @@ export function CampaignHeader({
   onRename,
   onBackup,
   onOpenSection,
+  activeSection,
   pieces,
   kits,
   kitPieces
@@ -174,14 +176,14 @@ export function CampaignHeader({
             </Badge>
           )}
           
-          {isAdminOrMaster && (
+          {isAdminOrMaster && (activeSection === "summary" || !activeSection) && (
             <ExportAllPhotosDialog
               campaignId={campaign.id}
               campaignName={campaign.name}
             />
           )}
           
-          {isAdminOrMaster && (
+          {isAdminOrMaster && (activeSection === "summary" || !activeSection) && (
             <Button
               size="sm"
               variant="outline"
@@ -192,7 +194,7 @@ export function CampaignHeader({
             </Button>
           )}
 
-          {(isAdminOrMaster || canEditCampaign) && (
+          {(isAdminOrMaster || canEditCampaign) && (activeSection === "summary" || !activeSection) && (
             <ExportReportDropdown
               campaignId={campaign.id}
               clientId={client?.id}
