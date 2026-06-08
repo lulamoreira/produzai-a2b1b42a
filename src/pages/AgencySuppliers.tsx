@@ -881,15 +881,6 @@ Qualquer dúvida, estamos à disposição!` : "";
       </div>
   );
 
-  const { data: agencyInfo } = useQuery({
-    queryKey: ["agency_name", agencyId],
-    queryFn: async () => {
-      if (!agencyId) return null;
-      const { data } = await supabase.from("agencies").select("name").eq("id", agencyId).maybeSingle();
-      return data;
-    },
-    enabled: !!agencyId,
-  });
 
   return (
     <AppLayout
