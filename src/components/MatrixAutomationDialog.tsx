@@ -575,7 +575,7 @@ export default function MatrixAutomationDialog({
       return;
     }
 
-    executePreview(false);
+    executePreview("keep");
   };
 
   const executePreview = (strategy: "keep" | "replace" | "sum") => {
