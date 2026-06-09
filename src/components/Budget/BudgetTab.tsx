@@ -240,9 +240,9 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const currencyCode = settingsTyped?.currency_code || "BRL";
   const currencyLocked = settingsTyped?.currency_locked === true;
   const fmtCurrency = (v: number | null | undefined) =>
-    v == null ? "—" : formatCurrencyByCode(v, currencyCode);
+    v == null ? "—" : `${currencyCode} ${formatCurrencyByCode(v, currencyCode)}`;
   const fmtBRL = (v: number | null | undefined) =>
-    v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    v == null ? "—" : `BRL ${v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`;
 
   // Exchange rate for non-BRL currencies
   const { data: rateData, isLoading: rateLoading } = useExchangeRate(currencyCode);
@@ -1158,7 +1158,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   {fmtCurrency(winnerOriginalTotal)}
                 </p>
                 {currencyCode !== "BRL" && (
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{fmtBRL(winnerOriginalTotal * exchangeRate)}</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Ref. {fmtBRL(winnerOriginalTotal * exchangeRate)}</p>
                 )}
               </div>
 
@@ -1184,7 +1184,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                     )}
                   </p>
                   {currencyCode !== "BRL" && (
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{fmtBRL(winnerNegotiatedTotal * exchangeRate)}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Ref. {fmtBRL(winnerNegotiatedTotal * exchangeRate)}</p>
                   )}
                 </div>
               )}
@@ -1248,7 +1248,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                 );
               })()}
               {budgetAmount != null && currencyCode !== "BRL" && (
-                <p className="text-[11px] text-muted-foreground mt-1">{fmtBRL(budgetAmount * exchangeRate)}</p>
+                <p className="text-[11px] text-muted-foreground mt-1">Ref. em Reais: {fmtBRL(budgetAmount * exchangeRate)}</p>
               )}
             </div>
 
@@ -1371,7 +1371,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                     )}
                   </p>
                   {currencyCode !== "BRL" && (
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{fmtBRL(winnerNegotiatedTotal * exchangeRate)}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Ref. {fmtBRL(winnerNegotiatedTotal * exchangeRate)}</p>
                   )}
                   <p className="text-[11px] text-muted-foreground line-through mt-1">
                     Original: {fmtCurrency(winnerOriginalTotal)}
@@ -1404,7 +1404,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                 <>
                   <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(bestSupplier.total)}</p>
                   {currencyCode !== "BRL" && (
-                    <p className="text-[11px] text-muted-foreground mt-0.5">{fmtBRL(bestSupplier.total * exchangeRate)}</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">Ref. {fmtBRL(bestSupplier.total * exchangeRate)}</p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">{bestSupplier.name}</p>
                   {(() => {
@@ -1467,7 +1467,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                     {val <= 0 ? "" : "+"}{fmtCurrency(val)}
                   </p>
                   {currencyCode !== "BRL" && (
-                    <p className="text-[10px] text-muted-foreground">{fmtBRL(val * exchangeRate)}</p>
+                    <p className="text-[10px] text-muted-foreground">Ref. {fmtBRL(val * exchangeRate)}</p>
                   )}
                 </>
               ) : (
