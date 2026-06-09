@@ -34,6 +34,7 @@ const SupplierWinnerEmail = ({
   mockupUrl,
   bookUrl,
   timeline = [],
+  locale = 'pt-BR',
 }: SupplierWinnerProps) => {
   const greeting = contactName || supplierName
   return (
