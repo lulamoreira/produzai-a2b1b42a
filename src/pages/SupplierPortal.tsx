@@ -1146,7 +1146,7 @@ const SupplierPortal = () => {
                                 return (
                                   <div className="ml-auto flex items-center gap-6">
                                     <div className="text-right">
-                                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-tight">Unit. por kit</div>
+                                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-tight">{portal.unitPerKit}</div>
                                       <span className="text-sm font-semibold text-foreground">{fmt(unitSum)}</span>
                                     </div>
                                     <div className="text-right">
