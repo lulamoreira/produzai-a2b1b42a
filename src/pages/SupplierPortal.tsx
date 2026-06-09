@@ -1354,7 +1354,7 @@ const SupplierPortal = () => {
                   {displayRows.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                        Nenhum {labels.columnItem.toLowerCase()} cadastrado nesta campanha.
+                        {portal.noItems}
                       </TableCell>
                     </TableRow>
                   )}
