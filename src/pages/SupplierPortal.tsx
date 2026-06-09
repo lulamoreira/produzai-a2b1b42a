@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { getSupplierLabels } from "@/utils/currencyLocale";
+import { getSupplierLabels, getSupplierPortalLabels } from "@/utils/currencyLocale";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { toast } from "sonner";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
