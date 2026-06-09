@@ -1446,7 +1446,7 @@ const SupplierPortal = () => {
                     : "bg-[#8C6F4E] hover:bg-[#7A5F3E] text-white px-10 py-6 text-lg font-semibold"}
                   onClick={() => setShowConfirm1(true)}
                   disabled={submitting || overTarget}
-                  title={overTarget ? "Total acima do teto máximo" : undefined}
+                  title={overTarget ? (currencyCode === "CLP" ? "Total sobre el techo máximo" : "Total acima do teto máximo") : undefined}
                 >
                   <Send className="w-5 h-5 mr-2" />
                   {inNegotiation ? (currencyCode === "CLP" ? "ENVIAR PROPUESTA AJUSTADA" : "ENVIAR PROPOSTA AJUSTADA") : portal.submitButton}
