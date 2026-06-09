@@ -1151,7 +1151,7 @@ const SupplierPortal = () => {
                                   <span className="font-semibold text-sm">{row.name}</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                  {kitPiecesData.filter((kp) => kp.kit_id === row.kitId).length} {labels.columnItem.toLowerCase()}(s) · Qtd kit: {row.totalQty}
+                                  {kitPiecesData.filter((kp) => kp.kit_id === row.kitId).length} {labels.columnItem.toLowerCase()}(s) · {labels.columnQty} kit: {row.totalQty}
                                 </p>
                               </div>
                               {(() => {
