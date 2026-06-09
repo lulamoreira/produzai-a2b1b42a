@@ -282,7 +282,7 @@ export async function buildSupplierBudgetWorkbook(
     .replace(/\//g, "-");
 
   const nameParts = [
-    "Cotacao",
+    labels.exportFileNamePrefix,
     sanitizeCamp(params.campaignName),
     firstName(params.clientName),
     firstName(params.supplierName),
