@@ -1271,13 +1271,13 @@ export default function RateioTabV2({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuItem 
-                        onClick={() => exportMatrixExcelJS(filteredStores, filteredPieces, visibleQtyMap, campaign.name, filteredKits, activeKitPieces, undefined, [], [], pieces, agency?.name, client?.name)} 
+                        onClick={() => exportMatrixExcelJS(filteredStores, filteredPieces, visibleQtyMap, campaign.name, filteredKits, activeKitPieces, undefined, [], [], pieces, agency?.name, client?.name, undefined, undefined, activeTabData?.label)} 
                         className="text-xs py-2 cursor-pointer"
                       >
                         {t("rateio.exportRateio", "EXPORTAR RATEIO")}
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        onClick={() => exportRateioGrid(filteredPieces, filteredKits, activeKitPieces, filteredStores, visibleQtyMap, campaign.name, client.name, agency.name)} 
+                        onClick={() => exportRateioGrid(filteredPieces, filteredKits, activeKitPieces, filteredStores, visibleQtyMap, campaign.name, client.name, agency.name, "pieces_and_kits", undefined, activeTabData?.label)} 
                         className="text-xs py-2 cursor-pointer"
                       >
                         {t("rateio.exportByStore", "EXPORTAR RATEIO POR LOJA")}
