@@ -32,6 +32,7 @@ const SupplierInviteEmail = ({
   portalUrl = '#',
   deadline,
   timelineEntries = [],
+  locale = 'pt-BR',
 }: SupplierInviteProps) => {
   const deadlineDate = deadline ? new Date(deadline) : null
   const daysLeft = deadlineDate
