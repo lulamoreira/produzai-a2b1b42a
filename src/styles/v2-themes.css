@@ -1,111 +1,116 @@
-:root[data-v2-theme="light"], :root {
-  --v2-bg: #FAFAF9;
+/* ─── DEFAULTS (aplicados quando nenhum tema está ativo) ─── */
+
+:root {
+  --v2-bg: #FAF8F5;
   --v2-surface: #FFFFFF;
-  --v2-border: #E7E5E4;
-  --v2-text: #1C1917;
-  --v2-text-secondary: #78716C;
-  --v2-text-muted: #A8A29E;
+  --v2-border: #E2D9CE;
+  --v2-text: #1A1208;
+  --v2-text-secondary: #6B5744;
+  --v2-text-muted: #A8937E;
   --v2-accent: #C2714F;
-  --v2-accent-hover: #B06040;
-  --v2-sidebar-bg: #F5F5F4;
-  --v2-sidebar-text: #1C1917;
-  --v2-sidebar-muted: #57534E;
+  --v2-accent-hover: #A85A3C;
+  --v2-badge-bg: #F0EAE2;
+  --v2-badge-text: #5C3D2E;
+  --v2-sidebar-bg: #F2EDE6;
+  --v2-sidebar-text: #1A1208;
+  --v2-sidebar-muted: #9A8472;
   --v2-sidebar-active: #C2714F;
-  --v2-sidebar-border: #E7E5E4;
-  --v2-sidebar-hover-bg: #E7E5E4;
-  --v2-sidebar-active-bg: #FEF0EB;
-  --v2-sidebar-active-text: #FFFFFF;
-  --v2-sidebar-section-label: #1C1917;
-  --v2-sidebar-section-bg: transparent;
-  --v2-badge-bg: #F5F5F4;
-  --v2-badge-text: #44403C;
-  --v2-sidebar-separator: #E7E5E4;
+  --v2-sidebar-border: #D9CFC4;
+  --v2-sidebar-hover-bg: #E8E0D5;
+  --v2-sidebar-active-bg: #F9DDD2;
+  --v2-sidebar-active-text: #8B4A2E;
+  --v2-sidebar-section-label: #7A6454;
+  --v2-sidebar-section-bg: #E8E0D5;
 }
+
+/* ─── CLARO: tons terrosos claros, contrastes definidos ─── */
+
+:root[data-v2-theme="light"] {
+  --v2-bg: #FAF8F5;
+  --v2-surface: #FFFFFF;
+  --v2-border: #E2D9CE;
+  --v2-text: #1A1208;
+  --v2-text-secondary: #6B5744;
+  --v2-text-muted: #A8937E;
+  --v2-accent: #C2714F;
+  --v2-accent-hover: #A85A3C;
+  --v2-badge-bg: #F0EAE2;
+  --v2-badge-text: #5C3D2E;
+  --v2-sidebar-bg: #F2EDE6;
+  --v2-sidebar-text: #1A1208;
+  --v2-sidebar-muted: #9A8472;
+  --v2-sidebar-active: #C2714F;
+  --v2-sidebar-border: #D9CFC4;
+  --v2-sidebar-hover-bg: #E8E0D5;
+  --v2-sidebar-active-bg: #F9DDD2;
+  --v2-sidebar-active-text: #8B4A2E;
+  --v2-sidebar-section-label: #7A6454;
+  --v2-sidebar-section-bg: #E8E0D5;
+}
+
+/* ─── ESCURO: tons terrosos escuros, contrastes definidos ─── */
 
 :root[data-v2-theme="dark"] {
-  --v2-bg: #0C0A09;
-  --v2-surface: #1C1917;
-  --v2-border: #292524;
-  --v2-text: #FAFAF9;
-  --v2-text-secondary: #A8A29E;
-  --v2-text-muted: #57534E;
+  --v2-bg: #0E0B08;
+  --v2-surface: #1A1510;
+  --v2-border: #2E2520;
+  --v2-text: #F0EAE0;
+  --v2-text-secondary: #B8A898;
+  --v2-text-muted: #6B5C4E;
   --v2-accent: #E8956D;
-  --v2-accent-hover: #D4845C;
-  --v2-sidebar-bg: #0C0A09;
-  --v2-sidebar-text: #FAFAF9;
-  --v2-sidebar-muted: #78716C;
+  --v2-accent-hover: #D4784A;
+  --v2-badge-bg: #2E2520;
+  --v2-badge-text: #D4C4B0;
+  --v2-sidebar-bg: #0A0805;
+  --v2-sidebar-text: #F0EAE0;
+  --v2-sidebar-muted: #6B5C4E;
   --v2-sidebar-active: #E8956D;
-  --v2-sidebar-active-text: #FAFAF9;
-  --v2-sidebar-section-label: #FAFAF9;
-  --v2-sidebar-section-bg: rgba(255,255,255,0.05);
-  --v2-sidebar-separator: rgba(255,255,255,0.1);
-  --v2-badge-bg: #292524;
-  --v2-badge-text: #D6D3D1;
+  --v2-sidebar-border: #231E18;
+  --v2-sidebar-hover-bg: #1A1510;
+  --v2-sidebar-active-bg: #2E2018;
+  --v2-sidebar-active-text: #FFBF99;
+  --v2-sidebar-section-label: #8C7A6A;
+  --v2-sidebar-section-bg: #1A1510;
 }
+
+/* ─── MULTICOLORIDO: paleta diversa e vibrante, sidebar gradiente ─── */
 
 :root[data-v2-theme="multicolor"] {
-  --v2-bg: #F8F7FF;
+  --v2-bg: #F9F9F9;
   --v2-surface: #FFFFFF;
-  --v2-surface-raised: #F0EEFF;
-  --v2-border: #DDD6FE;
-  --v2-text: #1E1B4B;
-  --v2-text-secondary: #4C1D95;
-  --v2-text-muted: #8B5CF6;
+  --v2-border: #E0E0E0;
+  --v2-text: #111111;
+  --v2-text-secondary: #444444;
+  --v2-text-muted: #888888;
   --v2-accent: #F97316;
   --v2-accent-hover: #EA580C;
-  --v2-accent-foreground: #FFFFFF;
-
-  /* Sidebar vibrante com gradiente */
-  --v2-sidebar-bg: linear-gradient(160deg, #4F46E5 0%, #7C3AED 40%, #DB2777 100%);
+  --v2-badge-bg: #F3F4F6;
+  --v2-badge-text: #111111;
+  --v2-sidebar-bg: linear-gradient(175deg, #1E1B4B 0%, #5B21B6 30%, #BE185D 65%, #B91C1C 100%);
   --v2-sidebar-text: #FFFFFF;
-  --v2-sidebar-muted: rgba(255,255,255,0.55);
-  --v2-sidebar-section-label: rgba(255,255,255,0.95);
-  --v2-sidebar-section-bg: rgba(255,255,255,0.12);
-  --v2-sidebar-border: rgba(255,255,255,0.15);
-  --v2-sidebar-active-bg: rgba(255,255,255,0.22);
+  --v2-sidebar-muted: rgba(255,255,255,0.50);
+  --v2-sidebar-active: #FACC15;
+  --v2-sidebar-border: rgba(255,255,255,0.12);
+  --v2-sidebar-hover-bg: rgba(255,255,255,0.10);
+  --v2-sidebar-active-bg: rgba(255,255,255,0.20);
   --v2-sidebar-active-text: #FFFFFF;
-  --v2-sidebar-hover-bg: rgba(255,255,255,0.12);
-  --v2-sidebar-separator: rgba(255,255,255,0.15);
-
-  /* Cores vivas para ícones e destaques */
-  --v2-color-1: #FF6B35;
-  --v2-color-2: #22D3EE;
-  --v2-color-3: #4ADE80;
-  --v2-color-4: #FACC15;
-  --v2-color-5: #F472B6;
-  --v2-color-6: #60A5FA;
+  --v2-sidebar-section-label: rgba(255,255,255,0.90);
+  --v2-sidebar-section-bg: rgba(255,255,255,0.10);
+  --v2-color-1: #FB923C;
+  --v2-color-2: #34D399;
+  --v2-color-3: #60A5FA;
+  --v2-color-4: #E879F9;
+  --v2-color-5: #FBBF24;
+  --v2-color-6: #F87171;
   --v2-color-7: #A78BFA;
-  --v2-color-8: #34D399;
+  --v2-color-8: #2DD4BF;
 }
 
-/* Global overflow protection for v2 */
-.v2-mode *,
-[data-v2-theme] * {
-  min-width: 0;
-}
+/* ─── ESTILOS GLOBAIS ─── */
 
-.v2-mode .card,
-.v2-mode [role="dialog"],
-.v2-mode [data-radix-dialog-content] {
-  overflow: hidden;
-  word-break: break-word;
-  overflow-wrap: break-word;
-}
-
-/* Custom scrollbar for v2 */
-.v2-mode .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-
-.v2-mode .custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.v2-mode .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: var(--v2-border);
-  border-radius: 10px;
-}
-
-.v2-mode .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: var(--v2-text-muted);
-}
+.v2-mode *, [data-v2-theme] * { min-width: 0; }
+.v2-mode .card, .v2-mode [role="dialog"], .v2-mode [data-radix-dialog-content] { overflow: hidden; word-break: break-word; overflow-wrap: break-word; }
+.v2-mode .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+.v2-mode .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.v2-mode .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--v2-border); border-radius: 10px; }
+.v2-mode .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--v2-text-muted); }
