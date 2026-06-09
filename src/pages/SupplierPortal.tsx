@@ -1422,13 +1422,13 @@ const SupplierPortal = () => {
               {inNegotiation && negotiationTarget != null && (
                 <Card className={overTarget ? "border-red-300 bg-red-50 dark:bg-red-900/10" : "border-emerald-300 bg-emerald-50 dark:bg-emerald-900/10"}>
                   <CardContent className="p-4 space-y-2">
-                    <div className="flex items-center gap-2 font-semibold text-sm">🤝 NEGOCIAÇÃO EM ANDAMENTO</div>
-                    <p className="text-xs text-muted-foreground">A agência solicitou ajuste de proposta.</p>
-                    <div className="flex justify-between text-sm"><span>Teto máximo:</span><span className="font-bold">{fmt(negotiationTarget)}</span></div>
+                    <div className="flex items-center gap-2 font-semibold text-sm">{portal.negotiationTitle}</div>
+                    <p className="text-xs text-muted-foreground">{portal.negotiationSubtitle}</p>
+                    <div className="flex justify-between text-sm"><span>{portal.negotiationTarget}</span><span className="font-bold">{fmt(negotiationTarget)}</span></div>
                     <div className="flex justify-between text-sm">
-                      <span>Seu total atual:</span>
+                      <span>{portal.negotiationCurrentTotal}</span>
                       <span className={`font-bold ${overTarget ? "text-red-700 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400"}`}>
-                        {fmt(grandTotal)} ({overTarget ? "acima do teto" : "dentro do teto"})
+                        {fmt(grandTotal)} ({overTarget ? portal.negotiationOverTarget : portal.negotiationWithinTarget})
                       </span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
