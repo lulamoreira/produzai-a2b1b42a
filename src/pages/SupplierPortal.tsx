@@ -1234,7 +1234,7 @@ const SupplierPortal = () => {
                               <span className="px-2 text-xs font-medium text-muted-foreground">{currencyCode}</span>
                               <Input
                                 inputMode="decimal"
-                                placeholder="0,00"
+                                placeholder={labels.noPrice}
                                 data-price-input={__editableIndex}
                                 className="h-10 min-w-0 flex-1 border-0 bg-transparent px-2 text-right font-semibold text-foreground shadow-none focus-visible:ring-0"
                                 disabled={isLocked}
