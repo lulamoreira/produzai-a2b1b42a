@@ -3,7 +3,8 @@ import { Send, Loader2, X } from "lucide-react";
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, es } from "date-fns/locale";
+import { getLocaleFromCurrency } from "@/utils/currencyLocale";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
