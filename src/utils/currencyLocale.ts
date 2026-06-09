@@ -119,3 +119,41 @@ export function getMessageLabels(currency?: string) {
   const locale = getLocaleFromCurrency(currency);
   return supplierMessageLabels[locale];
 }
+
+export const supplierPortalLabels = {
+  "pt-BR": {
+    greeting: (name: string) => `Olá, ${name}! 👋`,
+    inviteText: (campaign: string, client: string) =>
+      `Você foi convidado(a) a participar do processo de cotação da campanha <strong>${campaign}</strong>${client ? ` do cliente ${client}` : ""}.`,
+    instructionPrice: `Preencha o <strong>preço unitário</strong> de cada peça abaixo. O total por peça será calculado automaticamente (preço unitário × quantidade total).`,
+    instructionExtras: `Ao final, informe os valores de <strong>instalação</strong> e <strong>embalagem / frete / despacho</strong>, se aplicáveis.`,
+    instructionSend: `Quando tudo estiver pronto, clique em <strong>ENVIAR ORÇAMENTO</strong>. Atenção: após o envio, os valores ficam <strong>bloqueados</strong> e não poderão ser alterados.`,
+    deadlineLabel: "📅 Prazo para envio:",
+    scheduleTitle: "📅 Cronograma da Campanha",
+    scheduleSubtitle: "Datas e entregas acordadas para esta campanha",
+    submitButton: "ENVIAR ORÇAMENTO",
+    waitingStatus: "Aguardando",
+    valuesIn: "Valores em",
+    daysLeft: (n: number) => `${n} dia${n !== 1 ? "s" : ""} restante${n !== 1 ? "s" : ""}`,
+  },
+  "es-CL": {
+    greeting: (name: string) => `¡Hola, ${name}! 👋`,
+    inviteText: (campaign: string, client: string) =>
+      `Has sido invitado/a a participar del proceso de cotización de la campaña <strong>${campaign}</strong>${client ? ` del cliente ${client}` : ""}.`,
+    instructionPrice: `Completa el <strong>precio unitario</strong> de cada ítem a continuación. El total por ítem se calculará automáticamente (precio unitario × cantidad total).`,
+    instructionExtras: `Al finalizar, ingresa los valores de <strong>instalación</strong> y <strong>embalaje / flete / despacho</strong>, si aplica.`,
+    instructionSend: `Cuando todo esté listo, haz clic en <strong>ENVIAR COTIZACIÓN</strong>. Atención: una vez enviados, los valores quedan <strong>bloqueados</strong> y no podrán modificarse.`,
+    deadlineLabel: "📅 Plazo de envío:",
+    scheduleTitle: "📅 Cronograma de la Campaña",
+    scheduleSubtitle: "Fechas y entregas acordadas para esta campaña",
+    submitButton: "ENVIAR COTIZACIÓN",
+    waitingStatus: "Esperando",
+    valuesIn: "Valores en",
+    daysLeft: (n: number) => `${n} día${n !== 1 ? "s" : ""} restante${n !== 1 ? "s" : ""}`,
+  },
+} as const;
+
+export function getSupplierPortalLabels(currency?: string) {
+  const locale = getLocaleFromCurrency(currency);
+  return supplierPortalLabels[locale];
+}
