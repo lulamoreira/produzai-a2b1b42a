@@ -1024,6 +1024,7 @@ export default function RateioTabV2({
 
   const handleExport = async () => {
     setIsExporting(true);
+    const toastId = toast.loading('Exportando modelo...');
     try {
       await exportRateioSpreadsheet({
         stores: filteredStores,
@@ -1032,10 +1033,10 @@ export default function RateioTabV2({
         kitQtyMap,
         campaignName: campaign?.name ?? 'campanha',
       });
-      toast.success('Planilha exportada com sucesso');
+      toast.success('Modelo exportado com sucesso', { id: toastId });
     } catch (err) {
       console.error(err);
-      toast.error('Erro ao exportar planilha');
+      toast.error('Erro ao exportar modelo', { id: toastId });
     } finally {
       setIsExporting(false);
     }
