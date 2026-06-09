@@ -1398,8 +1398,8 @@ const SupplierPortal = () => {
               </div>
               <div>
                 <label className="text-sm text-muted-foreground mb-1 block">Embalagem / Frete / Despacho (R$)</label>
-                <Input
-                  type="number" step="0.01" min="0" placeholder="0,00" disabled={isLocked}
+                  <Input
+                    type="number" step="0.01" min="0" placeholder={labels.noPrice} disabled={isLocked}
                   value={extraCosts.freight_value ?? ""}
                   onFocus={markFilling}
                   onChange={(e) => {
