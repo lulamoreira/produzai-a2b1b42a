@@ -113,6 +113,7 @@ export default function BudgetWinnerDialog({
       return;
     }
 
+    const locale = getLocaleFromCurrency(currencyCode);
     const timeline = [...timelineEntries]
       .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
       .map((e) => ({
