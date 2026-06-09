@@ -1248,7 +1248,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                 );
               })()}
               {budgetAmount != null && currencyCode !== "BRL" && (
-                <p className="text-[11px] text-muted-foreground mt-1">{fmtBRL(budgetAmount * exchangeRate)}</p>
+                <p className="text-[11px] text-muted-foreground mt-1">Ref. em Reais: {fmtBRL(budgetAmount * exchangeRate)}</p>
               )}
             </div>
 
