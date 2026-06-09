@@ -780,6 +780,7 @@ const SupplierPortal = () => {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 4000);
       if (isNeg) toast.success("Proposta ajustada enviada com sucesso!");
+      else toast.success(labels.successMsg);
     } catch (e) {
       console.error(e);
       const msg = e instanceof Error ? e.message : "Erro ao enviar cotação.";
