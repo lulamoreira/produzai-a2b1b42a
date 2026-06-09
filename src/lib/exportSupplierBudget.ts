@@ -230,10 +230,10 @@ export async function buildSupplierBudgetWorkbook(
       r.getCell(6).font = { bold: true };
     }
   };
-  addTotalRow("Total dos Itens", itemsTotal);
-  addTotalRow("Instalação", params.installation ?? 0);
-  addTotalRow("Frete / Despacho", params.freight ?? 0);
-  addTotalRow("TOTAL GERAL", params.grandTotal, true);
+  addTotalRow(labels.rowItemsTotal, itemsTotal);
+  addTotalRow(labels.rowInstallation, params.installation ?? 0);
+  addTotalRow(labels.rowFreight, params.freight ?? 0);
+  addTotalRow(labels.rowGrandTotal, params.grandTotal, true);
 
   ws.columns = [
     { width: 12 }, // Foto
