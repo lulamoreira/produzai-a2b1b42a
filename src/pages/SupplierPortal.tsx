@@ -1202,7 +1202,7 @@ const SupplierPortal = () => {
                                         }
                                       }}
                                       className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                                      title="Sugerir modificação"
+                                      title={portal.suggestModification}
                                     >
                                       <Edit2 className="w-3 h-3" />
                                     </button>
