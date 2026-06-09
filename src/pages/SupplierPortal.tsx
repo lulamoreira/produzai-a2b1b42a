@@ -865,7 +865,7 @@ const SupplierPortal = () => {
                    <span className="font-medium">{pricedPieces.length} {labels.columnItem.toLowerCase()}(s)</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Instalação</span>
+                  <span className="text-muted-foreground">{portal.installation}</span>
                   <span className="font-medium">{fmt(extraCosts.installation_value)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
