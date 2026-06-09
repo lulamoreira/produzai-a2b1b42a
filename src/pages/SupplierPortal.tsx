@@ -984,7 +984,7 @@ const SupplierPortal = () => {
               {deadline && (
                 <p>
                   {portal.deadlineLabel}{" "}
-                  {new Date(deadline).toLocaleDateString(currencyCode === "CLP" ? "es-CL" : "pt-BR")}
+                  {new Date(deadline).toLocaleDateString(dateLocale)}
                 </p>
               )}
             </div>
