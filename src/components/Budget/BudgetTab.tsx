@@ -240,9 +240,9 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const currencyCode = settingsTyped?.currency_code || "BRL";
   const currencyLocked = settingsTyped?.currency_locked === true;
   const fmtCurrency = (v: number | null | undefined) =>
-    v == null ? "—" : formatCurrencyByCode(v, currencyCode);
+    v == null ? "—" : `${currencyCode} ${formatCurrencyByCode(v, currencyCode)}`;
   const fmtBRL = (v: number | null | undefined) =>
-    v == null ? "—" : v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+    v == null ? "—" : `BRL ${v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}`;
 
   // Exchange rate for non-BRL currencies
   const { data: rateData, isLoading: rateLoading } = useExchangeRate(currencyCode);
