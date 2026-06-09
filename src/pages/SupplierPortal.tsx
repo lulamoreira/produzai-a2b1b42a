@@ -185,6 +185,8 @@ const SupplierPortal = () => {
   const [storeData, setStoreData] = useState<{ id: string; name: string; city?: string; state?: string; showcase_count?: number }[]>([]);
   const [fullQtyMap, setFullQtyMap] = useState<Record<string, number>>({});
 
+  const labels = useMemo(() => getSupplierLabels(currencyCode), [currencyCode]);
+
   // ─── Data fetching ─────────────────────────────────────
   useEffect(() => {
     if (!token) { setError("Link inválido."); setLoading(false); return; }
