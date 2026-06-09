@@ -1150,7 +1150,7 @@ const SupplierPortal = () => {
                                       <span className="text-sm font-semibold text-foreground">{fmt(unitSum)}</span>
                                     </div>
                                     <div className="text-right">
-                                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-tight">{labels.columnTotal} do kit</div>
+                                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-tight">{portal.totalPerKit}</div>
                                       <span className="text-sm font-semibold text-primary">
                                         {fmt(kitSectionTotals[row.kitId!] || 0)}
                                       </span>
