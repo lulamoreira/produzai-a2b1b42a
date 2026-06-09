@@ -947,8 +947,8 @@ const SupplierPortal = () => {
                   {daysLeft != null && daysLeft > 0
                     ? portal.daysLeft(daysLeft)
                     : daysLeft === 0
-                    ? (currencyCode === "CLP" ? "¡Último día!" : "Último dia!")
-                    : (currencyCode === "CLP" ? "Plazo cerrado" : "Prazo encerrado")}
+                    ? portal.lastDay
+                    : portal.closedStatus}
                 </div>
               )}
             </div>
