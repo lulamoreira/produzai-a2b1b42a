@@ -410,11 +410,12 @@ export function SidebarV2() {
   return (
     <aside
       className={cn(
-        "flex flex-col h-screen transition-all duration-300 ease-in-out z-30 border-r",
-        collapsed ? "w-16" : "w-[240px]"
+        "flex flex-col h-screen transition-all duration-300 ease-in-out z-30",
+        collapsed ? "w-16" : "w-[240px]",
+        theme === "light" ? "border-r" : "border-r-0"
       )}
       style={{ 
-        backgroundColor: 'var(--v2-sidebar-bg)', 
+        background: 'var(--v2-sidebar-bg)', 
         borderColor: 'var(--v2-sidebar-border)' 
       }}
     >
