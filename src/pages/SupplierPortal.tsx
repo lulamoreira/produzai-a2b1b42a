@@ -816,9 +816,9 @@ const SupplierPortal = () => {
           <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
             <AlertTriangle className="w-8 h-8 text-destructive" />
           </div>
-          <h1 className="text-xl font-bold text-foreground mb-2">{error || "Link inválido ou expirado"}</h1>
+          <h1 className="text-xl font-bold text-foreground mb-2">{error || portal.errorTitle}</h1>
           <p className="text-muted-foreground text-sm mb-4">
-            Caso acredite ser um erro, entre em contato com a agência responsável.
+            {portal.errorDetail}
           </p>
           <Button onClick={() => window.location.reload()} variant="outline">
             Tentar novamente
