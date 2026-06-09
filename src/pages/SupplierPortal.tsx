@@ -1383,7 +1383,7 @@ const SupplierPortal = () => {
                 />
               </div>
               <div>
-                <label className="text-sm text-muted-foreground mb-1 block">{currencyCode === "CLP" ? `Embalaje / Flete (${currencyCode})` : "Embalagem / Frete / Despacho (R$)"}</label>
+                <label className="text-sm text-muted-foreground mb-1 block">{portal.freight} ({currencyCode})</label>
                   <Input
                     type="number" step="0.01" min="0" placeholder={labels.noPrice} disabled={isLocked}
                   value={extraCosts.freight_value ?? ""}
