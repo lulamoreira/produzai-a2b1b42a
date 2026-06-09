@@ -87,6 +87,7 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
   const [impersonatingUserId, setImpersonatingUserId] = useState<string | null>(null);
   const [resettingPassword, setResettingPassword] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  const [sendingResetEmail, setSendingResetEmail] = useState(false);
   const [deletingUser, setDeletingUser] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -207,6 +208,22 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
       setNewPassword("");
     } catch (e: any) {
       toast.error(`Erro: ${e.message}`);
+    }
+  };
+  
+  const handleSendResetEmail = async () => {
+    setSendingResetEmail(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(userInfo.email || "", {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) throw error;
+      toast.success("E-mail de redefinição enviado com sucesso!");
+    } catch (e: any) {
+      toast.error(`Erro ao enviar e-mail: ${e.message}`);
+    } finally {
+      setSendingResetEmail(false);
     }
   };
 
@@ -412,6 +429,22 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
                         <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={sharePassword} disabled={!newPassword}>
                           <Share2 className="w-3.5 h-3.5" /> Compartilhar
                         </Button>
+                      </div>
+                      <div className="pt-2 border-t border-border mt-2">
+                        <Button 
+                          type="button" 
+                          size="sm" 
+                          variant="secondary" 
+                          className="w-full gap-2 bg-blue-50 text-blue-700 hover:bg-blue-100 border-blue-200"
+                          onClick={handleSendResetEmail}
+                          disabled={sendingResetEmail}
+                        >
+                          <Mail className="w-3.5 h-3.5" /> 
+                          {sendingResetEmail ? "Enviando..." : "Enviar link de redefinição por e-mail"}
+                        </Button>
+                        <p className="text-[10px] text-muted-foreground mt-1 text-center">
+                          O usuário receberá um link seguro para criar sua própria senha.
+                        </p>
                       </div>
                       <p className="text-[11px] text-muted-foreground">
                         Gera uma senha forte de 12 caracteres com maiúsculas, minúsculas, números e símbolos.
