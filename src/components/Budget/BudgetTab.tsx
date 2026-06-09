@@ -2420,7 +2420,7 @@ Qualquer dúvida, estamos à disposição.
 
       {/* ═══ SUPPLIER DETAIL SHEET ═══ */}
       <Sheet open={!!detailSupplier} onOpenChange={(o) => { if (!o) { setDetailSupplier(null); setShowOnlyMissing(false); } }}>
-        <SheetContent className="w-full sm:max-w-[min(96vw,1100px)] overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-[min(96vw,1100px)] overflow-y-auto max-h-screen">
           {(() => {
             const labels = getSupplierLabels(currencyCode);
             const missingCount = detailSupplier && supplierPartialTotals[detailSupplier] 
