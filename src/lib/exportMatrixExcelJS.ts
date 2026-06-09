@@ -782,9 +782,11 @@ export async function exportMatrixExcelJS(
     agencyName,
     clientName,
     storeFields,
+    extraHiddenStoreFields,
   });
 
   const buffer = await wb.xlsx.writeBuffer();
-  const fileName = `Rateio_${campaignName.replace(/[^a-zA-Z0-9]/g, "_")}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  const sourceSuffix = sourceLabel ? ` — ${sourceLabel}` : "";
+  const fileName = `Rateio_${campaignName.replace(/[^a-zA-Z0-9]/g, "_")}${sourceSuffix}_${new Date().toISOString().slice(0, 10)}.xlsx`;
   await saveXlsxAs(buffer as ArrayBuffer, fileName);
 }
