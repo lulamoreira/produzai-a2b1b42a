@@ -624,7 +624,7 @@ const SupplierPortal = () => {
           [pieceId]: { id: prev[pieceId]?.id || "temp", suggested_spec: suggestionDraft.trim(), orcado_por: suggestionOrcadoPor },
         }));
         setExpandedSuggestion(null);
-        toast.success("Sugestão salva!");
+        toast.success(portal.suggestionSaved);
       } catch (e: any) {
         console.error('SUGGESTION ERROR:', e);
         console.error('SUGGESTION ERROR MESSAGE:', e?.message);
