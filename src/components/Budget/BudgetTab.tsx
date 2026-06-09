@@ -2421,80 +2421,83 @@ Qualquer dúvida, estamos à disposição.
       {/* ═══ SUPPLIER DETAIL SHEET ═══ */}
       <Sheet open={!!detailSupplier} onOpenChange={(o) => { if (!o) { setDetailSupplier(null); setShowOnlyMissing(false); } }}>
         <SheetContent className="w-full sm:max-w-[min(96vw,1100px)] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              {detailSup?.company_name}
-              {detailSup?.locked && <Lock className="w-4 h-4 text-muted-foreground" />}
-              {detailSup?.locked && isAdminOrMaster && (
-                <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px]">Edição administrativa</Badge>
-              )}
-              {detailSup?.status === "enviado" && <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px]">Enviado</Badge>}
-            </SheetTitle>
-            <SheetDescription>
-              {detailSup?.contact_name} · {detailSup?.email} · {detailSup?.phone}
-            </SheetDescription>
-          </SheetHeader>
+          {(() => {
+            const labels = getSupplierLabels(currencyCode);
+            const missingCount = detailSupplier && supplierPartialTotals[detailSupplier] 
+              ? supplierPartialTotals[detailSupplier].totalPiecesNeeded - supplierPartialTotals[detailSupplier].pricedPieces
+              : 0;
 
-          {/* Resumo de preenchimento (sempre visível, mesmo em andamento) */}
-          {detailSupplier && supplierPartialTotals[detailSupplier] && (
-            <div className="mt-4 rounded-lg border border-border bg-muted/30 p-3 space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-muted-foreground font-medium">Preenchimento do fornecedor</span>
-                <span className="font-semibold text-foreground">
-                  {supplierPartialTotals[detailSupplier].pricedPieces}/{supplierPartialTotals[detailSupplier].totalPiecesNeeded} peças
-                  ({supplierPartialTotals[detailSupplier].pct}%)
-                </span>
-              </div>
-              <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
-                <div
-                  className={cn("h-full transition-all", detailSup?.status === "enviado" ? "bg-emerald-500" : "bg-primary")}
-                  style={{ width: `${supplierPartialTotals[detailSupplier].pct}%` }}
-                />
-              </div>
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-xs text-muted-foreground">
-                  {detailSup?.status === "enviado" ? "Total final" : "Total parcial (em preenchimento)"}
-                </span>
-                <span className={cn(
-                  "text-base font-bold",
-                  detailSup?.status === "enviado" ? "text-emerald-600 dark:text-emerald-400" : "text-primary"
-                )}>
-                  {fmtCurrency(supplierPartialTotals[detailSupplier].total)}
-                </span>
-              </div>
-              {(() => {
-                const missingCount = supplierPartialTotals[detailSupplier].totalPiecesNeeded - supplierPartialTotals[detailSupplier].pricedPieces;
-                return (
-                  <div className="flex justify-end pt-1">
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={showOnlyMissing ? "default" : "outline"}
-                      onClick={() => setShowOnlyMissing((v) => !v)}
-                      disabled={missingCount <= 0 && !showOnlyMissing}
-                      className="h-7 text-xs gap-1.5"
-                    >
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      {showOnlyMissing ? "Mostrar todas" : `Apenas sem preço (${missingCount})`}
-                    </Button>
+            return (
+              <>
+                <SheetHeader>
+                  <SheetTitle className="flex items-center gap-2">
+                    {detailSup?.company_name}
+                    {detailSup?.locked && <Lock className="w-4 h-4 text-muted-foreground" />}
+                    {detailSup?.locked && isAdminOrMaster && (
+                      <Badge className="bg-amber-100 text-amber-800 border-amber-200 text-[10px]">Edição administrativa</Badge>
+                    )}
+                    {detailSup?.status === "enviado" && <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 text-[10px]">Enviado</Badge>}
+                  </SheetTitle>
+                  <SheetDescription>
+                    {detailSup?.contact_name} · {detailSup?.email} · {detailSup?.phone}
+                  </SheetDescription>
+                </SheetHeader>
+
+                {/* Resumo de preenchimento (sempre visível, mesmo em andamento) */}
+                {detailSupplier && supplierPartialTotals[detailSupplier] && (
+                  <div className="mt-4 rounded-lg border border-border bg-muted/30 p-3 space-y-2">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground font-medium">{labels.fillTitle}</span>
+                      <span className="font-semibold text-foreground">
+                        {supplierPartialTotals[detailSupplier].pricedPieces}/{supplierPartialTotals[detailSupplier].totalPiecesNeeded} peças
+                        ({supplierPartialTotals[detailSupplier].pct}%)
+                      </span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={cn("h-full transition-all", detailSup?.status === "enviado" ? "bg-emerald-500" : "bg-primary")}
+                        style={{ width: `${supplierPartialTotals[detailSupplier].pct}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between pt-1">
+                      <span className="text-xs text-muted-foreground">
+                        {detailSup?.status === "enviado" ? "Total final" : labels.partialTotal}
+                      </span>
+                      <span className={cn(
+                        "text-base font-bold",
+                        detailSup?.status === "enviado" ? "text-emerald-600 dark:text-emerald-400" : "text-primary"
+                      )}>
+                        {fmtCurrency(supplierPartialTotals[detailSupplier].total)}
+                      </span>
+                    </div>
+                    <div className="flex justify-end pt-1">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={showOnlyMissing ? "default" : "outline"}
+                        onClick={() => setShowOnlyMissing((v) => !v)}
+                        disabled={missingCount <= 0 && !showOnlyMissing}
+                        className="h-7 text-xs gap-1.5"
+                      >
+                        <AlertCircle className="w-3.5 h-3.5" />
+                        {showOnlyMissing ? "Mostrar todas" : `${labels.onlyWithoutPrice} (${missingCount})`}
+                      </Button>
+                    </div>
                   </div>
-                );
-              })()}
-            </div>
-          )}
+                )}
 
-          <div className="mt-6 space-y-4">
-            {/* Pieces table */}
-            <div className="border rounded-md overflow-x-auto">
-              <Table className="w-full min-w-[560px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Peça</TableHead>
-                    <TableHead className="text-xs text-right w-20">Qtd</TableHead>
-                    <TableHead className="text-xs text-right w-28">Preço Unit.</TableHead>
-                    <TableHead className="text-xs text-right w-28">Total</TableHead>
-                  </TableRow>
-                </TableHeader>
+                <div className="mt-6 space-y-4">
+                  {/* Pieces table */}
+                  <div className="border rounded-md overflow-x-auto">
+                    <Table className="w-full min-w-[560px]">
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-xs">{labels.columnItem}</TableHead>
+                          <TableHead className="text-xs text-right w-20">{labels.columnQty}</TableHead>
+                          <TableHead className="text-xs text-right w-28">{labels.columnUnitPrice}</TableHead>
+                          <TableHead className="text-xs text-right w-28">{labels.columnTotal}</TableHead>
+                        </TableRow>
+                      </TableHeader>
                 <TableBody>
                   {(() => {
                     const codeKey = (c: any) => {
