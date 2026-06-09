@@ -727,7 +727,7 @@ const SupplierPortal = () => {
         .maybeSingle();
       if (updErr) throw updErr;
       if (!updated) {
-        throw new Error("Não foi possível registrar o envio. Atualize a página e tente novamente.");
+        throw new Error(currencyCode === "CLP" ? "No se pudo registrar el envío. Actualice la página e intente nuevamente." : "Não foi possível registrar o envio. Atualize a página e tente novamente.");
       }
 
       // Save snapshot
