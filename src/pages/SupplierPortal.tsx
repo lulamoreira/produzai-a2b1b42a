@@ -1285,7 +1285,7 @@ const SupplierPortal = () => {
                                       onChange={() => setSuggestionOrcadoPor("original")}
                                       className="accent-[#8C6F4E]"
                                     />
-                                    Especificação original
+                                    {portal.suggestOriginalSpec}
                                   </label>
                                   <label className="flex items-center gap-1.5 text-xs cursor-pointer">
                                     <input
