@@ -40,16 +40,59 @@ const NegotiationProposalEmail = ({
   locale = 'pt-BR',
 }: NegotiationProposalProps) => {
   const greeting = contactName || supplierName
+  
+  const translations = {
+    'pt-BR': {
+      subject: `Proposta negociada — ${clientName ? `${clientName} · ` : ''}${campaignName}`,
+      header_title: 'PROPOSTA NEGOCIADA',
+      h1: '📑 Proposta Negociada',
+      dear: 'Prezado(a)',
+      client: 'Cliente',
+      intro_1: 'Conforme nossa negociação para a campanha',
+      intro_2: ', segue em anexo a proposta com os valores acordados.',
+      label_original: 'Valor Original',
+      label_negotiated: 'Valor Negociado',
+      label_diff: 'Diferença',
+      label_diff_up: 'Diferença (para maior)',
+      label_diff_down: 'Diferença (para menor)',
+      label_files: '📎 Arquivos',
+      label_download: '📥 Baixar',
+      label_note: 'Este arquivo ficará disponível por 30 dias.',
+      label_regards: 'Atenciosamente',
+      label_team: 'Equipe',
+    },
+    'es-CL': {
+      subject: `Propuesta negociada — ${clientName ? `${clientName} · ` : ''}${campaignName}`,
+      header_title: 'PROPUESTA NEGOCIADA',
+      h1: '📑 Propuesta Negociada',
+      dear: 'Estimado(a)',
+      client: 'Cliente',
+      intro_1: 'Según nuestra negociación para la campaña',
+      intro_2: ', adjuntamos la propuesta con los valores acordados.',
+      label_original: 'Valor Original',
+      label_negotiated: 'Valor Negociado',
+      label_diff: 'Diferencia',
+      label_diff_up: 'Diferencia (a favor)',
+      label_diff_down: 'Diferencia (en contra)',
+      label_files: '📎 Archivos',
+      label_download: '📥 Descargar',
+      label_note: 'Este archivo estará disponible por 30 días.',
+      label_regards: 'Atentamente',
+      label_team: 'Equipo',
+    }
+  }[locale]
+
   const diffLabel =
     differenceDirection === 'up'
-      ? 'Diferença (para maior)'
+      ? translations.label_diff_up
       : differenceDirection === 'down'
-      ? 'Diferença (para menor)'
-      : 'Diferença'
+      ? translations.label_diff_down
+      : translations.label_diff
   const diffColor =
     differenceDirection === 'up' ? '#2F855A' : differenceDirection === 'down' ? '#C53030' : '#555555'
   const diffPrefix =
     differenceDirection === 'up' ? '+' : differenceDirection === 'down' ? '-' : ''
+
   return (
     <Html lang="pt-BR" dir="ltr">
       <Head />
