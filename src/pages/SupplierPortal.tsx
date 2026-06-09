@@ -1370,7 +1370,7 @@ const SupplierPortal = () => {
             <h3 className="font-semibold text-foreground">{portal.extraCostsTitle}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-muted-foreground mb-1 block">{currencyCode === "CLP" ? `Instalación (${currencyCode})` : "Instalação (R$)"}</label>
+                <label className="text-sm text-muted-foreground mb-1 block">{portal.installation} ({currencyCode})</label>
                   <Input
                     type="number" step="0.01" min="0" placeholder={labels.noPrice} disabled={isLocked}
                   value={extraCosts.installation_value ?? ""}
