@@ -90,7 +90,30 @@ export async function buildSupplierBudgetWorkbook(
   const ws = wb.addWorksheet(labels.worksheetName, { views: [{ showGridLines: false }] });
 
   // Title block (cols A:G now → 7 columns: Foto, Tipo, Código, Item, Qtd, Unit, Total)
-...
+  ws.mergeCells("A1:G1");
+  const t1 = ws.getCell("A1");
+  t1.value = [params.agencyName, params.clientName].filter(Boolean).join(" | ") || "ProduzAI";
+  t1.font = { name: "Arial", size: 10, color: { argb: WHITE } };
+  t1.fill = { type: "pattern", pattern: "solid", fgColor: { argb: DARK } };
+  t1.alignment = { horizontal: "center", vertical: "middle" };
+  ws.getRow(1).height = 20;
+
+  ws.mergeCells("A2:G2");
+  const t2 = ws.getCell("A2");
+  t2.value = (params.campaignName || "").toUpperCase();
+  t2.font = { name: "Arial", size: 14, bold: true, color: { argb: WHITE } };
+  t2.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
+  t2.alignment = { horizontal: "center", vertical: "middle" };
+  ws.getRow(2).height = 26;
+
+  ws.mergeCells("A3:G3");
+  const t3 = ws.getCell("A3");
+  t3.value = `${params.labels ? (params.currencyCode === "CLP" ? "Proveedor" : "Fornecedor") : "Fornecedor"}: ${params.supplierName}`;
+  t3.font = { name: "Arial", size: 11, bold: true, color: { argb: DARK } };
+  t3.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
+  t3.alignment = { horizontal: "center", vertical: "middle" };
+  ws.getRow(3).height = 22;
+
   ws.getRow(4).height = 6;
 
   // Header row
