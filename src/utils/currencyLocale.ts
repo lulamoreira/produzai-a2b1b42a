@@ -43,3 +43,79 @@ export function getSupplierLabels(currency?: string) {
   const locale = getLocaleFromCurrency(currency);
   return supplierQuoteLabels[locale];
 }
+
+export const supplierMessageLabels = {
+  "pt-BR": {
+    inviteSubject: "Convite para Cotação",
+    inviteGreeting: "Olá",
+    inviteIntro: "convidou",
+    inviteAction: "para participar do processo de cotação da campanha",
+    inviteLinkText: "Para acessar a planilha e preencher seus preços, acesse o link abaixo:",
+    inviteDeadline: "Prazo para envio",
+    inviteMaterials: "Material de apoio para download",
+    inviteInstructionsTitle: "Instruções:",
+    inviteInstructions: [
+      "Acesse o link acima",
+      "Preencha o preço unitário de cada peça",
+      "Informe os valores de instalação e embalagem / frete",
+      "Clique em ENVIAR quando concluir"
+    ],
+    inviteFooter: "Dúvidas? Entre em contato conosco.",
+    inviteTimelineTitle: "CRONOGRAMA DA CAMPANHA",
+    inviteTimelineAcceptance: "ATENÇÃO: Ao preencher e enviar a cotação, você confirma o aceite deste cronograma.",
+    negotiationSubject: "Solicitação de Ajuste de Proposta",
+    negotiationIntro: "Gostaríamos de solicitar um ajuste na sua proposta para a campanha",
+    negotiationCurrentTotal: "Total atual",
+    negotiationTarget: "Teto máximo desejado",
+    negotiationAction: "Por favor, acesse o portal para revisar os preços:",
+    negotiationFooter: "Você só conseguirá enviar a proposta ajustada se o total estiver dentro do teto definido.\n\nObrigado!",
+    winnerSubject: "Links de produção (peças aprovadas)",
+    winnerIntro: "Conforme alinhado, segue abaixo o material aprovado da campanha",
+    winnerIntroProduction: "para iniciarmos a produção:",
+    winnerMockupTitle: "Peças fechadas (mockup)",
+    winnerBookTitle: "Book de mockup",
+    winnerFooter: "Qualquer dúvida sobre arquivos, formatos ou cronograma, estamos à disposição.",
+    winnerRegards: "Atenciosamente",
+    winnerWaIntro: "Reenviando os links de produção da campanha",
+    winnerWaFooter: "Qualquer dúvida, estamos à disposição."
+  },
+  "es-CL": {
+    inviteSubject: "Invitación a Cotizar",
+    inviteGreeting: "Hola",
+    inviteIntro: "ha invitado a",
+    inviteAction: "a participar en el proceso de cotización de la campaña",
+    inviteLinkText: "Para acceder a la planilla y completar sus precios, ingrese al siguiente link:",
+    inviteDeadline: "Plazo de envío",
+    inviteMaterials: "Material de apoyo para descargar",
+    inviteInstructionsTitle: "Instrucciones:",
+    inviteInstructions: [
+      "Ingrese al link de arriba",
+      "Complete el precio unitario de cada ítem",
+      "Informe los valores de instalación y embalaje / flete",
+      "Haga clic en ENVIAR al terminar"
+    ],
+    inviteFooter: "¿Dudas? Póngase en contacto con nosotros.",
+    inviteTimelineTitle: "CRONOGRAMA DE LA CAMPAÑA",
+    inviteTimelineAcceptance: "ATENCIÓN: Al completar y enviar la cotización, usted confirma la aceptación de este cronograma.",
+    negotiationSubject: "Solicitud de Ajuste de Propuesta",
+    negotiationIntro: "Nos gustaría solicitar un ajuste en su propuesta para la campaña",
+    negotiationCurrentTotal: "Total actual",
+    negotiationTarget: "Techo máximo deseado",
+    negotiationAction: "Por favor, acceda al portal para revisar los precios:",
+    negotiationFooter: "Solo podrá enviar la propuesta ajustada si el total está dentro del techo definido.\n\n¡Gracias!",
+    winnerSubject: "Links de producción (ítems aprobados)",
+    winnerIntro: "Según lo acordado, adjuntamos el material aprobado de la campaña",
+    winnerIntroProduction: "para iniciar la producción:",
+    winnerMockupTitle: "Piezas finales (mockup)",
+    winnerBookTitle: "Book de mockup",
+    winnerFooter: "Cualquier duda sobre archivos, formatos o cronograma, estamos a su disposición.",
+    winnerRegards: "Atentamente",
+    winnerWaIntro: "Reenviando los links de producción de la campaña",
+    winnerWaFooter: "Cualquier duda, estamos a su disposición."
+  }
+} as const;
+
+export function getMessageLabels(currency?: string) {
+  const locale = getLocaleFromCurrency(currency);
+  return supplierMessageLabels[locale];
+}
