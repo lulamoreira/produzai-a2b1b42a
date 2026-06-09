@@ -1340,7 +1340,7 @@ const SupplierPortal = () => {
                                     </Button>
                                   )}
                                   <Button size="sm" variant="ghost" onClick={() => setExpandedSuggestion(null)}>
-                                    Cancelar
+                                    {portal.cancelBtn}
                                   </Button>
                                 </div>
                               </div>
