@@ -799,7 +799,7 @@ const SupplierPortal = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-primary font-medium">Carregando...</div>
+        <div className="animate-pulse text-primary font-medium">Cargando...</div>
       </div>
     );
   }
