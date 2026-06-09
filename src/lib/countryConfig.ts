@@ -121,12 +121,17 @@ export function getCountryConfig(countryCode?: string | null): CountryConfig {
 }
 
 export function formatCurrencyByCode(value: number, currencyCode?: string | null, locale?: string | null): string {
-  const config = Object.values(COUNTRY_CONFIGS).find(c => c.currency === (currencyCode || "BRL")) || COUNTRY_CONFIGS["BR"];
+  const currency = currencyCode || "BRL";
+  const config = Object.values(COUNTRY_CONFIGS).find(c => c.currency === currency) || COUNTRY_CONFIGS["BR"];
+  
+  // Chilean Peso (CLP) normally doesn't use decimals
+  const isCLP = currency === "CLP";
+  
   return value.toLocaleString(locale || config.currencyLocale, {
     style: "currency",
     currency: config.currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: isCLP ? 0 : 2,
+    maximumFractionDigits: isCLP ? 0 : 2,
   });
 }
 
