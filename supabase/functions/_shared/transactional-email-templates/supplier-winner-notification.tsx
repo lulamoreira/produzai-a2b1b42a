@@ -82,9 +82,9 @@ const SupplierWinnerEmail = ({
   }[locale]
 
   return (
-    <Html lang="pt-BR" dir="ltr">
+    <Html lang={locale === 'es-CL' ? 'es-CL' : 'pt-BR'} dir="ltr">
       <Head />
-      <Preview>Parabéns! Você venceu o certame — {campaignName}</Preview>
+      <Preview>{translations.preview}</Preview>
       <Body style={main}>
         {/* Dark header */}
         <Section style={headerDark}>
@@ -97,25 +97,23 @@ const SupplierWinnerEmail = ({
         </Section>
 
         <Container style={container}>
-          <Heading style={h1}>🏆 Parabéns, você venceu o certame!</Heading>
+          <Heading style={h1}>{translations.h1}</Heading>
 
           <Text style={text}>Olá <strong>{greeting}</strong>,</Text>
 
           <Text style={text}>
-            É com satisfação que comunicamos que <strong>{supplierName}</strong> foi
-            selecionado(a) como fornecedor vencedor da cotação para a campanha{' '}
-            <strong>{campaignName}</strong>. A partir de agora seguiremos com as próximas
-            etapas do processo.
+            {translations.intro_1} <strong>{supplierName}</strong> {translations.intro_2}{' '}
+            <strong>{campaignName}</strong>{translations.intro_3}
           </Text>
 
           {timeline.length > 0 && (
             <>
-              <Heading as="h2" style={h2}>📅 Cronograma da Campanha</Heading>
+              <Heading as="h2" style={h2}>{translations.timeline_title}</Heading>
               <table cellPadding={0} cellSpacing={0} width="100%" style={dataTable}>
                 <thead>
                   <tr>
-                    <th style={thDate}>Data</th>
-                    <th style={th}>Etapa</th>
+                    <th style={thDate}>{translations.th_date}</th>
+                    <th style={th}>{translations.th_step}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -132,14 +130,13 @@ const SupplierWinnerEmail = ({
 
           {mockupUrl && (
             <>
-              <Heading as="h2" style={h2}>📦 Peças Fechadas (Mockup)</Heading>
+              <Heading as="h2" style={h2}>{translations.mockup_title}</Heading>
               <Text style={text}>
-                Acesse o link abaixo para baixar as peças fechadas do mockup, que serão
-                a referência final para produção:
+                {translations.mockup_text}
               </Text>
               <Section style={ctaSection}>
                 <Button style={ctaButton} href={mockupUrl}>
-                  📥 Baixar peças do mockup
+                  {translations.mockup_cta}
                 </Button>
               </Section>
             </>
@@ -147,13 +144,13 @@ const SupplierWinnerEmail = ({
 
           {bookUrl && (
             <>
-              <Heading as="h2" style={h2}>📘 Book de Mockup</Heading>
+              <Heading as="h2" style={h2}>{translations.book_title}</Heading>
               <Text style={text}>
-                Acesse abaixo o book de mockup com a apresentação visual completa das peças:
+                {translations.book_text}
               </Text>
               <Section style={ctaSection}>
                 <Button style={ctaButton} href={bookUrl}>
-                  📖 Baixar book de mockup
+                  {translations.book_cta}
                 </Button>
               </Section>
             </>
@@ -161,16 +158,14 @@ const SupplierWinnerEmail = ({
 
           <Section style={infoBox}>
             <Text style={infoText}>
-              ✅ Solicitamos que confirme o recebimento deste e-mail e dê início à
-              produção conforme o cronograma acima. Em caso de dúvidas, responda este
-              e-mail diretamente.
+              {translations.info_box}
             </Text>
           </Section>
 
           <Hr style={hr} />
 
           <Text style={footer}>
-            Este comunicado foi enviado pela plataforma {SITE_NAME} em nome da{' '}
+            {translations.footer_sent_by} {SITE_NAME} {translations.footer_on_behalf}{' '}
             <strong>{agencyName}</strong>.
           </Text>
         </Container>
