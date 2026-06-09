@@ -1132,7 +1132,7 @@ const SupplierPortal = () => {
                               <PieceThumbnail url={row.image_url} />
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">Kit</Badge>
+                                  <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">{portal.kitLabel}</Badge>
                                   <span className="font-semibold text-sm">{row.name}</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-0.5">
