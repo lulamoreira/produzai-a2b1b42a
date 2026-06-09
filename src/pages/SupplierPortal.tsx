@@ -869,7 +869,7 @@ const SupplierPortal = () => {
                   <span className="font-medium">{fmt(extraCosts.installation_value)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Embalagem / Frete / Despacho</span>
+                  <span className="text-muted-foreground">{portal.freight}</span>
                   <span className="font-medium">{fmt(extraCosts.freight_value)}</span>
                 </div>
                 <div className="border-t pt-2 flex justify-between font-bold">
