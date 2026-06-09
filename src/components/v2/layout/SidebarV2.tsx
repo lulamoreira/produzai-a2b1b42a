@@ -653,20 +653,19 @@ export function SidebarV2() {
         </TooltipProvider>
       </nav>
 
-      {/* Footer */}
-      <div className="border-t border-stone-700 py-3 px-3">
+      <div className="border-t py-3 px-3" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
         <div className={cn(
           "flex items-center gap-3",
           collapsed ? "justify-center" : ""
         )}>
-          <Avatar className="w-8 h-8 rounded-full bg-brand-400">
-            <AvatarFallback className="bg-brand-400 text-white text-xs font-bold">
+          <Avatar className="w-8 h-8 rounded-full" style={{ backgroundColor: 'var(--v2-accent)' }}>
+            <AvatarFallback className="text-white text-xs font-bold" style={{ backgroundColor: 'var(--v2-accent)' }}>
               {userInitial}
             </AvatarFallback>
           </Avatar>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">
+              <p className="text-sm font-medium truncate" style={{ color: 'var(--v2-sidebar-text)' }}>
                 {user?.email?.split("@")[0]}
               </p>
             </div>
@@ -675,7 +674,8 @@ export function SidebarV2() {
             <Button
               variant="ghost"
               size="icon"
-              className="text-stone-400 hover:text-white hover:bg-stone-800"
+              className="hover:bg-white/10"
+              style={{ color: 'var(--v2-sidebar-muted)' }}
               onClick={() => signOut()}
             >
               <LogOut className="w-4 h-4" />
@@ -687,7 +687,8 @@ export function SidebarV2() {
             <Button
               variant="ghost"
               size="icon"
-              className="text-stone-400 hover:text-white hover:bg-stone-800"
+              className="hover:bg-white/10"
+              style={{ color: 'var(--v2-sidebar-muted)' }}
               onClick={() => signOut()}
               title={t("auth.logout")}
             >
