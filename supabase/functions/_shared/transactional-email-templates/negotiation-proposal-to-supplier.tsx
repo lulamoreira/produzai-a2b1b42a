@@ -94,44 +94,43 @@ const NegotiationProposalEmail = ({
     differenceDirection === 'up' ? '+' : differenceDirection === 'down' ? '-' : ''
 
   return (
-    <Html lang="pt-BR" dir="ltr">
+    <Html lang={locale === 'es-CL' ? 'es-CL' : 'pt-BR'} dir="ltr">
       <Head />
-      <Preview>Proposta negociada — {clientName ? `${clientName} · ` : ''}{campaignName}</Preview>
+      <Preview>{translations.subject}</Preview>
       <Body style={main}>
         <Section style={headerDark}>
           <Text style={headerDarkText}>{agencyName || SITE_NAME}</Text>
         </Section>
         <Section style={headerBrown}>
-          <Text style={headerBrownText}>PROPOSTA NEGOCIADA</Text>
+          <Text style={headerBrownText}>{translations.header_title}</Text>
         </Section>
 
         <Container style={container}>
-          <Heading style={h1}>📑 Proposta Negociada</Heading>
+          <Heading style={h1}>{translations.h1}</Heading>
 
-          <Text style={text}>Prezado(a) <strong>{greeting}</strong>,</Text>
+          <Text style={text}>{translations.dear} <strong>{greeting}</strong>,</Text>
 
           {clientName && (
             <Section style={clientBox}>
-              <Text style={clientLabel}>Cliente</Text>
+              <Text style={clientLabel}>{translations.client}</Text>
               <Text style={clientName_}>{clientName}</Text>
             </Section>
           )}
 
           <Text style={text}>
-            Conforme nossa negociação para a campanha <strong>{campaignName}</strong>,
-            segue em anexo a proposta com os valores acordados.
+            {translations.intro_1} <strong>{campaignName}</strong>{translations.intro_2}
           </Text>
 
           {(totalOriginalFormatted || totalNegotiatedFormatted) && (
             <Section style={summaryBox}>
               {totalOriginalFormatted && (
                 <Text style={summaryLine}>
-                  Valor Original: <strong>{totalOriginalFormatted}</strong>
+                  {translations.label_original}: <strong>{totalOriginalFormatted}</strong>
                 </Text>
               )}
               {totalNegotiatedFormatted && (
                 <Text style={summaryLine}>
-                  Valor Negociado: <strong>{totalNegotiatedFormatted}</strong>
+                  {translations.label_negotiated}: <strong>{totalNegotiatedFormatted}</strong>
                 </Text>
               )}
               {differenceFormatted && differenceDirection !== 'none' && (
@@ -144,23 +143,23 @@ const NegotiationProposalEmail = ({
 
           {downloadUrls.length > 0 && (
             <>
-              <Heading as="h2" style={h2}>📎 Arquivos</Heading>
+              <Heading as="h2" style={h2}>{translations.label_files}</Heading>
               {downloadUrls.map((d, i) => (
                 <Section key={i} style={ctaSection}>
                   <Button style={ctaButton} href={d.url}>
-                    📥 Baixar {d.name}
+                    {translations.label_download} {d.name}
                   </Button>
                 </Section>
               ))}
-              <Text style={smallNote}>Este arquivo ficará disponível por 30 dias.</Text>
+              <Text style={smallNote}>{translations.label_note}</Text>
             </>
           )}
 
           <Hr style={hr} />
 
           <Text style={footer}>
-            Atenciosamente,<br />
-            Equipe <strong>{agencyName || SITE_NAME}</strong>
+            {translations.label_regards},<br />
+            {translations.label_team} <strong>{agencyName || SITE_NAME}</strong>
           </Text>
         </Container>
       </Body>
