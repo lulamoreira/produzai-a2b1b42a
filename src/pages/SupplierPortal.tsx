@@ -284,7 +284,7 @@ const SupplierPortal = () => {
         setSupplier(sup as Supplier);
 
         if (deadlineExpired && sup.status === "prazo_encerrado" && !sup.locked) {
-          setError("O prazo para envio da cotação foi encerrado.");
+          setError(portal.errorDeadlineExpired);
           setLoading(false);
           return;
         }
