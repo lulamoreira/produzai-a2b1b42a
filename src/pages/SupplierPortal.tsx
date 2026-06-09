@@ -1404,8 +1404,8 @@ const SupplierPortal = () => {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">{labels.columnTotal} Geral {currencyCode === "CLP" ? "de la Cotización" : "da Cotação"}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">({labels.columnItem}s + {currencyCode === "CLP" ? "Instalación + Embalaje / Flete" : "Instalação + Embalagem / Frete"})</p>
+                <p className="text-sm text-muted-foreground">{labels.columnTotal} {portal.grandTotalBudget}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{portal.grandTotalFormula}</p>
               </div>
               <span className="text-2xl font-bold text-primary">{fmt(grandTotal)}</span>
             </div>
