@@ -946,10 +946,10 @@ const SupplierPortal = () => {
                 <div className={`flex items-center gap-1 text-sm ${daysLeft != null && daysLeft < 3 ? "text-red-200 font-bold" : "opacity-80"}`}>
                   <Clock className="w-4 h-4" />
                   {daysLeft != null && daysLeft > 0
-                    ? `${daysLeft} dia${daysLeft !== 1 ? "s" : ""} restante${daysLeft !== 1 ? "s" : ""}`
+                    ? portal.daysLeft(daysLeft)
                     : daysLeft === 0
-                    ? "Último dia!"
-                    : "Prazo encerrado"}
+                    ? (currencyCode === "CLP" ? "¡Último día!" : "Último dia!")
+                    : (currencyCode === "CLP" ? "Plazo cerrado" : "Prazo encerrado")}
                 </div>
               )}
             </div>
