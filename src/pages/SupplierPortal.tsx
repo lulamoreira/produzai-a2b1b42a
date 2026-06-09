@@ -215,11 +215,11 @@ const SupplierPortal = () => {
 
         if (supErr) {
           console.error("[SupplierPortal] Erro ao buscar fornecedor:", supErr);
-          setError("Não foi possível validar o link. Verifique sua conexão e tente novamente.");
+          setError(portal.errorValidateLink);
           setLoading(false);
           return;
         }
-        if (!sup) { setError("Link inválido ou expirado."); setLoading(false); return; }
+        if (!sup) { setError(portal.errorTitle); setLoading(false); return; }
 
         // 2) Budget settings (não-crítico)
         const settings = await trySoft(
