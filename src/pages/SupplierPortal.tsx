@@ -872,7 +872,7 @@ const SupplierPortal = () => {
                   <span className="font-medium">{fmt(extraCosts.freight_value)}</span>
                 </div>
                 <div className="border-t pt-2 flex justify-between font-bold">
-                  <span>Total Geral</span>
+                  <span>{labels.columnTotal} Geral</span>
                   <span className="text-primary">{fmt(grandTotal)}</span>
                 </div>
               </CardContent>
