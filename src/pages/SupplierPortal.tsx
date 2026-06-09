@@ -886,7 +886,7 @@ const SupplierPortal = () => {
                 className="gap-2"
               >
                 <Download className="w-4 h-4" />
-                {downloadingExcel ? "Gerando planilha..." : "Baixar cópia da planilha"}
+                {downloadingExcel ? portal.generatingExcel : portal.downloadExcel}
               </Button>
               <p className="text-xs text-muted-foreground max-w-sm">
                 A planilha enviada está bloqueada. Guarde esta cópia para seus registros — os valores não poderão ser alterados.
