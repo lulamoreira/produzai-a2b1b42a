@@ -1113,7 +1113,7 @@ const SupplierPortal = () => {
                     <TableHead className="sticky left-0 z-[5] bg-card w-[46%] min-w-[300px]">{labels.columnItem}</TableHead>
                     <TableHead className="text-center w-[12%] min-w-[92px]">{labels.columnQty} Total</TableHead>
                     <TableHead className="text-center w-[24%] min-w-[190px] bg-primary/5 text-primary font-semibold">{labels.columnUnitPrice} ({currencyCode})</TableHead>
-                    <TableHead className="text-right w-[18%] min-w-[150px]">{labels.columnTotal} da Peça</TableHead>
+                    <TableHead className="text-right w-[18%] min-w-[150px]">{labels.columnTotal}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
