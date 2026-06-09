@@ -186,6 +186,7 @@ const SupplierPortal = () => {
   const [fullQtyMap, setFullQtyMap] = useState<Record<string, number>>({});
 
   const labels = useMemo(() => getSupplierLabels(currencyCode), [currencyCode]);
+  const portal = useMemo(() => getSupplierPortalLabels(currencyCode), [currencyCode]);
 
   // ─── Data fetching ─────────────────────────────────────
   useEffect(() => {
