@@ -1275,7 +1275,7 @@ const SupplierPortal = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm font-semibold text-primary">
-                            {unitPrice != null ? fmt(lineTotal) : <span className="text-muted-foreground font-normal">—</span>}
+                            {unitPrice != null ? fmt(lineTotal) : <span className="text-muted-foreground font-normal">{labels.noPrice}</span>}
                           </TableCell>
                         </TableRow>
                         {/* Inline suggestion form */}
