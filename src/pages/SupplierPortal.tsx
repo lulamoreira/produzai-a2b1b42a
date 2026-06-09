@@ -976,31 +976,17 @@ const SupplierPortal = () => {
         <Card>
           <CardContent className="p-5">
             <h2 className="text-lg font-semibold text-foreground mb-2">
-              Olá, {supplier.contact_name}! 👋
+              {portal.greeting(supplier.contact_name)}
             </h2>
             <div className="text-sm text-muted-foreground space-y-2 leading-relaxed">
-              <p>
-                Você foi convidado(a) a participar do processo de cotação da campanha{" "}
-                <strong className="text-foreground">{campaignName}</strong>
-                {clientName ? ` do cliente ${clientName}` : ""}.
-              </p>
-              <p>
-                Preencha o <strong>preço unitário</strong> de cada peça abaixo. O total por peça será
-                calculado automaticamente (preço unitário × quantidade total).
-              </p>
-              <p>
-                Ao final, informe os valores de <strong>instalação</strong> e{" "}
-                <strong>embalagem / frete / despacho</strong>, se aplicáveis.
-              </p>
-              <p>
-                Quando tudo estiver pronto, clique em{" "}
-                <strong className="text-primary">ENVIAR ORÇAMENTO</strong>. Atenção: após o envio,
-                os valores ficam <strong>bloqueados</strong> e não poderão ser alterados.
-              </p>
+              <p dangerouslySetInnerHTML={{ __html: portal.inviteText(campaignName, clientName) }} />
+              <p dangerouslySetInnerHTML={{ __html: portal.instructionPrice }} />
+              <p dangerouslySetInnerHTML={{ __html: portal.instructionExtras }} />
+              <p dangerouslySetInnerHTML={{ __html: portal.instructionSend }} />
               {deadline && (
                 <p>
-                  📅 <strong>Prazo para envio:</strong>{" "}
-                  {new Date(deadline).toLocaleDateString("pt-BR")}
+                  {portal.deadlineLabel}{" "}
+                  {new Date(deadline).toLocaleDateString(currencyCode === "CLP" ? "es-CL" : "pt-BR")}
                 </p>
               )}
             </div>
