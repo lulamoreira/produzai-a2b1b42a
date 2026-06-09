@@ -1272,7 +1272,7 @@ const SupplierPortal = () => {
                                 <Textarea
                                   value={suggestionDraft}
                                   onChange={(e) => setSuggestionDraft(e.target.value)}
-                                  placeholder="Sua sugestão de modificação na especificação..."
+                                  placeholder={portal.suggestionPlaceholder}
                                   className="text-sm min-h-[60px]"
                                 />
                                 <div className="flex items-center gap-4">
