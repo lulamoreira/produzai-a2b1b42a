@@ -1023,7 +1023,7 @@ const SupplierPortal = () => {
               <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5">
                 <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
                 <p className="text-sm text-warning leading-relaxed">
-                  <strong>{currencyCode === "CLP" ? "Atención:" : "Atenção:"}</strong> {portal.scheduleAcceptance}
+                  <strong>{portal.scheduleAttention}</strong> {portal.scheduleAcceptance}
                 </p>
               </div>
             </CardContent>
