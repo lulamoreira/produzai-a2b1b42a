@@ -703,7 +703,7 @@ const SupplierPortal = () => {
       });
     } catch (e) {
       console.error("Excel export error:", e);
-      toast.error("Erro ao gerar planilha.");
+      toast.error(currencyCode === "CLP" ? "Error al generar planilla." : "Erro ao gerar planilha.");
     } finally {
       setDownloadingExcel(false);
     }
