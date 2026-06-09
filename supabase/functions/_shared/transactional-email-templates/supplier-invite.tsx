@@ -39,8 +39,56 @@ const SupplierInviteEmail = ({
     ? Math.ceil((deadlineDate.getTime() - Date.now()) / 86400000)
     : null
   const deadlineStr = deadlineDate
-    ? deadlineDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    ? deadlineDate.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : null
+  
+  const translations = {
+    'pt-BR': {
+      subject: `Convite para cotação — ${campaignName}`,
+      heading: 'Convite para Cotação',
+      greeting: 'Olá',
+      intro_a: 'A',
+      intro_b: 'está convidando a',
+      intro_c: 'para participar do processo de cotação da campanha',
+      instructions: 'Para acessar a planilha de cotação e preencher seus preços, siga as instruções abaixo:',
+      step1: 'Acesse o link abaixo para abrir o portal de cotação',
+      step2: 'Preencha o preço unitário de cada peça/kit',
+      step3: 'Informe os valores de instalação e frete',
+      step4: 'Clique em ENVIAR quando concluir a cotação',
+      cta: 'ACESSAR COTAÇÃO',
+      deadline: 'Prazo para envio',
+      today: 'HOJE!',
+      missing_days: (d: number) => `faltam ${d} dia${d > 1 ? 's' : ''}!`,
+      timeline_title: 'Cronograma da Campanha',
+      timeline_acceptance: '⚠ Ao preencher e enviar o orçamento, você confirma o aceite deste cronograma.',
+      footer_sent_by: 'Este convite foi enviado pela plataforma',
+      footer_on_behalf: 'em nome da',
+      footer_disregard: 'Se você recebeu este email por engano, por favor desconsidere.',
+    },
+    'es-CL': {
+      subject: `Invitación a cotizar — ${campaignName}`,
+      heading: 'Invitación a Cotizar',
+      greeting: 'Hola',
+      intro_a: 'La agencia',
+      intro_b: 'ha invitado a',
+      intro_c: 'a participar en el proceso de cotización de la campaña',
+      instructions: 'Para acceder a la planilla de cotización y completar sus precios, siga las instrucciones abajo:',
+      step1: 'Acceda al link abajo para abrir el portal de cotización',
+      step2: 'Complete el precio unitario de cada ítem/kit',
+      step3: 'Informe los valores de instalación y flete',
+      step4: 'Haga clic en ENVIAR al concluir la cotización',
+      cta: 'ACCEDER A COTIZACIÓN',
+      deadline: 'Plazo de envío',
+      today: '¡HOY!',
+      missing_days: (d: number) => `faltan ${d} día${d > 1 ? 's' : ''}!`,
+      timeline_title: 'Cronograma de la Campaña',
+      timeline_acceptance: '⚠ Al completar y enviar el presupuesto, usted confirma la aceptación de este cronograma.',
+      footer_sent_by: 'Esta invitación fue enviada por la plataforma',
+      footer_on_behalf: 'en nombre de',
+      footer_disregard: 'Si recibió este correo por error, por favor desconsidérelo.',
+    }
+  }[locale]
+
   const isUrgent = daysLeft != null && daysLeft <= 3
 
   return (
