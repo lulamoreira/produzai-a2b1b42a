@@ -1463,7 +1463,7 @@ const SupplierPortal = () => {
                   title={overTarget ? "Total acima do teto máximo" : undefined}
                 >
                   <Send className="w-5 h-5 mr-2" />
-                  {inNegotiation ? "ENVIAR PROPOSTA AJUSTADA" : "ENVIAR ORÇAMENTO"}
+                  {inNegotiation ? "ENVIAR PROPOSTA AJUSTADA" : labels.submitQuote.toUpperCase()}
                 </Button>
               </div>
             </div>
