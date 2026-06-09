@@ -865,8 +865,8 @@ const SupplierPortal = () => {
             <Card className="text-left">
               <CardContent className="p-4 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{labels.columnItem}s cotados</span>
-                  <span className="font-medium">{pricedPieces.length} {labels.columnItem.toLowerCase()}(s)</span>
+                   <span className="text-muted-foreground">{labels.columnItem}s {portal.quotedItems}</span>
+                   <span className="font-medium">{pricedPieces.length} {labels.columnItem.toLowerCase()}(s)</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Instalação</span>
