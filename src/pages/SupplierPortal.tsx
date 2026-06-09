@@ -1276,7 +1276,7 @@ const SupplierPortal = () => {
                                   className="text-sm min-h-[60px]"
                                 />
                                 <div className="flex items-center gap-4">
-                                  <span className="text-xs font-medium text-muted-foreground">Orçando pela:</span>
+                                  <span className="text-xs font-medium text-muted-foreground">{portal.suggestOrcadoPor}</span>
                                   <label className="flex items-center gap-1.5 text-xs cursor-pointer">
                                     <input
                                       type="radio"
