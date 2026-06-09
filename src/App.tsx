@@ -310,12 +310,12 @@ const App = () => (
                   <Route path="/suppliers" element={<ProtectedRoute><AgencySuppliers /></ProtectedRoute>} />
                   <Route path="/agency/:agencyId/suppliers" element={<ProtectedRoute><AgencySuppliers /></ProtectedRoute>} />
                   <Route path="/favorites" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
-                  <Route path="/installer" element={<ErrorBoundary><InstallerPortal /></ErrorBoundary>} />
-                  <Route path="/instalador" element={<ErrorBoundary><InstallerPortal /></ErrorBoundary>} />
+                  <Route path="/installer" element={<InstallerPortal />} />
+                  <Route path="/instalador" element={<InstallerPortal />} />
                   <Route path="/orcamento/:token" element={<SupplierPortal />} />
                   <Route path="/recotacao/:token" element={<AdjustmentRequotePortal />} />
                   <Route path="/convite/fornecedor/:token" element={<SupplierInvitePortal />} />
-                  <Route path="/loja/:token" element={<ErrorBoundary><StorePortal /></ErrorBoundary>} />
+                  <Route path="/loja/:token" element={<StorePortal />} />
                   <Route path="/ocorrencias-portal/:campaignId" element={<OccurrencesPortal />} />
                   <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
                   <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
