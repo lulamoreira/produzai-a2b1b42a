@@ -1620,9 +1620,11 @@ Qualquer dúvida, estamos à disposição.
       {currencyCode !== "BRL" && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground -mt-2">
           <span>
-            Cotação: 1 {currencyCode} = {fmtBRL(exchangeRate)}
-            {rateData?.updatedAt ? ` · Atualizado em ${rateData.updatedAt}` : ""}
-            {" · Fonte: AwesomeAPI"}
+            Cotação: 1 {currencyCode} = {exchangeRate < 0.1 
+              ? `R$ ${exchangeRate.toLocaleString("pt-BR", { minimumFractionDigits: 4, maximumFractionDigits: 4 })}`
+              : fmtBRL(exchangeRate).replace("BRL ", "")}
+            {rateData?.updatedAt ? ` · Atualizado às ${rateData.updatedAt}` : ""}
+            {` · Fonte: ${(rateData as any)?.source || "AwesomeAPI"}`}
           </span>
           <Button
             variant="ghost"
