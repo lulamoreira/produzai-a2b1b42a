@@ -455,7 +455,7 @@ const SupplierPortal = () => {
       } catch (e: unknown) {
         console.error("[SupplierPortal] Erro crítico ao carregar:", e);
         const msg = e instanceof Error ? e.message : String(e);
-        setError(`Não foi possível carregar a cotação. ${msg ? `Detalhe: ${msg}. ` : ""}Recarregue a página ou tente novamente mais tarde.`);
+        setError(`${portal.errorCritical} ${msg ? portal.errorCriticalDetail(msg) : ""} ${portal.errorDetail}`);
       } finally {
         setLoading(false);
       }
