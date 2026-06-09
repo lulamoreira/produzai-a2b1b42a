@@ -1329,7 +1329,7 @@ const SupplierPortal = () => {
                                             return next;
                                           });
                                           setExpandedSuggestion(null);
-                                          toast.success("Sugestão removida. Especificação original restaurada.");
+                                          toast.success(portal.suggestionRemoved);
                                         } catch (e: any) {
                                           toast.error(`Erro: ${e?.message || JSON.stringify(e)}`);
                                         }
