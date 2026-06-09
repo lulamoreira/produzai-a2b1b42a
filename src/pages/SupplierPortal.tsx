@@ -1481,7 +1481,7 @@ const SupplierPortal = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{labels.cancelBtn}</AlertDialogCancel>
             <AlertDialogAction onClick={() => { setShowConfirm1(false); setShowConfirm2(true); }}>
               Sim, revisei
             </AlertDialogAction>
