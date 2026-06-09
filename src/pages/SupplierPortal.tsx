@@ -1182,7 +1182,7 @@ const SupplierPortal = () => {
                                   <Badge variant="outline" className="text-[10px] shrink-0">#{row.code}</Badge>
                                   <span className="font-medium text-sm break-words whitespace-normal">{row.name}</span>
                                   {hasSuggestion && (
-                                    <Badge className="bg-warning/15 text-warning border-warning/30 text-[9px]">Modificação sugerida</Badge>
+                                    <Badge className="bg-warning/15 text-warning border-warning/30 text-[9px]">{portal.suggestModificationActive}</Badge>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1 mt-0.5">
