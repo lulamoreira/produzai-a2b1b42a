@@ -821,7 +821,7 @@ const SupplierPortal = () => {
             {portal.errorDetail}
           </p>
           <Button onClick={() => window.location.reload()} variant="outline">
-            Tentar novamente
+            {currencyCode === "CLP" ? "Intentar nuevamente" : "Tentar novamente"}
           </Button>
         </div>
       </div>
