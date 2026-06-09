@@ -766,10 +766,10 @@ const SupplierPortal = () => {
           _campaign_id: supplier.campaign_id,
           _client_id: clientId,
           _type: "orcamento_enviado",
-          _title: isNeg ? "Proposta ajustada recebida" : "Cotação recebida",
+          _title: isNeg ? portal.negotiationSubmittedTitle : portal.quoteSubmittedTitle,
           _body: isNeg
-            ? `${supplier.company_name} enviou a proposta ajustada para a campanha ${campaignName}.`
-            : `${supplier.company_name} enviou a cotação para a campanha ${campaignName}.`,
+            ? portal.negotiationSubmittedBody(supplier.company_name, campaignName)
+            : portal.quoteSubmittedBody(supplier.company_name, campaignName),
           _action_url: `/agency/${agencyId}/clients/${clientId}/campaigns/${supplier.campaign_id}?section=budgets`,
         });
       }
