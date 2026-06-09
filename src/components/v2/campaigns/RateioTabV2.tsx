@@ -1024,6 +1024,7 @@ export default function RateioTabV2({
 
   const handleExport = async () => {
     setIsExporting(true);
+    const toastId = toast.loading('Exportando modelo...');
     try {
       await exportRateioSpreadsheet({
         stores: filteredStores,
@@ -1032,10 +1033,10 @@ export default function RateioTabV2({
         kitQtyMap,
         campaignName: campaign?.name ?? 'campanha',
       });
-      toast.success('Planilha exportada com sucesso');
+      toast.success('Modelo exportado com sucesso', { id: toastId });
     } catch (err) {
       console.error(err);
-      toast.error('Erro ao exportar planilha');
+      toast.error('Erro ao exportar modelo', { id: toastId });
     } finally {
       setIsExporting(false);
     }
@@ -1271,13 +1272,61 @@ export default function RateioTabV2({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
                       <DropdownMenuItem 
-                        onClick={() => exportMatrixExcelJS(filteredStores, filteredPieces, visibleQtyMap, campaign.name, filteredKits, activeKitPieces, undefined, [], [], pieces, agency?.name, client?.name, undefined, undefined, activeTabData?.label)} 
+                        onClick={async () => {
+                          const toastId = toast.loading('Gerando exportação de rateio...');
+                          try {
+                            await exportMatrixExcelJS(
+                              filteredStores, 
+                              filteredPieces, 
+                              visibleQtyMap, 
+                              campaign.name, 
+                              filteredKits, 
+                              activeKitPieces, 
+                              undefined, 
+                              [], 
+                              [], 
+                              pieces, 
+                              agency?.name, 
+                              client?.name, 
+                              undefined, 
+                              undefined, 
+                              activeTabData?.label
+                            );
+                            toast.success('Rateio exportado com sucesso', { id: toastId });
+                          } catch (err) {
+                            console.error(err);
+                            toast.error('Erro ao exportar rateio', { id: toastId });
+                          }
+                        }} 
                         className="text-xs py-2 cursor-pointer"
                       >
                         {t("rateio.exportRateio", "EXPORTAR RATEIO")}
                       </DropdownMenuItem>
                       <DropdownMenuItem 
-                        onClick={() => exportRateioGrid(filteredPieces, filteredKits, activeKitPieces, filteredStores, visibleQtyMap, campaign.name, client.name, agency.name, "pieces_and_kits", undefined, activeTabData?.label)} 
+                        onClick={async () => {
+                          const toastId = toast.loading('Iniciando exportação por loja...');
+                          try {
+                            await exportRateioGrid(
+                              filteredPieces, 
+                              filteredKits, 
+                              activeKitPieces, 
+                              filteredStores, 
+                              visibleQtyMap, 
+                              campaign.name, 
+                              client.name, 
+                              agency.name, 
+                              "pieces_and_kits", 
+                              (current, total, storeName) => {
+                                toast.loading(`Exportando loja ${current} de ${total}: ${storeName}`, { id: toastId });
+                              }, 
+                              activeTabData?.label
+                            );
+                            toast.success('Exportação por loja concluída', { id: toastId });
+                          } catch (err) {
+                            console.error(err);
+                            toast.error('Erro ao exportar rateio por loja', { id: toastId });
+                          }
+                        }} 
                         className="text-xs py-2 cursor-pointer"
                       >
                         {t("rateio.exportByStore", "EXPORTAR RATEIO POR LOJA")}
