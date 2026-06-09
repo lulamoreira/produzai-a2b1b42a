@@ -851,7 +851,7 @@ const SupplierPortal = () => {
             <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="w-10 h-10 text-success" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-3">Cotação Enviada!</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-3">{labels.successMsg}</h1>
             <p className="text-muted-foreground mb-6">
               Obrigado, {supplier.contact_name}! A cotação de{" "}
               <strong>{supplier.company_name}</strong> para a campanha{" "}
