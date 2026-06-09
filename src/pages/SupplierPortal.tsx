@@ -783,7 +783,7 @@ const SupplierPortal = () => {
       setSubmitted(true);
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 4000);
-      if (isNeg) toast.success("Proposta ajustada enviada com sucesso!");
+      if (isNeg) toast.success(portal.negotiationSuccess);
       else toast.success(labels.successMsg);
     } catch (e) {
       console.error(e);
