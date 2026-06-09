@@ -1550,26 +1550,27 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                       const ccEmail = settingsAny?.winner_cc_email || "";
                       const canShare = !!mockup;
                       const greetingName = sup.contact_name || sup.company_name;
-                      const subject = `${campaignName} — Links de produção (peças aprovadas)`;
+                      const msgLabels = getMessageLabels(currencyCode);
+                      const subject = `${campaignName} — ${msgLabels.winnerSubject}`;
                       const body =
-`Olá ${greetingName},
+`${msgLabels.inviteGreeting} ${greetingName},
 
-Conforme alinhado, segue abaixo o material aprovado da campanha ${campaignName} para iniciarmos a produção:
+${msgLabels.winnerIntro} ${campaignName} ${msgLabels.winnerIntroProduction}
 
-🎨 Peças fechadas (mockup):
+🎨 ${msgLabels.winnerMockupTitle}:
 ${mockup}
-${book ? `\n📘 Book de mockup:\n${book}\n` : ""}
-Qualquer dúvida sobre arquivos, formatos ou cronograma, estamos à disposição.
+${book ? `\n📘 ${msgLabels.winnerBookTitle}:\n${book}\n` : ""}
+${msgLabels.winnerFooter}
 
-Atenciosamente,
+${msgLabels.winnerRegards},
 ${agencyName}`;
                       const waMsg =
-`Olá ${greetingName}! Reenviando os links de produção da campanha *${campaignName}*:
+`${msgLabels.inviteGreeting} ${greetingName}! ${msgLabels.winnerWaIntro} *${campaignName}*:
 
-🎨 Peças fechadas (mockup):
-${mockup}${book ? `\n\n📘 Book de mockup:\n${book}` : ""}
+🎨 ${msgLabels.winnerMockupTitle}:
+${mockup}${book ? `\n\n📘 ${msgLabels.winnerBookTitle}:\n${book}` : ""}
 
-Qualquer dúvida, estamos à disposição.
+${msgLabels.winnerWaFooter}
 — ${agencyName}`;
                       const mailtoHref = `mailto:${sup.email}${ccEmail ? `?cc=${encodeURIComponent(ccEmail)}&` : "?"}subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
                       const phone = (sup.phone || "").replace(/\D/g, "");
