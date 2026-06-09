@@ -2,6 +2,7 @@ import { saveBlobAs } from "@/lib/saveBlobAs";
 import { buildExportFileName } from "@/lib/exportFileName";
 import { fetchImageBytes, type RateioImageCache } from "@/lib/rateioGridShared";
 import { appendMatrixSheets } from "@/lib/exportMatrixExcelJS";
+import { getSupplierExcelLabels } from "@/utils/currencyLocale";
 import type {
   CampaignPiece,
   CampaignKit,
@@ -43,6 +44,7 @@ type Params = {
   installation: number | null;
   freight: number | null;
   grandTotal: number;
+  labels?: ReturnType<typeof getSupplierExcelLabels>;
   /** Optional: include the full Rateio module export (Matriz Lojas x Peças + Kit tabs) as additional sheets. */
   rateio?: {
     pieces: CampaignPiece[];
@@ -84,7 +86,8 @@ export async function buildSupplierBudgetWorkbook(
   wb.created = new Date();
 
   const money = moneyFormat(params.currencyCode);
-  const ws = wb.addWorksheet("Cotação", { views: [{ showGridLines: false }] });
+  const labels = params.labels || getSupplierExcelLabels(params.currencyCode);
+  const ws = wb.addWorksheet(labels.worksheetName, { views: [{ showGridLines: false }] });
 
   // Title block (cols A:G now → 7 columns: Foto, Tipo, Código, Item, Qtd, Unit, Total)
   ws.mergeCells("A1:G1");
@@ -105,7 +108,7 @@ export async function buildSupplierBudgetWorkbook(
 
   ws.mergeCells("A3:G3");
   const t3 = ws.getCell("A3");
-  t3.value = `Fornecedor: ${params.supplierName}`;
+  t3.value = `${params.labels ? (params.currencyCode === "CLP" ? "Proveedor" : "Fornecedor") : "Fornecedor"}: ${params.supplierName}`;
   t3.font = { name: "Arial", size: 11, bold: true, color: { argb: DARK } };
   t3.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
   t3.alignment = { horizontal: "center", vertical: "middle" };
@@ -116,7 +119,15 @@ export async function buildSupplierBudgetWorkbook(
   // Header row
   const headerRowIdx = 5;
   const header = ws.getRow(headerRowIdx);
-  header.values = ["Foto", "Tipo", "Código", "Item / Especificação", "Qtd Total", "Preço Unitário", "Total da Peça"];
+  header.values = [
+    labels.colPhoto,
+    labels.colType,
+    labels.colCode,
+    labels.colItem,
+    labels.colQty,
+    labels.colUnitPrice,
+    labels.colTotal,
+  ];
   header.height = 24;
   header.eachCell((cell) => {
     cell.font = { bold: true, color: { argb: WHITE } };
@@ -139,7 +150,7 @@ export async function buildSupplierBudgetWorkbook(
     const r = params.rows[i];
     const row = ws.addRow([
       "", // Foto column — populated as floating image afterwards
-      r.type === "kit_header" ? "Kit" : r.type === "kit_piece" ? "Peça do Kit" : "Peça",
+      r.type === "kit_header" ? labels.typeKit : r.type === "kit_piece" ? labels.typeKitPiece : labels.typePiece,
       r.code,
       [r.name, r.specification, r.size].filter(Boolean).join(" — "),
       r.totalQty,
@@ -219,10 +230,10 @@ export async function buildSupplierBudgetWorkbook(
       r.getCell(6).font = { bold: true };
     }
   };
-  addTotalRow("Total dos Itens", itemsTotal);
-  addTotalRow("Instalação", params.installation ?? 0);
-  addTotalRow("Frete / Despacho", params.freight ?? 0);
-  addTotalRow("TOTAL GERAL", params.grandTotal, true);
+  addTotalRow(labels.rowItemsTotal, itemsTotal);
+  addTotalRow(labels.rowInstallation, params.installation ?? 0);
+  addTotalRow(labels.rowFreight, params.freight ?? 0);
+  addTotalRow(labels.rowGrandTotal, params.grandTotal, true);
 
   ws.columns = [
     { width: 12 }, // Foto
@@ -271,7 +282,7 @@ export async function buildSupplierBudgetWorkbook(
     .replace(/\//g, "-");
 
   const nameParts = [
-    "Cotacao",
+    labels.exportFileNamePrefix,
     sanitizeCamp(params.campaignName),
     firstName(params.clientName),
     firstName(params.supplierName),

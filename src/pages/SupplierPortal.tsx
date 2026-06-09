@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { getSupplierLabels, getSupplierPortalLabels } from "@/utils/currencyLocale";
+import { getSupplierLabels, getSupplierPortalLabels, getSupplierExcelLabels } from "@/utils/currencyLocale";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { toast } from "sonner";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -187,10 +187,12 @@ const SupplierPortal = () => {
 
   const labels = useMemo(() => getSupplierLabels(currencyCode), [currencyCode]);
   const portal = useMemo(() => getSupplierPortalLabels(currencyCode), [currencyCode]);
+  const excelLabels = useMemo(() => getSupplierExcelLabels(currencyCode), [currencyCode]);
+  const dateLocale = currencyCode === "CLP" ? "es-CL" : "pt-BR";
 
   // ─── Data fetching ─────────────────────────────────────
   useEffect(() => {
-    if (!token) { setError("Link inválido."); setLoading(false); return; }
+    if (!token) { setError(portal.errorInvalidLink); setLoading(false); return; }
 
     (async () => {
       // Helper: tenta uma operação não-crítica e apenas loga se falhar (não derruba o portal)
@@ -213,11 +215,11 @@ const SupplierPortal = () => {
 
         if (supErr) {
           console.error("[SupplierPortal] Erro ao buscar fornecedor:", supErr);
-          setError("Não foi possível validar o link. Verifique sua conexão e tente novamente.");
+          setError(portal.errorValidateLink);
           setLoading(false);
           return;
         }
-        if (!sup) { setError("Link inválido ou expirado."); setLoading(false); return; }
+        if (!sup) { setError(portal.errorTitle); setLoading(false); return; }
 
         // 2) Budget settings (não-crítico)
         const settings = await trySoft(
@@ -282,7 +284,7 @@ const SupplierPortal = () => {
         setSupplier(sup as Supplier);
 
         if (deadlineExpired && sup.status === "prazo_encerrado" && !sup.locked) {
-          setError("O prazo para envio da cotação foi encerrado.");
+          setError(portal.errorDeadlineExpired);
           setLoading(false);
           return;
         }
@@ -453,7 +455,7 @@ const SupplierPortal = () => {
       } catch (e: unknown) {
         console.error("[SupplierPortal] Erro crítico ao carregar:", e);
         const msg = e instanceof Error ? e.message : String(e);
-        setError(`Não foi possível carregar a cotação. ${msg ? `Detalhe: ${msg}. ` : ""}Recarregue a página ou tente novamente mais tarde.`);
+        setError(`${portal.errorCritical} ${msg ? portal.errorCriticalDetail(msg) : ""} ${portal.errorDetail}`);
       } finally {
         setLoading(false);
       }
@@ -622,7 +624,7 @@ const SupplierPortal = () => {
           [pieceId]: { id: prev[pieceId]?.id || "temp", suggested_spec: suggestionDraft.trim(), orcado_por: suggestionOrcadoPor },
         }));
         setExpandedSuggestion(null);
-        toast.success("Sugestão salva!");
+        toast.success(portal.suggestionSaved);
       } catch (e: any) {
         console.error('SUGGESTION ERROR:', e);
         console.error('SUGGESTION ERROR MESSAGE:', e?.message);
@@ -697,10 +699,11 @@ const SupplierPortal = () => {
         installation: extraCosts.installation_value,
         freight: extraCosts.freight_value,
         grandTotal,
+        labels: excelLabels,
       });
     } catch (e) {
       console.error("Excel export error:", e);
-      toast.error("Erro ao gerar planilha.");
+      toast.error(currencyCode === "CLP" ? "Error al generar planilla." : "Erro ao gerar planilha.");
     } finally {
       setDownloadingExcel(false);
     }
@@ -724,7 +727,7 @@ const SupplierPortal = () => {
         .maybeSingle();
       if (updErr) throw updErr;
       if (!updated) {
-        throw new Error("Não foi possível registrar o envio. Atualize a página e tente novamente.");
+        throw new Error(currencyCode === "CLP" ? "No se pudo registrar el envío. Actualice la página e intente nuevamente." : "Não foi possível registrar o envio. Atualize a página e tente novamente.");
       }
 
       // Save snapshot
@@ -763,10 +766,10 @@ const SupplierPortal = () => {
           _campaign_id: supplier.campaign_id,
           _client_id: clientId,
           _type: "orcamento_enviado",
-          _title: isNeg ? "Proposta ajustada recebida" : "Cotação recebida",
+          _title: isNeg ? portal.negotiationSubmittedTitle : portal.quoteSubmittedTitle,
           _body: isNeg
-            ? `${supplier.company_name} enviou a proposta ajustada para a campanha ${campaignName}.`
-            : `${supplier.company_name} enviou a cotação para a campanha ${campaignName}.`,
+            ? portal.negotiationSubmittedBody(supplier.company_name, campaignName)
+            : portal.quoteSubmittedBody(supplier.company_name, campaignName),
           _action_url: `/agency/${agencyId}/clients/${clientId}/campaigns/${supplier.campaign_id}?section=budgets`,
         });
       }
@@ -780,7 +783,7 @@ const SupplierPortal = () => {
       setSubmitted(true);
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 4000);
-      if (isNeg) toast.success("Proposta ajustada enviada com sucesso!");
+      if (isNeg) toast.success(portal.negotiationSuccess);
       else toast.success(labels.successMsg);
     } catch (e) {
       console.error(e);
@@ -800,7 +803,7 @@ const SupplierPortal = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-primary font-medium">{currencyCode === "CLP" ? "Cargando..." : "Carregando..."}</div>
+        <div className="animate-pulse text-primary font-medium">{portal.loading}</div>
       </div>
     );
   }
@@ -813,12 +816,12 @@ const SupplierPortal = () => {
           <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
             <AlertTriangle className="w-8 h-8 text-destructive" />
           </div>
-          <h1 className="text-xl font-bold text-foreground mb-2">{error || "Link inválido ou expirado"}</h1>
+          <h1 className="text-xl font-bold text-foreground mb-2">{error || portal.errorTitle}</h1>
           <p className="text-muted-foreground text-sm mb-4">
-            Caso acredite ser um erro, entre em contato com a agência responsável.
+            {portal.errorDetail}
           </p>
           <Button onClick={() => window.location.reload()} variant="outline">
-            Tentar novamente
+            {currencyCode === "CLP" ? "Intentar nuevamente" : "Tentar novamente"}
           </Button>
         </div>
       </div>
@@ -854,27 +857,23 @@ const SupplierPortal = () => {
               <CheckCircle2 className="w-10 h-10 text-success" />
             </div>
             <h1 className="text-2xl font-bold text-foreground mb-3">{labels.successMsg}</h1>
-            <p className="text-muted-foreground mb-6">
-              Obrigado, {supplier.contact_name}! A cotação de{" "}
-              <strong>{supplier.company_name}</strong> para a campanha{" "}
-              <strong>{campaignName}</strong> foi recebida com sucesso.
-            </p>
+            <p className="text-muted-foreground mb-6" dangerouslySetInnerHTML={{ __html: portal.successSubtitle(supplier.contact_name, supplier.company_name, campaignName) }} />
             <Card className="text-left">
               <CardContent className="p-4 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{labels.columnItem}s cotados</span>
-                  <span className="font-medium">{pricedPieces.length} {labels.columnItem.toLowerCase()}(s)</span>
+                   <span className="text-muted-foreground">{labels.columnItem}s {portal.quotedItems}</span>
+                   <span className="font-medium">{pricedPieces.length} {labels.columnItem.toLowerCase()}(s)</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Instalação</span>
+                  <span className="text-muted-foreground">{portal.installation}</span>
                   <span className="font-medium">{fmt(extraCosts.installation_value)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Embalagem / Frete / Despacho</span>
+                  <span className="text-muted-foreground">{portal.freight}</span>
                   <span className="font-medium">{fmt(extraCosts.freight_value)}</span>
                 </div>
                 <div className="border-t pt-2 flex justify-between font-bold">
-                  <span>{labels.columnTotal} Geral</span>
+                  <span>{portal.grandTotal}</span>
                   <span className="text-primary">{fmt(grandTotal)}</span>
                 </div>
               </CardContent>
@@ -887,14 +886,14 @@ const SupplierPortal = () => {
                 className="gap-2"
               >
                 <Download className="w-4 h-4" />
-                {downloadingExcel ? "Gerando planilha..." : "Baixar cópia da planilha"}
+                {downloadingExcel ? portal.generatingExcel : portal.downloadExcel}
               </Button>
               <p className="text-xs text-muted-foreground max-w-sm">
-                A planilha enviada está bloqueada. Guarde esta cópia para seus registros — os valores não poderão ser alterados.
+                {portal.excelLockedNotice}
               </p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
                 <Lock className="w-4 h-4" />
-                <span>Os valores estão bloqueados e não podem ser alterados.</span>
+                <span>{portal.lockedValues}</span>
               </div>
             </div>
           </div>
@@ -937,10 +936,10 @@ const SupplierPortal = () => {
               )}
               <Badge variant="secondary" className="bg-white/20 text-white border-0 hover:bg-white/30">
                 {supplier.status === "aguardando" && portal.waitingStatus}
-                {supplier.status === "preenchendo" && (currencyCode === "CLP" ? "Llenando" : "Preenchendo")}
-                {supplier.status === "enviado" && (currencyCode === "CLP" ? "Enviado" : "Enviado")}
-                {supplier.status === "prazo_estendido" && (currencyCode === "CLP" ? "Plazo extendido" : "Prazo estendido")}
-                {supplier.status === "prazo_encerrado" && (currencyCode === "CLP" ? "Plazo cerrado" : "Prazo encerrado")}
+                {supplier.status === "preenchendo" && portal.fillingStatus}
+                {supplier.status === "enviado" && portal.sentStatus}
+                {supplier.status === "prazo_estendido" && portal.extendedStatus}
+                {supplier.status === "prazo_encerrado" && portal.closedStatus}
               </Badge>
               {deadline && (
                 <div className={`flex items-center gap-1 text-sm ${daysLeft != null && daysLeft < 3 ? "text-red-200 font-bold" : "opacity-80"}`}>
@@ -948,8 +947,8 @@ const SupplierPortal = () => {
                   {daysLeft != null && daysLeft > 0
                     ? portal.daysLeft(daysLeft)
                     : daysLeft === 0
-                    ? (currencyCode === "CLP" ? "¡Último día!" : "Último dia!")
-                    : (currencyCode === "CLP" ? "Plazo cerrado" : "Prazo encerrado")}
+                    ? portal.lastDay
+                    : portal.closedStatus}
                 </div>
               )}
             </div>
@@ -963,9 +962,8 @@ const SupplierPortal = () => {
           <div className="max-w-4xl mx-auto flex items-center gap-2 text-warning text-sm">
             <Lock className="w-4 h-4 shrink-0" />
             <span>
-              Cotação enviada em{" "}
-              {supplier.submitted_at ? new Date(supplier.submitted_at).toLocaleDateString("pt-BR") : "—"}.
-              Os valores estão bloqueados.
+              {portal.sentAt(supplier.submitted_at ? new Date(supplier.submitted_at).toLocaleDateString(dateLocale) : "—")}{" "}
+              {portal.lockedValues}
             </span>
           </div>
         </div>
@@ -986,7 +984,7 @@ const SupplierPortal = () => {
               {deadline && (
                 <p>
                   {portal.deadlineLabel}{" "}
-                  {new Date(deadline).toLocaleDateString(currencyCode === "CLP" ? "es-CL" : "pt-BR")}
+                  {new Date(deadline).toLocaleDateString(dateLocale)}
                 </p>
               )}
             </div>
@@ -1013,7 +1011,7 @@ const SupplierPortal = () => {
                     className="flex items-start gap-3 py-2 border-b border-border last:border-b-0"
                   >
                     <span className="text-sm font-semibold text-foreground min-w-[100px] shrink-0">
-                      {new Date(entry.entry_date + "T00:00:00").toLocaleDateString(currencyCode === "CLP" ? "es-CL" : "pt-BR")}
+                      {new Date(entry.entry_date + "T00:00:00").toLocaleDateString(dateLocale)}
                     </span>
                     <span className="text-sm text-muted-foreground leading-relaxed">
                       {entry.description}
@@ -1025,7 +1023,7 @@ const SupplierPortal = () => {
               <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5">
                 <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
                 <p className="text-sm text-warning leading-relaxed">
-                  <strong>{currencyCode === "CLP" ? "Atención:" : "Atenção:"}</strong> {portal.scheduleAcceptance}
+                  <strong>{portal.scheduleAttention}</strong> {portal.scheduleAcceptance}
                 </p>
               </div>
             </CardContent>
@@ -1038,10 +1036,10 @@ const SupplierPortal = () => {
             <CardContent className="p-5 space-y-4">
               <div>
                 <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                  📎 Material de Apoio
+                  {portal.supportMaterialsTitle}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Arquivos disponibilizados pela agência para apoiar sua cotação. Clique em baixar quando precisar.
+                  {portal.supportMaterialsSubtitle}
                 </p>
               </div>
 
@@ -1076,7 +1074,7 @@ const SupplierPortal = () => {
                       >
                         <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs">
                           <Download className="w-3.5 h-3.5" />
-                          Baixar
+                          {portal.downloadBtn}
                         </Button>
                       </a>
                     </div>
@@ -1092,9 +1090,9 @@ const SupplierPortal = () => {
           <CardContent className="p-0">
             <div className="p-4 border-b flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-foreground">{labels.columnItem}s {currencyCode === "CLP" ? "de la" : "da"} Campanha</h3>
+                <h3 className="font-semibold text-foreground">{labels.columnItem}s {portal.matrixTitle}</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {currencyCode === "CLP" ? "Complete el precio unitario por ítem. Los kits se expanden en sus componentes." : "Preencha o preço unitário por peça. Kits são expandidos em suas peças componentes."}
+                  {portal.matrixSubtitle}
                 </p>
               </div>
               <Button
@@ -1105,7 +1103,7 @@ const SupplierPortal = () => {
                 onClick={handleDownloadExcel}
               >
                 <Download className="w-4 h-4" />
-                {downloadingExcel ? (currencyCode === "CLP" ? "Generando..." : "Gerando...") : (currencyCode === "CLP" ? "Bajar Planilla (Excel)" : "Baixar Planilha (Excel)")}
+                {downloadingExcel ? portal.generatingExcel : portal.downloadExcelBtn}
               </Button>
             </div>
             <div className="overflow-x-auto">
@@ -1115,7 +1113,7 @@ const SupplierPortal = () => {
                     <TableHead className="sticky left-0 z-[5] bg-card w-[46%] min-w-[300px]">{labels.columnItem}</TableHead>
                     <TableHead className="text-center w-[12%] min-w-[92px]">{labels.columnQty} Total</TableHead>
                     <TableHead className="text-center w-[24%] min-w-[190px] bg-primary/5 text-primary font-semibold">{labels.columnUnitPrice} ({currencyCode})</TableHead>
-                    <TableHead className="text-right w-[18%] min-w-[150px]">{labels.columnTotal} da Peça</TableHead>
+                    <TableHead className="text-right w-[18%] min-w-[150px]">{labels.columnTotal}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1134,7 +1132,7 @@ const SupplierPortal = () => {
                               <PieceThumbnail url={row.image_url} />
                               <div>
                                 <div className="flex items-center gap-2">
-                                  <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">Kit</Badge>
+                                  <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">{portal.kitLabel}</Badge>
                                   <span className="font-semibold text-sm">{row.name}</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -1148,11 +1146,11 @@ const SupplierPortal = () => {
                                 return (
                                   <div className="ml-auto flex items-center gap-6">
                                     <div className="text-right">
-                                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-tight">Unit. por kit</div>
+                                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-tight">{portal.unitPerKit}</div>
                                       <span className="text-sm font-semibold text-foreground">{fmt(unitSum)}</span>
                                     </div>
                                     <div className="text-right">
-                                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-tight">{labels.columnTotal} do kit</div>
+                                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-tight">{portal.totalPerKit}</div>
                                       <span className="text-sm font-semibold text-primary">
                                         {fmt(kitSectionTotals[row.kitId!] || 0)}
                                       </span>
@@ -1184,7 +1182,7 @@ const SupplierPortal = () => {
                                   <Badge variant="outline" className="text-[10px] shrink-0">#{row.code}</Badge>
                                   <span className="font-medium text-sm break-words whitespace-normal">{row.name}</span>
                                   {hasSuggestion && (
-                                    <Badge className="bg-warning/15 text-warning border-warning/30 text-[9px]">Modificação sugerida</Badge>
+                                    <Badge className="bg-warning/15 text-warning border-warning/30 text-[9px]">{portal.suggestModificationActive}</Badge>
                                   )}
                                 </div>
                                 <div className="flex items-center gap-1 mt-0.5">
@@ -1204,7 +1202,7 @@ const SupplierPortal = () => {
                                         }
                                       }}
                                       className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                                      title="Sugerir modificação"
+                                      title={portal.suggestModification}
                                     >
                                       <Edit2 className="w-3 h-3" />
                                     </button>
@@ -1274,11 +1272,11 @@ const SupplierPortal = () => {
                                 <Textarea
                                   value={suggestionDraft}
                                   onChange={(e) => setSuggestionDraft(e.target.value)}
-                                  placeholder="Sua sugestão de modificação na especificação..."
+                                  placeholder={portal.suggestionPlaceholder}
                                   className="text-sm min-h-[60px]"
                                 />
                                 <div className="flex items-center gap-4">
-                                  <span className="text-xs font-medium text-muted-foreground">Orçando pela:</span>
+                                  <span className="text-xs font-medium text-muted-foreground">{portal.suggestOrcadoPor}</span>
                                   <label className="flex items-center gap-1.5 text-xs cursor-pointer">
                                     <input
                                       type="radio"
@@ -1287,7 +1285,7 @@ const SupplierPortal = () => {
                                       onChange={() => setSuggestionOrcadoPor("original")}
                                       className="accent-[#8C6F4E]"
                                     />
-                                    Especificação original
+                                    {portal.suggestOriginalSpec}
                                   </label>
                                   <label className="flex items-center gap-1.5 text-xs cursor-pointer">
                                     <input
@@ -1297,7 +1295,7 @@ const SupplierPortal = () => {
                                       onChange={() => setSuggestionOrcadoPor("sugerida")}
                                       className="accent-[#8C6F4E]"
                                     />
-                                    Minha sugestão
+                                    {portal.suggestMySpec}
                                   </label>
                                 </div>
                                 <div className="flex items-center gap-2">
@@ -1308,7 +1306,7 @@ const SupplierPortal = () => {
                                     onClick={() => handleSaveSuggestion(row.pieceId!)}
                                   >
                                     <Save className="w-3.5 h-3.5" />
-                                    {savingSuggestion ? "Salvando..." : "Salvar"}
+                                    {savingSuggestion ? portal.savingBtn : portal.saveBtn}
                                   </Button>
                                   {suggestions[row.pieceId!] && (
                                     <Button
@@ -1331,18 +1329,18 @@ const SupplierPortal = () => {
                                             return next;
                                           });
                                           setExpandedSuggestion(null);
-                                          toast.success("Sugestão removida. Especificação original restaurada.");
+                                          toast.success(portal.suggestionRemoved);
                                         } catch (e: any) {
                                           toast.error(`Erro: ${e?.message || JSON.stringify(e)}`);
                                         }
                                       }}
                                     >
                                       <Trash2 className="w-3.5 h-3.5" />
-                                      Apagar sugestão
+                                      {portal.deleteSuggestion}
                                     </Button>
                                   )}
                                   <Button size="sm" variant="ghost" onClick={() => setExpandedSuggestion(null)}>
-                                    Cancelar
+                                    {portal.cancelBtn}
                                   </Button>
                                 </div>
                               </div>
@@ -1356,7 +1354,7 @@ const SupplierPortal = () => {
                   {displayRows.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                        Nenhum {labels.columnItem.toLowerCase()} cadastrado nesta campanha.
+                        {portal.noItems}
                       </TableCell>
                     </TableRow>
                   )}
@@ -1369,10 +1367,10 @@ const SupplierPortal = () => {
         {/* Extra costs */}
         <Card>
           <CardContent className="p-4 space-y-4">
-            <h3 className="font-semibold text-foreground">{currencyCode === "CLP" ? "Costos Adicionales" : "Custos Adicionais"}</h3>
+            <h3 className="font-semibold text-foreground">{portal.extraCostsTitle}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-muted-foreground mb-1 block">{currencyCode === "CLP" ? `Instalación (${currencyCode})` : "Instalação (R$)"}</label>
+                <label className="text-sm text-muted-foreground mb-1 block">{portal.installation} ({currencyCode})</label>
                   <Input
                     type="number" step="0.01" min="0" placeholder={labels.noPrice} disabled={isLocked}
                   value={extraCosts.installation_value ?? ""}
@@ -1385,7 +1383,7 @@ const SupplierPortal = () => {
                 />
               </div>
               <div>
-                <label className="text-sm text-muted-foreground mb-1 block">{currencyCode === "CLP" ? `Embalaje / Flete (${currencyCode})` : "Embalagem / Frete / Despacho (R$)"}</label>
+                <label className="text-sm text-muted-foreground mb-1 block">{portal.freight} ({currencyCode})</label>
                   <Input
                     type="number" step="0.01" min="0" placeholder={labels.noPrice} disabled={isLocked}
                   value={extraCosts.freight_value ?? ""}
@@ -1406,8 +1404,8 @@ const SupplierPortal = () => {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">{labels.columnTotal} Geral {currencyCode === "CLP" ? "de la Cotización" : "da Cotação"}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">({labels.columnItem}s + {currencyCode === "CLP" ? "Instalación + Embalaje / Flete" : "Instalação + Embalagem / Frete"})</p>
+                <p className="text-sm text-muted-foreground">{labels.columnTotal} {portal.grandTotalBudget}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{portal.grandTotalFormula}</p>
               </div>
               <span className="text-2xl font-bold text-primary">{fmt(grandTotal)}</span>
             </div>
@@ -1424,19 +1422,19 @@ const SupplierPortal = () => {
               {inNegotiation && negotiationTarget != null && (
                 <Card className={overTarget ? "border-red-300 bg-red-50 dark:bg-red-900/10" : "border-emerald-300 bg-emerald-50 dark:bg-emerald-900/10"}>
                   <CardContent className="p-4 space-y-2">
-                    <div className="flex items-center gap-2 font-semibold text-sm">🤝 NEGOCIAÇÃO EM ANDAMENTO</div>
-                    <p className="text-xs text-muted-foreground">A agência solicitou ajuste de proposta.</p>
-                    <div className="flex justify-between text-sm"><span>Teto máximo:</span><span className="font-bold">{fmt(negotiationTarget)}</span></div>
+                    <div className="flex items-center gap-2 font-semibold text-sm">{portal.negotiationTitle}</div>
+                    <p className="text-xs text-muted-foreground">{portal.negotiationSubtitle}</p>
+                    <div className="flex justify-between text-sm"><span>{portal.negotiationTarget}</span><span className="font-bold">{fmt(negotiationTarget)}</span></div>
                     <div className="flex justify-between text-sm">
-                      <span>Seu total atual:</span>
+                      <span>{portal.negotiationCurrentTotal}</span>
                       <span className={`font-bold ${overTarget ? "text-red-700 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400"}`}>
-                        {fmt(grandTotal)} ({overTarget ? "acima do teto" : "dentro do teto"})
+                        {fmt(grandTotal)} ({overTarget ? portal.negotiationOverTarget : portal.negotiationWithinTarget})
                       </span>
                     </div>
                     <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                       <div className={`h-full transition-all ${overTarget ? "bg-red-500" : "bg-emerald-500"}`} style={{ width: `${Math.min(pct, 100)}%` }} />
                     </div>
-                    <div className="text-[11px] text-muted-foreground text-right">{pct}% do teto</div>
+                    <div className="text-[11px] text-muted-foreground text-right">{pct}% {portal.negotiationTargetPct}</div>
                   </CardContent>
                 </Card>
               )}
@@ -1448,10 +1446,10 @@ const SupplierPortal = () => {
                     : "bg-[#8C6F4E] hover:bg-[#7A5F3E] text-white px-10 py-6 text-lg font-semibold"}
                   onClick={() => setShowConfirm1(true)}
                   disabled={submitting || overTarget}
-                  title={overTarget ? "Total acima do teto máximo" : undefined}
+                  title={overTarget ? (currencyCode === "CLP" ? "Total sobre el techo máximo" : "Total acima do teto máximo") : undefined}
                 >
                   <Send className="w-5 h-5 mr-2" />
-                  {inNegotiation ? (currencyCode === "CLP" ? "ENVIAR PROPUESTA AJUSTADA" : "ENVIAR PROPOSTA AJUSTADA") : portal.submitButton}
+                  {inNegotiation ? portal.submitButtonNegotiation : portal.submitButton}
                 </Button>
               </div>
             </div>
@@ -1463,15 +1461,15 @@ const SupplierPortal = () => {
       <AlertDialog open={showConfirm1} onOpenChange={setShowConfirm1}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{labels.confirmSend}</AlertDialogTitle>
+            <AlertDialogTitle>{portal.confirmTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              Você revisou todos os valores? Esta ação não pode ser desfeita.
+              {portal.confirmDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{labels.cancelBtn}</AlertDialogCancel>
             <AlertDialogAction onClick={() => { setShowConfirm1(false); setShowConfirm2(true); }}>
-              Sim, revisei
+              {portal.confirmYes}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1481,9 +1479,9 @@ const SupplierPortal = () => {
       <AlertDialog open={showConfirm2} onOpenChange={setShowConfirm2}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmação definitiva</AlertDialogTitle>
+            <AlertDialogTitle>{portal.confirmDefinitiveTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem absoluta certeza? Após o envio, os valores ficam bloqueados e não poderão ser alterados.
+              {portal.confirmDefinitiveDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1493,7 +1491,7 @@ const SupplierPortal = () => {
               disabled={submitting}
               className="bg-[#8C6F4E] hover:bg-[#7A5F3E]"
             >
-              {submitting ? "Enviando..." : "Confirmar Envio Definitivo"}
+              {submitting ? portal.submittingBtn : portal.confirmSubmitBtn}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
