@@ -2721,7 +2721,10 @@ Qualquer dúvida, estamos à disposição.
                 <p className="text-xl font-bold text-primary">{fmtCurrency(detailGrandTotal)}</p>
               </CardContent>
             </Card>
-          </div>
+                </div>
+              </>
+            );
+          })()}
         </SheetContent>
       </Sheet>
 
