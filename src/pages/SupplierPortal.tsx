@@ -192,7 +192,7 @@ const SupplierPortal = () => {
 
   // ─── Data fetching ─────────────────────────────────────
   useEffect(() => {
-    if (!token) { setError("Link inválido."); setLoading(false); return; }
+    if (!token) { setError(portal.errorInvalidLink); setLoading(false); return; }
 
     (async () => {
       // Helper: tenta uma operação não-crítica e apenas loga se falhar (não derruba o portal)
