@@ -129,6 +129,7 @@ export default function BudgetWinnerDialog({
       mockupUrl: mockup,
       bookUrl: book || undefined,
       timeline,
+      locale,
     };
 
     setPreviewLoading(true);
