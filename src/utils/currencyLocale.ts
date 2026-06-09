@@ -135,6 +135,7 @@ export const supplierPortalLabels = {
     waitingStatus: "Aguardando",
     valuesIn: "Valores em",
     daysLeft: (n: number) => `${n} dia${n !== 1 ? "s" : ""} restante${n !== 1 ? "s" : ""}`,
+    scheduleAcceptance: "Ao enviar esta cotação, você confirma o aceite do cronograma acima.",
   },
   "es-CL": {
     greeting: (name: string) => `¡Hola, ${name}! 👋`,
