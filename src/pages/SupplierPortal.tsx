@@ -1295,7 +1295,7 @@ const SupplierPortal = () => {
                                       onChange={() => setSuggestionOrcadoPor("sugerida")}
                                       className="accent-[#8C6F4E]"
                                     />
-                                    Minha sugestão
+                                    {portal.suggestMySpec}
                                   </label>
                                 </div>
                                 <div className="flex items-center gap-2">
