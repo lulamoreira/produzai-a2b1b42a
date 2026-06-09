@@ -23,6 +23,7 @@ interface NegotiationProposalProps {
   differenceFormatted?: string
   differenceDirection?: 'up' | 'down' | 'none'
   downloadUrls?: DownloadLink[]
+  locale?: 'pt-BR' | 'es-CL'
 }
 
 const NegotiationProposalEmail = ({
