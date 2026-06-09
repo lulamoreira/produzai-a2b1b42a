@@ -1499,7 +1499,7 @@ const SupplierPortal = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={submitting}>{labels.cancelBtn}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleSubmit}
               disabled={submitting}
