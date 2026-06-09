@@ -1036,7 +1036,7 @@ const SupplierPortal = () => {
             <CardContent className="p-5 space-y-4">
               <div>
                 <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                  📎 Material de Apoio
+                  {portal.supportMaterialsTitle}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Arquivos disponibilizados pela agência para apoiar sua cotação. Clique em baixar quando precisar.
