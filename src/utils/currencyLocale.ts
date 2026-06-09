@@ -74,7 +74,7 @@ export const supplierMessageLabels = {
     winnerIntroProduction: "para iniciarmos a produção:",
     winnerMockupTitle: "Peças fechadas (mockup)",
     winnerBookTitle: "Book de mockup",
-    winnerFooter: "Qualquer dúvida sobre arquivos, formatos ou cronograma, estamos à disposição.",
+    winnerFooter: "Qual qualquer dúvida sobre arquivos, formatos ou cronograma, estamos à disposição.",
     winnerRegards: "Atenciosamente",
     winnerWaIntro: "Reenviando os links de produção da campanha",
     winnerWaFooter: "Qualquer dúvida, estamos à disposição."
@@ -84,7 +84,7 @@ export const supplierMessageLabels = {
     inviteGreeting: "Hola",
     inviteIntro: "ha invitado a",
     inviteAction: "a participar en el proceso de cotización de la campaña",
-    inviteLinkText: "Para acceder a la planilla y completar sus precios, ingrese al siguiente link:",
+    inviteLinkText: "Para acceder a la planilha y completar sus precios, ingrese al siguiente link:",
     inviteDeadline: "Plazo de envío",
     inviteMaterials: "Material de apoyo para descargar",
     inviteInstructionsTitle: "Instrucciones:",
@@ -103,7 +103,8 @@ export const supplierMessageLabels = {
     negotiationTarget: "Techo máximo deseado",
     negotiationAction: "Por favor, acceda al portal para revisar los precios:",
     negotiationFooter: "Solo podrá enviar la propuesta ajustada si el total está dentro del techo definido.\n\n¡Gracias!",
-    winnerSubject: "Links de producción (ítems aprobados)",
+    negotiationRegards: "Atentamente",
+    winnerSubject: "Links de producción (ítems aprovados)",
     winnerIntro: "Según lo acordado, adjuntamos el material aprobado de la campaña",
     winnerIntroProduction: "para iniciar la producción:",
     winnerMockupTitle: "Piezas finales (mockup)",
@@ -135,7 +136,6 @@ export const supplierPortalLabels = {
     waitingStatus: "Aguardando",
     valuesIn: "Valores em",
     daysLeft: (n: number) => `${n} dia${n !== 1 ? "s" : ""} restante${n !== 1 ? "s" : ""}`,
-    scheduleAcceptance: "Al enviar esta cotización, usted confirma la aceptación de este cronograma.",
     scheduleAcceptance: "Ao enviar esta cotação, você confirma o aceite do cronograma acima.",
   },
   "es-CL": {
@@ -152,6 +152,7 @@ export const supplierPortalLabels = {
     waitingStatus: "Esperando",
     valuesIn: "Valores en",
     daysLeft: (n: number) => `${n} día${n !== 1 ? "s" : ""} restante${n !== 1 ? "s" : ""}`,
+    scheduleAcceptance: "Al enviar esta cotización, usted confirma la aceptación de este cronograma.",
   },
 } as const;
 
