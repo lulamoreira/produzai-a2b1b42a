@@ -1306,7 +1306,7 @@ const SupplierPortal = () => {
                                     onClick={() => handleSaveSuggestion(row.pieceId!)}
                                   >
                                     <Save className="w-3.5 h-3.5" />
-                                    {savingSuggestion ? "Salvando..." : "Salvar"}
+                                    {savingSuggestion ? portal.savingBtn : portal.saveBtn}
                                   </Button>
                                   {suggestions[row.pieceId!] && (
                                     <Button
