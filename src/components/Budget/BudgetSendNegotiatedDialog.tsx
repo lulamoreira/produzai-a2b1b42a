@@ -28,6 +28,7 @@ import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
 import EmailRecipientsInput from "@/components/Email/EmailRecipientsInput";
 import { useClientEmailMemory } from "@/hooks/useClientEmailMemory";
+import { getLocaleFromCurrency } from "@/utils/currencyLocale";
 
 interface Props {
   open: boolean;
