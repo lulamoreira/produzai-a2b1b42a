@@ -1475,7 +1475,7 @@ const SupplierPortal = () => {
       <AlertDialog open={showConfirm1} onOpenChange={setShowConfirm1}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar envio</AlertDialogTitle>
+            <AlertDialogTitle>{labels.confirmSend}</AlertDialogTitle>
             <AlertDialogDescription>
               Você revisou todos os valores? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
