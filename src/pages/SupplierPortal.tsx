@@ -1039,7 +1039,7 @@ const SupplierPortal = () => {
                   {portal.supportMaterialsTitle}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Arquivos disponibilizados pela agência para apoiar sua cotação. Clique em baixar quando precisar.
+                  {portal.supportMaterialsSubtitle}
                 </p>
               </div>
 
