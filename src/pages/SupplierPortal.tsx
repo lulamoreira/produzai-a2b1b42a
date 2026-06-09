@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { getSupplierLabels } from "@/utils/currencyLocale";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { toast } from "sonner";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -183,6 +184,8 @@ const SupplierPortal = () => {
   // Store data for Excel export
   const [storeData, setStoreData] = useState<{ id: string; name: string; city?: string; state?: string; showcase_count?: number }[]>([]);
   const [fullQtyMap, setFullQtyMap] = useState<Record<string, number>>({});
+
+  const labels = useMemo(() => getSupplierLabels(currencyCode), [currencyCode]);
 
   // ─── Data fetching ─────────────────────────────────────
   useEffect(() => {
@@ -777,6 +780,7 @@ const SupplierPortal = () => {
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 4000);
       if (isNeg) toast.success("Proposta ajustada enviada com sucesso!");
+      else toast.success(labels.successMsg);
     } catch (e) {
       console.error(e);
       const msg = e instanceof Error ? e.message : "Erro ao enviar cotação.";
@@ -795,7 +799,7 @@ const SupplierPortal = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-primary font-medium">Carregando...</div>
+        <div className="animate-pulse text-primary font-medium">{currencyCode === "CLP" ? "Cargando..." : "Carregando..."}</div>
       </div>
     );
   }
@@ -848,7 +852,7 @@ const SupplierPortal = () => {
             <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mx-auto mb-6">
               <CheckCircle2 className="w-10 h-10 text-success" />
             </div>
-            <h1 className="text-2xl font-bold text-foreground mb-3">Cotação Enviada!</h1>
+            <h1 className="text-2xl font-bold text-foreground mb-3">{labels.successMsg}</h1>
             <p className="text-muted-foreground mb-6">
               Obrigado, {supplier.contact_name}! A cotação de{" "}
               <strong>{supplier.company_name}</strong> para a campanha{" "}
@@ -857,8 +861,8 @@ const SupplierPortal = () => {
             <Card className="text-left">
               <CardContent className="p-4 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Itens cotados</span>
-                  <span className="font-medium">{pricedPieces.length} peça(s)</span>
+                  <span className="text-muted-foreground">{labels.columnItem}s cotados</span>
+                  <span className="font-medium">{pricedPieces.length} {labels.columnItem.toLowerCase()}(s)</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">Instalação</span>
@@ -869,7 +873,7 @@ const SupplierPortal = () => {
                   <span className="font-medium">{fmt(extraCosts.freight_value)}</span>
                 </div>
                 <div className="border-t pt-2 flex justify-between font-bold">
-                  <span>Total Geral</span>
+                  <span>{labels.columnTotal} Geral</span>
                   <span className="text-primary">{fmt(grandTotal)}</span>
                 </div>
               </CardContent>
@@ -1101,9 +1105,9 @@ const SupplierPortal = () => {
           <CardContent className="p-0">
             <div className="p-4 border-b flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-foreground">Itens da Campanha</h3>
+                <h3 className="font-semibold text-foreground">{labels.columnItem}s {currencyCode === "CLP" ? "de la" : "da"} Campanha</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Preencha o preço unitário por peça. Kits são expandidos em suas peças componentes.
+                  {currencyCode === "CLP" ? "Complete el precio unitario por ítem. Los kits se expanden en sus componentes." : "Preencha o preço unitário por peça. Kits são expandidos em suas peças componentes."}
                 </p>
               </div>
               <Button
@@ -1121,10 +1125,10 @@ const SupplierPortal = () => {
               <Table className="min-w-[760px] table-fixed">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="sticky left-0 z-[5] bg-card w-[46%] min-w-[300px]">Item</TableHead>
-                    <TableHead className="text-center w-[12%] min-w-[92px]">Qtd Total</TableHead>
-                    <TableHead className="text-center w-[24%] min-w-[190px] bg-primary/5 text-primary font-semibold">Preço Unitário ({currencyCode})</TableHead>
-                    <TableHead className="text-right w-[18%] min-w-[150px]">Total da Peça</TableHead>
+                    <TableHead className="sticky left-0 z-[5] bg-card w-[46%] min-w-[300px]">{labels.columnItem}</TableHead>
+                    <TableHead className="text-center w-[12%] min-w-[92px]">{labels.columnQty} Total</TableHead>
+                    <TableHead className="text-center w-[24%] min-w-[190px] bg-primary/5 text-primary font-semibold">{labels.columnUnitPrice} ({currencyCode})</TableHead>
+                    <TableHead className="text-right w-[18%] min-w-[150px]">{labels.columnTotal} da Peça</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1147,7 +1151,7 @@ const SupplierPortal = () => {
                                   <span className="font-semibold text-sm">{row.name}</span>
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-0.5">
-                                  {kitPiecesData.filter((kp) => kp.kit_id === row.kitId).length} peça(s) · Qtd kit: {row.totalQty}
+                                  {kitPiecesData.filter((kp) => kp.kit_id === row.kitId).length} {labels.columnItem.toLowerCase()}(s) · {labels.columnQty} kit: {row.totalQty}
                                 </p>
                               </div>
                               {(() => {
@@ -1161,7 +1165,7 @@ const SupplierPortal = () => {
                                       <span className="text-sm font-semibold text-foreground">{fmt(unitSum)}</span>
                                     </div>
                                     <div className="text-right">
-                                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-tight">Total do kit</div>
+                                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground leading-tight">{labels.columnTotal} do kit</div>
                                       <span className="text-sm font-semibold text-primary">
                                         {fmt(kitSectionTotals[row.kitId!] || 0)}
                                       </span>
@@ -1231,7 +1235,7 @@ const SupplierPortal = () => {
                               <span className="px-2 text-xs font-medium text-muted-foreground">{currencyCode}</span>
                               <Input
                                 inputMode="decimal"
-                                placeholder="0,00"
+                                placeholder={labels.noPrice}
                                 data-price-input={__editableIndex}
                                 className="h-10 min-w-0 flex-1 border-0 bg-transparent px-2 text-right font-semibold text-foreground shadow-none focus-visible:ring-0"
                                 disabled={isLocked}
@@ -1272,7 +1276,7 @@ const SupplierPortal = () => {
                             </div>
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm font-semibold text-primary">
-                            {unitPrice != null ? fmt(lineTotal) : <span className="text-muted-foreground font-normal">—</span>}
+                            {unitPrice != null ? fmt(lineTotal) : <span className="text-muted-foreground font-normal">{labels.noPrice}</span>}
                           </TableCell>
                         </TableRow>
                         {/* Inline suggestion form */}
@@ -1365,7 +1369,7 @@ const SupplierPortal = () => {
                   {displayRows.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
-                        Nenhum item cadastrado nesta campanha.
+                        Nenhum {labels.columnItem.toLowerCase()} cadastrado nesta campanha.
                       </TableCell>
                     </TableRow>
                   )}
@@ -1378,12 +1382,12 @@ const SupplierPortal = () => {
         {/* Extra costs */}
         <Card>
           <CardContent className="p-4 space-y-4">
-            <h3 className="font-semibold text-foreground">Custos Adicionais</h3>
+            <h3 className="font-semibold text-foreground">{currencyCode === "CLP" ? "Costos Adicionales" : "Custos Adicionais"}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm text-muted-foreground mb-1 block">Instalação (R$)</label>
-                <Input
-                  type="number" step="0.01" min="0" placeholder="0,00" disabled={isLocked}
+                <label className="text-sm text-muted-foreground mb-1 block">{currencyCode === "CLP" ? `Instalación (${currencyCode})` : "Instalação (R$)"}</label>
+                  <Input
+                    type="number" step="0.01" min="0" placeholder={labels.noPrice} disabled={isLocked}
                   value={extraCosts.installation_value ?? ""}
                   onFocus={markFilling}
                   onChange={(e) => {
@@ -1394,9 +1398,9 @@ const SupplierPortal = () => {
                 />
               </div>
               <div>
-                <label className="text-sm text-muted-foreground mb-1 block">Embalagem / Frete / Despacho (R$)</label>
-                <Input
-                  type="number" step="0.01" min="0" placeholder="0,00" disabled={isLocked}
+                <label className="text-sm text-muted-foreground mb-1 block">{currencyCode === "CLP" ? `Embalaje / Flete (${currencyCode})` : "Embalagem / Frete / Despacho (R$)"}</label>
+                  <Input
+                    type="number" step="0.01" min="0" placeholder={labels.noPrice} disabled={isLocked}
                   value={extraCosts.freight_value ?? ""}
                   onFocus={markFilling}
                   onChange={(e) => {
@@ -1415,8 +1419,8 @@ const SupplierPortal = () => {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Geral da Cotação</p>
-                <p className="text-xs text-muted-foreground mt-0.5">(Itens + Instalação + Embalagem / Frete)</p>
+                <p className="text-sm text-muted-foreground">{labels.columnTotal} Geral da Cotización</p>
+                <p className="text-xs text-muted-foreground mt-0.5">({labels.columnItem}s + Instalação + Embalagem / Frete)</p>
               </div>
               <span className="text-2xl font-bold text-primary">{fmt(grandTotal)}</span>
             </div>
@@ -1460,7 +1464,7 @@ const SupplierPortal = () => {
                   title={overTarget ? "Total acima do teto máximo" : undefined}
                 >
                   <Send className="w-5 h-5 mr-2" />
-                  {inNegotiation ? "ENVIAR PROPOSTA AJUSTADA" : "ENVIAR ORÇAMENTO"}
+                  {inNegotiation ? "ENVIAR PROPOSTA AJUSTADA" : labels.submitQuote.toUpperCase()}
                 </Button>
               </div>
             </div>
@@ -1472,13 +1476,13 @@ const SupplierPortal = () => {
       <AlertDialog open={showConfirm1} onOpenChange={setShowConfirm1}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar envio</AlertDialogTitle>
+            <AlertDialogTitle>{labels.confirmSend}</AlertDialogTitle>
             <AlertDialogDescription>
               Você revisou todos os valores? Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel>{labels.cancelBtn}</AlertDialogCancel>
             <AlertDialogAction onClick={() => { setShowConfirm1(false); setShowConfirm2(true); }}>
               Sim, revisei
             </AlertDialogAction>
@@ -1496,7 +1500,7 @@ const SupplierPortal = () => {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={submitting}>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={submitting}>{labels.cancelBtn}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleSubmit}
               disabled={submitting}
