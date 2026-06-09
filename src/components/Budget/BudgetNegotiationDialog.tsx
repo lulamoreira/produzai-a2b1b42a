@@ -24,6 +24,7 @@ import {
   cancelNegotiationRateio,
 } from "@/hooks/useNegotiationStorePieces";
 import { computeSupplierTotal, type KitComponentRow } from "@/lib/computeSupplierTotal";
+import { getMessageLabels } from "@/utils/currencyLocale";
 
 async function computeNegotiationLockedTotal(supplierId: string, campaignId: string): Promise<number> {
   const [{ data: prices }, { data: negPieces }, { data: extras }] = await Promise.all([
