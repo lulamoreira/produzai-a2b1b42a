@@ -1104,7 +1104,7 @@ const SupplierPortal = () => {
           <CardContent className="p-0">
             <div className="p-4 border-b flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-foreground">Itens da Campanha</h3>
+                <h3 className="font-semibold text-foreground">{labels.columnItem}s da Campanha</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Preencha o preço unitário por peça. Kits são expandidos em suas peças componentes.
                 </p>
