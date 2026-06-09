@@ -760,6 +760,8 @@ export async function exportMatrixExcelJS(
   agencyName?: string,
   clientName?: string,
   storeFields?: StoreFieldDef[],
+  extraHiddenStoreFields?: StoreFieldDef[],
+  sourceLabel?: string,
 ) {
   const ExcelJSModule = await import("exceljs");
   const ExcelJSRuntime = ExcelJSModule.default;
