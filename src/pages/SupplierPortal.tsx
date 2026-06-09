@@ -1382,7 +1382,7 @@ const SupplierPortal = () => {
         {/* Extra costs */}
         <Card>
           <CardContent className="p-4 space-y-4">
-            <h3 className="font-semibold text-foreground">Custos Adicionais</h3>
+            <h3 className="font-semibold text-foreground">{currencyCode === "CLP" ? "Costos Adicionales" : "Custos Adicionais"}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm text-muted-foreground mb-1 block">Instalação (R$)</label>
