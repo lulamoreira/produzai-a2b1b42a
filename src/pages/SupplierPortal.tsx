@@ -889,7 +889,7 @@ const SupplierPortal = () => {
                 {downloadingExcel ? portal.generatingExcel : portal.downloadExcel}
               </Button>
               <p className="text-xs text-muted-foreground max-w-sm">
-                A planilha enviada está bloqueada. Guarde esta cópia para seus registros — os valores não poderão ser alterados.
+                {portal.excelLockedNotice}
               </p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
                 <Lock className="w-4 h-4" />
