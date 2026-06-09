@@ -1449,7 +1449,7 @@ const SupplierPortal = () => {
                   title={overTarget ? (currencyCode === "CLP" ? "Total sobre el techo máximo" : "Total acima do teto máximo") : undefined}
                 >
                   <Send className="w-5 h-5 mr-2" />
-                  {inNegotiation ? (currencyCode === "CLP" ? "ENVIAR PROPUESTA AJUSTADA" : "ENVIAR PROPOSTA AJUSTADA") : portal.submitButton}
+                  {inNegotiation ? portal.submitButtonNegotiation : portal.submitButton}
                 </Button>
               </div>
             </div>
