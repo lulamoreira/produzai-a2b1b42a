@@ -1074,7 +1074,7 @@ const SupplierPortal = () => {
                       >
                         <Button size="sm" variant="outline" className="gap-1.5 h-8 text-xs">
                           <Download className="w-3.5 h-3.5" />
-                          Baixar
+                          {portal.downloadBtn}
                         </Button>
                       </a>
                     </div>
