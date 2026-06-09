@@ -999,10 +999,10 @@ const SupplierPortal = () => {
             <CardContent className="p-5 space-y-4">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  📅 Cronograma da Campanha
+                  {portal.scheduleTitle}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Datas e entregas acordadas para esta campanha
+                  {portal.scheduleSubtitle}
                 </p>
               </div>
 
