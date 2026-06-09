@@ -37,6 +37,7 @@ const NegotiationProposalEmail = ({
   differenceFormatted = '',
   differenceDirection = 'none',
   downloadUrls = [],
+  locale = 'pt-BR',
 }: NegotiationProposalProps) => {
   const greeting = contactName || supplierName
   const diffLabel =
