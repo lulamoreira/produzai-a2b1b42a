@@ -150,7 +150,7 @@ export async function buildSupplierBudgetWorkbook(
     const r = params.rows[i];
     const row = ws.addRow([
       "", // Foto column — populated as floating image afterwards
-      r.type === "kit_header" ? "Kit" : r.type === "kit_piece" ? "Peça do Kit" : "Peça",
+      r.type === "kit_header" ? labels.typeKit : r.type === "kit_piece" ? labels.typeKitPiece : labels.typePiece,
       r.code,
       [r.name, r.specification, r.size].filter(Boolean).join(" — "),
       r.totalQty,
