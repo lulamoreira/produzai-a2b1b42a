@@ -44,6 +44,7 @@ type Params = {
   installation: number | null;
   freight: number | null;
   grandTotal: number;
+  labels?: ReturnType<typeof getSupplierExcelLabels>;
   /** Optional: include the full Rateio module export (Matriz Lojas x Peças + Kit tabs) as additional sheets. */
   rateio?: {
     pieces: CampaignPiece[];
