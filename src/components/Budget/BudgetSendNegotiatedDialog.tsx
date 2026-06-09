@@ -273,6 +273,7 @@ export default function BudgetSendNegotiatedDialog({
                 differenceFormatted: fmt(Math.abs(diff)),
                 differenceDirection: diffDirection,
                 downloadUrls: [link],
+                locale: getLocaleFromCurrency(currencyCode),
               },
               fromName: agencyName,
               ...(replyTo.trim() ? { replyTo: replyTo.trim() } : {}),
