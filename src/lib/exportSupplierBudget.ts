@@ -2,6 +2,7 @@ import { saveBlobAs } from "@/lib/saveBlobAs";
 import { buildExportFileName } from "@/lib/exportFileName";
 import { fetchImageBytes, type RateioImageCache } from "@/lib/rateioGridShared";
 import { appendMatrixSheets } from "@/lib/exportMatrixExcelJS";
+import { getSupplierExcelLabels } from "@/utils/currencyLocale";
 import type {
   CampaignPiece,
   CampaignKit,
