@@ -857,11 +857,7 @@ const SupplierPortal = () => {
               <CheckCircle2 className="w-10 h-10 text-success" />
             </div>
             <h1 className="text-2xl font-bold text-foreground mb-3">{labels.successMsg}</h1>
-            <p className="text-muted-foreground mb-6">
-              Obrigado, {supplier.contact_name}! A cotação de{" "}
-              <strong>{supplier.company_name}</strong> para a campanha{" "}
-              <strong>{campaignName}</strong> foi recebida com sucesso.
-            </p>
+            <p className="text-muted-foreground mb-6" dangerouslySetInnerHTML={{ __html: portal.successSubtitle(supplier.contact_name, supplier.company_name, campaignName) }} />
             <Card className="text-left">
               <CardContent className="p-4 space-y-2">
                 <div className="flex justify-between text-sm">
