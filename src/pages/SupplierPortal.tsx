@@ -1385,8 +1385,8 @@ const SupplierPortal = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-sm text-muted-foreground mb-1 block">Instalação (R$)</label>
-                <Input
-                  type="number" step="0.01" min="0" placeholder="0,00" disabled={isLocked}
+                  <Input
+                    type="number" step="0.01" min="0" placeholder={labels.noPrice} disabled={isLocked}
                   value={extraCosts.installation_value ?? ""}
                   onFocus={markFilling}
                   onChange={(e) => {
