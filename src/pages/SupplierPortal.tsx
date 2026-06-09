@@ -1090,9 +1090,9 @@ const SupplierPortal = () => {
           <CardContent className="p-0">
             <div className="p-4 border-b flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-foreground">{labels.columnItem}s {currencyCode === "CLP" ? "de la" : "da"} Campanha</h3>
+                <h3 className="font-semibold text-foreground">{labels.columnItem}s {portal.matrixTitle}</h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {currencyCode === "CLP" ? "Complete el precio unitario por ítem. Los kits se expanden en sus componentes." : "Preencha o preço unitário por peça. Kits são expandidos em suas peças componentes."}
+                  {portal.matrixSubtitle}
                 </p>
               </div>
               <Button
