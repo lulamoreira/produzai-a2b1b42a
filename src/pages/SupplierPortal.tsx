@@ -1434,7 +1434,7 @@ const SupplierPortal = () => {
                     <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
                       <div className={`h-full transition-all ${overTarget ? "bg-red-500" : "bg-emerald-500"}`} style={{ width: `${Math.min(pct, 100)}%` }} />
                     </div>
-                    <div className="text-[11px] text-muted-foreground text-right">{pct}% do teto</div>
+                    <div className="text-[11px] text-muted-foreground text-right">{pct}% {portal.negotiationTargetPct}</div>
                   </CardContent>
                 </Card>
               )}
