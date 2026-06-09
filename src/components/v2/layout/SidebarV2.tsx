@@ -285,7 +285,7 @@ export function SidebarV2() {
         style={{ 
           background: isActive ? 'var(--v2-sidebar-active)' : 'transparent',
           borderColor: isActive ? (customColor || 'var(--v2-accent)') : 'transparent',
-          color: isActive ? 'var(--v2-sidebar-text)' : 'var(--v2-sidebar-muted)'
+          color: isActive ? 'var(--v2-sidebar-active-text)' : 'var(--v2-sidebar-muted)'
         }}
       >
         {item.icon && (
@@ -296,7 +296,7 @@ export function SidebarV2() {
             )}
             style={{ 
               color: isActive 
-                ? 'var(--v2-sidebar-text)' 
+                ? 'var(--v2-sidebar-active-text)' 
                 : (isSubItem && item.color ? item.color : (customColor || 'inherit'))
             }}
           />
@@ -395,7 +395,7 @@ export function SidebarV2() {
         {isExpanded && !collapsed && (
           <div 
             className="space-y-0.5 border-l ml-3 pl-1"
-            style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+            style={{ borderColor: 'var(--v2-sidebar-separator)' }}
           >
             {filteredModules.map(mod => (
               <NavItem key={mod.key} item={mod} isSubItem activeOverride={mod.active} />
@@ -422,7 +422,7 @@ export function SidebarV2() {
       {/* Logo Area */}
       <div 
         className="h-14 flex items-center justify-between px-4 border-b"
-        style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+        style={{ borderColor: 'var(--v2-sidebar-separator)' }}
       >
         {!collapsed && (
           <span className="font-semibold text-sm tracking-tight" style={{ color: 'var(--v2-sidebar-text)' }}>ProduzAI</span>
@@ -432,7 +432,7 @@ export function SidebarV2() {
           size="icon"
           className="rounded-full w-6 h-6 flex items-center justify-center transition-colors"
           style={{ 
-            background: 'rgba(255,255,255,0.1)',
+            background: theme === 'light' ? 'var(--v2-sidebar-hover-bg)' : 'rgba(255,255,255,0.1)',
             color: 'var(--v2-sidebar-muted)'
           }}
           onClick={toggleSidebar}
@@ -459,14 +459,14 @@ export function SidebarV2() {
           {(agencyId || clientId || campaignId) && !collapsed && (
             <div 
               className="px-3 py-2 border-b mb-2"
-              style={{ borderColor: 'rgba(255,255,255,0.1)' }}
+              style={{ borderColor: 'var(--v2-sidebar-separator)' }}
             >
               <div 
                 className={cn(
-                  "text-[10px] font-bold uppercase tracking-wider mb-1",
-                  theme === "multicolor" && "bg-white/10 rounded px-2 py-0.5 text-white/90"
+                  "text-[10px] font-bold uppercase tracking-wider mb-1 px-2 py-0.5 rounded",
+                  theme === "multicolor" ? "bg-white/10 text-white/90" : "bg-[var(--v2-sidebar-section-bg)]"
                 )}
-                style={{ color: theme === "multicolor" ? 'var(--v2-sidebar-section-label)' : 'var(--v2-sidebar-muted)' }}
+                style={{ color: 'var(--v2-sidebar-section-label)' }}
               >
               </div>
               <div className="flex flex-col gap-0.5 text-xs">
@@ -508,8 +508,8 @@ export function SidebarV2() {
               <button
                 onClick={() => navigate(`/agency/${effectiveAgencyId}`)}
                 className={cn(
-                  "w-full text-left px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer",
-                  theme === "multicolor" ? "bg-white/10 rounded-sm mx-1 px-2 mb-1 text-white/90" : "text-stone-500 hover:text-stone-300"
+                  "w-full text-left px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer rounded-sm mb-1",
+                  theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "bg-[var(--v2-sidebar-section-bg)] text-[var(--v2-sidebar-section-label)]"
                 )}
               >
                 Agência
@@ -531,8 +531,8 @@ export function SidebarV2() {
           {clientId && !campaignId && !isLimited && !collapsed && (
             <div className="space-y-1">
               <div className={cn(
-                "px-3 py-1 text-[10px] font-bold uppercase tracking-wider",
-                theme === "multicolor" ? "bg-white/10 rounded-sm mx-1 px-2 mb-1 text-white/90" : "text-stone-500"
+                "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm mb-1",
+                theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "bg-[var(--v2-sidebar-section-bg)] text-[var(--v2-sidebar-section-label)]"
               )}>
                 Menu do Cliente
               </div>
@@ -551,8 +551,8 @@ export function SidebarV2() {
               
               <div className="pt-2">
                 <div className={cn(
-                  "px-3 py-1 text-[10px] font-bold uppercase tracking-wider",
-                  theme === "multicolor" ? "bg-white/10 rounded-sm mx-1 px-2 mb-1 text-white/90" : "text-stone-500"
+                  "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm mb-1",
+                  theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "bg-[var(--v2-sidebar-section-bg)] text-[var(--v2-sidebar-section-label)]"
                 )}>
                   {t("sidebar.campaigns")}
                 </div>
@@ -569,8 +569,8 @@ export function SidebarV2() {
           {campaignId && !collapsed && effectiveSingleCampaign && (
             <div className="space-y-1">
               <div className={cn(
-                "px-3 py-1 text-[10px] font-bold uppercase tracking-wider",
-                theme === "multicolor" ? "bg-white/10 rounded-sm mx-1 px-2 mb-1 text-white/90" : "text-stone-500"
+                "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm mb-1",
+                theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "bg-[var(--v2-sidebar-section-bg)] text-[var(--v2-sidebar-section-label)]"
               )}>
                 Módulos da Campanha
               </div>
@@ -589,8 +589,8 @@ export function SidebarV2() {
             .map(group => (
               <div key={group.clientId} className="pt-2">
                 <div className={cn(
-                  "px-3 py-1 text-[10px] font-bold uppercase tracking-wider",
-                  theme === "multicolor" ? "bg-white/10 rounded-sm mx-1 px-2 mb-1 text-white/90" : "text-brand-400"
+                  "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm mb-1",
+                  theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "bg-[var(--v2-sidebar-section-bg)] text-[var(--v2-sidebar-section-label)]"
                 )}>
                   {group.clientName}
                 </div>
@@ -607,8 +607,8 @@ export function SidebarV2() {
             <div className="space-y-1 pt-2">
               {!collapsed && (
                 <div className={cn(
-                  "px-3 py-1 text-[10px] font-bold uppercase tracking-wider",
-                  theme === "multicolor" ? "bg-white/10 rounded mx-1 px-2 mb-1 text-white/90" : "text-stone-500"
+                  "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm mb-1",
+                  theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "bg-[var(--v2-sidebar-section-bg)] text-[var(--v2-sidebar-section-label)]"
                 )}>
                   {t("sidebar.administration", "Administração")}
                 </div>
@@ -632,10 +632,10 @@ export function SidebarV2() {
                   <React.Fragment key={(item as any).key || item.label}>
                     {showSeparator && !collapsed && (
                       <div className="px-3 pt-3 pb-1">
-                        <div className="h-px w-full bg-white/10 mb-2" />
+                        <div className="h-px w-full mb-2" style={{ background: 'var(--v2-sidebar-separator)' }} />
                         <div className={cn(
-                          "text-[10px] font-bold uppercase tracking-wider",
-                          theme === "multicolor" ? "bg-white/10 rounded-sm mx-1 px-2 mb-1 text-white/90" : "text-stone-500"
+                          "text-[10px] font-bold uppercase tracking-wider rounded-sm mb-1",
+                          theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "bg-[var(--v2-sidebar-section-bg)] text-[var(--v2-sidebar-section-label)]"
                         )}>
                           Sistema
                         </div>
@@ -654,7 +654,7 @@ export function SidebarV2() {
         </TooltipProvider>
       </nav>
 
-      <div className="border-t py-3 px-3" style={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+      <div className="border-t py-3 px-3" style={{ borderColor: 'var(--v2-sidebar-separator)' }}>
         <div className={cn(
           "flex items-center gap-3",
           collapsed ? "justify-center" : ""
@@ -675,7 +675,7 @@ export function SidebarV2() {
             <Button
               variant="ghost"
               size="icon"
-              className="hover:bg-white/10"
+              className="hover:bg-[var(--v2-sidebar-hover-bg)]"
               style={{ color: 'var(--v2-sidebar-muted)' }}
               onClick={() => signOut()}
             >
@@ -688,7 +688,7 @@ export function SidebarV2() {
             <Button
               variant="ghost"
               size="icon"
-              className="hover:bg-white/10"
+              className="hover:bg-[var(--v2-sidebar-hover-bg)]"
               style={{ color: 'var(--v2-sidebar-muted)' }}
               onClick={() => signOut()}
               title={t("auth.logout")}
