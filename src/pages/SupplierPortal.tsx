@@ -893,7 +893,7 @@ const SupplierPortal = () => {
               </p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
                 <Lock className="w-4 h-4" />
-                <span>Os valores estão bloqueados e não podem ser alterados.</span>
+                <span>{portal.lockedValues}</span>
               </div>
             </div>
           </div>
