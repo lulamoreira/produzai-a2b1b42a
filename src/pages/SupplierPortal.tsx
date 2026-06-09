@@ -1103,7 +1103,7 @@ const SupplierPortal = () => {
                 onClick={handleDownloadExcel}
               >
                 <Download className="w-4 h-4" />
-                {downloadingExcel ? (currencyCode === "CLP" ? "Generando..." : "Gerando...") : (currencyCode === "CLP" ? "Bajar Planilla (Excel)" : "Baixar Planilha (Excel)")}
+                {downloadingExcel ? portal.generatingExcel : portal.downloadExcelBtn}
               </Button>
             </div>
             <div className="overflow-x-auto">
