@@ -1491,7 +1491,7 @@ const SupplierPortal = () => {
               disabled={submitting}
               className="bg-[#8C6F4E] hover:bg-[#7A5F3E]"
             >
-              {submitting ? "Enviando..." : "Confirmar Envio Definitivo"}
+              {submitting ? portal.submittingBtn : portal.confirmSubmitBtn}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
