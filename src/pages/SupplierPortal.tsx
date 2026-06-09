@@ -962,9 +962,8 @@ const SupplierPortal = () => {
           <div className="max-w-4xl mx-auto flex items-center gap-2 text-warning text-sm">
             <Lock className="w-4 h-4 shrink-0" />
             <span>
-              Cotação enviada em{" "}
-              {supplier.submitted_at ? new Date(supplier.submitted_at).toLocaleDateString("pt-BR") : "—"}.
-              Os valores estão bloqueados.
+              {portal.sentAt(supplier.submitted_at ? new Date(supplier.submitted_at).toLocaleDateString(dateLocale) : "—")}{" "}
+              {portal.lockedValues}
             </span>
           </div>
         </div>
