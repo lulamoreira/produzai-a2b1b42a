@@ -187,6 +187,8 @@ const SupplierPortal = () => {
 
   const labels = useMemo(() => getSupplierLabels(currencyCode), [currencyCode]);
   const portal = useMemo(() => getSupplierPortalLabels(currencyCode), [currencyCode]);
+  const excelLabels = useMemo(() => getSupplierExcelLabels(currencyCode), [currencyCode]);
+  const dateLocale = currencyCode === "CLP" ? "es-CL" : "pt-BR";
 
   // ─── Data fetching ─────────────────────────────────────
   useEffect(() => {
