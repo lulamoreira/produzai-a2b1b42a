@@ -699,6 +699,7 @@ const SupplierPortal = () => {
         installation: extraCosts.installation_value,
         freight: extraCosts.freight_value,
         grandTotal,
+        labels: excelLabels,
       });
     } catch (e) {
       console.error("Excel export error:", e);
