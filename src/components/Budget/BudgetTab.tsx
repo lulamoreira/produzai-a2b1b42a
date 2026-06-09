@@ -781,16 +781,18 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   // ─── Email mailto: builder ─────────────────────────────
   const buildEmailMailto = (sup: typeof suppliers[0]) => {
     const portalUrl = `${window.location.origin}/orcamento/${sup.access_token}`;
-    const subject = `${campaignName} — Convite para Cotação`;
+    const labels = getMessageLabels(currencyCode);
+    const locale = getLocaleFromCurrency(currencyCode);
+    const subject = `${campaignName} — ${labels.inviteSubject}`;
 
     const deadlineBlock = settings?.deadline
       ? `
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-  ⏰ PRAZO PARA ENVIO
+  ⏰ ${labels.inviteDeadline.toUpperCase()}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-📅 ${new Date(settings.deadline).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+📅 ${new Date(settings.deadline).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
 `
       : '';
 
@@ -798,13 +800,12 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
       ? `
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-  📅 CRONOGRAMA DA CAMPANHA
+  📅 ${labels.inviteTimelineTitle}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-${timelineEntries.map(e => `🔸 ${new Date(e.entry_date + 'T00:00:00').toLocaleDateString('pt-BR')}
-   ${e.description}`).join('\n\n')}
+${timelineEntries.map(e => `🔸 ${new Date(e.entry_date + 'T00:00:00').toLocaleDateString(locale)}\n   ${e.description}`).join('\n\n')}
 
-⚠️  ATENÇÃO: Ao preencher e enviar a cotação, você confirma o aceite deste cronograma.
+⚠️  ${labels.inviteTimelineAcceptance}
 `
       : '';
 
@@ -812,39 +813,33 @@ ${timelineEntries.map(e => `🔸 ${new Date(e.entry_date + 'T00:00:00').toLocale
       ? `
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-  📎 MATERIAL DE APOIO
+  📎 ${labels.inviteMaterials.toUpperCase()}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Os arquivos abaixo estão disponíveis para download direto:
-
-${sharedMaterials.map((m: any) => `🔸 ${m.title || m.file_name}
-   ${m.file_url}`).join('\n\n')}
+${sharedMaterials.map((m: any) => `🔸 ${m.title || m.file_name}\n   ${m.file_url}`).join('\n\n')}
 
 💡 Você também encontrará todos esses materiais dentro do portal de cotação.
 `
       : '';
 
     const body = `━━━━━━━━━━━━━━━━━━━━━━━━━━
-  📋 CONVITE PARA COTAÇÃO
+  📋 ${labels.inviteSubject.toUpperCase()}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-👋 Olá, ${sup.contact_name}!
+👋 ${labels.inviteGreeting}, ${sup.contact_name}!
 
-✨ A ${agencyName} está convidando a ${sup.company_name} para participar do processo de cotação da campanha:
+✨ A ${agencyName} ${labels.inviteIntro} a ${sup.company_name} ${labels.inviteAction}:
 
 📌 ${campaignName.toUpperCase()}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-  📝 COMO PARTICIPAR
+  📝 ${locale === 'es-CL' ? 'CÓMO PARTICIPAR' : 'COMO PARTICIPAR'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-▸ 1️⃣  Acesse o portal de cotação pelo link abaixo
-▸ 2️⃣  Preencha o preço unitário de cada peça/kit
-▸ 3️⃣  Informe os valores de instalação e embalagem / frete
-▸ 4️⃣  Clique em ENVIAR ao concluir a cotação
+${labels.inviteInstructions.map((inst, i) => `▸ ${i + 1}️⃣  ${inst}`).join('\n')}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
-  🔗 ACESSE AQUI
+  🔗 ${locale === 'es-CL' ? 'ACCEDA AQUÍ' : 'ACESSE AQUI'}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 👉 ${portalUrl}
@@ -861,11 +856,16 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
   // ─── WhatsApp message builder ──────────────────────────
   const buildWhatsAppUrl = (sup: typeof suppliers[0]) => {
     const portalUrl = `${window.location.origin}/orcamento/${sup.access_token}`;
-    const deadlineStr = deadlineDate ? format(deadlineDate, "dd/MM/yyyy 'às' HH:mm") : "não definido";
+    const labels = getMessageLabels(currencyCode);
+    const locale = getLocaleFromCurrency(currencyCode);
+    const deadlineStr = deadlineDate ? format(deadlineDate, locale === 'es-CL' ? "dd/MM/yyyy 'a las' HH:mm" : "dd/MM/yyyy 'às' HH:mm") : (locale === 'es-CL' ? "no definido" : "não definido");
     const materialsLine = sharedMaterials.length > 0
-      ? `\n\n📎 Material de apoio para download:\n${sharedMaterials.map((m: any) => `• ${m.title || m.file_name}: ${m.file_url}`).join('\n')}`
+      ? `\n\n📎 ${labels.inviteMaterials}:\n${sharedMaterials.map((m: any) => `• ${m.title || m.file_name}: ${m.file_url}`).join('\n')}`
       : '';
-    const msg = `Olá ${sup.contact_name}! A ${agencyName} convidou ${sup.company_name} para participar do processo de cotação da campanha ${campaignName}.\n\nPara acessar a planilha e preencher seus preços, acesse o link abaixo:\n${portalUrl}\n\nPrazo para envio: ${deadlineStr}${materialsLine}\n\nInstruções:\n1) Acesse o link acima\n2) Preencha o preço unitário de cada peça\n3) Informe os valores de instalação e embalagem / frete\n4) Clique em ENVIAR quando concluir\n\nDúvidas? Entre em contato conosco.`;
+    
+    const instrStr = labels.inviteInstructions.map((inst, i) => `${i + 1}) ${inst}`).join('\n');
+    
+    const msg = `${labels.inviteGreeting} ${sup.contact_name}! A ${agencyName} ${labels.inviteIntro} ${sup.company_name} ${labels.inviteAction} ${campaignName}.\n\n${labels.inviteLinkText}\n${portalUrl}\n\n${labels.inviteDeadline}: ${deadlineStr}${materialsLine}\n\n${labels.inviteInstructionsTitle}\n${instrStr}\n\n${labels.inviteFooter}`;
     const phone = sup.phone.replace(/\D/g, "");
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
   };
