@@ -1479,9 +1479,9 @@ const SupplierPortal = () => {
       <AlertDialog open={showConfirm2} onOpenChange={setShowConfirm2}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmação definitiva</AlertDialogTitle>
+            <AlertDialogTitle>{portal.confirmDefinitiveTitle}</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem absoluta certeza? Após o envio, os valores ficam bloqueados e não poderão ser alterados.
+              {portal.confirmDefinitiveDescription}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
