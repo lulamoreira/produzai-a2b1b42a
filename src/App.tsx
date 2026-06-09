@@ -115,7 +115,22 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAdminOrMaster } = useUserRole();
   const { isProcessing } = useProcessInvite();
 
-  if (loading || loadingApproval || isProcessing) {
+  // Allow public access to specific routes even if ProtectedRoute is misused,
+  // but better to just not wrap them. This is a safety net.
+  const publicPaths = [
+    "/orcamento/",
+    "/recotacao/",
+    "/convite/fornecedor/",
+    "/loja/",
+    "/ocorrencias-portal/",
+    "/ocorrencias/",
+    "/ocorrencia/",
+    "/unsubscribe",
+    "/join/"
+  ];
+  const isPublicPath = publicPaths.some(path => window.location.pathname.startsWith(path));
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
@@ -123,12 +138,21 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!user) {
+  if (!user && !isPublicPath) {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!isAdminOrMaster && approvalStatus !== "approved") {
+  if (user && !isAdminOrMaster && approvalStatus !== "approved" && !isPublicPath) {
     return <PendingApprovalScreen />;
+  }
+
+  // Still show loaders for authenticated users if needed
+  if (user && (loadingApproval || isProcessing) && !isPublicPath) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (
