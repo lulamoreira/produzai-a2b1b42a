@@ -608,7 +608,7 @@ export function SidebarV2() {
               {!collapsed && (
                 <div className={cn(
                   "px-3 py-1 text-[10px] font-bold uppercase tracking-wider",
-                  theme === "multicolor" ? "bg-white/10 rounded-sm mx-1 px-2 mb-1 text-white/90" : "text-stone-500"
+                  theme === "multicolor" ? "bg-white/10 rounded mx-1 px-2 mb-1 text-white/90" : "text-stone-500"
                 )}>
                   {t("sidebar.administration", "Administração")}
                 </div>
