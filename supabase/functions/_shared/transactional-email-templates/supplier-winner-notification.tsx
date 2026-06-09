@@ -23,6 +23,7 @@ interface SupplierWinnerProps {
   mockupUrl?: string
   bookUrl?: string
   timeline?: TimelineEntry[]
+  locale?: 'pt-BR' | 'es-CL'
 }
 
 const SupplierWinnerEmail = ({
