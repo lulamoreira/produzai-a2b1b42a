@@ -21,6 +21,7 @@ interface SupplierInviteProps {
   portalUrl?: string
   deadline?: string
   timelineEntries?: TimelineEntry[]
+  locale?: 'pt-BR' | 'es-CL'
 }
 
 const SupplierInviteEmail = ({
