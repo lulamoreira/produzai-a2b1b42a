@@ -1013,7 +1013,7 @@ const SupplierPortal = () => {
                     className="flex items-start gap-3 py-2 border-b border-border last:border-b-0"
                   >
                     <span className="text-sm font-semibold text-foreground min-w-[100px] shrink-0">
-                      {new Date(entry.entry_date + "T00:00:00").toLocaleDateString("pt-BR")}
+                      {new Date(entry.entry_date + "T00:00:00").toLocaleDateString(currencyCode === "CLP" ? "es-CL" : "pt-BR")}
                     </span>
                     <span className="text-sm text-muted-foreground leading-relaxed">
                       {entry.description}
