@@ -1124,10 +1124,10 @@ const SupplierPortal = () => {
               <Table className="min-w-[760px] table-fixed">
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="sticky left-0 z-[5] bg-card w-[46%] min-w-[300px]">Item</TableHead>
-                    <TableHead className="text-center w-[12%] min-w-[92px]">Qtd Total</TableHead>
-                    <TableHead className="text-center w-[24%] min-w-[190px] bg-primary/5 text-primary font-semibold">Preço Unitário ({currencyCode})</TableHead>
-                    <TableHead className="text-right w-[18%] min-w-[150px]">Total da Peça</TableHead>
+                    <TableHead className="sticky left-0 z-[5] bg-card w-[46%] min-w-[300px]">{labels.columnItem}</TableHead>
+                    <TableHead className="text-center w-[12%] min-w-[92px]">{labels.columnQty} Total</TableHead>
+                    <TableHead className="text-center w-[24%] min-w-[190px] bg-primary/5 text-primary font-semibold">{labels.columnUnitPrice} ({currencyCode})</TableHead>
+                    <TableHead className="text-right w-[18%] min-w-[150px]">{labels.columnTotal} da Peça</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
