@@ -49,16 +49,58 @@ export function useExchangeRate(currencyCode: string) {
   return useQuery({
     queryKey: ["exchange_rate", currencyCode],
     enabled: currencyCode !== "BRL",
-    staleTime: 5 * 60 * 1000,
+    staleTime: 10 * 60 * 1000, // 10 minutes
     queryFn: async () => {
-      const res = await fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL,CLP-BRL");
-      const data = await res.json();
-      const rate =
-        currencyCode === "USD"
-          ? parseFloat(data["USDBRL"].bid)
-          : parseFloat(data["CLPBRL"].bid);
-      const updatedAt = new Date().toLocaleString("pt-BR");
-      return { rate, updatedAt };
+      try {
+        const res = await fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL,CLP-BRL");
+        if (!res.ok) throw new Error("AwesomeAPI failed or limit reached");
+        const data = await res.json();
+        const key = currencyCode === "USD" ? "USDBRL" : "CLPBRL";
+        
+        if (data && data[key]) {
+          const rate = parseFloat(data[key].bid);
+          if (!isNaN(rate) && rate > 0) {
+            return { 
+              rate, 
+              updatedAt: new Date().toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' }), 
+              source: "AwesomeAPI" 
+            };
+          }
+        }
+        throw new Error("Invalid data from AwesomeAPI");
+      } catch (err) {
+        console.warn("Exchange Rate Error (AwesomeAPI), trying fallback:", err);
+        try {
+          // Fallback API: rates relative to BRL
+          const res = await fetch("https://open.er-api.com/v6/latest/BRL");
+          if (!res.ok) throw new Error("Fallback API failed");
+          const data = await res.json();
+          
+          if (data && data.rates && data.rates[currencyCode]) {
+            // data.rates[currencyCode] is how many [Currency] for 1 BRL
+            // We want how many BRL for 1 [Currency]
+            const rate = 1 / data.rates[currencyCode];
+            return { 
+              rate, 
+              updatedAt: new Date().toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' }), 
+              source: "ER-API (Fallback)" 
+            };
+          }
+        } catch (fallbackErr) {
+          console.error("All exchange rate APIs failed:", fallbackErr);
+        }
+        
+        // Final fallback if everything fails
+        const hardcodedRates: Record<string, number> = {
+          "USD": 5.25,
+          "CLP": 0.0058
+        };
+        return { 
+          rate: hardcodedRates[currencyCode] || 1, 
+          updatedAt: "Offline", 
+          source: "Padrão" 
+        };
+      }
     },
   });
 }
