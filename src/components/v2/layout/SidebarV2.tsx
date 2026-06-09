@@ -464,7 +464,7 @@ export function SidebarV2() {
               <div 
                 className={cn(
                   "text-[10px] font-bold uppercase tracking-wider mb-1 px-2 py-0.5 rounded",
-                  theme === "multicolor" ? "bg-white/10 text-white/90" : "bg-[var(--v2-sidebar-section-bg)]"
+                  theme === "multicolor" ? "bg-white/10 text-white/90" : "text-[var(--v2-sidebar-section-label)]"
                 )}
                 style={{ color: 'var(--v2-sidebar-section-label)' }}
               >
@@ -509,7 +509,7 @@ export function SidebarV2() {
                 onClick={() => navigate(`/agency/${effectiveAgencyId}`)}
                 className={cn(
                   "w-full text-left px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer rounded-sm mb-1",
-                  theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "bg-[var(--v2-sidebar-section-bg)] text-[var(--v2-sidebar-section-label)]"
+                  theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "text-[var(--v2-sidebar-section-label)]"
                 )}
               >
                 Agência
@@ -532,7 +532,7 @@ export function SidebarV2() {
             <div className="space-y-1">
               <div className={cn(
                 "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm mb-1",
-                theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "bg-[var(--v2-sidebar-section-bg)] text-[var(--v2-sidebar-section-label)]"
+                theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "text-[var(--v2-sidebar-section-label)]"
               )}>
                 Menu do Cliente
               </div>
@@ -552,7 +552,7 @@ export function SidebarV2() {
               <div className="pt-2">
                 <div className={cn(
                   "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm mb-1",
-                  theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "bg-[var(--v2-sidebar-section-bg)] text-[var(--v2-sidebar-section-label)]"
+                  theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "text-[var(--v2-sidebar-section-label)]"
                 )}>
                   {t("sidebar.campaigns")}
                 </div>
@@ -570,7 +570,7 @@ export function SidebarV2() {
             <div className="space-y-1">
               <div className={cn(
                 "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm mb-1",
-                theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "bg-[var(--v2-sidebar-section-bg)] text-[var(--v2-sidebar-section-label)]"
+                theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "text-[var(--v2-sidebar-section-label)]"
               )}>
                 Módulos da Campanha
               </div>
@@ -590,7 +590,7 @@ export function SidebarV2() {
               <div key={group.clientId} className="pt-2">
                 <div className={cn(
                   "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm mb-1",
-                  theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "bg-[var(--v2-sidebar-section-bg)] text-[var(--v2-sidebar-section-label)]"
+                  theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "text-[var(--v2-sidebar-section-label)]"
                 )}>
                   {group.clientName}
                 </div>
@@ -608,7 +608,7 @@ export function SidebarV2() {
               {!collapsed && (
                 <div className={cn(
                   "px-3 py-1 text-[10px] font-bold uppercase tracking-wider rounded-sm mb-1",
-                  theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "bg-[var(--v2-sidebar-section-bg)] text-[var(--v2-sidebar-section-label)]"
+                  theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "text-[var(--v2-sidebar-section-label)]"
                 )}>
                   {t("sidebar.administration", "Administração")}
                 </div>
@@ -635,7 +635,7 @@ export function SidebarV2() {
                         <div className="h-px w-full mb-2" style={{ background: 'var(--v2-sidebar-separator)' }} />
                         <div className={cn(
                           "text-[10px] font-bold uppercase tracking-wider rounded-sm mb-1",
-                          theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "bg-[var(--v2-sidebar-section-bg)] text-[var(--v2-sidebar-section-label)]"
+                          theme === "multicolor" ? "bg-white/10 mx-1 px-2 text-white/90" : "text-[var(--v2-sidebar-section-label)]"
                         )}>
                           Sistema
                         </div>
