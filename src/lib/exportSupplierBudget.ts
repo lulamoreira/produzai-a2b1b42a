@@ -86,39 +86,25 @@ export async function buildSupplierBudgetWorkbook(
   wb.created = new Date();
 
   const money = moneyFormat(params.currencyCode);
-  const ws = wb.addWorksheet("Cotação", { views: [{ showGridLines: false }] });
+  const labels = params.labels || getSupplierExcelLabels(params.currencyCode);
+  const ws = wb.addWorksheet(labels.worksheetName, { views: [{ showGridLines: false }] });
 
   // Title block (cols A:G now → 7 columns: Foto, Tipo, Código, Item, Qtd, Unit, Total)
-  ws.mergeCells("A1:G1");
-  const t1 = ws.getCell("A1");
-  t1.value = [params.agencyName, params.clientName].filter(Boolean).join(" | ") || "ProduzAI";
-  t1.font = { name: "Arial", size: 10, color: { argb: WHITE } };
-  t1.fill = { type: "pattern", pattern: "solid", fgColor: { argb: DARK } };
-  t1.alignment = { horizontal: "center", vertical: "middle" };
-  ws.getRow(1).height = 20;
-
-  ws.mergeCells("A2:G2");
-  const t2 = ws.getCell("A2");
-  t2.value = (params.campaignName || "").toUpperCase();
-  t2.font = { name: "Arial", size: 14, bold: true, color: { argb: WHITE } };
-  t2.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
-  t2.alignment = { horizontal: "center", vertical: "middle" };
-  ws.getRow(2).height = 26;
-
-  ws.mergeCells("A3:G3");
-  const t3 = ws.getCell("A3");
-  t3.value = `Fornecedor: ${params.supplierName}`;
-  t3.font = { name: "Arial", size: 11, bold: true, color: { argb: DARK } };
-  t3.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
-  t3.alignment = { horizontal: "center", vertical: "middle" };
-  ws.getRow(3).height = 22;
-
+...
   ws.getRow(4).height = 6;
 
   // Header row
   const headerRowIdx = 5;
   const header = ws.getRow(headerRowIdx);
-  header.values = ["Foto", "Tipo", "Código", "Item / Especificação", "Qtd Total", "Preço Unitário", "Total da Peça"];
+  header.values = [
+    labels.colPhoto,
+    labels.colType,
+    labels.colCode,
+    labels.colItem,
+    labels.colQty,
+    labels.colUnitPrice,
+    labels.colTotal,
+  ];
   header.height = 24;
   header.eachCell((cell) => {
     cell.font = { bold: true, color: { argb: WHITE } };
