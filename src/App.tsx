@@ -115,7 +115,22 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAdminOrMaster } = useUserRole();
   const { isProcessing } = useProcessInvite();
 
-  if (loading || loadingApproval || isProcessing) {
+  // Allow public access to specific routes even if ProtectedRoute is misused,
+  // but better to just not wrap them. This is a safety net.
+  const publicPaths = [
+    "/orcamento/",
+    "/recotacao/",
+    "/convite/fornecedor/",
+    "/loja/",
+    "/ocorrencias-portal/",
+    "/ocorrencias/",
+    "/ocorrencia/",
+    "/unsubscribe",
+    "/join/"
+  ];
+  const isPublicPath = publicPaths.some(path => window.location.pathname.startsWith(path));
+
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
@@ -123,12 +138,21 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
-  if (!user) {
+  if (!user && !isPublicPath) {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!isAdminOrMaster && approvalStatus !== "approved") {
+  if (user && !isAdminOrMaster && approvalStatus !== "approved" && !isPublicPath) {
     return <PendingApprovalScreen />;
+  }
+
+  // Still show loaders for authenticated users if needed
+  if (user && (loadingApproval || isProcessing) && !isPublicPath) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (
@@ -286,12 +310,12 @@ const App = () => (
                   <Route path="/suppliers" element={<ProtectedRoute><AgencySuppliers /></ProtectedRoute>} />
                   <Route path="/agency/:agencyId/suppliers" element={<ProtectedRoute><AgencySuppliers /></ProtectedRoute>} />
                   <Route path="/favorites" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
-                  <Route path="/installer" element={<ErrorBoundary><InstallerPortal /></ErrorBoundary>} />
-                  <Route path="/instalador" element={<ErrorBoundary><InstallerPortal /></ErrorBoundary>} />
+                  <Route path="/installer" element={<InstallerPortal />} />
+                  <Route path="/instalador" element={<InstallerPortal />} />
                   <Route path="/orcamento/:token" element={<SupplierPortal />} />
                   <Route path="/recotacao/:token" element={<AdjustmentRequotePortal />} />
                   <Route path="/convite/fornecedor/:token" element={<SupplierInvitePortal />} />
-                  <Route path="/loja/:token" element={<ErrorBoundary><StorePortal /></ErrorBoundary>} />
+                  <Route path="/loja/:token" element={<StorePortal />} />
                   <Route path="/ocorrencias-portal/:campaignId" element={<OccurrencesPortal />} />
                   <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
                   <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
