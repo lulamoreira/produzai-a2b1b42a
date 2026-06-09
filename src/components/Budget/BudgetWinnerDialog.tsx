@@ -46,6 +46,8 @@ export default function BudgetWinnerDialog({
 }: BudgetWinnerDialogProps) {
   const { t } = useTranslation();
   const { data: timelineEntries = [] } = useBudgetTimeline(campaignId);
+  const { data: settings } = useBudgetSettings(campaignId);
+  const currencyCode = (settings as any)?.currency_code || "BRL";
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
   const { suggestions: emailSuggestions, record: recordEmails } = useClientEmailMemory({ campaignId });
