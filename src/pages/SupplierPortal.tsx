@@ -932,15 +932,15 @@ const SupplierPortal = () => {
             <div className="flex items-center gap-3 flex-wrap">
               {currencyCode !== "BRL" && (
                 <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full font-medium">
-                  Valores em {currencyCode}
+                  {portal.valuesIn} {currencyCode}
                 </span>
               )}
               <Badge variant="secondary" className="bg-white/20 text-white border-0 hover:bg-white/30">
-                {supplier.status === "aguardando" && "Aguardando"}
-                {supplier.status === "preenchendo" && "Preenchendo"}
-                {supplier.status === "enviado" && "Enviado"}
-                {supplier.status === "prazo_estendido" && "Prazo estendido"}
-                {supplier.status === "prazo_encerrado" && "Prazo encerrado"}
+                {supplier.status === "aguardando" && portal.waitingStatus}
+                {supplier.status === "preenchendo" && (currencyCode === "CLP" ? "Llenando" : "Preenchendo")}
+                {supplier.status === "enviado" && (currencyCode === "CLP" ? "Enviado" : "Enviado")}
+                {supplier.status === "prazo_estendido" && (currencyCode === "CLP" ? "Plazo extendido" : "Prazo estendido")}
+                {supplier.status === "prazo_encerrado" && (currencyCode === "CLP" ? "Plazo cerrado" : "Prazo encerrado")}
               </Badge>
               {deadline && (
                 <div className={`flex items-center gap-1 text-sm ${daysLeft != null && daysLeft < 3 ? "text-red-200 font-bold" : "opacity-80"}`}>
