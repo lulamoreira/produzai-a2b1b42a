@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { getSupplierLabels } from "@/utils/currencyLocale";
+import { getSupplierLabels, getSupplierPortalLabels } from "@/utils/currencyLocale";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { toast } from "sonner";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -186,6 +186,7 @@ const SupplierPortal = () => {
   const [fullQtyMap, setFullQtyMap] = useState<Record<string, number>>({});
 
   const labels = useMemo(() => getSupplierLabels(currencyCode), [currencyCode]);
+  const portal = useMemo(() => getSupplierPortalLabels(currencyCode), [currencyCode]);
 
   // ─── Data fetching ─────────────────────────────────────
   useEffect(() => {
@@ -931,24 +932,24 @@ const SupplierPortal = () => {
             <div className="flex items-center gap-3 flex-wrap">
               {currencyCode !== "BRL" && (
                 <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full font-medium">
-                  Valores em {currencyCode}
+                  {portal.valuesIn} {currencyCode}
                 </span>
               )}
               <Badge variant="secondary" className="bg-white/20 text-white border-0 hover:bg-white/30">
-                {supplier.status === "aguardando" && "Aguardando"}
-                {supplier.status === "preenchendo" && "Preenchendo"}
-                {supplier.status === "enviado" && "Enviado"}
-                {supplier.status === "prazo_estendido" && "Prazo estendido"}
-                {supplier.status === "prazo_encerrado" && "Prazo encerrado"}
+                {supplier.status === "aguardando" && portal.waitingStatus}
+                {supplier.status === "preenchendo" && (currencyCode === "CLP" ? "Llenando" : "Preenchendo")}
+                {supplier.status === "enviado" && (currencyCode === "CLP" ? "Enviado" : "Enviado")}
+                {supplier.status === "prazo_estendido" && (currencyCode === "CLP" ? "Plazo extendido" : "Prazo estendido")}
+                {supplier.status === "prazo_encerrado" && (currencyCode === "CLP" ? "Plazo cerrado" : "Prazo encerrado")}
               </Badge>
               {deadline && (
                 <div className={`flex items-center gap-1 text-sm ${daysLeft != null && daysLeft < 3 ? "text-red-200 font-bold" : "opacity-80"}`}>
                   <Clock className="w-4 h-4" />
                   {daysLeft != null && daysLeft > 0
-                    ? `${daysLeft} dia${daysLeft !== 1 ? "s" : ""} restante${daysLeft !== 1 ? "s" : ""}`
+                    ? portal.daysLeft(daysLeft)
                     : daysLeft === 0
-                    ? "Último dia!"
-                    : "Prazo encerrado"}
+                    ? (currencyCode === "CLP" ? "¡Último día!" : "Último dia!")
+                    : (currencyCode === "CLP" ? "Plazo cerrado" : "Prazo encerrado")}
                 </div>
               )}
             </div>
@@ -975,31 +976,17 @@ const SupplierPortal = () => {
         <Card>
           <CardContent className="p-5">
             <h2 className="text-lg font-semibold text-foreground mb-2">
-              Olá, {supplier.contact_name}! 👋
+              {portal.greeting(supplier.contact_name)}
             </h2>
             <div className="text-sm text-muted-foreground space-y-2 leading-relaxed">
-              <p>
-                Você foi convidado(a) a participar do processo de cotação da campanha{" "}
-                <strong className="text-foreground">{campaignName}</strong>
-                {clientName ? ` do cliente ${clientName}` : ""}.
-              </p>
-              <p>
-                Preencha o <strong>preço unitário</strong> de cada peça abaixo. O total por peça será
-                calculado automaticamente (preço unitário × quantidade total).
-              </p>
-              <p>
-                Ao final, informe os valores de <strong>instalação</strong> e{" "}
-                <strong>embalagem / frete / despacho</strong>, se aplicáveis.
-              </p>
-              <p>
-                Quando tudo estiver pronto, clique em{" "}
-                <strong className="text-primary">ENVIAR ORÇAMENTO</strong>. Atenção: após o envio,
-                os valores ficam <strong>bloqueados</strong> e não poderão ser alterados.
-              </p>
+              <p dangerouslySetInnerHTML={{ __html: portal.inviteText(campaignName, clientName) }} />
+              <p dangerouslySetInnerHTML={{ __html: portal.instructionPrice }} />
+              <p dangerouslySetInnerHTML={{ __html: portal.instructionExtras }} />
+              <p dangerouslySetInnerHTML={{ __html: portal.instructionSend }} />
               {deadline && (
                 <p>
-                  📅 <strong>Prazo para envio:</strong>{" "}
-                  {new Date(deadline).toLocaleDateString("pt-BR")}
+                  {portal.deadlineLabel}{" "}
+                  {new Date(deadline).toLocaleDateString(currencyCode === "CLP" ? "es-CL" : "pt-BR")}
                 </p>
               )}
             </div>
@@ -1012,10 +999,10 @@ const SupplierPortal = () => {
             <CardContent className="p-5 space-y-4">
               <div>
                 <h3 className="text-base font-semibold text-foreground">
-                  📅 Cronograma da Campanha
+                  {portal.scheduleTitle}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Datas e entregas acordadas para esta campanha
+                  {portal.scheduleSubtitle}
                 </p>
               </div>
 
@@ -1026,7 +1013,7 @@ const SupplierPortal = () => {
                     className="flex items-start gap-3 py-2 border-b border-border last:border-b-0"
                   >
                     <span className="text-sm font-semibold text-foreground min-w-[100px] shrink-0">
-                      {new Date(entry.entry_date + "T00:00:00").toLocaleDateString("pt-BR")}
+                      {new Date(entry.entry_date + "T00:00:00").toLocaleDateString(currencyCode === "CLP" ? "es-CL" : "pt-BR")}
                     </span>
                     <span className="text-sm text-muted-foreground leading-relaxed">
                       {entry.description}
@@ -1038,7 +1025,7 @@ const SupplierPortal = () => {
               <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2.5">
                 <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
                 <p className="text-sm text-warning leading-relaxed">
-                  <strong>Atenção:</strong> Ao enviar esta cotação, você confirma o aceite do cronograma acima.
+                  <strong>{currencyCode === "CLP" ? "Atención:" : "Atenção:"}</strong> Ao enviar esta cotação, você confirma o aceite do cronograma acima.
                 </p>
               </div>
             </CardContent>
@@ -1118,7 +1105,7 @@ const SupplierPortal = () => {
                 onClick={handleDownloadExcel}
               >
                 <Download className="w-4 h-4" />
-                {downloadingExcel ? "Gerando..." : "Baixar Planilha (Excel)"}
+                {downloadingExcel ? (currencyCode === "CLP" ? "Generando..." : "Gerando...") : (currencyCode === "CLP" ? "Bajar Planilla (Excel)" : "Baixar Planilha (Excel)")}
               </Button>
             </div>
             <div className="overflow-x-auto">
@@ -1419,8 +1406,8 @@ const SupplierPortal = () => {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">{labels.columnTotal} Geral da Cotización</p>
-                <p className="text-xs text-muted-foreground mt-0.5">({labels.columnItem}s + Instalação + Embalagem / Frete)</p>
+                <p className="text-sm text-muted-foreground">{labels.columnTotal} Geral {currencyCode === "CLP" ? "de la Cotización" : "da Cotação"}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">({labels.columnItem}s + {currencyCode === "CLP" ? "Instalación + Embalaje / Flete" : "Instalação + Embalagem / Frete"})</p>
               </div>
               <span className="text-2xl font-bold text-primary">{fmt(grandTotal)}</span>
             </div>
@@ -1464,7 +1451,7 @@ const SupplierPortal = () => {
                   title={overTarget ? "Total acima do teto máximo" : undefined}
                 >
                   <Send className="w-5 h-5 mr-2" />
-                  {inNegotiation ? "ENVIAR PROPOSTA AJUSTADA" : labels.submitQuote.toUpperCase()}
+                  {inNegotiation ? (currencyCode === "CLP" ? "ENVIAR PROPUESTA AJUSTADA" : "ENVIAR PROPOSTA AJUSTADA") : portal.submitButton}
                 </Button>
               </div>
             </div>
