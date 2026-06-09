@@ -23,6 +23,7 @@ interface SupplierWinnerProps {
   mockupUrl?: string
   bookUrl?: string
   timeline?: TimelineEntry[]
+  locale?: 'pt-BR' | 'es-CL'
 }
 
 const SupplierWinnerEmail = ({
@@ -33,12 +34,57 @@ const SupplierWinnerEmail = ({
   mockupUrl,
   bookUrl,
   timeline = [],
+  locale = 'pt-BR',
 }: SupplierWinnerProps) => {
   const greeting = contactName || supplierName
+
+  const translations = {
+    'pt-BR': {
+      subject: `🏆 ${campaignName || 'Campanha'} — Você venceu o certame!`,
+      preview: `Parabéns! Você venceu o certame — ${campaignName}`,
+      h1: '🏆 Parabéns, você venceu o certame!',
+      intro_1: 'É com satisfação que comunicamos que',
+      intro_2: 'foi selecionado(a) como fornecedor vencedor da cotação para a campanha',
+      intro_3: '. A partir de agora seguiremos com as próximas etapas do processo.',
+      timeline_title: 'Cronograma da Campanha',
+      th_date: 'Data',
+      th_step: 'Etapa',
+      mockup_title: '📦 Peças Fechadas (Mockup)',
+      mockup_text: 'Acesse o link abaixo para baixar as peças fechadas do mockup, que serão a referência final para produção:',
+      mockup_cta: '📥 Baixar peças do mockup',
+      book_title: '📘 Book de Mockup',
+      book_text: 'Acesse abaixo o book de mockup com a apresentação visual completa das peças:',
+      book_cta: '📖 Baixar book de mockup',
+      info_box: '✅ Solicitamos que confirme o recebimento deste e-mail e dê início à produção conforme o cronograma acima. Em caso de dúvidas, responda este e-mail diretamente.',
+      footer_sent_by: 'Este comunicado foi enviado pela plataforma',
+      footer_on_behalf: 'em nome da',
+    },
+    'es-CL': {
+      subject: `🏆 ${campaignName || 'Campaña'} — ¡Usted venció la licitación!`,
+      preview: `¡Felicitaciones! Usted venció la licitación — ${campaignName}`,
+      h1: '🏆 ¡Felicitaciones, usted ganó la licitación!',
+      intro_1: 'Es con satisfacción que comunicamos que',
+      intro_2: 'ha sido seleccionado(a) como proveedor ganador de la cotización para la campaña',
+      intro_3: '. A partir de ahora seguiremos con las próximas etapas del proceso.',
+      timeline_title: 'Cronograma de la Campaña',
+      th_date: 'Fecha',
+      th_step: 'Etapa',
+      mockup_title: '📦 Piezas Finales (Mockup)',
+      mockup_text: 'Acceda al link abajo para descargar las piezas finales del mockup, que serán la referencia final para la producción:',
+      mockup_cta: '📥 Descargar piezas del mockup',
+      book_title: '📘 Book de Mockup',
+      book_text: 'Acceda abajo al book de mockup con la presentación visual completa de las piezas:',
+      book_cta: '📖 Descargar book de mockup',
+      info_box: '✅ Solicitamos que confirme la recepción de este correo e inicie la producción según el cronograma anterior. En caso de dudas, responda a este correo directamente.',
+      footer_sent_by: 'Este comunicado fue enviado por la plataforma',
+      footer_on_behalf: 'en nombre de',
+    }
+  }[locale]
+
   return (
-    <Html lang="pt-BR" dir="ltr">
+    <Html lang={locale === 'es-CL' ? 'es-CL' : 'pt-BR'} dir="ltr">
       <Head />
-      <Preview>Parabéns! Você venceu o certame — {campaignName}</Preview>
+      <Preview>{translations.preview}</Preview>
       <Body style={main}>
         {/* Dark header */}
         <Section style={headerDark}>
@@ -51,25 +97,23 @@ const SupplierWinnerEmail = ({
         </Section>
 
         <Container style={container}>
-          <Heading style={h1}>🏆 Parabéns, você venceu o certame!</Heading>
+          <Heading style={h1}>{translations.h1}</Heading>
 
           <Text style={text}>Olá <strong>{greeting}</strong>,</Text>
 
           <Text style={text}>
-            É com satisfação que comunicamos que <strong>{supplierName}</strong> foi
-            selecionado(a) como fornecedor vencedor da cotação para a campanha{' '}
-            <strong>{campaignName}</strong>. A partir de agora seguiremos com as próximas
-            etapas do processo.
+            {translations.intro_1} <strong>{supplierName}</strong> {translations.intro_2}{' '}
+            <strong>{campaignName}</strong>{translations.intro_3}
           </Text>
 
           {timeline.length > 0 && (
             <>
-              <Heading as="h2" style={h2}>📅 Cronograma da Campanha</Heading>
+              <Heading as="h2" style={h2}>{translations.timeline_title}</Heading>
               <table cellPadding={0} cellSpacing={0} width="100%" style={dataTable}>
                 <thead>
                   <tr>
-                    <th style={thDate}>Data</th>
-                    <th style={th}>Etapa</th>
+                    <th style={thDate}>{translations.th_date}</th>
+                    <th style={th}>{translations.th_step}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -86,14 +130,13 @@ const SupplierWinnerEmail = ({
 
           {mockupUrl && (
             <>
-              <Heading as="h2" style={h2}>📦 Peças Fechadas (Mockup)</Heading>
+              <Heading as="h2" style={h2}>{translations.mockup_title}</Heading>
               <Text style={text}>
-                Acesse o link abaixo para baixar as peças fechadas do mockup, que serão
-                a referência final para produção:
+                {translations.mockup_text}
               </Text>
               <Section style={ctaSection}>
                 <Button style={ctaButton} href={mockupUrl}>
-                  📥 Baixar peças do mockup
+                  {translations.mockup_cta}
                 </Button>
               </Section>
             </>
@@ -101,13 +144,13 @@ const SupplierWinnerEmail = ({
 
           {bookUrl && (
             <>
-              <Heading as="h2" style={h2}>📘 Book de Mockup</Heading>
+              <Heading as="h2" style={h2}>{translations.book_title}</Heading>
               <Text style={text}>
-                Acesse abaixo o book de mockup com a apresentação visual completa das peças:
+                {translations.book_text}
               </Text>
               <Section style={ctaSection}>
                 <Button style={ctaButton} href={bookUrl}>
-                  📖 Baixar book de mockup
+                  {translations.book_cta}
                 </Button>
               </Section>
             </>
@@ -115,16 +158,14 @@ const SupplierWinnerEmail = ({
 
           <Section style={infoBox}>
             <Text style={infoText}>
-              ✅ Solicitamos que confirme o recebimento deste e-mail e dê início à
-              produção conforme o cronograma acima. Em caso de dúvidas, responda este
-              e-mail diretamente.
+              {translations.info_box}
             </Text>
           </Section>
 
           <Hr style={hr} />
 
           <Text style={footer}>
-            Este comunicado foi enviado pela plataforma {SITE_NAME} em nome da{' '}
+            {translations.footer_sent_by} {SITE_NAME} {translations.footer_on_behalf}{' '}
             <strong>{agencyName}</strong>.
           </Text>
         </Container>

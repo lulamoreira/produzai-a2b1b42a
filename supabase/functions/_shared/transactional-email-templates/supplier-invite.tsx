@@ -21,6 +21,7 @@ interface SupplierInviteProps {
   portalUrl?: string
   deadline?: string
   timelineEntries?: TimelineEntry[]
+  locale?: 'pt-BR' | 'es-CL'
 }
 
 const SupplierInviteEmail = ({
@@ -31,20 +32,69 @@ const SupplierInviteEmail = ({
   portalUrl = '#',
   deadline,
   timelineEntries = [],
+  locale = 'pt-BR',
 }: SupplierInviteProps) => {
   const deadlineDate = deadline ? new Date(deadline) : null
   const daysLeft = deadlineDate
     ? Math.ceil((deadlineDate.getTime() - Date.now()) / 86400000)
     : null
   const deadlineStr = deadlineDate
-    ? deadlineDate.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+    ? deadlineDate.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })
     : null
+  
+  const translations = {
+    'pt-BR': {
+      subject: `Convite para cotação — ${campaignName}`,
+      heading: 'Convite para Cotação',
+      greeting: 'Olá',
+      intro_a: 'A',
+      intro_b: 'está convidando a',
+      intro_c: 'para participar do processo de cotação da campanha',
+      instructions: 'Para acessar a planilha de cotação e preencher seus preços, siga as instruções abaixo:',
+      step1: 'Acesse o link abaixo para abrir o portal de cotação',
+      step2: 'Preencha o preço unitário de cada peça/kit',
+      step3: 'Informe os valores de instalação e frete',
+      step4: 'Clique em ENVIAR quando concluir a cotação',
+      cta: 'ACESSAR COTAÇÃO',
+      deadline: 'Prazo para envio',
+      today: 'HOJE!',
+      missing_days: (d: number) => `faltam ${d} dia${d > 1 ? 's' : ''}!`,
+      timeline_title: 'Cronograma da Campanha',
+      timeline_acceptance: '⚠ Ao preencher e enviar o orçamento, você confirma o aceite deste cronograma.',
+      footer_sent_by: 'Este convite foi enviado pela plataforma',
+      footer_on_behalf: 'em nome da',
+      footer_disregard: 'Se você recebeu este email por engano, por favor desconsidere.',
+    },
+    'es-CL': {
+      subject: `Invitación a cotizar — ${campaignName}`,
+      heading: 'Invitación a Cotizar',
+      greeting: 'Hola',
+      intro_a: 'La agencia',
+      intro_b: 'ha invitado a',
+      intro_c: 'a participar en el proceso de cotización de la campaña',
+      instructions: 'Para acceder a la planilla de cotización y completar sus precios, siga las instrucciones abajo:',
+      step1: 'Acceda al link abajo para abrir el portal de cotización',
+      step2: 'Complete el precio unitario de cada ítem/kit',
+      step3: 'Informe los valores de instalación y flete',
+      step4: 'Haga clic en ENVIAR al concluir la cotización',
+      cta: 'ACCEDER A COTIZACIÓN',
+      deadline: 'Plazo de envío',
+      today: '¡HOY!',
+      missing_days: (d: number) => `faltan ${d} día${d > 1 ? 's' : ''}!`,
+      timeline_title: 'Cronograma de la Campaña',
+      timeline_acceptance: '⚠ Al completar y enviar el presupuesto, usted confirma la aceptación de este cronograma.',
+      footer_sent_by: 'Esta invitación fue enviada por la plataforma',
+      footer_on_behalf: 'en nombre de',
+      footer_disregard: 'Si recibió este correo por error, por favor desconsidérelo.',
+    }
+  }[locale]
+
   const isUrgent = daysLeft != null && daysLeft <= 3
 
   return (
-    <Html lang="pt-BR" dir="ltr">
+    <Html lang={locale === 'es-CL' ? 'es-CL' : 'pt-BR'} dir="ltr">
       <Head />
-      <Preview>Convite para cotação — {campaignName}</Preview>
+      <Preview>{translations.subject}</Preview>
       <Body style={main}>
         {/* Branded header */}
         <Section style={header}>
@@ -52,50 +102,48 @@ const SupplierInviteEmail = ({
         </Section>
 
         <Container style={container}>
-          <Heading style={h1}>Convite para Cotação</Heading>
+          <Heading style={h1}>{translations.heading}</Heading>
 
           <Text style={text}>
-            Olá, <strong>{contactName}</strong>!
+            {translations.greeting}, <strong>{contactName}</strong>!
           </Text>
 
           <Text style={text}>
-            A <strong>{agencyName}</strong> está convidando a{' '}
-            <strong>{companyName}</strong> para participar do processo de
-            cotação da campanha <strong>{campaignName}</strong>.
+            {translations.intro_a} <strong>{agencyName}</strong> {translations.intro_b}{' '}
+            <strong>{companyName}</strong> {translations.intro_c} <strong>{campaignName}</strong>.
           </Text>
 
           <Text style={text}>
-            Para acessar a planilha de cotação e preencher seus preços,
-            siga as instruções abaixo:
+            {translations.instructions}
           </Text>
 
           <Section style={stepsBox}>
             <Text style={stepItem}>
-              <strong>1.</strong> Acesse o link abaixo para abrir o portal de cotação
+              <strong>1.</strong> {translations.step1}
             </Text>
             <Text style={stepItem}>
-              <strong>2.</strong> Preencha o preço unitário de cada peça/kit
+              <strong>2.</strong> {translations.step2}
             </Text>
             <Text style={stepItem}>
-              <strong>3.</strong> Informe os valores de instalação e frete
+              <strong>3.</strong> {translations.step3}
             </Text>
             <Text style={stepItem}>
-              <strong>4.</strong> Clique em <strong>ENVIAR</strong> quando concluir a cotação
+              <strong>4.</strong> {translations.step4}
             </Text>
           </Section>
 
           <Section style={ctaSection}>
             <Button style={ctaButton} href={portalUrl}>
-              ACESSAR COTAÇÃO
+              {translations.cta}
             </Button>
           </Section>
 
           {deadlineStr && (
             <Section style={deadlineBox}>
               <Text style={isUrgent ? deadlineTextUrgent : deadlineTextNormal}>
-                ⏰ Prazo para envio: <strong>{deadlineStr}</strong>
+                ⏰ {translations.deadline}: <strong>{deadlineStr}</strong>
                 {isUrgent && daysLeft != null && (
-                  <span> — {daysLeft <= 0 ? 'HOJE!' : `faltam ${daysLeft} dia${daysLeft > 1 ? 's' : ''}!`}</span>
+                  <span> — {daysLeft <= 0 ? translations.today : translations.missing_days(daysLeft)}</span>
                 )}
               </Text>
             </Section>
@@ -103,18 +151,18 @@ const SupplierInviteEmail = ({
 
           {timelineEntries && timelineEntries.length > 0 && (
             <Section style={timelineBox}>
-              <Text style={timelineTitle}>📅 Cronograma da Campanha</Text>
+              <Text style={timelineTitle}>📅 {translations.timeline_title}</Text>
               {timelineEntries.map((entry, i) => (
                 <Text key={i} style={timelineItem}>
                   <strong>
-                    {new Date(entry.entry_date + 'T00:00:00').toLocaleDateString('pt-BR')}
+                    {new Date(entry.entry_date + 'T00:00:00').toLocaleDateString(locale)}
                   </strong>
                   {' — '}
                   {entry.description}
                 </Text>
               ))}
               <Text style={timelineAcceptance}>
-                ⚠ Ao preencher e enviar o orçamento, você confirma o aceite deste cronograma.
+                {translations.timeline_acceptance}
               </Text>
             </Section>
           )}
@@ -122,9 +170,8 @@ const SupplierInviteEmail = ({
           <Hr style={hr} />
 
           <Text style={footer}>
-            Este convite foi enviado pela plataforma {SITE_NAME} em nome da{' '}
-            <strong>{agencyName}</strong>. Se você recebeu este email por
-            engano, por favor desconsidere.
+            {translations.footer_sent_by} {SITE_NAME} {translations.footer_on_behalf}{' '}
+            <strong>{agencyName}</strong>. {translations.footer_disregard}
           </Text>
         </Container>
       </Body>

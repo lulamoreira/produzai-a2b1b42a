@@ -24,6 +24,7 @@ import {
   cancelNegotiationRateio,
 } from "@/hooks/useNegotiationStorePieces";
 import { computeSupplierTotal, type KitComponentRow } from "@/lib/computeSupplierTotal";
+import { getMessageLabels } from "@/utils/currencyLocale";
 
 async function computeNegotiationLockedTotal(supplierId: string, campaignId: string): Promise<number> {
   const [{ data: prices }, { data: negPieces }, { data: extras }] = await Promise.all([
@@ -418,14 +419,15 @@ export default function BudgetNegotiationDialog({
 
       // Open mailto
       if (supplier.email) {
-        const subject = encodeURIComponent(`${campaignName} — Solicitação de Ajuste de Proposta`);
+        const msgLabels = getMessageLabels(currencyCode);
+        const subject = encodeURIComponent(`${campaignName} — ${msgLabels.negotiationSubject}`);
         const portal = publicPortalUrl || "";
         const body = encodeURIComponent(
-          `Olá,\n\nGostaríamos de solicitar um ajuste na sua proposta para a campanha ${campaignName}.\n\n` +
-          `Total atual: ${fmtCurrency(currentTotal)}\n` +
-          `Teto máximo desejado: ${fmtCurrency(targetNum)}\n\n` +
-          `Por favor, acesse o portal para revisar os preços:\n${portal}\n\n` +
-          `Você só conseguirá enviar a proposta ajustada se o total estiver dentro do teto definido.\n\nObrigado!`
+          `${msgLabels.inviteGreeting},\n\n${msgLabels.negotiationIntro} ${campaignName}.\n\n` +
+          `${msgLabels.negotiationCurrentTotal}: ${fmtCurrency(currentTotal)}\n` +
+          `${msgLabels.negotiationTarget}: ${fmtCurrency(targetNum)}\n\n` +
+          `${msgLabels.negotiationAction}\n${portal}\n\n` +
+          `${msgLabels.negotiationFooter}`
         );
         window.open(`mailto:${supplier.email}?subject=${subject}&body=${body}`, "_blank");
       }

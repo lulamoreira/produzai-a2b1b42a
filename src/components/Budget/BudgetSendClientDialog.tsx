@@ -3,7 +3,8 @@ import { Send, Loader2, X } from "lucide-react";
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, es } from "date-fns/locale";
+import { getLocaleFromCurrency } from "@/utils/currencyLocale";
 
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -573,7 +574,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
           const partial = supplierPartialTotals[s.id] || { total: 0, installation: 0, freight: 0 };
           const submittedAtRaw = s.submitted_at ?? s.updated_at ?? s.created_at ?? null;
           const submittedAt = submittedAtRaw
-            ? format(new Date(submittedAtRaw), "dd/MM/yyyy HH:mm", { locale: ptBR })
+            ? format(new Date(submittedAtRaw), "dd/MM/yyyy HH:mm", { locale: getLocaleFromCurrency(currencyCode) === "es-CL" ? es : ptBR })
             : null;
           return {
             name: s.company_name,

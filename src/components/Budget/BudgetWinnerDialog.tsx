@@ -18,6 +18,8 @@ import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
 import EmailRecipientsInput from "@/components/Email/EmailRecipientsInput";
 import { useClientEmailMemory } from "@/hooks/useClientEmailMemory";
+import { getLocaleFromCurrency } from "@/utils/currencyLocale";
+import { useBudgetSettings } from "@/hooks/useBudget";
 
 const URL_REGEX = /^https?:\/\/.+/i;
 
@@ -44,6 +46,8 @@ export default function BudgetWinnerDialog({
 }: BudgetWinnerDialogProps) {
   const { t } = useTranslation();
   const { data: timelineEntries = [] } = useBudgetTimeline(campaignId);
+  const { data: settings } = useBudgetSettings(campaignId);
+  const currencyCode = (settings as any)?.currency_code || "BRL";
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
   const { suggestions: emailSuggestions, record: recordEmails } = useClientEmailMemory({ campaignId });
@@ -109,6 +113,7 @@ export default function BudgetWinnerDialog({
       return;
     }
 
+    const locale = getLocaleFromCurrency(currencyCode);
     const timeline = [...timelineEntries]
       .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
       .map((e) => ({
@@ -124,6 +129,7 @@ export default function BudgetWinnerDialog({
       mockupUrl: mockup,
       bookUrl: book || undefined,
       timeline,
+      locale,
     };
 
     setPreviewLoading(true);

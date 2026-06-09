@@ -28,6 +28,7 @@ import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
 import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
 import EmailRecipientsInput from "@/components/Email/EmailRecipientsInput";
 import { useClientEmailMemory } from "@/hooks/useClientEmailMemory";
+import { getLocaleFromCurrency } from "@/utils/currencyLocale";
 
 interface Props {
   open: boolean;
@@ -272,6 +273,7 @@ export default function BudgetSendNegotiatedDialog({
                 differenceFormatted: fmt(Math.abs(diff)),
                 differenceDirection: diffDirection,
                 downloadUrls: [link],
+                locale: getLocaleFromCurrency(currencyCode),
               },
               fromName: agencyName,
               ...(replyTo.trim() ? { replyTo: replyTo.trim() } : {}),
@@ -333,31 +335,53 @@ export default function BudgetSendNegotiatedDialog({
         /* mantém URL original */
       }
       const diff = t.totalNegotiated - t.totalOriginal;
+      const locale = getLocaleFromCurrency(currencyCode);
+      const isCLP = locale === 'es-CL';
+      
       const diffLine =
         diff > 0
-          ? `📈 Diferença (para maior): *+${fmt(diff)}*`
+          ? (isCLP ? `📈 Diferencia (a favor): *+${fmt(diff)}*` : `📈 Diferença (para maior): *+${fmt(diff)}*`)
           : diff < 0
-          ? `📉 Diferença (para menor): *-${fmt(Math.abs(diff))}*`
-          : `➖ Sem diferença em relação ao valor original.`;
+          ? (isCLP ? `📉 Diferencia (en contra): *-${fmt(Math.abs(diff))}*` : `📉 Diferença (para menor): *-${fmt(Math.abs(diff))}*`)
+          : (isCLP ? `➖ Sin diferencia respecto al valor original.` : `➖ Sem diferença em relação ao valor original.`);
 
       const greeting = supplier.contact_name || supplier.company_name;
       const waText =
-        `🤝 *Proposta Negociada* 🤝\n\n` +
-        `Olá, *${greeting}*! 👋\n\n` +
-        `Segue a proposta negociada referente à:\n` +
-        `🏢 Cliente: *${clientName}*\n` +
-        `📣 Campanha: *${campaignName}*\n` +
-        `🏛 Agência: ${agencyName}\n\n` +
-        `💰 *Resumo financeiro*\n` +
-        `• Valor original: ${fmt(t.totalOriginal)}\n` +
-        `• ✅ Valor negociado: *${fmt(t.totalNegotiated)}*\n` +
-        `• ${diffLine.replace(/^[^\s]+\s/, (m) => m)}\n\n` +
-        `📎 *Planilha completa da proposta:*\n` +
-        `${shortUrl}\n\n` +
-        `📄 Arquivo: ${link.name}\n\n` +
-        `Por favor, confirme o recebimento e nos avise em caso de qualquer dúvida. 🙌\n` +
-        `Agradecemos pela parceria! 🚀\n\n` +
-        `— Equipe ${agencyName}`;
+        isCLP ? (
+          `🤝 *Propuesta Negociada* 🤝\n\n` +
+          `Hola, *${greeting}*! 👋\n\n` +
+          `Adjuntamos la propuesta negociada referente a:\n` +
+          `🏢 Cliente: *${clientName}*\n` +
+          `📣 Campaña: *${campaignName}*\n` +
+          `🏛 Agencia: ${agencyName}\n\n` +
+          `💰 *Resumen financiero*\n` +
+          `• Valor original: ${fmt(t.totalOriginal)}\n` +
+          `• ✅ Valor negociado: *${fmt(t.totalNegotiated)}*\n` +
+          `• ${diffLine.replace(/^[^\s]+\s/, (m) => m)}\n\n` +
+          `📎 *Planilla completa de la propuesta:*\n` +
+          `${shortUrl}\n\n` +
+          `📄 Archivo: ${link.name}\n\n` +
+          `Por favor, confirme la recepción e infórmenos en caso de cualquier duda. 🙌\n` +
+          `¡Agradecemos la colaboración! 🚀\n\n` +
+          `— Equipo ${agencyName}`
+        ) : (
+          `🤝 *Proposta Negociada* 🤝\n\n` +
+          `Olá, *${greeting}*! 👋\n\n` +
+          `Segue a proposta negociada referente à:\n` +
+          `🏢 Cliente: *${clientName}*\n` +
+          `📣 Campanha: *${campaignName}*\n` +
+          `🏛 Agência: ${agencyName}\n\n` +
+          `💰 *Resumo financeiro*\n` +
+          `• Valor original: ${fmt(t.totalOriginal)}\n` +
+          `• ✅ Valor negociado: *${fmt(t.totalNegotiated)}*\n` +
+          `• ${diffLine.replace(/^[^\s]+\s/, (m) => m)}\n\n` +
+          `📎 *Planilha completa da proposta:*\n` +
+          `${shortUrl}\n\n` +
+          `📄 Arquivo: ${link.name}\n\n` +
+          `Por favor, confirme o recebimento e nos avise em caso de qualquer dúvida. 🙌\n` +
+          `Agradecemos pela parceria! 🚀\n\n` +
+          `— Equipe ${agencyName}`
+        );
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(waText)}`, "_blank");
       push({ kind: "whatsapp", label: `WhatsApp → ${phone}`, stage: "sent" });
       toast.success("Mensagem pronta no WhatsApp.", { id: tId });

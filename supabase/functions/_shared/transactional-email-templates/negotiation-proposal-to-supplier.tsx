@@ -23,6 +23,7 @@ interface NegotiationProposalProps {
   differenceFormatted?: string
   differenceDirection?: 'up' | 'down' | 'none'
   downloadUrls?: DownloadLink[]
+  locale?: 'pt-BR' | 'es-CL'
 }
 
 const NegotiationProposalEmail = ({
@@ -36,57 +37,100 @@ const NegotiationProposalEmail = ({
   differenceFormatted = '',
   differenceDirection = 'none',
   downloadUrls = [],
+  locale = 'pt-BR',
 }: NegotiationProposalProps) => {
   const greeting = contactName || supplierName
+  
+  const translations = {
+    'pt-BR': {
+      subject: `Proposta negociada — ${clientName ? `${clientName} · ` : ''}${campaignName}`,
+      header_title: 'PROPOSTA NEGOCIADA',
+      h1: '📑 Proposta Negociada',
+      dear: 'Prezado(a)',
+      client: 'Cliente',
+      intro_1: 'Conforme nossa negociação para a campanha',
+      intro_2: ', segue em anexo a proposta com os valores acordados.',
+      label_original: 'Valor Original',
+      label_negotiated: 'Valor Negociado',
+      label_diff: 'Diferença',
+      label_diff_up: 'Diferença (para maior)',
+      label_diff_down: 'Diferença (para menor)',
+      label_files: '📎 Arquivos',
+      label_download: '📥 Baixar',
+      label_note: 'Este arquivo ficará disponível por 30 dias.',
+      label_regards: 'Atenciosamente',
+      label_team: 'Equipe',
+    },
+    'es-CL': {
+      subject: `Propuesta negociada — ${clientName ? `${clientName} · ` : ''}${campaignName}`,
+      header_title: 'PROPUESTA NEGOCIADA',
+      h1: '📑 Propuesta Negociada',
+      dear: 'Estimado(a)',
+      client: 'Cliente',
+      intro_1: 'Según nuestra negociación para la campaña',
+      intro_2: ', adjuntamos la propuesta con los valores acordados.',
+      label_original: 'Valor Original',
+      label_negotiated: 'Valor Negociado',
+      label_diff: 'Diferencia',
+      label_diff_up: 'Diferencia (a favor)',
+      label_diff_down: 'Diferencia (en contra)',
+      label_files: '📎 Archivos',
+      label_download: '📥 Descargar',
+      label_note: 'Este archivo estará disponible por 30 días.',
+      label_regards: 'Atentamente',
+      label_team: 'Equipo',
+    }
+  }[locale]
+
   const diffLabel =
     differenceDirection === 'up'
-      ? 'Diferença (para maior)'
+      ? translations.label_diff_up
       : differenceDirection === 'down'
-      ? 'Diferença (para menor)'
-      : 'Diferença'
+      ? translations.label_diff_down
+      : translations.label_diff
   const diffColor =
     differenceDirection === 'up' ? '#2F855A' : differenceDirection === 'down' ? '#C53030' : '#555555'
   const diffPrefix =
     differenceDirection === 'up' ? '+' : differenceDirection === 'down' ? '-' : ''
+
   return (
-    <Html lang="pt-BR" dir="ltr">
+    <Html lang={locale === 'es-CL' ? 'es-CL' : 'pt-BR'} dir="ltr">
       <Head />
-      <Preview>Proposta negociada — {clientName ? `${clientName} · ` : ''}{campaignName}</Preview>
+      <Preview>{translations.subject}</Preview>
       <Body style={main}>
         <Section style={headerDark}>
           <Text style={headerDarkText}>{agencyName || SITE_NAME}</Text>
         </Section>
         <Section style={headerBrown}>
-          <Text style={headerBrownText}>PROPOSTA NEGOCIADA</Text>
+          <Text style={headerBrownText}>{translations.header_title}</Text>
         </Section>
 
         <Container style={container}>
-          <Heading style={h1}>📑 Proposta Negociada</Heading>
+          <Heading style={h1}>{translations.h1}</Heading>
 
-          <Text style={text}>Prezado(a) <strong>{greeting}</strong>,</Text>
+          <Text style={text}>{translations.dear} <strong>{greeting}</strong>,</Text>
 
           {clientName && (
             <Section style={clientBox}>
-              <Text style={clientLabel}>Cliente</Text>
+              <Text style={clientLabel}>{translations.client}</Text>
               <Text style={clientName_}>{clientName}</Text>
             </Section>
           )}
 
           <Text style={text}>
-            Conforme nossa negociação para a campanha <strong>{campaignName}</strong>,
-            segue em anexo a proposta com os valores acordados.
+            {translations.intro_1} <strong>{campaignName}</strong>{translations.intro_2}
           </Text>
 
           {(totalOriginalFormatted || totalNegotiatedFormatted) && (
             <Section style={summaryBox}>
               {totalOriginalFormatted && (
                 <Text style={summaryLine}>
-                  Valor Original: <strong>{totalOriginalFormatted}</strong>
+                  {translations.label_original}: <strong>{totalOriginalFormatted}</strong>
                 </Text>
               )}
               {totalNegotiatedFormatted && (
                 <Text style={summaryLine}>
-                  Valor Negociado: <strong>{totalNegotiatedFormatted}</strong>
+                  {translations.label_negotiated}: <strong>{totalNegotiatedFormatted}</strong>
                 </Text>
               )}
               {differenceFormatted && differenceDirection !== 'none' && (
@@ -99,23 +143,23 @@ const NegotiationProposalEmail = ({
 
           {downloadUrls.length > 0 && (
             <>
-              <Heading as="h2" style={h2}>📎 Arquivos</Heading>
+              <Heading as="h2" style={h2}>{translations.label_files}</Heading>
               {downloadUrls.map((d, i) => (
                 <Section key={i} style={ctaSection}>
                   <Button style={ctaButton} href={d.url}>
-                    📥 Baixar {d.name}
+                    {translations.label_download} {d.name}
                   </Button>
                 </Section>
               ))}
-              <Text style={smallNote}>Este arquivo ficará disponível por 30 dias.</Text>
+              <Text style={smallNote}>{translations.label_note}</Text>
             </>
           )}
 
           <Hr style={hr} />
 
           <Text style={footer}>
-            Atenciosamente,<br />
-            Equipe <strong>{agencyName || SITE_NAME}</strong>
+            {translations.label_regards},<br />
+            {translations.label_team} <strong>{agencyName || SITE_NAME}</strong>
           </Text>
         </Container>
       </Body>
