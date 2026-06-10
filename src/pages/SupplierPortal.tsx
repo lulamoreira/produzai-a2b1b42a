@@ -418,16 +418,16 @@ const SupplierPortal = () => {
           const CHUNK = 1000;
           for (let i = 0; i < ids.length; i += CHUNK) {
             const chunk = ids.slice(i, i + CHUNK);
-            const { data: storesRaw } = await supabase
+            const { data: storesRaw, error: storesErr } = await supabase
               .from("client_stores")
               .select("id, name, city, state, street, number, neighborhood, code, zip_code, nickname, showcase_count, tipo_entrega")
               .in("id", chunk);
+            
+            if (storesErr) {
+              console.error("[SupplierPortal] Erro ao buscar detalhes das lojas:", storesErr);
+            }
             if (storesRaw) allStores.push(...storesRaw);
           }
-          
-          // The delivery types are stored in client_stores.tipo_entrega
-          // We already fetched them in the select above.
-          // No need for campaign-specific overrides if not present in schema.
           
           setStoreData(allStores as any);
         }
