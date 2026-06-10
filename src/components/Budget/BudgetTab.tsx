@@ -2813,7 +2813,7 @@ ${msgLabels.winnerWaFooter}
         kitPieces={kitPieces}
         qtyMap={qtyMap}
         stores={stores}
-        pieceTotals={pieceTotals}
+        pieceTotals={pieceTotalsFull}
         prices={prices}
         extraCosts={extraCosts}
         currencyCode={currencyCode}
