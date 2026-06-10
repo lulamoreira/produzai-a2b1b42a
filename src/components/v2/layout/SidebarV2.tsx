@@ -275,6 +275,10 @@ export function SidebarV2() {
     const content = (
       <NavLink
         to={item.route}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (collapsed && !isSubItem) toggleSidebar();
+        }}
         className={cn(
           "w-full flex items-center gap-3 py-2 px-3 transition-all duration-200 group relative",
           isSubItem ? "pl-9 text-xs" : "text-sm font-medium",
@@ -325,10 +329,12 @@ export function SidebarV2() {
     return content;
   };
 
-  const CampaignItem = ({ camp, agencyId, clientId }: { camp: any, agencyId: string, clientId: string }) => {
-    if (!camp || !camp.id) return null;
+  const CampaignItem = ({ camp, agencyId: aId, clientId: cId }: { camp: any, agencyId?: string, clientId?: string }) => {
+    const effectiveAgencyIdToUse = aId || agencyId;
+    const effectiveClientIdToUse = cId || clientId;
+    if (!camp || !camp.id || !effectiveAgencyIdToUse || !effectiveClientIdToUse) return null;
     const isExpanded = campaignExpanded[camp.id];
-    const campBasePath = `/agency/${agencyId}/clients/${clientId}/campaigns/${camp.id}`;
+    const campBasePath = `/agency/${effectiveAgencyIdToUse}/clients/${effectiveClientIdToUse}/campaigns/${camp.id}`;
     const isActiveCampaign = campaignId === camp.id;
     const currentSection = new URLSearchParams(location.search).get("section") || "summary";
 
@@ -355,7 +361,12 @@ export function SidebarV2() {
           style={{ 
             background: isActiveCampaign ? 'rgba(255,255,255,0.05)' : 'transparent' 
           }}
-          onClick={() => navigate(campBasePath)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (collapsed) toggleSidebar();
+            navigate(campBasePath, { replace: location.pathname === campBasePath });
+          }}
         >
           <div className="flex items-center gap-2 min-w-0">
             <div 
@@ -558,7 +569,7 @@ export function SidebarV2() {
                 </div>
                 <div className="space-y-1 mt-1">
                   {clientCampaigns.map(camp => (
-                    <CampaignItem key={camp.id} camp={camp} agencyId={agencyId!} clientId={clientId!} />
+                    <CampaignItem key={camp.id} camp={camp} agencyId={agencyId} clientId={clientId} />
                   ))}
                 </div>
               </div>
@@ -574,7 +585,7 @@ export function SidebarV2() {
               )}>
                 Módulos da Campanha
               </div>
-              <CampaignItem camp={effectiveSingleCampaign} agencyId={agencyId!} clientId={clientId!} />
+              <CampaignItem camp={effectiveSingleCampaign} agencyId={agencyId} clientId={clientId} />
             </div>
           )}
 
