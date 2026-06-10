@@ -186,6 +186,7 @@ const SupplierPortal = () => {
 
   // Store data for Excel export
   const [storeData, setStoreData] = useState<{ id: string; name: string; city?: string; state?: string; address?: string; street?: string; number?: string; neighborhood?: string; code?: string; zip_code?: string; nickname?: string; showcase_count?: number; tipo_entrega: 'frete_instalacao' | 'frete_apenas' | 'sem_logistica' | null }[]>([]);
+  const [downloadingStores, setDownloadingStores] = useState(false);
   const [fullQtyMap, setFullQtyMap] = useState<Record<string, number>>({});
 
   const labels = useMemo(() => getSupplierLabels(currencyCode), [currencyCode]);
@@ -423,6 +424,26 @@ const SupplierPortal = () => {
               .in("id", chunk);
             if (storesRaw) allStores.push(...storesRaw);
           }
+          
+          // Re-fetch only the delivery types for this specific campaign from campaign_store_status
+          const { data: campaignStoreTypes } = await supabase
+            .from("campaign_store_status")
+            .select("store_id, tipo_entrega")
+            .eq("campaign_id", sup.campaign_id);
+            
+          if (campaignStoreTypes && campaignStoreTypes.length > 0) {
+            const typeMap: Record<string, string> = {};
+            campaignStoreTypes.forEach(t => {
+              if (t.tipo_entrega) typeMap[t.store_id] = t.tipo_entrega;
+            });
+            
+            allStores.forEach(s => {
+              if (typeMap[s.id]) {
+                s.tipo_entrega = typeMap[s.id];
+              }
+            });
+          }
+          
           setStoreData(allStores as any);
         }
 
@@ -1560,11 +1581,12 @@ const SupplierPortal = () => {
                 <Button
                   variant="outline"
                   size="sm"
+                  disabled={downloadingStores}
                   className="gap-1.5 h-8 text-xs font-medium border-primary/20 hover:bg-primary/5 hover:text-primary transition-all"
                   onClick={handleDownloadStoresExcel}
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  {portal.storesDownload}
+                  <Download className={`w-3.5 h-3.5 ${downloadingStores ? 'animate-bounce' : ''}`} />
+                  {downloadingStores ? (currencyCode === "CLP" ? "Generando..." : "Gerando...") : portal.storesDownload}
                 </Button>
 
                 <Sheet>
