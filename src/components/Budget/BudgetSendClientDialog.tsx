@@ -157,7 +157,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         });
       } else {
         const p = item.data;
-        const qty = pieceTotals[p.id] || 0;
+        const qty = pieceTotals.map[p.id] || 0;
         const up = priceFor(p.id);
         rows.push({
           type: "standalone_piece",
