@@ -2230,6 +2230,7 @@ export type Database = {
           number: string | null
           observations: string | null
           phone: string | null
+          requer_instalacao: boolean
           show_in_scheduling: boolean
           showcase_count: number
           state: string | null
@@ -2273,6 +2274,7 @@ export type Database = {
           number?: string | null
           observations?: string | null
           phone?: string | null
+          requer_instalacao?: boolean
           show_in_scheduling?: boolean
           showcase_count?: number
           state?: string | null
@@ -2316,6 +2318,7 @@ export type Database = {
           number?: string | null
           observations?: string | null
           phone?: string | null
+          requer_instalacao?: boolean
           show_in_scheduling?: boolean
           showcase_count?: number
           state?: string | null
