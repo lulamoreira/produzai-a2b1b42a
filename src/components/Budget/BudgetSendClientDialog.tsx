@@ -319,7 +319,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         });
       } else {
         const piece = item.data;
-        const qty = pieceTotals[piece.id] || 0;
+        const qty = pieceTotals.map[piece.id] || 0;
         renderRow(piece, qty, supplierTotals, evenIdx, false);
         evenIdx++;
       }
