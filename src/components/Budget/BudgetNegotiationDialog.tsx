@@ -99,7 +99,7 @@ interface Props {
   pieces: Piece[];
   prices: Price[];
   extraCosts: ExtraCost[];
-  pieceTotals: Record<string, number>;
+  pieceTotals: { map: Record<string, number>; installationMap: Record<string, number>; freightMap: Record<string, number>; noLogisticsMap: Record<string, number> };
   kitPieceTotals: Record<string, KitComponentRow[]>;
   settings: any;
   currencyCode: string;
