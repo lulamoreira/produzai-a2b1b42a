@@ -536,6 +536,10 @@
     "newCampaign": "Nova Campanha"
   },
   "pieces": {
+    "addPiece": "Adicionar peça",
+    "addPieceToStoreTitle": "Adicionar peça à loja",
+    "noPieceAssigned": "Nenhuma peça atribuída",
+    "selectPiecePlaceholder": "Selecione uma peça",
     "customFields": "Campos Personalizados",
     "registered": "Peças registradas",
     "title": "Peças",
@@ -682,6 +686,9 @@
     "kitPiece": "É Kit"
   },
   "occurrences": {
+    "actionsTaken": "Ações tomadas",
+    "agencyObservation": "Observação da agência",
+    "priority": "Prioridade",
     "portal": {
       "title": "Portal de Ocorrências",
       "subtitle": "Selecione sua loja para registrar uma ocorrência",
@@ -757,6 +764,7 @@
     "reporterEmail": "Email Reclamante"
   },
   "scheduling": {
+    "notScheduled": "Não agendado",
     "title": "Agendamento",
     "scheduledDate": "Data Agendada",
     "scheduledTime": "Hora Agendada",
@@ -833,6 +841,11 @@
     }
   },
   "installations": {
+    "checkinDone": "Check-in registrado",
+    "checkinRemoved": "Check-in removido",
+    "errorUpdatingCheckin": "Erro ao atualizar o check-in",
+    "errorUpdatingCompletion": "Erro ao atualizar a conclusão",
+    "errorUpload": "Erro ao enviar a foto",
     "markComplete": "Marcar como concluída",
     "photosSentShort": "Fotos enviadas",
     "title": "Instalações",
@@ -945,6 +958,7 @@
     "noUserFound": "Nenhum usuário encontrado.",
     "noUserRegistered": "Nenhum usuário cadastrado.",
     "messages": {
+      "bulkTranslateConfirm": "Tem certeza que deseja traduzir todas as mensagens em massa?",
       "title": "Mensagens",
       "coverage": "{{percentage}}% cobertura — {{covered}} mensagens",
       "filterAll": "Todas",
@@ -979,6 +993,7 @@
     "es": "Español"
   },
   "clientDashboard": {
+    "renameCampaign": "Renomear campanha",
     "searchClient": "Buscar cliente...",
     "newClient": "Novo Cliente",
     "clientName": "Nome do cliente",
@@ -1217,6 +1232,7 @@
     "error": "Erro: {{message}}"
   },
   "profile": {
+    "nameRequired": "O nome é obrigatório",
     "editProfile": "Editar Perfil",
     "displayName": "Nome Completo",
     "namePlaceholder": "Seu nome completo",
@@ -1331,6 +1347,7 @@
       "viewAll": "Ver todas"
     },
     "recentActivity": {
+      "newCampaign": "Nova campanha",
       "title": "Atividade Recente"
     }
   },
