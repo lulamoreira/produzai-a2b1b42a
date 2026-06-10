@@ -858,7 +858,15 @@ const SupplierPortal = () => {
         : (s.tipo_entrega === 'frete_apenas' ? portal.typeFreteApenas : portal.typeSemLogistica)
     }));
 
-    const ws = XLSX.utils.json_to_sheet(data, { origin: "A2" });
+    const ws = XLSX.utils.json_to_sheet(data);
+    const range = XLSX.utils.decode_range(ws['!ref']!);
+    for (let r = range.e.r; r >= 0; --r) {
+      for (let c = 0; c <= range.e.c; ++c) {
+        const cell = ws[XLSX.utils.encode_cell({ r, c })];
+        const nextCell = ws[XLSX.utils.encode_cell({ r: r + 1, c })];
+        if (cell) ws[XLSX.utils.encode_cell({ r: r + 1, c })] = cell;
+      }
+    }
     XLSX.utils.sheet_add_aoa(ws, [[summaryLine]], { origin: "A1" });
     
     const wb = XLSX.utils.book_new();
