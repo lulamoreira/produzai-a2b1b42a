@@ -585,7 +585,7 @@ export function SidebarV2() {
               )}>
                 Módulos da Campanha
               </div>
-              <CampaignItem camp={effectiveSingleCampaign} agencyId={agencyId!} clientId={clientId!} />
+              <CampaignItem camp={effectiveSingleCampaign} agencyId={agencyId} clientId={clientId} />
             </div>
           )}
 
