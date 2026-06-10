@@ -54,7 +54,7 @@ export async function exportStoresExcel({ stores, campaignName, supplierName, cu
   titleCell.alignment = { horizontal: "center", vertical: "middle" };
 
   // Subtítulo
-  wsResumo.getCell("A4").value = portal.storesSummaryTitle || (isCLP ? "KPIs de Entrega" : "KPIs de Entrega");
+  wsResumo.getCell("A4").value = isCLP ? "KPIs de Entrega" : "KPIs de Entrega";
   wsResumo.getCell("A4").font = { bold: true, size: 12, color: { argb: ESCURO } };
 
   // KPIs
