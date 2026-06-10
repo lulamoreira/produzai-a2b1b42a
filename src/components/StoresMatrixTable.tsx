@@ -786,10 +786,35 @@ export default function StoresMatrixTable({
                       );
                     }
 
-                  // Special field: tipo_entrega (3 options)
                   if (col.storeField === "tipo_entrega") {
                     const val = (store.tipo_entrega ?? 'frete_instalacao') as string;
-                    
+
+                    const CYCLE: Record<string, string> = {
+                      frete_instalacao: 'frete_apenas',
+                      frete_apenas: 'sem_logistica',
+                      sem_logistica: 'frete_instalacao',
+                    };
+
+                    const LABELS: Record<string, { label: string; className: string; tooltip: string }> = {
+                      frete_instalacao: {
+                        label: '📦🔧 Frete + Instalação',
+                        className: 'bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200',
+                        tooltip: 'Esta loja recebe o material E tem instalação agendada. Clique para alterar.',
+                      },
+                      frete_apenas: {
+                        label: '📦 Frete Apenas',
+                        className: 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200',
+                        tooltip: 'Esta loja recebe apenas o material — sem instalação. Clique para alterar.',
+                      },
+                      sem_logistica: {
+                        label: '🏪 Sem Logística',
+                        className: 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200',
+                        tooltip: 'Ponto virtual ou retira na agência. Clique para alterar.',
+                      },
+                    };
+
+                    const current = LABELS[val] ?? LABELS['frete_instalacao'];
+
                     return (
                       <TableCell 
                         key={col.key} 
@@ -800,45 +825,20 @@ export default function StoresMatrixTable({
                         onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}
                       >
                         <div className="flex items-center justify-center gap-1.5 px-1 py-0.5 min-h-[28px]">
-                          <DropdownMenu modal={false}>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-auto p-0 hover:bg-transparent">
-                                {val === "frete_instalacao" ? (
-                                  <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 hover:bg-emerald-200 text-[10px] font-bold uppercase whitespace-nowrap">
-                                    📦🔧 Frete + Instalação
-                                  </Badge>
-                                ) : val === "frete_apenas" ? (
-                                  <Badge className="bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200 text-[10px] font-bold uppercase whitespace-nowrap">
-                                    📦 Frete Apenas
-                                  </Badge>
-                                ) : (
-                                  <Badge className="bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200 text-[10px] font-bold uppercase whitespace-nowrap">
-                                    🏪 Sem Logística
-                                  </Badge>
-                                )}
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start">
-                              <DropdownMenuItem onClick={() => onUpdateStore({ id: store.id, tipo_entrega: "frete_instalacao" })}>
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="font-bold text-emerald-700">📦🔧 Frete + Instalação</span>
-                                  <span className="text-[10px] text-muted-foreground">Esta loja recebe o material E tem instalação agendada</span>
-                                </div>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => onUpdateStore({ id: store.id, tipo_entrega: "frete_apenas" })}>
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="font-bold text-blue-700">📦 Frete Apenas</span>
-                                  <span className="text-[10px] text-muted-foreground">Esta loja recebe apenas o material — sem instalação</span>
-                                </div>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => onUpdateStore({ id: store.id, tipo_entrega: "sem_logistica" })}>
-                                <div className="flex flex-col gap-0.5">
-                                  <span className="font-bold text-gray-700">🏪 Sem Logística</span>
-                                  <span className="text-[10px] text-muted-foreground">Ponto virtual ou retira na agência</span>
-                                </div>
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <button
+                            type="button"
+                            className={cn(
+                              "inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase transition-colors border",
+                              current.className
+                            )}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onUpdateStore({ id: store.id, tipo_entrega: CYCLE[val] ?? 'frete_instalacao' as any });
+                            }}
+                            title={current.tooltip}
+                          >
+                            {current.label}
+                          </button>
                         </div>
                       </TableCell>
                     );
