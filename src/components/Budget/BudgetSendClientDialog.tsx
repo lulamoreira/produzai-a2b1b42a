@@ -285,7 +285,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
         if (kpList.length === 0) return;
         const kitTotalQty = Math.min(
-          ...kpList.map((kp) => Math.floor((pieceTotals[kp.piece_id] || 0) / (kp.quantity || 1))),
+          ...kpList.map((kp) => Math.floor((pieceTotals.map[kp.piece_id] || 0) / (kp.quantity || 1))),
         );
 
         // Kit header row (no prices on header itself)
