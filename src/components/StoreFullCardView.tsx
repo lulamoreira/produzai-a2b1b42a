@@ -110,21 +110,25 @@ const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFie
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm text-foreground flex items-center gap-2">
                       {store.name}
-                      {store.tipo_entrega === "frete_apenas" && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-700 border border-blue-200 uppercase">
-                          Só Entrega
-                        </span>
-                      )}
-                      {store.tipo_entrega === "frete_instalacao" && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 uppercase">
-                          Instalação
-                        </span>
-                      )}
-                      {store.tipo_entrega === "sem_logistica" && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-100 text-gray-600 border border-gray-200 uppercase">
-                          Sem Logística
-                        </span>
-                      )}
+                      {(() => {
+                        const tipo = store.tipo_entrega ?? 'frete_instalacao';
+                        if (tipo === "frete_apenas") return (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-700 border border-blue-200 uppercase">
+                            Só Entrega
+                          </span>
+                        );
+                        if (tipo === "frete_instalacao") return (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 uppercase">
+                            Instalação
+                          </span>
+                        );
+                        if (tipo === "sem_logistica") return (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-100 text-gray-600 border border-gray-200 uppercase">
+                            Sem Logística
+                          </span>
+                        );
+                        return null;
+                      })()}
                     </p>
                     {store.nickname && store.nickname !== store.name && (
                       <p className="text-xs text-muted-foreground">({store.nickname})</p>

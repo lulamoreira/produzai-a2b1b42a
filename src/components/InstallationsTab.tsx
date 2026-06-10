@@ -241,7 +241,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
   const filteredStores = useMemo(() => {
     return scheduledStores.filter((s) => {
-      if (s.tipo_entrega !== 'frete_instalacao') return false;
+      if ((s.tipo_entrega ?? 'frete_instalacao') !== 'frete_instalacao') return false;
       const q = searchTerm.toLowerCase().trim();
       const matchesSearch = !q || Object.values(s).some(val => 
         (typeof val === 'string' || typeof val === 'number') && 

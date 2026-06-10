@@ -276,8 +276,10 @@ export function SidebarV2() {
       <NavLink
         to={item.route}
         onClick={(e) => {
-          e.stopPropagation();
-          if (collapsed && !isSubItem) toggleSidebar();
+          if (collapsed && !isSubItem) {
+            e.preventDefault();
+            toggleSidebar();
+          }
         }}
         className={cn(
           "w-full flex items-center gap-3 py-2 px-3 transition-all duration-200 group relative",
