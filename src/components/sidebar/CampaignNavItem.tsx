@@ -71,7 +71,7 @@ export function CampaignNavItem({
       <div className="flex items-center gap-0.5">
         <button
           type="button"
-          onClick={handleCampaignClick}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCampaignClick(e); }}
           className="flex-1 text-left px-2 py-1.5 rounded-md text-[12px] font-semibold uppercase tracking-wider transition-all whitespace-normal break-words"
           style={{ color: isActive ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)" }}
           onMouseEnter={(e) => { e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
