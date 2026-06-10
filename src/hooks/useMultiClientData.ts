@@ -81,6 +81,7 @@ export type ClientStore = {
   observations: string | null;
   auto_distribute: boolean;
   show_in_scheduling: boolean;
+  requer_instalacao: boolean;
   created_at: string;
 };
 
