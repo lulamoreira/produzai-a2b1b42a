@@ -1103,34 +1103,39 @@ const SupplierPortal = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {storeData.map((store) => {
-                          const tipo = store.tipo_entrega || 'frete_instalacao';
-                          return (
-                            <TableRow key={store.id}>
-                              <TableCell className="text-xs font-medium">{store.name}</TableCell>
-                              <TableCell className="text-xs text-muted-foreground">{store.nickname || '—'}</TableCell>
-                              <TableCell className="text-xs text-muted-foreground">{store.city || '—'}</TableCell>
-                              <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">
-                                {store.street ? `${store.street}${store.number ? `, ${store.number}` : ''}` : '—'}
-                              </TableCell>
-                              <TableCell>
-                                {tipo === 'frete_instalacao' ? (
-                                  <Badge className="bg-green-100 text-green-700 border-green-200 text-[9px] whitespace-nowrap">
-                                    📦🔧 {portal.typeFreteInstalacao}
-                                  </Badge>
-                                ) : tipo === 'frete_apenas' ? (
-                                  <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[9px] whitespace-nowrap">
-                                    📦 {portal.typeFreteApenas}
-                                  </Badge>
-                                ) : (
-                                  <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-[9px] whitespace-nowrap">
-                                    🏪 {portal.typeSemLogistica}
-                                  </Badge>
-                                )}
-                              </TableCell>
-                            </TableRow>
+                        {(() => {
+                          const uniqueStoresList = storeData.filter((s, idx, self) => 
+                            idx === self.findIndex(t => t.id === s.id)
                           );
-                        })}
+                          return uniqueStoresList.map((store) => {
+                            const tipo = store.tipo_entrega || 'frete_instalacao';
+                            return (
+                              <TableRow key={store.id}>
+                                <TableCell className="text-xs font-medium">{store.name}</TableCell>
+                                <TableCell className="text-xs text-muted-foreground">{store.nickname || '—'}</TableCell>
+                                <TableCell className="text-xs text-muted-foreground">{store.city || '—'}</TableCell>
+                                <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">
+                                  {store.street ? `${store.street}${store.number ? `, ${store.number}` : ''}` : '—'}
+                                </TableCell>
+                                <TableCell>
+                                  {tipo === 'frete_instalacao' ? (
+                                    <Badge className="bg-green-100 text-green-700 border-green-200 text-[9px] whitespace-nowrap">
+                                      📦🔧 {portal.typeFreteInstalacao}
+                                    </Badge>
+                                  ) : tipo === 'frete_apenas' ? (
+                                    <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[9px] whitespace-nowrap">
+                                      📦 {portal.typeFreteApenas}
+                                    </Badge>
+                                  ) : (
+                                    <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-[9px] whitespace-nowrap">
+                                      🏪 {portal.typeSemLogistica}
+                                    </Badge>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          });
+                        })()}
                       </TableBody>
                     </Table>
                   </div>
