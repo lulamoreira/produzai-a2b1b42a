@@ -1532,13 +1532,17 @@ const ClientDetail = () => {
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col">
-                    <DialogHeader><DialogTitle>Nova Loja</DialogTitle></DialogHeader>
-                    <form onSubmit={handleAddStore} className="space-y-4">
-                      {renderStoreFormFields(storeForm, setStoreForm, {
-                        nameChangeHandler: handleNameChange,
-                        nicknameChangeHandler: handleNicknameChange,
-                      })}
-                      <Button type="submit" className="w-full gradient-secondary text-white border-0" disabled={addStore.isPending}>Adicionar Loja</Button>
+                    <DialogHeader className="px-6 pt-6"><DialogTitle>Nova Loja</DialogTitle></DialogHeader>
+                    <form onSubmit={handleAddStore} className="flex-1 overflow-y-auto px-6 py-4 flex flex-col">
+                      <div className="flex-1 space-y-4">
+                        {renderStoreFormFields(storeForm, setStoreForm, {
+                          nameChangeHandler: handleNameChange,
+                          nicknameChangeHandler: handleNicknameChange,
+                        })}
+                      </div>
+                      <div className="pt-4 mt-auto">
+                        <Button type="submit" className="w-full gradient-secondary text-white border-0" disabled={addStore.isPending}>Adicionar Loja</Button>
+                      </div>
                     </form>
                   </DialogContent>
                 </Dialog>
