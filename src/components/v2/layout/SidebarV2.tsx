@@ -355,7 +355,10 @@ export function SidebarV2() {
           style={{ 
             background: isActiveCampaign ? 'rgba(255,255,255,0.05)' : 'transparent' 
           }}
-          onClick={() => navigate(campBasePath)}
+          onClick={() => {
+            if (collapsed) toggleSidebar();
+            navigate(campBasePath);
+          }}
         >
           <div className="flex items-center gap-2 min-w-0">
             <div 
