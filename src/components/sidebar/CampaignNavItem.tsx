@@ -34,8 +34,8 @@ export function CampaignNavItem({
 }: Props) {
   const { t } = useTranslation();
 
-  const handleCampaignClick = () => {
-    // Sempre vai para a tela inicial da campanha (KPIs + ModuleGrid)
+  const handleCampaignClick = (e: React.MouseEvent) => {
+    // Se clicar no nome da campanha, vai para o resumo
     onNavigateHome();
   };
 
