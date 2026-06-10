@@ -392,7 +392,7 @@ export function SidebarV2() {
               <ChevronDown className="w-3 h-3" />
             </button>
           )}
-        </div>
+        </NavLink>
         
         {isExpanded && !collapsed && (
           <div 
