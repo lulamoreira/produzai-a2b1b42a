@@ -275,23 +275,18 @@ export function SidebarV2() {
     const content = (
       <NavLink
         to={item.route}
-        onClick={() => {
-          if (collapsed && !isSubItem) {
-            toggleSidebar();
-          }
-        }}
-        className={cn(
+        className={({ isActive: linkActive }) => cn(
           "w-full flex items-center gap-3 py-2 px-3 transition-all duration-200 group relative",
           isSubItem ? "pl-9 text-xs" : "text-sm font-medium",
-          isActive
+          (activeOverride !== undefined ? activeOverride : linkActive)
             ? "text-white border-l-2 rounded-r-lg"
             : "hover:text-white rounded-lg"
         )}
-        style={{ 
-          background: isActive ? 'var(--v2-sidebar-active)' : 'transparent',
-          borderColor: isActive ? (customColor || 'var(--v2-accent)') : 'transparent',
-          color: isActive ? 'var(--v2-sidebar-active-text)' : 'var(--v2-sidebar-muted)'
-        }}
+        style={({ isActive: linkActive }) => ({ 
+          background: (activeOverride !== undefined ? activeOverride : linkActive) ? 'var(--v2-sidebar-active)' : 'transparent',
+          borderColor: (activeOverride !== undefined ? activeOverride : linkActive) ? (customColor || 'var(--v2-accent)') : 'transparent',
+          color: (activeOverride !== undefined ? activeOverride : linkActive) ? 'var(--v2-sidebar-active-text)' : 'var(--v2-sidebar-muted)'
+        })}
       >
         {item.icon && (
           <item.icon
@@ -300,7 +295,7 @@ export function SidebarV2() {
               "flex-shrink-0 transition-colors"
             )}
             style={{ 
-              color: isActive 
+              color: (activeOverride !== undefined ? activeOverride : isActive) 
                 ? 'var(--v2-sidebar-active-text)' 
                 : (isSubItem && item.color ? item.color : (customColor || 'inherit'))
             }}
