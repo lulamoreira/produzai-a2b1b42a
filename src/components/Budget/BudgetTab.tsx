@@ -1233,13 +1233,13 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           <div className="px-6 h-12 flex items-center border-b border-border/60">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Budget da Campanha</p>
             {(() => {
-              const somenteEntrega = stores.filter(s => (s as any).requer_instalacao === false).length;
-              if (somenteEntrega > 0) {
+              const semLogistica = stores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
+              if (semLogistica > 0) {
                 const pLabels = getSupplierPortalLabels(currencyCode);
                 return (
                   <div className="bg-amber-50 border border-amber-200 rounded p-2 mb-2">
                     <p className="text-[10px] font-bold text-amber-700 leading-tight">
-                      {pLabels.onlyDeliveryNote(somenteEntrega)}
+                      {pLabels.noLogisticsNote(semLogistica)}
                     </p>
                   </div>
                 );
