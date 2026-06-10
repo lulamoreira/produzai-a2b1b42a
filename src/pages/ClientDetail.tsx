@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -879,7 +879,7 @@ const ClientDetail = () => {
     (client as any)?.custom_field_14_label,
     (client as any)?.custom_field_15_label,
   ];
-  const customFieldsParsed = customFieldLabelsRaw.map(parseFieldLabel);
+  const customFieldsParsed = useMemo(() => customFieldLabelsRaw.map(parseFieldLabel), [customFieldLabelsRaw]);
 
   if (!isAdminOrMaster && (loadingAccess || !canViewClient)) {
     return null;
@@ -1623,12 +1623,19 @@ const ClientDetail = () => {
                 <p className="text-muted-foreground text-sm">Nenhuma loja cadastrada.</p>
               </div>
             ) : (
-              <StoresMatrixTable
-                stores={stores}
-                clientId={clientId!}
-                customFieldLabels={customFieldsParsed
-                  .map((cf, i) => ({ label: cf.name, index: i + 1, type: cf.type }))
-                  .filter((cf) => cf.label)}
+              (() => {
+                const stableCustomFieldLabels = useMemo(
+                  () => customFieldsParsed
+                    .map((cf, i) => ({ label: cf.name, index: i + 1, type: cf.type }))
+                    .filter((cf) => cf.label),
+                  [customFieldsParsed]
+                );
+
+                return (
+                  <StoresMatrixTable
+                    stores={stores}
+                    clientId={clientId!}
+                    customFieldLabels={stableCustomFieldLabels}
                 canEdit={canEditStores}
                 onUpdateStore={async (data) => { await updateStore.mutateAsync(data); }}
                 onOpenEditStore={handleOpenEditStore}
@@ -1636,6 +1643,8 @@ const ClientDetail = () => {
                 storeStateFilter={storeStateFilter}
                 onDisplayOrderChange={setDisplayOrderStores}
                />
+                );
+              })()
 
             )}
             </>
