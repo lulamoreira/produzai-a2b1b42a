@@ -645,6 +645,7 @@ const ClientDetail = () => {
       custom_field_15: (store as any).custom_field_15 || "",
       observations: (store as any).observations || "",
       showcase_count: String((store as any).showcase_count ?? 0),
+      requer_instalacao: (store as any).requer_instalacao ?? true,
     });
     setEditStoreDialogOpen(true);
   };
