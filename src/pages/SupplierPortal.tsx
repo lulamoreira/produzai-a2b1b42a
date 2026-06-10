@@ -1016,10 +1016,15 @@ const SupplierPortal = () => {
           }, [] as typeof storeData);
 
           const comFrete = uniqueStores.filter(s => {
-            const tipo = (s as any).tipo_entrega ?? 'frete_instalacao';
+            const tipo = (s as any).tipo_entrega || 'frete_instalacao';
             return tipo === 'frete_instalacao' || tipo === 'frete_apenas';
           }).length;
-          const comInstalacao = uniqueStores.filter(s => ((s as any).tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length;
+          
+          const comInstalacao = uniqueStores.filter(s => {
+            const tipo = (s as any).tipo_entrega || 'frete_instalacao';
+            return tipo === 'frete_instalacao';
+          }).length;
+          
           const semLogistica = uniqueStores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
           
           if (uniqueStores.length === 0) return null;
