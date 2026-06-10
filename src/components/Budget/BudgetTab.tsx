@@ -2862,7 +2862,7 @@ ${msgLabels.winnerWaFooter}
             pieces={pieces}
             prices={prices as any}
             extraCosts={extraCosts as any}
-            pieceTotals={pieceTotals}
+            pieceTotals={pieceTotalsFull}
             kitPieceTotals={kitPieceTotals}
             settings={settings}
             currencyCode={currencyCode}
