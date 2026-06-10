@@ -46,7 +46,7 @@ export function CampaignNavItem({
         <TooltipTrigger asChild>
           <button
             type="button"
-            onClick={handleCampaignClick}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCampaignClick(e); }}
             className="w-full flex items-center justify-center px-2 py-1.5 rounded-md transition-all"
             style={isActive
               ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", borderLeft: "3px solid var(--sidebar-active-bar)" }
