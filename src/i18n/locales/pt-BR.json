@@ -352,6 +352,7 @@
     "completedPct": "concluída"
   },
   "filters": {
+    "moreFilters": "Mais filtros",
     "allStates": "Todos estados",
     "allCities": "Todas cidades",
     "approvals": "Aprovações",
@@ -821,6 +822,7 @@
     }
   },
   "installations": {
+    "markComplete": "Marcar como concluída",
     "photosSentShort": "Fotos enviadas",
     "title": "Instalações",
 
