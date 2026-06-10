@@ -915,6 +915,38 @@ const ClientDetail = () => {
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Apelido</label>
           <Input value={form.nickname} onChange={(e) => options?.nicknameChangeHandler ? options.nicknameChangeHandler(e.target.value) : setForm((f) => ({ ...f, nickname: e.target.value }))} />
         </div>
+        <div className="col-span-1 sm:col-span-2">
+          <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Tipo de ponto</label>
+          <ToggleGroup
+            type="single"
+            value={String(form.requer_instalacao)}
+            onValueChange={(val) => {
+              if (val) setForm((f) => ({ ...f, requer_instalacao: val === "true" }));
+            }}
+            className="justify-start gap-3"
+          >
+            <ToggleGroupItem
+              value="true"
+              className={cn(
+                "flex-1 justify-center gap-2 h-10 border rounded-md transition-all",
+                form.requer_instalacao === true && "bg-primary/10 border-primary text-primary hover:bg-primary/20"
+              )}
+            >
+              <Wrench className="w-4 h-4" />
+              <span className="text-sm">Instalação + Entrega</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="false"
+              className={cn(
+                "flex-1 justify-center gap-2 h-10 border rounded-md transition-all",
+                form.requer_instalacao === false && "bg-blue-50 border-blue-500 text-blue-700 hover:bg-blue-100"
+              )}
+            >
+              <Package className="w-4 h-4" />
+              <span className="text-sm">Somente Entrega</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">{countryConfig.taxIdLabel}</label>
           <Input value={form.cnpj} onChange={(e) => setForm((f) => ({ ...f, cnpj: e.target.value }))} />
