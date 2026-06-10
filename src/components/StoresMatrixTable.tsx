@@ -716,7 +716,7 @@ export default function StoresMatrixTable({
   const isMobile = useIsMobile();
 
   return (
-    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+    <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden isolate relative">
       <div className="overflow-x-auto">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <Table className="min-w-[1200px] border-collapse">
