@@ -51,7 +51,7 @@ export type ColumnDef = {
 };
 
 const BASE_COLUMNS: ColumnDef[] = [
-  { key: "requer_instalacao", label: "Entrega", storeField: "requer_instalacao", fieldType: "boolean" },
+  { key: "tipo_entrega", label: "Entrega", storeField: "tipo_entrega", fieldType: "text" },
   { key: "name", label: "Nome", storeField: "name" },
   { key: "nickname", label: "Apelido", storeField: "nickname" },
   { key: "store_code", label: "Código", storeField: "store_code" },
