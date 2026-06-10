@@ -46,7 +46,7 @@ export default function StoresTab({
           <Store className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-semibold">{t("modules.stores")}</h2>
           <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-            {stores.length} registradas
+            {filteredStores.length} registradas
           </span>
         </div>
         
