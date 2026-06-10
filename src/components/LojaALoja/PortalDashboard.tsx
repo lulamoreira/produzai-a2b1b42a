@@ -76,7 +76,7 @@ function usePortalOccurrences(campaignId: string) {
           expected_resolution_date, needs_reinstallation, resolution_photo_urls,
           reinstallation_scheduled_at, reinstallation_os,
           tratativa_status, tratativa_notes,
-          client_stores(name, city, state),
+          client_stores(name, city, state, tipo_entrega),
           loja_a_loja_pecas(nome, image_url, loja_a_loja_tipos(letra, nome), loja_a_loja_subdivisoes(nome)),
           store_portal_motivos(descricao)
         ` as any)
