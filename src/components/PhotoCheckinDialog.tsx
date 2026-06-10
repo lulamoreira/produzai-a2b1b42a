@@ -126,7 +126,7 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
         </div>
 
         {/* Photo grid - Scrollable area */}
-        <div className="flex-1 overflow-y-auto px-6 pb-6">
+        <div className="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar">
           {filteredPhotos.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-sm">
               <Camera className="w-10 h-10 mx-auto mb-2 opacity-30" />
