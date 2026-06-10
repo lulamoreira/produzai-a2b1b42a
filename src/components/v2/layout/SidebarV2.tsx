@@ -275,6 +275,9 @@ export function SidebarV2() {
     const content = (
       <NavLink
         to={item.route}
+        onClick={() => {
+          if (collapsed && !isSubItem) toggleSidebar();
+        }}
         className={cn(
           "w-full flex items-center gap-3 py-2 px-3 transition-all duration-200 group relative",
           isSubItem ? "pl-9 text-xs" : "text-sm font-medium",
