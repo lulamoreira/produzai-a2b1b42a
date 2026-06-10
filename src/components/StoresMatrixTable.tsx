@@ -477,7 +477,11 @@ export default function StoresMatrixTable({
 
   }, [stores, storeSearch, storeStateFilter, sortKey, sortDir, disableInternalSort, orderedColumns, allColumns]);
 
+  const lastOrderSigRef = useRef<string>("");
   useEffect(() => {
+    const sig = filteredStores.map((s) => s.id).join(",");
+    if (sig === lastOrderSigRef.current) return;
+    lastOrderSigRef.current = sig;
     onDisplayOrderChange?.(filteredStores);
   }, [filteredStores, onDisplayOrderChange]);
 
