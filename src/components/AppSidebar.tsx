@@ -281,7 +281,7 @@ export default function AppSidebar() {
   }, [mobileOpen]);
 
   const sidebarContent = (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden" onClick={handleSidebarClick}>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden" onClick={(e) => { e.stopPropagation(); handleSidebarClick(e); }}>
       <SidebarHeader
         collapsed={collapsed}
         onToggleCollapsed={() => setCollapsed(!collapsed)}
