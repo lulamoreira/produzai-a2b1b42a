@@ -2230,7 +2230,6 @@ export type Database = {
           number: string | null
           observations: string | null
           phone: string | null
-          requer_instalacao: boolean
           show_in_scheduling: boolean
           showcase_count: number
           state: string | null
@@ -2238,6 +2237,7 @@ export type Database = {
           store_code: string | null
           store_model: string | null
           street: string | null
+          tipo_entrega: string
           zip_code: string | null
         }
         Insert: {
@@ -2274,7 +2274,6 @@ export type Database = {
           number?: string | null
           observations?: string | null
           phone?: string | null
-          requer_instalacao?: boolean
           show_in_scheduling?: boolean
           showcase_count?: number
           state?: string | null
@@ -2282,6 +2281,7 @@ export type Database = {
           store_code?: string | null
           store_model?: string | null
           street?: string | null
+          tipo_entrega?: string
           zip_code?: string | null
         }
         Update: {
@@ -2318,7 +2318,6 @@ export type Database = {
           number?: string | null
           observations?: string | null
           phone?: string | null
-          requer_instalacao?: boolean
           show_in_scheduling?: boolean
           showcase_count?: number
           state?: string | null
@@ -2326,6 +2325,7 @@ export type Database = {
           store_code?: string | null
           store_model?: string | null
           street?: string | null
+          tipo_entrega?: string
           zip_code?: string | null
         }
         Relationships: [
