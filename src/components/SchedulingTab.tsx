@@ -293,7 +293,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   }, [stores]);
 
   const filteredStores = useMemo(() => {
-    let result = stores.filter((s) => s.requer_instalacao !== false);
+    let result = stores.filter((s) => s.tipo_entrega === 'frete_instalacao');
     if (filterState) result = result.filter((s) => s.state === filterState);
     if (filterCity) result = result.filter((s) => s.city === filterCity);
     if (filterModel) result = result.filter((s) => s.store_model === filterModel);

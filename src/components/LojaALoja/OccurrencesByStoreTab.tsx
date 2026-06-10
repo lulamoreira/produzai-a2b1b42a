@@ -39,7 +39,7 @@ function useOccurrencesByStore(campaignId: string) {
           expected_resolution_date, needs_reinstallation, resolution_photo_urls,
           reinstallation_scheduled_at, reinstallation_os,
           tratativa_status, tratativa_notes,
-          client_stores(name, city, state),
+          client_stores(name, city, state, tipo_entrega),
           loja_a_loja_pecas(nome, image_url, loja_a_loja_tipos(letra, nome), loja_a_loja_subdivisoes(nome)),
           store_portal_motivos(descricao)
         ` as any)
@@ -102,6 +102,8 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const result = occList.filter((o) => {
+      const storeTipo = (o.client_stores as any)?.tipo_entrega;
+      if (storeTipo === 'sem_logistica') return false;
       if (filterStore !== "__all__" && o.store_id !== filterStore) return false;
       if (filterMotive !== "__all__" && o.motive_id !== filterMotive) return false;
       const st = o.tratativa_status ?? "aberta";

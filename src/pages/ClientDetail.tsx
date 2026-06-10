@@ -136,7 +136,7 @@ const emptyStoreForm = {
   custom_field_6: "", custom_field_7: "", custom_field_8: "", custom_field_9: "", custom_field_10: "",
   custom_field_11: "", custom_field_12: "", custom_field_13: "", custom_field_14: "", custom_field_15: "",
   observations: "", showcase_count: "0",
-  requer_instalacao: true,
+  tipo_entrega: 'frete_instalacao' as const,
 };
 
 function generateStoreCode(clientName: string, country: string, existingStores: { store_code: string | null }[]): string {
@@ -648,7 +648,7 @@ const ClientDetail = () => {
       custom_field_15: (store as any).custom_field_15 || "",
       observations: (store as any).observations || "",
       showcase_count: String((store as any).showcase_count ?? 0),
-      requer_instalacao: (store as any).requer_instalacao ?? true,
+      tipo_entrega: (store as any).tipo_entrega || 'frete_instalacao',
     });
     setEditStoreDialogOpen(true);
   };
@@ -919,17 +919,17 @@ const ClientDetail = () => {
           <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Tipo de ponto</label>
           <ToggleGroup
             type="single"
-            value={String(form.requer_instalacao)}
+            value={form.tipo_entrega}
             onValueChange={(val) => {
-              if (val) setForm((f) => ({ ...f, requer_instalacao: val === "true" }));
+              if (val) setForm((f) => ({ ...f, tipo_entrega: val as any }));
             }}
-            className="justify-start gap-3"
+            className="flex flex-col sm:flex-row justify-start gap-3 h-auto"
           >
             <ToggleGroupItem
-              value="true"
+              value="frete_instalacao"
               className={cn(
                 "flex-1 flex-col items-center justify-center gap-1 h-auto py-3 border rounded-md transition-all text-center",
-                form.requer_instalacao === true && "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm"
+                (form.tipo_entrega as string) === "frete_instalacao" && "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm"
               )}
             >
               <div className="flex items-center gap-2 font-bold">
@@ -937,16 +937,28 @@ const ClientDetail = () => {
               </div>
             </ToggleGroupItem>
             <ToggleGroupItem
-              value="false"
+              value="frete_apenas"
               className={cn(
                 "flex-1 flex-col items-center justify-center gap-1 h-auto py-3 border rounded-md transition-all text-center",
-                form.requer_instalacao === false && "bg-blue-50 border-blue-500 text-blue-700 shadow-sm"
+                (form.tipo_entrega as string) === "frete_apenas" && "bg-blue-50 border-blue-500 text-blue-700 shadow-sm"
               )}
             >
               <div className="flex items-center gap-2 font-bold">
                 <span>📦 Frete Apenas</span>
               </div>
               <span className="text-[10px] opacity-70 font-normal">Quiosques, stands e pontos sem instalação</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="sem_logistica"
+              className={cn(
+                "flex-1 flex-col items-center justify-center gap-1 h-auto py-3 border rounded-md transition-all text-center",
+                (form.tipo_entrega as string) === "sem_logistica" && "bg-gray-50 border-gray-400 text-gray-700 shadow-sm"
+              )}
+            >
+              <div className="flex items-center gap-2 font-bold">
+                <span>🏪 Sem Logística</span>
+              </div>
+              <span className="text-[10px] opacity-70 font-normal">Ponto virtual ou retira na agência</span>
             </ToggleGroupItem>
           </ToggleGroup>
         </div>

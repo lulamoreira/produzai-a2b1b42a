@@ -81,7 +81,7 @@ export type ClientStore = {
   observations: string | null;
   auto_distribute: boolean;
   show_in_scheduling: boolean;
-  requer_instalacao: boolean;
+  tipo_entrega: 'frete_instalacao' | 'frete_apenas' | 'sem_logistica';
   created_at: string;
 };
 

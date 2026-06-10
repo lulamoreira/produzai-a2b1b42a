@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { format } from "date-fns";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers, AlertCircle, FileSpreadsheet, Package, Wrench
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers, AlertCircle, FileSpreadsheet, Package, Wrench, Store
 } from "lucide-react";
 import { useExportRequoteFinal } from "@/hooks/useExportRequoteFinal";
 import RequoteFinalExportDialog from "@/components/RequoteFinalExportDialog";
@@ -1118,22 +1118,23 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
 
       {(() => {
         const pLabels = getSupplierPortalLabels(currencyCode);
-        const somenteEntrega = stores.filter(s => (s as any).requer_instalacao === false).length;
-        const comInstalacao = stores.length - somenteEntrega;
+        const comFrete = stores.filter(s => (s as any).tipo_entrega === 'frete_instalacao' || (s as any).tipo_entrega === 'frete_apenas').length;
+        const comInstalacao = stores.filter(s => (s as any).tipo_entrega === 'frete_instalacao').length;
+        const semLogistica = stores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
         
         return (
           <div className="flex flex-wrap gap-3">
             <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-full border border-border shadow-sm">
               <Package className="w-4 h-4 text-primary" />
-              <span className="text-xs font-semibold">{stores.length} {pLabels.summaryPackages}</span>
+              <span className="text-xs font-semibold">{comFrete} {pLabels.summaryFrete}</span>
             </div>
             <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100 shadow-sm">
               <Wrench className="w-4 h-4 text-emerald-600" />
               <span className="text-xs font-semibold text-emerald-700">{comInstalacao} {pLabels.summaryInstallations}</span>
             </div>
-            <div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100 shadow-sm">
-              <Package className="w-4 h-4 text-blue-600" />
-              <span className="text-xs font-semibold text-blue-700">{somenteEntrega} {pLabels.summaryOnlyDelivery}</span>
+            <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">
+              <Store className="w-4 h-4 text-gray-600" />
+              <span className="text-xs font-semibold text-gray-700">{semLogistica} {pLabels.summaryNoLogistics}</span>
             </div>
           </div>
         );
@@ -1233,13 +1234,13 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           <div className="px-6 h-12 flex items-center border-b border-border/60">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Budget da Campanha</p>
             {(() => {
-              const somenteEntrega = stores.filter(s => (s as any).requer_instalacao === false).length;
-              if (somenteEntrega > 0) {
+              const semLogistica = stores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
+              if (semLogistica > 0) {
                 const pLabels = getSupplierPortalLabels(currencyCode);
                 return (
                   <div className="bg-amber-50 border border-amber-200 rounded p-2 mb-2">
                     <p className="text-[10px] font-bold text-amber-700 leading-tight">
-                      {pLabels.onlyDeliveryNote(somenteEntrega)}
+                      {pLabels.noLogisticsNote(semLogistica)}
                     </p>
                   </div>
                 );

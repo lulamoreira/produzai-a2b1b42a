@@ -972,23 +972,24 @@ const SupplierPortal = () => {
       <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 space-y-6">
         {/* Resumo visual no portal */}
         {(() => {
-          const somenteEntrega = storeData.filter(s => (s as any).requer_instalacao === false).length;
-          const comInstalacao = storeData.length - somenteEntrega;
+          const comFrete = storeData.filter(s => (s as any).tipo_entrega === 'frete_instalacao' || (s as any).tipo_entrega === 'frete_apenas').length;
+          const comInstalacao = storeData.filter(s => (s as any).tipo_entrega === 'frete_instalacao').length;
+          const semLogistica = storeData.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
           if (storeData.length === 0) return null;
 
           return (
             <div className="flex flex-wrap gap-3">
               <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-border shadow-sm">
                 <Package className="w-4 h-4 text-primary" />
-                <span className="text-xs font-bold">{storeData.length} {portal.summaryPackages}</span>
+                <span className="text-xs font-bold">{comFrete} {portal.summaryFrete}</span>
               </div>
               <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-border shadow-sm">
                 <Edit2 className="w-4 h-4 text-emerald-600" />
                 <span className="text-xs font-bold">{comInstalacao} {portal.summaryInstallations}</span>
               </div>
               <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-border shadow-sm">
-                <Package className="w-4 h-4 text-blue-600" />
-                <span className="text-xs font-bold">{somenteEntrega} {portal.summaryOnlyDelivery}</span>
+                <Package className="w-4 h-4 text-gray-400" />
+                <span className="text-xs font-bold">{semLogistica} {portal.summaryNoLogistics}</span>
               </div>
             </div>
           );
@@ -1004,9 +1005,9 @@ const SupplierPortal = () => {
               <p dangerouslySetInnerHTML={{ __html: portal.inviteText(campaignName, clientName) }} />
               <p dangerouslySetInnerHTML={{ __html: portal.instructionPrice }} />
               {(() => {
-                const somenteEntrega = storeData.filter(s => (s as any).requer_instalacao === false).length;
-                if (somenteEntrega > 0) {
-                  return <p className="font-bold text-amber-600">{portal.onlyDeliveryNote(somenteEntrega)}</p>;
+                const semLogistica = storeData.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
+                if (semLogistica > 0) {
+                  return <p className="font-bold text-amber-600">{portal.noLogisticsNote(semLogistica)}</p>;
                 }
                 return null;
               })()}
@@ -1212,6 +1213,21 @@ const SupplierPortal = () => {
                                 <div className="flex items-center gap-2">
                                   <Badge variant="outline" className="text-[10px] shrink-0">#{row.code}</Badge>
                                   <span className="font-medium text-sm break-words whitespace-normal">{row.name}</span>
+                                  {(() => {
+                                    const store = storeData.find(s => s.name === row.name);
+                                    const tipo = (store as any)?.tipo_entrega;
+                                    if (tipo === "frete_apenas") return (
+                                      <Badge className="ml-2 bg-blue-100 text-blue-700 border-blue-200 text-[10px] font-bold uppercase">
+                                        {portal.onlyDeliveryBadge}
+                                      </Badge>
+                                    );
+                                    if (tipo === "sem_logistica") return (
+                                      <Badge className="ml-2 bg-gray-100 text-gray-600 border-gray-200 text-[10px] font-bold uppercase">
+                                        {portal.typeSemLogistica}
+                                      </Badge>
+                                    );
+                                    return null;
+                                  })()}
                                   {hasSuggestion && (
                                     <Badge className="bg-warning/15 text-warning border-warning/30 text-[9px]">{portal.suggestModificationActive}</Badge>
                                   )}
