@@ -1644,6 +1644,9 @@ const ClientDetail = () => {
             {/* CustomExportDialog removed — see project policy */}
           </>
         )}
+      </>
+    )}
+
 
 
         {/* ─── Suppliers View ─── */}
