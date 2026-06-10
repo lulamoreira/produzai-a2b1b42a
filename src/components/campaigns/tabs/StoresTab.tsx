@@ -35,6 +35,10 @@ export default function StoresTab({
   const [storeSearch, setStoreSearch] = useState("");
   const [storesViewMode, setStoresViewMode] = useState<"table" | "contacts">("table");
 
+  const filteredStores = useMemo(() => {
+    return stores.filter((s) => (s.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica');
+  }, [stores]);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
