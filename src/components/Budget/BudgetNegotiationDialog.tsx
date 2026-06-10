@@ -652,6 +652,9 @@ export default function BudgetNegotiationDialog({
                     <TableHeader>
                       <TableRow>
                         <TableHead>Peça</TableHead>
+                        <TableHead className="text-right">F+I</TableHead>
+                        <TableHead className="text-right">FA</TableHead>
+                        <TableHead className="text-right">SL</TableHead>
                         <TableHead className="text-right">Qtd</TableHead>
                         <TableHead className="text-right">Original</TableHead>
                         <TableHead className="text-right">Ajustado</TableHead>
