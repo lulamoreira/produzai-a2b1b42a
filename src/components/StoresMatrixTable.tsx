@@ -48,7 +48,7 @@ export type ColumnDef = {
 };
 
 const BASE_COLUMNS: ColumnDef[] = [
-  { key: "requer_instalacao", label: "Tipo", storeField: "requer_instalacao", fieldType: "boolean" },
+  { key: "requer_instalacao", label: "Entrega", storeField: "requer_instalacao", fieldType: "boolean" },
   { key: "name", label: "Nome", storeField: "name" },
   { key: "nickname", label: "Apelido", storeField: "nickname" },
   { key: "store_code", label: "Código", storeField: "store_code" },
@@ -156,6 +156,18 @@ function DraggableHeaderCell({
           onClick={() => onSort(col.key)}
         >
           {col.label}
+          {col.storeField === "requer_instalacao" && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="w-3 h-3 text-muted-foreground/70" />
+                </TooltipTrigger>
+                <TooltipContent side="top">
+                  <p className="text-xs">Frete + Instalação ou Frete Apenas</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
           {sortKey === col.key ? (
             sortDir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
           ) : (
@@ -773,35 +785,82 @@ export default function StoresMatrixTable({
                   if (col.fieldType === "boolean") {
                     const boolVal = (store as any)[col.storeField];
                     const isTrue = boolVal === "true" || boolVal === true;
+                    const isRequerInstalacao = col.storeField === "requer_instalacao";
+
                     return (
-                      <TableCell key={col.key} className={cn("p-1 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 cursor-cell transition-all", isAnchor && "ring-2 ring-inset ring-blue-500 z-[6]")} onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}>
-                        {canEdit ? (
-                          <div className="flex items-center justify-center gap-1.5 px-1 py-0.5 min-h-[28px]">
-                            <Switch
-                              checked={isTrue}
-                              onCheckedChange={(checked) => {
-                                handleSave(store.id, col.storeField, checked ? "true" : "false");
-                              }}
-                              className="scale-75"
-                            />
-                            <span className="text-xs text-muted-foreground">{isTrue ? "Sim" : "Não"}</span>
-                            {isAnchor && !editingCell && (
+                      <TableCell 
+                        key={col.key} 
+                        className={cn(
+                          "p-1 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 cursor-cell transition-all", 
+                          isAnchor && "ring-2 ring-inset ring-blue-500 z-[6]"
+                        )} 
+                        onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}
+                      >
+                        <div className="flex items-center justify-center gap-1.5 px-1 py-0.5 min-h-[28px]">
+                          {canEdit ? (
+                            <>
                               <TooltipProvider>
-                                <Tooltip open={true}>
+                                <Tooltip>
                                   <TooltipTrigger asChild>
-                                    <div className="w-0 h-0" />
-                                  </TooltipTrigger>
-                                  <TooltipContent side="bottom" className="text-[10px] py-1 px-2 z-50">
-                                    <div className="flex items-center gap-1.5">
+                                    <div className="flex items-center gap-2">
+                                      <Switch
+                                        checked={isTrue}
+                                        onCheckedChange={(checked) => {
+                                          handleSave(store.id, col.storeField, checked ? "true" : "false");
+                                        }}
+                                        className="scale-75"
+                                      />
+                                      {isRequerInstalacao ? (
+                                        <span className={cn(
+                                          "text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap uppercase",
+                                          isTrue ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : "bg-blue-100 text-blue-700 border border-blue-200"
+                                        )}>
+                                          {isTrue ? "📦🔧 Frete + Instalação" : "📦 Frete Apenas"}
+                                        </span>
+                                      ) : (
+                                        <span className="text-xs text-muted-foreground">{isTrue ? "Sim" : "Não"}</span>
+                                      )}
                                     </div>
-                                  </TooltipContent>
+                                  </TooltipTrigger>
+                                  {isRequerInstalacao && (
+                                    <TooltipContent side="top">
+                                      <p className="text-xs">
+                                        {isTrue 
+                                          ? "Esta loja recebe o material E tem instalação agendada" 
+                                          : "Esta loja recebe apenas o material — sem instalação (ex: quiosque, stand)"}
+                                      </p>
+                                    </TooltipContent>
+                                  )}
                                 </Tooltip>
                               </TooltipProvider>
-                            )}
-                          </div>
-                        ) : (
-                          <span className="text-xs px-1 text-gray-900 dark:text-gray-100">{isTrue ? "Sim" : "Não"}</span>
-                        )}
+
+                              {isAnchor && !editingCell && (
+                                <TooltipProvider>
+                                  <Tooltip open={true}>
+                                    <TooltipTrigger asChild>
+                                      <div className="w-0 h-0" />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom" className="text-[10px] py-1 px-2 z-50">
+                                      <div className="flex items-center gap-1.5">
+                                      </div>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </>
+                          ) : (
+                            isRequerInstalacao ? (
+                              <span className={cn(
+                                "text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap uppercase",
+                                isTrue ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : "bg-blue-100 text-blue-700 border border-blue-200"
+                              )}>
+                                {isTrue ? "📦🔧 Frete + Instalação" : "📦 Frete Apenas"}
+                              </span>
+                            ) : (
+                              <span className="text-xs px-1 text-gray-900 dark:text-gray-100">{isTrue ? "Sim" : "Não"}</span>
+                            )
+                          )}
+                        </div>
                       </TableCell>
                     );
                   }
