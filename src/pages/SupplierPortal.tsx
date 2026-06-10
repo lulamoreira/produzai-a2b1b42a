@@ -1012,25 +1012,23 @@ const SupplierPortal = () => {
       <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 space-y-6">
         {/* Resumo visual no portal */}
         {(() => {
-          const uniqueStores = storeData.reduce((acc, current) => {
-            const x = acc.find(item => item.id === current.id);
-            if (!x) return acc.concat([current]);
-            return acc;
-          }, [] as typeof storeData);
+          const uniqueStores = storeData.filter((s, idx, self) => 
+            idx === self.findIndex(t => t.id === s.id)
+          );
 
           const comFrete = uniqueStores.filter(s => {
-            const tipo = (s as any).tipo_entrega || 'frete_instalacao';
+            const tipo = s.tipo_entrega || 'frete_instalacao';
             return tipo === 'frete_instalacao' || tipo === 'frete_apenas';
           }).length;
           
           const comInstalacao = uniqueStores.filter(s => {
-            const tipo = (s as any).tipo_entrega || 'frete_instalacao';
+            const tipo = s.tipo_entrega || 'frete_instalacao';
             return tipo === 'frete_instalacao';
           }).length;
           
-          const semLogistica = uniqueStores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
+          const semLogistica = uniqueStores.filter(s => s.tipo_entrega === 'sem_logistica').length;
           
-          if (uniqueStores.length === 0 && storeData.length === 0) return null;
+          if (uniqueStores.length === 0) return null;
 
           return (
             <div className="flex flex-wrap items-center justify-between gap-4">
