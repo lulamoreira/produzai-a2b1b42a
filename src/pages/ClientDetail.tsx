@@ -1641,12 +1641,10 @@ const ClientDetail = () => {
                 onDisplayOrderChange={setDisplayOrderStores}
                />
             )}
-          </>
-        )}
-
             {/* CustomExportDialog removed — see project policy */}
           </>
         )}
+
 
         {/* ─── Suppliers View ─── */}
         {new URLSearchParams(location.search).get("tab") === "suppliers" && (
