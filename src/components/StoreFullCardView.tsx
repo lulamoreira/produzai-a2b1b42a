@@ -108,7 +108,18 @@ const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFie
                 <div className="flex items-start gap-2 pb-2 border-b border-border/50">
                   <Building2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-foreground">{store.name}</p>
+                    <p className="font-semibold text-sm text-foreground flex items-center gap-2">
+                      {store.name}
+                      {store.requer_instalacao === false ? (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-100 text-blue-700 border border-blue-200 uppercase">
+                          Só Entrega
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200 uppercase">
+                          Instalação
+                        </span>
+                      )}
+                    </p>
                     {store.nickname && store.nickname !== store.name && (
                       <p className="text-xs text-muted-foreground">({store.nickname})</p>
                     )}
