@@ -2588,6 +2588,9 @@ ${msgLabels.winnerWaFooter}
                       <TableHeader>
                         <TableRow>
                           <TableHead className="text-xs">{labels.columnItem}</TableHead>
+                          <TableHead className="text-xs text-right">Frete + Inst.</TableHead>
+                          <TableHead className="text-xs text-right">Frete Apenas</TableHead>
+                          <TableHead className="text-xs text-right">Sem Log.</TableHead>
                           <TableHead className="text-xs text-right w-20">{labels.columnQty}</TableHead>
                           <TableHead className="text-xs text-right w-28">{labels.columnUnitPrice}</TableHead>
                           <TableHead className="text-xs text-right w-28">{labels.columnTotal}</TableHead>
