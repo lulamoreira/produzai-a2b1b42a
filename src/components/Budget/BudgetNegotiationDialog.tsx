@@ -666,6 +666,9 @@ export default function BudgetNegotiationDialog({
                         return (
                         <TableRow key={row.pieceId}>
                           <TableCell className="truncate max-w-[200px]" title={row.name}>{row.code} — {row.name}</TableCell>
+                          <TableCell className="text-right font-mono text-[10px]">{pieceTotals.installationMap[row.pieceId] || 0}</TableCell>
+                          <TableCell className="text-right font-mono text-[10px]">{pieceTotals.freightMap[row.pieceId] || 0}</TableCell>
+                          <TableCell className="text-right font-mono text-[10px] text-muted-foreground">{pieceTotals.noLogisticsMap[row.pieceId] || 0}</TableCell>
                           <TableCell className="text-right font-mono font-semibold">{row.qty}</TableCell>
                           <TableCell className="text-right font-mono">{fmtCurrency(row.original)}</TableCell>
                           <TableCell className="text-right font-mono font-semibold text-primary">{fmtCurrency(row.adjusted)}</TableCell>
