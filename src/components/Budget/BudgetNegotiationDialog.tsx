@@ -682,7 +682,7 @@ export default function BudgetNegotiationDialog({
                         <>
                           <TableRow>
                             <TableCell>Instalação</TableCell>
-                            <TableCell className="text-right text-muted-foreground">—</TableCell>
+                            <TableCell className="text-right text-muted-foreground" colSpan={4}>—</TableCell>
                             <TableCell className="text-right font-mono">{fmtCurrency(toNum(supplierEC.installation_value))}</TableCell>
                             <TableCell className="text-right font-mono font-semibold text-primary">{fmtCurrency(adjustedInstallation || 0)}</TableCell>
                             <TableCell className="text-right font-mono">
