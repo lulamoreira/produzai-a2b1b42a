@@ -1531,7 +1531,7 @@ const ClientDetail = () => {
                       <Plus className="w-3.5 h-3.5" /> Nova Loja
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col">
                     <DialogHeader><DialogTitle>Nova Loja</DialogTitle></DialogHeader>
                     <form onSubmit={handleAddStore} className="space-y-4">
                       {renderStoreFormFields(storeForm, setStoreForm, {
