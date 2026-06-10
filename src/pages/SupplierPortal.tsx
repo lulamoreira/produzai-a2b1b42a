@@ -206,7 +206,10 @@ const SupplierPortal = () => {
       }
     }, [] as typeof storeData);
 
-    if (!uniqueStores.length) return;
+    if (!uniqueStores.length) {
+      toast.error(currencyCode === "CLP" ? "No hay datos de tiendas para exportar." : "Não há dados de lojas para exportar.");
+      return;
+    }
 
     try {
       await exportStoresExcel({
