@@ -185,7 +185,7 @@ const SupplierPortal = () => {
   const [savingSuggestion, setSavingSuggestion] = useState(false);
 
   // Store data for Excel export
-  const [storeData, setStoreData] = useState<{ id: string; name: string; city?: string; state?: string; address?: string; street?: string; number?: string; neighborhood?: string; code?: string; zip_code?: string; nickname?: string; showcase_count?: number; requer_instalacao: boolean; tipo_entrega: 'frete_instalacao' | 'frete_apenas' | 'sem_logistica' | null }[]>([]);
+  const [storeData, setStoreData] = useState<{ id: string; name: string; city?: string; state?: string; address?: string; street?: string; number?: string; neighborhood?: string; code?: string; zip_code?: string; nickname?: string; showcase_count?: number; tipo_entrega: 'frete_instalacao' | 'frete_apenas' | 'sem_logistica' | null }[]>([]);
   const [fullQtyMap, setFullQtyMap] = useState<Record<string, number>>({});
 
   const labels = useMemo(() => getSupplierLabels(currencyCode), [currencyCode]);
@@ -419,7 +419,7 @@ const SupplierPortal = () => {
             const chunk = ids.slice(i, i + CHUNK);
             const { data: storesRaw } = await supabase
               .from("client_stores")
-              .select("id, name, city, state, street, number, neighborhood, code, zip_code, nickname, showcase_count, requer_instalacao, tipo_entrega")
+              .select("id, name, city, state, street, number, neighborhood, code, zip_code, nickname, showcase_count, tipo_entrega")
               .in("id", chunk);
             if (storesRaw) allStores.push(...storesRaw);
           }
