@@ -569,7 +569,7 @@ export function SidebarV2() {
                 </div>
                 <div className="space-y-1 mt-1">
                   {clientCampaigns.map(camp => (
-                    <CampaignItem key={camp.id} camp={camp} agencyId={agencyId!} clientId={clientId!} />
+                    <CampaignItem key={camp.id} camp={camp} agencyId={agencyId} clientId={clientId} />
                   ))}
                 </div>
               </div>
