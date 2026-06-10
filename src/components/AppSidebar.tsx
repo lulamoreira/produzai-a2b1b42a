@@ -578,7 +578,7 @@ export default function AppSidebar() {
       >
         <div className="px-2 pt-2">
           <button
-            onClick={() => setSettingsOpen(true)}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSettingsOpen(true); }}
             className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] transition-all ${collapsed ? "justify-center" : ""}`}
             style={{ color: "var(--sidebar-text, #A89880)" }}
             onMouseEnter={(e) => {
