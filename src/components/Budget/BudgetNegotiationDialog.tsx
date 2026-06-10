@@ -691,7 +691,7 @@ export default function BudgetNegotiationDialog({
                           </TableRow>
                           <TableRow>
                             <TableCell>Embalagem / Frete</TableCell>
-                            <TableCell className="text-right text-muted-foreground">—</TableCell>
+                            <TableCell className="text-right text-muted-foreground" colSpan={4}>—</TableCell>
                             <TableCell className="text-right font-mono">{fmtCurrency(toNum(supplierEC.freight_value))}</TableCell>
                             <TableCell className={`text-right font-mono font-semibold ${applyResidualToFreight ? "text-amber-700" : "text-primary"}`}>
                               {fmtCurrency((applyResidualToFreight ? adjustedFreightFinal : adjustedFreight) || 0)}
