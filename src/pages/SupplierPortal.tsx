@@ -206,7 +206,10 @@ const SupplierPortal = () => {
       }
     }, [] as typeof storeData);
 
-    if (!uniqueStores.length) return;
+    if (!uniqueStores.length) {
+      toast.error(currencyCode === "CLP" ? "No hay datos de tiendas para exportar." : "Não há dados de lojas para exportar.");
+      return;
+    }
 
     try {
       await exportStoresExcel({
@@ -1309,10 +1312,30 @@ const SupplierPortal = () => {
                 size="sm"
                 className="gap-1.5 shrink-0"
                 disabled={downloadingExcel}
-                onClick={handleDownloadExcel}
+                onClick={async () => {
+                  setDownloadingExcel(true);
+                  try {
+                    await handleDownloadExcel();
+                    toast.success(currencyCode === "CLP" ? "Planilla descargada con éxito." : "Planilha baixada com sucesso.");
+                  } catch (e) {
+                    console.error("Excel download error:", e);
+                    toast.error(currencyCode === "CLP" ? "Erro ao baixar planilha." : "Erro ao baixar planilha.");
+                  } finally {
+                    setDownloadingExcel(false);
+                  }
+                }}
               >
-                <Download className="w-4 h-4" />
-                {downloadingExcel ? portal.generatingExcel : portal.downloadExcelBtn}
+                {downloadingExcel ? (
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    {portal.generatingExcel}
+                  </div>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4" />
+                    {portal.downloadExcelBtn}
+                  </>
+                )}
               </Button>
             </div>
             <div className="overflow-x-auto">
