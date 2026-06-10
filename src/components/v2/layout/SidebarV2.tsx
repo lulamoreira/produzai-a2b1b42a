@@ -332,7 +332,7 @@ export function SidebarV2() {
   const CampaignItem = ({ camp, agencyId: aId, clientId: cId }: { camp: any, agencyId: string, clientId: string }) => {
     if (!camp || !camp.id) return null;
     const isExpanded = campaignExpanded[camp.id];
-    const campBasePath = `/agency/${agencyId}/clients/${clientId}/campaigns/${camp.id}`;
+    const campBasePath = `/agency/${aId}/clients/${cId}/campaigns/${camp.id}`;
     const isActiveCampaign = campaignId === camp.id;
     const currentSection = new URLSearchParams(location.search).get("section") || "summary";
 
