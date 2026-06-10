@@ -93,6 +93,15 @@
     "confirmCancel": "Tem certeza que deseja cancelar este convite? O link ficará inválido."
   },
   "common": {
+    "city": "Cidade",
+    "createAccount": "Criar conta",
+    "errorSaving": "Erro ao salvar",
+    "locked": "Bloqueado",
+    "occurrence": "Ocorrência",
+    "or": "ou",
+    "recode": "Recodificar",
+    "sendLink": "Enviar link",
+    "state": "Estado",
     "filtersAndActions": "Filtros e Ações",
     "filtersAndActionsHidden": "Filtros e ações ocultos",
     "collapse": "Recolher",
@@ -257,6 +266,7 @@
     "evening": "Boa noite"
   },
   "auth": {
+    "confirmPassword": "Confirmar senha",
     "login": "Entrar",
     "logout": "Sair",
     "email": "E-mail",
@@ -352,6 +362,7 @@
     "completedPct": "concluída"
   },
   "filters": {
+    "advancedFilters": "Filtros avançados",
     "moreFilters": "Mais filtros",
     "allStates": "Todos estados",
     "allCities": "Todas cidades",

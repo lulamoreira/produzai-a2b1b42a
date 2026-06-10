@@ -93,6 +93,15 @@
     "confirmCancel": "¿Estás seguro de que deseas cancelar esta invitación? El enlace quedará inválido."
   },
   "common": {
+    "city": "Ciudad",
+    "createAccount": "Crear cuenta",
+    "errorSaving": "Error al guardar",
+    "locked": "Bloqueado",
+    "occurrence": "Ocurrencia",
+    "or": "o",
+    "recode": "Recodificar",
+    "sendLink": "Enviar enlace",
+    "state": "Región",
     "filtersAndActions": "Filtros y Acciones",
     "filtersAndActionsHidden": "Filtros y acciones ocultos",
     "collapse": "Contraer",
@@ -257,6 +266,7 @@
     "evening": "Buenas noches"
   },
   "auth": {
+    "confirmPassword": "Confirmar contraseña",
     "login": "Iniciar sesión",
     "logout": "Cerrar sesión",
     "email": "Correo",
@@ -351,6 +361,7 @@
     "completedPct": "completada"
   },
   "filters": {
+    "advancedFilters": "Filtros avanzados",
     "moreFilters": "Más filtros",
     "allStates": "Todas las regiones",
     "allCities": "Todas las ciudades",
