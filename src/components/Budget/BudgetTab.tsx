@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { format } from "date-fns";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers, AlertCircle, FileSpreadsheet, Package, Wrench
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers, AlertCircle, FileSpreadsheet, Package, Wrench, Store
 } from "lucide-react";
 import { useExportRequoteFinal } from "@/hooks/useExportRequoteFinal";
 import RequoteFinalExportDialog from "@/components/RequoteFinalExportDialog";
