@@ -519,7 +519,7 @@ export function SidebarV2() {
           )}
 
           {/* Agency Context: List Clients & Suppliers */}
-          {effectiveAgencyId && !clientId && !isLimited && !collapsed && (
+          {effectiveAgencyId && isAgencyAccessible && !clientId && !isLimited && !collapsed && (
             <div className="space-y-1">
               <button
                 onClick={() => navigate(`/agency/${effectiveAgencyId}`)}
