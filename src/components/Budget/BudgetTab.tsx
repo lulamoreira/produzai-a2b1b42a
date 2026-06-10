@@ -2745,7 +2745,10 @@ ${msgLabels.winnerWaFooter}
                                       </button>
                                     )}
                                   </TableCell>
-                                  <TableCell className="text-xs text-right">{qty}</TableCell>
+                                  <TableCell className="text-xs text-right font-mono">{pieceTotalsFull.installationMap[kp.piece_id] || 0}</TableCell>
+                                  <TableCell className="text-xs text-right font-mono">{pieceTotalsFull.freightMap[kp.piece_id] || 0}</TableCell>
+                                  <TableCell className="text-xs text-right font-mono text-muted-foreground">{pieceTotalsFull.noLogisticsMap[kp.piece_id] || 0}</TableCell>
+                                  <TableCell className="text-xs text-right font-bold">{qty}</TableCell>
                                   <TableCell className="text-xs text-right">
                                     {isAdminOrMaster ? (
                                       <AdminInlineNumberInput
