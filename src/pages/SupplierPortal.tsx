@@ -1030,7 +1030,7 @@ const SupplierPortal = () => {
           
           const semLogistica = uniqueStores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
           
-          if (uniqueStores.length === 0) return null;
+          if (uniqueStores.length === 0 && storeData.length === 0) return null;
 
           return (
             <div className="flex flex-wrap items-center justify-between gap-4">
