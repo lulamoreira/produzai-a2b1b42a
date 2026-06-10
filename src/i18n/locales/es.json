@@ -554,6 +554,10 @@
     }
   },
   "pieces": {
+    "addPiece": "Agregar pieza",
+    "addPieceToStoreTitle": "Agregar pieza a la tienda",
+    "noPieceAssigned": "Ninguna pieza asignada",
+    "selectPiecePlaceholder": "Selecciona una pieza",
     "customFields": "Campos Personalizados",
     "registered": "Piezas registradas",
     "title": "Piezas",
@@ -700,6 +704,9 @@
     "kitPiece": "Es Kit"
   },
   "occurrences": {
+    "actionsTaken": "Acciones tomadas",
+    "agencyObservation": "Observación de la agencia",
+    "priority": "Prioridade",
     "portal": {
       "title": "Portal de Ocurrencias",
       "subtitle": "Selecciona tu tienda para registrar una ocurrencia",
@@ -782,6 +789,7 @@
     "reporterEmail": "Correo del Reclamante"
   },
   "scheduling": {
+    "notScheduled": "No agendado",
     "title": "Programación",
     "scheduledDate": "Fecha Programada",
     "scheduledTime": "Hora Programada",
@@ -839,6 +847,11 @@
     "missingOs": "FALTA\nOT"
   },
   "installations": {
+    "checkinDone": "Check-in registrado",
+    "checkinRemoved": "Check-in eliminado",
+    "errorUpdatingCheckin": "Error al actualizar el check-in",
+    "errorUpdatingCompletion": "Error al actualizar la finalización",
+    "errorUpload": "Error al subir la foto",
     "markComplete": "Marcar como completada",
     "photosSentShort": "Fotos enviadas",
     "title": "Instalaciones",
@@ -951,7 +964,8 @@
     "noUserFound": "No se encontraron usuarios.",
     "noUserRegistered": "No hay usuarios registrados.",
     "messages": {
-      "title": "Mensajes",
+      "bulkTranslateConfirm": "¿Seguro que deseas traducir todos los mensajes en masa?",
+      "title": "Mensagens",
       "coverage": "{{percentage}}% cobertura — {{covered}} mensajes",
       "filterAll": "Todas",
       "filterUI": "Visual (UI)",
@@ -985,6 +999,7 @@
     "es": "Español"
   },
   "clientDashboard": {
+    "renameCampaign": "Renombrar campaña",
     "searchClient": "Buscar cliente...",
     "newClient": "Nuevo Cliente",
     "clientName": "Nombre del cliente",
@@ -1223,6 +1238,7 @@
     "error": "Error: {{message}}"
   },
   "profile": {
+    "nameRequired": "El nombre es obligatorio",
     "editProfile": "Editar Perfil",
     "displayName": "Nombre Completo",
     "namePlaceholder": "Tu nombre completo",
