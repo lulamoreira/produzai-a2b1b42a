@@ -1135,20 +1135,7 @@ const SupplierPortal = () => {
 
         {/* Welcome text */}
         <div className="flex justify-between items-center mb-1">
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="outline" className="gap-2 text-primary border-primary hover:bg-primary/10">
-                <Store className="w-4 h-4" />
-                {portal.storesButton}
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
-              <SheetHeader className="mb-6">
-                <SheetTitle className="flex items-center gap-2">
-                  <Store className="w-5 h-5" />
-                  {portal.storesTitle}
-                </SheetTitle>
-              </SheetHeader>
+        </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                 <Card className="bg-green-50 border-green-100">
