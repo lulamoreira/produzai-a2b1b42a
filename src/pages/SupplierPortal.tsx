@@ -1039,7 +1039,7 @@ const SupplierPortal = () => {
                 <SheetTrigger asChild>
                   <Button variant="outline" size="sm" className="gap-2 border-[#8C6F4E] text-[#8C6F4E] hover:bg-[#8C6F4E]/10">
                     <Store className="w-4 h-4" />
-                    {portal.storesAction}
+                    {portal.storesButton}
                   </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
