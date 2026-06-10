@@ -972,8 +972,11 @@ const SupplierPortal = () => {
       <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 space-y-6">
         {/* Resumo visual no portal */}
         {(() => {
-          const comFrete = storeData.filter(s => (s as any).tipo_entrega === 'frete_instalacao' || (s as any).tipo_entrega === 'frete_apenas').length;
-          const comInstalacao = storeData.filter(s => (s as any).tipo_entrega === 'frete_instalacao').length;
+          const comFrete = storeData.filter(s => {
+            const tipo = (s as any).tipo_entrega ?? 'frete_instalacao';
+            return tipo === 'frete_instalacao' || tipo === 'frete_apenas';
+          }).length;
+          const comInstalacao = storeData.filter(s => ((s as any).tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length;
           const semLogistica = storeData.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
           if (storeData.length === 0) return null;
 
@@ -1215,7 +1218,7 @@ const SupplierPortal = () => {
                                   <span className="font-medium text-sm break-words whitespace-normal">{row.name}</span>
                                   {(() => {
                                     const store = storeData.find(s => s.name === row.name);
-                                    const tipo = (store as any)?.tipo_entrega;
+                                    const tipo = (store as any)?.tipo_entrega ?? 'frete_instalacao';
                                     if (tipo === "frete_apenas") return (
                                       <Badge className="ml-2 bg-blue-100 text-blue-700 border-blue-200 text-[10px] font-bold uppercase">
                                         {portal.onlyDeliveryBadge}

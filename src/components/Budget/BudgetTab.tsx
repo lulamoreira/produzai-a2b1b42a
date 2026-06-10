@@ -1118,8 +1118,11 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
 
       {(() => {
         const pLabels = getSupplierPortalLabels(currencyCode);
-        const comFrete = stores.filter(s => (s as any).tipo_entrega === 'frete_instalacao' || (s as any).tipo_entrega === 'frete_apenas').length;
-        const comInstalacao = stores.filter(s => (s as any).tipo_entrega === 'frete_instalacao').length;
+        const comFrete = stores.filter(s => {
+          const tipo = (s as any).tipo_entrega ?? 'frete_instalacao';
+          return tipo === 'frete_instalacao' || tipo === 'frete_apenas';
+        }).length;
+        const comInstalacao = stores.filter(s => ((s as any).tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length;
         const semLogistica = stores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
         
         return (
