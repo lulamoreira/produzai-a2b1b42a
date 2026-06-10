@@ -418,16 +418,16 @@ const SupplierPortal = () => {
           const CHUNK = 1000;
           for (let i = 0; i < ids.length; i += CHUNK) {
             const chunk = ids.slice(i, i + CHUNK);
-            const { data: storesRaw } = await supabase
+            const { data: storesRaw, error: storesErr } = await supabase
               .from("client_stores")
               .select("id, name, city, state, street, number, neighborhood, code, zip_code, nickname, showcase_count, tipo_entrega")
               .in("id", chunk);
+            
+            if (storesErr) {
+              console.error("[SupplierPortal] Erro ao buscar detalhes das lojas:", storesErr);
+            }
             if (storesRaw) allStores.push(...storesRaw);
           }
-          
-          // The delivery types are stored in client_stores.tipo_entrega
-          // We already fetched them in the select above.
-          // No need for campaign-specific overrides if not present in schema.
           
           setStoreData(allStores as any);
         }
@@ -1016,10 +1016,15 @@ const SupplierPortal = () => {
           }, [] as typeof storeData);
 
           const comFrete = uniqueStores.filter(s => {
-            const tipo = (s as any).tipo_entrega ?? 'frete_instalacao';
+            const tipo = (s as any).tipo_entrega || 'frete_instalacao';
             return tipo === 'frete_instalacao' || tipo === 'frete_apenas';
           }).length;
-          const comInstalacao = uniqueStores.filter(s => ((s as any).tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length;
+          
+          const comInstalacao = uniqueStores.filter(s => {
+            const tipo = (s as any).tipo_entrega || 'frete_instalacao';
+            return tipo === 'frete_instalacao';
+          }).length;
+          
           const semLogistica = uniqueStores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
           
           if (uniqueStores.length === 0) return null;
@@ -1128,9 +1133,30 @@ const SupplierPortal = () => {
                   </div>
 
                   <SheetFooter className="mt-8 border-t pt-6">
-                    <Button onClick={handleDownloadStoresExcel} className="w-full gap-2 bg-[#8C6F4E] hover:bg-[#7A5F3E]">
-                      <Download className="w-4 h-4" />
-                      {portal.storesDownload}
+                    <Button 
+                      onClick={async () => {
+                        setDownloadingStores(true);
+                        try {
+                          await handleDownloadStoresExcel();
+                          toast.success(currencyCode === "CLP" ? "Planilla descargada con éxito." : "Planilha baixada com sucesso.");
+                        } finally {
+                          setDownloadingStores(false);
+                        }
+                      }} 
+                      className="w-full gap-2 bg-[#8C6F4E] hover:bg-[#7A5F3E]"
+                      disabled={downloadingStores}
+                    >
+                      {downloadingStores ? (
+                        <div className="flex items-center gap-2">
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          {currencyCode === "CLP" ? "Descargando..." : "Baixando..."}
+                        </div>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4" />
+                          {portal.storesDownload}
+                        </>
+                      )}
                     </Button>
                   </SheetFooter>
                 </SheetContent>
@@ -1151,9 +1177,14 @@ const SupplierPortal = () => {
               <p dangerouslySetInnerHTML={{ __html: portal.inviteText(campaignName, clientName) }} />
               <p dangerouslySetInnerHTML={{ __html: portal.instructionPrice }} />
               {(() => {
-                const semLogistica = storeData.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
-                if (semLogistica > 0) {
-                  return <p className="font-bold text-amber-600">{portal.noLogisticsNote(semLogistica)}</p>;
+                const uniqueStores = storeData.reduce((acc, current) => {
+                  const x = acc.find(item => item.id === current.id);
+                  if (!x) return acc.concat([current]);
+                  return acc;
+                }, [] as typeof storeData);
+                const semLogisticaCount = uniqueStores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
+                if (semLogisticaCount > 0) {
+                  return <p className="font-bold text-amber-600">{portal.noLogisticsNote(semLogisticaCount)}</p>;
                 }
                 return null;
               })()}
