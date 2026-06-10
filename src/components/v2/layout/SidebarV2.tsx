@@ -50,7 +50,7 @@ export function SidebarV2() {
   const { user, signOut } = useAuth();
   const { isAdminOrMaster, isAdmin, isMaster } = useUserRole();
 
-  const { isLimited, campaigns: limitedCampaigns } = useUserDirectAccess();
+  const { isLimited, campaigns: limitedCampaigns, hasAgencyAccess, isLoading: permissionsLoading } = useSidebarPermissions();
 
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem("sidebar-v2-collapsed") === "true";
