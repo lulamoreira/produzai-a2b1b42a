@@ -59,10 +59,20 @@ export default function SummaryTab({
       const { data: campaign } = await supabase.from("campaigns").select("client_id").eq("id", campaignId).single();
       const clientId = campaign?.client_id;
 
-      const storesRes = await supabase.from("client_stores").select("id", { count: "exact", head: true }).eq("client_id", clientId);
+      const storesRes = await supabase.from("client_stores").select("id, tipo_entrega", { count: "exact" }).eq("client_id", clientId);
+      const filteredStoresCount = (storesRes.data ?? []).filter(s => (s.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica').length;
+
       const piecesRes = await supabase.from("campaign_pieces").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).eq("is_deleted", false);
       const kitsRes = await supabase.from("campaign_kits").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
-      const pendingInstallationsRes = await supabase.from("campaign_schedules").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).is("completed_at", null);
+      const pendingInstallationsRes = await supabase.from("campaign_schedules").select("id, client_stores(tipo_entrega)", { count: "exact" }).eq("campaign_id", campaignId).is("completed_at", null);
+      const filteredPendingCount = (pendingInstallationsRes.data ?? []).filter((s: any) => (s.client_stores?.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length;
+      
+      return {
+        stores: filteredStoresCount,
+        pieces: (piecesRes.count || 0) + (kitsRes.count || 0),
+        pendingInstallations: filteredPendingCount,
+        pendingApprovals: 0
+      };
       
       return {
         stores: storesRes.count || 0,
@@ -76,7 +86,7 @@ export default function SummaryTab({
 
   const baseKpis = externalKpis || internalKpis;
   const campaignKpis = {
-    stores: baseKpis?.stores || stores?.length || 0,
+    stores: baseKpis?.stores || stores?.filter(s => (s.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica').length || 0,
     pieces: baseKpis?.pieces || (visiblePieces?.length || 0) + (kits?.length || 0) || 0,
     pendingInstallations: baseKpis?.pendingInstallations || 0,
     pendingApprovals: baseKpis?.pendingApprovals || 0,
@@ -109,7 +119,7 @@ export default function SummaryTab({
       {/* KPI Stats moved to Header or kept here? The user prompt suggests SummaryTab is the overview */}
       <div className="flex items-baseline gap-3 flex-wrap">
         <button onClick={() => onNavigate("stores")} className="inline-flex items-baseline gap-1.5 group cursor-pointer">
-          <span className="text-xl font-bold text-foreground">{campaignKpis?.stores || stores?.length || 0}</span>
+          <span className="text-xl font-bold text-foreground">{campaignKpis?.stores}</span>
           <span className="text-[13px] text-muted-foreground group-hover:underline">{t("stores.totalStores")}</span>
 
         </button>

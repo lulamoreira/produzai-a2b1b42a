@@ -35,6 +35,10 @@ export default function StoresTab({
   const [storeSearch, setStoreSearch] = useState("");
   const [storesViewMode, setStoresViewMode] = useState<"table" | "contacts">("table");
 
+  const filteredStores = useMemo(() => {
+    return stores.filter((s) => (s.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica');
+  }, [stores]);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
@@ -42,7 +46,7 @@ export default function StoresTab({
           <Store className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-semibold">{t("modules.stores")}</h2>
           <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-            {stores.length} registradas
+            {filteredStores.length} registradas
           </span>
         </div>
         
@@ -102,18 +106,22 @@ export default function StoresTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {stores.map(store => (
+              {filteredStores.map(store => (
                 <TableRow key={store.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-700">
                   <TableCell className="font-medium text-gray-900 dark:text-gray-100">
                     <div className="flex flex-col gap-1">
                       <span>{store.name}</span>
-                      {store.requer_instalacao === false ? (
-                        <span className="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 border border-blue-200">
-                          Só Entrega
+                      {store.tipo_entrega === "frete_apenas" ? (
+                        <span className="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-100 text-blue-700 border border-blue-200">
+                          📦 Frete Apenas
+                        </span>
+                      ) : store.tipo_entrega === "sem_logistica" ? (
+                        <span className="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-700 border border-gray-300">
+                          🏪 Sem Logística
                         </span>
                       ) : (
-                        <span className="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
-                          Instalação
+                        <span className="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 border border-emerald-200">
+                          📦🔧 Frete + Instalação
                         </span>
                       )}
                     </div>

@@ -76,7 +76,7 @@ function usePortalOccurrences(campaignId: string) {
           expected_resolution_date, needs_reinstallation, resolution_photo_urls,
           reinstallation_scheduled_at, reinstallation_os,
           tratativa_status, tratativa_notes,
-          client_stores(name, city, state),
+          client_stores(name, city, state, tipo_entrega),
           loja_a_loja_pecas(nome, image_url, loja_a_loja_tipos(letra, nome), loja_a_loja_subdivisoes(nome)),
           store_portal_motivos(descricao)
         ` as any)
@@ -278,6 +278,8 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
 
   const filteredOccurrences = useMemo(() => {
     return occList.filter((o) => {
+      const storeTipo = (o.client_stores as any)?.tipo_entrega ?? 'frete_instalacao';
+      if (storeTipo === 'sem_logistica') return false;
       if (filterStatus !== "all" && (o.tratativa_status ?? "aberta") !== filterStatus) return false;
       if (filterPriority !== "all" && o.priority !== filterPriority) return false;
       if (filterStore !== "all" && o.store_id !== filterStore) return false;
