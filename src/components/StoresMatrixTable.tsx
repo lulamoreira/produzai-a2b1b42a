@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { getStateColor } from "@/lib/stateColors";
 import type { ClientStore } from "@/hooks/useMultiClientData";
 import {
