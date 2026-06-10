@@ -86,7 +86,7 @@ interface BudgetTabProps {
   kits: CampaignKit[];
   kitPieces: { id: string; kit_id: string; piece_id: string; quantity: number }[];
   qtyMap: Record<string, number>;
-  stores: ClientStore[];
+  stores: any[];
   onNavigateToRateio?: () => void;
   onNavigateToSection?: (section: string) => void;
   activeAdjustment?: { id: string; name: string } | null;
