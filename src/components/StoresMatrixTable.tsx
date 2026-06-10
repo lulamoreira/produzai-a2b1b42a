@@ -672,7 +672,7 @@ export default function StoresMatrixTable({
   }, [stores, orderedColumns]);
 
   // DnD for columns
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
