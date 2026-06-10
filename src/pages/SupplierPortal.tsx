@@ -398,7 +398,7 @@ const SupplierPortal = () => {
           (from, to) =>
             supabase
               .from("campaign_store_pieces")
-              .select("piece_id, quantity, store_id")
+              .select("piece_id, quantity, store_id", { count: "exact" })
               .eq("campaign_id", sup.campaign_id)
               .range(from, to) as any
         );
@@ -407,8 +407,8 @@ const SupplierPortal = () => {
         const fullQMap: Record<string, number> = {};
         const storeIds = new Set<string>();
         allStorePieces.forEach((sp) => {
-          spQtyMap[sp.piece_id] = (spQtyMap[sp.piece_id] || 0) + sp.quantity;
-          fullQMap[`${sp.store_id}-${sp.piece_id}`] = sp.quantity;
+          spQtyMap[sp.piece_id] = (spQtyMap[sp.piece_id] || 0) + (Number(sp.quantity) || 0);
+          fullQMap[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0;
           storeIds.add(sp.store_id);
         });
         setStorePieceQtyMap(spQtyMap);
@@ -1030,7 +1030,7 @@ const SupplierPortal = () => {
           
           const semLogistica = uniqueStores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
           
-          if (uniqueStores.length === 0) return null;
+          if (uniqueStores.length === 0 && storeData.length === 0) return null;
 
           return (
             <div className="flex flex-wrap items-center justify-between gap-4">
