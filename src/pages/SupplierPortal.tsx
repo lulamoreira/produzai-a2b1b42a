@@ -1065,7 +1065,9 @@ const SupplierPortal = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                     <Card className="bg-green-50 border-green-100">
                       <CardContent className="p-3 text-center">
-                        <div className="text-xl font-bold text-green-700">{comInstalacao}</div>
+                        <div className="text-xl font-bold text-green-700">
+                          {storeData.filter(s => (s.tipo_entrega || 'frete_instalacao') === 'frete_instalacao').length}
+                        </div>
                         <div className="text-[10px] text-green-600 font-medium uppercase leading-tight mt-1">
                           {portal.storesSummaryInstall}
                         </div>
@@ -1073,7 +1075,9 @@ const SupplierPortal = () => {
                     </Card>
                     <Card className="bg-blue-50 border-blue-100">
                       <CardContent className="p-3 text-center">
-                        <div className="text-xl font-bold text-blue-700">{comFrete - comInstalacao}</div>
+                        <div className="text-xl font-bold text-blue-700">
+                          {storeData.filter(s => s.tipo_entrega === 'frete_apenas').length}
+                        </div>
                         <div className="text-[10px] text-blue-600 font-medium uppercase leading-tight mt-1">
                           {portal.storesSummaryFreteOnly}
                         </div>
@@ -1081,7 +1085,9 @@ const SupplierPortal = () => {
                     </Card>
                     <Card className="bg-gray-50 border-gray-100">
                       <CardContent className="p-3 text-center">
-                        <div className="text-xl font-bold text-gray-700">{semLogistica}</div>
+                        <div className="text-xl font-bold text-gray-700">
+                          {storeData.filter(s => s.tipo_entrega === 'sem_logistica').length}
+                        </div>
                         <div className="text-[10px] text-gray-600 font-medium uppercase leading-tight mt-1">
                           {portal.storesSummaryNoLogistics}
                         </div>
