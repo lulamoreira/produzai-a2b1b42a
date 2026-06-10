@@ -1177,9 +1177,14 @@ const SupplierPortal = () => {
               <p dangerouslySetInnerHTML={{ __html: portal.inviteText(campaignName, clientName) }} />
               <p dangerouslySetInnerHTML={{ __html: portal.instructionPrice }} />
               {(() => {
-                const semLogistica = storeData.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
-                if (semLogistica > 0) {
-                  return <p className="font-bold text-amber-600">{portal.noLogisticsNote(semLogistica)}</p>;
+                const uniqueStores = storeData.reduce((acc, current) => {
+                  const x = acc.find(item => item.id === current.id);
+                  if (!x) return acc.concat([current]);
+                  return acc;
+                }, [] as typeof storeData);
+                const semLogisticaCount = uniqueStores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
+                if (semLogisticaCount > 0) {
+                  return <p className="font-bold text-amber-600">{portal.noLogisticsNote(semLogisticaCount)}</p>;
                 }
                 return null;
               })()}
