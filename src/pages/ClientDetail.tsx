@@ -929,7 +929,7 @@ const ClientDetail = () => {
               value="frete_instalacao"
               className={cn(
                 "flex-1 flex-col items-center justify-center gap-1 h-auto py-3 border rounded-md transition-all text-center",
-                form.tipo_entrega === "frete_instalacao" && "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm"
+                (form.tipo_entrega as string) === "frete_instalacao" && "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm"
               )}
             >
               <div className="flex items-center gap-2 font-bold">
@@ -940,7 +940,7 @@ const ClientDetail = () => {
               value="frete_apenas"
               className={cn(
                 "flex-1 flex-col items-center justify-center gap-1 h-auto py-3 border rounded-md transition-all text-center",
-                form.tipo_entrega === "frete_apenas" && "bg-blue-50 border-blue-500 text-blue-700 shadow-sm"
+                (form.tipo_entrega as string) === "frete_apenas" && "bg-blue-50 border-blue-500 text-blue-700 shadow-sm"
               )}
             >
               <div className="flex items-center gap-2 font-bold">
@@ -952,7 +952,7 @@ const ClientDetail = () => {
               value="sem_logistica"
               className={cn(
                 "flex-1 flex-col items-center justify-center gap-1 h-auto py-3 border rounded-md transition-all text-center",
-                form.tipo_entrega === "sem_logistica" && "bg-gray-50 border-gray-400 text-gray-700 shadow-sm"
+                (form.tipo_entrega as string) === "sem_logistica" && "bg-gray-50 border-gray-400 text-gray-700 shadow-sm"
               )}
             >
               <div className="flex items-center gap-2 font-bold">
