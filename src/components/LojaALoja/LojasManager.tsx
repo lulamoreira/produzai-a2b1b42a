@@ -95,9 +95,11 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
   // Sort stores by user preference (always ascending)
   const sortedStores = useMemo(() => {
     const getVal = (s: any) => (s?.[sortField] ?? "").toString();
-    return [...stores].sort((a, b) =>
-      getVal(a).localeCompare(getVal(b), "pt-BR", { numeric: true, sensitivity: "base" })
-    );
+    return [...stores]
+      .filter((s) => (s.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica')
+      .sort((a, b) =>
+        getVal(a).localeCompare(getVal(b), "pt-BR", { numeric: true, sensitivity: "base" })
+      );
   }, [stores, sortField]);
 
   // Filter stores by search
