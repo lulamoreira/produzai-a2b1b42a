@@ -389,7 +389,7 @@ const SupplierPortal = () => {
             const chunk = ids.slice(i, i + CHUNK);
             const { data: storesRaw } = await supabase
               .from("client_stores")
-              .select("id, name, city, state, showcase_count")
+              .select("id, name, city, state, showcase_count, requer_instalacao")
               .in("id", chunk);
             if (storesRaw) allStores.push(...storesRaw);
           }
