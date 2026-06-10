@@ -520,7 +520,7 @@ export default function AppSidebar() {
               <span className="truncate">{t("sidebar.campaigns")}</span>
             </button>
             <button
-              onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}?tab=emails`)}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNavigate(`/agency/${agencyId}/clients/${clientId}?tab=emails`); }}
               className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
               style={itemStyle(location.search.includes("tab=emails") && !isInsideCampaign)}
               {...hoverHandlers(location.search.includes("tab=emails") && !isInsideCampaign)}
