@@ -928,22 +928,25 @@ const ClientDetail = () => {
             <ToggleGroupItem
               value="true"
               className={cn(
-                "flex-1 justify-center gap-2 h-10 border rounded-md transition-all",
-                form.requer_instalacao === true && "bg-primary/10 border-primary text-primary hover:bg-primary/20"
+                "flex-1 flex-col items-center justify-center gap-1 h-auto py-3 border rounded-md transition-all text-center",
+                form.requer_instalacao === true && "bg-emerald-50 border-emerald-500 text-emerald-700 shadow-sm"
               )}
             >
-              <Wrench className="w-4 h-4" />
-              <span className="text-sm">Instalação + Entrega</span>
+              <div className="flex items-center gap-2 font-bold">
+                <span>📦🔧 Frete + Instalação</span>
+              </div>
             </ToggleGroupItem>
             <ToggleGroupItem
               value="false"
               className={cn(
-                "flex-1 justify-center gap-2 h-10 border rounded-md transition-all",
-                form.requer_instalacao === false && "bg-blue-50 border-blue-500 text-blue-700 hover:bg-blue-100"
+                "flex-1 flex-col items-center justify-center gap-1 h-auto py-3 border rounded-md transition-all text-center",
+                form.requer_instalacao === false && "bg-blue-50 border-blue-500 text-blue-700 shadow-sm"
               )}
             >
-              <Package className="w-4 h-4" />
-              <span className="text-sm">Somente Entrega</span>
+              <div className="flex items-center gap-2 font-bold">
+                <span>📦 Frete Apenas</span>
+              </div>
+              <span className="text-[10px] opacity-70 font-normal">Quiosques, stands e pontos sem instalação</span>
             </ToggleGroupItem>
           </ToggleGroup>
         </div>
