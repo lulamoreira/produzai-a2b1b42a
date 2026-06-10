@@ -119,7 +119,7 @@ export default function SummaryTab({
       {/* KPI Stats moved to Header or kept here? The user prompt suggests SummaryTab is the overview */}
       <div className="flex items-baseline gap-3 flex-wrap">
         <button onClick={() => onNavigate("stores")} className="inline-flex items-baseline gap-1.5 group cursor-pointer">
-          <span className="text-xl font-bold text-foreground">{campaignKpis?.stores || stores?.length || 0}</span>
+          <span className="text-xl font-bold text-foreground">{campaignKpis?.stores}</span>
           <span className="text-[13px] text-muted-foreground group-hover:underline">{t("stores.totalStores")}</span>
 
         </button>
