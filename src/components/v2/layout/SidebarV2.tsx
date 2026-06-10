@@ -36,7 +36,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CAMPAIGN_MODULES, MODULE_ICONS } from "@/lib/sidebarRegistry";
+import { CAMPAIGN_MODULES, MODULE_ICONS, checkPermission, type PermissionContext } from "@/lib/sidebarRegistry";
 import { ADMIN_MENU_ITEMS } from "@/lib/adminMenuConfig";
 import AquaIcon from "@/components/AquaIcon";
 
