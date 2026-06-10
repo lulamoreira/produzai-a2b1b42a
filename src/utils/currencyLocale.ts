@@ -327,7 +327,18 @@ export const supplierPortalLabels = {
     typeSemLogistica: "Sin Logística",
     summaryFrete: "con flete",
     summaryNoLogistics: "sin logística",
-    noLogisticsNote: (n: number) => `⚠️ ${n} punto(s) sin flete ni instalación — no incluir logística para ellos.`
+    noLogisticsNote: (n: number) => `⚠️ ${n} punto(s) sin flete ni instalación — no incluir logística para ellos.`,
+    storesButton: "Ver Tiendas",
+    storesTitle: "Tiendas de la Campaña",
+    storesSummaryInstall: "con Flete + Instalación",
+    storesSummaryFreteOnly: "Solo Flete",
+    storesSummaryNoLogistics: "Sin Logística",
+    storesColName: "Nombre",
+    storesColAlias: "Alias",
+    storesColCity: "Ciudad",
+    storesColAddress: "Dirección",
+    storesColType: "Tipo de Entrega",
+    storesDownload: "⬇ Descargar Planilla",
   },
 } as const;
 
