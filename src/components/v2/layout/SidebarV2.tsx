@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
+import { useSidebarPermissions } from "@/hooks/useSidebarPermissions";
 import { useV2Theme } from "@/hooks/useV2Theme";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
