@@ -388,7 +388,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   }, [currencyCode]);
 
   // ─── Piece total quantities (sum across all stores) ────
-  const pieceTotals = useMemo(() => {
+  const pieceTotalsFull = useMemo(() => {
     const map: Record<string, number> = {};
     const installationMap: Record<string, number> = {};
     const freightMap: Record<string, number> = {};
@@ -419,6 +419,8 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
 
     return { map, installationMap, freightMap, noLogisticsMap };
   }, [pieces, stores, qtyMap]);
+
+  const pieceTotals = pieceTotalsFull.map;
 
   // ─── Build per-piece quantities including kit expansion ─
   const kitPieceTotals = useMemo(() => {
