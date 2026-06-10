@@ -74,7 +74,7 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-4xl max-h-[95vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-3">
           <DialogTitle className="flex items-center gap-2">
             <Camera className="w-5 h-5" />
@@ -125,8 +125,8 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
           })}
         </div>
 
-        {/* Photo grid */}
-        <div className="px-6 pb-6">
+        {/* Photo grid - Scrollable area */}
+        <div className="flex-1 overflow-y-auto px-6 pb-6 custom-scrollbar">
           {filteredPhotos.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground text-sm">
               <Camera className="w-10 h-10 mx-auto mb-2 opacity-30" />
