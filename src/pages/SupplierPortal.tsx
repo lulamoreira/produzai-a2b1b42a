@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
-import { Package, Lock, Clock, CheckCircle2, AlertTriangle, Send, ImageIcon, Download, Edit2, Save, Trash2 } from "lucide-react";
+import { Package, Lock, Clock, CheckCircle2, AlertTriangle, Send, ImageIcon, Download, Edit2, Save, Trash2, Store, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
+import * as XLSX from "xlsx";
 import { exportSupplierBudget } from "@/lib/exportSupplierBudget";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
@@ -182,7 +184,7 @@ const SupplierPortal = () => {
   const [savingSuggestion, setSavingSuggestion] = useState(false);
 
   // Store data for Excel export
-  const [storeData, setStoreData] = useState<{ id: string; name: string; city?: string; state?: string; showcase_count?: number }[]>([]);
+  const [storeData, setStoreData] = useState<{ id: string; name: string; city?: string; state?: string; address?: string; street?: string; number?: string; neighborhood?: string; code?: string; zip_code?: string; nickname?: string; showcase_count?: number; requer_instalacao: boolean; tipo_entrega: 'frete_instalacao' | 'frete_apenas' | 'sem_logistica' | null }[]>([]);
   const [fullQtyMap, setFullQtyMap] = useState<Record<string, number>>({});
 
   const labels = useMemo(() => getSupplierLabels(currencyCode), [currencyCode]);
