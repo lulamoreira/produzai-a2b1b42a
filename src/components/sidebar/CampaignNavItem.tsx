@@ -34,8 +34,8 @@ export function CampaignNavItem({
 }: Props) {
   const { t } = useTranslation();
 
-  const handleCampaignClick = () => {
-    // Sempre vai para a tela inicial da campanha (KPIs + ModuleGrid)
+  const handleCampaignClick = (e: React.MouseEvent) => {
+    // Se clicar no nome da campanha, vai para o resumo
     onNavigateHome();
   };
 
@@ -46,7 +46,7 @@ export function CampaignNavItem({
         <TooltipTrigger asChild>
           <button
             type="button"
-            onClick={handleCampaignClick}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCampaignClick(e); }}
             className="w-full flex items-center justify-center px-2 py-1.5 rounded-md transition-all"
             style={isActive
               ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", borderLeft: "3px solid var(--sidebar-active-bar)" }
@@ -71,7 +71,7 @@ export function CampaignNavItem({
       <div className="flex items-center gap-0.5">
         <button
           type="button"
-          onClick={handleCampaignClick}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleCampaignClick(e); }}
           className="flex-1 text-left px-2 py-1.5 rounded-md text-[12px] font-semibold uppercase tracking-wider transition-all whitespace-normal break-words"
           style={{ color: isActive ? "var(--sidebar-text-active, #F5EFE6)" : "var(--brand-300, #C4AD92)" }}
           onMouseEnter={(e) => { e.currentTarget.style.color = "var(--sidebar-text-active)"; }}
@@ -102,7 +102,7 @@ export function CampaignNavItem({
               <button
                 key={mod.key}
                 type="button"
-                onClick={() => onNavigateModule(mod.key)}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onNavigateModule(mod.key); }}
                 className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-all relative before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
                 style={modActive
                   ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", fontWeight: 600, borderLeft: "3px solid var(--sidebar-active-bar)" }

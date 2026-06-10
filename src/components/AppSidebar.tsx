@@ -281,7 +281,7 @@ export default function AppSidebar() {
   }, [mobileOpen]);
 
   const sidebarContent = (
-    <div className="flex h-full min-h-0 flex-col overflow-hidden" onClick={handleSidebarClick}>
+    <div className="flex h-full min-h-0 flex-col overflow-hidden" onClick={(e) => { e.stopPropagation(); handleSidebarClick(e); }}>
       <SidebarHeader
         collapsed={collapsed}
         onToggleCollapsed={() => setCollapsed(!collapsed)}
@@ -307,7 +307,7 @@ export default function AppSidebar() {
 
         {/* ── Início (visible for all users) ── */}
         <button
-          onClick={() => handleNavigate("/")}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNavigate("/"); }}
           className="group w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
           style={itemStyle(location.pathname === "/" || location.pathname === "/favorites" || location.pathname === "/agencies" || location.pathname === "/my-campaigns")}
           {...hoverHandlers(location.pathname === "/" || location.pathname === "/favorites" || location.pathname === "/agencies" || location.pathname === "/my-campaigns")}
@@ -321,7 +321,7 @@ export default function AppSidebar() {
         {/* ── Agências (admin/master only) ── */}
         {isAdminOrMaster && (
           <button
-            onClick={() => handleNavigate("/agencies")}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNavigate("/agencies"); }}
             className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
             style={itemStyle(location.pathname === "/agencies")}
             {...hoverHandlers(location.pathname === "/agencies")}
@@ -334,7 +334,7 @@ export default function AppSidebar() {
 
         {/* ── Favoritos (all authenticated users) ── */}
         <button
-          onClick={() => handleNavigate("/favorites")}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNavigate("/favorites"); }}
           className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
           style={itemStyle(location.pathname === "/favorites")}
           {...hoverHandlers(location.pathname === "/favorites")}
@@ -354,7 +354,7 @@ export default function AppSidebar() {
         {/* ── Admin (fixed, admin/master only) ── */}
         {isAdminOrMaster && (
           <button
-            onClick={() => handleNavigate("/admin")}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNavigate("/admin"); }}
             className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
             style={itemStyle(location.pathname.startsWith("/admin") || location.pathname === "/approvals")}
             {...hoverHandlers(location.pathname.startsWith("/admin") || location.pathname === "/approvals")}
@@ -391,7 +391,7 @@ export default function AppSidebar() {
             
             {!collapsed && (
               <button 
-                onClick={() => handleNavigate(`/agency/${effectiveAgencyId}`)}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNavigate(`/agency/${effectiveAgencyId}`); }}
                 className={cn(
                   "flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all w-full text-left group",
                   location.pathname === `/agency/${effectiveAgencyId}` 
@@ -502,7 +502,7 @@ export default function AppSidebar() {
               </span>
             </div>
             <button
-              onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`)}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNavigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`); }}
               className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
               style={itemStyle(location.search.includes("tab=stores") && !isInsideCampaign)}
               {...hoverHandlers(location.search.includes("tab=stores") && !isInsideCampaign)}
@@ -511,7 +511,7 @@ export default function AppSidebar() {
               <span className="truncate">{t("modules.stores")}</span>
             </button>
             <button
-              onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}`)}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNavigate(`/agency/${agencyId}/clients/${clientId}`); }}
               className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
               style={itemStyle(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !location.search.includes("tab=emails") && !isInsideCampaign)}
               {...hoverHandlers(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !location.search.includes("tab=emails") && !isInsideCampaign)}
@@ -520,7 +520,7 @@ export default function AppSidebar() {
               <span className="truncate">{t("sidebar.campaigns")}</span>
             </button>
             <button
-              onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}?tab=emails`)}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNavigate(`/agency/${agencyId}/clients/${clientId}?tab=emails`); }}
               className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
               style={itemStyle(location.search.includes("tab=emails") && !isInsideCampaign)}
               {...hoverHandlers(location.search.includes("tab=emails") && !isInsideCampaign)}
@@ -578,7 +578,7 @@ export default function AppSidebar() {
       >
         <div className="px-2 pt-2">
           <button
-            onClick={() => setSettingsOpen(true)}
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setSettingsOpen(true); }}
             className={`w-full flex items-center gap-2.5 px-2 py-2 rounded-lg text-[13px] transition-all ${collapsed ? "justify-center" : ""}`}
             style={{ color: "var(--sidebar-text, #A89880)" }}
             onMouseEnter={(e) => {
