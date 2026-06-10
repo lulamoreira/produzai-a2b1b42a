@@ -186,6 +186,7 @@ const SupplierPortal = () => {
 
   // Store data for Excel export
   const [storeData, setStoreData] = useState<{ id: string; name: string; city?: string; state?: string; address?: string; street?: string; number?: string; neighborhood?: string; code?: string; zip_code?: string; nickname?: string; showcase_count?: number; tipo_entrega: 'frete_instalacao' | 'frete_apenas' | 'sem_logistica' | null }[]>([]);
+  const [downloadingStores, setDownloadingStores] = useState(false);
   const [fullQtyMap, setFullQtyMap] = useState<Record<string, number>>({});
 
   const labels = useMemo(() => getSupplierLabels(currencyCode), [currencyCode]);
@@ -423,6 +424,11 @@ const SupplierPortal = () => {
               .in("id", chunk);
             if (storesRaw) allStores.push(...storesRaw);
           }
+          
+          // The delivery types are stored in client_stores.tipo_entrega
+          // We already fetched them in the select above.
+          // No need for campaign-specific overrides if not present in schema.
+          
           setStoreData(allStores as any);
         }
 
@@ -1560,11 +1566,12 @@ const SupplierPortal = () => {
                 <Button
                   variant="outline"
                   size="sm"
+                  disabled={downloadingStores}
                   className="gap-1.5 h-8 text-xs font-medium border-primary/20 hover:bg-primary/5 hover:text-primary transition-all"
                   onClick={handleDownloadStoresExcel}
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  {portal.storesDownload}
+                  <Download className={`w-3.5 h-3.5 ${downloadingStores ? 'animate-bounce' : ''}`} />
+                  {downloadingStores ? (currencyCode === "CLP" ? "Generando..." : "Gerando...") : portal.storesDownload}
                 </Button>
 
                 <Sheet>
@@ -1709,7 +1716,7 @@ const SupplierPortal = () => {
                     <span className="text-[11px] font-normal text-muted-foreground">({currencyCode})</span>
                   </label>
                   <div className="flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                    {storeData.filter(s => s.tipo_entrega !== 'sem_logistica').length} {portal.summaryFrete}
+                    {storeData.filter(s => (s.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica').length} {portal.summaryFrete}
                   </div>
                 </div>
                 <div className="relative group">
