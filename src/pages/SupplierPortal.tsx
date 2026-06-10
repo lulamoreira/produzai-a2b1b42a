@@ -1554,37 +1554,198 @@ const SupplierPortal = () => {
         {/* Extra costs */}
         <Card>
           <CardContent className="p-4 space-y-4">
-            <h3 className="font-semibold text-foreground">{portal.extraCostsTitle}</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm text-muted-foreground mb-1 block">{portal.installation} ({currencyCode})</label>
-                  <Input
-                    type="number" step="0.01" min="0" placeholder={labels.noPrice} disabled={isLocked}
-                  value={extraCosts.installation_value ?? ""}
-                  onFocus={markFilling}
-                  onChange={(e) => {
-                    const val = e.target.value === "" ? null : parseFloat(e.target.value);
-                    setExtraCosts((ec) => ({ ...ec, installation_value: val }));
-                  }}
-                  onBlur={() => saveExtraCosts("installation_value", extraCosts.installation_value)}
-                />
-              </div>
-              <div>
-                <label className="text-sm text-muted-foreground mb-1 block">{portal.freight} ({currencyCode})</label>
-                  <Input
-                    type="number" step="0.01" min="0" placeholder={labels.noPrice} disabled={isLocked}
-                  value={extraCosts.freight_value ?? ""}
-                  onFocus={markFilling}
-                  onChange={(e) => {
-                    const val = e.target.value === "" ? null : parseFloat(e.target.value);
-                    setExtraCosts((ec) => ({ ...ec, freight_value: val }));
-                  }}
-                  onBlur={() => saveExtraCosts("freight_value", extraCosts.freight_value)}
-                />
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold text-foreground">{portal.extraCostsTitle}</h3>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 h-8 text-xs font-medium border-primary/20 hover:bg-primary/5 hover:text-primary transition-all"
+                  onClick={handleDownloadStoresExcel}
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {portal.storesDownload}
+                </Button>
+
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 h-8 text-xs font-medium border-primary/20 hover:bg-primary/5 hover:text-primary transition-all"
+                    >
+                      <Store className="w-3.5 h-3.5" />
+                      {portal.storesButton}
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-full sm:max-w-md md:max-w-lg overflow-y-auto">
+                    <SheetHeader>
+                      <SheetTitle className="flex items-center gap-2">
+                        <Store className="w-5 h-5 text-primary" />
+                        {portal.storesTitle}
+                      </SheetTitle>
+                    </SheetHeader>
+                    <div className="mt-6 space-y-6 pb-8">
+                      {/* Summary Chips inside Sheet */}
+                      <div className="grid grid-cols-1 gap-2">
+                        <div className="flex items-center justify-between p-3 rounded-lg border border-primary/10 bg-primary/5">
+                          <span className="text-sm font-medium text-primary flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-primary" />
+                            {portal.storesSummaryInstall}
+                          </span>
+                          <span className="text-lg font-bold text-primary">
+                            {storeData.filter(s => (s.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg border border-blue-100 bg-blue-50/50">
+                          <span className="text-sm font-medium text-blue-700 flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-blue-500" />
+                            {portal.storesSummaryFreteOnly}
+                          </span>
+                          <span className="text-lg font-bold text-blue-700">
+                            {storeData.filter(s => s.tipo_entrega === 'frete_apenas').length}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-gray-50/50">
+                          <span className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-gray-400" />
+                            {portal.storesSummaryNoLogistics}
+                          </span>
+                          <span className="text-lg font-bold text-gray-600">
+                            {storeData.filter(s => s.tipo_entrega === 'sem_logistica').length}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="rounded-md border border-border overflow-hidden">
+                        <Table>
+                          <TableHeader className="bg-muted/50">
+                            <TableRow>
+                              <TableHead className="text-xs h-10">{portal.storesColName}</TableHead>
+                              <TableHead className="text-xs h-10">{portal.storesColCity}</TableHead>
+                              <TableHead className="text-xs h-10">{portal.storesColType}</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {storeData.map((store) => (
+                              <TableRow key={store.id} className="hover:bg-muted/30 transition-colors">
+                                <TableCell className="py-3">
+                                  <div className="font-medium text-sm leading-none">{store.name}</div>
+                                  {store.nickname && (
+                                    <div className="text-[10px] text-muted-foreground mt-1 uppercase tracking-wider">{store.nickname}</div>
+                                  )}
+                                </TableCell>
+                                <TableCell className="py-3">
+                                  <div className="text-xs text-muted-foreground">{store.city}</div>
+                                </TableCell>
+                                <TableCell className="py-3">
+                                  {(() => {
+                                    const tipo = store.tipo_entrega ?? 'frete_instalacao';
+                                    if (tipo === 'frete_instalacao') return (
+                                      <Badge variant="outline" className="text-[10px] font-semibold border-primary/20 text-primary bg-primary/5 px-1.5 py-0 leading-tight">
+                                        {portal.typeFreteInstalacao}
+                                      </Badge>
+                                    );
+                                    if (tipo === 'frete_apenas') return (
+                                      <Badge variant="outline" className="text-[10px] font-semibold border-blue-200 text-blue-700 bg-blue-50 px-1.5 py-0 leading-tight">
+                                        {portal.typeFreteApenas}
+                                      </Badge>
+                                    );
+                                    return (
+                                      <Badge variant="outline" className="text-[10px] font-semibold border-gray-200 text-gray-500 bg-gray-50 px-1.5 py-0 leading-tight">
+                                        {portal.typeSemLogistica}
+                                      </Badge>
+                                    );
+                                  })()}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    </div>
+                  </SheetContent>
+                </Sheet>
               </div>
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="relative">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                    {portal.installation}
+                    <span className="text-[11px] font-normal text-muted-foreground">({currencyCode})</span>
+                  </label>
+                  <div className="flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
+                    {storeData.filter(s => (s.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length} {portal.summaryInstallations}
+                  </div>
+                </div>
+                <div className="relative group">
+                  <Input
+                    type="number" 
+                    step="0.01" 
+                    min="0" 
+                    placeholder={labels.noPrice} 
+                    disabled={isLocked}
+                    className="h-11 bg-background border-border group-hover:border-primary/30 focus:border-primary transition-all pr-12 font-semibold"
+                    value={extraCosts.installation_value ?? ""}
+                    onFocus={markFilling}
+                    onChange={(e) => {
+                      const val = e.target.value === "" ? null : parseFloat(e.target.value);
+                      setExtraCosts((ec) => ({ ...ec, installation_value: val }));
+                    }}
+                    onBlur={() => saveExtraCosts("installation_value", extraCosts.installation_value)}
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground opacity-40">
+                    <MapPin className="w-4 h-4" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                    {portal.freight}
+                    <span className="text-[11px] font-normal text-muted-foreground">({currencyCode})</span>
+                  </label>
+                  <div className="flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
+                    {storeData.filter(s => s.tipo_entrega !== 'sem_logistica').length} {portal.summaryFrete}
+                  </div>
+                </div>
+                <div className="relative group">
+                  <Input
+                    type="number" 
+                    step="0.01" 
+                    min="0" 
+                    placeholder={labels.noPrice} 
+                    disabled={isLocked}
+                    className="h-11 bg-background border-border group-hover:border-primary/30 focus:border-primary transition-all pr-12 font-semibold"
+                    value={extraCosts.freight_value ?? ""}
+                    onFocus={markFilling}
+                    onChange={(e) => {
+                      const val = e.target.value === "" ? null : parseFloat(e.target.value);
+                      setExtraCosts((ec) => ({ ...ec, freight_value: val }));
+                    }}
+                    onBlur={() => saveExtraCosts("freight_value", extraCosts.freight_value)}
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground opacity-40">
+                    <Package className="w-4 h-4" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {storeData.filter(s => s.tipo_entrega === 'sem_logistica').length > 0 && (
+              <div className="mt-2 p-2.5 rounded-lg bg-gray-50 border border-gray-200 flex items-start gap-2 animate-in fade-in slide-in-from-top-1">
+                <AlertTriangle className="w-4 h-4 text-gray-400 mt-0.5 shrink-0" />
+                <p className="text-[11px] leading-tight text-gray-600 font-medium italic">
+                  {portal.noLogisticsNote(storeData.filter(s => s.tipo_entrega === 'sem_logistica').length)}
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
+
 
         {/* Grand total */}
         <Card className="border-primary/30 bg-primary/5">
