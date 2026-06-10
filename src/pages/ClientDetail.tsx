@@ -1531,25 +1531,31 @@ const ClientDetail = () => {
                       <Plus className="w-3.5 h-3.5" /> Nova Loja
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-                    <DialogHeader><DialogTitle>Nova Loja</DialogTitle></DialogHeader>
-                    <form onSubmit={handleAddStore} className="space-y-4">
-                      {renderStoreFormFields(storeForm, setStoreForm, {
-                        nameChangeHandler: handleNameChange,
-                        nicknameChangeHandler: handleNicknameChange,
-                      })}
-                      <Button type="submit" className="w-full gradient-secondary text-white border-0" disabled={addStore.isPending}>Adicionar Loja</Button>
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col">
+                    <DialogHeader className="px-6 pt-6"><DialogTitle>Nova Loja</DialogTitle></DialogHeader>
+                    <form onSubmit={handleAddStore} className="flex-1 overflow-y-auto px-6 py-4 flex flex-col">
+                      <div className="flex-1 space-y-4">
+                        {renderStoreFormFields(storeForm, setStoreForm, {
+                          nameChangeHandler: handleNameChange,
+                          nicknameChangeHandler: handleNicknameChange,
+                        })}
+                      </div>
+                      <div className="pt-4 mt-auto">
+                        <Button type="submit" className="w-full gradient-secondary text-white border-0" disabled={addStore.isPending}>Adicionar Loja</Button>
+                      </div>
                     </form>
                   </DialogContent>
                 </Dialog>
 
                 <Dialog open={editStoreDialogOpen} onOpenChange={setEditStoreDialogOpen}>
-                  <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-                    <DialogHeader><DialogTitle>Editar Loja</DialogTitle></DialogHeader>
-                    <form onSubmit={handleEditStore} className="space-y-4">
-                      {renderStoreFormFields(editStoreForm, setEditStoreForm)}
-                      <StoreContactsSection storeId={editStoreId || undefined} clientId={clientId} canEdit={canEditStores} storeName={editStoreForm.nickname || editStoreForm.name} countryCode={client?.country_code} />
-                      <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-between pt-2">
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-hidden p-0 flex flex-col">
+                    <DialogHeader className="px-6 pt-6"><DialogTitle>Editar Loja</DialogTitle></DialogHeader>
+                    <form onSubmit={handleEditStore} className="flex-1 overflow-y-auto px-6 py-4 flex flex-col">
+                      <div className="flex-1 space-y-4">
+                        {renderStoreFormFields(editStoreForm, setEditStoreForm)}
+                        <StoreContactsSection storeId={editStoreId || undefined} clientId={clientId} canEdit={canEditStores} storeName={editStoreForm.nickname || editStoreForm.name} countryCode={client?.country_code} />
+                      </div>
+                      <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-between pt-4 mt-auto">
                         {isAdminOrMaster && editStoreId ? (
                           <Button
                             type="button"
