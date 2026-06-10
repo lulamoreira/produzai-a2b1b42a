@@ -1641,10 +1641,8 @@ const ClientDetail = () => {
                 onDisplayOrderChange={setDisplayOrderStores}
                />
             )}
-
-            )}
-            </>
-            )}
+          </>
+        )}
 
             {/* CustomExportDialog removed — see project policy */}
           </>
