@@ -1180,10 +1180,7 @@ const SupplierPortal = () => {
               <p dangerouslySetInnerHTML={{ __html: portal.inviteText(campaignName, clientName) }} />
               <p dangerouslySetInnerHTML={{ __html: portal.instructionPrice }} />
               {(() => {
-                const uniqueStores = storeData.filter((s, idx, self) => 
-                  idx === self.findIndex(t => t.id === s.id)
-                );
-                const semLogisticaCount = uniqueStores.filter(s => s.tipo_entrega === 'sem_logistica').length;
+                const semLogisticaCount = storeData.filter(s => s.tipo_entrega === 'sem_logistica').length;
                 if (semLogisticaCount > 0) {
                   return <p className="font-bold text-amber-600">{portal.noLogisticsNote(semLogisticaCount)}</p>;
                 }
