@@ -363,7 +363,7 @@ export function SidebarV2() {
             e.preventDefault();
             e.stopPropagation();
             if (collapsed) toggleSidebar();
-            navigate(campBasePath);
+            navigate(campBasePath, { replace: location.pathname === campBasePath });
           }}
         >
           <div className="flex items-center gap-2 min-w-0">
