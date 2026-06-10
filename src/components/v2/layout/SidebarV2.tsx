@@ -358,7 +358,9 @@ export function SidebarV2() {
           style={{ 
             background: isActiveCampaign ? 'rgba(255,255,255,0.05)' : 'transparent' 
           }}
-          onClick={() => {
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
             if (collapsed) toggleSidebar();
             navigate(campBasePath);
           }}
