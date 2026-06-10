@@ -336,7 +336,14 @@ export function SidebarV2() {
 
 
     const filteredModules = CAMPAIGN_MODULES.filter(mod => {
-      if (mod.requires === "admin_or_master" && !isAdminOrMaster) return false;
+      const permissionCtx: PermissionContext = {
+        isAdmin,
+        isMaster,
+        isLimited,
+        hasCampaignAccess: !!myCampaignAccess
+      };
+      
+      if (!checkPermission(mod.requires, permissionCtx)) return false;
       if (mod.hideForLimited && isLimited) return false;
       if (mod.requiresCampaignModule && camp.modules && !camp.modules.includes(mod.requiresCampaignModule)) return false;
       if (isLimited && camp.modules && camp.modules.length > 0 && !camp.modules.includes(mod.key)) return false;
