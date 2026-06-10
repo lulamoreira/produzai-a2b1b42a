@@ -391,7 +391,7 @@ export default function AppSidebar() {
             
             {!collapsed && (
               <button 
-                onClick={() => handleNavigate(`/agency/${effectiveAgencyId}`)}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNavigate(`/agency/${effectiveAgencyId}`); }}
                 className={cn(
                   "flex items-center gap-2.5 px-3 py-2.5 rounded-lg transition-all w-full text-left group",
                   location.pathname === `/agency/${effectiveAgencyId}` 
