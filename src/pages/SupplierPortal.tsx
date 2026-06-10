@@ -1003,28 +1003,132 @@ const SupplierPortal = () => {
       <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 space-y-6">
         {/* Resumo visual no portal */}
         {(() => {
-          const comFrete = storeData.filter(s => {
+          const uniqueStores = storeData.reduce((acc, current) => {
+            const x = acc.find(item => item.id === current.id);
+            if (!x) return acc.concat([current]);
+            return acc;
+          }, [] as typeof storeData);
+
+          const comFrete = uniqueStores.filter(s => {
             const tipo = (s as any).tipo_entrega ?? 'frete_instalacao';
             return tipo === 'frete_instalacao' || tipo === 'frete_apenas';
           }).length;
-          const comInstalacao = storeData.filter(s => ((s as any).tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length;
-          const semLogistica = storeData.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
-          if (storeData.length === 0) return null;
+          const comInstalacao = uniqueStores.filter(s => ((s as any).tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length;
+          const semLogistica = uniqueStores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
+          
+          if (uniqueStores.length === 0) return null;
 
           return (
-            <div className="flex flex-wrap gap-3">
-              <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-border shadow-sm">
-                <Package className="w-4 h-4 text-primary" />
-                <span className="text-xs font-bold">{comFrete} {portal.summaryFrete}</span>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap gap-3">
+                <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-border shadow-sm">
+                  <Package className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-bold">{comFrete} {portal.summaryFrete}</span>
+                </div>
+                <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-border shadow-sm">
+                  <Edit2 className="w-4 h-4 text-emerald-600" />
+                  <span className="text-xs font-bold">{comInstalacao} {portal.summaryInstallations}</span>
+                </div>
+                <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-border shadow-sm">
+                  <Package className="w-4 h-4 text-gray-400" />
+                  <span className="text-xs font-bold">{semLogistica} {portal.summaryNoLogistics}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-border shadow-sm">
-                <Edit2 className="w-4 h-4 text-emerald-600" />
-                <span className="text-xs font-bold">{comInstalacao} {portal.summaryInstallations}</span>
-              </div>
-              <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-border shadow-sm">
-                <Package className="w-4 h-4 text-gray-400" />
-                <span className="text-xs font-bold">{semLogistica} {portal.summaryNoLogistics}</span>
-              </div>
+
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="gap-2 border-[#8C6F4E] text-[#8C6F4E] hover:bg-[#8C6F4E]/10">
+                    <Store className="w-4 h-4" />
+                    {portal.storesAction}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+                  <SheetHeader className="mb-6">
+                    <SheetTitle className="flex items-center gap-2">
+                      <Store className="w-5 h-5" />
+                      {portal.storesTitle}
+                    </SheetTitle>
+                  </SheetHeader>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                    <Card className="bg-green-50 border-green-100">
+                      <CardContent className="p-3 text-center">
+                        <div className="text-xl font-bold text-green-700">{comInstalacao}</div>
+                        <div className="text-[10px] text-green-600 font-medium uppercase leading-tight mt-1">
+                          {portal.storesSummaryInstall}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-blue-50 border-blue-100">
+                      <CardContent className="p-3 text-center">
+                        <div className="text-xl font-bold text-blue-700">{comFrete - comInstalacao}</div>
+                        <div className="text-[10px] text-blue-600 font-medium uppercase leading-tight mt-1">
+                          {portal.storesSummaryFreteOnly}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-gray-50 border-gray-100">
+                      <CardContent className="p-3 text-center">
+                        <div className="text-xl font-bold text-gray-700">{semLogistica}</div>
+                        <div className="text-[10px] text-gray-600 font-medium uppercase leading-tight mt-1">
+                          {portal.storesSummaryNoLogistics}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+
+                  <div className="border rounded-md overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="text-xs">{portal.storesColName}</TableHead>
+                          <TableHead className="text-xs">{portal.storesColAlias}</TableHead>
+                          <TableHead className="text-xs">{portal.storesColCity}</TableHead>
+                          <TableHead className="text-xs">{portal.storesColAddress}</TableHead>
+                          <TableHead className="text-xs">{portal.storesColType}</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {uniqueStores.map((store) => {
+                          const tipo = store.tipo_entrega || 'frete_instalacao';
+                          return (
+                            <TableRow key={store.id}>
+                              <TableCell className="text-xs font-medium">{store.name}</TableCell>
+                              <TableCell className="text-xs text-muted-foreground">{store.nickname || '—'}</TableCell>
+                              <TableCell className="text-xs text-muted-foreground">{store.city || '—'}</TableCell>
+                              <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">
+                                {store.street ? `${store.street}${store.number ? `, ${store.number}` : ''}` : '—'}
+                              </TableCell>
+                              <TableCell>
+                                {tipo === 'frete_instalacao' ? (
+                                  <Badge className="bg-green-100 text-green-700 border-green-200 text-[9px] whitespace-nowrap">
+                                    📦🔧 {portal.typeFreteInstalacao}
+                                  </Badge>
+                                ) : tipo === 'frete_apenas' ? (
+                                  <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[9px] whitespace-nowrap">
+                                    📦 {portal.typeFreteApenas}
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-[9px] whitespace-nowrap">
+                                    🏪 {portal.typeSemLogistica}
+                                  </Badge>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+
+                  <SheetFooter className="mt-8 border-t pt-6">
+                    <Button onClick={handleDownloadStoresExcel} className="w-full gap-2 bg-[#8C6F4E] hover:bg-[#7A5F3E]">
+                      <Download className="w-4 h-4" />
+                      {portal.storesDownload}
+                    </Button>
+                  </SheetFooter>
+                </SheetContent>
+              </Sheet>
             </div>
           );
         })()}
