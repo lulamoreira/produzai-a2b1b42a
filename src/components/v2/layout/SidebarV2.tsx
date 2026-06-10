@@ -336,11 +336,12 @@ export function SidebarV2() {
 
 
     const filteredModules = CAMPAIGN_MODULES.filter(mod => {
+      const myAccess = isLimited ? limitedCampaigns.find(lc => lc.campaignId === camp.id) : null;
       const permissionCtx: PermissionContext = {
         isAdmin,
         isMaster,
         isLimited,
-        hasCampaignAccess: !!myCampaignAccess
+        hasCampaignAccess: !isLimited || !!myAccess
       };
       
       if (!checkPermission(mod.requires, permissionCtx)) return false;
