@@ -4887,6 +4887,7 @@ export type Database = {
           name: string
           number: number
           primary_mod: string
+          requer_instalacao: boolean
           secondary_mod: string
           type: string
           uf: string
@@ -4898,6 +4899,7 @@ export type Database = {
           name: string
           number: number
           primary_mod: string
+          requer_instalacao?: boolean
           secondary_mod: string
           type: string
           uf: string
@@ -4909,6 +4911,7 @@ export type Database = {
           name?: string
           number?: number
           primary_mod?: string
+          requer_instalacao?: boolean
           secondary_mod?: string
           type?: string
           uf?: string
