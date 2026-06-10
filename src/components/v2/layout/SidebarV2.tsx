@@ -115,6 +115,11 @@ export function SidebarV2() {
   });
 
   const effectiveAgencyId = agencyId || profile?.agency_id;
+  
+  const isAgencyAccessible = useMemo(() => {
+    if (!effectiveAgencyId) return false;
+    return hasAgencyAccess(effectiveAgencyId);
+  }, [effectiveAgencyId, hasAgencyAccess]);
 
   // Fetch contextual names
   const { data: agencyData } = useQuery({
