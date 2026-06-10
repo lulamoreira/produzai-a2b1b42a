@@ -100,7 +100,7 @@ export const supplierMessageLabels = {
     negotiationSubject: "Solicitud de Ajuste de Propuesta",
     negotiationIntro: "Nos gustaría solicitar un ajuste en su propuesta para la campaña",
     negotiationCurrentTotal: "Total actual",
-    negotiationTarget: "Techo máximo deseado",
+    negotiationTarget: "Techo máximo deado",
     negotiationAction: "Por favor, acceda al portal para revisar los precios:",
     negotiationFooter: "Solo podrá enviar la propuesta ajustada si el total está dentro del techo definido.\n\n¡Gracias!",
     negotiationRegards: "Atentamente",
@@ -213,6 +213,12 @@ export const supplierPortalLabels = {
     summaryPackages: "pacotes (frete)",
     summaryInstallations: "instalações",
     summaryOnlyDelivery: "somente entrega",
+    typeFreteInstalacao: "Frete + Instalação",
+    typeFreteApenas: "Frete Apenas",
+    typeSemLogistica: "Sem Logística",
+    summaryFrete: "com frete",
+    summaryNoLogistics: "sem logística",
+    noLogisticsNote: (n: number) => `⚠️ ${n} loja(s) sem frete e sem instalação — não incluir logística para elas.`
   },
   "es-CL": {
     loading: "Cargando...",
@@ -250,7 +256,7 @@ export const supplierPortalLabels = {
     successSubtitle: (name: string, company: string, campaign: string) => 
       `¡Gracias, ${name}! La cotización de <strong>${company}</strong> para la campaña <strong>${campaign}</strong> fue recibida con éxito.`,
     quotedItems: "ítems cotizados",
-    installation: "Instalación",
+    installation: "Instalaación",
     freight: "Embalaje / Flete / Despacho",
     grandTotal: "Total General",
     grandTotalBudget: "de la Cotización",
@@ -292,7 +298,7 @@ export const supplierPortalLabels = {
     confirmDescription: "¿Revisó todos los valores? Esta acción no se puede deshacer.",
     confirmYes: "Sí, revisé",
     confirmDefinitiveTitle: "Confirmación definitiva",
-    confirmDefinitiveDescription: "¿Está absolutamente seguro? Después del envío, los valores quedan bloqueados y no podrán ser modificados.",
+    confirmDefinitiveDescription: "¿Está absolutamente seguro? Después del envío, los valores quedan bloqueados y no podrán se modificados.",
     confirmSubmitBtn: "Confirmar Envío Definitivo",
     submittingBtn: "Enviando...",
     negotiationSuccess: "¡Propuesta ajustada enviada con éxito!",
@@ -305,6 +311,12 @@ export const supplierPortalLabels = {
     summaryPackages: "paquetes (flete)",
     summaryInstallations: "instalaciones",
     summaryOnlyDelivery: "solo entrega",
+    typeFreteInstalacao: "Flete + Instalación",
+    typeFreteApenas: "Solo Flete",
+    typeSemLogistica: "Sin Logística",
+    summaryFrete: "con flete",
+    summaryNoLogistics: "sin logística",
+    noLogisticsNote: (n: number) => `⚠️ ${n} punto(s) sin flete ni instalación — no incluir logística para ellos.`
   },
 } as const;
 
