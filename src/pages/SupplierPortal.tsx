@@ -1128,9 +1128,30 @@ const SupplierPortal = () => {
                   </div>
 
                   <SheetFooter className="mt-8 border-t pt-6">
-                    <Button onClick={handleDownloadStoresExcel} className="w-full gap-2 bg-[#8C6F4E] hover:bg-[#7A5F3E]">
-                      <Download className="w-4 h-4" />
-                      {portal.storesDownload}
+                    <Button 
+                      onClick={async () => {
+                        setDownloadingStores(true);
+                        try {
+                          await handleDownloadStoresExcel();
+                          toast.success(currencyCode === "CLP" ? "Planilla descargada con éxito." : "Planilha baixada com sucesso.");
+                        } finally {
+                          setDownloadingStores(false);
+                        }
+                      }} 
+                      className="w-full gap-2 bg-[#8C6F4E] hover:bg-[#7A5F3E]"
+                      disabled={downloadingStores}
+                    >
+                      {downloadingStores ? (
+                        <div className="flex items-center gap-2">
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          {currencyCode === "CLP" ? "Descargando..." : "Baixando..."}
+                        </div>
+                      ) : (
+                        <>
+                          <Download className="w-4 h-4" />
+                          {portal.storesDownload}
+                        </>
+                      )}
                     </Button>
                   </SheetFooter>
                 </SheetContent>
