@@ -15,6 +15,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/hooks/useAuth";
 import { snapshotSupplierBudget } from "@/lib/budgetPriceSnapshot";
 import { computeSupplierTotal } from "@/lib/computeSupplierTotal";
+import { ClientStore } from "@/hooks/useMultiClientData";
 import BudgetSupplierHistorySheet from "@/components/Budget/BudgetSupplierHistorySheet";
 import { getSupplierLabels, getMessageLabels, getLocaleFromCurrency, getSupplierPortalLabels } from "@/utils/currencyLocale";
 
@@ -85,7 +86,7 @@ interface BudgetTabProps {
   kits: CampaignKit[];
   kitPieces: { id: string; kit_id: string; piece_id: string; quantity: number }[];
   qtyMap: Record<string, number>;
-  stores: { id: string; name: string }[];
+  stores: ClientStore[];
   onNavigateToRateio?: () => void;
   onNavigateToSection?: (section: string) => void;
   activeAdjustment?: { id: string; name: string } | null;
