@@ -502,7 +502,7 @@ export default function AppSidebar() {
               </span>
             </div>
             <button
-              onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`)}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNavigate(`/agency/${agencyId}/clients/${clientId}?tab=stores`); }}
               className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
               style={itemStyle(location.search.includes("tab=stores") && !isInsideCampaign)}
               {...hoverHandlers(location.search.includes("tab=stores") && !isInsideCampaign)}
