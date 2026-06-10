@@ -2707,7 +2707,7 @@ ${msgLabels.winnerWaFooter}
                       return (
                         <React.Fragment key={`kit-${kit.id}`}>
                           <TableRow className="bg-muted/40 border-t-2">
-                            <TableCell colSpan={2} className="text-xs font-semibold">
+                            <TableCell colSpan={5} className="text-xs font-semibold">
                               🧩 Kit {kit.code} - {kit.name} <span className="font-normal text-muted-foreground">(Qtd kit: {kitQty})</span>
                             </TableCell>
                             <TableCell className="text-xs text-right font-semibold">
