@@ -112,7 +112,7 @@ const PendingApprovalScreen = () => {
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const { data: approvalStatus, isLoading: loadingApproval } = useUserApprovalStatus();
-  const { isAdminOrMaster } = useUserRole();
+  const { isAdminOrMaster, isLoading: loadingRole } = useUserRole();
   const { isProcessing } = useProcessInvite();
 
   // Allow public access to specific routes even if ProtectedRoute is misused,
@@ -142,17 +142,17 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  if (user && !isAdminOrMaster && approvalStatus !== "approved" && !isPublicPath) {
-    return <PendingApprovalScreen />;
-  }
-
   // Still show loaders for authenticated users if needed
-  if (user && (loadingApproval || isProcessing) && !isPublicPath) {
+  if (user && (loadingApproval || loadingRole || isProcessing) && !isPublicPath) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
       </div>
     );
+  }
+
+  if (user && !isAdminOrMaster && approvalStatus !== "approved" && !isPublicPath) {
+    return <PendingApprovalScreen />;
   }
 
   return (
