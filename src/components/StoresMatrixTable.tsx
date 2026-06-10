@@ -151,6 +151,10 @@ function DraggableHeaderCell({
           className="cursor-grab active:cursor-grabbing touch-none p-0.5 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
           {...attributes}
           {...listeners}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            listeners?.onPointerDown?.(e as any);
+          }}
         >
           <GripVertical className="w-3 h-3" />
         </button>
@@ -668,7 +672,7 @@ export default function StoresMatrixTable({
   }, [stores, orderedColumns]);
 
   // DnD for columns
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
@@ -799,7 +803,7 @@ export default function StoresMatrixTable({
                         onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}
                       >
                         <div className="flex items-center justify-center gap-1.5 px-1 py-0.5 min-h-[28px]">
-                          <DropdownMenu>
+                          <DropdownMenu modal={false}>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm" className="h-auto p-0 hover:bg-transparent">
                                 {val === "frete_instalacao" ? (
