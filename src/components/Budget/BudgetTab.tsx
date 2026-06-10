@@ -16,7 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { snapshotSupplierBudget } from "@/lib/budgetPriceSnapshot";
 import { computeSupplierTotal } from "@/lib/computeSupplierTotal";
 import BudgetSupplierHistorySheet from "@/components/Budget/BudgetSupplierHistorySheet";
-import { getSupplierLabels, getMessageLabels, getLocaleFromCurrency } from "@/utils/currencyLocale";
+import { getSupplierLabels, getMessageLabels, getLocaleFromCurrency, getSupplierPortalLabels } from "@/utils/currencyLocale";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
