@@ -151,6 +151,10 @@ function DraggableHeaderCell({
           className="cursor-grab active:cursor-grabbing touch-none p-0.5 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
           {...attributes}
           {...listeners}
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            listeners?.onPointerDown?.(e as any);
+          }}
         >
           <GripVertical className="w-3 h-3" />
         </button>
