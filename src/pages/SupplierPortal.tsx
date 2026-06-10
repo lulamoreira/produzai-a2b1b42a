@@ -1012,25 +1012,19 @@ const SupplierPortal = () => {
       <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 space-y-6">
         {/* Resumo visual no portal */}
         {(() => {
-          const uniqueStores = storeData.reduce((acc, current) => {
-            const x = acc.find(item => item.id === current.id);
-            if (!x) return acc.concat([current]);
-            return acc;
-          }, [] as typeof storeData);
-
-          const comFrete = uniqueStores.filter(s => {
-            const tipo = (s as any).tipo_entrega || 'frete_instalacao';
+          const comFrete = storeData.filter(s => {
+            const tipo = s.tipo_entrega || 'frete_instalacao';
             return tipo === 'frete_instalacao' || tipo === 'frete_apenas';
           }).length;
           
-          const comInstalacao = uniqueStores.filter(s => {
-            const tipo = (s as any).tipo_entrega || 'frete_instalacao';
+          const comInstalacao = storeData.filter(s => {
+            const tipo = s.tipo_entrega || 'frete_instalacao';
             return tipo === 'frete_instalacao';
           }).length;
           
-          const semLogistica = uniqueStores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
+          const semLogistica = storeData.filter(s => s.tipo_entrega === 'sem_logistica').length;
           
-          if (uniqueStores.length === 0 && storeData.length === 0) return null;
+          if (storeData.length === 0) return null;
 
           return (
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -1067,7 +1061,9 @@ const SupplierPortal = () => {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
                     <Card className="bg-green-50 border-green-100">
                       <CardContent className="p-3 text-center">
-                        <div className="text-xl font-bold text-green-700">{comInstalacao}</div>
+                        <div className="text-xl font-bold text-green-700">
+                          {storeData.filter(s => (s.tipo_entrega || 'frete_instalacao') === 'frete_instalacao').length}
+                        </div>
                         <div className="text-[10px] text-green-600 font-medium uppercase leading-tight mt-1">
                           {portal.storesSummaryInstall}
                         </div>
@@ -1075,7 +1071,9 @@ const SupplierPortal = () => {
                     </Card>
                     <Card className="bg-blue-50 border-blue-100">
                       <CardContent className="p-3 text-center">
-                        <div className="text-xl font-bold text-blue-700">{comFrete - comInstalacao}</div>
+                        <div className="text-xl font-bold text-blue-700">
+                          {storeData.filter(s => s.tipo_entrega === 'frete_apenas').length}
+                        </div>
                         <div className="text-[10px] text-blue-600 font-medium uppercase leading-tight mt-1">
                           {portal.storesSummaryFreteOnly}
                         </div>
@@ -1083,7 +1081,9 @@ const SupplierPortal = () => {
                     </Card>
                     <Card className="bg-gray-50 border-gray-100">
                       <CardContent className="p-3 text-center">
-                        <div className="text-xl font-bold text-gray-700">{semLogistica}</div>
+                        <div className="text-xl font-bold text-gray-700">
+                          {storeData.filter(s => s.tipo_entrega === 'sem_logistica').length}
+                        </div>
                         <div className="text-[10px] text-gray-600 font-medium uppercase leading-tight mt-1">
                           {portal.storesSummaryNoLogistics}
                         </div>
@@ -1103,34 +1103,39 @@ const SupplierPortal = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {uniqueStores.map((store) => {
-                          const tipo = store.tipo_entrega || 'frete_instalacao';
-                          return (
-                            <TableRow key={store.id}>
-                              <TableCell className="text-xs font-medium">{store.name}</TableCell>
-                              <TableCell className="text-xs text-muted-foreground">{store.nickname || '—'}</TableCell>
-                              <TableCell className="text-xs text-muted-foreground">{store.city || '—'}</TableCell>
-                              <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">
-                                {store.street ? `${store.street}${store.number ? `, ${store.number}` : ''}` : '—'}
-                              </TableCell>
-                              <TableCell>
-                                {tipo === 'frete_instalacao' ? (
-                                  <Badge className="bg-green-100 text-green-700 border-green-200 text-[9px] whitespace-nowrap">
-                                    📦🔧 {portal.typeFreteInstalacao}
-                                  </Badge>
-                                ) : tipo === 'frete_apenas' ? (
-                                  <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[9px] whitespace-nowrap">
-                                    📦 {portal.typeFreteApenas}
-                                  </Badge>
-                                ) : (
-                                  <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-[9px] whitespace-nowrap">
-                                    🏪 {portal.typeSemLogistica}
-                                  </Badge>
-                                )}
-                              </TableCell>
-                            </TableRow>
+                        {(() => {
+                          const uniqueStoresList = storeData.filter((s, idx, self) => 
+                            idx === self.findIndex(t => t.id === s.id)
                           );
-                        })}
+                          return uniqueStoresList.map((store) => {
+                            const tipo = store.tipo_entrega || 'frete_instalacao';
+                            return (
+                              <TableRow key={store.id}>
+                                <TableCell className="text-xs font-medium">{store.name}</TableCell>
+                                <TableCell className="text-xs text-muted-foreground">{store.nickname || '—'}</TableCell>
+                                <TableCell className="text-xs text-muted-foreground">{store.city || '—'}</TableCell>
+                                <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">
+                                  {store.street ? `${store.street}${store.number ? `, ${store.number}` : ''}` : '—'}
+                                </TableCell>
+                                <TableCell>
+                                  {tipo === 'frete_instalacao' ? (
+                                    <Badge className="bg-green-100 text-green-700 border-green-200 text-[9px] whitespace-nowrap">
+                                      📦🔧 {portal.typeFreteInstalacao}
+                                    </Badge>
+                                  ) : tipo === 'frete_apenas' ? (
+                                    <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[9px] whitespace-nowrap">
+                                      📦 {portal.typeFreteApenas}
+                                    </Badge>
+                                  ) : (
+                                    <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-[9px] whitespace-nowrap">
+                                      🏪 {portal.typeSemLogistica}
+                                    </Badge>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          });
+                        })()}
                       </TableBody>
                     </Table>
                   </div>
@@ -1180,12 +1185,7 @@ const SupplierPortal = () => {
               <p dangerouslySetInnerHTML={{ __html: portal.inviteText(campaignName, clientName) }} />
               <p dangerouslySetInnerHTML={{ __html: portal.instructionPrice }} />
               {(() => {
-                const uniqueStores = storeData.reduce((acc, current) => {
-                  const x = acc.find(item => item.id === current.id);
-                  if (!x) return acc.concat([current]);
-                  return acc;
-                }, [] as typeof storeData);
-                const semLogisticaCount = uniqueStores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
+                const semLogisticaCount = storeData.filter(s => s.tipo_entrega === 'sem_logistica').length;
                 if (semLogisticaCount > 0) {
                   return <p className="font-bold text-amber-600">{portal.noLogisticsNote(semLogisticaCount)}</p>;
                 }
