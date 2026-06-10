@@ -1107,7 +1107,7 @@ const SupplierPortal = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {uniqueStores.map((store) => {
+                        {storeData.map((store) => {
                           const tipo = store.tipo_entrega || 'frete_instalacao';
                           return (
                             <TableRow key={store.id}>
