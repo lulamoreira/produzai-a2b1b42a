@@ -36,7 +36,7 @@ export default function StoresTab({
   const [storesViewMode, setStoresViewMode] = useState<"table" | "contacts">("table");
 
   const filteredStores = useMemo(() => {
-    return stores.filter((s) => (s.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica');
+    return stores;
   }, [stores]);
 
   return (

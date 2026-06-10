@@ -75,7 +75,7 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
   }, [stores]);
 
   const allStoreIds = useMemo(() => (stores ?? [])
-    .filter((s: any) => (s.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica')
+    .filter((s: any) => (s.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao')
     .map((s: any) => s.id as string), [stores]);
 
   /* Count unique stores active per tipo */

@@ -15,6 +15,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/hooks/useAuth";
 import { snapshotSupplierBudget } from "@/lib/budgetPriceSnapshot";
 import { computeSupplierTotal } from "@/lib/computeSupplierTotal";
+import { ClientStore } from "@/hooks/useMultiClientData";
 import BudgetSupplierHistorySheet from "@/components/Budget/BudgetSupplierHistorySheet";
 import { getSupplierLabels, getMessageLabels, getLocaleFromCurrency, getSupplierPortalLabels } from "@/utils/currencyLocale";
 
@@ -85,7 +86,7 @@ interface BudgetTabProps {
   kits: CampaignKit[];
   kitPieces: { id: string; kit_id: string; piece_id: string; quantity: number }[];
   qtyMap: Record<string, number>;
-  stores: { id: string; name: string }[];
+  stores: any[];
   onNavigateToRateio?: () => void;
   onNavigateToSection?: (section: string) => void;
   activeAdjustment?: { id: string; name: string } | null;
@@ -388,15 +389,39 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   }, [currencyCode]);
 
   // ─── Piece total quantities (sum across all stores) ────
-  const pieceTotals = useMemo(() => {
+  const pieceTotalsFull = useMemo(() => {
     const map: Record<string, number> = {};
+    const installationMap: Record<string, number> = {};
+    const freightMap: Record<string, number> = {};
+    const noLogisticsMap: Record<string, number> = {};
+
     pieces.forEach((p) => {
       let total = 0;
-      stores.forEach((s) => { total += qtyMap[`${s.id}-${p.id}`] || 0; });
+      let inst = 0;
+      let freight = 0;
+      let none = 0;
+
+      stores.forEach((s) => {
+        const qty = qtyMap[`${s.id}-${p.id}`] || 0;
+        const tipo = (s as any).tipo_entrega ?? 'frete_instalacao';
+        
+        if (tipo === 'frete_instalacao') inst += qty;
+        else if (tipo === 'frete_apenas') freight += qty;
+        else none += qty;
+
+        total += qty;
+      });
+
       map[p.id] = total;
+      installationMap[p.id] = inst;
+      freightMap[p.id] = freight;
+      noLogisticsMap[p.id] = none;
     });
-    return map;
+
+    return { map, installationMap, freightMap, noLogisticsMap };
   }, [pieces, stores, qtyMap]);
+
+  const pieceTotals = pieceTotalsFull.map;
 
   // ─── Build per-piece quantities including kit expansion ─
   const kitPieceTotals = useMemo(() => {
@@ -2074,9 +2099,9 @@ ${msgLabels.winnerWaFooter}
                       <TableHead className="text-xs">Fornecedor</TableHead>
                       <TableHead className="text-xs">Status</TableHead>
                       <TableHead className="text-xs text-center">Preenchimento</TableHead>
-                      <TableHead className="text-xs text-right">Σ Peças</TableHead>
-                      <TableHead className="text-xs text-right">Instalação</TableHead>
-                      <TableHead className="text-xs text-right">Embalagem / Frete</TableHead>
+                      <TableHead className="text-xs text-right">Σ Frete + Inst.</TableHead>
+                      <TableHead className="text-xs text-right">Σ Frete Apenas</TableHead>
+                      <TableHead className="text-xs text-right">Σ Sem Logística</TableHead>
                       <TableHead className="text-xs text-right">Total Geral</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -2108,9 +2133,38 @@ ${msgLabels.winnerWaFooter}
                               </div>
                             </div>
                           </TableCell>
-                          <TableCell className="text-right tabular-nums">{piecesTotal > 0 ? fmtCurrency(piecesTotal) : "—"}</TableCell>
-                          <TableCell className="text-right tabular-nums">{p.installation > 0 ? fmtCurrency(p.installation) : "—"}</TableCell>
-                          <TableCell className="text-right tabular-nums">{p.freight > 0 ? fmtCurrency(p.freight) : "—"}</TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {(() => {
+                              let sum = 0;
+                              pieces.forEach(p => {
+                                const up = prices.find(x => x.supplier_id === sup.id && x.piece_id === p.id)?.unit_price;
+                                if (up != null) sum += Number(up) * (pieceTotalsFull.installationMap[p.id] || 0);
+                              });
+                              return sum > 0 ? fmtCurrency(sum) : "—";
+                            })()}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {(() => {
+                              let sum = 0;
+                              pieces.forEach(p => {
+                                const up = prices.find(x => x.supplier_id === sup.id && x.piece_id === p.id)?.unit_price;
+                                if (up != null) sum += Number(up) * (pieceTotalsFull.freightMap[p.id] || 0);
+                              });
+                              return sum > 0 ? fmtCurrency(sum) : "—";
+                            })()}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums">
+                            {(() => {
+                              let sum = 0;
+                              pieces.forEach(p => {
+                                const up = prices.find(x => x.supplier_id === sup.id && x.piece_id === p.id)?.unit_price;
+                                if (up != null) sum += Number(up) * (pieceTotalsFull.noLogisticsMap[p.id] || 0);
+                              });
+                              return sum > 0 ? (
+                                <span className="text-muted-foreground">{fmtCurrency(sum)}</span>
+                              ) : "—";
+                            })()}
+                          </TableCell>
                           <TableCell className={cn(
                             "text-right tabular-nums font-semibold",
                             isBest && "text-emerald-600 dark:text-emerald-400"
@@ -2535,6 +2589,9 @@ ${msgLabels.winnerWaFooter}
                       <TableHeader>
                         <TableRow>
                           <TableHead className="text-xs">{labels.columnItem}</TableHead>
+                          <TableHead className="text-xs text-right">Frete + Inst.</TableHead>
+                          <TableHead className="text-xs text-right">Frete Apenas</TableHead>
+                          <TableHead className="text-xs text-right">Sem Log.</TableHead>
                           <TableHead className="text-xs text-right w-20">{labels.columnQty}</TableHead>
                           <TableHead className="text-xs text-right w-28">{labels.columnUnitPrice}</TableHead>
                           <TableHead className="text-xs text-right w-28">{labels.columnTotal}</TableHead>
@@ -2598,7 +2655,10 @@ ${msgLabels.winnerWaFooter}
                                   </button>
                                 )}
                               </TableCell>
-                              <TableCell className="text-xs text-right">{qty}</TableCell>
+                              <TableCell className="text-xs text-right font-mono">{pieceTotalsFull.installationMap[piece.id] || 0}</TableCell>
+                              <TableCell className="text-xs text-right font-mono">{pieceTotalsFull.freightMap[piece.id] || 0}</TableCell>
+                              <TableCell className="text-xs text-right font-mono text-muted-foreground">{pieceTotalsFull.noLogisticsMap[piece.id] || 0}</TableCell>
+                              <TableCell className="text-xs text-right font-bold">{qty}</TableCell>
                               <TableCell className="text-xs text-right">
                                 {isAdminOrMaster ? (
                                   <AdminInlineNumberInput
@@ -2648,7 +2708,7 @@ ${msgLabels.winnerWaFooter}
                       return (
                         <React.Fragment key={`kit-${kit.id}`}>
                           <TableRow className="bg-muted/40 border-t-2">
-                            <TableCell colSpan={2} className="text-xs font-semibold">
+                            <TableCell colSpan={5} className="text-xs font-semibold">
                               🧩 Kit {kit.code} - {kit.name} <span className="font-normal text-muted-foreground">(Qtd kit: {kitQty})</span>
                             </TableCell>
                             <TableCell className="text-xs text-right font-semibold">
@@ -2686,7 +2746,10 @@ ${msgLabels.winnerWaFooter}
                                       </button>
                                     )}
                                   </TableCell>
-                                  <TableCell className="text-xs text-right">{qty}</TableCell>
+                                  <TableCell className="text-xs text-right font-mono">{pieceTotalsFull.installationMap[kp.piece_id] || 0}</TableCell>
+                                  <TableCell className="text-xs text-right font-mono">{pieceTotalsFull.freightMap[kp.piece_id] || 0}</TableCell>
+                                  <TableCell className="text-xs text-right font-mono text-muted-foreground">{pieceTotalsFull.noLogisticsMap[kp.piece_id] || 0}</TableCell>
+                                  <TableCell className="text-xs text-right font-bold">{qty}</TableCell>
                                   <TableCell className="text-xs text-right">
                                     {isAdminOrMaster ? (
                                       <AdminInlineNumberInput
@@ -2789,7 +2852,7 @@ ${msgLabels.winnerWaFooter}
         kitPieces={kitPieces}
         qtyMap={qtyMap}
         stores={stores}
-        pieceTotals={pieceTotals}
+        pieceTotals={pieceTotalsFull}
         prices={prices}
         extraCosts={extraCosts}
         currencyCode={currencyCode}
@@ -2838,7 +2901,7 @@ ${msgLabels.winnerWaFooter}
             pieces={pieces}
             prices={prices as any}
             extraCosts={extraCosts as any}
-            pieceTotals={pieceTotals}
+            pieceTotals={pieceTotalsFull}
             kitPieceTotals={kitPieceTotals}
             settings={settings}
             currencyCode={currencyCode}

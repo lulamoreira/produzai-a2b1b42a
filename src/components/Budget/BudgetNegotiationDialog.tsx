@@ -99,7 +99,7 @@ interface Props {
   pieces: Piece[];
   prices: Price[];
   extraCosts: ExtraCost[];
-  pieceTotals: Record<string, number>;
+  pieceTotals: { map: Record<string, number>; installationMap: Record<string, number>; freightMap: Record<string, number>; noLogisticsMap: Record<string, number> };
   kitPieceTotals: Record<string, KitComponentRow[]>;
   settings: any;
   currencyCode: string;
@@ -148,7 +148,7 @@ export default function BudgetNegotiationDialog({
     }
     return map;
   }, [negotiationPieces]);
-  const effectivePieceTotals = negotiationPieces.length > 0 ? negPieceTotals : pieceTotals;
+  const effectivePieceTotals = negotiationPieces.length > 0 ? negPieceTotals : pieceTotals.map;
 
   const pricedQuantityRows = useMemo(() => {
     const rows: { pieceId: string; qty: number }[] = [];
@@ -652,6 +652,9 @@ export default function BudgetNegotiationDialog({
                     <TableHeader>
                       <TableRow>
                         <TableHead>Peça</TableHead>
+                        <TableHead className="text-right">F+I</TableHead>
+                        <TableHead className="text-right">FA</TableHead>
+                        <TableHead className="text-right">SL</TableHead>
                         <TableHead className="text-right">Qtd</TableHead>
                         <TableHead className="text-right">Original</TableHead>
                         <TableHead className="text-right">Ajustado</TableHead>
@@ -663,6 +666,9 @@ export default function BudgetNegotiationDialog({
                         return (
                         <TableRow key={row.pieceId}>
                           <TableCell className="truncate max-w-[200px]" title={row.name}>{row.code} — {row.name}</TableCell>
+                          <TableCell className="text-right font-mono text-[10px]">{pieceTotals.installationMap[row.pieceId] || 0}</TableCell>
+                          <TableCell className="text-right font-mono text-[10px]">{pieceTotals.freightMap[row.pieceId] || 0}</TableCell>
+                          <TableCell className="text-right font-mono text-[10px] text-muted-foreground">{pieceTotals.noLogisticsMap[row.pieceId] || 0}</TableCell>
                           <TableCell className="text-right font-mono font-semibold">{row.qty}</TableCell>
                           <TableCell className="text-right font-mono">{fmtCurrency(row.original)}</TableCell>
                           <TableCell className="text-right font-mono font-semibold text-primary">{fmtCurrency(row.adjusted)}</TableCell>
@@ -676,7 +682,7 @@ export default function BudgetNegotiationDialog({
                         <>
                           <TableRow>
                             <TableCell>Instalação</TableCell>
-                            <TableCell className="text-right text-muted-foreground">—</TableCell>
+                            <TableCell className="text-right text-muted-foreground" colSpan={4}>—</TableCell>
                             <TableCell className="text-right font-mono">{fmtCurrency(toNum(supplierEC.installation_value))}</TableCell>
                             <TableCell className="text-right font-mono font-semibold text-primary">{fmtCurrency(adjustedInstallation || 0)}</TableCell>
                             <TableCell className="text-right font-mono">
@@ -685,7 +691,7 @@ export default function BudgetNegotiationDialog({
                           </TableRow>
                           <TableRow>
                             <TableCell>Embalagem / Frete</TableCell>
-                            <TableCell className="text-right text-muted-foreground">—</TableCell>
+                            <TableCell className="text-right text-muted-foreground" colSpan={4}>—</TableCell>
                             <TableCell className="text-right font-mono">{fmtCurrency(toNum(supplierEC.freight_value))}</TableCell>
                             <TableCell className={`text-right font-mono font-semibold ${applyResidualToFreight ? "text-amber-700" : "text-primary"}`}>
                               {fmtCurrency((applyResidualToFreight ? adjustedFreightFinal : adjustedFreight) || 0)}

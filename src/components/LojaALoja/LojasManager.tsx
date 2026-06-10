@@ -96,7 +96,7 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
   const sortedStores = useMemo(() => {
     const getVal = (s: any) => (s?.[sortField] ?? "").toString();
     return [...stores]
-      .filter((s) => (s.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica')
+      .filter((s) => (s.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao')
       .sort((a, b) =>
         getVal(a).localeCompare(getVal(b), "pt-BR", { numeric: true, sensitivity: "base" })
       );

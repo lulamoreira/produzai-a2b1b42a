@@ -103,7 +103,7 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
     const q = search.trim().toLowerCase();
     const result = occList.filter((o) => {
       const storeTipo = (o.client_stores as any)?.tipo_entrega ?? 'frete_instalacao';
-      if (storeTipo === 'sem_logistica') return false;
+      if (storeTipo !== 'frete_instalacao') return false;
       if (filterStore !== "__all__" && o.store_id !== filterStore) return false;
       if (filterMotive !== "__all__" && o.motive_id !== filterMotive) return false;
       const st = o.tratativa_status ?? "aberta";

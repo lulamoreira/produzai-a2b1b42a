@@ -57,8 +57,8 @@ interface BudgetSendClientDialogProps {
   kits: CampaignKit[];
   kitPieces: { id: string; kit_id: string; piece_id: string; quantity: number }[];
   qtyMap: Record<string, number>;
-  stores: { id: string; name: string }[];
-  pieceTotals: Record<string, number>;
+  stores: any[];
+  pieceTotals: { map: Record<string, number>; installationMap: Record<string, number>; freightMap: Record<string, number>; noLogisticsMap: Record<string, number> };
   prices: any[];
   extraCosts: any[];
   currencyCode: string;
@@ -127,7 +127,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
         if (kpList.length === 0) return;
         const kitTotalQty = Math.min(
-          ...kpList.map((kp) => Math.floor((pieceTotals[kp.piece_id] || 0) / (kp.quantity || 1))),
+          ...kpList.map((kp) => Math.floor((pieceTotals.map[kp.piece_id] || 0) / (kp.quantity || 1))),
         );
         rows.push({
           type: "kit_header",
@@ -157,7 +157,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         });
       } else {
         const p = item.data;
-        const qty = pieceTotals[p.id] || 0;
+        const qty = pieceTotals.map[p.id] || 0;
         const up = priceFor(p.id);
         rows.push({
           type: "standalone_piece",
@@ -285,7 +285,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
         if (kpList.length === 0) return;
         const kitTotalQty = Math.min(
-          ...kpList.map((kp) => Math.floor((pieceTotals[kp.piece_id] || 0) / (kp.quantity || 1))),
+          ...kpList.map((kp) => Math.floor((pieceTotals.map[kp.piece_id] || 0) / (kp.quantity || 1))),
         );
 
         // Kit header row (no prices on header itself)
@@ -319,7 +319,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         });
       } else {
         const piece = item.data;
-        const qty = pieceTotals[piece.id] || 0;
+        const qty = pieceTotals.map[piece.id] || 0;
         renderRow(piece, qty, supplierTotals, evenIdx, false);
         evenIdx++;
       }
