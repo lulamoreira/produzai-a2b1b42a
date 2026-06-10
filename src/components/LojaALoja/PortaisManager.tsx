@@ -59,7 +59,7 @@ export default function PortaisManager({ campaignId, clientId, permissions }: Pr
   }, [tokens]);
 
   const sortedStores = useMemo(() => {
-    const baseStores = stores.filter((s: any) => (s.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica');
+    const baseStores = stores.filter((s: any) => (s.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao');
     if (!sortField || !sortDir) return baseStores;
     return [...baseStores].sort((a, b) => {
       let va: string | number = "";
