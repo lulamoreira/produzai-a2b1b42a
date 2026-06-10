@@ -425,24 +425,9 @@ const SupplierPortal = () => {
             if (storesRaw) allStores.push(...storesRaw);
           }
           
-          // Re-fetch only the delivery types for this specific campaign from campaign_store_status
-          const { data: campaignStoreTypes } = await supabase
-            .from("campaign_store_status")
-            .select("store_id, tipo_entrega")
-            .eq("campaign_id", sup.campaign_id);
-            
-          if (campaignStoreTypes && campaignStoreTypes.length > 0) {
-            const typeMap: Record<string, string> = {};
-            campaignStoreTypes.forEach(t => {
-              if (t.tipo_entrega) typeMap[t.store_id] = t.tipo_entrega;
-            });
-            
-            allStores.forEach(s => {
-              if (typeMap[s.id]) {
-                s.tipo_entrega = typeMap[s.id];
-              }
-            });
-          }
+          // The delivery types are stored in client_stores.tipo_entrega
+          // We already fetched them in the select above.
+          // No need for campaign-specific overrides if not present in schema.
           
           setStoreData(allStores as any);
         }
