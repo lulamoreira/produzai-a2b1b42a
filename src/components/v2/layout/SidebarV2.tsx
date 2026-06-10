@@ -329,8 +329,10 @@ export function SidebarV2() {
     return content;
   };
 
-  const CampaignItem = ({ camp, agencyId: aId, clientId: cId }: { camp: any, agencyId: string, clientId: string }) => {
-    if (!camp || !camp.id) return null;
+  const CampaignItem = ({ camp, agencyId: aId, clientId: cId }: { camp: any, agencyId?: string, clientId?: string }) => {
+    const effectiveAgencyIdToUse = aId || agencyId;
+    const effectiveClientIdToUse = cId || clientId;
+    if (!camp || !camp.id || !effectiveAgencyIdToUse || !effectiveClientIdToUse) return null;
     const isExpanded = campaignExpanded[camp.id];
     const campBasePath = `/agency/${aId}/clients/${cId}/campaigns/${camp.id}`;
     const isActiveCampaign = campaignId === camp.id;
