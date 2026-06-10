@@ -326,6 +326,7 @@ export const supplierExcelLabels = {
     typeKitPiece: "Peça do Kit",
     typePiece: "Peça",
     exportFileNamePrefix: "Cotacao",
+    onlyDeliveryNote: (n: number) => `⚠️ ${n} loja(s) somente entrega — sem instalação.`,
   },
   "es-CL": {
     worksheetName: "Cotización",
@@ -344,6 +345,7 @@ export const supplierExcelLabels = {
     typeKitPiece: "Ítem del Kit",
     typePiece: "Ítem",
     exportFileNamePrefix: "Cotizacion",
+    onlyDeliveryNote: (n: number) => `⚠️ ${n} punto(s) solo entrega — sin instalación.`,
   },
 } as const;
 
