@@ -25,6 +25,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import * as XLSX from "xlsx";
 import { exportSupplierBudget } from "@/lib/exportSupplierBudget";
+import { exportStoresExcel } from "@/lib/exportStoresExcel";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
 
