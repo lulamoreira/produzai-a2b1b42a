@@ -2098,9 +2098,9 @@ ${msgLabels.winnerWaFooter}
                       <TableHead className="text-xs">Fornecedor</TableHead>
                       <TableHead className="text-xs">Status</TableHead>
                       <TableHead className="text-xs text-center">Preenchimento</TableHead>
-                      <TableHead className="text-xs text-right">Σ Peças</TableHead>
-                      <TableHead className="text-xs text-right">Instalação</TableHead>
-                      <TableHead className="text-xs text-right">Embalagem / Frete</TableHead>
+                      <TableHead className="text-xs text-right">Σ Frete + Inst.</TableHead>
+                      <TableHead className="text-xs text-right">Σ Frete Apenas</TableHead>
+                      <TableHead className="text-xs text-right">Σ Sem Logística</TableHead>
                       <TableHead className="text-xs text-right">Total Geral</TableHead>
                     </TableRow>
                   </TableHeader>
