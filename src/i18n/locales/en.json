@@ -351,6 +351,7 @@
     "completedPct": "completed"
   },
   "filters": {
+    "moreFilters": "More filters",
     "allStates": "All states",
     "allCities": "All cities",
     "approvals": "Approvals",
@@ -842,6 +843,7 @@
     "next": "Next"
   },
   "installations": {
+    "markComplete": "Mark as complete",
     "photosSentShort": "Photos sent",
     "title": "Installations",
 

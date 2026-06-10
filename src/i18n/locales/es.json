@@ -351,6 +351,7 @@
     "completedPct": "completada"
   },
   "filters": {
+    "moreFilters": "Más filtros",
     "allStates": "Todas las regiones",
     "allCities": "Todas las ciudades",
     "approvals": "Aprobaciones",
@@ -827,6 +828,7 @@
     "missingOs": "FALTA\nOT"
   },
   "installations": {
+    "markComplete": "Marcar como completada",
     "photosSentShort": "Fotos enviadas",
     "title": "Instalaciones",
 
