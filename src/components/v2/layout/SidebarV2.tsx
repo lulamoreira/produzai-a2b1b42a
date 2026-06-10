@@ -275,7 +275,8 @@ export function SidebarV2() {
     const content = (
       <NavLink
         to={item.route}
-        onClick={() => {
+        onClick={(e) => {
+          e.stopPropagation();
           if (collapsed && !isSubItem) toggleSidebar();
         }}
         className={cn(
