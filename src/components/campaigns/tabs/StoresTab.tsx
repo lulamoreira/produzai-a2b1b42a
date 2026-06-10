@@ -107,13 +107,17 @@ export default function StoresTab({
                   <TableCell className="font-medium text-gray-900 dark:text-gray-100">
                     <div className="flex flex-col gap-1">
                       <span>{store.name}</span>
-                      {store.requer_instalacao === false ? (
-                        <span className="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700 border border-blue-200">
-                          Só Entrega
+                      {store.tipo_entrega === "frete_apenas" ? (
+                        <span className="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-100 text-blue-700 border border-blue-200">
+                          📦 Frete Apenas
+                        </span>
+                      ) : store.tipo_entrega === "sem_logistica" ? (
+                        <span className="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-700 border border-gray-300">
+                          🏪 Sem Logística
                         </span>
                       ) : (
-                        <span className="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-700 border border-emerald-200">
-                          Instalação
+                        <span className="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 border border-emerald-200">
+                          📦🔧 Frete + Instalação
                         </span>
                       )}
                     </div>
