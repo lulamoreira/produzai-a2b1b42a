@@ -115,7 +115,7 @@ export async function buildSupplierBudgetWorkbook(
   ws.getRow(3).height = 22;
 
   // Add "Only Delivery" warning if any
-  const somenteEntrega = params.rateio?.stores.filter((s: any) => s.requer_instalacao === false).length || 0;
+  const somenteEntrega = params.rateio?.stores.filter((s: any) => (s.tipo_entrega ?? 'frete_instalacao') !== 'frete_instalacao').length || 0;
   if (somenteEntrega > 0) {
     const note = labels.onlyDeliveryNote(somenteEntrega);
     ws.mergeCells("A4:G4");
