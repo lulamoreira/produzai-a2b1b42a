@@ -809,6 +809,7 @@ const ClientDetail = () => {
         store_code: row.store_code || null,
         email: row.email || null,
         observations: row.observations || null,
+        tipo_entrega: (row.tipo_entrega as any) || 'frete_instalacao',
         showcase_count: parseInt(showcaseRaw, 10) || 0,
       });
 
