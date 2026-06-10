@@ -389,7 +389,7 @@ const SupplierPortal = () => {
             const chunk = ids.slice(i, i + CHUNK);
             const { data: storesRaw } = await supabase
               .from("client_stores")
-              .select("id, name, city, state, showcase_count")
+              .select("id, name, city, state, showcase_count, requer_instalacao")
               .in("id", chunk);
             if (storesRaw) allStores.push(...storesRaw);
           }
@@ -970,6 +970,30 @@ const SupplierPortal = () => {
       )}
 
       <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 space-y-6">
+        {/* Resumo visual no portal */}
+        {(() => {
+          const somenteEntrega = storeData.filter(s => (s as any).requer_instalacao === false).length;
+          const comInstalacao = storeData.length - somenteEntrega;
+          if (storeData.length === 0) return null;
+
+          return (
+            <div className="flex flex-wrap gap-3">
+              <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-border shadow-sm">
+                <Package className="w-4 h-4 text-primary" />
+                <span className="text-xs font-bold">{storeData.length} {portal.summaryPackages}</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-border shadow-sm">
+                <Edit2 className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs font-bold">{comInstalacao} {portal.summaryInstallations}</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white px-3 py-2 rounded-lg border border-border shadow-sm">
+                <Package className="w-4 h-4 text-blue-600" />
+                <span className="text-xs font-bold">{somenteEntrega} {portal.summaryOnlyDelivery}</span>
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Welcome text */}
         <Card>
           <CardContent className="p-5">
@@ -979,6 +1003,13 @@ const SupplierPortal = () => {
             <div className="text-sm text-muted-foreground space-y-2 leading-relaxed">
               <p dangerouslySetInnerHTML={{ __html: portal.inviteText(campaignName, clientName) }} />
               <p dangerouslySetInnerHTML={{ __html: portal.instructionPrice }} />
+              {(() => {
+                const somenteEntrega = storeData.filter(s => (s as any).requer_instalacao === false).length;
+                if (somenteEntrega > 0) {
+                  return <p className="font-bold text-amber-600">{portal.onlyDeliveryNote(somenteEntrega)}</p>;
+                }
+                return null;
+              })()}
               <p dangerouslySetInnerHTML={{ __html: portal.instructionExtras }} />
               <p dangerouslySetInnerHTML={{ __html: portal.instructionSend }} />
               {deadline && (

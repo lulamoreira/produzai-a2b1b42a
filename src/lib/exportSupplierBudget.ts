@@ -114,7 +114,20 @@ export async function buildSupplierBudgetWorkbook(
   t3.alignment = { horizontal: "center", vertical: "middle" };
   ws.getRow(3).height = 22;
 
-  ws.getRow(4).height = 6;
+  // Add "Only Delivery" warning if any
+  const somenteEntrega = params.rateio?.stores.filter((s: any) => s.requer_instalacao === false).length || 0;
+  if (somenteEntrega > 0) {
+    const note = labels.onlyDeliveryNote(somenteEntrega);
+    ws.mergeCells("A4:G4");
+    const t4 = ws.getCell("A4");
+    t4.value = note;
+    t4.font = { name: "Arial", size: 10, bold: true, color: { argb: "FF990000" } };
+    t4.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFF2CC" } };
+    t4.alignment = { horizontal: "center", vertical: "middle" };
+    ws.getRow(4).height = 20;
+  } else {
+    ws.getRow(4).height = 6;
+  }
 
   // Header row
   const headerRowIdx = 5;

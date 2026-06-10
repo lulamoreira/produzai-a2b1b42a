@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { 
   ArrowUp, ArrowDown, ArrowUpDown, GripVertical, Check, X, ChevronsRight, 
-  ClipboardPaste, AlertTriangle, Info
+  ClipboardPaste, AlertTriangle, Info, Wrench, Package
 } from "lucide-react";
 import {
   AlertDialog,
@@ -48,6 +48,7 @@ export type ColumnDef = {
 };
 
 const BASE_COLUMNS: ColumnDef[] = [
+  { key: "requer_instalacao", label: "Tipo", storeField: "requer_instalacao", fieldType: "boolean" },
   { key: "name", label: "Nome", storeField: "name" },
   { key: "nickname", label: "Apelido", storeField: "nickname" },
   { key: "store_code", label: "Código", storeField: "store_code" },

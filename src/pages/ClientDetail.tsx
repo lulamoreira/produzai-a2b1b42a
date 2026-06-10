@@ -27,7 +27,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star, Building2, Pencil, Layers } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star, Building2, Pencil, Layers, Wrench, Package } from "lucide-react";
 import { useClientSuppliers, useAddClientSupplier, useUpdateClientSupplier, useDeleteClientSupplier, type ClientSupplier } from "@/hooks/useClientSuppliers";
 import { Textarea } from "@/components/ui/textarea";
 import { useFavoriteIds, useToggleFavorite } from "@/hooks/useCampaignFavorites";
@@ -51,6 +51,9 @@ import ImportWizardDialog from "@/components/ImportWizardDialog";
 import { ResponsiveToolbar } from "@/components/ResponsiveToolbar";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import ComboboxInput from "@/components/ComboboxInput";
 import { getStateColor } from "@/lib/stateColors";
 import DeleteStoreDialog from "@/components/DeleteStoreDialog";
@@ -133,6 +136,7 @@ const emptyStoreForm = {
   custom_field_6: "", custom_field_7: "", custom_field_8: "", custom_field_9: "", custom_field_10: "",
   custom_field_11: "", custom_field_12: "", custom_field_13: "", custom_field_14: "", custom_field_15: "",
   observations: "", showcase_count: "0",
+  requer_instalacao: true,
 };
 
 function generateStoreCode(clientName: string, country: string, existingStores: { store_code: string | null }[]): string {
@@ -644,6 +648,7 @@ const ClientDetail = () => {
       custom_field_15: (store as any).custom_field_15 || "",
       observations: (store as any).observations || "",
       showcase_count: String((store as any).showcase_count ?? 0),
+      requer_instalacao: (store as any).requer_instalacao ?? true,
     });
     setEditStoreDialogOpen(true);
   };
@@ -909,6 +914,38 @@ const ClientDetail = () => {
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Apelido</label>
           <Input value={form.nickname} onChange={(e) => options?.nicknameChangeHandler ? options.nicknameChangeHandler(e.target.value) : setForm((f) => ({ ...f, nickname: e.target.value }))} />
+        </div>
+        <div className="col-span-1 sm:col-span-2">
+          <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Tipo de ponto</label>
+          <ToggleGroup
+            type="single"
+            value={String(form.requer_instalacao)}
+            onValueChange={(val) => {
+              if (val) setForm((f) => ({ ...f, requer_instalacao: val === "true" }));
+            }}
+            className="justify-start gap-3"
+          >
+            <ToggleGroupItem
+              value="true"
+              className={cn(
+                "flex-1 justify-center gap-2 h-10 border rounded-md transition-all",
+                form.requer_instalacao === true && "bg-primary/10 border-primary text-primary hover:bg-primary/20"
+              )}
+            >
+              <Wrench className="w-4 h-4" />
+              <span className="text-sm">Instalação + Entrega</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="false"
+              className={cn(
+                "flex-1 justify-center gap-2 h-10 border rounded-md transition-all",
+                form.requer_instalacao === false && "bg-blue-50 border-blue-500 text-blue-700 hover:bg-blue-100"
+              )}
+            >
+              <Package className="w-4 h-4" />
+              <span className="text-sm">Somente Entrega</span>
+            </ToggleGroupItem>
+          </ToggleGroup>
         </div>
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">{countryConfig.taxIdLabel}</label>
