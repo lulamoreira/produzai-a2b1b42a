@@ -803,7 +803,7 @@ export default function StoresMatrixTable({
                         onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}
                       >
                         <div className="flex items-center justify-center gap-1.5 px-1 py-0.5 min-h-[28px]">
-                          <DropdownMenu>
+                          <DropdownMenu modal={false}>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="sm" className="h-auto p-0 hover:bg-transparent">
                                 {val === "frete_instalacao" ? (
