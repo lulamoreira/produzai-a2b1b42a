@@ -352,15 +352,12 @@ export function SidebarV2() {
 
     return (
       <div className="space-y-0.5">
-        <div 
-          className="group flex items-center justify-between px-2 py-1.5 rounded-lg cursor-pointer transition-colors"
-          style={{ 
-            background: isActiveCampaign ? 'rgba(255,255,255,0.05)' : 'transparent' 
-          }}
-          onClick={() => {
-            if (collapsed) toggleSidebar();
-            navigate(campBasePath, { replace: location.pathname === campBasePath });
-          }}
+        <NavLink 
+          to={campBasePath}
+          className="group flex items-center justify-between px-2 py-1.5 rounded-lg transition-colors"
+          style={({ isActive: linkActive }) => ({ 
+            background: (isActiveCampaign || linkActive) ? 'rgba(255,255,255,0.05)' : 'transparent' 
+          })}
         >
           <div className="flex items-center gap-2 min-w-0">
             <div 
