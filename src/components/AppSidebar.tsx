@@ -511,7 +511,7 @@ export default function AppSidebar() {
               <span className="truncate">{t("modules.stores")}</span>
             </button>
             <button
-              onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}`)}
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNavigate(`/agency/${agencyId}/clients/${clientId}`); }}
               className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[13px] transition-all ml-2"
               style={itemStyle(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !location.search.includes("tab=emails") && !isInsideCampaign)}
               {...hoverHandlers(location.pathname === `/agency/${agencyId}/clients/${clientId}` && !location.search.includes("tab=stores") && !location.search.includes("tab=emails") && !isInsideCampaign)}
