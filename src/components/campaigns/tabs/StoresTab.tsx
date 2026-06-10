@@ -106,7 +106,7 @@ export default function StoresTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {stores.map(store => (
+              {filteredStores.map(store => (
                 <TableRow key={store.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-700">
                   <TableCell className="font-medium text-gray-900 dark:text-gray-100">
                     <div className="flex flex-col gap-1">
