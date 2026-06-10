@@ -192,6 +192,55 @@ const SupplierPortal = () => {
   const excelLabels = useMemo(() => getSupplierExcelLabels(currencyCode), [currencyCode]);
   const dateLocale = currencyCode === "CLP" ? "es-CL" : "pt-BR";
 
+  // ─── Excel download for stores ─────────────────────────
+  const handleDownloadStoresExcel = useCallback(() => {
+    if (!storeData.length) return;
+
+    const summary = {
+      total: storeData.length,
+      install: storeData.filter(s => (s.tipo_entrega || 'frete_instalacao') === 'frete_instalacao').length,
+      freight: storeData.filter(s => s.tipo_entrega === 'frete_apenas').length,
+      none: storeData.filter(s => s.tipo_entrega === 'sem_logistica').length
+    };
+
+    const summaryLine = currencyCode === 'CLP'
+      ? `${summary.total} tiendas | ${summary.install} ${portal.storesSummaryInstall} | ${summary.freight} ${portal.storesSummaryFreteOnly} | ${summary.none} ${portal.storesSummaryNoLogistics}`
+      : `${summary.total} lojas | ${summary.install} ${portal.storesSummaryInstall} | ${summary.freight} ${portal.storesSummaryFreteOnly} | ${summary.none} ${portal.storesSummaryNoLogistics}`;
+
+    const data = storeData.map(s => ({
+      [portal.storesColName]: s.name || '',
+      [portal.storesColAlias]: s.nickname || '',
+      "Código": s.code || '',
+      [portal.storesColCity]: s.city || '',
+      "UF": s.state || '',
+      [portal.storesColAddress]: `${s.street || ''}, ${s.number || ''} - ${s.neighborhood || ''}`,
+      "CEP": s.zip_code || '',
+      [portal.storesColType]: (s.tipo_entrega || 'frete_instalacao') === 'frete_instalacao' 
+        ? portal.typeFreteInstalacao 
+        : (s.tipo_entrega === 'frete_apenas' ? portal.typeFreteApenas : portal.typeSemLogistica)
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const range = XLSX.utils.decode_range(ws['!ref']!);
+    for (let r = range.e.r; r >= 0; --r) {
+      for (let c = 0; c <= range.e.c; ++c) {
+        const cell = ws[XLSX.utils.encode_cell({ r, c })];
+        const nextCell = ws[XLSX.utils.encode_cell({ r: r + 1, c })];
+        if (cell) ws[XLSX.utils.encode_cell({ r: r + 1, c })] = cell;
+      }
+    }
+    XLSX.utils.sheet_add_aoa(ws, [[summaryLine]], { origin: "A1" });
+    
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Lojas");
+    
+    const fileName = currencyCode === 'CLP' 
+      ? `tiendas-${campaignName}.xlsx` 
+      : `lojas-${campaignName}.xlsx`;
+      
+    XLSX.writeFile(wb, fileName);
+  }, [storeData, campaignName, currencyCode, portal]);
+
   // ─── Data fetching ─────────────────────────────────────
   useEffect(() => {
     if (!token) { setError(portal.errorInvalidLink); setLoading(false); return; }
@@ -830,54 +879,6 @@ const SupplierPortal = () => {
     );
   }
 
-  // ─── Excel download for stores ─────────────────────────
-  const handleDownloadStoresExcel = useCallback(() => {
-    if (!storeData.length) return;
-
-    const summary = {
-      total: storeData.length,
-      install: storeData.filter(s => (s.tipo_entrega || 'frete_instalacao') === 'frete_instalacao').length,
-      freight: storeData.filter(s => s.tipo_entrega === 'frete_apenas').length,
-      none: storeData.filter(s => s.tipo_entrega === 'sem_logistica').length
-    };
-
-    const summaryLine = currencyCode === 'CLP'
-      ? `${summary.total} tiendas | ${summary.install} ${portal.storesSummaryInstall} | ${summary.freight} ${portal.storesSummaryFreteOnly} | ${summary.none} ${portal.storesSummaryNoLogistics}`
-      : `${summary.total} lojas | ${summary.install} ${portal.storesSummaryInstall} | ${summary.freight} ${portal.storesSummaryFreteOnly} | ${summary.none} ${portal.storesSummaryNoLogistics}`;
-
-    const data = storeData.map(s => ({
-      [portal.storesColName]: s.name || '',
-      [portal.storesColAlias]: s.nickname || '',
-      "Código": s.code || '',
-      [portal.storesColCity]: s.city || '',
-      "UF": s.state || '',
-      [portal.storesColAddress]: `${s.street || ''}, ${s.number || ''} - ${s.neighborhood || ''}`,
-      "CEP": s.zip_code || '',
-      [portal.storesColType]: (s.tipo_entrega || 'frete_instalacao') === 'frete_instalacao' 
-        ? portal.typeFreteInstalacao 
-        : (s.tipo_entrega === 'frete_apenas' ? portal.typeFreteApenas : portal.typeSemLogistica)
-    }));
-
-    const ws = XLSX.utils.json_to_sheet(data);
-    const range = XLSX.utils.decode_range(ws['!ref']!);
-    for (let r = range.e.r; r >= 0; --r) {
-      for (let c = 0; c <= range.e.c; ++c) {
-        const cell = ws[XLSX.utils.encode_cell({ r, c })];
-        const nextCell = ws[XLSX.utils.encode_cell({ r: r + 1, c })];
-        if (cell) ws[XLSX.utils.encode_cell({ r: r + 1, c })] = cell;
-      }
-    }
-    XLSX.utils.sheet_add_aoa(ws, [[summaryLine]], { origin: "A1" });
-    
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Lojas");
-    
-    const fileName = currencyCode === 'CLP' 
-      ? `tiendas-${campaignName}.xlsx` 
-      : `lojas-${campaignName}.xlsx`;
-      
-    XLSX.writeFile(wb, fileName);
-  }, [storeData, campaignName, currencyCode, portal]);
 
   // ─── Success screen ────────────────────────────────────
   if (submitted) {
