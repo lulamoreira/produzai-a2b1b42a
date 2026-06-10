@@ -334,7 +334,7 @@ export function SidebarV2() {
     const effectiveClientIdToUse = cId || clientId;
     if (!camp || !camp.id || !effectiveAgencyIdToUse || !effectiveClientIdToUse) return null;
     const isExpanded = campaignExpanded[camp.id];
-    const campBasePath = `/agency/${aId}/clients/${cId}/campaigns/${camp.id}`;
+    const campBasePath = `/agency/${effectiveAgencyIdToUse}/clients/${effectiveClientIdToUse}/campaigns/${camp.id}`;
     const isActiveCampaign = campaignId === camp.id;
     const currentSection = new URLSearchParams(location.search).get("section") || "summary";
 
