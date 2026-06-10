@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
+import { useSidebarPermissions } from "@/hooks/useSidebarPermissions";
 import { useV2Theme } from "@/hooks/useV2Theme";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,7 +37,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { CAMPAIGN_MODULES, MODULE_ICONS } from "@/lib/sidebarRegistry";
+import { CAMPAIGN_MODULES, MODULE_ICONS, checkPermission, type PermissionContext } from "@/lib/sidebarRegistry";
 import { ADMIN_MENU_ITEMS } from "@/lib/adminMenuConfig";
 import AquaIcon from "@/components/AquaIcon";
 
@@ -50,7 +51,7 @@ export function SidebarV2() {
   const { user, signOut } = useAuth();
   const { isAdminOrMaster, isAdmin, isMaster } = useUserRole();
 
-  const { isLimited, campaigns: limitedCampaigns } = useUserDirectAccess();
+  const { isLimited, limitedCampaigns, hasAgencyAccess, isLoading: permissionsLoading } = useSidebarPermissions();
 
   const [collapsed, setCollapsed] = useState(() => {
     return localStorage.getItem("sidebar-v2-collapsed") === "true";
@@ -114,6 +115,11 @@ export function SidebarV2() {
   });
 
   const effectiveAgencyId = agencyId || profile?.agency_id;
+  
+  const isAgencyAccessible = useMemo(() => {
+    if (!effectiveAgencyId) return false;
+    return hasAgencyAccess(effectiveAgencyId);
+  }, [effectiveAgencyId, hasAgencyAccess]);
 
   // Fetch contextual names
   const { data: agencyData } = useQuery({
@@ -336,7 +342,15 @@ export function SidebarV2() {
 
 
     const filteredModules = CAMPAIGN_MODULES.filter(mod => {
-      if (mod.requires === "admin_or_master" && !isAdminOrMaster) return false;
+      const myAccess = isLimited ? limitedCampaigns.find(lc => lc.campaignId === camp.id) : null;
+      const permissionCtx: PermissionContext = {
+        isAdmin,
+        isMaster,
+        isLimited,
+        hasCampaignAccess: !isLimited || !!myAccess
+      };
+      
+      if (!checkPermission(mod.requires, permissionCtx)) return false;
       if (mod.hideForLimited && isLimited) return false;
       if (mod.requiresCampaignModule && camp.modules && !camp.modules.includes(mod.requiresCampaignModule)) return false;
       if (isLimited && camp.modules && camp.modules.length > 0 && !camp.modules.includes(mod.key)) return false;
@@ -505,7 +519,7 @@ export function SidebarV2() {
           )}
 
           {/* Agency Context: List Clients & Suppliers */}
-          {effectiveAgencyId && !clientId && !isLimited && !collapsed && (
+          {effectiveAgencyId && isAgencyAccessible && !clientId && !isLimited && !collapsed && (
             <div className="space-y-1">
               <button
                 onClick={() => navigate(`/agency/${effectiveAgencyId}`)}

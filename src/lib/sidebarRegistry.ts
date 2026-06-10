@@ -83,7 +83,7 @@ export const CAMPAIGN_MODULES: ModuleEntry[] = [
   { key: "scheduling",    labelKey: "modules.scheduling",    label: "Cronograma",   icon: "CalendarDays",   color: "#5C6B3F", requires: "campaign_access" },
   { key: "installations", labelKey: "modules.installations", label: "Instalações",  icon: "Camera",         color: "#7B5E3A", requires: "campaign_access" },
   { key: "loja_a_loja",   labelKey: "modules.loja_a_loja",   label: "Loja a Loja",  icon: "MapPin",         color: "#5B7B5E", requires: "campaign_access" },
-  { key: "stores",        labelKey: "modules.stores",        label: "Lojas",        icon: "Store",          color: "#6B4F2E", requires: "campaign_access" },
+  { key: "stores",        labelKey: "modules.stores",        label: "Lojas",        icon: "Store",          color: "#6B4F2E", requires: "limited_user_blocked" },
   { key: "occurrences",   labelKey: "modules.occurrences",   label: "Ocorrências",  icon: "AlertTriangle",  color: "#7A3B2E", requires: "campaign_access" },
   { key: "budgets",       labelKey: "modules.budgets",       label: "Cotações",   icon: "DollarSign",     color: "#4A5568", requires: "admin_or_master", hideForLimited: true },
   { key: "pieces",        labelKey: "modules.pieces",        label: "Peças",        icon: "LayoutList",     color: "#A07850", requires: "campaign_access" },
