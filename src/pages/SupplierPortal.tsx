@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
-import { Package, Lock, Clock, CheckCircle2, AlertTriangle, Send, ImageIcon, Download, Edit2, Save, Trash2 } from "lucide-react";
+import { Package, Lock, Clock, CheckCircle2, AlertTriangle, Send, ImageIcon, Download, Edit2, Save, Trash2, Store, MapPin } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -22,6 +22,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
+import * as XLSX from "xlsx";
 import { exportSupplierBudget } from "@/lib/exportSupplierBudget";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
@@ -182,7 +184,7 @@ const SupplierPortal = () => {
   const [savingSuggestion, setSavingSuggestion] = useState(false);
 
   // Store data for Excel export
-  const [storeData, setStoreData] = useState<{ id: string; name: string; city?: string; state?: string; showcase_count?: number }[]>([]);
+  const [storeData, setStoreData] = useState<{ id: string; name: string; city?: string; state?: string; address?: string; street?: string; number?: string; neighborhood?: string; code?: string; zip_code?: string; nickname?: string; showcase_count?: number; requer_instalacao: boolean; tipo_entrega: 'frete_instalacao' | 'frete_apenas' | 'sem_logistica' | null }[]>([]);
   const [fullQtyMap, setFullQtyMap] = useState<Record<string, number>>({});
 
   const labels = useMemo(() => getSupplierLabels(currencyCode), [currencyCode]);
@@ -389,7 +391,7 @@ const SupplierPortal = () => {
             const chunk = ids.slice(i, i + CHUNK);
             const { data: storesRaw } = await supabase
               .from("client_stores")
-              .select("id, name, city, state, showcase_count, requer_instalacao")
+              .select("id, name, city, state, street, number, neighborhood, code, zip_code, nickname, showcase_count, requer_instalacao, tipo_entrega")
               .in("id", chunk);
             if (storesRaw) allStores.push(...storesRaw);
           }
@@ -828,6 +830,55 @@ const SupplierPortal = () => {
     );
   }
 
+  // ─── Excel download for stores ─────────────────────────
+  const handleDownloadStoresExcel = useCallback(() => {
+    if (!storeData.length) return;
+
+    const summary = {
+      total: storeData.length,
+      install: storeData.filter(s => (s.tipo_entrega || 'frete_instalacao') === 'frete_instalacao').length,
+      freight: storeData.filter(s => s.tipo_entrega === 'frete_apenas').length,
+      none: storeData.filter(s => s.tipo_entrega === 'sem_logistica').length
+    };
+
+    const summaryLine = currencyCode === 'CLP'
+      ? `${summary.total} tiendas | ${summary.install} ${portal.storesSummaryInstall} | ${summary.freight} ${portal.storesSummaryFreteOnly} | ${summary.none} ${portal.storesSummaryNoLogistics}`
+      : `${summary.total} lojas | ${summary.install} ${portal.storesSummaryInstall} | ${summary.freight} ${portal.storesSummaryFreteOnly} | ${summary.none} ${portal.storesSummaryNoLogistics}`;
+
+    const data = storeData.map(s => ({
+      [portal.storesColName]: s.name || '',
+      [portal.storesColAlias]: s.nickname || '',
+      "Código": s.code || '',
+      [portal.storesColCity]: s.city || '',
+      "UF": s.state || '',
+      [portal.storesColAddress]: `${s.street || ''}, ${s.number || ''} - ${s.neighborhood || ''}`,
+      "CEP": s.zip_code || '',
+      [portal.storesColType]: (s.tipo_entrega || 'frete_instalacao') === 'frete_instalacao' 
+        ? portal.typeFreteInstalacao 
+        : (s.tipo_entrega === 'frete_apenas' ? portal.typeFreteApenas : portal.typeSemLogistica)
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const range = XLSX.utils.decode_range(ws['!ref']!);
+    for (let r = range.e.r; r >= 0; --r) {
+      for (let c = 0; c <= range.e.c; ++c) {
+        const cell = ws[XLSX.utils.encode_cell({ r, c })];
+        const nextCell = ws[XLSX.utils.encode_cell({ r: r + 1, c })];
+        if (cell) ws[XLSX.utils.encode_cell({ r: r + 1, c })] = cell;
+      }
+    }
+    XLSX.utils.sheet_add_aoa(ws, [[summaryLine]], { origin: "A1" });
+    
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Lojas");
+    
+    const fileName = currencyCode === 'CLP' 
+      ? `tiendas-${campaignName}.xlsx` 
+      : `lojas-${campaignName}.xlsx`;
+      
+    XLSX.writeFile(wb, fileName);
+  }, [storeData, campaignName, currencyCode, portal]);
+
   // ─── Success screen ────────────────────────────────────
   if (submitted) {
     const confettiColors = ["#8C6F4E", "#D4A574", "#E8D5C0", "#4CAF50", "#FF9800", "#2196F3"];
@@ -999,6 +1050,108 @@ const SupplierPortal = () => {
         })()}
 
         {/* Welcome text */}
+        <div className="flex justify-between items-center mb-1">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="gap-2 text-primary border-primary hover:bg-primary/10">
+                <Store className="w-4 h-4" />
+                {portal.storesButton}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+              <SheetHeader className="mb-6">
+                <SheetTitle className="flex items-center gap-2">
+                  <Store className="w-5 h-5" />
+                  {portal.storesTitle}
+                </SheetTitle>
+              </SheetHeader>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                <Card className="bg-green-50 border-green-100">
+                  <CardContent className="p-3 text-center">
+                    <div className="text-xl font-bold text-green-700">
+                      {storeData.filter(s => (s.tipo_entrega || 'frete_instalacao') === 'frete_instalacao').length}
+                    </div>
+                    <div className="text-[10px] text-green-600 font-medium uppercase leading-tight mt-1">
+                      {portal.storesSummaryInstall}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-blue-50 border-blue-100">
+                  <CardContent className="p-3 text-center">
+                    <div className="text-xl font-bold text-blue-700">
+                      {storeData.filter(s => s.tipo_entrega === 'frete_apenas').length}
+                    </div>
+                    <div className="text-[10px] text-blue-600 font-medium uppercase leading-tight mt-1">
+                      {portal.storesSummaryFreteOnly}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gray-50 border-gray-100">
+                  <CardContent className="p-3 text-center">
+                    <div className="text-xl font-bold text-gray-700">
+                      {storeData.filter(s => s.tipo_entrega === 'sem_logistica').length}
+                    </div>
+                    <div className="text-[10px] text-gray-600 font-medium uppercase leading-tight mt-1">
+                      {portal.storesSummaryNoLogistics}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="border rounded-md overflow-hidden">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">{portal.storesColName}</TableHead>
+                      <TableHead className="text-xs">{portal.storesColAlias}</TableHead>
+                      <TableHead className="text-xs">{portal.storesColCity}</TableHead>
+                      <TableHead className="text-xs">{portal.storesColAddress}</TableHead>
+                      <TableHead className="text-xs">{portal.storesColType}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {storeData.map((store) => {
+                      const tipo = store.tipo_entrega || 'frete_instalacao';
+                      return (
+                        <TableRow key={store.id}>
+                          <TableCell className="text-xs font-medium">{store.name}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{store.nickname || '—'}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{store.city || '—'}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground max-w-[150px] truncate">
+                            {store.street ? `${store.street}${store.number ? `, ${store.number}` : ''}` : '—'}
+                          </TableCell>
+                          <TableCell>
+                            {tipo === 'frete_instalacao' ? (
+                              <Badge className="bg-green-100 text-green-700 border-green-200 text-[9px] whitespace-nowrap">
+                                📦🔧 {portal.typeFreteInstalacao}
+                              </Badge>
+                            ) : tipo === 'frete_apenas' ? (
+                              <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[9px] whitespace-nowrap">
+                                📦 {portal.typeFreteApenas}
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-[9px] whitespace-nowrap">
+                                🏪 {portal.typeSemLogistica}
+                              </Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+
+              <SheetFooter className="mt-8 border-t pt-6">
+                <Button onClick={handleDownloadStoresExcel} className="w-full gap-2">
+                  <Download className="w-4 h-4" />
+                  {portal.storesDownload}
+                </Button>
+              </SheetFooter>
+            </SheetContent>
+          </Sheet>
+        </div>
         <Card>
           <CardContent className="p-5">
             <h2 className="text-lg font-semibold text-foreground mb-2">
