@@ -1213,6 +1213,21 @@ const SupplierPortal = () => {
                                 <div className="flex items-center gap-2">
                                   <Badge variant="outline" className="text-[10px] shrink-0">#{row.code}</Badge>
                                   <span className="font-medium text-sm break-words whitespace-normal">{row.name}</span>
+                                  {(() => {
+                                    const store = storeData.find(s => s.name === row.name);
+                                    const tipo = (store as any)?.tipo_entrega;
+                                    if (tipo === "frete_apenas") return (
+                                      <Badge className="ml-2 bg-blue-100 text-blue-700 border-blue-200 text-[10px] font-bold uppercase">
+                                        {portal.onlyDeliveryBadge}
+                                      </Badge>
+                                    );
+                                    if (tipo === "sem_logistica") return (
+                                      <Badge className="ml-2 bg-gray-100 text-gray-600 border-gray-200 text-[10px] font-bold uppercase">
+                                        {portal.typeSemLogistica}
+                                      </Badge>
+                                    );
+                                    return null;
+                                  })()}
                                   {hasSuggestion && (
                                     <Badge className="bg-warning/15 text-warning border-warning/30 text-[9px]">{portal.suggestModificationActive}</Badge>
                                   )}
