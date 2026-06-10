@@ -208,6 +208,11 @@ export const supplierPortalLabels = {
     negotiationSubmittedBody: (company: string, campaign: string) => `${company} enviou a proposta ajustada para a campanha ${campaign}.`,
     quoteSubmittedTitle: "Cotação recebida",
     quoteSubmittedBody: (company: string, campaign: string) => `${company} enviou a cotação para a campanha ${campaign}.`,
+    onlyDeliveryBadge: "Só Entrega",
+    onlyDeliveryNote: (n: number) => `⚠️ ${n} loja(s) somente entrega — sem instalação.`,
+    summaryPackages: "pacotes (frete)",
+    summaryInstallations: "instalações",
+    summaryOnlyDelivery: "somente entrega",
   },
   "es-CL": {
     loading: "Cargando...",
@@ -295,6 +300,11 @@ export const supplierPortalLabels = {
     negotiationSubmittedBody: (company: string, campaign: string) => `${company} envió la propuesta ajustada para la campaña ${campaign}.`,
     quoteSubmittedTitle: "Cotización recibida",
     quoteSubmittedBody: (company: string, campaign: string) => `${company} envió la cotización para la campaña ${campaign}.`,
+    onlyDeliveryBadge: "Solo Entrega",
+    onlyDeliveryNote: (n: number) => `⚠️ ${n} punto(s) solo entrega — sin instalación.`,
+    summaryPackages: "paquetes (flete)",
+    summaryInstallations: "instalaciones",
+    summaryOnlyDelivery: "solo entrega",
   },
 } as const;
 
