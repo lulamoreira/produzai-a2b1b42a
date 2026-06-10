@@ -102,7 +102,7 @@ export function CampaignNavItem({
               <button
                 key={mod.key}
                 type="button"
-                onClick={() => onNavigateModule(mod.key)}
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); onNavigateModule(mod.key); }}
                 className="w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[12px] transition-all relative before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
                 style={modActive
                   ? { background: "var(--sidebar-item-active)", color: "var(--sidebar-text-active)", fontWeight: 600, borderLeft: "3px solid var(--sidebar-active-bar)" }
