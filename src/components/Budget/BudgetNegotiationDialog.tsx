@@ -148,7 +148,7 @@ export default function BudgetNegotiationDialog({
     }
     return map;
   }, [negotiationPieces]);
-  const effectivePieceTotals = negotiationPieces.length > 0 ? negPieceTotals : pieceTotals;
+  const effectivePieceTotals = negotiationPieces.length > 0 ? negPieceTotals : pieceTotals.map;
 
   const pricedQuantityRows = useMemo(() => {
     const rows: { pieceId: string; qty: number }[] = [];
