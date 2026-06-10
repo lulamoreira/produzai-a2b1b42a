@@ -880,6 +880,12 @@ const ClientDetail = () => {
     (client as any)?.custom_field_15_label,
   ];
   const customFieldsParsed = useMemo(() => customFieldLabelsRaw.map(parseFieldLabel), [customFieldLabelsRaw]);
+  const stableCustomFieldLabels = useMemo(
+    () => customFieldsParsed
+      .map((cf, i) => ({ label: cf.name, index: i + 1, type: cf.type }))
+      .filter((cf) => cf.label),
+    [customFieldsParsed]
+  );
 
   if (!isAdminOrMaster && (loadingAccess || !canViewClient)) {
     return null;
@@ -1623,19 +1629,10 @@ const ClientDetail = () => {
                 <p className="text-muted-foreground text-sm">Nenhuma loja cadastrada.</p>
               </div>
             ) : (
-              (() => {
-                const stableCustomFieldLabels = useMemo(
-                  () => customFieldsParsed
-                    .map((cf, i) => ({ label: cf.name, index: i + 1, type: cf.type }))
-                    .filter((cf) => cf.label),
-                  [customFieldsParsed]
-                );
-
-                return (
-                  <StoresMatrixTable
-                    stores={stores}
-                    clientId={clientId!}
-                    customFieldLabels={stableCustomFieldLabels}
+              <StoresMatrixTable
+                stores={stores}
+                clientId={clientId!}
+                customFieldLabels={stableCustomFieldLabels}
                 canEdit={canEditStores}
                 onUpdateStore={async (data) => { await updateStore.mutateAsync(data); }}
                 onOpenEditStore={handleOpenEditStore}
@@ -1643,8 +1640,7 @@ const ClientDetail = () => {
                 storeStateFilter={storeStateFilter}
                 onDisplayOrderChange={setDisplayOrderStores}
                />
-                );
-              })()
+            )}
 
             )}
             </>
