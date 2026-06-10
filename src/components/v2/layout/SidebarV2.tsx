@@ -329,7 +329,7 @@ export function SidebarV2() {
     return content;
   };
 
-  const CampaignItem = ({ camp, agencyId, clientId }: { camp: any, agencyId: string, clientId: string }) => {
+  const CampaignItem = ({ camp, agencyId: aId, clientId: cId }: { camp: any, agencyId: string, clientId: string }) => {
     if (!camp || !camp.id) return null;
     const isExpanded = campaignExpanded[camp.id];
     const campBasePath = `/agency/${agencyId}/clients/${clientId}/campaigns/${camp.id}`;
