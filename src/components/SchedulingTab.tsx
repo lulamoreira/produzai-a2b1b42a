@@ -1119,10 +1119,10 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 {/* Row 1: Store name + badges */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-sm text-[var(--text-primary)] truncate">
+                    <div className="font-semibold text-sm text-[var(--text-primary)] truncate">
                       {store.name}
-                      {store.nickname && <span className="text-[var(--text-muted)] font-normal"> — {store.nickname}</span>}
-                    </p>
+                      {store.nickname && <span className="text-[var(--text-muted)] font-normal ml-1"> — {store.nickname}</span>}
+                    </div>
                   </div>
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     {hasOpenOccurrence && (() => {
