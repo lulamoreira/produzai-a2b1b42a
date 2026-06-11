@@ -1616,6 +1616,39 @@ const SupplierPortal = () => {
           <CardContent className="p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-foreground">{portal.extraCostsTitle}</h3>
+            {(() => {
+              const uStores = storeData.reduce((acc, c) => {
+                if (!acc.some((s) => s.id === c.id)) acc.push(c);
+                return acc;
+              }, [] as typeof storeData);
+              if (uStores.length === 0) return null;
+              const needInstall = uStores.filter((s) => (s.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length;
+              const needFreight = uStores.filter((s) => {
+                const t = s.tipo_entrega ?? 'frete_instalacao';
+                return t === 'frete_instalacao' || t === 'frete_apenas';
+              }).length;
+              const isCLP = currencyCode === 'CLP';
+              return (
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-700 px-2.5 py-1 text-xs font-medium">
+                    🔧 {needInstall} {isCLP ? 'tiendas necesitan instalación' : 'lojas precisam de instalação'}
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 rounded-md bg-blue-50 border border-blue-200 text-blue-700 px-2.5 py-1 text-xs font-medium">
+                    📦 {needFreight} {isCLP ? 'tiendas necesitan flete' : 'lojas precisam de frete'}
+                  </span>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDownloadStoresExcel}
+                    className="gap-1.5 border-[#8C6F4E] text-[#8C6F4E] hover:bg-[#8C6F4E]/10 ml-auto"
+                  >
+                    <Store className="w-3.5 h-3.5" />
+                    {isCLP ? 'Descargar planilla de tiendas' : 'Baixar planilha de lojas'}
+                  </Button>
+                </div>
+              );
+            })()}
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
