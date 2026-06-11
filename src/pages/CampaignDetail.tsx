@@ -71,12 +71,16 @@ const CampaignDetail = () => {
     enabled: !!agencyId,
   });
 
-  const { data: stores = [] } = useClientStores(clientId);
-  const { data: pieces = [], refetch: refetchPieces } = useCampaignPieces(campaignId);
-  const { data: storePieces = [], isLoading: loadingStorePieces, isFetching: fetchingStorePieces } = useCampaignStorePieces(campaignId);
-  const { data: kits = [] } = useCampaignKits(campaignId);
-  const { data: kitPieces = [] } = useCampaignKitPieces(campaignId);
+  const { data: allStores = [] } = useClientStores(clientId);
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
+  const stores = useMemo(() => {
+    return allStores.filter(s => {
+      const status = campaignStoreStatus.find(st => st.store_id === s.id);
+      return status ? status.enabled : true;
+    });
+  }, [allStores, campaignStoreStatus]);
+
+  const { data: pieces = [], refetch: refetchPieces } = useCampaignPieces(campaignId);
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
 
