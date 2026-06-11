@@ -371,7 +371,7 @@ export default function MatrixTab({
                           try {
                             await exportMatrixExcelJS(
                               stores || [], pieces || [], qtyMap || {}, campaign?.name || "Campanha", kits || [], kitPieces || [], 
-                              undefined, [], [], pieces || [], agency?.name, client?.name, []
+                              undefined, [], [], pieces || [], agency?.name, client?.name, [], [], vigenteSource === "negotiation" ? "Negociação" : vigenteSource === "adjustment" ? "Ajuste" : "Original"
                             );
                             toast.success("Planilha exportada com sucesso!", { id: tId });
                           } catch (e: any) { toast.error("Falha ao exportar: " + e.message, { id: tId }); }
