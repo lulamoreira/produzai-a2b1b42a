@@ -563,7 +563,7 @@ const CampaignDetail = () => {
               {hasModule("stores") && (
                 <TabsContent value="stores">
                   <StoresTab 
-                    campaignId={campaignId!} clientId={clientId!} stores={stores}
+                    campaignId={campaignId!} clientId={clientId!} allStores={allStores} stores={stores}
                     canEditStores={true} canEditCampaignStores={true} isLimitedMode={isLimitedMode}
                     onOpenEditStore={() => {}} agencyName={agency?.name || ""} clientName={client?.name || ""}
                   />
