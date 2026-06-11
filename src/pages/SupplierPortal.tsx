@@ -40,6 +40,8 @@ interface Supplier {
   submitted_at: string | null;
   access_token: string;
   negotiation_status?: string | null;
+  decline_reason?: string | null;
+  declined_at?: string | null;
 }
 
 interface PieceData {
