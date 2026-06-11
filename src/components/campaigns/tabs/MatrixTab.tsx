@@ -421,8 +421,8 @@ export default function MatrixTab({
                                  <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
                                    <Package className="w-4 h-4 text-primary" />
                                  </div>
-                                 <span className="text-[10px] font-bold text-primary">{col.data.code}</span>
-                                 <span className="text-[9px] text-muted-foreground text-center break-words max-w-[80px] leading-tight" title={col.data.name}>{col.data.name}</span>
+                                 <span className="text-[11px] font-bold text-primary">{col.data.code}</span>
+                                 <span className="text-[10px] text-muted-foreground text-center break-words max-w-[100px] leading-tight" title={col.data.name}>{col.data.name}</span>
                                </>
                              )}
                            </div>
