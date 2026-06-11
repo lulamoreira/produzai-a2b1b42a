@@ -413,8 +413,8 @@ export default function MatrixTab({
                              {col.type === "piece" ? (
                                <>
                                  <PieceThumbnail imageUrl={col.data.image_url} name={col.data.name} size="sm" />
-                                 <span className="text-[10px] font-bold">{col.data.code}</span>
-                                <span className="text-[9px] text-muted-foreground text-center break-words max-w-[80px] leading-tight" title={col.data.name}>{col.data.name}</span>
+                                 <span className="text-[11px] font-bold">{col.data.code}</span>
+                                <span className="text-[10px] text-muted-foreground text-center break-words max-w-[100px] leading-tight" title={col.data.name}>{col.data.name}</span>
                                </>
                              ) : (
                                <>
