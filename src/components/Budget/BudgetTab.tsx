@@ -99,6 +99,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   enviado: { label: "Enviado", color: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" },
   prazo_estendido: { label: "Prazo estendido", color: "bg-warning/10 text-warning border-warning/30" },
   prazo_encerrado: { label: "Prazo encerrado", color: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400" },
+  declinado: { label: "Desistiu", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400" },
 };
 
 // Returns visual status considering revision/deadline state.
@@ -1819,6 +1820,22 @@ ${msgLabels.winnerWaFooter}
                       </div>
                       <Badge className={cn("text-[10px] shrink-0", st.color)}>{st.label}</Badge>
                     </div>
+                    {sup.status === 'declinado' && (
+                      <div className="bg-amber-50 border border-amber-100 rounded p-2 mb-2">
+                        <p className="text-[11px] font-semibold text-amber-900 flex items-center gap-1">
+                          <AlertTriangle className="w-3 h-3 shrink-0" />
+                          Optou por não participar
+                        </p>
+                        <p className="text-[10px] text-amber-800 mt-1 italic leading-tight">
+                          Motivo: {(sup as any).decline_reason || "Não informou o motivo"}
+                        </p>
+                        {(sup as any).declined_at && (
+                          <p className="text-[9px] text-amber-600 mt-1">
+                            {format(new Date((sup as any).declined_at), "dd/MM/yyyy HH:mm")}
+                          </p>
+                        )}
+                      </div>
+                    )}
                     <div className="text-xs text-muted-foreground space-y-0.5">
                       <p>{sup.email}</p>
                       <p>{sup.phone}</p>
