@@ -149,12 +149,13 @@ export default function StoresTab({
                     <TableCell className="font-medium text-gray-900 dark:text-gray-100">
                       <div className="flex flex-col gap-1">
                         <span 
+                          translate="no"
                           className="cursor-pointer hover:underline text-primary"
                           onClick={() => setSelectedStore(store)}
                         >
                           {store.name}
                         </span>
-                        {store.nickname && <span className="text-[11px] text-muted-foreground">{store.nickname}</span>}
+                        {store.nickname && <span translate="no" className="text-[11px] text-muted-foreground">{store.nickname}</span>}
                         <div className="flex gap-1 mt-1">
                           {store.tipo_entrega === "frete_apenas" ? (
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-100 text-blue-700 border border-blue-200">
@@ -172,8 +173,8 @@ export default function StoresTab({
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="text-gray-900 dark:text-gray-100">{store.city} / {store.state}</TableCell>
-                    <TableCell className="text-gray-900 dark:text-gray-100">{store.store_model}</TableCell>
+                    <TableCell translate="no" className="text-gray-900 dark:text-gray-100">{store.city} / {store.state}</TableCell>
+                    <TableCell translate="no" className="text-gray-900 dark:text-gray-100">{store.store_model}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end pr-4">
                         <Switch 
@@ -219,21 +220,21 @@ export default function StoresTab({
                 <CardContent className="space-y-3">
                   <div className="flex flex-col">
                     <span className="text-[10px] uppercase text-muted-foreground font-bold">Nome</span>
-                    <span className="text-sm font-medium">{selectedStore.name}</span>
+                    <span translate="no" className="text-sm font-medium">{selectedStore.name}</span>
                   </div>
                   {selectedStore.nickname && (
                     <div className="flex flex-col">
                       <span className="text-[10px] uppercase text-muted-foreground font-bold">Apelido</span>
-                      <span className="text-sm font-medium">{selectedStore.nickname}</span>
+                      <span translate="no" className="text-sm font-medium">{selectedStore.nickname}</span>
                     </div>
                   )}
                   <div className="flex flex-col">
                     <span className="text-[10px] uppercase text-muted-foreground font-bold">Código</span>
-                    <span className="text-sm font-medium font-mono">{selectedStore.store_code || "—"}</span>
+                    <span translate="no" className="text-sm font-medium font-mono">{selectedStore.store_code || "—"}</span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] uppercase text-muted-foreground font-bold">Modelo</span>
-                    <span className="text-sm font-medium">{selectedStore.store_model || "—"}</span>
+                    <span translate="no" className="text-sm font-medium">{selectedStore.store_model || "—"}</span>
                   </div>
                 </CardContent>
               </Card>
@@ -257,7 +258,7 @@ export default function StoresTab({
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] uppercase text-muted-foreground font-bold">Cidade/UF</span>
-                    <span className="text-sm font-medium">
+                    <span translate="no" className="text-sm font-medium">
                       {selectedStore.city || "—"} / {selectedStore.state || "—"}
                     </span>
                   </div>

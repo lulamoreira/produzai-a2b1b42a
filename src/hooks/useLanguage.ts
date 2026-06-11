@@ -40,6 +40,7 @@ export function useLanguage(clientLanguage?: string | null) {
   useEffect(() => {
     if (effectiveLang && i18n.language !== effectiveLang) {
       i18n.changeLanguage(effectiveLang);
+      document.documentElement.lang = effectiveLang;
     }
   }, [effectiveLang, i18n]);
 
