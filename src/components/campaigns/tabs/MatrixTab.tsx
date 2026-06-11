@@ -510,6 +510,19 @@ export default function MatrixTab({
                </div>
             </TabsContent>
 
+            <TabsContent value="lojas" className="flex-1 flex flex-col overflow-hidden mt-0 data-[state=inactive]:hidden p-4">
+              <StoresMatrixTable 
+                stores={stores}
+                clientId={clientId}
+                campaignId={campaignId}
+                customFieldLabels={customFieldLabels.map(cf => ({ label: cf.label, index: cf.index }))}
+                canEdit={canEditCampaignStores}
+                onUpdateStore={handleUpdateStorePiece} // StoresMatrixTable expects onUpdateStore for store fields
+                storeSearch={storeSearch}
+                storeStateFilter="all"
+              />
+            </TabsContent>
+
             <TabsContent value="dashboard" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
               <MatrixDistributionDashboard 
                 stores={stores}
