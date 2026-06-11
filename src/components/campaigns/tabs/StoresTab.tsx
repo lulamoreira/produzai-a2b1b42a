@@ -141,7 +141,10 @@ export default function StoresTab({
                 const isEnabled = status ? status.enabled : true;
 
                 return (
-                  <TableRow key={store.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-700">
+                  <TableRow key={store.id} className={cn(
+                    "odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-700",
+                    !isEnabled && "opacity-60 grayscale-[0.5]"
+                  )}>
                     <TableCell className="font-medium text-gray-900 dark:text-gray-100">
                       <div className="flex flex-col gap-1">
                         <span 
