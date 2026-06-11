@@ -1556,8 +1556,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         onClick={() => setExpandedCards((prev) => { const n = new Set(prev); n.add(store.id); return n; })}
                       >
                         <td className="px-3 py-2">
-                          <div className="font-medium text-foreground">{store.nickname || store.name}</div>
-                          {store.store_code && <div className="text-[11px] text-muted-foreground">{store.store_code}</div>}
+                          <div className="font-medium text-foreground">{store.name}</div>
+                          {store.nickname && <div className="text-[11px] text-muted-foreground">{store.nickname}</div>}
                         </td>
                         <td className="px-3 py-2">{store.state || "—"}</td>
                         <td className="px-3 py-2">{store.city || "—"}</td>
@@ -1596,7 +1596,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     className="px-3 py-2 hover:bg-muted/30 transition-colors cursor-pointer"
                     onClick={() => setExpandedCards((prev) => { const n = new Set(prev); n.add(store.id); return n; })}
                   >
-                    <div className="font-medium text-foreground">{store.nickname || store.name}</div>
+                    <div className="font-medium text-foreground">{store.name}</div>
+                    {store.nickname && <div className="text-[11px] text-muted-foreground">{store.nickname}</div>}
                     <div className="text-xs text-muted-foreground mt-0.5">
                       {(store.state || "—")} · {(store.city || "—")}
                       {sc?.team_id && ` · ${teamMap[sc.team_id]?.name || "Equipe Removida"}`}
