@@ -588,9 +588,47 @@ const SupplierPortal = () => {
   // ─── Mark as preenchendo on first interaction ──────────
   const markFilling = useCallback(async () => {
     if (!supplier || !["aguardando", "prazo_estendido"].includes(supplier.status)) return;
-    await supabase.from("budget_suppliers").update({ status: "preenchendo" }).eq("id", supplier.id);
+    
+    const { error: updErr } = await supabase.from("budget_suppliers").update({ status: "preenchendo" }).eq("id", supplier.id);
+    if (updErr) return;
+
     setSupplier((s) => s ? { ...s, status: "preenchendo" } : s);
-  }, [supplier]);
+
+    // Enviar notificação de início de preenchimento
+    try {
+      const { data: campaign } = await supabase
+        .from("campaigns")
+        .select("client_id")
+        .eq("id", supplier.campaign_id)
+        .single();
+
+      let agencyId: string | null = null;
+      let clientId: string | null = null;
+      if (campaign?.client_id) {
+        clientId = campaign.client_id;
+        const { data: client } = await supabase
+          .from("clients")
+          .select("agency_id")
+          .eq("id", campaign.client_id)
+          .single();
+        agencyId = client?.agency_id ?? null;
+      }
+
+      if (agencyId) {
+        await supabase.rpc("criar_notificacao", {
+          _agency_id: agencyId,
+          _campaign_id: supplier.campaign_id,
+          _client_id: clientId,
+          _type: "orcamento_em_preenchimento",
+          _title: "Fornecedor iniciou preenchimento",
+          _body: `${supplier.company_name} começou a preencher a cotação da campanha ${campaignName}.`,
+          _action_url: `/agency/${agencyId}/clients/${clientId}/campaigns/${supplier.campaign_id}?section=budgets`,
+        });
+      }
+    } catch (e) {
+      console.warn("[SupplierPortal] Failed to send 'filling' notification:", e);
+    }
+  }, [supplier, campaignName]);
 
   // ─── Save price on blur (always piece_id) ──────────────
   // In negotiation mode, writes to adjusted_unit_price (preserves original unit_price).
@@ -765,6 +803,45 @@ const SupplierPortal = () => {
       if (error) throw error;
       setSupplier((s) => (s ? { ...s, status: "declinado" } : s));
       setDeclineOpen(false);
+
+      // Enviar notificação de desistência
+      try {
+        const { data: campaign } = await supabase
+          .from("campaigns")
+          .select("client_id")
+          .eq("id", supplier.campaign_id)
+          .single();
+
+        let agencyId: string | null = null;
+        let clientId: string | null = null;
+        if (campaign?.client_id) {
+          clientId = campaign.client_id;
+          const { data: client } = await supabase
+            .from("clients")
+            .select("agency_id")
+            .eq("id", campaign.client_id)
+            .single();
+          agencyId = client?.agency_id ?? null;
+        }
+
+        if (agencyId) {
+          const reason = declineReason.trim();
+          const body = `${supplier.company_name} não participará da cotação da campanha ${campaignName}.${reason ? ` Motivo: "${reason}".` : ""}`;
+          
+          await supabase.rpc("criar_notificacao", {
+            _agency_id: agencyId,
+            _campaign_id: supplier.campaign_id,
+            _client_id: clientId,
+            _type: "orcamento_declinado",
+            _title: "Fornecedor desistiu da cotação",
+            _body: body,
+            _action_url: `/agency/${agencyId}/clients/${clientId}/campaigns/${supplier.campaign_id}?section=budgets`,
+          });
+        }
+      } catch (e) {
+        console.warn("[SupplierPortal] Failed to send 'decline' notification:", e);
+      }
+
       toast.success(isCLP ? "Registrado. Gracias por avisar." : "Registrado. Obrigado por avisar.");
     } catch {
       toast.error(isCLP ? "No se pudo registrar. Intenta nuevamente." : "Não foi possível registrar. Tente novamente.");
