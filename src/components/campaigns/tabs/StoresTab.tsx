@@ -1,14 +1,16 @@
 import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Store, Search, Filter, X, LayoutList, Users } from "lucide-react";
+import { Store, Search, Filter, X, LayoutList, Users, MapPin, Phone, User, Hash, Info, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 import { useCampaignStoreStatus, useUpsertCampaignStoreStatus } from "@/hooks/useMultiClientData";
 import { toast } from "sonner";
+import { getStateColor } from "@/lib/stateColors";
 
 interface StoresTabProps {
   campaignId: string;
@@ -36,6 +38,7 @@ export default function StoresTab({
   const { t } = useTranslation();
   const [storeSearch, setStoreSearch] = useState("");
   const [storesViewMode, setStoresViewMode] = useState<"table" | "contacts">("table");
+  const [selectedStore, setSelectedStore] = useState<any | null>(null);
 
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
   const upsertStatus = useUpsertCampaignStoreStatus();
@@ -136,7 +139,12 @@ export default function StoresTab({
                   <TableRow key={store.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-700">
                     <TableCell className="font-medium text-gray-900 dark:text-gray-100">
                       <div className="flex flex-col gap-1">
-                        <span>{store.name}</span>
+                        <span 
+                          className="cursor-pointer hover:underline text-primary"
+                          onClick={() => setSelectedStore(store)}
+                        >
+                          {store.name}
+                        </span>
                         {store.nickname && <span className="text-[11px] text-muted-foreground">{store.nickname}</span>}
                         <div className="flex gap-1 mt-1">
                           {store.tipo_entrega === "frete_apenas" ? (
@@ -181,6 +189,147 @@ export default function StoresTab({
           clientName={clientName}
         />
       )}
+      )}
+
+      <Dialog open={!!selectedStore} onOpenChange={(open) => !open && setSelectedStore(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Store className="w-5 h-5 text-primary" />
+              Detalhes da Loja
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedStore && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+              <Card className="bg-muted/30">
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <Info className="w-4 h-4 text-muted-foreground" /> Identificação
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase text-muted-foreground font-bold">Nome</span>
+                    <span className="text-sm font-medium">{selectedStore.name}</span>
+                  </div>
+                  {selectedStore.nickname && (
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase text-muted-foreground font-bold">Apelido</span>
+                      <span className="text-sm font-medium">{selectedStore.nickname}</span>
+                    </div>
+                  )}
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase text-muted-foreground font-bold">Código</span>
+                    <span className="text-sm font-medium font-mono">{selectedStore.store_code || "—"}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase text-muted-foreground font-bold">Modelo</span>
+                    <span className="text-sm font-medium">{selectedStore.store_model || "—"}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-muted/30">
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-muted-foreground" /> Localização
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase text-muted-foreground font-bold">Endereço</span>
+                    <span className="text-sm font-medium">
+                      {selectedStore.street || ""}, {selectedStore.number || ""} {selectedStore.complement || ""}
+                    </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase text-muted-foreground font-bold">Bairro</span>
+                    <span className="text-sm font-medium">{selectedStore.neighborhood || "—"}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase text-muted-foreground font-bold">Cidade/UF</span>
+                    <span className="text-sm font-medium">
+                      {selectedStore.city || "—"} / {selectedStore.state || "—"}
+                    </span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase text-muted-foreground font-bold">CEP</span>
+                    <span className="text-sm font-medium">{selectedStore.zip_code || "—"}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-muted/30">
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <User className="w-4 h-4 text-muted-foreground" /> Contato Direto
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase text-muted-foreground font-bold">Responsável</span>
+                    <span className="text-sm font-medium">{selectedStore.manager_name || "—"}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase text-muted-foreground font-bold">Telefone</span>
+                    <span className="text-sm font-medium">{selectedStore.phone || "—"}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase text-muted-foreground font-bold">E-mail</span>
+                    <span className="text-sm font-medium truncate" title={selectedStore.email}>{selectedStore.email || "—"}</span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-muted/30">
+                <CardHeader className="py-3">
+                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                    <Truck className="w-4 h-4 text-muted-foreground" /> Logística
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex flex-col">
+                    <span className="text-[10px] uppercase text-muted-foreground font-bold">Tipo de Entrega</span>
+                    <div className="mt-1">
+                      {selectedStore.tipo_entrega === "frete_apenas" ? (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-100 text-blue-700 border border-blue-200">
+                          📦 Frete Apenas
+                        </span>
+                      ) : selectedStore.tipo_entrega === "sem_logistica" ? (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-700 border border-gray-300">
+                          🏪 Sem Logística
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 border border-emerald-200">
+                          📦🔧 Frete + Instalação
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {selectedStore.cnpj && (
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase text-muted-foreground font-bold">CNPJ</span>
+                      <span className="text-sm font-medium font-mono">{selectedStore.cnpj}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+              
+              {selectedStore.observations && (
+                <Card className="bg-muted/30 md:col-span-2">
+                  <CardHeader className="py-3">
+                    <CardTitle className="text-sm font-semibold">Observações</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground whitespace-pre-wrap">{selectedStore.observations}</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
