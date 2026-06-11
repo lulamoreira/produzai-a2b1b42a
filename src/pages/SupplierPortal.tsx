@@ -1961,7 +1961,7 @@ const SupplierPortal = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      </div>
+
 
       {/* Confirmation 1 */}
       <AlertDialog open={showConfirm1} onOpenChange={setShowConfirm1}>
