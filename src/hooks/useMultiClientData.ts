@@ -1292,9 +1292,15 @@ export async function fetchAddressByCep(cep: string) {
         "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
       },
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      console.error("CEP lookup failed:", response.status, await response.text());
+      return null;
+    }
     const data = await response.json();
-    if (data.error) return null;
+    if (data.error) {
+      console.error("CEP lookup error data:", data.error);
+      return null;
+    }
     return data as {
       street: string;
       neighborhood: string;
