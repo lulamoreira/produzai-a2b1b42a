@@ -591,6 +591,8 @@ export type Database = {
           company_name: string
           contact_name: string
           created_at: string | null
+          decline_reason: string | null
+          declined_at: string | null
           email: string
           id: string
           invited_at: string | null
@@ -611,6 +613,8 @@ export type Database = {
           company_name: string
           contact_name: string
           created_at?: string | null
+          decline_reason?: string | null
+          declined_at?: string | null
           email: string
           id?: string
           invited_at?: string | null
@@ -631,6 +635,8 @@ export type Database = {
           company_name?: string
           contact_name?: string
           created_at?: string | null
+          decline_reason?: string | null
+          declined_at?: string | null
           email?: string
           id?: string
           invited_at?: string | null
