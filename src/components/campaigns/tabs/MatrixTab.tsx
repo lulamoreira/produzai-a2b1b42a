@@ -95,9 +95,15 @@ export default function MatrixTab({
 
   const updateStorePiece = useUpdateCampaignStorePiece();
   const bulkUpdateStorePieces = useBulkUpdateCampaignStorePieces();
+  const updateClientStore = useUpdateClientStore();
 
   const handleUpdateStorePiece = async (data: { id: string } & Partial<any>) => {
-    // This is for store metadata updates from StoresMatrixTable
+    try {
+      await updateClientStore.mutateAsync(data);
+      // toast already handled by hook or we can add success here if needed
+    } catch (e: any) {
+      toast.error("Erro ao atualizar loja: " + e.message);
+    }
   };
 
   const { isAdminOrMaster } = useUserRole();
