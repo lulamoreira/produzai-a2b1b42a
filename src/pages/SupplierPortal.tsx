@@ -40,6 +40,8 @@ interface Supplier {
   submitted_at: string | null;
   access_token: string;
   negotiation_status?: string | null;
+  decline_reason?: string | null;
+  declined_at?: string | null;
 }
 
 interface PieceData {
@@ -175,6 +177,9 @@ const SupplierPortal = () => {
   const [submitted, setSubmitted] = useState(false);
   const [showConfirm1, setShowConfirm1] = useState(false);
   const [showConfirm2, setShowConfirm2] = useState(false);
+  const [declineOpen, setDeclineOpen] = useState(false);
+  const [declineReason, setDeclineReason] = useState("");
+  const [declining, setDeclining] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const [downloadingExcel, setDownloadingExcel] = useState(false);
@@ -747,6 +752,26 @@ const SupplierPortal = () => {
       setDownloadingExcel(false);
     }
   }, [supplier, displayRows, prices, campaignName, agencyName, clientName, currencyCode, extraCosts, grandTotal]);
+
+  const handleDecline = async () => {
+    if (!supplier) return;
+    const isCLP = currencyCode === "CLP";
+    setDeclining(true);
+    try {
+      const { error } = await supabase
+        .from("budget_suppliers")
+        .update({ status: "declinado", decline_reason: declineReason.trim() || null, declined_at: new Date().toISOString() } as never)
+        .eq("id", supplier.id);
+      if (error) throw error;
+      setSupplier((s) => (s ? { ...s, status: "declinado" } : s));
+      setDeclineOpen(false);
+      toast.success(isCLP ? "Registrado. Gracias por avisar." : "Registrado. Obrigado por avisar.");
+    } catch {
+      toast.error(isCLP ? "No se pudo registrar. Intenta nuevamente." : "Não foi possível registrar. Tente novamente.");
+    } finally {
+      setDeclining(false);
+    }
+  };
 
   // ─── Submit ────────────────────────────────────────────
   const handleSubmit = async () => {
@@ -1822,7 +1847,7 @@ const SupplierPortal = () => {
         </Card>
 
         {/* Submit button */}
-        {!isLocked && (() => {
+        {!isLocked && supplier?.status !== 'declinado' && (() => {
           const overTarget = inNegotiation && negotiationTarget != null && grandTotal > negotiationTarget;
           const pct = inNegotiation && negotiationTarget && negotiationTarget > 0
             ? Math.round((grandTotal / negotiationTarget) * 100) : 0;
@@ -1847,7 +1872,7 @@ const SupplierPortal = () => {
                   </CardContent>
                 </Card>
               )}
-              <div className="flex justify-center">
+              <div className="flex flex-col items-center gap-4">
                 <Button
                   size="lg"
                   className={inNegotiation && !overTarget
@@ -1860,11 +1885,85 @@ const SupplierPortal = () => {
                   <Send className="w-5 h-5 mr-2" />
                   {inNegotiation ? portal.submitButtonNegotiation : portal.submitButton}
                 </Button>
+
+                <Button
+                  variant="ghost"
+                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  onClick={() => setDeclineOpen(true)}
+                >
+                  {currencyCode === "CLP" ? "No participaré en esta cotización" : "Não participarei desta cotação"}
+                </Button>
               </div>
             </div>
           );
         })()}
+
+        {supplier?.status === 'declinado' && (
+          <div className="pb-8">
+            <Card className="border-amber-200 bg-amber-50">
+              <CardContent className="p-6 text-center space-y-2">
+                <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto" />
+                <h3 className="font-semibold text-amber-900">
+                  {currencyCode === "CLP" ? "Has declinado participar" : "Você declinou participar"}
+                </h3>
+                <p className="text-sm text-amber-800">
+                  {currencyCode === "CLP" ? "Tu decisión ha sido registrada. ¡Gracias!" : "Sua decisão foi registrada. Obrigado!"}
+                </p>
+                {supplier.decline_reason && (
+                  <div className="mt-4 pt-4 border-t border-amber-200 text-left">
+                    <p className="text-xs font-medium text-amber-900 uppercase tracking-wider mb-1">
+                      {currencyCode === "CLP" ? "Motivo informado:" : "Motivo informado:"}
+                    </p>
+                    <p className="text-sm text-amber-800 italic">"{supplier.decline_reason}"</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
+
+      <AlertDialog open={declineOpen} onOpenChange={setDeclineOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {currencyCode === "CLP" ? "¿Confirmas que no participarás?" : "Confirma que não irá participar?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {currencyCode === "CLP" 
+                ? "Esta acción informará al equipo que no enviarás una propuesta para esta campaña."
+                : "Esta ação informará à equipe que você não enviará uma proposta para esta campanha."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4 space-y-2">
+            <label className="text-sm font-medium">
+              {currencyCode === "CLP" ? "Motivo (opcional):" : "Motivo (opcional):"}
+            </label>
+            <Textarea
+              placeholder={currencyCode === "CLP" ? "Escribe aquí si quieres explicar por qué..." : "Escreva aqui se quiser explicar o motivo..."}
+              value={declineReason}
+              onChange={(e) => setDeclineReason(e.target.value)}
+              rows={3}
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={declining}>{labels.cancelBtn}</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={(e) => {
+                e.preventDefault();
+                handleDecline();
+              }}
+              disabled={declining}
+            >
+              {declining 
+                ? (currencyCode === "CLP" ? "Registrando..." : "Registrando...")
+                : (currencyCode === "CLP" ? "Confirmar declive" : "Confirmar desistência")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
       {/* Confirmation 1 */}
       <AlertDialog open={showConfirm1} onOpenChange={setShowConfirm1}>
