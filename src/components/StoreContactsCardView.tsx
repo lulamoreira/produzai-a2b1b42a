@@ -109,9 +109,9 @@ const StoreContactsCardView = ({ clientId, stores, agencyName, clientName, canEd
                 <div className="flex items-center gap-2 pb-2 border-b border-border/50">
                   <Building2 className="w-4 h-4 text-primary" />
                   <div className="flex-1 min-w-0">
-                    <span className="font-semibold text-sm text-foreground">{store.name}</span>
+                    <span translate="no" className="font-semibold text-sm text-foreground">{store.name}</span>
                     {store.nickname && store.nickname !== store.name && (
-                      <span className="text-xs text-muted-foreground ml-1.5">({store.nickname})</span>
+                      <span translate="no" className="text-xs text-muted-foreground ml-1.5">({store.nickname})</span>
                     )}
                   </div>
                   {canEdit && onEditStore && (
@@ -128,7 +128,7 @@ const StoreContactsCardView = ({ clientId, stores, agencyName, clientName, canEd
                   {(store.city || store.state) && (
                     <div className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                       <MapPin className="w-3 h-3" />
-                      {[store.city, store.state].filter(Boolean).join(" / ")}
+                      <span translate="no">{[store.city, store.state].filter(Boolean).join(" / ")}</span>
                     </div>
                   )}
                 </div>
@@ -140,9 +140,9 @@ const StoreContactsCardView = ({ clientId, stores, agencyName, clientName, canEd
                     return (
                       <div key={contact.id} className="bg-background rounded-lg border border-border p-3 space-y-1.5">
                         <div>
-                          <p className="text-sm font-medium text-foreground">{contact.name}</p>
+                          <p translate="no" className="text-sm font-medium text-foreground">{contact.name}</p>
                           {roleName && (
-                            <p className="text-[11px] text-primary font-medium">{roleName}</p>
+                            <p translate="no" className="text-[11px] text-primary font-medium">{roleName}</p>
                           )}
                         </div>
 
@@ -150,7 +150,7 @@ const StoreContactsCardView = ({ clientId, stores, agencyName, clientName, canEd
                           <div className="flex items-center gap-2">
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground flex-1 min-w-0">
                               <Phone className="w-3 h-3 shrink-0" />
-                              <span className="truncate">{formatPhoneByCountry(contact.phone, countryCode)}</span>
+                              <span translate="no" className="truncate">{formatPhoneByCountry(contact.phone, countryCode)}</span>
                             </div>
                             <a
                               href={buildWhatsAppUrl(contact.phone, contact.name)}
