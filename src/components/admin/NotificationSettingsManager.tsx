@@ -17,6 +17,8 @@ const EVENTOS = [
   { type: "ocorrencia_resolvida", label: "Ocorrência resolvida" },
   { type: "novo_usuario_pendente", label: "Novo usuário aguardando" },
   { type: "orcamento_enviado", label: "Orçamento enviado por fornecedor" },
+  { type: "orcamento_em_preenchimento", label: "Fornecedor iniciou preenchimento" },
+  { type: "orcamento_declinado", label: "Fornecedor desistiu da cotação" },
 ];
 
 const ROLE_COLUNAS = [
