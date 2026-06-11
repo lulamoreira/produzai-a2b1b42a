@@ -401,28 +401,28 @@ export default function MatrixTab({
                        </TableRow>
                      )}
                      <TableRow className="hover:bg-transparent">
-                       <TableHead className="sticky left-0 bg-card z-[40] min-w-[180px] border-b border-border font-bold">
-                         {t("matrix.store")}
-                       </TableHead>
-                       {matrixColumns.map((col, idx) => (
-                         <TableHead 
-                           key={idx} 
-                           className={`text-center min-w-[80px] px-2 py-2 border-l border-b border-border ${columnTints[idx]}`}
-                         >
+                        <TableHead className="sticky left-0 bg-card z-[40] min-w-[240px] border-b border-border font-bold">
+                          {t("matrix.store")}
+                        </TableHead>
+                        {matrixColumns.map((col, idx) => (
+                          <TableHead 
+                            key={idx} 
+                            className={`text-center min-w-[120px] px-3 py-3 border-l border-b border-border ${columnTints[idx]}`}
+                          >
                            <div className="flex flex-col items-center gap-1">
                              {col.type === "piece" ? (
                                <>
                                  <PieceThumbnail imageUrl={col.data.image_url} name={col.data.name} size="sm" />
-                                 <span className="text-[10px] font-bold">{col.data.code}</span>
-                                <span className="text-[9px] text-muted-foreground text-center break-words max-w-[80px] leading-tight" title={col.data.name}>{col.data.name}</span>
+                                 <span className="text-[11px] font-bold">{col.data.code}</span>
+                                <span className="text-[10px] text-muted-foreground text-center break-words max-w-[100px] leading-tight" title={col.data.name}>{col.data.name}</span>
                                </>
                              ) : (
                                <>
                                  <div className="w-8 h-8 rounded bg-primary/10 flex items-center justify-center">
                                    <Package className="w-4 h-4 text-primary" />
                                  </div>
-                                 <span className="text-[10px] font-bold text-primary">{col.data.code}</span>
-                                 <span className="text-[9px] text-muted-foreground text-center break-words max-w-[80px] leading-tight" title={col.data.name}>{col.data.name}</span>
+                                 <span className="text-[11px] font-bold text-primary">{col.data.code}</span>
+                                 <span className="text-[10px] text-muted-foreground text-center break-words max-w-[100px] leading-tight" title={col.data.name}>{col.data.name}</span>
                                </>
                              )}
                            </div>
