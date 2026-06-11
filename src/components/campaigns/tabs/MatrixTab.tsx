@@ -3,11 +3,12 @@ import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
   Search, Filter, X, Grid3X3, ArrowDownAZ, MapPin, Copy, 
-  Trash2, Package, MoreHorizontal, Presentation, Download, Upload, Sparkles, RefreshCw, AlertTriangle
+  Trash2, Package, MoreHorizontal, Presentation, Download, Upload, Sparkles, RefreshCw, AlertTriangle, List
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useUpdateClientStore } from "@/hooks/useMultiClientData";
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
@@ -94,9 +95,15 @@ export default function MatrixTab({
 
   const updateStorePiece = useUpdateCampaignStorePiece();
   const bulkUpdateStorePieces = useBulkUpdateCampaignStorePieces();
+  const updateClientStore = useUpdateClientStore();
 
   const handleUpdateStorePiece = async (data: { id: string } & Partial<any>) => {
-    // This is for store metadata updates from StoresMatrixTable
+    try {
+      await updateClientStore.mutateAsync(data);
+      // toast already handled by hook or we can add success here if needed
+    } catch (e: any) {
+      toast.error("Erro ao atualizar loja: " + e.message);
+    }
   };
 
   const { isAdminOrMaster } = useUserRole();
@@ -280,6 +287,10 @@ export default function MatrixTab({
                   <Table2 className="w-3.5 h-3.5" />
                   {t("modules.matrix")}
                 </TabsTrigger>
+                <TabsTrigger value="lojas" className="text-xs gap-1.5 h-6 px-2.5">
+                  <List className="w-3.5 h-3.5" />
+                  Lista de Lojas
+                </TabsTrigger>
                 <TabsTrigger value="dashboard" className="text-xs gap-1.5 h-6 px-2.5">
                   <BarChart3Icon className="w-3.5 h-3.5" />
                   Dashboard
@@ -360,7 +371,7 @@ export default function MatrixTab({
                           try {
                             await exportMatrixExcelJS(
                               stores || [], pieces || [], qtyMap || {}, campaign?.name || "Campanha", kits || [], kitPieces || [], 
-                              undefined, [], [], pieces || [], agency?.name, client?.name, []
+                              undefined, [], [], pieces || [], agency?.name, client?.name, [], [], vigenteSource === "negotiation" ? "Negociação" : vigenteSource === "adjustment" ? "Ajuste" : "Original"
                             );
                             toast.success("Planilha exportada com sucesso!", { id: tId });
                           } catch (e: any) { toast.error("Falha ao exportar: " + e.message, { id: tId }); }
@@ -504,6 +515,19 @@ export default function MatrixTab({
                    </TableBody>
                  </Table>
                </div>
+            </TabsContent>
+
+            <TabsContent value="lojas" className="flex-1 flex flex-col overflow-hidden mt-0 data-[state=inactive]:hidden p-4">
+              <StoresMatrixTable 
+                stores={stores}
+                clientId={clientId}
+                campaignId={campaignId}
+                customFieldLabels={customFieldLabels.map(cf => ({ label: cf.label, index: cf.index }))}
+                canEdit={canEditCampaignStores}
+                onUpdateStore={handleUpdateStorePiece} // StoresMatrixTable expects onUpdateStore for store fields
+                storeSearch={storeSearch}
+                storeStateFilter="all"
+              />
             </TabsContent>
 
             <TabsContent value="dashboard" className="flex-1 overflow-hidden mt-0 data-[state=inactive]:hidden">
