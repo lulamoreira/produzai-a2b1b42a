@@ -71,12 +71,19 @@ const CampaignDetail = () => {
     enabled: !!agencyId,
   });
 
-  const { data: stores = [] } = useClientStores(clientId);
+  const { data: allStores = [] } = useClientStores(clientId);
+  const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
+  const stores = useMemo(() => {
+    return allStores.filter(s => {
+      const status = campaignStoreStatus.find(st => st.store_id === s.id);
+      return status ? status.enabled : true;
+    });
+  }, [allStores, campaignStoreStatus]);
+
   const { data: pieces = [], refetch: refetchPieces } = useCampaignPieces(campaignId);
   const { data: storePieces = [], isLoading: loadingStorePieces, isFetching: fetchingStorePieces } = useCampaignStorePieces(campaignId);
   const { data: kits = [] } = useCampaignKits(campaignId);
   const { data: kitPieces = [] } = useCampaignKitPieces(campaignId);
-  const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
 
@@ -95,7 +102,7 @@ const CampaignDetail = () => {
       const pendingApprovalsRes = { count: 0 }; 
 
       return {
-        stores: storesRes.count || 0,
+        stores: stores.length,
         pieces: (piecesRes.count || 0) + (kitsRes.count || 0),
         pendingInstallations: pendingInstallationsRes.count || 0,
         pendingApprovals: pendingApprovalsRes.count || 0
@@ -556,7 +563,7 @@ const CampaignDetail = () => {
               {hasModule("stores") && (
                 <TabsContent value="stores">
                   <StoresTab 
-                    campaignId={campaignId!} clientId={clientId!} stores={stores}
+                    campaignId={campaignId!} clientId={clientId!} allStores={allStores} stores={stores}
                     canEditStores={true} canEditCampaignStores={true} isLimitedMode={isLimitedMode}
                     onOpenEditStore={() => {}} agencyName={agency?.name || ""} clientName={client?.name || ""}
                   />

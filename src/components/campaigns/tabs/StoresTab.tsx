@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { Store, Search, Filter, X, LayoutList, Users, MapPin, Phone, User, Hash, Info, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,7 @@ import { getStateColor } from "@/lib/stateColors";
 interface StoresTabProps {
   campaignId: string;
   clientId: string;
+  allStores: any[];
   stores: any[];
   canEditStores: boolean;
   canEditCampaignStores: boolean;
@@ -27,6 +29,7 @@ interface StoresTabProps {
 export default function StoresTab({
   campaignId,
   clientId,
+  allStores,
   stores,
   canEditStores,
   canEditCampaignStores,
@@ -44,16 +47,19 @@ export default function StoresTab({
   const upsertStatus = useUpsertCampaignStoreStatus();
 
   const filteredStores = useMemo(() => {
-    if (!storeSearch) return stores;
-    const q = storeSearch.toLowerCase().trim();
-    return stores.filter(s => 
-      s.name.toLowerCase().includes(q) || 
-      (s.nickname && s.nickname.toLowerCase().includes(q)) ||
-      (s.store_code && s.store_code.toLowerCase().includes(q)) ||
-      (s.city && s.city.toLowerCase().includes(q)) ||
-      (s.state && s.state.toLowerCase().includes(q))
-    );
-  }, [stores, storeSearch]);
+    let result = allStores;
+    if (storeSearch) {
+      const q = storeSearch.toLowerCase().trim();
+      result = result.filter(s => 
+        (s.name && s.name.toLowerCase().includes(q)) || 
+        (s.nickname && s.nickname.toLowerCase().includes(q)) ||
+        (s.store_code && s.store_code.toLowerCase().includes(q)) ||
+        (s.city && s.city.toLowerCase().includes(q)) ||
+        (s.state && s.state.toLowerCase().includes(q))
+      );
+    }
+    return result;
+  }, [allStores, storeSearch]);
 
   const handleToggleStore = async (storeId: string, currentEnabled: boolean) => {
     try {
@@ -136,7 +142,10 @@ export default function StoresTab({
                 const isEnabled = status ? status.enabled : true;
 
                 return (
-                  <TableRow key={store.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-700">
+                  <TableRow key={store.id} className={cn(
+                    "odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-700",
+                    !isEnabled && "opacity-60 grayscale-[0.5]"
+                  )}>
                     <TableCell className="font-medium text-gray-900 dark:text-gray-100">
                       <div className="flex flex-col gap-1">
                         <span 

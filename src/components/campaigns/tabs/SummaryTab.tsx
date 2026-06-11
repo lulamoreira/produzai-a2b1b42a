@@ -81,7 +81,7 @@ export default function SummaryTab({
 
   const baseKpis = externalKpis || internalKpis;
   const campaignKpis = {
-    stores: baseKpis?.stores || stores?.length || 0,
+    stores: stores?.length || baseKpis?.stores || 0,
     pieces: baseKpis?.pieces || (visiblePieces?.length || 0) + (kits?.length || 0) || 0,
     pendingInstallations: baseKpis?.pendingInstallations || 0,
     pendingApprovals: baseKpis?.pendingApprovals || 0,
