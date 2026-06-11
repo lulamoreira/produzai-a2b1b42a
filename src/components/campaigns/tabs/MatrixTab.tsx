@@ -401,14 +401,14 @@ export default function MatrixTab({
                        </TableRow>
                      )}
                      <TableRow className="hover:bg-transparent">
-                       <TableHead className="sticky left-0 bg-card z-[40] min-w-[180px] border-b border-border font-bold">
-                         {t("matrix.store")}
-                       </TableHead>
-                       {matrixColumns.map((col, idx) => (
-                         <TableHead 
-                           key={idx} 
-                           className={`text-center min-w-[80px] px-2 py-2 border-l border-b border-border ${columnTints[idx]}`}
-                         >
+                        <TableHead className="sticky left-0 bg-card z-[40] min-w-[240px] border-b border-border font-bold">
+                          {t("matrix.store")}
+                        </TableHead>
+                        {matrixColumns.map((col, idx) => (
+                          <TableHead 
+                            key={idx} 
+                            className={`text-center min-w-[120px] px-3 py-3 border-l border-b border-border ${columnTints[idx]}`}
+                          >
                            <div className="flex flex-col items-center gap-1">
                              {col.type === "piece" ? (
                                <>
