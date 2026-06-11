@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { format } from "date-fns";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers, AlertCircle, FileSpreadsheet, Package, Wrench, Store, AlertTriangle
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers, AlertCircle, FileSpreadsheet, Package, Wrench, Store, AlertTriangle, RotateCcw
 } from "lucide-react";
 import { useExportRequoteFinal } from "@/hooks/useExportRequoteFinal";
 import RequoteFinalExportDialog from "@/components/RequoteFinalExportDialog";
@@ -326,6 +326,15 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const handleToggleSupplierLock = async (sup: { id: string; campaign_id: string; locked: boolean | null; status: string; company_name: string; submitted_at: string | null }) => {
     setReopeningSupplierId(sup.id);
     try {
+      if (sup.status === "declinado") {
+        await updateSupplier.mutateAsync({
+          id: sup.id,
+          campaign_id: sup.campaign_id,
+          updates: { status: "aguardando", decline_reason: null, declined_at: null, locked: false } as never,
+        });
+        toast.success(`Participação reaberta para ${sup.company_name}.`);
+        return;
+      }
       if (sup.locked) {
         // ─── REOPEN: snapshot then unlock, preserving submitted_at so we can restore "Enviado" later
         await snapshotSupplierBudget({
@@ -2021,20 +2030,24 @@ ${msgLabels.winnerWaFooter}
                     {isAdminOrMaster && (
                       <div className="flex items-center justify-between gap-2 pt-2 mt-1 border-t border-border/60">
                         <div className="flex items-center gap-1.5 min-w-0">
-                          {sup.locked ? (
+                          {sup.status === "declinado" ? (
+                            <RotateCcw className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                          ) : sup.locked ? (
                             <Lock className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                           ) : (
                             <Unlock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                           )}
                           <span className="text-[11px] text-muted-foreground truncate">
-                            {sup.locked ? "Travado para edição" : "Liberado para revisão"}
+                            {sup.status === "declinado"
+                              ? "Desistiu — reabrir participação"
+                              : (sup.locked ? "Travado para edição" : "Liberado para revisão")}
                           </span>
                         </div>
                         <Switch
-                          checked={!sup.locked}
+                          checked={sup.status === "declinado" ? false : !sup.locked}
                           disabled={reopeningSupplierId === sup.id}
                           onCheckedChange={() => handleToggleSupplierLock(sup)}
-                          aria-label={sup.locked ? "Liberar planilha para revisão" : "Travar planilha novamente"}
+                          aria-label={sup.status === "declinado" ? "Reabrir participação do fornecedor" : (sup.locked ? "Liberar planilha para revisão" : "Travar planilha novamente")}
                         />
                       </div>
                     )}
