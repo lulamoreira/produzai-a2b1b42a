@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { Store, Search, Filter, X, LayoutList, Users, MoreHorizontal } from "lucide-react";
+import { Store, Search, Filter, X, LayoutList, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Switch } from "@/components/ui/switch";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
+import { useCampaignStoreStatus, useUpsertCampaignStoreStatus } from "@/hooks/useMultiClientData";
+import { toast } from "sonner";
 
 interface StoresTabProps {
   campaignId: string;
@@ -35,9 +37,32 @@ export default function StoresTab({
   const [storeSearch, setStoreSearch] = useState("");
   const [storesViewMode, setStoresViewMode] = useState<"table" | "contacts">("table");
 
+  const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
+  const upsertStatus = useUpsertCampaignStoreStatus();
+
   const filteredStores = useMemo(() => {
-    return stores;
-  }, [stores]);
+    if (!storeSearch) return stores;
+    const q = storeSearch.toLowerCase().trim();
+    return stores.filter(s => 
+      s.name.toLowerCase().includes(q) || 
+      (s.nickname && s.nickname.toLowerCase().includes(q)) ||
+      (s.store_code && s.store_code.toLowerCase().includes(q)) ||
+      (s.city && s.city.toLowerCase().includes(q)) ||
+      (s.state && s.state.toLowerCase().includes(q))
+    );
+  }, [stores, storeSearch]);
+
+  const handleToggleStore = async (storeId: string, currentEnabled: boolean) => {
+    try {
+      await upsertStatus.mutateAsync({
+        campaignId,
+        store_id: storeId,
+        enabled: !currentEnabled
+      } as any);
+    } catch (error: any) {
+      toast.error("Erro ao atualizar status da loja: " + error.message);
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -89,9 +114,6 @@ export default function StoresTab({
             </button>
           )}
         </div>
-        <Button variant="outline" className="gap-2">
-          <Filter className="w-4 h-4" /> Filtros
-        </Button>
       </div>
 
       {storesViewMode === "table" ? (
@@ -102,46 +124,51 @@ export default function StoresTab({
                 <TableHead className="text-gray-900 dark:text-gray-100 font-semibold">Loja</TableHead>
                 <TableHead className="text-gray-900 dark:text-gray-100 font-semibold">Cidade/UF</TableHead>
                 <TableHead className="text-gray-900 dark:text-gray-100 font-semibold">Modelo</TableHead>
-                <TableHead className="text-right text-gray-900 dark:text-gray-100 font-semibold">Ações</TableHead>
+                <TableHead className="text-right text-gray-900 dark:text-gray-100 font-semibold w-[100px]">Ativa</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredStores.map(store => (
-                <TableRow key={store.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-700">
-                  <TableCell className="font-medium text-gray-900 dark:text-gray-100">
-                    <div className="flex flex-col gap-1">
-                      <span>{store.name}</span>
-                      {store.tipo_entrega === "frete_apenas" ? (
-                        <span className="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-100 text-blue-700 border border-blue-200">
-                          📦 Frete Apenas
-                        </span>
-                      ) : store.tipo_entrega === "sem_logistica" ? (
-                        <span className="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-700 border border-gray-300">
-                          🏪 Sem Logística
-                        </span>
-                      ) : (
-                        <span className="inline-flex w-fit items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 border border-emerald-200">
-                          📦🔧 Frete + Instalação
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-gray-900 dark:text-gray-100">{store.city} / {store.state}</TableCell>
-                  <TableCell className="text-gray-900 dark:text-gray-100">{store.store_model}</TableCell>
-                  <TableCell className="text-right text-gray-900 dark:text-gray-100">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onOpenEditStore(store)}>Editar loja</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {filteredStores.map(store => {
+                const status = campaignStoreStatus.find(s => s.store_id === store.id);
+                const isEnabled = status ? status.enabled : true;
+
+                return (
+                  <TableRow key={store.id} className="odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-700">
+                    <TableCell className="font-medium text-gray-900 dark:text-gray-100">
+                      <div className="flex flex-col gap-1">
+                        <span>{store.name}</span>
+                        {store.nickname && <span className="text-[11px] text-muted-foreground">{store.nickname}</span>}
+                        <div className="flex gap-1 mt-1">
+                          {store.tipo_entrega === "frete_apenas" ? (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-100 text-blue-700 border border-blue-200">
+                              📦 Frete Apenas
+                            </span>
+                          ) : store.tipo_entrega === "sem_logistica" ? (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-700 border border-gray-300">
+                              🏪 Sem Logística
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 border border-emerald-200">
+                              📦🔧 Frete + Instalação
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-gray-900 dark:text-gray-100">{store.city} / {store.state}</TableCell>
+                    <TableCell className="text-gray-900 dark:text-gray-100">{store.store_model}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end pr-4">
+                        <Switch 
+                          checked={isEnabled}
+                          onCheckedChange={() => handleToggleStore(store.id, isEnabled)}
+                          disabled={upsertStatus.isPending}
+                        />
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </Card>
