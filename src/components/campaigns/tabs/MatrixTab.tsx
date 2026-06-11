@@ -280,6 +280,10 @@ export default function MatrixTab({
                   <Table2 className="w-3.5 h-3.5" />
                   {t("modules.matrix")}
                 </TabsTrigger>
+                <TabsTrigger value="lojas" className="text-xs gap-1.5 h-6 px-2.5">
+                  <List className="w-3.5 h-3.5" />
+                  Lista de Lojas
+                </TabsTrigger>
                 <TabsTrigger value="dashboard" className="text-xs gap-1.5 h-6 px-2.5">
                   <BarChart3Icon className="w-3.5 h-3.5" />
                   Dashboard
