@@ -102,7 +102,7 @@ const CampaignDetail = () => {
       const pendingApprovalsRes = { count: 0 }; 
 
       return {
-        stores: storesRes.count || 0,
+        stores: stores.length,
         pieces: (piecesRes.count || 0) + (kitsRes.count || 0),
         pendingInstallations: pendingInstallationsRes.count || 0,
         pendingApprovals: pendingApprovalsRes.count || 0
