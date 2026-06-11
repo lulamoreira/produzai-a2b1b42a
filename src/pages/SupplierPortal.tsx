@@ -1956,9 +1956,7 @@ const SupplierPortal = () => {
               }}
               disabled={declining}
             >
-              {declining 
-                ? (currencyCode === "CLP" ? "Registrando..." : "Registrando...")
-                : (currencyCode === "CLP" ? "Confirmar declive" : "Confirmar desistência")}
+              {declining ? "Registrando..." : "Confirmar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
