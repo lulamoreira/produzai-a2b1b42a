@@ -189,7 +189,6 @@ export default function StoresTab({
           clientName={clientName}
         />
       )}
-      )}
 
       <Dialog open={!!selectedStore} onOpenChange={(open) => !open && setSelectedStore(null)}>
         <DialogContent className="max-w-2xl">
