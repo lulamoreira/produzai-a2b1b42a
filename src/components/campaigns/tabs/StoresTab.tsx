@@ -46,11 +46,11 @@ export default function StoresTab({
   const upsertStatus = useUpsertCampaignStoreStatus();
 
   const filteredStores = useMemo(() => {
-    let result = stores;
+    let result = allStores;
     if (storeSearch) {
       const q = storeSearch.toLowerCase().trim();
       result = result.filter(s => 
-        s.name.toLowerCase().includes(q) || 
+        (s.name && s.name.toLowerCase().includes(q)) || 
         (s.nickname && s.nickname.toLowerCase().includes(q)) ||
         (s.store_code && s.store_code.toLowerCase().includes(q)) ||
         (s.city && s.city.toLowerCase().includes(q)) ||
@@ -58,7 +58,7 @@ export default function StoresTab({
       );
     }
     return result;
-  }, [stores, storeSearch]);
+  }, [allStores, storeSearch]);
 
   const handleToggleStore = async (storeId: string, currentEnabled: boolean) => {
     try {
