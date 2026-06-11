@@ -81,6 +81,9 @@ const CampaignDetail = () => {
   }, [allStores, campaignStoreStatus]);
 
   const { data: pieces = [], refetch: refetchPieces } = useCampaignPieces(campaignId);
+  const { data: storePieces = [], isLoading: loadingStorePieces, isFetching: fetchingStorePieces } = useCampaignStorePieces(campaignId);
+  const { data: kits = [] } = useCampaignKits(campaignId);
+  const { data: kitPieces = [] } = useCampaignKitPieces(campaignId);
   const { data: pieceLocations = [] } = useCampaignPieceLocations(campaignId);
   const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
 
