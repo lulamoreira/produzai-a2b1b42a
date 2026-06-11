@@ -59,25 +59,20 @@ export default function SummaryTab({
       const { data: campaign } = await supabase.from("campaigns").select("client_id").eq("id", campaignId).single();
       const clientId = campaign?.client_id;
 
-      const storesRes = await supabase.from("client_stores").select("id, tipo_entrega", { count: "exact" }).eq("client_id", clientId);
-      const filteredStoresCount = (storesRes.data ?? []).filter(s => (s.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica').length;
+      const storesRes = await supabase.from("client_stores").select("id, tipo_entrega").eq("client_id", clientId);
+      const allStores = storesRes.data ?? [];
+      const totalStores = allStores.length;
 
       const piecesRes = await supabase.from("campaign_pieces").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).eq("is_deleted", false);
       const kitsRes = await supabase.from("campaign_kits").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
-      const pendingInstallationsRes = await supabase.from("campaign_schedules").select("id, client_stores(tipo_entrega)", { count: "exact" }).eq("campaign_id", campaignId).is("completed_at", null);
-      const filteredPendingCount = (pendingInstallationsRes.data ?? []).filter((s: any) => (s.client_stores?.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length;
+      const pendingInstallationsRes = await supabase.from("campaign_schedules").select("id, client_stores(tipo_entrega)").eq("campaign_id", campaignId).is("completed_at", null);
+      const pendingInstData = pendingInstallationsRes.data ?? [];
+      const pendingInstCount = pendingInstData.length;
       
       return {
-        stores: filteredStoresCount,
+        stores: totalStores,
         pieces: (piecesRes.count || 0) + (kitsRes.count || 0),
-        pendingInstallations: filteredPendingCount,
-        pendingApprovals: 0
-      };
-      
-      return {
-        stores: storesRes.count || 0,
-        pieces: (piecesRes.count || 0) + (kitsRes.count || 0),
-        pendingInstallations: pendingInstallationsRes.count || 0,
+        pendingInstallations: pendingInstCount,
         pendingApprovals: 0
       };
     },
