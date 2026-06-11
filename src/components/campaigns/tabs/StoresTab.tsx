@@ -15,6 +15,7 @@ import { getStateColor } from "@/lib/stateColors";
 interface StoresTabProps {
   campaignId: string;
   clientId: string;
+  allStores: any[];
   stores: any[];
   canEditStores: boolean;
   canEditCampaignStores: boolean;
