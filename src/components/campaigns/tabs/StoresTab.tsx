@@ -28,6 +28,7 @@ interface StoresTabProps {
 export default function StoresTab({
   campaignId,
   clientId,
+  allStores,
   stores,
   canEditStores,
   canEditCampaignStores,
