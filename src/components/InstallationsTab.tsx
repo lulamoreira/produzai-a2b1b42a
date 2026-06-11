@@ -1197,7 +1197,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                 {/* Row 1: Store name + occurrence badge */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-sm text-[var(--text-primary)] truncate">
+                    <div className="font-semibold text-sm text-[var(--text-primary)] truncate" translate="no">
                       {store.name}
                       {store.nickname && <span className="text-[var(--text-muted)] font-normal ml-1"> — {store.nickname}</span>}
                     </div>
@@ -1229,7 +1229,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                 </div>
 
                 {/* Row 2: Code + State + City */}
-                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                <p className="text-xs text-[var(--text-muted)] mt-0.5" translate="no">
                   {store.store_code && <span className="font-mono font-semibold text-[var(--text-secondary)]">{store.store_code}</span>}
                   {store.store_code && " · "}
                   {store.state || "—"} · {store.city || "—"}
@@ -1238,7 +1238,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                 {/* Row 3: Team + Date + Time + OS */}
                 <div className="flex items-center gap-2 mt-1.5 text-xs text-[var(--text-secondary)] flex-wrap">
                   {assignedTeam && (
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1" translate="no">
                       <Wrench className="w-3 h-3 text-[var(--text-muted)]" />
                       <span className="font-medium">{assignedTeam.name}</span>
                     </span>

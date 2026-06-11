@@ -1119,7 +1119,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 {/* Row 1: Store name + badges */}
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <div className="font-semibold text-sm text-[var(--text-primary)] truncate">
+                    <div className="font-semibold text-sm text-[var(--text-primary)] truncate" translate="no">
                       {store.name}
                       {store.nickname && <span className="text-[var(--text-muted)] font-normal ml-1"> — {store.nickname}</span>}
                     </div>
@@ -1152,7 +1152,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 </div>
 
                 {/* Row 2: Code + State + City */}
-                <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                <p className="text-xs text-[var(--text-muted)] mt-0.5" translate="no">
                   {store.store_code && <span className="font-mono font-semibold text-[var(--text-secondary)]">{store.store_code}</span>}
                   {store.store_code && " · "}
                   {store.state || "—"} · {store.city || "—"}
@@ -1161,7 +1161,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 {/* Row 3: Team + Date + Time + Preference */}
                 <div className="flex items-center gap-2 mt-1.5 text-xs text-[var(--text-secondary)] flex-wrap">
                   {assignedTeam && (
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-1" translate="no">
                       <Wrench className="w-3 h-3 text-[var(--text-muted)]" />
                       <span className="font-medium">{assignedTeam.name}</span>
                     </span>
@@ -1555,13 +1555,13 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         className="border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors cursor-pointer"
                         onClick={() => setExpandedCards((prev) => { const n = new Set(prev); n.add(store.id); return n; })}
                       >
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2" translate="no">
                           <div className="font-medium text-foreground">{store.name}</div>
                           {store.nickname && <div className="text-[11px] text-muted-foreground">{store.nickname}</div>}
                         </td>
-                        <td className="px-3 py-2">{store.state || "—"}</td>
-                        <td className="px-3 py-2">{store.city || "—"}</td>
-                        <td className="px-3 py-2">
+                        <td className="px-3 py-2" translate="no">{store.state || "—"}</td>
+                        <td className="px-3 py-2" translate="no">{store.city || "—"}</td>
+                        <td className="px-3 py-2" translate="no">
                           {sc?.team_id ? (
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                               <Users className="w-3 h-3 shrink-0" />
@@ -1596,9 +1596,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     className="px-3 py-2 hover:bg-muted/30 transition-colors cursor-pointer"
                     onClick={() => setExpandedCards((prev) => { const n = new Set(prev); n.add(store.id); return n; })}
                   >
-                    <div className="font-medium text-foreground">{store.name}</div>
-                    {store.nickname && <div className="text-[11px] text-muted-foreground">{store.nickname}</div>}
-                    <div className="text-xs text-muted-foreground mt-0.5">
+                    <div className="font-medium text-foreground" translate="no">{store.name}</div>
+                    {store.nickname && <div className="text-[11px] text-muted-foreground" translate="no">{store.nickname}</div>}
+                    <div className="text-xs text-muted-foreground mt-0.5" translate="no">
                       {(store.state || "—")} · {(store.city || "—")}
                       {sc?.team_id && ` · ${teamMap[sc.team_id]?.name || "Equipe Removida"}`}
                     </div>
