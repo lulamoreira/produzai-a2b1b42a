@@ -92,6 +92,8 @@ interface BudgetTabProps {
   activeAdjustment?: { id: string; name: string } | null;
 }
 
+const PUBLIC_BASE_URL = "https://produzai.lovable.app";
+
 // ─── Status helpers ──────────────────────────────────────
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   aguardando: { label: "Aguardando", color: "bg-muted text-muted-foreground" },
@@ -815,7 +817,7 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
 
   // ─── Email mailto: builder ─────────────────────────────
   const buildEmailMailto = (sup: typeof suppliers[0]) => {
-    const portalUrl = `${window.location.origin}/orcamento/${sup.access_token}`;
+    const portalUrl = `${PUBLIC_BASE_URL}/orcamento/${sup.access_token}`;
     const labels = getMessageLabels(currencyCode);
     const locale = getLocaleFromCurrency(currencyCode);
     const subject = `${campaignName} — ${labels.inviteSubject}`;
@@ -890,7 +892,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
 
   // ─── WhatsApp message builder ──────────────────────────
   const buildWhatsAppUrl = (sup: typeof suppliers[0]) => {
-    const portalUrl = `${window.location.origin}/orcamento/${sup.access_token}`;
+    const portalUrl = `${PUBLIC_BASE_URL}/orcamento/${sup.access_token}`;
     const labels = getMessageLabels(currencyCode);
     const locale = getLocaleFromCurrency(currencyCode);
     const deadlineStr = deadlineDate ? format(deadlineDate, locale === 'es-CL' ? "dd/MM/yyyy 'a las' HH:mm" : "dd/MM/yyyy 'às' HH:mm") : (locale === 'es-CL' ? "no definido" : "não definido");
@@ -1865,7 +1867,7 @@ ${msgLabels.winnerWaFooter}
                           <button
                             type="button"
                             onClick={() => {
-                              const url = `${window.location.origin}/orcamento/${sup.access_token}`;
+                              const url = `${PUBLIC_BASE_URL}/orcamento/${sup.access_token}`;
                               window.open(
                                 url,
                                 "_blank",
@@ -1873,14 +1875,14 @@ ${msgLabels.winnerWaFooter}
                               );
                             }}
                             className="truncate text-[11px] text-primary hover:underline text-left flex-1 min-w-0"
-                            title={`${window.location.origin}/orcamento/${sup.access_token}`}
+                            title={`${PUBLIC_BASE_URL}/orcamento/${sup.access_token}`}
                           >
-                            {`${window.location.origin}/orcamento/${sup.access_token}`}
+                            {`${PUBLIC_BASE_URL}/orcamento/${sup.access_token}`}
                           </button>
                           <button
                             type="button"
                             onClick={() => {
-                              const url = `${window.location.origin}/orcamento/${sup.access_token}`;
+                              const url = `${PUBLIC_BASE_URL}/orcamento/${sup.access_token}`;
                               navigator.clipboard.writeText(url);
                               toast.success("Link copiado!");
                             }}

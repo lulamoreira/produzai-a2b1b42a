@@ -33,6 +33,8 @@ import DeadlinePickerDialog from "@/components/Budget/DeadlinePickerDialog";
 import { RequotePortalPreviewSheet } from "@/components/Budget/RequotePortalPreviewSheet";
 import { useGeneratePortalLink } from "@/hooks/useAdjustmentBudgetRequest";
 
+const PUBLIC_BASE_URL = "https://produzai.lovable.app";
+
 interface Props {
   open: boolean;
   onOpenChange: (v: boolean) => void;
@@ -279,7 +281,7 @@ export default function AdjustmentBudgetRequestDialog({
       .maybeSingle();
     setExistingRequest(refreshed || null);
     return {
-      portalUrl: `${window.location.origin}/recotacao/${token}`,
+      portalUrl: `${PUBLIC_BASE_URL}/recotacao/${token}`,
       tokenExpiresAt: (refreshed as any)?.token_expires_at || null,
     };
   };
@@ -327,7 +329,7 @@ export default function AdjustmentBudgetRequestDialog({
     if (existingRequest?.access_token && existingRequest?.token_expires_at) {
       // Reuse existing token; skip picker.
       handleOpenPreview({
-        portalUrl: `${window.location.origin}/recotacao/${existingRequest.access_token}`,
+        portalUrl: `${PUBLIC_BASE_URL}/recotacao/${existingRequest.access_token}`,
         tokenExpiresAt: existingRequest.token_expires_at,
       });
       return;
@@ -339,7 +341,7 @@ export default function AdjustmentBudgetRequestDialog({
   const handleClickSendWhatsAppGated = () => {
     if (existingRequest?.access_token && existingRequest?.token_expires_at) {
       handleSendWhatsApp({
-        portalUrl: `${window.location.origin}/recotacao/${existingRequest.access_token}`,
+        portalUrl: `${PUBLIC_BASE_URL}/recotacao/${existingRequest.access_token}`,
         tokenExpiresAt: existingRequest.token_expires_at,
       });
       return;
