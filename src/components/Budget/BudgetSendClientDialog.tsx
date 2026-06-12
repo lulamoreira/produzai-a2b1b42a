@@ -836,21 +836,22 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Conteúdo do e-mail (editável)</Label>
+              <Label className="text-xs text-muted-foreground">Mensagem de abertura (editável)</Label>
               <Textarea
-                value={previewBody}
-                onChange={(e) => setPreviewBody(e.target.value)}
-                className="min-h-[260px] text-sm font-mono"
+                value={openingMessage}
+                onChange={(e) => setOpeningMessage(e.target.value)}
+                className="min-h-[80px] text-sm"
               />
             </div>
-            {mailtoTooLong && (
-              <div className="flex items-start gap-2 p-2.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-                <span>
-                  Conteúdo longo: se o e-mail abrir incompleto, use <strong>COPIAR CONTEÚDO</strong> e cole no seu e-mail.
-                </span>
-              </div>
-            )}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Pré-visualização do e-mail</Label>
+              <div
+                className="border rounded-md p-3 bg-white overflow-auto"
+                style={{ maxHeight: 400 }}
+                dangerouslySetInnerHTML={{ __html: emailHtml }}
+              />
+            </div>
+
           </div>
         )}
 
