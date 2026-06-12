@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Send, Loader2, X, ArrowLeft, Copy, AlertTriangle } from "lucide-react";
+import { Send, Loader2, X, ArrowLeft, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR, es } from "date-fns/locale";
@@ -82,7 +82,8 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
   // Preview state
   const [step, setStep] = useState<"form" | "preview">("form");
   const [previewSubject, setPreviewSubject] = useState("");
-  const [previewBody, setPreviewBody] = useState("");
+  const [openingMessage, setOpeningMessage] = useState("");
+  const [downloadUrls, setDownloadUrls] = useState<{ name: string; url: string }[]>([]);
 
   useEffect(() => {
     if (open) {
@@ -91,7 +92,8 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       setIncludeComparative(true);
       setStep("form");
       setPreviewSubject("");
-      setPreviewBody("");
+      setOpeningMessage("");
+      setDownloadUrls([]);
     }
   }, [open, clientEmail]);
 
@@ -518,56 +520,13 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
         downloadUrls.push(link);
       }
 
-      // Build subject + body (plain text)
+      // Build subject + opening message (plain text editable by user)
       const subject = `Resultado da Cotação — ${campaignName} (${clientName || "Cliente"})`;
-      const dateLocale = getLocaleFromCurrency(currencyCode) === "es-CL" ? es : ptBR;
-      const lines: string[] = [];
-      lines.push(`Olá,`);
-      lines.push("");
-      lines.push(`Segue o resultado da cotação da campanha "${campaignName}"${clientName ? ` — ${clientName}` : ""}.`);
-      lines.push("");
-
-      if (bestSupplier) {
-        lines.push(`Melhor fornecedor: ${bestSupplier.name} — Total ${fmt(bestSupplier.total)}`);
-        if (budgetAmount != null) {
-          const diff = bestSupplier.total - budgetAmount;
-          const sign = diff > 0 ? "+" : "";
-          lines.push(`Verba prevista: ${fmt(budgetAmount)} | Diferença: ${sign}${fmt(diff)}`);
-        }
-        lines.push("");
-      }
-
-      lines.push("Fornecedores participantes:");
-      submittedSuppliers.forEach((s) => {
-        const partial = supplierPartialTotals[s.id] || { total: 0, installation: 0, freight: 0 };
-        lines.push(`• ${s.company_name} — Total: ${fmt(partial.total)} (Instalação: ${fmt(partial.installation)} | Frete: ${fmt(partial.freight)})`);
-      });
-
-      if (declinedSuppliers.length > 0) {
-        lines.push("");
-        lines.push("Fornecedores que não participaram:");
-        declinedSuppliers.forEach((s: any) => {
-          const declinedAtRaw = s.declined_at ?? null;
-          const declinedAt = declinedAtRaw
-            ? format(new Date(declinedAtRaw), "dd/MM/yyyy", { locale: dateLocale })
-            : "—";
-          const reason = (s.decline_reason && String(s.decline_reason).trim()) || "Motivo não informado";
-          lines.push(`• ${s.company_name} — Desistiu em ${declinedAt} — Motivo: ${reason}`);
-        });
-      }
-
-      lines.push("");
-      lines.push("Planilhas para download:");
-      downloadUrls.forEach((u) => {
-        lines.push(`- ${u.name}: ${u.url}`);
-      });
-      lines.push("");
-      lines.push("Qualquer dúvida, é só responder este e-mail.");
-      lines.push("");
-      lines.push(agencyName || "");
+      const opening = `Segue o resultado da cotação da campanha "${campaignName}"${clientName ? ` — ${clientName}` : ""}.`;
 
       setPreviewSubject(subject);
-      setPreviewBody(lines.join("\n"));
+      setOpeningMessage(opening);
+      setDownloadUrls(downloadUrls);
       setStep("preview");
 
       toast.dismiss(toastId);
@@ -583,6 +542,134 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     }
   };
 
+  const escapeHtml = (s: string) =>
+    (s || "").replace(/[&<>"']/g, (c) =>
+      c === "&" ? "&amp;" : c === "<" ? "&lt;" : c === ">" ? "&gt;" : c === '"' ? "&quot;" : "&#39;",
+    );
+
+  const dateLocale = getLocaleFromCurrency(currencyCode) === "es-CL" ? es : ptBR;
+
+  const buildEmailHtml = (): string => {
+    const opening = escapeHtml(openingMessage).replace(/\n/g, "<br/>");
+    const summaryRows: string[] = [];
+    if (bestSupplier) {
+      summaryRows.push(
+        `<tr><td style="padding:4px 8px;color:#555;">Melhor fornecedor</td><td style="padding:4px 8px;font-weight:bold;">${escapeHtml(bestSupplier.name)} — ${escapeHtml(fmt(bestSupplier.total))}</td></tr>`,
+      );
+      if (budgetAmount != null) {
+        const diff = bestSupplier.total - budgetAmount;
+        const sign = diff > 0 ? "+" : "";
+        const color = diff > 0 ? "#dc2626" : "#16a34a";
+        summaryRows.push(
+          `<tr><td style="padding:4px 8px;color:#555;">Verba prevista</td><td style="padding:4px 8px;">${escapeHtml(fmt(budgetAmount))}</td></tr>`,
+        );
+        summaryRows.push(
+          `<tr><td style="padding:4px 8px;color:#555;">Diferença</td><td style="padding:4px 8px;color:${color};font-weight:bold;">${sign}${escapeHtml(fmt(diff))}</td></tr>`,
+        );
+      }
+    }
+    const summaryBlock = summaryRows.length
+      ? `<table style="border-collapse:collapse;background:#F7F3EC;border:1px solid #e5d8c8;border-radius:6px;margin:12px 0;font-size:13px;"><tbody>${summaryRows.join("")}</tbody></table>`
+      : "";
+
+    const supplierRows = submittedSuppliers
+      .map((s) => {
+        const partial = supplierPartialTotals[s.id] || { total: 0, installation: 0, freight: 0 };
+        return `<tr>
+          <td style="padding:8px;border:1px solid #e5e7eb;">${escapeHtml(s.company_name)}</td>
+          <td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">${escapeHtml(fmt(partial.total))}</td>
+          <td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">${escapeHtml(fmt(partial.installation))}</td>
+          <td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">${escapeHtml(fmt(partial.freight))}</td>
+        </tr>`;
+      })
+      .join("");
+    const suppliersBlock = supplierRows
+      ? `<h3 style="font-size:14px;margin:18px 0 8px;color:#1C1916;">Fornecedores participantes</h3>
+        <table style="border-collapse:collapse;width:100%;font-size:13px;">
+          <thead><tr style="background:#F7F3EC;">
+            <th style="padding:8px;border:1px solid #e5e7eb;text-align:left;">Fornecedor</th>
+            <th style="padding:8px;border:1px solid #e5e7eb;text-align:right;">Total</th>
+            <th style="padding:8px;border:1px solid #e5e7eb;text-align:right;">Instalação</th>
+            <th style="padding:8px;border:1px solid #e5e7eb;text-align:right;">Frete</th>
+          </tr></thead>
+          <tbody>${supplierRows}</tbody>
+        </table>`
+      : "";
+
+    const declinedBlock = declinedSuppliers.length
+      ? `<h3 style="font-size:14px;margin:18px 0 8px;color:#1C1916;">Fornecedores que não participaram</h3>
+        <ul style="font-size:13px;color:#444;padding-left:20px;margin:0;">${declinedSuppliers
+          .map((s: any) => {
+            const declinedAt = s.declined_at
+              ? format(new Date(s.declined_at), "dd/MM/yyyy", { locale: dateLocale })
+              : "—";
+            const reason = (s.decline_reason && String(s.decline_reason).trim()) || "Motivo não informado";
+            return `<li style="margin-bottom:4px;"><strong>${escapeHtml(s.company_name)}</strong> — ${escapeHtml(declinedAt)} — <em>${escapeHtml(reason)}</em></li>`;
+          })
+          .join("")}</ul>`
+      : "";
+
+    const downloadsBlock = downloadUrls.length
+      ? `<h3 style="font-size:14px;margin:18px 0 8px;color:#1C1916;">Planilhas para download</h3>
+        <ol style="font-size:13px;padding-left:20px;margin:0;">${downloadUrls
+          .map(
+            (d) =>
+              `<li style="margin-bottom:6px;"><a href="${escapeHtml(d.url)}" style="color:#8C6F4E;text-decoration:underline;">${escapeHtml(d.name)}</a></li>`,
+          )
+          .join("")}</ol>`
+      : "";
+
+    return `<div style="font-family:'Segoe UI',Arial,sans-serif;color:#1C1916;font-size:14px;line-height:1.6;">
+      <p style="margin:0 0 12px;">Olá,</p>
+      <p style="margin:0 0 12px;">${opening}</p>
+      ${summaryBlock}
+      ${suppliersBlock}
+      ${declinedBlock}
+      ${downloadsBlock}
+      <p style="margin:18px 0 8px;">Qualquer dúvida, é só responder este e-mail.</p>
+      <p style="margin:0;font-weight:bold;">${escapeHtml(agencyName || "")}</p>
+    </div>`;
+  };
+
+  const buildEmailPlainText = (): string => {
+    const lines: string[] = [];
+    lines.push(`Olá,`, "", openingMessage, "");
+    if (bestSupplier) {
+      lines.push(`Melhor fornecedor: ${bestSupplier.name} — Total ${fmt(bestSupplier.total)}`);
+      if (budgetAmount != null) {
+        const diff = bestSupplier.total - budgetAmount;
+        const sign = diff > 0 ? "+" : "";
+        lines.push(`Verba prevista: ${fmt(budgetAmount)} | Diferença: ${sign}${fmt(diff)}`);
+      }
+      lines.push("");
+    }
+    lines.push("Fornecedores participantes:");
+    submittedSuppliers.forEach((s) => {
+      const partial = supplierPartialTotals[s.id] || { total: 0, installation: 0, freight: 0 };
+      lines.push(`• ${s.company_name} — Total: ${fmt(partial.total)} (Instalação: ${fmt(partial.installation)} | Frete: ${fmt(partial.freight)})`);
+    });
+    if (declinedSuppliers.length > 0) {
+      lines.push("", "Fornecedores que não participaram:");
+      declinedSuppliers.forEach((s: any) => {
+        const declinedAt = s.declined_at
+          ? format(new Date(s.declined_at), "dd/MM/yyyy", { locale: dateLocale })
+          : "—";
+        const reason = (s.decline_reason && String(s.decline_reason).trim()) || "Motivo não informado";
+        lines.push(`• ${s.company_name} — Desistiu em ${declinedAt} — Motivo: ${reason}`);
+      });
+    }
+    lines.push("", "Planilhas para download:");
+    downloadUrls.forEach((u, i) => lines.push(`${i + 1}. ${u.name}: ${u.url}`));
+    lines.push("", "Qualquer dúvida, é só responder este e-mail.", "", agencyName || "");
+    return lines.join("\n");
+  };
+
+  const emailHtml = useMemo(
+    () => (step === "preview" ? buildEmailHtml() : ""),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [step, openingMessage, downloadUrls, submittedSuppliers, declinedSuppliers, bestSupplier, budgetAmount, agencyName],
+  );
+
   const buildMailtoUrl = () => {
     const merged = mergeRecipients(email, cc);
     const toEmails = parseRecipients(email);
@@ -590,16 +677,30 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     const params = new URLSearchParams();
     if (ccEmails.length) params.set("cc", ccEmails.join(","));
     params.set("subject", previewSubject);
-    params.set("body", previewBody);
-    // URLSearchParams uses '+' for spaces; mailto expects %20. Replace.
     const query = params.toString().replace(/\+/g, "%20");
     return `mailto:${toEmails.join(",")}?${query}`;
   };
 
-  const mailtoUrl = step === "preview" ? buildMailtoUrl() : "";
-  const mailtoTooLong = mailtoUrl.length > 1800;
+  const copyRichBody = async () => {
+    const html = buildEmailHtml();
+    const plain = buildEmailPlainText();
+    if (typeof ClipboardItem !== "undefined" && navigator.clipboard?.write) {
+      const item = new ClipboardItem({
+        "text/html": new Blob([html], { type: "text/html" }),
+        "text/plain": new Blob([plain], { type: "text/plain" }),
+      });
+      await navigator.clipboard.write([item]);
+    } else {
+      await navigator.clipboard.writeText(plain);
+    }
+  };
 
-  const handleOpenMail = () => {
+  const handleOpenMail = async () => {
+    try {
+      await copyRichBody();
+    } catch (e) {
+      console.warn("Rich clipboard copy failed", e);
+    }
     const merged = mergeRecipients(email, cc);
     recordEmails(merged.valid);
     const url = buildMailtoUrl();
@@ -608,12 +709,16 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     } catch {
       window.location.href = url;
     }
+    toast.success(
+      "Rascunho aberto! Clique no corpo do e-mail e cole com Cmd+V para inserir o conteúdo formatado.",
+      { duration: 15000 },
+    );
   };
 
   const handleCopyBody = async () => {
     try {
-      await navigator.clipboard.writeText(previewBody);
-      toast.success("Conteúdo copiado para a área de transferência.");
+      await copyRichBody();
+      toast.success("Corpo formatado copiado. Cole no seu e-mail com Cmd+V.");
     } catch {
       toast.error("Não foi possível copiar. Selecione e copie manualmente.");
     }
@@ -731,21 +836,22 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
               />
             </div>
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Conteúdo do e-mail (editável)</Label>
+              <Label className="text-xs text-muted-foreground">Mensagem de abertura (editável)</Label>
               <Textarea
-                value={previewBody}
-                onChange={(e) => setPreviewBody(e.target.value)}
-                className="min-h-[260px] text-sm font-mono"
+                value={openingMessage}
+                onChange={(e) => setOpeningMessage(e.target.value)}
+                className="min-h-[80px] text-sm"
               />
             </div>
-            {mailtoTooLong && (
-              <div className="flex items-start gap-2 p-2.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-xs">
-                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
-                <span>
-                  Conteúdo longo: se o e-mail abrir incompleto, use <strong>COPIAR CONTEÚDO</strong> e cole no seu e-mail.
-                </span>
-              </div>
-            )}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Pré-visualização do e-mail</Label>
+              <div
+                className="border rounded-md p-3 bg-white overflow-auto"
+                style={{ maxHeight: 400 }}
+                dangerouslySetInnerHTML={{ __html: emailHtml }}
+              />
+            </div>
+
           </div>
         )}
 
@@ -776,7 +882,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
                 <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
               </Button>
               <Button variant="secondary" onClick={handleCopyBody}>
-                <Copy className="w-4 h-4 mr-1" /> Copiar Conteúdo
+                <Copy className="w-4 h-4 mr-1" /> Copiar Corpo Formatado
               </Button>
               <Button onClick={handleOpenMail}>
                 <Send className="w-4 h-4 mr-1" /> Abrir no Meu E-mail
