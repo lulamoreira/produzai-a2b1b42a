@@ -258,14 +258,13 @@ const SupplierInvitePortal = () => {
           .eq("id", supplierId);
         if (updateError) throw updateError;
       } else {
-        const { data: newSupplier, error: insertError } = await supabase
+        const newId = crypto.randomUUID();
+        const { error: insertError } = await supabase
           .from("agency_suppliers")
-          .insert([payload])
-          .select()
-          .single();
+          .insert([{ id: newId, ...payload }]);
         if (insertError) throw insertError;
-        supplierId = newSupplier.id;
-        
+        supplierId = newId;
+
         await supabase
           .from("supplier_invitations")
           .update({ supplier_id: supplierId })
