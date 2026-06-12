@@ -732,7 +732,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
   const emailHtml = useMemo(
     () => (step === "preview" ? buildEmailHtml() : ""),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [step, openingMessage, downloadUrls, submittedSuppliers, declinedSuppliers, bestSupplier, budgetAmount, agencyName],
+    [step, openingMessage, downloadUrls, submittedSuppliers, declinedSuppliers, bestSupplier, budgetAmount, agencyName, clientName, campaignName],
   );
 
   const buildMailtoUrl = () => {
