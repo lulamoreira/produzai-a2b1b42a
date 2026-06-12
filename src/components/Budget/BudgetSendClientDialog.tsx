@@ -776,8 +776,46 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     }
     toast.success(
       "Rascunho aberto! Clique no corpo do e-mail e cole com Cmd+V para inserir o conteúdo formatado.",
-      { duration: 15000 },
+      { duration: 6000, closeButton: true },
     );
+
+    // Log activity (fire-and-forget)
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data: { user } } = await supabase.auth.getUser();
+      let actorName: string | null = null;
+      if (user?.id) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("display_name")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        actorName = prof?.display_name || user.email || null;
+      }
+      const toList = parseRecipients(email).valid.join(", ");
+      const ccList = parseRecipients(cc).valid.join(", ");
+      await supabase.from("campaign_activity_log").insert({
+        campaign_id: campaignId,
+        user_id: user?.id || null,
+        actor_name: actorName,
+        actor_type: "user",
+        action: "resultado_cotacao_enviado",
+        description: `Resultado da cotação enviado ao cliente — destinatários: ${toList}${ccList ? `; cc: ${ccList}` : ""}`,
+        metadata: {
+          to: parseRecipients(email).valid,
+          cc: parseRecipients(cc).valid,
+          assunto: previewSubject,
+          planilhas: downloadUrls.map((d) => d.name),
+        },
+      });
+    } catch (err) {
+      console.warn("Failed to log resultado_cotacao_enviado", err);
+    }
+
+    setTimeout(() => {
+      onOpenChange(false);
+      setStep("form");
+    }, 1500);
   };
 
   const handleCopyBody = async () => {
