@@ -1,14 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Send, Loader2, X } from "lucide-react";
-import { saveBlobAs } from "@/lib/saveBlobAs";
+import { Send, Loader2, X, ArrowLeft, Copy, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR, es } from "date-fns/locale";
 import { getLocaleFromCurrency } from "@/utils/currencyLocale";
 
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -22,10 +19,9 @@ import {
 } from "@/lib/exportSupplierBudget";
 import { uploadAndSign as sharedUploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
 import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
-import { SendSummaryPanel, type SendSummaryItem, type SummaryItemKind, type SummaryItemStage } from "@/components/Budget/SendSummaryPanel";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
-import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
 import EmailRecipientsInput from "@/components/Email/EmailRecipientsInput";
 import { useClientEmailMemory } from "@/hooks/useClientEmailMemory";
 
@@ -78,25 +74,34 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
   const { suggestions: emailSuggestions, record: recordEmails } = useClientEmailMemory({ clientId });
-  const [replyTo, setReplyTo] = useState("");
   const [includeComparative, setIncludeComparative] = useState(true);
   const [sending, setSending] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const [stageMessage, setStageMessage] = useState<string>("");
-  const [summary, setSummary] = useState<SendSummaryItem[]>([]);
+
+  // Preview state
+  const [step, setStep] = useState<"form" | "preview">("form");
+  const [previewSubject, setPreviewSubject] = useState("");
+  const [previewBody, setPreviewBody] = useState("");
 
   useEffect(() => {
     if (open) {
       setEmail(clientEmail || "");
       setCc("");
-      setReplyTo("");
       setIncludeComparative(true);
-      setSummary([]);
+      setStep("form");
+      setPreviewSubject("");
+      setPreviewBody("");
     }
   }, [open, clientEmail]);
 
   const submittedSuppliers = useMemo(
     () => suppliers.filter((s) => s.status === "enviado"),
+    [suppliers],
+  );
+
+  const declinedSuppliers = useMemo(
+    () => suppliers.filter((s) => s.status === "declinado"),
     [suppliers],
   );
 
@@ -469,21 +474,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     supplierIdOrTag: string,
   ) => sharedUploadAndSign(blob, fileName, supplierIdOrTag, campaignId, setUploadStatus);
 
-  const sendOnce = async (recipient: string, templateData: any) => {
-    const { error } = await supabase.functions.invoke("send-transactional-email", {
-      body: {
-        templateName: "budget-results-to-client",
-        recipientEmail: recipient,
-        idempotencyKey: `budget-results-${campaignId}-${recipient}-${Date.now()}`,
-        templateData,
-        fromName: agencyName,
-        ...(replyTo.trim() ? { replyTo: replyTo.trim() } : {}),
-      },
-    });
-    if (error) throw new Error(error.message || "Erro ao enviar e-mail");
-  };
-
-  const handleSend = async () => {
+  const handleGenerateAndPreview = async () => {
     const merged = mergeRecipients(email, cc);
     if (merged.invalid.length) {
       toast.error(`E-mail(s) inválido(s): ${merged.invalid.join(", ")}`);
@@ -491,10 +482,6 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     }
     if (merged.valid.length === 0) {
       toast.error("Informe pelo menos um e-mail válido.");
-      return;
-    }
-    if (!isReplyToValid(replyTo)) {
-      toast.error("E-mail de 'Responder para' inválido.");
       return;
     }
     if (submittedSuppliers.length === 0) {
@@ -505,19 +492,8 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     setSending(true);
     setUploadStatus(null);
     setStageMessage("Iniciando geração das planilhas...");
-    const collected: SendSummaryItem[] = [];
-    setSummary([]);
-    const updateSummary = (items: SendSummaryItem[]) => {
-      setSummary([...items]);
-    };
-    const upsertItem = (label: string, kind: SummaryItemKind, stage: SummaryItemStage, error?: string) => {
-      const idx = collected.findIndex((it) => it.kind === kind && it.label === label);
-      if (idx >= 0) collected[idx] = { ...collected[idx], stage, error };
-      else collected.push({ kind, label, stage, error });
-      updateSummary(collected);
-    };
 
-    const toastId = toast.loading("Gerando planilhas e enviando...", {
+    const toastId = toast.loading("Gerando planilhas...", {
       description: "Isso pode levar alguns segundos.",
     });
 
@@ -529,92 +505,77 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       for (const sup of submittedSuppliers) {
         fileIndex += 1;
         setStageMessage(`Gerando planilha ${fileIndex}/${totalFiles} — ${sup.company_name}`);
-        const label = `Planilha — ${sup.company_name}`;
-        try {
-          const { blob, fileName } = await buildOneSupplier(sup);
-          upsertItem(fileName, "file", "generated");
-          const link = await uploadAndSign(blob, fileName, sup.id);
-          upsertItem(fileName, "file", "signed");
-          downloadUrls.push(link);
-        } catch (err: any) {
-          upsertItem(label, "file", "failed", err?.message || "Erro desconhecido");
-          throw err;
-        }
+        const { blob, fileName } = await buildOneSupplier(sup);
+        const link = await uploadAndSign(blob, fileName, sup.id);
+        downloadUrls.push(link);
       }
 
       if (includeComparative && submittedSuppliers.length >= 1) {
         fileIndex += 1;
         setStageMessage(`Gerando planilha ${fileIndex}/${totalFiles} — Comparativo`);
-        try {
-          const { blob, fileName } = await buildComparativeWorkbook();
-          upsertItem(fileName, "file", "generated");
-          const link = await uploadAndSign(blob, fileName, "comparativo");
-          upsertItem(fileName, "file", "signed");
-          downloadUrls.push(link);
-        } catch (err: any) {
-          upsertItem("Comparativo", "file", "failed", err?.message || "Erro desconhecido");
-          throw err;
-        }
+        const { blob, fileName } = await buildComparativeWorkbook();
+        const link = await uploadAndSign(blob, fileName, "comparativo");
+        downloadUrls.push(link);
       }
 
-      // Build templateData
-      const difference = bestSupplier && budgetAmount != null ? bestSupplier.total - budgetAmount : null;
-      const templateData = {
-        clientName: clientName || "Cliente",
-        agencyName,
-        campaignName,
-        bestSupplier: bestSupplier
-          ? { name: bestSupplier.name, total: bestSupplier.total, totalFormatted: fmt(bestSupplier.total) }
-          : null,
-        budgetAmount,
-        budgetAmountFormatted: budgetAmount != null ? fmt(budgetAmount) : null,
-        difference,
-        differenceFormatted: difference != null ? fmt(difference) : null,
-        suppliers: submittedSuppliers.map((s) => {
-          const partial = supplierPartialTotals[s.id] || { total: 0, installation: 0, freight: 0 };
-          const submittedAtRaw = s.submitted_at ?? s.updated_at ?? s.created_at ?? null;
-          const submittedAt = submittedAtRaw
-            ? format(new Date(submittedAtRaw), "dd/MM/yyyy HH:mm", { locale: getLocaleFromCurrency(currencyCode) === "es-CL" ? es : ptBR })
-            : null;
-          return {
-            name: s.company_name,
-            status: s.status,
-            totalFormatted: fmt(partial.total),
-            installationFormatted: fmt(partial.installation),
-            freightFormatted: fmt(partial.freight),
-            submittedAt,
-          };
-        }),
-        deadline,
-        currencyCode,
-        downloadUrls,
-      };
+      // Build subject + body (plain text)
+      const subject = `Resultado da Cotação — ${campaignName} (${clientName || "Cliente"})`;
+      const dateLocale = getLocaleFromCurrency(currencyCode) === "es-CL" ? es : ptBR;
+      const lines: string[] = [];
+      lines.push(`Olá,`);
+      lines.push("");
+      lines.push(`Segue o resultado da cotação da campanha "${campaignName}"${clientName ? ` — ${clientName}` : ""}.`);
+      lines.push("");
 
-      const toEmails = parseRecipients(email);
-      let anySent = false;
-      let sentIndex = 0;
-      for (const recipient of merged.valid) {
-        sentIndex += 1;
-        const isCc = !toEmails.includes(recipient);
-        const label = `${isCc ? "E-mail (CC)" : "E-mail"} → ${recipient}`;
-        setStageMessage(`Enviando e-mail ${sentIndex}/${merged.valid.length} — ${recipient}`);
-        try {
-          await sendOnce(recipient, templateData);
-          upsertItem(label, "email", "sent");
-          anySent = true;
-        } catch (err: any) {
-          upsertItem(label, "email", "failed", err?.message || "Erro ao enviar");
+      if (bestSupplier) {
+        lines.push(`Melhor fornecedor: ${bestSupplier.name} — Total ${fmt(bestSupplier.total)}`);
+        if (budgetAmount != null) {
+          const diff = bestSupplier.total - budgetAmount;
+          const sign = diff > 0 ? "+" : "";
+          lines.push(`Verba prevista: ${fmt(budgetAmount)} | Diferença: ${sign}${fmt(diff)}`);
         }
+        lines.push("");
       }
-      if (!anySent) throw new Error("Nenhum e-mail foi enviado.");
+
+      lines.push("Fornecedores participantes:");
+      submittedSuppliers.forEach((s) => {
+        const partial = supplierPartialTotals[s.id] || { total: 0, installation: 0, freight: 0 };
+        lines.push(`• ${s.company_name} — Total: ${fmt(partial.total)} (Instalação: ${fmt(partial.installation)} | Frete: ${fmt(partial.freight)})`);
+      });
+
+      if (declinedSuppliers.length > 0) {
+        lines.push("");
+        lines.push("Fornecedores que não participaram:");
+        declinedSuppliers.forEach((s: any) => {
+          const declinedAtRaw = s.declined_at ?? null;
+          const declinedAt = declinedAtRaw
+            ? format(new Date(declinedAtRaw), "dd/MM/yyyy", { locale: dateLocale })
+            : "—";
+          const reason = (s.decline_reason && String(s.decline_reason).trim()) || "Motivo não informado";
+          lines.push(`• ${s.company_name} — Desistiu em ${declinedAt} — Motivo: ${reason}`);
+        });
+      }
+
+      lines.push("");
+      lines.push("Planilhas para download:");
+      downloadUrls.forEach((u) => {
+        lines.push(`- ${u.name}: ${u.url}`);
+      });
+      lines.push("");
+      lines.push("Qualquer dúvida, é só responder este e-mail.");
+      lines.push("");
+      lines.push(agencyName || "");
+
+      setPreviewSubject(subject);
+      setPreviewBody(lines.join("\n"));
+      setStep("preview");
 
       toast.dismiss(toastId);
-      recordEmails(merged.valid);
-      toast.success("Relatório enviado com sucesso!");
+      toast.success("Planilhas geradas. Revise o e-mail antes de enviar.");
     } catch (e: any) {
-      console.error("Send budget results error:", e);
+      console.error("Generate budget results error:", e);
       toast.dismiss(toastId);
-      toast.error(e?.message || "Erro ao enviar o relatório.");
+      toast.error(e?.message || "Erro ao gerar as planilhas.");
     } finally {
       setSending(false);
       setUploadStatus(null);
@@ -622,112 +583,203 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     }
   };
 
+  const buildMailtoUrl = () => {
+    const merged = mergeRecipients(email, cc);
+    const toEmails = parseRecipients(email);
+    const ccEmails = merged.valid.filter((e) => !toEmails.includes(e));
+    const params = new URLSearchParams();
+    if (ccEmails.length) params.set("cc", ccEmails.join(","));
+    params.set("subject", previewSubject);
+    params.set("body", previewBody);
+    // URLSearchParams uses '+' for spaces; mailto expects %20. Replace.
+    const query = params.toString().replace(/\+/g, "%20");
+    return `mailto:${toEmails.join(",")}?${query}`;
+  };
+
+  const mailtoUrl = step === "preview" ? buildMailtoUrl() : "";
+  const mailtoTooLong = mailtoUrl.length > 1800;
+
+  const handleOpenMail = () => {
+    const merged = mergeRecipients(email, cc);
+    recordEmails(merged.valid);
+    const url = buildMailtoUrl();
+    try {
+      window.open(url, "_self");
+    } catch {
+      window.location.href = url;
+    }
+  };
+
+  const handleCopyBody = async () => {
+    try {
+      await navigator.clipboard.writeText(previewBody);
+      toast.success("Conteúdo copiado para a área de transferência.");
+    } catch {
+      toast.error("Não foi possível copiar. Selecione e copie manualmente.");
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={(o) => !sending && onOpenChange(o)}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Enviar Resultado da Cotação ao Cliente</DialogTitle>
           <DialogDescription>
-            O e-mail será enviado com os resultados e links para download das planilhas.
+            {step === "form"
+              ? "Gere as planilhas e revise o e-mail antes de abrir no seu cliente de e-mail."
+              : "Revise (e edite, se quiser) o conteúdo antes de abrir no seu e-mail."}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="recipient-email">E-mail(s) do destinatário *</Label>
-            <EmailRecipientsInput
-              id="recipient-email"
-              placeholder="cliente1@empresa.com, cliente2@empresa.com"
-              value={email}
-              onChange={setEmail}
-              suggestions={emailSuggestions}
-              disabled={sending}
-            />
-            <p className="text-[11px] text-muted-foreground">Separe múltiplos e-mails por vírgula ou ponto e vírgula.</p>
-          </div>
+        {step === "form" && (
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="recipient-email">E-mail(s) do destinatário *</Label>
+              <EmailRecipientsInput
+                id="recipient-email"
+                placeholder="cliente1@empresa.com, cliente2@empresa.com"
+                value={email}
+                onChange={setEmail}
+                suggestions={emailSuggestions}
+                disabled={sending}
+              />
+              <p className="text-[11px] text-muted-foreground">Separe múltiplos e-mails por vírgula ou ponto e vírgula.</p>
+            </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="cc-email">CC (opcional)</Label>
-            <EmailRecipientsInput
-              id="cc-email"
-              placeholder="copia1@empresa.com, copia2@empresa.com"
-              value={cc}
-              onChange={setCc}
-              suggestions={emailSuggestions}
-              disabled={sending}
-            />
-          </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="cc-email">CC (opcional)</Label>
+              <EmailRecipientsInput
+                id="cc-email"
+                placeholder="copia1@empresa.com, copia2@empresa.com"
+                value={cc}
+                onChange={setCc}
+                suggestions={emailSuggestions}
+                disabled={sending}
+              />
+            </div>
 
-          <ReplyToField value={replyTo} onChange={setReplyTo} disabled={sending} />
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="include-comparative"
+                checked={includeComparative}
+                onCheckedChange={(v) => setIncludeComparative(Boolean(v))}
+                disabled={sending}
+              />
+              <Label htmlFor="include-comparative" className="text-sm cursor-pointer">
+                Incluir planilha comparativa de preços
+              </Label>
+            </div>
 
-          <div className="flex items-center gap-2">
-            <Checkbox
-              id="include-comparative"
-              checked={includeComparative}
-              onCheckedChange={(v) => setIncludeComparative(Boolean(v))}
-              disabled={sending}
-            />
-            <Label htmlFor="include-comparative" className="text-sm cursor-pointer">
-              Incluir planilha comparativa de preços
-            </Label>
-          </div>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">
+                Planilhas que serão geradas ({submittedSuppliers.length}{includeComparative ? " + comparativo" : ""}):
+              </Label>
+              {submittedSuppliers.length === 0 ? (
+                <p className="text-sm text-muted-foreground italic">
+                  Nenhum fornecedor enviou a cotação ainda.
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-1.5">
+                  {submittedSuppliers.map((s) => (
+                    <Badge key={s.id} variant="secondary" className="text-xs">
+                      {s.company_name}
+                    </Badge>
+                  ))}
+                  {includeComparative && (
+                    <Badge variant="outline" className="text-xs">
+                      Comparativo
+                    </Badge>
+                  )}
+                </div>
+              )}
+              {declinedSuppliers.length > 0 && (
+                <p className="text-[11px] text-muted-foreground">
+                  {declinedSuppliers.length} fornecedor(es) que desistiram serão listados no corpo do e-mail.
+                </p>
+              )}
+            </div>
 
-          <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">
-              Planilhas que serão geradas ({submittedSuppliers.length}{includeComparative ? " + comparativo" : ""}):
-            </Label>
-            {submittedSuppliers.length === 0 ? (
-              <p className="text-sm text-muted-foreground italic">
-                Nenhum fornecedor enviou a cotação ainda.
-              </p>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {submittedSuppliers.map((s) => (
-                  <Badge key={s.id} variant="secondary" className="text-xs">
-                    {s.company_name}
-                  </Badge>
-                ))}
-                {includeComparative && (
-                  <Badge variant="outline" className="text-xs">
-                    Comparativo
-                  </Badge>
+            {sending && (
+              <div className="space-y-2">
+                {stageMessage && (
+                  <div className="text-xs text-muted-foreground">{stageMessage}</div>
                 )}
+                <UploadProgressPanel status={uploadStatus} />
               </div>
             )}
           </div>
+        )}
 
-          {sending && (
-            <div className="space-y-2">
-              {stageMessage && (
-                <div className="text-xs text-muted-foreground">{stageMessage}</div>
-              )}
-              <UploadProgressPanel status={uploadStatus} />
+        {step === "preview" && (
+          <div className="space-y-3 py-2">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Para</Label>
+              <Input value={parseRecipients(email).join(", ")} readOnly className="text-sm" />
             </div>
-          )}
-
-          {!sending && summary.length > 0 && <SendSummaryPanel items={summary} />}
-        </div>
+            {parseRecipients(cc).length > 0 && (
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">CC</Label>
+                <Input value={parseRecipients(cc).join(", ")} readOnly className="text-sm" />
+              </div>
+            )}
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Assunto</Label>
+              <Input
+                value={previewSubject}
+                onChange={(e) => setPreviewSubject(e.target.value)}
+                className="text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Conteúdo do e-mail (editável)</Label>
+              <Textarea
+                value={previewBody}
+                onChange={(e) => setPreviewBody(e.target.value)}
+                className="min-h-[260px] text-sm font-mono"
+              />
+            </div>
+            {mailtoTooLong && (
+              <div className="flex items-start gap-2 p-2.5 rounded-md bg-amber-50 border border-amber-200 text-amber-900 text-xs">
+                <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                <span>
+                  Conteúdo longo: se o e-mail abrir incompleto, use <strong>COPIAR CONTEÚDO</strong> e cole no seu e-mail.
+                </span>
+              </div>
+            )}
+          </div>
+        )}
 
         <DialogFooter className="flex-col sm:flex-row gap-2">
-          {!sending && summary.length > 0 ? (
-            <Button onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
-              Fechar
-            </Button>
-          ) : (
+          {step === "form" ? (
             <>
               <Button variant="outline" onClick={() => onOpenChange(false)} disabled={sending}>
                 <X className="w-4 h-4 mr-1" /> Cancelar
               </Button>
-              <Button onClick={handleSend} disabled={sending || submittedSuppliers.length === 0}>
+              <Button
+                onClick={handleGenerateAndPreview}
+                disabled={sending || submittedSuppliers.length === 0}
+              >
                 {sending ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-1 animate-spin" /> Enviando...
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" /> Gerando...
                   </>
                 ) : (
                   <>
-                    <Send className="w-4 h-4 mr-1" /> Enviar Relatório
+                    <Send className="w-4 h-4 mr-1" /> Gerar e Visualizar
                   </>
                 )}
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setStep("form")}>
+                <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
+              </Button>
+              <Button variant="secondary" onClick={handleCopyBody}>
+                <Copy className="w-4 h-4 mr-1" /> Copiar Conteúdo
+              </Button>
+              <Button onClick={handleOpenMail}>
+                <Send className="w-4 h-4 mr-1" /> Abrir no Meu E-mail
               </Button>
             </>
           )}
