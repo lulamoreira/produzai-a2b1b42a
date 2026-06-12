@@ -74,20 +74,24 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
   const [email, setEmail] = useState("");
   const [cc, setCc] = useState("");
   const { suggestions: emailSuggestions, record: recordEmails } = useClientEmailMemory({ clientId });
-  const [replyTo, setReplyTo] = useState("");
   const [includeComparative, setIncludeComparative] = useState(true);
   const [sending, setSending] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<UploadStatus | null>(null);
   const [stageMessage, setStageMessage] = useState<string>("");
-  const [summary, setSummary] = useState<SendSummaryItem[]>([]);
+
+  // Preview state
+  const [step, setStep] = useState<"form" | "preview">("form");
+  const [previewSubject, setPreviewSubject] = useState("");
+  const [previewBody, setPreviewBody] = useState("");
 
   useEffect(() => {
     if (open) {
       setEmail(clientEmail || "");
       setCc("");
-      setReplyTo("");
       setIncludeComparative(true);
-      setSummary([]);
+      setStep("form");
+      setPreviewSubject("");
+      setPreviewBody("");
     }
   }, [open, clientEmail]);
 
