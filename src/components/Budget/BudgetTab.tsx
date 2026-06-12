@@ -1542,10 +1542,16 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   <Send className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">Enviar ao cliente</span>
                 </Button>
+                {lastResultSentAt && (
+                  <p className="mt-1.5 text-[10px] text-muted-foreground text-center">
+                    Último envio ao cliente: {format(new Date(lastResultSentAt), "dd/MM/yyyy 'às' HH:mm")}
+                  </p>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
+
 
         {/* Diferença */}
         {(() => {
