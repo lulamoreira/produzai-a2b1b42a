@@ -550,85 +550,150 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
   const dateLocale = getLocaleFromCurrency(currencyCode) === "es-CL" ? es : ptBR;
 
   const buildEmailHtml = (): string => {
-    const opening = escapeHtml(openingMessage).replace(/\n/g, "<br/>");
-    const summaryRows: string[] = [];
-    if (bestSupplier) {
-      summaryRows.push(
-        `<tr><td style="padding:4px 8px;color:#555;">Melhor fornecedor</td><td style="padding:4px 8px;font-weight:bold;">${escapeHtml(bestSupplier.name)} — ${escapeHtml(fmt(bestSupplier.total))}</td></tr>`,
-      );
-      if (budgetAmount != null) {
-        const diff = bestSupplier.total - budgetAmount;
-        const sign = diff > 0 ? "+" : "";
-        const color = diff > 0 ? "#dc2626" : "#16a34a";
-        summaryRows.push(
-          `<tr><td style="padding:4px 8px;color:#555;">Verba prevista</td><td style="padding:4px 8px;">${escapeHtml(fmt(budgetAmount))}</td></tr>`,
-        );
-        summaryRows.push(
-          `<tr><td style="padding:4px 8px;color:#555;">Diferença</td><td style="padding:4px 8px;color:${color};font-weight:bold;">${sign}${escapeHtml(fmt(diff))}</td></tr>`,
-        );
-      }
-    }
-    const summaryBlock = summaryRows.length
-      ? `<table style="border-collapse:collapse;background:#F7F3EC;border:1px solid #e5d8c8;border-radius:6px;margin:12px 0;font-size:13px;"><tbody>${summaryRows.join("")}</tbody></table>`
-      : "";
+    const BRAND = "#8C6F4E";
+    const DARK = "#1C1916";
+    const BEIGE = "#f9f7f5";
+    const CREAM = "#fef9f0";
+    const BORDER = "#e5d8c8";
+    const ESPRESSO = "#3F2E1E";
+    const GREEN = "#2e7d32";
+    const RED = "#c62828";
 
+    const opening = escapeHtml(openingMessage).replace(/\n/g, "<br/>");
+    const greetName = (clientName || "").trim();
+    const greeting = greetName ? `Olá, ${escapeHtml(greetName)}!` : "Olá!";
+
+    // Header bands + campaign / client title
+    const header = `
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
+        <tr><td style="background:${DARK};padding:14px 24px;text-align:center;color:#fff;font:bold 14px 'Segoe UI',Arial,sans-serif;letter-spacing:0.5px;">${escapeHtml(agencyName || "ProduzAI")}</td></tr>
+        <tr><td style="background:${BRAND};padding:14px 24px;text-align:center;color:#fff;font:bold 16px 'Segoe UI',Arial,sans-serif;letter-spacing:1px;text-transform:uppercase;">Resultado da Cotação</td></tr>
+        <tr><td style="padding:22px 24px 6px;text-align:center;">
+          <div style="font:bold 22px 'Segoe UI',Arial,sans-serif;color:${DARK};margin:0 0 4px;">${escapeHtml(campaignName || "")}</div>
+          ${greetName ? `<div style="font:14px 'Segoe UI',Arial,sans-serif;color:#6b5937;margin:0;">Preparado para <strong>${escapeHtml(greetName)}</strong></div>` : ""}
+        </td></tr>
+      </table>`;
+
+    // KPI cards (3 cells)
+    let kpis = "";
+    if (bestSupplier || budgetAmount != null) {
+      const bestCell = bestSupplier
+        ? `<td width="33%" valign="top" style="background:${BEIGE};border:1px solid ${BORDER};border-radius:6px;padding:14px 12px;text-align:center;">
+            <div style="font:bold 11px 'Segoe UI',Arial,sans-serif;color:#6b5937;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px;">Melhor Proposta</div>
+            <div style="font:bold 18px 'Segoe UI',Arial,sans-serif;color:${DARK};margin:0;">${escapeHtml(fmt(bestSupplier.total))}</div>
+            <div style="font:11px 'Segoe UI',Arial,sans-serif;color:#666;margin:4px 0 0;">${escapeHtml(bestSupplier.name)}</div>
+          </td>`
+        : `<td width="33%" style="background:${BEIGE};border:1px solid ${BORDER};border-radius:6px;padding:14px 12px;text-align:center;color:#999;">—</td>`;
+      const budgetCell = `<td width="33%" valign="top" style="background:${CREAM};border:1px solid ${BORDER};border-radius:6px;padding:14px 12px;text-align:center;">
+        <div style="font:bold 11px 'Segoe UI',Arial,sans-serif;color:#6b5937;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px;">Verba Prevista</div>
+        <div style="font:bold 18px 'Segoe UI',Arial,sans-serif;color:${DARK};margin:0;">${budgetAmount != null ? escapeHtml(fmt(budgetAmount)) : "Não definida"}</div>
+      </td>`;
+      let diffCell = `<td width="33%" valign="top" style="background:${BEIGE};border:1px solid ${BORDER};border-radius:6px;padding:14px 12px;text-align:center;">
+        <div style="font:bold 11px 'Segoe UI',Arial,sans-serif;color:#6b5937;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px;">Diferença</div>
+        <div style="font:bold 18px 'Segoe UI',Arial,sans-serif;color:#999;margin:0;">—</div>
+      </td>`;
+      if (bestSupplier && budgetAmount != null) {
+        const diff = bestSupplier.total - budgetAmount;
+        const color = diff > 0 ? RED : GREEN;
+        const sign = diff > 0 ? "+" : "";
+        diffCell = `<td width="33%" valign="top" style="background:${BEIGE};border:1px solid ${BORDER};border-radius:6px;padding:14px 12px;text-align:center;">
+          <div style="font:bold 11px 'Segoe UI',Arial,sans-serif;color:#6b5937;text-transform:uppercase;letter-spacing:0.5px;margin:0 0 6px;">Diferença</div>
+          <div style="font:bold 18px 'Segoe UI',Arial,sans-serif;color:${color};margin:0;">${sign}${escapeHtml(fmt(diff))}</div>
+        </td>`;
+      }
+      kpis = `<table role="presentation" cellpadding="0" cellspacing="8" border="0" width="100%" style="border-collapse:separate;margin:8px 0 4px;"><tr>${bestCell}${budgetCell}${diffCell}</tr></table>`;
+    }
+
+    // Suppliers table
+    const winnerName = bestSupplier?.name || "";
     const supplierRows = submittedSuppliers
-      .map((s) => {
+      .map((s, i) => {
         const partial = supplierPartialTotals[s.id] || { total: 0, installation: 0, freight: 0 };
-        return `<tr>
-          <td style="padding:8px;border:1px solid #e5e7eb;">${escapeHtml(s.company_name)}</td>
-          <td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">${escapeHtml(fmt(partial.total))}</td>
-          <td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">${escapeHtml(fmt(partial.installation))}</td>
-          <td style="padding:8px;border:1px solid #e5e7eb;text-align:right;">${escapeHtml(fmt(partial.freight))}</td>
+        const isWinner = s.company_name === winnerName;
+        const bg = isWinner ? ESPRESSO : i % 2 === 0 ? "#ffffff" : BEIGE;
+        const color = isWinner ? "#ffffff" : "#333";
+        const weight = isWinner ? "bold" : "normal";
+        const td = `padding:8px;border:1px solid #e5e5e5;color:${color};font-weight:${weight};`;
+        const tdR = `${td}text-align:right;`;
+        return `<tr style="background:${bg};">
+          <td style="${td}">${isWinner ? "🏆 " : ""}${escapeHtml(s.company_name)}</td>
+          <td style="${tdR}">${escapeHtml(fmt(partial.total))}</td>
+          <td style="${tdR}">${escapeHtml(fmt(partial.installation))}</td>
+          <td style="${tdR}">${escapeHtml(fmt(partial.freight))}</td>
         </tr>`;
       })
       .join("");
+    const th = `background:${BRAND};color:#fff;font:bold 12px 'Segoe UI',Arial,sans-serif;padding:10px 8px;border:1px solid #d4c2a8;text-align:left;`;
+    const thR = `${th}text-align:right;`;
     const suppliersBlock = supplierRows
-      ? `<h3 style="font-size:14px;margin:18px 0 8px;color:#1C1916;">Fornecedores participantes</h3>
-        <table style="border-collapse:collapse;width:100%;font-size:13px;">
-          <thead><tr style="background:#F7F3EC;">
-            <th style="padding:8px;border:1px solid #e5e7eb;text-align:left;">Fornecedor</th>
-            <th style="padding:8px;border:1px solid #e5e7eb;text-align:right;">Total</th>
-            <th style="padding:8px;border:1px solid #e5e7eb;text-align:right;">Instalação</th>
-            <th style="padding:8px;border:1px solid #e5e7eb;text-align:right;">Frete</th>
+      ? `<h3 style="font:bold 16px 'Segoe UI',Arial,sans-serif;color:${DARK};margin:24px 0 12px;">Fornecedores Participantes</h3>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;border:1px solid #e5e5e5;font-family:'Segoe UI',Arial,sans-serif;">
+          <thead><tr>
+            <th style="${th}">Fornecedor</th>
+            <th style="${thR}">Total</th>
+            <th style="${thR}">Instalação</th>
+            <th style="${thR}">Frete</th>
           </tr></thead>
           <tbody>${supplierRows}</tbody>
         </table>`
       : "";
 
+    // Declined block — boxed with brand left border
     const declinedBlock = declinedSuppliers.length
-      ? `<h3 style="font-size:14px;margin:18px 0 8px;color:#1C1916;">Fornecedores que não participaram</h3>
-        <ul style="font-size:13px;color:#444;padding-left:20px;margin:0;">${declinedSuppliers
-          .map((s: any) => {
-            const declinedAt = s.declined_at
-              ? format(new Date(s.declined_at), "dd/MM/yyyy", { locale: dateLocale })
-              : "—";
-            const reason = (s.decline_reason && String(s.decline_reason).trim()) || "Motivo não informado";
-            return `<li style="margin-bottom:4px;"><strong>${escapeHtml(s.company_name)}</strong> — ${escapeHtml(declinedAt)} — <em>${escapeHtml(reason)}</em></li>`;
-          })
-          .join("")}</ul>`
+      ? `<h3 style="font:bold 16px 'Segoe UI',Arial,sans-serif;color:${DARK};margin:24px 0 12px;">Fornecedores que não participaram</h3>
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;margin:0 0 16px;">
+          <tr><td style="background:${CREAM};border-left:4px solid ${BRAND};padding:14px 18px;font:13px 'Segoe UI',Arial,sans-serif;color:#444;">
+            ${declinedSuppliers
+              .map((s: any) => {
+                const declinedAt = s.declined_at
+                  ? format(new Date(s.declined_at), "dd/MM/yyyy", { locale: dateLocale })
+                  : "—";
+                const reason = (s.decline_reason && String(s.decline_reason).trim()) || "Motivo não informado";
+                return `<div style="margin:0 0 6px;"><strong style="color:${DARK};">${escapeHtml(s.company_name)}</strong> <em style="color:#777;">— ${escapeHtml(declinedAt)} — ${escapeHtml(reason)}</em></div>`;
+              })
+              .join("")}
+          </td></tr>
+        </table>`
       : "";
 
+    // Downloads as button-links
     const downloadsBlock = downloadUrls.length
-      ? `<h3 style="font-size:14px;margin:18px 0 8px;color:#1C1916;">Planilhas para download</h3>
-        <ol style="font-size:13px;padding-left:20px;margin:0;">${downloadUrls
-          .map(
-            (d) =>
-              `<li style="margin-bottom:6px;"><a href="${escapeHtml(d.url)}" style="color:#8C6F4E;text-decoration:underline;">${escapeHtml(d.name)}</a></li>`,
-          )
-          .join("")}</ol>`
+      ? `<h3 style="font:bold 16px 'Segoe UI',Arial,sans-serif;color:${DARK};margin:24px 0 12px;">Planilhas para Download</h3>
+        <div>${downloadUrls
+          .map((d, i) => {
+            const isComp = /comparativo/i.test(d.name);
+            let label = "";
+            if (isComp) {
+              label = `${i + 1} · Comparativo de Preços`;
+            } else {
+              const fornecedor = d.name
+                .replace(/\.xlsx$/i, "")
+                .replace(/^or[çc]amento\s*[-—]\s*/i, "")
+                .replace(/^cota[çc][aã]o\s*[-—]\s*/i, "");
+              label = `${i + 1} · Cotação — ${fornecedor}`;
+            }
+            return `<a href="${escapeHtml(d.url)}" style="background:${BRAND};color:#fff;padding:10px 20px;border-radius:6px;display:inline-block;margin:4px;font:bold 13px 'Segoe UI',Arial,sans-serif;text-decoration:none;">📥 ${escapeHtml(label)}</a>`;
+          })
+          .join("")}</div>
+        <p style="font:12px 'Segoe UI',Arial,sans-serif;color:#777;margin:8px 0 0;">Os links de download ficam ativos por 30 dias.</p>`
       : "";
 
-    return `<div style="font-family:'Segoe UI',Arial,sans-serif;color:#1C1916;font-size:14px;line-height:1.6;">
-      <p style="margin:0 0 12px;">Olá,</p>
-      <p style="margin:0 0 12px;">${opening}</p>
-      ${summaryBlock}
-      ${suppliersBlock}
-      ${declinedBlock}
-      ${downloadsBlock}
-      <p style="margin:18px 0 8px;">Qualquer dúvida, é só responder este e-mail.</p>
-      <p style="margin:0;font-weight:bold;">${escapeHtml(agencyName || "")}</p>
-    </div>`;
+    const body = `
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
+        <tr><td style="padding:18px 24px 8px;font-family:'Segoe UI',Arial,sans-serif;color:${DARK};font-size:14px;line-height:1.6;">
+          <p style="margin:0 0 12px;font-weight:bold;">${greeting}</p>
+          <p style="margin:0 0 12px;">${opening}</p>
+          ${kpis}
+          ${suppliersBlock}
+          ${declinedBlock}
+          ${downloadsBlock}
+          <hr style="border:none;border-top:1px solid #e5e5e5;margin:24px 0 14px;" />
+          <p style="margin:0 0 6px;font-size:13px;color:#555;">Qualquer dúvida, é só responder este e-mail.</p>
+          <p style="margin:0;font-weight:bold;color:${BRAND};">${escapeHtml(agencyName || "")}</p>
+        </td></tr>
+      </table>`;
+
+    return `<div style="background:#ffffff;">${header}${body}</div>`;
   };
 
   const buildEmailPlainText = (): string => {
@@ -667,7 +732,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
   const emailHtml = useMemo(
     () => (step === "preview" ? buildEmailHtml() : ""),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [step, openingMessage, downloadUrls, submittedSuppliers, declinedSuppliers, bestSupplier, budgetAmount, agencyName],
+    [step, openingMessage, downloadUrls, submittedSuppliers, declinedSuppliers, bestSupplier, budgetAmount, agencyName, clientName, campaignName],
   );
 
   const buildMailtoUrl = () => {
