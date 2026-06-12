@@ -792,18 +792,18 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
           .maybeSingle();
         actorName = prof?.display_name || user.email || null;
       }
-      const toList = parseRecipients(email).valid.join(", ");
-      const ccList = parseRecipients(cc).valid.join(", ");
+      const toArr = parseRecipients(email);
+      const ccArr = parseRecipients(cc);
       await supabase.from("campaign_activity_log").insert({
         campaign_id: campaignId,
         user_id: user?.id || null,
         actor_name: actorName,
         actor_type: "user",
         action: "resultado_cotacao_enviado",
-        description: `Resultado da cotação enviado ao cliente — destinatários: ${toList}${ccList ? `; cc: ${ccList}` : ""}`,
+        description: `Resultado da cotação enviado ao cliente — destinatários: ${toArr.join(", ")}${ccArr.length ? `; cc: ${ccArr.join(", ")}` : ""}`,
         metadata: {
-          to: parseRecipients(email).valid,
-          cc: parseRecipients(cc).valid,
+          to: toArr,
+          cc: ccArr,
           assunto: previewSubject,
           planilhas: downloadUrls.map((d) => d.name),
         },
