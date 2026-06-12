@@ -1,14 +1,11 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Send, Loader2, X } from "lucide-react";
-import { saveBlobAs } from "@/lib/saveBlobAs";
+import { Send, Loader2, X, ArrowLeft, Copy, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR, es } from "date-fns/locale";
 import { getLocaleFromCurrency } from "@/utils/currencyLocale";
 
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
@@ -22,10 +19,9 @@ import {
 } from "@/lib/exportSupplierBudget";
 import { uploadAndSign as sharedUploadAndSign, type UploadStatus } from "@/lib/budgetEmailUpload";
 import { UploadProgressPanel } from "@/components/Budget/UploadProgressPanel";
-import { SendSummaryPanel, type SendSummaryItem, type SummaryItemKind, type SummaryItemStage } from "@/components/Budget/SendSummaryPanel";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { mergeRecipients, parseRecipients } from "@/lib/emailRecipients";
-import ReplyToField, { isReplyToValid } from "@/components/Email/ReplyToField";
 import EmailRecipientsInput from "@/components/Email/EmailRecipientsInput";
 import { useClientEmailMemory } from "@/hooks/useClientEmailMemory";
 
