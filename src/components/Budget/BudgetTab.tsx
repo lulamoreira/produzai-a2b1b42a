@@ -2890,7 +2890,12 @@ ${msgLabels.winnerWaFooter}
       {/* Send budget results to client */}
       <BudgetSendClientDialog
         open={clientSendDialogOpen}
-        onOpenChange={setClientSendDialogOpen}
+        onOpenChange={(o) => {
+          setClientSendDialogOpen(o);
+          if (!o) {
+            queryClient.invalidateQueries({ queryKey: ["last_resultado_cotacao_enviado", campaignId] });
+          }
+        }}
         campaignId={campaignId}
         campaignName={campaignName}
         agencyName={agencyName}
