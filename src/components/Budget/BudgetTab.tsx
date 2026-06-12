@@ -240,6 +240,23 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     },
   });
 
+  // Último envio de resultado da cotação ao cliente
+  const { data: lastResultSentAt } = useQuery({
+    queryKey: ["last_resultado_cotacao_enviado", campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaign_activity_log")
+        .select("created_at")
+        .eq("campaign_id", campaignId)
+        .eq("action", "resultado_cotacao_enviado")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) return null;
+      return data?.created_at ?? null;
+    },
+  });
+
   // Currency-aware formatter (depends on settings)
   const settingsTyped = settings as { currency_code?: string; currency_locked?: boolean } | null | undefined;
   const currencyCode = settingsTyped?.currency_code || "BRL";
@@ -1525,10 +1542,16 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   <Send className="w-3.5 h-3.5 shrink-0" />
                   <span className="truncate">Enviar ao cliente</span>
                 </Button>
+                {lastResultSentAt && (
+                  <p className="mt-1.5 text-[10px] text-muted-foreground text-center">
+                    Último envio ao cliente: {format(new Date(lastResultSentAt), "dd/MM/yyyy 'às' HH:mm")}
+                  </p>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
+
 
         {/* Diferença */}
         {(() => {
@@ -2867,7 +2890,12 @@ ${msgLabels.winnerWaFooter}
       {/* Send budget results to client */}
       <BudgetSendClientDialog
         open={clientSendDialogOpen}
-        onOpenChange={setClientSendDialogOpen}
+        onOpenChange={(o) => {
+          setClientSendDialogOpen(o);
+          if (!o) {
+            queryClient.invalidateQueries({ queryKey: ["last_resultado_cotacao_enviado", campaignId] });
+          }
+        }}
         campaignId={campaignId}
         campaignName={campaignName}
         agencyName={agencyName}
