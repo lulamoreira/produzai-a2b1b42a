@@ -882,7 +882,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
                 <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
               </Button>
               <Button variant="secondary" onClick={handleCopyBody}>
-                <Copy className="w-4 h-4 mr-1" /> Copiar Conteúdo
+                <Copy className="w-4 h-4 mr-1" /> Copiar Corpo Formatado
               </Button>
               <Button onClick={handleOpenMail}>
                 <Send className="w-4 h-4 mr-1" /> Abrir no Meu E-mail
