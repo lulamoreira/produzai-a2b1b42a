@@ -82,7 +82,8 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
   // Preview state
   const [step, setStep] = useState<"form" | "preview">("form");
   const [previewSubject, setPreviewSubject] = useState("");
-  const [previewBody, setPreviewBody] = useState("");
+  const [openingMessage, setOpeningMessage] = useState("");
+  const [downloadUrls, setDownloadUrls] = useState<{ name: string; url: string }[]>([]);
 
   useEffect(() => {
     if (open) {
@@ -91,7 +92,8 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       setIncludeComparative(true);
       setStep("form");
       setPreviewSubject("");
-      setPreviewBody("");
+      setOpeningMessage("");
+      setDownloadUrls([]);
     }
   }, [open, clientEmail]);
 
