@@ -100,6 +100,11 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
     [suppliers],
   );
 
+  const declinedSuppliers = useMemo(
+    () => suppliers.filter((s) => s.status === "declinado"),
+    [suppliers],
+  );
+
   const fmt = (v: number | null | undefined) =>
     v == null ? "—" : formatCurrencyByCode(v, currencyCode);
 
