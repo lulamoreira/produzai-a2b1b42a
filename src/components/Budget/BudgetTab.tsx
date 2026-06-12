@@ -240,6 +240,23 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
     },
   });
 
+  // Último envio de resultado da cotação ao cliente
+  const { data: lastResultSentAt } = useQuery({
+    queryKey: ["last_resultado_cotacao_enviado", campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaign_activity_log")
+        .select("created_at")
+        .eq("campaign_id", campaignId)
+        .eq("action", "resultado_cotacao_enviado")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) return null;
+      return data?.created_at ?? null;
+    },
+  });
+
   // Currency-aware formatter (depends on settings)
   const settingsTyped = settings as { currency_code?: string; currency_locked?: boolean } | null | undefined;
   const currencyCode = settingsTyped?.currency_code || "BRL";
