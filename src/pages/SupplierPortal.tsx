@@ -790,18 +790,13 @@ const SupplierPortal = () => {
     const isNeg = supplier.negotiation_status === "pending";
     setSubmitting(true);
     try {
-      const updates: any = isNeg
-        ? { negotiation_status: "submitted", negotiation_submitted_at: new Date().toISOString(), locked: true }
-        : { status: "enviado", locked: true, submitted_at: new Date().toISOString() };
-
-      const { data: updated, error: updErr } = await supabase
-        .from("budget_suppliers")
-        .update(updates)
-        .eq("id", supplier.id)
-        .select("id")
-        .maybeSingle();
+      const { data: rpcData, error: updErr } = await supabase.rpc("supplier_portal_submit" as never, {
+        _token: token,
+        _is_negotiation: isNeg,
+      } as never);
       if (updErr) throw updErr;
-      if (!updated) {
+      const result = (rpcData ?? {}) as { success?: boolean };
+      if (!result.success) {
         throw new Error(currencyCode === "CLP" ? "No se pudo registrar el envío. Actualice la página e intente nuevamente." : "Não foi possível registrar o envio. Atualize a página e tente novamente.");
       }
 
