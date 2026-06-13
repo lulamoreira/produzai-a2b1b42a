@@ -23,7 +23,7 @@ export const COLOR_PALETTES: ColorPalette[] = [
   { id: "floresta",  label: "Floresta",  bg: "#EFF6EC", surface: "#CCE8C4", accent: "#2F9E44", accentStrong: "#1B6E2E", text: "#133A18", isDark: false },
   { id: "marfim",    label: "Marfim",    bg: "#FAF8F3", surface: "#ECE7DC", accent: "#C9B68C", accentStrong: "#8A6D3B", text: "#3A3326", isDark: false },
   { id: "grafite",   label: "Grafite",   bg: "#16181D", surface: "#23262E", accent: "#5B8DEF", accentStrong: "#8AA4F2", text: "#E6E8EC", isDark: true  },
-  { id: "orgulho",   label: "Orgulho",   bg: "#1E1B2E", surface: "#2E2640", accent: "#7B2FBE", accentStrong: "#F77F00", text: "#F4F1FA", isDark: true  },
+  { id: "orgulho",   label: "Orgulho",   bg: "#FFFFFF", surface: "#FBEFF7", accent: "#7B2FBE", accentStrong: "#6A0DAD", text: "#2A1330", isDark: false },
   { id: "classico",  label: "Clássico",  bg: "#FFFFFF", surface: "#F2F2F0", accent: "#3A3A38", accentStrong: "#161615", text: "#161615", isDark: false },
   { id: "terracota", label: "Terracota", bg: "#F6EFE7", surface: "#E4D3C0", accent: "#B5651D", accentStrong: "#8A5A2B", text: "#4A3526", isDark: false },
   { id: "ametista",  label: "Ametista",  bg: "#F4EFFB", surface: "#DECFF5", accent: "#7C3AED", accentStrong: "#5B21B6", text: "#2E1065", isDark: false },
