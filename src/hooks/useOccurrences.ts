@@ -264,15 +264,11 @@ export function useAddOccurrence() {
       reporter_email?: string;
       reporter_type?: string;
     }): Promise<string | null> => {
-      const { data: inserted, error } = await supabase.from("occurrences").insert(data).select("id").maybeSingle();
-      if (error) {
-        const { error: err2 } = await supabase.from("occurrences").insert(data);
-        if (err2) throw err2;
-      supabase.functions.invoke("notify-occurrence", { body: { record: data, event_type: "created" } }).catch(console.error);
-      return null;
-    }
-    supabase.functions.invoke("notify-occurrence", { body: { record: { ...data, id: inserted?.id }, event_type: "created" } }).catch(console.error);
-      return inserted?.id ?? null;
+      const newId = crypto.randomUUID();
+      const { error } = await supabase.from("occurrences").insert({ id: newId, ...data });
+      if (error) throw error;
+      supabase.functions.invoke("notify-occurrence", { body: { record: { ...data, id: newId }, event_type: "created" } }).catch(console.error);
+      return newId;
     },
     onSuccess: (_, vars) => qc.invalidateQueries({ queryKey: ["occurrences", vars.campaign_id] }),
   });
