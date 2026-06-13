@@ -440,11 +440,8 @@ const SupplierPortal = () => {
           setStoreData(allStores as any);
         }
 
-        // 8) Existing prices (keyed by piece_id now)
-        const { data: pricesData } = await supabase
-          .from("budget_prices")
-          .select("*")
-          .eq("supplier_id", sup.id);
+        // 8) Existing prices (from RPC payload)
+        const pricesData = portalPrices;
 
         // In negotiation mode (status='pending'), the editable price is adjusted_unit_price
         // (falling back to unit_price for the first edit). Original is shown as reference.
