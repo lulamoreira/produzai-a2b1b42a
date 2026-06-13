@@ -782,28 +782,13 @@ const SupplierPortal = () => {
 
       // Enviar notificação de desistência
       try {
-        const { data: campaign } = await supabase
-          .from("campaigns")
-          .select("client_id")
-          .eq("id", supplier.campaign_id)
-          .single();
-
-        let agencyId: string | null = null;
-        let clientId: string | null = null;
-        if (campaign?.client_id) {
-          clientId = campaign.client_id;
-          const { data: client } = await supabase
-            .from("clients")
-            .select("agency_id")
-            .eq("id", campaign.client_id)
-            .single();
-          agencyId = client?.agency_id ?? null;
-        }
+        const agencyId = headerIds.agency_id;
+        const clientId = headerIds.client_id;
 
         if (agencyId) {
           const reason = declineReason.trim();
           const body = `${supplier.company_name} não participará da cotação da campanha ${campaignName}.${reason ? ` Motivo: "${reason}".` : ""}`;
-          
+
           await supabase.rpc("criar_notificacao", {
             _agency_id: agencyId,
             _campaign_id: supplier.campaign_id,
