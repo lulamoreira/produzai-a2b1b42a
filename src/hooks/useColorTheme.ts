@@ -40,7 +40,7 @@ function resolveAuto(hint?: SystemThemeHint): ColorPaletteId {
   const storedAppTheme = window.localStorage.getItem(NEXT_THEME_STORAGE_KEY);
 
   if (hint === "dark" || storedAppTheme === "dark") return AUTO_DARK_PALETTE;
-  if (hint === "light" || storedAppTheme === "light") return AUTO_LIGHT_PALETTE;
+  if (hint === "light" || storedAppTheme === "light") return getLastManualLight();
   if (document.documentElement.classList.contains("dark")) return AUTO_DARK_PALETTE;
 
   const darkMql = window.matchMedia?.("(prefers-color-scheme: dark)");
@@ -52,8 +52,8 @@ function resolveAuto(hint?: SystemThemeHint): ColorPaletteId {
   if (isEmbeddedPreview()) return AUTO_DARK_PALETTE;
 
   const lightMql = window.matchMedia?.("(prefers-color-scheme: light)");
-  if (lightMql?.matches) return AUTO_LIGHT_PALETTE;
-  return AUTO_LIGHT_PALETTE;
+  if (lightMql?.matches) return getLastManualLight();
+  return getLastManualLight();
 }
 
 function applyPalette(id: ColorPaletteId) {
