@@ -15,7 +15,18 @@ import {
 } from "@/lib/colorPalettes";
 
 const STORAGE_KEY = "preferred-color-theme";
+const LAST_MANUAL_KEY = "preferred-color-theme-last-manual";
 const NEXT_THEME_STORAGE_KEY = "produzai-theme";
+
+function getLastManualLight(): ColorPaletteId {
+  if (typeof window === "undefined") return AUTO_LIGHT_PALETTE;
+  const stored = window.localStorage.getItem(LAST_MANUAL_KEY);
+  if (isValidPalette(stored)) {
+    const p = getPaletteById(stored);
+    if (!p.isDark) return stored;
+  }
+  return AUTO_LIGHT_PALETTE;
+}
 
 type SystemThemeHint = "light" | "dark" | null | undefined;
 
@@ -29,7 +40,7 @@ function resolveAuto(hint?: SystemThemeHint): ColorPaletteId {
   const storedAppTheme = window.localStorage.getItem(NEXT_THEME_STORAGE_KEY);
 
   if (hint === "dark" || storedAppTheme === "dark") return AUTO_DARK_PALETTE;
-  if (hint === "light" || storedAppTheme === "light") return AUTO_LIGHT_PALETTE;
+  if (hint === "light" || storedAppTheme === "light") return getLastManualLight();
   if (document.documentElement.classList.contains("dark")) return AUTO_DARK_PALETTE;
 
   const darkMql = window.matchMedia?.("(prefers-color-scheme: dark)");
@@ -41,8 +52,8 @@ function resolveAuto(hint?: SystemThemeHint): ColorPaletteId {
   if (isEmbeddedPreview()) return AUTO_DARK_PALETTE;
 
   const lightMql = window.matchMedia?.("(prefers-color-scheme: light)");
-  if (lightMql?.matches) return AUTO_LIGHT_PALETTE;
-  return AUTO_LIGHT_PALETTE;
+  if (lightMql?.matches) return getLastManualLight();
+  return getLastManualLight();
 }
 
 function applyPalette(id: ColorPaletteId) {
@@ -133,7 +144,12 @@ export function useColorTheme() {
     },
     onMutate: async (id) => {
       queryClient.setQueryData(["user_preferred_theme", user?.id], id);
-      try { window.localStorage.setItem(STORAGE_KEY, id); } catch {}
+      try {
+        window.localStorage.setItem(STORAGE_KEY, id);
+        if (id !== "auto" && isValidPalette(id) && !getPaletteById(id).isDark) {
+          window.localStorage.setItem(LAST_MANUAL_KEY, id);
+        }
+      } catch {}
       const palette = id === "auto" ? resolveAuto() : id;
       applyPalette(palette);
     },
