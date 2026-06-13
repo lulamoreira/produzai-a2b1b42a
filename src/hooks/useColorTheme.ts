@@ -37,22 +37,18 @@ function isEmbeddedPreview() {
 
 function resolveAuto(hint?: SystemThemeHint): ColorPaletteId {
   if (typeof window === "undefined") return AUTO_LIGHT_PALETTE;
-  const storedAppTheme = window.localStorage.getItem(NEXT_THEME_STORAGE_KEY);
 
-  if (hint === "dark" || storedAppTheme === "dark") return AUTO_DARK_PALETTE;
-  if (hint === "light" || storedAppTheme === "light") return getLastManualLight();
-  if (document.documentElement.classList.contains("dark")) return AUTO_DARK_PALETTE;
+  // Fonte de verdade = SO. Ignoramos `produzai-theme` e a classe `.dark`
+  // porque esses refletem a paleta atual aplicada, não a preferência do SO.
+  if (hint === "dark") return AUTO_DARK_PALETTE;
+  if (hint === "light") return getLastManualLight();
 
   const darkMql = window.matchMedia?.("(prefers-color-scheme: dark)");
   if (darkMql?.matches) return AUTO_DARK_PALETTE;
 
-  // Lovable preview runs embedded and can report `light` from the parent frame
-  // even when the user's system/app state is dark. In auto mode, prefer Grafite
-  // unless the app theme was explicitly stored as light.
-  if (isEmbeddedPreview()) return AUTO_DARK_PALETTE;
-
   const lightMql = window.matchMedia?.("(prefers-color-scheme: light)");
   if (lightMql?.matches) return getLastManualLight();
+
   return getLastManualLight();
 }
 
