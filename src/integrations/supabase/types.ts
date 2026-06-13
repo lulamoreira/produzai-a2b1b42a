@@ -5313,6 +5313,14 @@ export type Database = {
         Returns: string
       }
       get_adjustment_requote: { Args: { p_token: string }; Returns: Json }
+      get_public_occurrence_context: {
+        Args: { _campaign_id: string }
+        Returns: Json
+      }
+      get_public_occurrence_detail_context: {
+        Args: { _occurrence_id: string }
+        Returns: Json
+      }
       get_supplier_portal_budget: { Args: { _token: string }; Returns: Json }
       get_supplier_portal_header: {
         Args: { _supplier_token: string }
