@@ -5411,6 +5411,45 @@ export type Database = {
         }
         Returns: Json
       }
+      supplier_portal_delete_suggestion: {
+        Args: { _piece_id: string; _token: string }
+        Returns: Json
+      }
+      supplier_portal_save_extra_costs: {
+        Args: {
+          _field: string
+          _is_negotiation: boolean
+          _token: string
+          _value: number
+        }
+        Returns: Json
+      }
+      supplier_portal_save_price: {
+        Args: {
+          _is_negotiation: boolean
+          _piece_id: string
+          _token: string
+          _value: number
+        }
+        Returns: Json
+      }
+      supplier_portal_save_suggestion: {
+        Args: {
+          _orcado_por?: string
+          _piece_id: string
+          _suggested_spec: string
+          _token: string
+        }
+        Returns: Json
+      }
+      supplier_portal_set_status: {
+        Args: { _decline_reason?: string; _status: string; _token: string }
+        Returns: Json
+      }
+      supplier_portal_submit: {
+        Args: { _is_negotiation: boolean; _token: string }
+        Returns: Json
+      }
       to_title_case: { Args: { input: string }; Returns: string }
       unlock_budget_phase: {
         Args: { p_campaign_id: string; p_target_phase: string }
