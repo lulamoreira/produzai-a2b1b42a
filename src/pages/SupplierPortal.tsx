@@ -322,10 +322,10 @@ const SupplierPortal = () => {
         const deadlineExpired = !!deadlineDate && !Number.isNaN(deadlineDate.getTime()) && deadlineDate < new Date();
 
         if (deadlineExpired && sup.status !== "enviado") {
-          await supabase.from("budget_suppliers").update({ status: "prazo_encerrado" }).eq("id", sup.id);
+          await supabase.rpc("supplier_portal_set_status" as never, { _token: token, _status: "prazo_encerrado" } as never);
           sup.status = "prazo_encerrado";
         } else if (!deadlineExpired && sup.status === "prazo_encerrado" && !sup.locked) {
-          await supabase.from("budget_suppliers").update({ status: "prazo_estendido", locked: false }).eq("id", sup.id);
+          await supabase.rpc("supplier_portal_set_status" as never, { _token: token, _status: "prazo_estendido" } as never);
           sup.status = "prazo_estendido";
           sup.locked = false;
         }
@@ -582,7 +582,7 @@ const SupplierPortal = () => {
   const markFilling = useCallback(async () => {
     if (!supplier || !["aguardando", "prazo_estendido"].includes(supplier.status)) return;
     
-    const { error: updErr } = await supabase.from("budget_suppliers").update({ status: "preenchendo" }).eq("id", supplier.id);
+    const { error: updErr } = await supabase.rpc("supplier_portal_set_status" as never, { _token: token, _status: "preenchendo" } as never);
     if (updErr) return;
 
     setSupplier((s) => s ? { ...s, status: "preenchendo" } : s);
@@ -614,22 +614,14 @@ const SupplierPortal = () => {
     async (pieceId: string, value: number | null) => {
       if (!supplier) return;
       const isNeg = supplier.negotiation_status === "pending";
-      const payload: any = {
-        supplier_id: supplier.id,
-        campaign_id: supplier.campaign_id,
-        piece_id: pieceId,
-      };
-      if (isNeg) {
-        payload.adjusted_unit_price = value;
-        // preserve original unit_price by including it from cache
-        const original = originalPrices[pieceId];
-        if (original != null) payload.unit_price = original;
-      } else {
-        payload.unit_price = value;
-      }
-      await supabase.from("budget_prices").upsert(payload as never, { onConflict: "supplier_id,piece_id" });
+      await supabase.rpc("supplier_portal_save_price" as never, {
+        _token: token,
+        _piece_id: pieceId,
+        _value: value,
+        _is_negotiation: isNeg,
+      } as never);
     },
-    [supplier, originalPrices]
+    [supplier, token]
   );
 
   // ─── Save extra costs on blur ──────────────────────────
@@ -637,24 +629,14 @@ const SupplierPortal = () => {
     async (field: "installation_value" | "freight_value", value: number | null) => {
       if (!supplier) return;
       const isNeg = supplier.negotiation_status === "pending";
-      const dbField = isNeg
-        ? (field === "installation_value" ? "adjusted_installation_value" : "adjusted_freight_value")
-        : field;
-
-      if (extraCosts.id) {
-        await supabase.from("budget_extra_costs").update({ [dbField]: value } as never).eq("id", extraCosts.id);
-      } else {
-        const insertPayload: any = {
-          supplier_id: supplier.id,
-          installation_value: !isNeg && field === "installation_value" ? value : extraCosts.installation_value,
-          freight_value: !isNeg && field === "freight_value" ? value : extraCosts.freight_value,
-        };
-        if (isNeg) insertPayload[dbField] = value;
-        const { data } = await supabase.from("budget_extra_costs").insert(insertPayload).select().single();
-        if (data) setExtraCosts((ec) => ({ ...ec, id: data.id }));
-      }
+      await supabase.rpc("supplier_portal_save_extra_costs" as never, {
+        _token: token,
+        _field: field,
+        _value: value,
+        _is_negotiation: isNeg,
+      } as never);
     },
-    [supplier, extraCosts]
+    [supplier, token]
   );
 
   // ─── Save spec suggestion ─────────────────────────────
@@ -663,20 +645,12 @@ const SupplierPortal = () => {
       if (!supplier || !suggestionDraft.trim()) return;
       setSavingSuggestion(true);
       try {
-        const piece = allPieces.find((p) => p.id === pieceId);
-        const { error: err } = await supabase
-          .from("supplier_spec_suggestions")
-          .upsert(
-            {
-              supplier_id: supplier.id,
-              piece_id: pieceId,
-              campaign_id: supplier.campaign_id,
-              original_spec: piece?.specification || "",
-              suggested_spec: suggestionDraft.trim(),
-              orcado_por: suggestionOrcadoPor,
-            } as never,
-            { onConflict: "supplier_id,piece_id" }
-          );
+        const { error: err } = await supabase.rpc("supplier_portal_save_suggestion" as never, {
+          _token: token,
+          _piece_id: pieceId,
+          _suggested_spec: suggestionDraft.trim(),
+          _orcado_por: suggestionOrcadoPor,
+        } as never);
 
         if (err) throw err;
         setSuggestions((prev) => ({
@@ -687,16 +661,12 @@ const SupplierPortal = () => {
         toast.success(portal.suggestionSaved);
       } catch (e: any) {
         console.error('SUGGESTION ERROR:', e);
-        console.error('SUGGESTION ERROR MESSAGE:', e?.message);
-        console.error('SUGGESTION ERROR CODE:', e?.code);
-        console.error('SUGGESTION ERROR DETAILS:', e?.details);
-        console.error('SUGGESTION ERROR HINT:', e?.hint);
         toast.error(`Erro: ${e?.message || e?.code || JSON.stringify(e)}`);
       } finally {
         setSavingSuggestion(false);
       }
     },
-    [supplier, suggestionDraft, suggestionOrcadoPor, allPieces]
+    [supplier, suggestionDraft, suggestionOrcadoPor, token, portal]
   );
 
   // ─── Computed totals ───────────────────────────────────
@@ -774,10 +744,11 @@ const SupplierPortal = () => {
     const isCLP = currencyCode === "CLP";
     setDeclining(true);
     try {
-      const { error } = await supabase
-        .from("budget_suppliers")
-        .update({ status: "declinado", decline_reason: declineReason.trim() || null, declined_at: new Date().toISOString() } as never)
-        .eq("id", supplier.id);
+      const { error } = await supabase.rpc("supplier_portal_set_status" as never, {
+        _token: token,
+        _status: "declinado",
+        _decline_reason: declineReason.trim() || null,
+      } as never);
       if (error) throw error;
       setSupplier((s) => (s ? { ...s, status: "declinado" } : s));
       setDeclineOpen(false);
@@ -819,18 +790,13 @@ const SupplierPortal = () => {
     const isNeg = supplier.negotiation_status === "pending";
     setSubmitting(true);
     try {
-      const updates: any = isNeg
-        ? { negotiation_status: "submitted", negotiation_submitted_at: new Date().toISOString(), locked: true }
-        : { status: "enviado", locked: true, submitted_at: new Date().toISOString() };
-
-      const { data: updated, error: updErr } = await supabase
-        .from("budget_suppliers")
-        .update(updates)
-        .eq("id", supplier.id)
-        .select("id")
-        .maybeSingle();
+      const { data: rpcData, error: updErr } = await supabase.rpc("supplier_portal_submit" as never, {
+        _token: token,
+        _is_negotiation: isNeg,
+      } as never);
       if (updErr) throw updErr;
-      if (!updated) {
+      const result = (rpcData ?? {}) as { success?: boolean };
+      if (!result.success) {
         throw new Error(currencyCode === "CLP" ? "No se pudo registrar el envío. Actualice la página e intente nuevamente." : "Não foi possível registrar o envio. Atualize a página e tente novamente.");
       }
 
@@ -1614,11 +1580,10 @@ const SupplierPortal = () => {
                                       onClick={async () => {
                                         const pieceId = row.pieceId!;
                                         try {
-                                          const { error } = await supabase
-                                            .from("supplier_spec_suggestions")
-                                            .delete()
-                                            .eq("supplier_id", supplier!.id)
-                                            .eq("piece_id", pieceId);
+                                          const { error } = await supabase.rpc("supplier_portal_delete_suggestion" as never, {
+                                            _token: token,
+                                            _piece_id: pieceId,
+                                          } as never);
                                           if (error) throw error;
                                           setSuggestions((prev) => {
                                             const next = { ...prev };
