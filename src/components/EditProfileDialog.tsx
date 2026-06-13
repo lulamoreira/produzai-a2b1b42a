@@ -19,6 +19,9 @@ import { Loader2, MessageCircle, Camera } from "lucide-react";
 import { compressImage } from "@/lib/compressImage";
 import { useLanguage } from "@/hooks/useLanguage";
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/i18n";
+import { useColorTheme } from "@/hooks/useColorTheme";
+import { COLOR_PALETTES, type ColorPaletteId } from "@/lib/colorPalettes";
+import { Check } from "lucide-react";
 
 interface EditProfileDialogProps {
   open: boolean;
@@ -40,6 +43,7 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { currentLanguage, changeLanguage } = useLanguage();
+  const { currentPalette, setColorTheme } = useColorTheme();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile_full", user?.id],
@@ -180,7 +184,7 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>{t("profile.editProfile")}</DialogTitle>
           <DialogDescription>Atualize seus dados pessoais.</DialogDescription>
@@ -307,6 +311,53 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            {/* Color theme picker */}
+            <div>
+              <Label className="text-xs">Tema de cores</Label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                {COLOR_PALETTES.map((p) => {
+                  const active = currentPalette === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setColorTheme(p.id as ColorPaletteId)}
+                      className={`relative rounded-lg overflow-hidden border-2 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                        active ? "border-foreground shadow-md" : "border-transparent hover:border-muted-foreground/30"
+                      }`}
+                      style={{ background: p.bg }}
+                      aria-label={p.label}
+                    >
+                      <div className="flex items-center justify-between px-3 py-3">
+                        <span className="text-sm font-semibold" style={{ color: p.text }}>
+                          {p.label}
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border"
+                            style={{ background: p.accent, borderColor: "rgba(0,0,0,0.1)" }}
+                          />
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border"
+                            style={{ background: p.accentStrong, borderColor: "rgba(0,0,0,0.1)" }}
+                          />
+                        </div>
+                      </div>
+                      <div className="h-2 w-full" style={{ background: p.surface }} />
+                      {active && (
+                        <span
+                          className="absolute top-1 right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                          style={{ background: p.accent }}
+                        >
+                          <Check className="w-3 h-3 text-white" />
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 pt-2">
