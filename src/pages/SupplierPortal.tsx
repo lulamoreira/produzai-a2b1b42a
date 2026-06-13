@@ -582,7 +582,7 @@ const SupplierPortal = () => {
   const markFilling = useCallback(async () => {
     if (!supplier || !["aguardando", "prazo_estendido"].includes(supplier.status)) return;
     
-    const { error: updErr } = await supabase.from("budget_suppliers").update({ status: "preenchendo" }).eq("id", supplier.id);
+    const { error: updErr } = await supabase.rpc("supplier_portal_set_status" as never, { _token: token, _status: "preenchendo" } as never);
     if (updErr) return;
 
     setSupplier((s) => s ? { ...s, status: "preenchendo" } : s);
