@@ -112,18 +112,15 @@ export function useColorTheme() {
   // Listen to OS color-scheme changes when in auto mode
   useEffect(() => {
     if (typeof window === "undefined" || preference !== "auto") return;
+    // Apenas systemTheme reflete o SO. `theme`/`resolvedTheme` refletem o app.
     const themeHint: SystemThemeHint =
-      resolvedTheme === "dark" || theme === "dark" || systemTheme === "dark"
-        ? "dark"
-        : resolvedTheme === "light" || theme === "light" || systemTheme === "light"
-          ? "light"
-          : null;
+      systemTheme === "dark" ? "dark" : systemTheme === "light" ? "light" : null;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
     const handler = () => setSystemPalette(resolveAuto(themeHint));
     handler();
     mq.addEventListener?.("change", handler);
     return () => mq.removeEventListener?.("change", handler);
-  }, [preference, theme, resolvedTheme, systemTheme]);
+  }, [preference, systemTheme]);
 
   useEffect(() => {
     applyPalette(effective);
