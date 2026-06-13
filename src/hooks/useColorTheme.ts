@@ -23,8 +23,11 @@ function resolveAuto(): ColorPaletteId {
 
 function applyPalette(id: ColorPaletteId) {
   const root = document.documentElement;
+  const isDark = getPaletteById(id).isDark;
   root.setAttribute("data-v2-theme", id);
-  root.setAttribute("data-v2-mode", getPaletteById(id).isDark ? "dark" : "light");
+  root.setAttribute("data-v2-mode", isDark ? "dark" : "light");
+  if (isDark) root.classList.add("dark");
+  else root.classList.remove("dark");
 }
 
 // Apply early from localStorage so first paint isn't a flash.
