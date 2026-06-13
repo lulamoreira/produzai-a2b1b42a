@@ -587,23 +587,8 @@ const SupplierPortal = () => {
 
     // Enviar notificação de início de preenchimento
     try {
-      const { data: campaign } = await supabase
-        .from("campaigns")
-        .select("client_id")
-        .eq("id", supplier.campaign_id)
-        .single();
-
-      let agencyId: string | null = null;
-      let clientId: string | null = null;
-      if (campaign?.client_id) {
-        clientId = campaign.client_id;
-        const { data: client } = await supabase
-          .from("clients")
-          .select("agency_id")
-          .eq("id", campaign.client_id)
-          .single();
-        agencyId = client?.agency_id ?? null;
-      }
+      const agencyId = headerIds.agency_id;
+      const clientId = headerIds.client_id;
 
       if (agencyId) {
         await supabase.rpc("criar_notificacao", {
@@ -619,7 +604,7 @@ const SupplierPortal = () => {
     } catch (e) {
       console.warn("[SupplierPortal] Failed to send 'filling' notification:", e);
     }
-  }, [supplier, campaignName]);
+  }, [supplier, campaignName, headerIds]);
 
   // ─── Save price on blur (always piece_id) ──────────────
   // In negotiation mode, writes to adjusted_unit_price (preserves original unit_price).
