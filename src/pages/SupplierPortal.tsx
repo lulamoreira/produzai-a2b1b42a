@@ -246,12 +246,11 @@ const SupplierPortal = () => {
       };
 
       try {
-        // 1) Find supplier by token (CRÍTICO)
-        const { data: sup, error: supErr } = await supabase
-          .from("budget_suppliers")
-          .select("*")
-          .eq("access_token", token)
-          .maybeSingle();
+        // 1) Find supplier by token via SECURITY DEFINER RPC (anon-safe, prices not exposed)
+        const { data: portalData, error: supErr } = await supabase.rpc(
+          "get_supplier_portal_budget" as never,
+          { _token: token } as never
+        );
 
         if (supErr) {
           console.error("[SupplierPortal] Erro ao buscar fornecedor:", supErr);
@@ -259,7 +258,17 @@ const SupplierPortal = () => {
           setLoading(false);
           return;
         }
+        if (!portalData) { setError(portal.errorTitle); setLoading(false); return; }
+
+        const portalPayload = portalData as {
+          supplier: any;
+          prices: any[] | null;
+          extra_costs: any[] | null;
+        };
+        const sup = portalPayload.supplier;
         if (!sup) { setError(portal.errorTitle); setLoading(false); return; }
+        const portalPrices = portalPayload.prices ?? [];
+        const portalExtraCosts = portalPayload.extra_costs ?? [];
 
         // 2) Budget settings (não-crítico)
         const settings = await trySoft(
@@ -431,11 +440,8 @@ const SupplierPortal = () => {
           setStoreData(allStores as any);
         }
 
-        // 8) Existing prices (keyed by piece_id now)
-        const { data: pricesData } = await supabase
-          .from("budget_prices")
-          .select("*")
-          .eq("supplier_id", sup.id);
+        // 8) Existing prices (from RPC payload)
+        const pricesData = portalPrices;
 
         // In negotiation mode (status='pending'), the editable price is adjusted_unit_price
         // (falling back to unit_price for the first edit). Original is shown as reference.
@@ -453,12 +459,8 @@ const SupplierPortal = () => {
         setOriginalPrices(origMap);
         setPriceInputs(Object.fromEntries(Object.entries(priceMap).map(([pieceId, value]) => [pieceId, priceToInput(value)])));
 
-        // 9) Extra costs
-        const { data: ecData } = await supabase
-          .from("budget_extra_costs")
-          .select("*")
-          .eq("supplier_id", sup.id)
-          .maybeSingle();
+        // 9) Extra costs (from RPC payload)
+        const ecData = portalExtraCosts[0] ?? null;
 
         setExtraCosts({
           id: ecData?.id,
