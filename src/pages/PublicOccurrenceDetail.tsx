@@ -54,19 +54,19 @@ const PublicOccurrenceDetail = () => {
     onError: () => toast.error("Erro ao enviar email"),
   });
 
-  const { data: occurrence, isLoading } = useQuery({
+  const { data: detailContext, isLoading } = useQuery({
     queryKey: ["public_occurrence_detail", occurrenceId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("occurrences")
-        .select("*")
-        .eq("id", occurrenceId!)
-        .maybeSingle();
+        .rpc("get_public_occurrence_detail_context", { _occurrence_id: occurrenceId! });
       if (error) throw error;
-      return data;
+      return data as any;
     },
     enabled: !!occurrenceId,
   });
+
+  const occurrence = detailContext?.occurrence ?? null;
+  const campaign = detailContext?.campaign ?? null;
 
   // Fetch notification emails for the campaign (for CC options)
   const { data: notificationEmails = [] } = useQuery({
@@ -77,17 +77,6 @@ const PublicOccurrenceDetail = () => {
         .select("email")
         .eq("campaign_id", occurrence!.campaign_id);
       return (data || []).map((e: any) => e.email).filter((e: string) => e !== occurrence?.reporter_email);
-    },
-    enabled: !!occurrence?.campaign_id,
-  });
-
-  const { data: campaign } = useQuery({
-    queryKey: ["public_occ_campaign", occurrence?.campaign_id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .rpc("get_public_occurrence_detail_context", { _occurrence_id: occurrenceId! });
-      if (error) throw error;
-      return (data as any)?.campaign ?? null;
     },
     enabled: !!occurrence?.campaign_id,
   });
