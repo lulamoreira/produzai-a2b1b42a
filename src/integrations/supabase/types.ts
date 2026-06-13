@@ -3801,6 +3801,7 @@ export type Database = {
           phone: string | null
           phone_is_whatsapp: boolean | null
           preferred_language: string | null
+          preferred_theme: string
           theme_hue: number
           updated_at: string
           user_id: string
@@ -3824,6 +3825,7 @@ export type Database = {
           phone?: string | null
           phone_is_whatsapp?: boolean | null
           preferred_language?: string | null
+          preferred_theme?: string
           theme_hue?: number
           updated_at?: string
           user_id: string
@@ -3847,6 +3849,7 @@ export type Database = {
           phone?: string | null
           phone_is_whatsapp?: boolean | null
           preferred_language?: string | null
+          preferred_theme?: string
           theme_hue?: number
           updated_at?: string
           user_id?: string
