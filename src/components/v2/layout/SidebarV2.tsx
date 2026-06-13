@@ -29,7 +29,8 @@ import {
   Truck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import EditProfileDialog from "@/components/EditProfileDialog";
 import { Button } from "@/components/ui/button";
 import { 
   Tooltip,
