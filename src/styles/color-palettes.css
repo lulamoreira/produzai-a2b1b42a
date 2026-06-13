@@ -319,8 +319,8 @@
   --v2-sidebar-active: #FACC15;
   --v2-sidebar-border: rgba(255, 255, 255, 0.14);
   --v2-sidebar-hover-bg: rgba(255, 255, 255, 0.12);
-  --v2-sidebar-active-bg: rgba(250, 204, 21, 0.25);
-  --v2-sidebar-active-text: #FACC15;
+  --v2-sidebar-active-bg: #FACC15;
+  --v2-sidebar-active-text: #1A1208;
   --v2-sidebar-section-label: rgba(255, 255, 255, 0.78);
   --v2-sidebar-section-bg: rgba(255, 255, 255, 0.10);
 }
