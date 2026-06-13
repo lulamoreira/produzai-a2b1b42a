@@ -15,7 +15,18 @@ import {
 } from "@/lib/colorPalettes";
 
 const STORAGE_KEY = "preferred-color-theme";
+const LAST_MANUAL_KEY = "preferred-color-theme-last-manual";
 const NEXT_THEME_STORAGE_KEY = "produzai-theme";
+
+function getLastManualLight(): ColorPaletteId {
+  if (typeof window === "undefined") return AUTO_LIGHT_PALETTE;
+  const stored = window.localStorage.getItem(LAST_MANUAL_KEY);
+  if (isValidPalette(stored)) {
+    const p = getPaletteById(stored);
+    if (!p.isDark) return stored;
+  }
+  return AUTO_LIGHT_PALETTE;
+}
 
 type SystemThemeHint = "light" | "dark" | null | undefined;
 
