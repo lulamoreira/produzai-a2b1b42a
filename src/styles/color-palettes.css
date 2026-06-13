@@ -302,32 +302,46 @@
 }
 
 [data-v2-theme="degrade"] {
-  --v2-bg: #1F1B3A;
-  --v2-bg-gradient: linear-gradient(135deg,#1E1B4B 0%,#5B21B6 35%,#BE185D 70%,#B91C1C 100%);
-  --v2-surface: rgba(31, 27, 58, 0.85);
-  --v2-border: rgba(255, 255, 255, 0.14);
+  --v2-bg-gradient: linear-gradient(135deg,#1E1B4B 0%,#5B21B6 30%,#BE185D 60%,#F97316 90%,#FACC15 100%);
+  --v2-bg: linear-gradient(135deg,#1E1B4B 0%,#5B21B6 30%,#BE185D 60%,#F97316 90%,#FACC15 100%);
+  --v2-surface: rgba(20, 14, 40, 0.55);
+  --v2-border: rgba(255, 255, 255, 0.18);
   --v2-text: #FFFFFF;
-  --v2-text-secondary: rgba(255, 255, 255, 0.78);
-  --v2-text-muted: rgba(255, 255, 255, 0.55);
+  --v2-text-secondary: rgba(255, 255, 255, 0.82);
+  --v2-text-muted: rgba(255, 255, 255, 0.62);
   --v2-accent: #FACC15;
   --v2-accent-hover: #F59E0B;
-  --v2-badge-bg: rgba(255, 255, 255, 0.14);
+  --v2-badge-bg: rgba(255, 255, 255, 0.16);
   --v2-badge-text: #FFFFFF;
-  --v2-sidebar-bg: rgba(15, 12, 38, 0.55);
+  --v2-sidebar-bg: transparent;
   --v2-sidebar-text: #FFFFFF;
-  --v2-sidebar-muted: rgba(255, 255, 255, 0.60);
+  --v2-sidebar-muted: rgba(255, 255, 255, 0.65);
   --v2-sidebar-active: #FACC15;
-  --v2-sidebar-border: rgba(255, 255, 255, 0.12);
-  --v2-sidebar-hover-bg: rgba(255, 255, 255, 0.10);
-  --v2-sidebar-active-bg: rgba(250, 204, 21, 0.22);
+  --v2-sidebar-border: rgba(255, 255, 255, 0.14);
+  --v2-sidebar-hover-bg: rgba(255, 255, 255, 0.12);
+  --v2-sidebar-active-bg: rgba(250, 204, 21, 0.25);
   --v2-sidebar-active-text: #FACC15;
-  --v2-sidebar-section-label: rgba(255, 255, 255, 0.75);
-  --v2-sidebar-section-bg: rgba(255, 255, 255, 0.08);
+  --v2-sidebar-section-label: rgba(255, 255, 255, 0.78);
+  --v2-sidebar-section-bg: rgba(255, 255, 255, 0.10);
 }
 
-/* Apply gradient as the actual page background when degrade is active */
-:root[data-v2-theme="degrade"],
-[data-v2-theme="degrade"] body {
+/* Paint the gradient on html so it shows under every surface,
+   regardless of nested wrappers using --v2-bg/--v2-surface. */
+html[data-v2-theme="degrade"],
+html[data-v2-theme="degrade"] body {
   background: var(--v2-bg-gradient) fixed !important;
-  background-attachment: fixed;
+  background-attachment: fixed !important;
 }
+
+/* Make the header translucent so the gradient bleeds through the top bar too. */
+[data-v2-theme="degrade"] header {
+  background: rgba(20, 14, 40, 0.35) !important;
+  backdrop-filter: blur(8px);
+}
+
+/* Frosted-glass cards/surfaces over the gradient. */
+[data-v2-theme="degrade"] .v2-card,
+[data-v2-theme="degrade"] [data-v2-surface] {
+  backdrop-filter: blur(10px);
+}
+
