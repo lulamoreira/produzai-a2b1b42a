@@ -63,18 +63,16 @@ export default function OccurrencesPortal() {
         throw lojasErr;
       }
 
-      // Fetch existing tokens
+      // Fetch existing tokens via scoped RPC (anon-safe, returns only this campaign's links)
       const { data: existingTokens, error: tokensErr } = await supabase
-        .from("store_portal_tokens")
-        .select("token, store_id")
-        .eq("campaign_id", campaignId!);
-      
+        .rpc("get_campaign_store_links", { _campaign_id: campaignId! });
+
       if (tokensErr) {
         console.error("Supabase Error [occ-portal-tokens]:", tokensErr);
         throw tokensErr;
       }
 
-      const tokenMap = new Map(existingTokens?.map(t => [t.store_id, t.token]) || []);
+      const tokenMap = new Map((existingTokens ?? []).map((t: any) => [t.store_id, t.token]));
 
       // Dedup stores
       const uniqueStoresMap = new Map<string, any>();

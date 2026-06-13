@@ -5313,6 +5313,13 @@ export type Database = {
         Returns: string
       }
       get_adjustment_requote: { Args: { p_token: string }; Returns: Json }
+      get_campaign_store_links: {
+        Args: { _campaign_id: string }
+        Returns: {
+          store_id: string
+          token: string
+        }[]
+      }
       get_public_occurrence_context: {
         Args: { _campaign_id: string }
         Returns: Json
