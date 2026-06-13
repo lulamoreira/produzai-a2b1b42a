@@ -5313,6 +5313,7 @@ export type Database = {
         Returns: string
       }
       get_adjustment_requote: { Args: { p_token: string }; Returns: Json }
+      get_supplier_portal_budget: { Args: { _token: string }; Returns: Json }
       get_supplier_portal_header: {
         Args: { _supplier_token: string }
         Returns: Json
