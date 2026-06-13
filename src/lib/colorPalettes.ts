@@ -30,7 +30,7 @@ export const COLOR_PALETTES: ColorPalette[] = [
   { id: "ametista",  label: "Ametista",  bg: "#F4EFFB", surface: "#DECFF5", accent: "#7C3AED", accentStrong: "#5B21B6", text: "#2E1065", isDark: false },
   { id: "turquesa",  label: "Turquesa",  bg: "#EAF7F5", surface: "#C2EAE3", accent: "#0EA5A5", accentStrong: "#0F766E", text: "#0A3D38", isDark: false },
   { id: "magenta",   label: "Magenta",   bg: "#FDEEF5", surface: "#F8CCE0", accent: "#DB2777", accentStrong: "#9D174D", text: "#500724", isDark: false },
-  { id: "degrade",   label: "Degradê",   bg: "linear-gradient(135deg,#1E1B4B 0%,#5B21B6 30%,#BE185D 60%,#F97316 90%,#FACC15 100%)", surface: "rgba(20,14,40,0.55)", accent: "#FACC15", accentStrong: "#F97316", text: "#FFFFFF", isDark: true },
+  { id: "degrade",   label: "Degradê",   bg: "linear-gradient(135deg,#0F0A2E 0%,#2B1B5E 25%,#5B21B6 50%,#831843 75%,#3B0764 100%)", surface: "rgba(15,10,46,0.6)", accent: "#FACC15", accentStrong: "#F59E0B", text: "#FFFFFF", isDark: true },
 ];
 
 export const DEFAULT_PALETTE: ColorPaletteId = "terracota";
