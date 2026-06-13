@@ -85,12 +85,9 @@ const PublicOccurrenceDetail = () => {
     queryKey: ["public_occ_campaign", occurrence?.campaign_id],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("campaigns")
-        .select("id, name, client_id, clients(name, agency_id, agencies(name))")
-        .eq("id", occurrence!.campaign_id)
-        .maybeSingle();
+        .rpc("get_public_occurrence_detail_context", { _occurrence_id: occurrenceId! });
       if (error) throw error;
-      return data;
+      return (data as any)?.campaign ?? null;
     },
     enabled: !!occurrence?.campaign_id,
   });
