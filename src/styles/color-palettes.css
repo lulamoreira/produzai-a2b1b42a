@@ -302,8 +302,8 @@
 }
 
 [data-v2-theme="degrade"] {
-  --v2-bg-gradient: linear-gradient(135deg,#1E1B4B 0%,#5B21B6 30%,#BE185D 60%,#F97316 90%,#FACC15 100%);
-  --v2-bg: linear-gradient(135deg,#1E1B4B 0%,#5B21B6 30%,#BE185D 60%,#F97316 90%,#FACC15 100%);
+  --v2-bg-gradient: linear-gradient(135deg,#0F0A2E 0%,#2B1B5E 25%,#5B21B6 50%,#831843 75%,#3B0764 100%);
+  --v2-bg: linear-gradient(135deg,#0F0A2E 0%,#2B1B5E 25%,#5B21B6 50%,#831843 75%,#3B0764 100%);
   --v2-surface: rgba(20, 14, 40, 0.55);
   --v2-border: rgba(255, 255, 255, 0.18);
   --v2-text: #FFFFFF;
