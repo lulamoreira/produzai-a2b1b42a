@@ -629,24 +629,14 @@ const SupplierPortal = () => {
     async (field: "installation_value" | "freight_value", value: number | null) => {
       if (!supplier) return;
       const isNeg = supplier.negotiation_status === "pending";
-      const dbField = isNeg
-        ? (field === "installation_value" ? "adjusted_installation_value" : "adjusted_freight_value")
-        : field;
-
-      if (extraCosts.id) {
-        await supabase.from("budget_extra_costs").update({ [dbField]: value } as never).eq("id", extraCosts.id);
-      } else {
-        const insertPayload: any = {
-          supplier_id: supplier.id,
-          installation_value: !isNeg && field === "installation_value" ? value : extraCosts.installation_value,
-          freight_value: !isNeg && field === "freight_value" ? value : extraCosts.freight_value,
-        };
-        if (isNeg) insertPayload[dbField] = value;
-        const { data } = await supabase.from("budget_extra_costs").insert(insertPayload).select().single();
-        if (data) setExtraCosts((ec) => ({ ...ec, id: data.id }));
-      }
+      await supabase.rpc("supplier_portal_save_extra_costs" as never, {
+        _token: token,
+        _field: field,
+        _value: value,
+        _is_negotiation: isNeg,
+      } as never);
     },
-    [supplier, extraCosts]
+    [supplier, token]
   );
 
   // ─── Save spec suggestion ─────────────────────────────
@@ -655,20 +645,12 @@ const SupplierPortal = () => {
       if (!supplier || !suggestionDraft.trim()) return;
       setSavingSuggestion(true);
       try {
-        const piece = allPieces.find((p) => p.id === pieceId);
-        const { error: err } = await supabase
-          .from("supplier_spec_suggestions")
-          .upsert(
-            {
-              supplier_id: supplier.id,
-              piece_id: pieceId,
-              campaign_id: supplier.campaign_id,
-              original_spec: piece?.specification || "",
-              suggested_spec: suggestionDraft.trim(),
-              orcado_por: suggestionOrcadoPor,
-            } as never,
-            { onConflict: "supplier_id,piece_id" }
-          );
+        const { error: err } = await supabase.rpc("supplier_portal_save_suggestion" as never, {
+          _token: token,
+          _piece_id: pieceId,
+          _suggested_spec: suggestionDraft.trim(),
+          _orcado_por: suggestionOrcadoPor,
+        } as never);
 
         if (err) throw err;
         setSuggestions((prev) => ({
@@ -679,16 +661,12 @@ const SupplierPortal = () => {
         toast.success(portal.suggestionSaved);
       } catch (e: any) {
         console.error('SUGGESTION ERROR:', e);
-        console.error('SUGGESTION ERROR MESSAGE:', e?.message);
-        console.error('SUGGESTION ERROR CODE:', e?.code);
-        console.error('SUGGESTION ERROR DETAILS:', e?.details);
-        console.error('SUGGESTION ERROR HINT:', e?.hint);
         toast.error(`Erro: ${e?.message || e?.code || JSON.stringify(e)}`);
       } finally {
         setSavingSuggestion(false);
       }
     },
-    [supplier, suggestionDraft, suggestionOrcadoPor, allPieces]
+    [supplier, suggestionDraft, suggestionOrcadoPor, token, portal]
   );
 
   // ─── Computed totals ───────────────────────────────────
