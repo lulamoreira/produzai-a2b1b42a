@@ -1,5 +1,6 @@
 import { useEffect, useCallback, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -14,16 +15,33 @@ import {
 } from "@/lib/colorPalettes";
 
 const STORAGE_KEY = "preferred-color-theme";
+const NEXT_THEME_STORAGE_KEY = "produzai-theme";
 
-function resolveAuto(): ColorPaletteId {
+type SystemThemeHint = "light" | "dark" | null | undefined;
+
+function isEmbeddedPreview() {
+  try { return typeof window !== "undefined" && window.self !== window.top; }
+  catch { return false; }
+}
+
+function resolveAuto(hint?: SystemThemeHint): ColorPaletteId {
   if (typeof window === "undefined") return AUTO_LIGHT_PALETTE;
-  const mql = window.matchMedia?.("(prefers-color-scheme: dark)");
-  // If the OS explicitly reports dark, OR doesn't report light at all,
-  // prefer the dark palette. This also covers preview iframes that
-  // don't forward the OS preference cleanly.
-  if (mql?.matches) return AUTO_DARK_PALETTE;
+  const storedAppTheme = window.localStorage.getItem(NEXT_THEME_STORAGE_KEY);
+
+  if (hint === "dark" || storedAppTheme === "dark") return AUTO_DARK_PALETTE;
+  if (hint === "light" || storedAppTheme === "light") return AUTO_LIGHT_PALETTE;
+  if (document.documentElement.classList.contains("dark")) return AUTO_DARK_PALETTE;
+
+  const darkMql = window.matchMedia?.("(prefers-color-scheme: dark)");
+  if (darkMql?.matches) return AUTO_DARK_PALETTE;
+
+  // Lovable preview runs embedded and can report `light` from the parent frame
+  // even when the user's system/app state is dark. In auto mode, prefer Grafite
+  // unless the app theme was explicitly stored as light.
+  if (isEmbeddedPreview()) return AUTO_DARK_PALETTE;
+
   const lightMql = window.matchMedia?.("(prefers-color-scheme: light)");
-  if (lightMql && !lightMql.matches) return AUTO_DARK_PALETTE;
+  if (lightMql?.matches) return AUTO_LIGHT_PALETTE;
   return AUTO_LIGHT_PALETTE;
 }
 
@@ -53,6 +71,7 @@ export function bootstrapColorTheme() {
 
 export function useColorTheme() {
   const { user } = useAuth();
+  const { theme, resolvedTheme, systemTheme } = useTheme();
   const queryClient = useQueryClient();
   const [systemPalette, setSystemPalette] = useState<ColorPaletteId>(() => resolveAuto());
 
@@ -86,12 +105,18 @@ export function useColorTheme() {
   // Listen to OS color-scheme changes when in auto mode
   useEffect(() => {
     if (typeof window === "undefined" || preference !== "auto") return;
+    const themeHint: SystemThemeHint =
+      theme === "dark" || resolvedTheme === "dark" || systemTheme === "dark"
+        ? "dark"
+        : theme === "light" && window.localStorage.getItem(NEXT_THEME_STORAGE_KEY) === "light"
+          ? "light"
+          : null;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => setSystemPalette(resolveAuto());
+    const handler = () => setSystemPalette(resolveAuto(themeHint));
     handler();
     mq.addEventListener?.("change", handler);
     return () => mq.removeEventListener?.("change", handler);
-  }, [preference]);
+  }, [preference, theme, resolvedTheme, systemTheme]);
 
   useEffect(() => {
     applyPalette(effective);
