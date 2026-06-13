@@ -1580,11 +1580,10 @@ const SupplierPortal = () => {
                                       onClick={async () => {
                                         const pieceId = row.pieceId!;
                                         try {
-                                          const { error } = await supabase
-                                            .from("supplier_spec_suggestions")
-                                            .delete()
-                                            .eq("supplier_id", supplier!.id)
-                                            .eq("piece_id", pieceId);
+                                          const { error } = await supabase.rpc("supplier_portal_delete_suggestion" as never, {
+                                            _token: token,
+                                            _piece_id: pieceId,
+                                          } as never);
                                           if (error) throw error;
                                           setSuggestions((prev) => {
                                             const next = { ...prev };
