@@ -17,8 +17,14 @@ const STORAGE_KEY = "preferred-color-theme";
 
 function resolveAuto(): ColorPaletteId {
   if (typeof window === "undefined") return AUTO_LIGHT_PALETTE;
-  const dark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
-  return dark ? AUTO_DARK_PALETTE : AUTO_LIGHT_PALETTE;
+  const mql = window.matchMedia?.("(prefers-color-scheme: dark)");
+  // If the OS explicitly reports dark, OR doesn't report light at all,
+  // prefer the dark palette. This also covers preview iframes that
+  // don't forward the OS preference cleanly.
+  if (mql?.matches) return AUTO_DARK_PALETTE;
+  const lightMql = window.matchMedia?.("(prefers-color-scheme: light)");
+  if (lightMql && !lightMql.matches) return AUTO_DARK_PALETTE;
+  return AUTO_LIGHT_PALETTE;
 }
 
 function applyPalette(id: ColorPaletteId) {
