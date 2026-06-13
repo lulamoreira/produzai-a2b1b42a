@@ -272,7 +272,17 @@ export function SidebarV2() {
     }));
   }, [isAdminOrMaster, isAdmin, location.pathname, location.search, t]);
 
-  const userInitial = user?.email?.[0]?.toUpperCase() || "U";
+  const [profileOpen, setProfileOpen] = useState(false);
+  const handleProfileOpenChange = (open: boolean) => {
+    setProfileOpen(open);
+    if (!open) {
+      qc.invalidateQueries({ queryKey: ["user_profile", user?.id] });
+    }
+  };
+
+  const displayName = (profile as any)?.display_name || user?.email?.split("@")[0] || "";
+  const avatarUrl = (profile as any)?.avatar_url || null;
+  const userInitial = (displayName || user?.email || "U").charAt(0).toUpperCase();
 
   const NavItem = ({ item, isSubItem = false, activeOverride, colorIndex }: { item: any, isSubItem?: boolean, activeOverride?: boolean, colorIndex?: number }) => {
     const isActive = activeOverride !== undefined ? activeOverride : (item.exact ? location.pathname === item.route : location.pathname.startsWith(item.route));
