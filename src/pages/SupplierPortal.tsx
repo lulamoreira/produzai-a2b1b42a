@@ -459,12 +459,8 @@ const SupplierPortal = () => {
         setOriginalPrices(origMap);
         setPriceInputs(Object.fromEntries(Object.entries(priceMap).map(([pieceId, value]) => [pieceId, priceToInput(value)])));
 
-        // 9) Extra costs
-        const { data: ecData } = await supabase
-          .from("budget_extra_costs")
-          .select("*")
-          .eq("supplier_id", sup.id)
-          .maybeSingle();
+        // 9) Extra costs (from RPC payload)
+        const ecData = portalExtraCosts[0] ?? null;
 
         setExtraCosts({
           id: ecData?.id,
