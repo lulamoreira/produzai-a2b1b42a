@@ -322,10 +322,10 @@ const SupplierPortal = () => {
         const deadlineExpired = !!deadlineDate && !Number.isNaN(deadlineDate.getTime()) && deadlineDate < new Date();
 
         if (deadlineExpired && sup.status !== "enviado") {
-          await supabase.from("budget_suppliers").update({ status: "prazo_encerrado" }).eq("id", sup.id);
+          await supabase.rpc("supplier_portal_set_status" as never, { _token: token, _status: "prazo_encerrado" } as never);
           sup.status = "prazo_encerrado";
         } else if (!deadlineExpired && sup.status === "prazo_encerrado" && !sup.locked) {
-          await supabase.from("budget_suppliers").update({ status: "prazo_estendido", locked: false }).eq("id", sup.id);
+          await supabase.rpc("supplier_portal_set_status" as never, { _token: token, _status: "prazo_estendido" } as never);
           sup.status = "prazo_estendido";
           sup.locked = false;
         }
