@@ -109,7 +109,7 @@ export function SidebarV2() {
   const { data: profile } = useQuery({
     queryKey: ["user_profile", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("agency_id").eq("user_id", user?.id).maybeSingle();
+      const { data } = await supabase.from("profiles").select("agency_id, avatar_url, display_name").eq("user_id", user?.id).maybeSingle();
       return data;
     },
     enabled: !!user,
