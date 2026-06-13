@@ -1,7 +1,8 @@
 export type ColorPaletteId =
   | "tangerina" | "rubi" | "oceano" | "floresta"
   | "marfim" | "grafite" | "orgulho" | "classico"
-  | "terracota" | "ametista" | "turquesa" | "magenta";
+  | "terracota" | "ametista" | "turquesa" | "magenta"
+  | "degrade";
 
 export type ColorThemePreference = ColorPaletteId | "auto";
 
