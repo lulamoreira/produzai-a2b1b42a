@@ -144,7 +144,12 @@ export function useColorTheme() {
     },
     onMutate: async (id) => {
       queryClient.setQueryData(["user_preferred_theme", user?.id], id);
-      try { window.localStorage.setItem(STORAGE_KEY, id); } catch {}
+      try {
+        window.localStorage.setItem(STORAGE_KEY, id);
+        if (id !== "auto" && isValidPalette(id) && !getPaletteById(id).isDark) {
+          window.localStorage.setItem(LAST_MANUAL_KEY, id);
+        }
+      } catch {}
       const palette = id === "auto" ? resolveAuto() : id;
       applyPalette(palette);
     },
