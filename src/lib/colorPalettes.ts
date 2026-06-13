@@ -1,7 +1,8 @@
 export type ColorPaletteId =
   | "tangerina" | "rubi" | "oceano" | "floresta"
   | "marfim" | "grafite" | "orgulho" | "classico"
-  | "terracota" | "ametista" | "turquesa" | "magenta";
+  | "terracota" | "ametista" | "turquesa" | "magenta"
+  | "degrade";
 
 export type ColorThemePreference = ColorPaletteId | "auto";
 
@@ -29,6 +30,7 @@ export const COLOR_PALETTES: ColorPalette[] = [
   { id: "ametista",  label: "Ametista",  bg: "#F4EFFB", surface: "#DECFF5", accent: "#7C3AED", accentStrong: "#5B21B6", text: "#2E1065", isDark: false },
   { id: "turquesa",  label: "Turquesa",  bg: "#EAF7F5", surface: "#C2EAE3", accent: "#0EA5A5", accentStrong: "#0F766E", text: "#0A3D38", isDark: false },
   { id: "magenta",   label: "Magenta",   bg: "#FDEEF5", surface: "#F8CCE0", accent: "#DB2777", accentStrong: "#9D174D", text: "#500724", isDark: false },
+  { id: "degrade",   label: "Degradê",   bg: "linear-gradient(135deg,#1E1B4B 0%,#5B21B6 35%,#BE185D 70%,#B91C1C 100%)", surface: "#1F1B3A", accent: "#FACC15", accentStrong: "#F59E0B", text: "#FFFFFF", isDark: true },
 ];
 
 export const DEFAULT_PALETTE: ColorPaletteId = "terracota";
