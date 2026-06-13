@@ -117,9 +117,9 @@ export function useColorTheme() {
   useEffect(() => {
     if (typeof window === "undefined" || preference !== "auto") return;
     const themeHint: SystemThemeHint =
-      theme === "dark" || resolvedTheme === "dark" || systemTheme === "dark"
+      resolvedTheme === "dark" || theme === "dark" || systemTheme === "dark"
         ? "dark"
-        : theme === "light" && window.localStorage.getItem(NEXT_THEME_STORAGE_KEY) === "light"
+        : resolvedTheme === "light" || theme === "light" || systemTheme === "light"
           ? "light"
           : null;
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
