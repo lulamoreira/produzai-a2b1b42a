@@ -159,6 +159,7 @@ const SupplierPortal = () => {
   const [campaignName, setCampaignName] = useState("");
   const [clientName, setClientName] = useState("");
   const [agencyName, setAgencyName] = useState("");
+  const [headerIds, setHeaderIds] = useState<{ client_id: string | null; agency_id: string | null }>({ client_id: null, agency_id: null });
   const [deadline, setDeadline] = useState<string | null>(null);
   const [currencyCode, setCurrencyCode] = useState<string>("BRL");
   const [timelineEntries, setTimelineEntries] = useState<{ id: string; entry_date: string; description: string }[]>([]);
@@ -328,37 +329,27 @@ const SupplierPortal = () => {
           return;
         }
 
-        // 3) Campaign + client + agency
-        const { data: campaign } = await supabase
-          .from("campaigns")
-          .select("name, client_id")
-          .eq("id", sup.campaign_id)
-          .single();
+        // 3) Campaign + client + agency (via SECURITY DEFINER RPC — anon-safe)
+        const { data: headerData } = await supabase.rpc(
+          "get_supplier_portal_header" as never,
+          { _supplier_token: token } as never
+        );
+        const header = (headerData ?? {}) as {
+          campaign_name?: string;
+          client_name?: string;
+          agency_name?: string;
+          client_id?: string | null;
+          agency_id?: string | null;
+          currency_code?: string;
+        };
 
-        setCampaignName(campaign?.name ?? "");
-        let resolvedClientName = "";
-        let resolvedAgencyName = "";
-        let resolvedClientId = campaign?.client_id ?? null;
-
-        if (campaign?.client_id) {
-          const { data: client } = await supabase
-            .from("clients")
-            .select("name, agency_id")
-            .eq("id", campaign.client_id)
-            .single();
-          resolvedClientName = client?.name ?? "";
-          setClientName(resolvedClientName);
-
-          if (client?.agency_id) {
-            const { data: agency } = await supabase
-              .from("agencies")
-              .select("name")
-              .eq("id", client.agency_id)
-              .single();
-            resolvedAgencyName = agency?.name ?? "";
-            setAgencyName(resolvedAgencyName);
-          }
-        }
+        setCampaignName(header.campaign_name ?? "");
+        const resolvedClientName = header.client_name ?? "";
+        const resolvedAgencyName = header.agency_name ?? "";
+        const resolvedClientId = header.client_id ?? null;
+        setClientName(resolvedClientName);
+        setAgencyName(resolvedAgencyName);
+        setHeaderIds({ client_id: resolvedClientId, agency_id: header.agency_id ?? null });
 
         // 4) ALL pieces (including kit_only) — paginated
         const piecesRaw = await supabasePaginate<PieceData>((from, to) =>
