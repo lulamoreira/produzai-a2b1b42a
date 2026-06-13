@@ -29,7 +29,8 @@ import {
   Truck
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import EditProfileDialog from "@/components/EditProfileDialog";
 import { Button } from "@/components/ui/button";
 import { 
   Tooltip,
@@ -108,7 +109,7 @@ export function SidebarV2() {
   const { data: profile } = useQuery({
     queryKey: ["user_profile", user?.id],
     queryFn: async () => {
-      const { data } = await supabase.from("profiles").select("agency_id").eq("user_id", user?.id).maybeSingle();
+      const { data } = await supabase.from("profiles").select("agency_id, avatar_url, display_name").eq("user_id", user?.id).maybeSingle();
       return data;
     },
     enabled: !!user,
@@ -271,7 +272,17 @@ export function SidebarV2() {
     }));
   }, [isAdminOrMaster, isAdmin, location.pathname, location.search, t]);
 
-  const userInitial = user?.email?.[0]?.toUpperCase() || "U";
+  const [profileOpen, setProfileOpen] = useState(false);
+  const handleProfileOpenChange = (open: boolean) => {
+    setProfileOpen(open);
+    if (!open) {
+      qc.invalidateQueries({ queryKey: ["user_profile", user?.id] });
+    }
+  };
+
+  const displayName = (profile as any)?.display_name || user?.email?.split("@")[0] || "";
+  const avatarUrl = (profile as any)?.avatar_url || null;
+  const userInitial = (displayName || user?.email || "U").charAt(0).toUpperCase();
 
   const NavItem = ({ item, isSubItem = false, activeOverride, colorIndex }: { item: any, isSubItem?: boolean, activeOverride?: boolean, colorIndex?: number }) => {
     const isActive = activeOverride !== undefined ? activeOverride : (item.exact ? location.pathname === item.route : location.pathname.startsWith(item.route));
@@ -672,21 +683,32 @@ export function SidebarV2() {
 
       <div className="border-t py-3 px-3" style={{ borderColor: 'var(--v2-sidebar-separator)' }}>
         <div className={cn(
-          "flex items-center gap-3",
+          "flex items-center gap-2",
           collapsed ? "justify-center" : ""
         )}>
-          <Avatar className="w-8 h-8 rounded-full" style={{ backgroundColor: 'var(--v2-accent)' }}>
-            <AvatarFallback className="text-white text-xs font-bold" style={{ backgroundColor: 'var(--v2-accent)' }}>
-              {userInitial}
-            </AvatarFallback>
-          </Avatar>
-          {!collapsed && (
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate" style={{ color: 'var(--v2-sidebar-text)' }}>
-                {user?.email?.split("@")[0]}
-              </p>
-            </div>
-          )}
+          <button
+            type="button"
+            onClick={() => setProfileOpen(true)}
+            className={cn(
+              "flex items-center gap-3 min-w-0 rounded-lg transition-colors hover:bg-[var(--v2-sidebar-hover-bg)] focus:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              collapsed ? "p-1" : "flex-1 p-1"
+            )}
+            title={displayName}
+          >
+            <Avatar className="w-8 h-8 rounded-full" style={{ backgroundColor: 'var(--v2-accent)' }}>
+              {avatarUrl && <AvatarImage src={avatarUrl} alt={displayName} />}
+              <AvatarFallback className="text-white text-xs font-bold" style={{ backgroundColor: 'var(--v2-accent)' }}>
+                {userInitial}
+              </AvatarFallback>
+            </Avatar>
+            {!collapsed && (
+              <div className="flex-1 min-w-0 text-left">
+                <p className="text-sm font-medium truncate" style={{ color: 'var(--v2-sidebar-text)' }}>
+                  {displayName}
+                </p>
+              </div>
+            )}
+          </button>
           {!collapsed && (
             <Button
               variant="ghost"
@@ -694,6 +716,7 @@ export function SidebarV2() {
               className="hover:bg-[var(--v2-sidebar-hover-bg)]"
               style={{ color: 'var(--v2-sidebar-muted)' }}
               onClick={() => signOut()}
+              title={t("auth.logout")}
             >
               <LogOut className="w-4 h-4" />
             </Button>
@@ -714,6 +737,7 @@ export function SidebarV2() {
           </div>
         )}
       </div>
+      <EditProfileDialog open={profileOpen} onOpenChange={handleProfileOpenChange} />
     </aside>
   );
 }
