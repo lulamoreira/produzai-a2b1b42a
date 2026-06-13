@@ -744,10 +744,11 @@ const SupplierPortal = () => {
     const isCLP = currencyCode === "CLP";
     setDeclining(true);
     try {
-      const { error } = await supabase
-        .from("budget_suppliers")
-        .update({ status: "declinado", decline_reason: declineReason.trim() || null, declined_at: new Date().toISOString() } as never)
-        .eq("id", supplier.id);
+      const { error } = await supabase.rpc("supplier_portal_set_status" as never, {
+        _token: token,
+        _status: "declinado",
+        _decline_reason: declineReason.trim() || null,
+      } as never);
       if (error) throw error;
       setSupplier((s) => (s ? { ...s, status: "declinado" } : s));
       setDeclineOpen(false);
