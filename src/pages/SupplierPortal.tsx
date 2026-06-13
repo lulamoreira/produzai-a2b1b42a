@@ -614,22 +614,14 @@ const SupplierPortal = () => {
     async (pieceId: string, value: number | null) => {
       if (!supplier) return;
       const isNeg = supplier.negotiation_status === "pending";
-      const payload: any = {
-        supplier_id: supplier.id,
-        campaign_id: supplier.campaign_id,
-        piece_id: pieceId,
-      };
-      if (isNeg) {
-        payload.adjusted_unit_price = value;
-        // preserve original unit_price by including it from cache
-        const original = originalPrices[pieceId];
-        if (original != null) payload.unit_price = original;
-      } else {
-        payload.unit_price = value;
-      }
-      await supabase.from("budget_prices").upsert(payload as never, { onConflict: "supplier_id,piece_id" });
+      await supabase.rpc("supplier_portal_save_price" as never, {
+        _token: token,
+        _piece_id: pieceId,
+        _value: value,
+        _is_negotiation: isNeg,
+      } as never);
     },
-    [supplier, originalPrices]
+    [supplier, token]
   );
 
   // ─── Save extra costs on blur ──────────────────────────
