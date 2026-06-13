@@ -2,13 +2,14 @@ import React from "react";
 import { useLocation, useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/hooks/useAuth";
-import { ChevronRight, Palette, Sun, Moon, Laptop, Check, Languages } from "lucide-react";
+import { ChevronRight, Palette, Check, Languages, Laptop } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import NotificationBell from "@/components/NotificationBell";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useV2Theme, V2Theme } from "@/hooks/useV2Theme";
+import { useColorTheme } from "@/hooks/useColorTheme";
+import { COLOR_PALETTES, type ColorThemePreference } from "@/lib/colorPalettes";
 import {
   Popover,
   PopoverContent,
@@ -18,7 +19,7 @@ import { SUPPORTED_LANGUAGES } from "@/i18n";
 import { ADMIN_MENU_ITEMS as SUPPORTED_ADMIN_TABS } from "@/lib/adminMenuConfig";
 
 export function HeaderV2() {
-  const { theme, setTheme } = useV2Theme();
+  const { currentPreference, setColorTheme } = useColorTheme();
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
@@ -104,6 +105,8 @@ export function HeaderV2() {
   const crumbs = getBreadcrumbs();
   const userInitial = user?.email?.[0]?.toUpperCase() || "U";
 
+  const handlePick = (pref: ColorThemePreference) => setColorTheme(pref);
+
   return (
     <header 
       className="h-14 border-b shadow-sm px-6 flex items-center justify-between z-20"
@@ -116,7 +119,7 @@ export function HeaderV2() {
             {crumb.path ? (
               <button
                 onClick={() => navigate(crumb.path!)}
-                className="text-xs hover:text-stone-600 cursor-pointer whitespace-nowrap"
+                className="text-xs hover:opacity-80 cursor-pointer whitespace-nowrap"
                 style={{ color: 'var(--v2-text-muted)' }}
               >
                 {crumb.label}
@@ -128,7 +131,7 @@ export function HeaderV2() {
                   ? "font-semibold" 
                   : ""
               )}
-              style={{ color: idx === crumbs.length - 1 ? 'var(--v2-text-primary)' : 'var(--v2-text-muted)' }}
+              style={{ color: idx === crumbs.length - 1 ? 'var(--v2-text)' : 'var(--v2-text-muted)' }}
             >
                 {crumb.label}
               </span>
@@ -147,7 +150,7 @@ export function HeaderV2() {
         <Popover>
           <PopoverTrigger asChild>
             <button 
-              className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-stone-100 transition-colors"
+              className="w-8 h-8 rounded-full flex items-center justify-center hover:opacity-80 transition-colors"
               style={{ color: 'var(--v2-text-secondary)' }}
             >
               <Languages className="w-5 h-5" />
@@ -160,7 +163,7 @@ export function HeaderV2() {
                   key={lang.code}
                   onClick={() => changeLanguage(lang.code as any)}
                   className={cn(
-                    "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors hover:bg-stone-50",
+                    "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors hover:opacity-80",
                     currentLanguage === lang.code ? "font-medium" : ""
                   )}
                   style={{ 
@@ -181,38 +184,64 @@ export function HeaderV2() {
         <Popover>
           <PopoverTrigger asChild>
             <button 
-              className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-stone-100 transition-colors"
+              className="w-8 h-8 rounded-full flex items-center justify-center hover:opacity-80 transition-colors"
               style={{ color: 'var(--v2-text-secondary)' }}
+              aria-label="Tema de cores"
             >
               <Palette className="w-5 h-5" />
             </button>
           </PopoverTrigger>
-          <PopoverContent className="w-48 p-2" align="end" style={{ background: 'var(--v2-surface)', borderColor: 'var(--v2-border)' }}>
+          <PopoverContent
+            className="w-64 p-2 max-h-[70vh] overflow-y-auto"
+            align="end"
+            style={{ background: 'var(--v2-surface)', borderColor: 'var(--v2-border)' }}
+          >
             <div className="flex flex-col gap-1">
-              {[
-                { id: 'light', icon: Sun, label: t("theme.light") },
-                { id: 'dark', icon: Moon, label: t("theme.dark") },
-                { id: 'system', icon: Laptop, label: t("theme.system") },
-                { id: 'multicolor', icon: Palette, label: t("theme.multicolor") },
-              ].map((opt) => (
-                <button
-                  key={opt.id}
-                  onClick={() => setTheme(opt.id as V2Theme)}
-                  className={cn(
-                    "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors hover:bg-stone-50",
-                    theme === opt.id ? "font-medium" : ""
-                  )}
-                  style={{ 
-                    color: theme === opt.id ? 'var(--v2-accent)' : 'var(--v2-text-secondary)' 
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <opt.icon className="w-4 h-4" />
-                    {opt.label}
-                  </div>
-                  {theme === opt.id && <Check className="w-4 h-4" />}
-                </button>
-              ))}
+              <button
+                onClick={() => handlePick("auto")}
+                className={cn(
+                  "w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors hover:opacity-80",
+                  currentPreference === "auto" ? "font-semibold" : ""
+                )}
+                style={{
+                  color: currentPreference === "auto" ? 'var(--v2-accent)' : 'var(--v2-text-secondary)',
+                  background: currentPreference === "auto" ? 'var(--v2-bg)' : 'transparent',
+                }}
+              >
+                <div className="flex items-center gap-3">
+                  <Laptop className="w-4 h-4" />
+                  Automático (seguir o sistema)
+                </div>
+                {currentPreference === "auto" && <Check className="w-4 h-4" />}
+              </button>
+
+              <div className="h-px my-1" style={{ background: 'var(--v2-border)' }} />
+
+              {COLOR_PALETTES.map((p) => {
+                const active = currentPreference === p.id;
+                return (
+                  <button
+                    key={p.id}
+                    onClick={() => handlePick(p.id)}
+                    className={cn(
+                      "w-full flex items-center justify-between px-2 py-2 rounded-lg text-sm transition-all border-2",
+                      active ? "font-semibold" : "border-transparent hover:opacity-90"
+                    )}
+                    style={{
+                      background: p.bg,
+                      color: p.text,
+                      borderColor: active ? p.accent : 'transparent',
+                    }}
+                  >
+                    <span>{p.label}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="w-3.5 h-3.5 rounded-full border" style={{ background: p.accent, borderColor: 'rgba(0,0,0,0.1)' }} />
+                      <span className="w-3.5 h-3.5 rounded-full border" style={{ background: p.accentStrong, borderColor: 'rgba(0,0,0,0.1)' }} />
+                      {active && <Check className="w-3.5 h-3.5 ml-1" style={{ color: p.accent }} />}
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </PopoverContent>
         </Popover>

@@ -20,8 +20,8 @@ import { compressImage } from "@/lib/compressImage";
 import { useLanguage } from "@/hooks/useLanguage";
 import { SUPPORTED_LANGUAGES, type SupportedLanguage } from "@/i18n";
 import { useColorTheme } from "@/hooks/useColorTheme";
-import { COLOR_PALETTES, type ColorPaletteId } from "@/lib/colorPalettes";
-import { Check } from "lucide-react";
+import { COLOR_PALETTES, type ColorThemePreference } from "@/lib/colorPalettes";
+import { Check, Laptop } from "lucide-react";
 
 interface EditProfileDialogProps {
   open: boolean;
@@ -43,7 +43,7 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { currentLanguage, changeLanguage } = useLanguage();
-  const { currentPalette, setColorTheme } = useColorTheme();
+  const { currentPreference, setColorTheme } = useColorTheme();
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile_full", user?.id],
@@ -316,14 +316,28 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
             {/* Color theme picker */}
             <div>
               <Label className="text-xs">Tema de cores</Label>
+              <button
+                type="button"
+                onClick={() => setColorTheme("auto" as ColorThemePreference)}
+                className={`mt-2 w-full flex items-center justify-between rounded-lg border-2 px-3 py-2.5 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  currentPreference === "auto" ? "border-foreground shadow-sm" : "border-transparent bg-muted hover:border-muted-foreground/30"
+                }`}
+              >
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <Laptop className="w-4 h-4" />
+                  Automático (seguir o sistema)
+                </div>
+                {currentPreference === "auto" && <Check className="w-4 h-4" />}
+              </button>
+
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
                 {COLOR_PALETTES.map((p) => {
-                  const active = currentPalette === p.id;
+                  const active = currentPreference === p.id;
                   return (
                     <button
                       key={p.id}
                       type="button"
-                      onClick={() => setColorTheme(p.id as ColorPaletteId)}
+                      onClick={() => setColorTheme(p.id as ColorThemePreference)}
                       className={`relative rounded-lg overflow-hidden border-2 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                         active ? "border-foreground shadow-md" : "border-transparent hover:border-muted-foreground/30"
                       }`}
@@ -359,6 +373,7 @@ export default function EditProfileDialog({ open, onOpenChange }: EditProfileDia
                 })}
               </div>
             </div>
+
 
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>

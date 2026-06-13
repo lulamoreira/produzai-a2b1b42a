@@ -3,12 +3,10 @@ import { SidebarV2 } from "./SidebarV2";
 import { HeaderV2 } from "./HeaderV2";
 import { BottomNavV2 } from "./BottomNavV2";
 import { useLocation } from "react-router-dom";
-import { useV2Theme } from "@/hooks/useV2Theme";
 import { useColorTheme } from "@/hooks/useColorTheme";
 
 export function AppShellV2({ children }: { children: React.ReactNode }) {
   const location = useLocation();
-  useV2Theme();
   useColorTheme();
 
   useEffect(() => {

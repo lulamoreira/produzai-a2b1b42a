@@ -1,27 +1,53 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { DEFAULT_PALETTE, isValidPalette, type ColorPaletteId } from "@/lib/colorPalettes";
+import {
+  DEFAULT_PALETTE,
+  AUTO_LIGHT_PALETTE,
+  AUTO_DARK_PALETTE,
+  getPaletteById,
+  isValidPalette,
+  isValidPreference,
+  type ColorPaletteId,
+  type ColorThemePreference,
+} from "@/lib/colorPalettes";
 
 const STORAGE_KEY = "preferred-color-theme";
 
+function resolveAuto(): ColorPaletteId {
+  if (typeof window === "undefined") return AUTO_LIGHT_PALETTE;
+  const dark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+  return dark ? AUTO_DARK_PALETTE : AUTO_LIGHT_PALETTE;
+}
+
 function applyPalette(id: ColorPaletteId) {
-  document.documentElement.setAttribute("data-v2-theme", id);
+  const root = document.documentElement;
+  root.setAttribute("data-v2-theme", id);
+  root.setAttribute("data-v2-mode", getPaletteById(id).isDark ? "dark" : "light");
 }
 
 // Apply early from localStorage so first paint isn't a flash.
 export function bootstrapColorTheme() {
   if (typeof window === "undefined") return;
   const cached = window.localStorage.getItem(STORAGE_KEY);
-  applyPalette(isValidPalette(cached) ? cached : DEFAULT_PALETTE);
+  let palette: ColorPaletteId;
+  if (cached === "auto") {
+    palette = resolveAuto();
+  } else if (isValidPalette(cached)) {
+    palette = cached;
+  } else {
+    palette = DEFAULT_PALETTE;
+  }
+  applyPalette(palette);
 }
 
 export function useColorTheme() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const [systemPalette, setSystemPalette] = useState<ColorPaletteId>(() => resolveAuto());
 
-  const { data: profileTheme } = useQuery({
+  const { data: profilePreference } = useQuery({
     queryKey: ["user_preferred_theme", user?.id],
     queryFn: async () => {
       if (!user) return null;
@@ -39,19 +65,32 @@ export function useColorTheme() {
   const cached =
     typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null;
 
-  const effective: ColorPaletteId = isValidPalette(profileTheme)
-    ? profileTheme
-    : isValidPalette(cached)
+  const preference: ColorThemePreference = isValidPreference(profilePreference)
+    ? profilePreference
+    : isValidPreference(cached)
       ? cached
       : DEFAULT_PALETTE;
 
+  const effective: ColorPaletteId =
+    preference === "auto" ? systemPalette : preference;
+
+  // Listen to OS color-scheme changes when in auto mode
+  useEffect(() => {
+    if (typeof window === "undefined" || preference !== "auto") return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = () => setSystemPalette(resolveAuto());
+    handler();
+    mq.addEventListener?.("change", handler);
+    return () => mq.removeEventListener?.("change", handler);
+  }, [preference]);
+
   useEffect(() => {
     applyPalette(effective);
-    try { window.localStorage.setItem(STORAGE_KEY, effective); } catch {}
-  }, [effective]);
+    try { window.localStorage.setItem(STORAGE_KEY, preference); } catch {}
+  }, [effective, preference]);
 
   const { mutate } = useMutation({
-    mutationFn: async (id: ColorPaletteId) => {
+    mutationFn: async (id: ColorThemePreference) => {
       if (!user) return;
       await supabase
         .from("profiles")
@@ -61,14 +100,23 @@ export function useColorTheme() {
     onMutate: async (id) => {
       queryClient.setQueryData(["user_preferred_theme", user?.id], id);
       try { window.localStorage.setItem(STORAGE_KEY, id); } catch {}
-      applyPalette(id);
+      const palette = id === "auto" ? resolveAuto() : id;
+      applyPalette(palette);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["user_preferred_theme", user?.id] });
     },
   });
 
-  const setColorTheme = useCallback((id: ColorPaletteId) => mutate(id), [mutate]);
+  const setColorTheme = useCallback(
+    (id: ColorThemePreference) => mutate(id),
+    [mutate]
+  );
 
-  return { currentPalette: effective, setColorTheme };
+  return {
+    currentPalette: effective,
+    currentPreference: preference,
+    isAuto: preference === "auto",
+    setColorTheme,
+  };
 }

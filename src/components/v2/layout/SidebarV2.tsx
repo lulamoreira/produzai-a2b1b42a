@@ -5,7 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { useSidebarPermissions } from "@/hooks/useSidebarPermissions";
-import { useV2Theme } from "@/hooks/useV2Theme";
+
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { 
@@ -44,7 +44,7 @@ import AquaIcon from "@/components/AquaIcon";
 
 export function SidebarV2() {
   const { agencyId, clientId, campaignId } = useParams<{ agencyId: string; clientId: string; campaignId: string }>();
-  const { theme } = useV2Theme();
+  const theme: string = "light"; // legacy local — palette system owns visuals now
   const location = useLocation();
   const navigate = useNavigate();
   const qc = useQueryClient();
