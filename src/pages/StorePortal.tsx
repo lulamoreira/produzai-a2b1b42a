@@ -185,13 +185,30 @@ export default function StorePortal() {
               </h1>
             </div>
           </div>
-          <p className="text-sm opacity-90 truncate">
-            {storeName}{storeLocation ? ` — ${storeLocation}` : ""}
-            {data.store.store_code ? ` (${data.store.store_code})` : ""}
-          </p>
-          {data.portal_config?.portal_welcome_message && (
-            <p className="text-xs opacity-75 mt-1">{data.portal_config.portal_welcome_message}</p>
-          )}
+          <div className="flex items-end justify-between gap-3 mt-1">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm opacity-90 truncate">
+                {storeName}{storeLocation ? ` — ${storeLocation}` : ""}
+                {data.store.store_code ? ` (${data.store.store_code})` : ""}
+              </p>
+              {data.portal_config?.portal_welcome_message && (
+                <p className="text-xs opacity-75 mt-1">{data.portal_config.portal_welcome_message}</p>
+              )}
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleDownloadPdf}
+              disabled={generatingPdf}
+              className="shrink-0 h-8 text-xs"
+            >
+              {generatingPdf ? (
+                <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Gerando...</>
+              ) : (
+                <><Download className="w-3.5 h-3.5 mr-1.5" /> Baixar peças (PDF)</>
+              )}
+            </Button>
+          </div>
         </div>
       </header>
 
