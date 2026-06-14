@@ -376,6 +376,15 @@ export default function OccurrenceInviteDialog({
                 dangerouslySetInnerHTML={{ __html: buildHtml() }}
               />
             </div>
+            {buildMailto().length > 1800 && (
+              <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                <span>
+                  Você tem <strong>{bccList.length}</strong> destinatários. O "Abrir no Meu E-mail"
+                  pode não carregar todos — copie os destinatários e o conteúdo e cole no seu e-mail.
+                </span>
+              </div>
+            )}
           </div>
         )}
 
