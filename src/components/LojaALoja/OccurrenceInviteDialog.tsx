@@ -317,6 +317,7 @@ export default function OccurrenceInviteDialog({
                 placeholder="lojista1@empresa.com, lojista2@empresa.com"
                 value={bcc}
                 onChange={setBcc}
+                suggestions={[]}
               />
               <p className="text-[11px] text-muted-foreground">
                 {isLoading
