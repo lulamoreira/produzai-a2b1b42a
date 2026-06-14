@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
-import { Store, AlertTriangle, Loader2, Clock, LogOut } from "lucide-react";
+import { Store, AlertTriangle, Loader2, Clock, LogOut, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import OcorrenciasTab from "@/components/StorePortal/OcorrenciasTab";
@@ -11,6 +11,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { useFormatters } from "@/lib/formatters";
+import { exportStorePiecesPDF } from "@/lib/exportStorePiecesPDF";
+import { toast } from "sonner";
 
 export interface PortalData {
   token_id: string;
