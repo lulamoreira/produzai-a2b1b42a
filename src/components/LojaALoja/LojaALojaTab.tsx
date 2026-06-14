@@ -112,6 +112,8 @@ function SortableTab({ id, t }: { id: string; t: any }) {
 export default function LojaALojaTab({ campaignId, clientId, permissions, initialTab }: Props) {
   const { t } = useTranslation();
   const { order, saveOrder, loaded } = useLojaALojaTabOrder();
+  const [inviteOpen, setInviteOpen] = useState(false);
+
 
   // Filter tabs by per-area view permission
   const visibleTabs = useMemo(() => {
