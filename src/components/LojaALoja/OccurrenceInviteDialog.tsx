@@ -376,6 +376,15 @@ export default function OccurrenceInviteDialog({
                 dangerouslySetInnerHTML={{ __html: buildHtml() }}
               />
             </div>
+            {buildMailto().length > 1800 && (
+              <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+                <span>
+                  Você tem <strong>{bccList.length}</strong> destinatários. O "Abrir no Meu E-mail"
+                  pode não carregar todos — copie os destinatários e o conteúdo e cole no seu e-mail.
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -404,6 +413,20 @@ export default function OccurrenceInviteDialog({
             <>
               <Button variant="outline" onClick={() => setStep("form")}>
                 <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(bccList.join(", "));
+                    toast.success(`${bccList.length} destinatário(s) copiados. Cole no campo CCO.`);
+                  } catch {
+                    toast.error("Não foi possível copiar os destinatários.");
+                  }
+                }}
+                disabled={bccList.length === 0}
+              >
+                <Copy className="w-4 h-4 mr-1" /> Copiar destinatários (CCO)
               </Button>
               <Button variant="secondary" onClick={handleCopy}>
                 <Copy className="w-4 h-4 mr-1" /> Copiar Conteúdo Formatado
