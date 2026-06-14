@@ -104,8 +104,23 @@ export default function StorePortal() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<PortalData | null>(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
   const { t } = useTranslation();
   const fmt = useFormatters();
+
+  const handleDownloadPdf = async () => {
+    if (!data) return;
+    setGeneratingPdf(true);
+    try {
+      await exportStorePiecesPDF(data);
+      toast.success("PDF gerado com sucesso");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao gerar PDF");
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
 
   useEffect(() => {
     if (!token) { setError("Token não informado"); setLoading(false); return; }
