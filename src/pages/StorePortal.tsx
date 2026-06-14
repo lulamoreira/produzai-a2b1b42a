@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
-import { Store, AlertTriangle, Loader2, Clock, LogOut } from "lucide-react";
+import { Store, AlertTriangle, Loader2, Clock, LogOut, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import OcorrenciasTab from "@/components/StorePortal/OcorrenciasTab";
@@ -11,6 +11,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { useFormatters } from "@/lib/formatters";
+import { exportStorePiecesPDF } from "@/lib/exportStorePiecesPDF";
+import { toast } from "sonner";
 
 export interface PortalData {
   token_id: string;
@@ -102,8 +104,23 @@ export default function StorePortal() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<PortalData | null>(null);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
   const { t } = useTranslation();
   const fmt = useFormatters();
+
+  const handleDownloadPdf = async () => {
+    if (!data) return;
+    setGeneratingPdf(true);
+    try {
+      await exportStorePiecesPDF(data);
+      toast.success("PDF gerado com sucesso");
+    } catch (err) {
+      console.error(err);
+      toast.error("Erro ao gerar PDF");
+    } finally {
+      setGeneratingPdf(false);
+    }
+  };
 
   useEffect(() => {
     if (!token) { setError("Token não informado"); setLoading(false); return; }
@@ -168,13 +185,30 @@ export default function StorePortal() {
               </h1>
             </div>
           </div>
-          <p className="text-sm opacity-90 truncate">
-            {storeName}{storeLocation ? ` — ${storeLocation}` : ""}
-            {data.store.store_code ? ` (${data.store.store_code})` : ""}
-          </p>
-          {data.portal_config?.portal_welcome_message && (
-            <p className="text-xs opacity-75 mt-1">{data.portal_config.portal_welcome_message}</p>
-          )}
+          <div className="flex items-end justify-between gap-3 mt-1">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm opacity-90 truncate">
+                {storeName}{storeLocation ? ` — ${storeLocation}` : ""}
+                {data.store.store_code ? ` (${data.store.store_code})` : ""}
+              </p>
+              {data.portal_config?.portal_welcome_message && (
+                <p className="text-xs opacity-75 mt-1">{data.portal_config.portal_welcome_message}</p>
+              )}
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleDownloadPdf}
+              disabled={generatingPdf}
+              className="shrink-0 h-8 text-xs"
+            >
+              {generatingPdf ? (
+                <><Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> Gerando...</>
+              ) : (
+                <><Download className="w-3.5 h-3.5 mr-1.5" /> Baixar peças (PDF)</>
+              )}
+            </Button>
+          </div>
         </div>
       </header>
 
