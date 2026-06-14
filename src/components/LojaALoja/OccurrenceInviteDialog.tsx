@@ -414,6 +414,20 @@ export default function OccurrenceInviteDialog({
               <Button variant="outline" onClick={() => setStep("form")}>
                 <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
               </Button>
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(bccList.join(", "));
+                    toast.success(`${bccList.length} destinatário(s) copiados. Cole no campo CCO.`);
+                  } catch {
+                    toast.error("Não foi possível copiar os destinatários.");
+                  }
+                }}
+                disabled={bccList.length === 0}
+              >
+                <Copy className="w-4 h-4 mr-1" /> Copiar destinatários (CCO)
+              </Button>
               <Button variant="secondary" onClick={handleCopy}>
                 <Copy className="w-4 h-4 mr-1" /> Copiar Conteúdo Formatado
               </Button>
