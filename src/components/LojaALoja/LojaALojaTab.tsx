@@ -183,13 +183,34 @@ export default function LojaALojaTab({ campaignId, clientId, permissions, initia
         onDragEnd={handleDragEnd}
       >
         <SortableContext items={visibleTabs} strategy={horizontalListSortingStrategy}>
-          <TabsList className="mb-4 flex-wrap h-auto gap-1">
-            {visibleTabs.map((id) => (
-              <SortableTab key={id} id={id} t={t} />
-            ))}
-          </TabsList>
+          <div className="mb-4 flex flex-wrap items-center gap-2 justify-between">
+            <TabsList className="flex-wrap h-auto gap-1">
+              {visibleTabs.map((id) => (
+                <SortableTab key={id} id={id} t={t} />
+              ))}
+            </TabsList>
+            {permissions.ocorrencias.canView && (
+              <Button
+                size="sm"
+                variant="default"
+                onClick={() => setInviteOpen(true)}
+                className="gap-1.5"
+              >
+                <Megaphone className="h-4 w-4" />
+                {t("lojaAloja.inviteStores", "Convocar lojistas")}
+              </Button>
+            )}
+          </div>
         </SortableContext>
       </DndContext>
+
+      <OccurrenceInviteDialog
+        open={inviteOpen}
+        onOpenChange={setInviteOpen}
+        campaignId={campaignId}
+        clientId={clientId}
+      />
+
 
       {visibleTabs.includes("dashboard") && (
         <TabsContent value="dashboard">
