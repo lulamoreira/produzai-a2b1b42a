@@ -80,6 +80,71 @@ export default function StoresTab({
     }
   };
 
+  const handleExportPdf = async () => {
+    if (!selectedStore || exportingPdf) return;
+    setExportingPdf(true);
+    try {
+      const node = pdfRef.current;
+      if (!node) throw new Error("Template não montado");
+      await new Promise((r) => setTimeout(r, 60));
+      const imgs = Array.from(node.querySelectorAll("img"));
+      await Promise.all(
+        imgs.map(
+          (img) =>
+            new Promise<void>((resolve) => {
+              if ((img as HTMLImageElement).complete) return resolve();
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+            })
+        )
+      );
+
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+
+      const canvas = await html2canvas(node, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+
+      const imgRatio = canvas.height / canvas.width;
+      let renderW = pageW;
+      let renderH = pageW * imgRatio;
+      if (renderH > pageH) {
+        renderH = pageH;
+        renderW = pageH / imgRatio;
+      }
+      const x = (pageW - renderW) / 2;
+      const y = 0;
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.92);
+      pdf.addImage(imgData, "JPEG", x, y, renderW, renderH);
+      pdf.save(`Loja_${selectedStore.store_code || selectedStore.name}.pdf`);
+    } catch (err) {
+      console.error("PDF export failed", err);
+      toast.error("Falha ao gerar PDF");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
+  const pdfItems = useMemo(() => {
+    if (!selectedStore) return [];
+    return storePieces
+      .filter((sp: any) => sp.store_id === selectedStore.id)
+      .map((sp: any) => {
+        const piece = pieces.find((p: any) => p.id === sp.piece_id);
+        return piece ? { piece, qty: sp.quantity || 1 } : null;
+      })
+      .filter(Boolean) as { piece: any; qty: number }[];
+  }, [selectedStore, pieces, storePieces]);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
