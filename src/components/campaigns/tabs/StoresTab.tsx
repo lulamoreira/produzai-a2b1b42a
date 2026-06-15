@@ -422,6 +422,32 @@ export default function StoresTab({
               )}
             </div>
           )}
+
+          {/* Hidden PDF template */}
+          {selectedStore && (
+            <LojaPdfTemplate
+              ref={pdfRef}
+              store={{
+                name: selectedStore.name,
+                number: selectedStore.store_code,
+                model: selectedStore.store_model,
+                uf: selectedStore.state,
+                type: selectedStore.type,
+                primary_mod: selectedStore.primary_mod,
+                secondary_mod: selectedStore.secondary_mod,
+              }}
+              items={pdfItems.map((item) => ({
+                piece: {
+                  id: item.piece.id,
+                  name: item.piece.name,
+                  image_url: item.piece.image_url,
+                  category: item.piece.category || item.piece.store_category,
+                },
+                qty: item.qty,
+              }))}
+              footerLabel={`${agencyName} · ${clientName}`}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
