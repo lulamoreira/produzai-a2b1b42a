@@ -488,7 +488,7 @@ export function KitDetailDialog({
 
   const startEditPiece = (p: CampaignPiece) => {
     setEditingPieceId(p.id);
-    const [w, h, l] = (p.size || "").split(" x ");
+    const [w, h, l] = (p.size || "").split(/[x×]/i).map((s: string) => s.trim());
     setEditForm({
       name: p.name,
       category: p.category,
