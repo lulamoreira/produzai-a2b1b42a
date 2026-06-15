@@ -517,6 +517,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
             <MiniKpi label="Resolvidas" value={resolvidas} icon={CheckCircle2} color="text-green-600" />
             <MiniKpi label="Atrasadas" value={atrasadas} icon={Clock} color="text-red-600" />
             <MiniKpi label="Precisam reinst." value={reinst} icon={RotateCw} color="text-orange-600" />
+            <MiniKpi label="Não procede" value={naoProcede} icon={X} color="text-gray-700" />
           </div>
 
           {/* Filter bar */}
