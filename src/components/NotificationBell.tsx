@@ -100,24 +100,31 @@ export default function NotificationBell() {
               {t("notifications.noNotifications", { defaultValue: "Nenhuma notificação" })}
             </div>
           ) : (
-            notifications.slice(0, 20).map((notif) => (
-              <DropdownMenuItem
-                key={notif.id}
-                className="flex items-start gap-2 px-3 py-2.5 cursor-pointer rounded-none border-b border-border/30 last:border-0"
-                onClick={() => handleClick(notif)}
-              >
-                {!notif.read && (
-                  <span className="mt-1.5 w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                )}
-                {notif.read && <span className="mt-1.5 w-2 h-2 flex-shrink-0" />}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium leading-tight truncate">{notif.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.body}</p>
-                  <p className="text-[10px] text-muted-foreground/70 mt-1">
-                    {fmt.relative(new Date(notif.created_at))}
-                  </p>
+            groupedNotifications.map((group) => (
+              <div key={group.label}>
+                <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40 border-b border-border/30">
+                  {group.label}
                 </div>
-              </DropdownMenuItem>
+                {group.items.map((notif) => (
+                  <DropdownMenuItem
+                    key={notif.id}
+                    className="flex items-start gap-2 px-3 py-2.5 cursor-pointer rounded-none border-b border-border/30 last:border-0"
+                    onClick={() => handleClick(notif)}
+                  >
+                    {!notif.read && (
+                      <span className="mt-1.5 w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                    )}
+                    {notif.read && <span className="mt-1.5 w-2 h-2 flex-shrink-0" />}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium leading-tight truncate">{notif.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.body}</p>
+                      <p className="text-[10px] text-muted-foreground/70 mt-1">
+                        {fmt.relative(new Date(notif.created_at))}
+                      </p>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </div>
             ))
           )}
         </ScrollArea>
