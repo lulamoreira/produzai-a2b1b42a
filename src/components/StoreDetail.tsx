@@ -484,6 +484,9 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
           </div>
         )}
       </div>
+
+      {/* Off-screen PDF template */}
+      <LojaPdfTemplate ref={pdfRef} store={store} items={piecesWithQty} />
     </div>
   );
 };
