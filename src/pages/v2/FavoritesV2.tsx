@@ -9,6 +9,7 @@ const FavoritesV2 = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: favorites = [], isLoading } = useCampaignFavorites();
+  const toggleFavorite = useToggleFavorite();
 
   if (isLoading) {
     return (
