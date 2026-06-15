@@ -121,7 +121,7 @@ export default function StoresTab({
 
   // Pre-calculate which categories fit on each piece page (8 cols, 132px card, 36px cat header)
   const pdfPiecePages = useMemo(() => {
-    const PAGE_H = 710; const COLS = 8; const CARD_H = 132; const CARD_GAP = 7;
+    const PAGE_H = 710; const COLS = 8; const CARD_H = 150; const CARD_GAP = 7;
     const CAT_H = 36; const CAT_SEP = 14;
     type PCat = typeof piecesByCategory[number];
     const pages: PCat[][] = [[]]; let usedH = 0;
@@ -139,8 +139,11 @@ export default function StoresTab({
   // Pre-calculate which kits fit on each kit page
   const pdfKitPages = useMemo(() => {
     if (!storeKits.length) return [] as any[][];
-    const PAGE_H = 710; const KIT_COLS = 3; const PC = 4;
-    const KIT_H = (kit: any) => 50 + Math.ceil(kit.pieces.length / PC) * 90 + 14;
+    const PAGE_H = 640; const KIT_COLS = 3; const PC = 4;
+    const KIT_H = (kit: any) => {
+      const pieceRows = Math.ceil(kit.pieces.length / PC);
+      return 80 + pieceRows * 110 + Math.max(0, pieceRows - 1) * 8 + 16;
+    };
     const pages: any[][] = [[]]; let usedH = 0;
     for (let i = 0; i < storeKits.length; i += KIT_COLS) {
       const row = (storeKits as any[]).slice(i, i + KIT_COLS);
@@ -637,7 +640,7 @@ export default function StoresTab({
                             const p = sp.campaign_pieces;
                             if (!p) return null;
                             return (
-                              <div key={i} style={{ border: "1px solid #e5e1d8", borderRadius: 6, overflow: "hidden", background: "#fff", height: 132, display: "flex", flexDirection: "column" }}>
+                              <div key={i} style={{ border: "1px solid #e5e1d8", borderRadius: 6, overflow: "hidden", background: "#fff", minHeight: 150, display: "flex", flexDirection: "column" }}>
                                 <div style={{ width: "100%", height: 80, background: "#f4f4f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, padding: 4, flexShrink: 0 }}>
                                   {p.image_url ? (
                                     <img
@@ -661,7 +664,7 @@ export default function StoresTab({
                                   )}
                                 </div>
                                 <div style={{ padding: "5px 7px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                                  <div style={{ fontSize: 9.5, fontWeight: 600, color: "#1a1a1a", lineHeight: 1.2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                  <div style={{ fontSize: 9.5, fontWeight: 600, color: "#1a1a1a", lineHeight: 1.2 }}>
                                     {p.name}
                                   </div>
                                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 3 }}>
@@ -741,7 +744,7 @@ export default function StoresTab({
                               [{kit.code}]
                             </span>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 10.5, fontWeight: 700, color: "#ffffff", lineHeight: 1.3, overflow: "hidden", maxHeight: 26 }}>
+                              <div style={{ fontSize: 10.5, fontWeight: 700, color: "#ffffff", lineHeight: 1.3 }}>
                                 {kit.name}
                               </div>
                               <div style={{ fontSize: 8.5, color: "#9ca3af", marginTop: 2 }}>
@@ -753,8 +756,8 @@ export default function StoresTab({
                             {kit.pieces.map((kp: any, j: number) => {
                               const p = kp.campaign_pieces;
                               return (
-                                <div key={j} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-                                  <div style={{ width: "100%", height: 54, background: "#f4f4f5", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", fontSize: 18 }}>
+                                <div key={j} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "#fff", minHeight: 110 }}>
+                                  <div style={{ width: "100%", height: 58, background: "#f4f4f5", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", fontSize: 18 }}>
                                     {p?.image_url ? (
                                       <img
                                         crossOrigin="anonymous"
@@ -769,7 +772,7 @@ export default function StoresTab({
                                       "📦"
                                     )}
                                   </div>
-                                  <div style={{ fontSize: 8.5, color: "#1a1a1a", textAlign: "center", lineHeight: 1.2, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", maxHeight: 22 }}>
+                                  <div style={{ fontSize: 8.5, color: "#1a1a1a", textAlign: "center", lineHeight: 1.2 }}>
                                     {p?.name || "—"}
                                   </div>
                                   <span style={{ fontSize: 9, fontWeight: 700, color: "#92400e", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 3, padding: "0 5px" }}>
