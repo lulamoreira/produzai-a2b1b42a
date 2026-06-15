@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Image as ImageIcon, ArrowLeft, ChevronDown, ChevronUp, MessageCircle, Share2, ClipboardList } from "lucide-react";
+import { useEffectiveTratativaStatuses, type TratativaStatus } from "@/hooks/useLalTratativaStatuses";
 
 interface Props {
   data: PortalData;
