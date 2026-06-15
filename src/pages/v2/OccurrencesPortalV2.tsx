@@ -3,8 +3,9 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Store as StoreIcon, ChevronRight, Clock, MapPin, Globe } from "lucide-react";
+import { Store as StoreIcon, ChevronRight, Clock, MapPin, Globe, Search } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { isAfter } from "date-fns";
 import { useTranslation } from "react-i18next";
 import { OccurrencesPortalEmptyState } from "@/components/v2/campaigns/OccurrencesPortalEmptyState";
@@ -29,6 +30,7 @@ export default function OccurrencesPortalV2() {
   const { user } = useAuth();
   const isPublic = !user;
   const [selectedState, setSelectedState] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   const { data: config, isLoading: loadingConfig } = useQuery({
     queryKey: ["occ-portal-config", campaignId],
@@ -156,9 +158,16 @@ export default function OccurrencesPortalV2() {
 
   const filteredTokens = useMemo(() => {
     if (!storesData?.tokens) return [];
-    if (selectedState === "all") return storesData.tokens;
-    return storesData.tokens.filter(s => s.client_stores?.state === selectedState);
-  }, [storesData?.tokens, selectedState]);
+    const q = searchTerm.trim().toLowerCase();
+    return storesData.tokens.filter(s => {
+      if (selectedState !== "all" && s.client_stores?.state !== selectedState) return false;
+      if (!q) return true;
+      const cs = s.client_stores;
+      return [cs?.name, cs?.city, cs?.state, cs?.store_code]
+        .filter(Boolean)
+        .some(v => String(v).toLowerCase().includes(q));
+    });
+  }, [storesData?.tokens, selectedState, searchTerm]);
 
   if (isLoading) {
     return (
@@ -224,6 +233,15 @@ export default function OccurrencesPortalV2() {
           </div>
           
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar loja, código, cidade..."
+                className="pl-9 bg-white border-stone-200"
+              />
+            </div>
             {availableStates.length > 1 && (
               <div className="w-full sm:w-48">
                 <Select value={selectedState} onValueChange={setSelectedState}>
