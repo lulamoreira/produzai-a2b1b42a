@@ -973,8 +973,8 @@ export default function StoresTab({
                     <span style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "#ffffff" }}>
                       {PDF_I18N[renderLang].kitsSectionTitle}
                     </span>
-                    <span style={{ background: "#d97706", color: "#fff", borderRadius: 20, padding: "1px 10px", fontSize: 10, fontWeight: 700, marginLeft: "auto" }}>
-                      {pageKits.length} kits
+                    <span style={{ background: "#d97706", color: "#fff", borderRadius: 20, padding: "1px 10px", fontSize: 10, fontWeight: 700, marginLeft: "auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {PDF_I18N[renderLang].kitsCount(pageKits.length)}
                     </span>
                   </div>
 
