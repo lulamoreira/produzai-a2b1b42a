@@ -2844,6 +2844,7 @@ export type Database = {
           ativo: boolean
           client_id: string
           color: string
+          conta_como_ocorrencia: boolean
           created_at: string
           display_order: number
           id: string
@@ -2857,6 +2858,7 @@ export type Database = {
           ativo?: boolean
           client_id: string
           color?: string
+          conta_como_ocorrencia?: boolean
           created_at?: string
           display_order?: number
           id?: string
@@ -2870,6 +2872,7 @@ export type Database = {
           ativo?: boolean
           client_id?: string
           color?: string
+          conta_como_ocorrencia?: boolean
           created_at?: string
           display_order?: number
           id?: string
