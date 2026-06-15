@@ -93,6 +93,7 @@ export default function PhotoCheckin() {
 
   const handleUpload = async (files: FileList | null, category: string, method: "upload" | "camera" = "upload") => {
     if (!files || !campaignId || !storeId || !user) return;
+    let uploadedCount = 0;
     for (const file of Array.from(files)) {
       try {
         const fileIsVideo = file.type.startsWith("video/");
@@ -119,9 +120,22 @@ export default function PhotoCheckin() {
           media_type: fileIsVideo ? "video" : "photo",
         });
         toast.success(fileIsVideo ? "Vídeo enviado!" : "Foto enviada!");
+        uploadedCount++;
       } catch (err: any) {
         toast.error("Erro ao enviar: " + err.message);
       }
+    }
+    if (uploadedCount > 0 && campaign?.agency_id) {
+      criarNotificacao({
+        agency_id: campaign.agency_id,
+        campaign_id: campaignId,
+        store_id: storeId,
+        client_id: campaign.client_id ?? undefined,
+        type: "installation_photo",
+        title: "Novas fotos de instalação",
+        body: `${store?.name ?? "Uma loja"} enviou ${uploadedCount} foto${uploadedCount > 1 ? "s" : ""} de instalação (${CATEGORIES.find(c => c.value === category)?.label ?? category}).`,
+        action_url: `/agency/${campaign.agency_id}/clients/${campaign.client_id}/campaigns/${campaignId}?section=mockup`,
+      }).catch(() => {});
     }
   };
 
