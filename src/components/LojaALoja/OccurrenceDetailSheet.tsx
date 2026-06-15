@@ -224,6 +224,8 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
       qc.invalidateQueries({ queryKey: ["loja-a-loja-dashboard", campaignId] });
       qc.invalidateQueries({ queryKey: ["campaign-status-dashboard", campaignId] });
       setInitialized(null);
+      addToNoteHistory(campaignId, tratativaStatus, tratativaNotes);
+      setNoteHistory(getNoteHistory(campaignId)[tratativaStatus] ?? []);
       onOpenChange(false);
     } catch (e: any) {
       toast.error("Erro ao salvar: " + (e.message || ""));
