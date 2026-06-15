@@ -60,6 +60,7 @@
     "exceljs": "^4.4.0",
     "file-saver": "^2.0.5",
     "framer-motion": "^12.40.0",
+    "html2canvas": "^1.4.1",
     "i18next": "^26.0.4",
     "input-otp": "^1.4.2",
     "jspdf": "^4.2.1",
