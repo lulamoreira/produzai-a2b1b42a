@@ -11,20 +11,36 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Image as ImageIcon, ArrowLeft, ChevronDown, ChevronUp, MessageCircle, Share2, ClipboardList } from "lucide-react";
+import { useEffectiveTratativaStatuses, type TratativaStatus } from "@/hooks/useLalTratativaStatuses";
 
 interface Props {
   data: PortalData;
   agencyId: string;
 }
 
-function getTratativaStatusLabel(status: string) {
-  const map: Record<string, { label: string; color: string }> = {
-    aberta: { label: "Aberta", color: "bg-yellow-500 text-white" },
-    em_andamento: { label: "Em andamento", color: "bg-blue-500 text-white" },
-    resolvida: { label: "Resolvida", color: "bg-green-600 text-white" },
-    resolvido: { label: "Resolvida", color: "bg-green-600 text-white" },
+interface StatusItem {
+  value: string;
+  label: string;
+  color: string;
+}
+
+function getTratativaDisplay(status: string, statuses: StatusItem[]) {
+  const found = statuses.find((s) => s.value === status);
+  if (found) {
+    return {
+      label: found.label,
+      className: "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white",
+      style: { backgroundColor: found.color },
+    };
+  }
+  const fallbackLabel = status
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+  return {
+    label: fallbackLabel,
+    className: "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-white",
+    style: {} as React.CSSProperties,
   };
-  return map[status] ?? { label: status, color: "bg-gray-400 text-white" };
 }
 
 function formatDateBR(iso: string | null | undefined) {
@@ -32,12 +48,12 @@ function formatDateBR(iso: string | null | undefined) {
   return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-function buildWhatsAppMessage(r: any, data: PortalData) {
+function buildWhatsAppMessage(r: any, data: PortalData, statuses: StatusItem[]) {
   const peca = data.pecas.find(p => p.id === r.loja_a_loja_peca_id);
   const tipo = data.tipos.find(t => t.id === r.tipo_id);
   const subdivisao = data.subdivisoes.find(s => s.id === r.subdivisao_id);
   const motivo = data.motivos?.find(m => m.id === r.motive_id);
-  const statusInfo = getTratativaStatusLabel(r.tratativa_status ?? r.status ?? "aberta");
+  const statusInfo = getTratativaDisplay(r.tratativa_status ?? r.status ?? "aberta", statuses);
   const local = [tipo?.nome, subdivisao?.nome].filter(Boolean).join(" / ") || "—";
   const storeName = data.store.nickname || data.store.name;
   const storeCity = [data.store.city, data.store.state].filter(Boolean).join("/");
@@ -56,26 +72,26 @@ function buildWhatsAppMessage(r: any, data: PortalData) {
   ].filter(Boolean).join("\n");
 }
 
-function OcorrenciaCard({ r, data }: { r: any; data: PortalData }) {
+function OcorrenciaCard({ r, data, statuses }: { r: any; data: PortalData; statuses: StatusItem[] }) {
   const [expanded, setExpanded] = useState(false);
 
   const peca = data.pecas.find(p => p.id === r.loja_a_loja_peca_id);
   const tipo = data.tipos.find(t => t.id === r.tipo_id);
   const subdivisao = data.subdivisoes.find(s => s.id === r.subdivisao_id);
   const motivo = data.motivos?.find(m => m.id === r.motive_id);
-  const statusInfo = getTratativaStatusLabel(r.tratativa_status ?? r.status ?? "aberta");
+  const statusInfo = getTratativaDisplay(r.tratativa_status ?? r.status ?? "aberta", statuses);
   const local = [tipo?.nome, subdivisao?.nome].filter(Boolean).join(" / ") || "—";
   const whatsappContact = (data.portal_config as any)?.whatsapp_contact;
 
   const handleShare = () => {
-    const msg = encodeURIComponent(buildWhatsAppMessage(r, data));
+    const msg = encodeURIComponent(buildWhatsAppMessage(r, data, statuses));
     window.open(`https://wa.me/?text=${msg}`, "_blank");
   };
 
   const handleContact = () => {
     if (!whatsappContact) return;
     const phone = whatsappContact.replace(/\D/g, "");
-    const msg = encodeURIComponent(buildWhatsAppMessage(r, data));
+    const msg = encodeURIComponent(buildWhatsAppMessage(r, data, statuses));
     window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
   };
 
@@ -87,7 +103,7 @@ function OcorrenciaCard({ r, data }: { r: any; data: PortalData }) {
       <div className="flex items-center justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.color}`}>
+            <span className={statusInfo.className} style={statusInfo.style}>
               {statusInfo.label}
             </span>
             <span className="text-sm font-medium truncate">{peca?.nome || "Peça"}</span>
@@ -96,7 +112,12 @@ function OcorrenciaCard({ r, data }: { r: any; data: PortalData }) {
             {local} · {formatDateBR(r.created_at)}
           </p>
         </div>
-        {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
+        <div className="flex flex-col items-end gap-0.5 shrink-0">
+          {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          <span className="text-[10px] text-muted-foreground text-right max-w-[140px] leading-tight">
+            clique na seta para ver mais informações e se for o caso, pedir mais explicações, por WhatsApp
+          </span>
+        </div>
       </div>
 
       {expanded && (
@@ -149,6 +170,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
   const [showSituacao, setShowSituacao] = useState(false);
   const [allReports, setAllReports] = useState<any[]>([]);
   const [loadingAll, setLoadingAll] = useState(false);
+  const { statuses } = useEffectiveTratativaStatuses(data.campaign.client_id);
 
   const handlePieceClick = (peca: PortalData["pecas"][number]) => {
     if (peca.nome.includes("*")) {
@@ -316,7 +338,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
         ) : (
           <div className="space-y-3">
             {allReports.map(r => (
-              <OcorrenciaCard key={r.id} r={r} data={data} />
+              <OcorrenciaCard key={r.id} r={r} data={data} statuses={statuses} />
             ))}
           </div>
         )}
