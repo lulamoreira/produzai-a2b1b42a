@@ -432,8 +432,8 @@ export default function OccurrencesByStoreTab({ campaignId, clientId, permission
                               <span className="text-sm font-medium truncate">
                                 {(o.loja_a_loja_pecas as any)?.nome ?? "Peça —"}
                               </span>
-                              <Badge className={cn("text-xs", tratativaColor[o.tratativa_status ?? "aberta"])}>
-                                {tratativaLabel[o.tratativa_status ?? "aberta"]}
+                              <Badge className={cn("text-xs", getTratativaDisplay(o.tratativa_status ?? "aberta", tratativaStatuses).className)} style={getTratativaDisplay(o.tratativa_status ?? "aberta", tratativaStatuses).style}>
+                                {getTratativaDisplay(o.tratativa_status ?? "aberta", tratativaStatuses).label}
                               </Badge>
                             </div>
                             <div className="text-xs text-muted-foreground mt-0.5 truncate">
