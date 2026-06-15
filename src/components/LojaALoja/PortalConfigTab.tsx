@@ -376,6 +376,38 @@ export default function PortalConfigTab({ campaignId, clientId, permissions }: P
             </div>
             <Separator />
 
+            {/* Quem pode reportar */}
+            <div className="space-y-2 pt-2">
+              <div>
+                <p className="text-sm font-semibold">Quem pode reportar ocorrências</p>
+                <p className="text-xs text-muted-foreground">Selecione quais opções aparecem no campo "Reportado por" no portal da loja. Se nenhuma estiver marcada, todas aparecem.</p>
+              </div>
+              {[
+                { key: "lojista", label: "Lojista" },
+                { key: "fornecedor", label: "Fornecedor" },
+                { key: "agencia", label: "Agência (nome automático)" },
+                { key: "cliente", label: "Cliente (nome automático)" },
+              ].map(({ key, label }) => {
+                const current: string[] | null = (localConfig as any)?.reporter_options ?? null;
+                const isOn = current === null || current.includes(key);
+                return (
+                  <div key={key} className="flex items-center justify-between py-1">
+                    <Label className="text-sm font-normal">{label}</Label>
+                    <Switch
+                      checked={isOn}
+                      disabled={!isAdmin}
+                      onCheckedChange={(v) => {
+                        const base: string[] = current ?? ["lojista", "fornecedor", "agencia", "cliente"];
+                        const next = v ? [...new Set([...base, key])] : base.filter((k) => k !== key);
+                        saveConfig({ reporter_options: next.length === 4 ? null : next });
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+            <Separator />
+
             <div className="space-y-3 pt-2">
               <div>
                 <Label className="text-sm">Título do Portal</Label>
