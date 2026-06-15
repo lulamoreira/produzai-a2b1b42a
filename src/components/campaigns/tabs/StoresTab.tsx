@@ -84,7 +84,7 @@ export default function StoresTab({
       const [kitsRes, cspRes] = await Promise.all([
         supabase
           .from("campaign_kits")
-          .select("id, code, name, display_order, campaign_kit_pieces(piece_id, quantity, display_order, campaign_pieces(name, code))")
+          .select("id, code, name, display_order, campaign_kit_pieces(piece_id, quantity, display_order, campaign_pieces(name, code, image_url))")
           .eq("campaign_id", campaignId)
           .eq("is_deleted", false)
           .order("display_order"),
