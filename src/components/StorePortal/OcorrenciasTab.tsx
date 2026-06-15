@@ -47,21 +47,25 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
   );
 
   const reporterOptions = useMemo(() => {
-    const agencyName = data.campaign?.clients?.agencies?.name;
-    const clientName = data.campaign?.clients?.name;
+    const cfg: any = data.portal_config ?? {};
+    const agencyName = cfg.reporter_agency_label || data.campaign?.clients?.agencies?.name;
+    const clientName = cfg.reporter_client_label || data.campaign?.clients?.name;
+    const customList: string[] = Array.isArray(cfg.reporter_custom) ? cfg.reporter_custom.filter((s: string) => s && s.trim()) : [];
     const all: Array<{ value: string; label: string }> = [
       { value: "lojista", label: "Lojista" },
       { value: "fornecedor", label: "Fornecedor" },
       ...(agencyName ? [{ value: `agencia:${agencyName}`, label: agencyName }] : []),
       ...(clientName ? [{ value: `cliente:${clientName}`, label: clientName }] : []),
+      ...customList.map((name) => ({ value: `custom:${name}`, label: name })),
     ];
-    const enabled: string[] | null = (data.portal_config as any)?.reporter_options ?? null;
+    const enabled: string[] | null = cfg.reporter_options ?? null;
     if (!enabled) return all;
     return all.filter((o) => {
       if (o.value === "lojista") return enabled.includes("lojista");
       if (o.value === "fornecedor") return enabled.includes("fornecedor");
       if (o.value.startsWith("agencia:")) return enabled.includes("agencia");
       if (o.value.startsWith("cliente:")) return enabled.includes("cliente");
+      if (o.value.startsWith("custom:")) return true;
       return true;
     });
   }, [data]);
