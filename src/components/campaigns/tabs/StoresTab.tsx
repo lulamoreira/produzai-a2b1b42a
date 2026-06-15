@@ -9,6 +9,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 import { useCampaignStoreStatus, useUpsertCampaignStoreStatus } from "@/hooks/useMultiClientData";
 import { useStoreContacts, useStoreContactRoles } from "@/hooks/useStoreContacts";
@@ -52,6 +63,82 @@ const PDF_I18N = {
 
 type PdfLang = keyof typeof PDF_I18N;
 
+async function fetchStorePiecesData(campaignId: string, storeId: string) {
+  const { data } = await supabase
+    .from("campaign_store_pieces")
+    .select("piece_id, quantity, campaign_pieces(name, image_url, category, code, size)")
+    .eq("campaign_id", campaignId)
+    .eq("store_id", storeId)
+    .gt("quantity", 0);
+  return (data ?? []) as any[];
+}
+
+async function fetchStoreKitsData(campaignId: string, storeId: string, storePieceIds: string[]) {
+  const { data } = await supabase
+    .from("campaign_kits")
+    .select("id, code, name, display_order, campaign_kit_pieces(piece_id, quantity, display_order, campaign_pieces(name, code, image_url))")
+    .eq("campaign_id", campaignId)
+    .eq("is_deleted", false)
+    .order("display_order");
+  const idSet = new Set(storePieceIds);
+  return ((data ?? []) as any[])
+    .map((kit) => ({
+      ...kit,
+      pieces: ((kit.campaign_kit_pieces ?? []) as any[]).sort(
+        (a: any, b: any) => a.display_order - b.display_order
+      ),
+    }))
+    .filter((kit) => kit.pieces.some((kp: any) => idSet.has(kp.piece_id)));
+}
+
+function groupPiecesByCategory(pieces: any[]) {
+  const map = new Map<string, any[]>();
+  pieces.forEach((sp: any) => {
+    const cat = sp.campaign_pieces?.category || "Outros";
+    if (!map.has(cat)) map.set(cat, []);
+    map.get(cat)!.push(sp);
+  });
+  return Array.from(map.entries())
+    .sort((a, b) => a[0].localeCompare(b[0], "pt-BR"))
+    .map(([category, pieces]) => ({ category, pieces }));
+}
+
+function buildPiecePages(piecesByCategory: { category: string; pieces: any[] }[]) {
+  const PAGE_H = 710, COLS = 8, CARD_H = 150, CARD_GAP = 7, CAT_H = 36, CAT_SEP = 14;
+  const pages: { category: string; pieces: any[] }[][] = [[]];
+  let usedH = 0;
+  for (const cat of piecesByCategory) {
+    const rows = Math.ceil(cat.pieces.length / COLS);
+    const h = CAT_H + rows * CARD_H + Math.max(0, rows - 1) * CARD_GAP;
+    const needed = usedH === 0 ? h : h + CAT_SEP;
+    if (usedH > 0 && usedH + needed > PAGE_H) { pages.push([]); usedH = 0; }
+    pages[pages.length - 1].push(cat);
+    usedH += usedH === 0 ? h : needed;
+  }
+  return pages;
+}
+
+function buildKitPages(kits: any[]) {
+  if (!kits.length) return [] as any[][];
+  const PAGE_H = 640, KIT_COLS = 3, PC = 4;
+  const KIT_H = (kit: any) => {
+    const pieceRows = Math.ceil(kit.pieces.length / PC);
+    return 80 + pieceRows * 110 + Math.max(0, pieceRows - 1) * 8 + 16;
+  };
+  const pages: any[][] = [[]];
+  let usedH = 0;
+  for (let i = 0; i < kits.length; i += KIT_COLS) {
+    const row = kits.slice(i, i + KIT_COLS);
+    const rowH = Math.max(...row.map(KIT_H));
+    const needed = usedH === 0 ? rowH : rowH + 10;
+    if (usedH > 0 && usedH + needed > PAGE_H) { pages.push([]); usedH = 0; }
+    row.forEach((k) => pages[pages.length - 1].push(k));
+    usedH += usedH === 0 ? rowH : needed;
+  }
+  return pages;
+}
+
+
 interface StoresTabProps {
   campaignId: string;
   clientId: string;
@@ -89,6 +176,17 @@ export default function StoresTab({
   const [pdfLangPickerOpen, setPdfLangPickerOpen] = useState(false);
   const [pdfLang, setPdfLang] = useState<PdfLang>("pt-BR");
   const pdfTemplateRef = useRef<HTMLDivElement>(null);
+  const [batchPdfConfirmOpen, setBatchPdfConfirmOpen] = useState(false);
+  const [batchPdfLangPickerOpen, setBatchPdfLangPickerOpen] = useState(false);
+  const [batchPdfStatus, setBatchPdfStatus] = useState<string | null>(null);
+  const [batchRender, setBatchRender] = useState<{
+    store: any;
+    piecesByCategory: { category: string; pieces: any[] }[];
+    piecePages: { category: string; pieces: any[] }[][];
+    kitPages: any[][];
+    totalPieces: number;
+    lang: PdfLang;
+  } | null>(null);
 
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
   const upsertStatus = useUpsertCampaignStoreStatus();
@@ -145,56 +243,23 @@ export default function StoresTab({
     },
   });
 
-  const piecesByCategory = useMemo(() => {
-    const map = new Map<string, typeof storePieces>();
-    storePieces.forEach((sp) => {
-      const cat = sp.campaign_pieces?.category || "Outros";
-      if (!map.has(cat)) map.set(cat, []);
-      map.get(cat)!.push(sp);
-    });
-    return Array.from(map.entries())
-      .sort((a, b) => a[0].localeCompare(b[0], "pt-BR"))
-      .map(([category, pieces]) => ({ category, pieces }));
-  }, [storePieces]);
-
-  // Pre-calculate which categories fit on each piece page (8 cols, 132px card, 36px cat header)
-  const pdfPiecePages = useMemo(() => {
-    const PAGE_H = 710; const COLS = 8; const CARD_H = 150; const CARD_GAP = 7;
-    const CAT_H = 36; const CAT_SEP = 14;
-    type PCat = typeof piecesByCategory[number];
-    const pages: PCat[][] = [[]]; let usedH = 0;
-    for (const cat of piecesByCategory) {
-      const rows = Math.ceil(cat.pieces.length / COLS);
-      const h = CAT_H + rows * CARD_H + Math.max(0, rows - 1) * CARD_GAP;
-      const needed = usedH === 0 ? h : h + CAT_SEP;
-      if (usedH > 0 && usedH + needed > PAGE_H) { pages.push([]); usedH = 0; }
-      pages[pages.length - 1].push(cat);
-      usedH += usedH === 0 ? h : needed;
-    }
-    return pages;
-  }, [piecesByCategory]);
-
-  // Pre-calculate which kits fit on each kit page
-  const pdfKitPages = useMemo(() => {
-    if (!storeKits.length) return [] as any[][];
-    const PAGE_H = 640; const KIT_COLS = 3; const PC = 4;
-    const KIT_H = (kit: any) => {
-      const pieceRows = Math.ceil(kit.pieces.length / PC);
-      return 80 + pieceRows * 110 + Math.max(0, pieceRows - 1) * 8 + 16;
-    };
-    const pages: any[][] = [[]]; let usedH = 0;
-    for (let i = 0; i < storeKits.length; i += KIT_COLS) {
-      const row = (storeKits as any[]).slice(i, i + KIT_COLS);
-      const rowH = Math.max(...row.map(KIT_H));
-      const needed = usedH === 0 ? rowH : rowH + 10;
-      if (usedH > 0 && usedH + needed > PAGE_H) { pages.push([]); usedH = 0; }
-      row.forEach((k) => pages[pages.length - 1].push(k));
-      usedH += usedH === 0 ? rowH : needed;
-    }
-    return pages;
-  }, [storeKits]);
+  const piecesByCategory = useMemo(() => groupPiecesByCategory(storePieces as any[]), [storePieces]);
+  const pdfPiecePages = useMemo(() => buildPiecePages(piecesByCategory), [piecesByCategory]);
+  const pdfKitPages = useMemo(() => buildKitPages(storeKits as any[]), [storeKits]);
 
   const totalPdfPages = 1 + pdfPiecePages.length + pdfKitPages.length;
+
+  // Render context: batch export overrides single-store data when active
+  const renderStore = batchRender?.store ?? selectedStore;
+  const renderPiecesByCat = batchRender?.piecesByCategory ?? piecesByCategory;
+  const renderPiecePages = batchRender?.piecePages ?? pdfPiecePages;
+  const renderKitPages = batchRender?.kitPages ?? pdfKitPages;
+  const renderTotalPages = 1 + renderPiecePages.length + renderKitPages.length;
+  const renderLang: PdfLang = batchRender?.lang ?? pdfLang;
+  const renderContacts = batchRender ? [] : selectedStoreContacts;
+  const renderTotalPieces = batchRender
+    ? batchRender.totalPieces
+    : (storePieces as any[]).reduce((acc: number, sp: any) => acc + sp.quantity, 0);
 
   const filteredStores = useMemo(() => {
     let result = allStores;
@@ -258,6 +323,58 @@ export default function StoresTab({
     }
   }, [selectedStore]);
 
+  const handleExportAllStoresPdf = useCallback(async (lang: PdfLang) => {
+    if (!stores.length) return;
+    setBatchPdfStatus(`Iniciando exportação de ${stores.length} lojas...`);
+    try {
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas"),
+      ]);
+      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      let firstPage = true;
+
+      for (let i = 0; i < stores.length; i++) {
+        const store = stores[i];
+        setBatchPdfStatus(`Gerando loja ${i + 1} de ${stores.length}: ${store.name}...`);
+
+        const pieces = await fetchStorePiecesData(campaignId, store.id);
+        if (!pieces.length) continue;
+        const pieceIds = pieces.map((p: any) => p.piece_id);
+        const kits = await fetchStoreKitsData(campaignId, store.id, pieceIds);
+        const pbc = groupPiecesByCategory(pieces);
+        const piecePages = buildPiecePages(pbc);
+        const kitPages = buildKitPages(kits);
+        const totalPieces = pieces.reduce((acc: number, sp: any) => acc + sp.quantity, 0);
+
+        setBatchRender({ store, piecesByCategory: pbc, piecePages, kitPages, totalPieces, lang });
+        // Wait for React to paint the new content into pdfTemplateRef
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        await new Promise((r) => setTimeout(r, 50));
+
+        if (!pdfTemplateRef.current) continue;
+        const pageEls = Array.from(pdfTemplateRef.current.children) as HTMLElement[];
+        for (const pageEl of pageEls) {
+          if (!firstPage) pdf.addPage();
+          firstPage = false;
+          const canvas = await html2canvas(pageEl, {
+            scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false,
+            width: 1122, height: 794,
+          });
+          pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, 297, 210);
+        }
+      }
+
+      pdf.save(`Todas_as_Lojas_${campaignId}.pdf`);
+    } catch (e) {
+      console.error("Batch PDF export error:", e);
+      toast.error("Falha ao gerar PDF em lote");
+    } finally {
+      setBatchRender(null);
+      setBatchPdfStatus(null);
+    }
+  }, [stores, campaignId]);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
@@ -290,6 +407,56 @@ export default function StoresTab({
               Contatos
             </Button>
           </div>
+
+          <AlertDialog open={batchPdfConfirmOpen} onOpenChange={setBatchPdfConfirmOpen}>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 px-2 text-xs gap-1.5"
+                disabled={!!batchPdfStatus || stores.length === 0}
+                onClick={() => setBatchPdfConfirmOpen(true)}
+              >
+                <Download className="w-3.5 h-3.5" />
+                Exportar PDF
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Exportar PDF de todas as lojas?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Isso vai gerar um único PDF contendo todas as {stores.length} lojas registradas nesta campanha (peças e kits de cada uma). Pode levar alguns minutos dependendo da quantidade de lojas e imagens.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => { setBatchPdfConfirmOpen(false); setBatchPdfLangPickerOpen(true); }}>
+                  Continuar
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <Popover open={batchPdfLangPickerOpen} onOpenChange={setBatchPdfLangPickerOpen}>
+            <PopoverTrigger asChild>
+              <span />
+            </PopoverTrigger>
+            <PopoverContent className="w-48 p-1" align="end">
+              {(["pt-BR", "es-CL", "en-US"] as PdfLang[]).map((lang) => (
+                <button
+                  key={lang}
+                  className="w-full text-left px-3 py-2 text-sm rounded hover:bg-muted"
+                  onClick={() => { setBatchPdfLangPickerOpen(false); handleExportAllStoresPdf(lang); }}
+                >
+                  {lang === "pt-BR" ? "Português Brasileiro" : lang === "es-CL" ? "Español Chileno" : "English (US)"}
+                </button>
+              ))}
+            </PopoverContent>
+          </Popover>
+
+          {batchPdfStatus && (
+            <span className="text-sm text-muted-foreground ml-2">{batchPdfStatus}</span>
+          )}
         </div>
       </div>
 
@@ -578,9 +745,11 @@ export default function StoresTab({
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
 
-          {/* Hidden multi-page PDF Template — A4 Landscape (1122 x 794) per page */}
-          {selectedStore && (
+      {/* Hidden multi-page PDF Template — A4 Landscape (1122 x 794) per page */}
+      {renderStore && (
             <div
               ref={pdfTemplateRef}
               style={{
@@ -609,38 +778,38 @@ export default function StoresTab({
                 }}
               >
                 <div style={{ fontSize: 20, color: "#8C6F4E", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 20 }}>
-                  {PDF_I18N[pdfLang].titlePageSubtitle}
+                  {PDF_I18N[renderLang].titlePageSubtitle}
                 </div>
                 <h1 style={{ fontSize: 56, fontWeight: 800, margin: 0, color: "#1a1a1a", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
-                  {selectedStore.name}
+                  {renderStore.name}
                 </h1>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 24, fontSize: 16, color: "#555", justifyContent: "center" }}>
-                  {selectedStore.store_code && (
+                  {renderStore.store_code && (
                     <span style={{ background: "#F5F2ED", padding: "6px 14px", borderRadius: 6, fontFamily: "monospace", color: "#8C6F4E", fontWeight: 700 }}>
-                      # {selectedStore.store_code}
+                      # {renderStore.store_code}
                     </span>
                   )}
-                  {selectedStore.store_model && (
-                    <span style={{ padding: "6px 14px", background: "#f4f4f5", borderRadius: 6 }}>{selectedStore.store_model}</span>
+                  {renderStore.store_model && (
+                    <span style={{ padding: "6px 14px", background: "#f4f4f5", borderRadius: 6 }}>{renderStore.store_model}</span>
                   )}
-                  {(selectedStore.city || selectedStore.state) && (
+                  {(renderStore.city || renderStore.state) && (
                     <span style={{ padding: "6px 14px", background: "#f4f4f5", borderRadius: 6 }}>
-                      📍 {[selectedStore.city, selectedStore.state].filter(Boolean).join(" / ")}
+                      📍 {[renderStore.city, renderStore.state].filter(Boolean).join(" / ")}
                     </span>
                   )}
                 </div>
-                {selectedStoreContacts.length > 0 && (
+                {renderContacts.length > 0 && (
                   <div style={{ marginTop: 18, fontSize: 14, color: "#666" }}>
-                    👤 {selectedStoreContacts.map((c: any) => c.name).join(" · ")}
+                    👤 {renderContacts.map((c: any) => c.name).join(" · ")}
                   </div>
                 )}
                 <div style={{ display: "flex", gap: 40, marginTop: 60, alignItems: "center" }}>
                   <div style={{ background: "#8C6F4E", color: "#fff", padding: "20px 36px", borderRadius: 12, textAlign: "center" }}>
                     <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.15em", opacity: 0.9 }}>
-                      {PDF_I18N[pdfLang].totalPieces}
+                      {PDF_I18N[renderLang].totalPieces}
                     </div>
                     <div style={{ fontSize: 52, fontWeight: 800, lineHeight: 1, marginTop: 6 }}>
-                      {storePieces.reduce((acc: number, sp: any) => acc + sp.quantity, 0)}
+                      {renderTotalPieces}
                     </div>
                   </div>
                   <div style={{ textAlign: "left" }}>
@@ -655,7 +824,7 @@ export default function StoresTab({
               </div>
 
               {/* ══════════ PIECE PAGES ══════════ */}
-              {pdfPiecePages.map((pageCategories, pi) => (
+              {renderPiecePages.map((pageCategories, pi) => (
                 <div
                   key={`pp-${pi}`}
                   style={{
@@ -673,12 +842,12 @@ export default function StoresTab({
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 10, borderBottom: "2px solid #8C6F4E", marginBottom: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#1a1a1a", fontWeight: 600 }}>
                       <div style={{ width: 4, height: 18, background: "#8C6F4E", borderRadius: 2 }} />
-                      <span>{selectedStore.name}</span>
-                      {selectedStore.store_code && (
-                        <span style={{ color: "#888", fontWeight: 500 }}>· #{selectedStore.store_code}</span>
+                      <span>{renderStore.name}</span>
+                      {renderStore.store_code && (
+                        <span style={{ color: "#888", fontWeight: 500 }}>· #{renderStore.store_code}</span>
                       )}
                     </div>
-                    <span style={{ fontSize: 11, color: "#888" }}>{PDF_I18N[pdfLang].pageOf(pi + 2, totalPdfPages)}</span>
+                    <span style={{ fontSize: 11, color: "#888" }}>{PDF_I18N[renderLang].pageOf(pi + 2, renderTotalPages)}</span>
                   </div>
 
                   {/* Categories content */}
@@ -733,7 +902,7 @@ export default function StoresTab({
                                       <span />
                                     )}
                                     <span style={{ fontSize: 10.5, fontWeight: 700, color: "#8C6F4E", background: "#F5F2ED", padding: "1px 6px", borderRadius: 4 }}>
-                                      {PDF_I18N[pdfLang].qty(sp.quantity)}
+                                      {PDF_I18N[renderLang].qty(sp.quantity)}
                                     </span>
                                   </div>
                                 </div>
@@ -748,7 +917,7 @@ export default function StoresTab({
                   {/* Footer */}
                   <div style={{ marginTop: 12, paddingTop: 8, borderTop: "1px solid #e5e1d8", display: "flex", justifyContent: "space-between", fontSize: 9, color: "#888" }}>
                     <span>
-                      {PDF_I18N[pdfLang].generatedOn} {new Date().toLocaleDateString("pt-BR")}{" "}
+                      {PDF_I18N[renderLang].generatedOn} {new Date().toLocaleDateString("pt-BR")}{" "}
                       {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                     <span>ProduzAI · {agencyName} · {clientName}</span>
@@ -757,7 +926,7 @@ export default function StoresTab({
               ))}
 
               {/* ══════════ KIT PAGES ══════════ */}
-              {pdfKitPages.map((pageKits, ki) => (
+              {renderKitPages.map((pageKits, ki) => (
                 <div
                   key={`kp-${ki}`}
                   style={{
@@ -775,10 +944,10 @@ export default function StoresTab({
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 10, borderBottom: "2px solid #8C6F4E", marginBottom: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#1a1a1a", fontWeight: 600 }}>
                       <div style={{ width: 4, height: 18, background: "#d97706", borderRadius: 2 }} />
-                      <span>Kits da Campanha · {selectedStore.name}</span>
+                      <span>Kits da Campanha · {renderStore.name}</span>
                     </div>
                     <span style={{ fontSize: 11, color: "#888" }}>
-                      {PDF_I18N[pdfLang].pageOf(1 + pdfPiecePages.length + ki + 1, totalPdfPages)}
+                      {PDF_I18N[renderLang].pageOf(1 + renderPiecePages.length + ki + 1, renderTotalPages)}
                     </span>
                   </div>
 
@@ -786,7 +955,7 @@ export default function StoresTab({
                   <div style={{ background: "linear-gradient(90deg, #1f2937 0%, #374151 100%)", padding: "8px 14px", display: "flex", alignItems: "center", gap: 10, borderRadius: 6, marginBottom: 12 }}>
                     <div style={{ width: 3, height: 16, background: "#d97706", borderRadius: 2, flexShrink: 0 }} />
                     <span style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "#ffffff" }}>
-                      {PDF_I18N[pdfLang].kitsSectionTitle}
+                      {PDF_I18N[renderLang].kitsSectionTitle}
                     </span>
                     <span style={{ background: "#d97706", color: "#fff", borderRadius: 20, padding: "1px 10px", fontSize: 10, fontWeight: 700, marginLeft: "auto" }}>
                       {pageKits.length} kits
@@ -807,7 +976,7 @@ export default function StoresTab({
                                 {kit.name}
                               </div>
                               <div style={{ fontSize: 8.5, color: "#9ca3af", marginTop: 2 }}>
-                                {PDF_I18N[pdfLang].kitSummary(kit.pieces.length, totalKitQty)}
+                                {PDF_I18N[renderLang].kitSummary(kit.pieces.length, totalKitQty)}
                               </div>
                             </div>
                           </div>
@@ -835,7 +1004,7 @@ export default function StoresTab({
                                     {p?.name || "—"}
                                   </div>
                                   <span style={{ fontSize: 9, fontWeight: 700, color: "#92400e", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 3, padding: "0 5px" }}>
-                                    {PDF_I18N[pdfLang].qty(kp.quantity)}
+                                    {PDF_I18N[renderLang].qty(kp.quantity)}
                                   </span>
                                 </div>
                               );
@@ -849,7 +1018,7 @@ export default function StoresTab({
                   {/* Footer */}
                   <div style={{ marginTop: 12, paddingTop: 8, borderTop: "1px solid #e5e1d8", display: "flex", justifyContent: "space-between", fontSize: 9, color: "#888" }}>
                     <span>
-                      {PDF_I18N[pdfLang].generatedOn} {new Date().toLocaleDateString("pt-BR")}{" "}
+                      {PDF_I18N[renderLang].generatedOn} {new Date().toLocaleDateString("pt-BR")}{" "}
                       {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                     <span>ProduzAI · {agencyName} · {clientName}</span>
@@ -858,8 +1027,6 @@ export default function StoresTab({
               ))}
             </div>
           )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
