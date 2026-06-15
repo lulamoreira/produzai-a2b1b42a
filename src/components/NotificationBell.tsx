@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, CheckCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -13,6 +13,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useFormatters } from "@/lib/formatters";
+
+const NOTIFICATION_CATEGORY_LABELS: Record<string, string> = {
+  installation_photo: "Instalação",
+  store_occurrence_report: "Ocorrências",
+  ocorrencia_resolvida: "Ocorrências",
+  store_maintenance_request: "Portal da Loja",
+  store_replacement_request: "Portal da Loja",
+  store_compliance_check: "Portal da Loja",
+};
+
+const CATEGORY_ORDER = ["Instalação", "Ocorrências", "Portal da Loja", "Outros"];
+
+function getCategoryLabel(type: string): string {
+  return NOTIFICATION_CATEGORY_LABELS[type] ?? "Outros";
+}
 
 export default function NotificationBell() {
   const { t } = useTranslation();
@@ -30,6 +45,19 @@ export default function NotificationBell() {
     }
     setOpen(false);
   };
+
+  const groupedNotifications = useMemo(() => {
+    const groups: Record<string, typeof notifications> = {};
+    notifications.slice(0, 20).forEach((n) => {
+      const cat = getCategoryLabel(n.type);
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(n);
+    });
+    return CATEGORY_ORDER.filter((cat) => groups[cat]?.length > 0).map((cat) => ({
+      label: cat,
+      items: groups[cat],
+    }));
+  }, [notifications]);
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -72,24 +100,31 @@ export default function NotificationBell() {
               {t("notifications.noNotifications", { defaultValue: "Nenhuma notificação" })}
             </div>
           ) : (
-            notifications.slice(0, 20).map((notif) => (
-              <DropdownMenuItem
-                key={notif.id}
-                className="flex items-start gap-2 px-3 py-2.5 cursor-pointer rounded-none border-b border-border/30 last:border-0"
-                onClick={() => handleClick(notif)}
-              >
-                {!notif.read && (
-                  <span className="mt-1.5 w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                )}
-                {notif.read && <span className="mt-1.5 w-2 h-2 flex-shrink-0" />}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium leading-tight truncate">{notif.title}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.body}</p>
-                  <p className="text-[10px] text-muted-foreground/70 mt-1">
-                    {fmt.relative(new Date(notif.created_at))}
-                  </p>
+            groupedNotifications.map((group) => (
+              <div key={group.label}>
+                <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40 border-b border-border/30">
+                  {group.label}
                 </div>
-              </DropdownMenuItem>
+                {group.items.map((notif) => (
+                  <DropdownMenuItem
+                    key={notif.id}
+                    className="flex items-start gap-2 px-3 py-2.5 cursor-pointer rounded-none border-b border-border/30 last:border-0"
+                    onClick={() => handleClick(notif)}
+                  >
+                    {!notif.read && (
+                      <span className="mt-1.5 w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                    )}
+                    {notif.read && <span className="mt-1.5 w-2 h-2 flex-shrink-0" />}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium leading-tight truncate">{notif.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.body}</p>
+                      <p className="text-[10px] text-muted-foreground/70 mt-1">
+                        {fmt.relative(new Date(notif.created_at))}
+                      </p>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+              </div>
             ))
           )}
         </ScrollArea>
