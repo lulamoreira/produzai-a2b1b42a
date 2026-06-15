@@ -678,7 +678,7 @@ export default function StoresTab({
                         <span style={{ color: "#888", fontWeight: 500 }}>· #{selectedStore.store_code}</span>
                       )}
                     </div>
-                    <span style={{ fontSize: 11, color: "#888" }}>Página {pi + 2} de {totalPdfPages}</span>
+                    <span style={{ fontSize: 11, color: "#888" }}>{PDF_I18N[pdfLang].pageOf(pi + 2, totalPdfPages)}</span>
                   </div>
 
                   {/* Categories content */}
