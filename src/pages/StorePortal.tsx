@@ -48,6 +48,9 @@ export interface PortalData {
     blocked_piece_message: string | null;
     show_priority?: boolean;
     reporter_options?: string[] | null;
+    reporter_agency_label?: string | null;
+    reporter_client_label?: string | null;
+    reporter_custom?: string[] | null;
   } | null;
   store_override?: {
     module_conformidade: boolean | null;
