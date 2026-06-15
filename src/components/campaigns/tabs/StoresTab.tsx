@@ -772,7 +772,7 @@ export default function StoresTab({
                                       "📦"
                                     )}
                                   </div>
-                                  <div style={{ fontSize: 8.5, color: "#1a1a1a", textAlign: "center", lineHeight: 1.2, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", maxHeight: 22 }}>
+                                  <div style={{ fontSize: 8.5, color: "#1a1a1a", textAlign: "center", lineHeight: 1.2 }}>
                                     {p?.name || "—"}
                                   </div>
                                   <span style={{ fontSize: 9, fontWeight: 700, color: "#92400e", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 3, padding: "0 5px" }}>
