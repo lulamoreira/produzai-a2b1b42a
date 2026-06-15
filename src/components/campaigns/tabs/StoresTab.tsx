@@ -161,15 +161,24 @@ export default function StoresTab({
         backgroundColor: "#ffffff",
         logging: false,
       });
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
       const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
-      const imgH = (canvas.height / canvas.width) * pageW;
-      const totalPages = Math.ceil(imgH / pageH);
+      const pxPerMm = canvas.width / pageW;
+      const pageHeightPx = Math.floor(pageH * pxPerMm);
+      const totalPages = Math.ceil(canvas.height / pageHeightPx);
       for (let i = 0; i < totalPages; i++) {
         if (i > 0) pdf.addPage();
-        pdf.addImage(imgData, "JPEG", 0, -(i * pageH), pageW, imgH);
+        const startY = i * pageHeightPx;
+        const sliceH = Math.min(pageHeightPx, canvas.height - startY);
+        const pageCanvas = document.createElement("canvas");
+        pageCanvas.width = canvas.width;
+        pageCanvas.height = sliceH;
+        const ctx = pageCanvas.getContext("2d")!;
+        ctx.drawImage(canvas, 0, startY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+        const sliceData = pageCanvas.toDataURL("image/jpeg", 0.95);
+        const sliceHmm = sliceH / pxPerMm;
+        pdf.addImage(sliceData, "JPEG", 0, 0, pageW, sliceHmm);
       }
       pdf.save(`Loja_${selectedStore.store_code || selectedStore.name}.pdf`);
     } catch (e) {
@@ -548,13 +557,20 @@ export default function StoresTab({
                         if (!p) return null;
                         return (
                           <div key={i} style={{ border: "1px solid #e5e1d8", borderRadius: 6, overflow: "hidden", background: "#fff" }}>
-                            <div style={{ width: "100%", aspectRatio: "1 / 1", background: "#f4f4f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>
+                            <div style={{ width: "100%", minHeight: 80, background: "#f4f4f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, padding: 4 }}>
                               {p.image_url ? (
                                 <img
-                                  src={p.image_url}
                                   crossOrigin="anonymous"
+                                  src={p.image_url}
                                   alt={p.name}
-                                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                                  style={{
+                                    maxWidth: "calc(100% - 8px)",
+                                    maxHeight: "70px",
+                                    width: "auto",
+                                    height: "auto",
+                                    display: "block",
+                                    margin: "0 auto",
+                                  }}
                                   onError={(e) => {
                                     (e.currentTarget as HTMLImageElement).style.display = "none";
                                   }}
