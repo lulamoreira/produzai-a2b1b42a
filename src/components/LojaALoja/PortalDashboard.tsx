@@ -467,7 +467,8 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
     <div className="space-y-6">
       {/* Top KPI Row (overview) — Ocorrências sempre, demais só se > 0 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={AlertTriangle} label="Ocorrências (total)" value={total} color="hsl(var(--destructive))" />
+        <KpiCard icon={AlertTriangle} label="Ocorrências (total)" value={rawTotal} color="hsl(var(--destructive))" />
+        <KpiCard icon={CheckCircle2} label="Ocorrências válidas" value={total} color={BRAND} />
         {openMaintenance > 0 && (
           <KpiCard icon={Wrench} label="Manutenções abertas" value={openMaintenance} color="hsl(var(--warning, 38 92% 50%))" />
         )}
@@ -515,7 +516,8 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
         <CardContent className="space-y-4">
           {/* Occurrence sub-KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-            <MiniKpi label="Total" value={total} icon={AlertCircle} color="text-muted-foreground" />
+            <MiniKpi label="Total bruto" value={rawTotal} icon={AlertCircle} color="text-muted-foreground" />
+            <MiniKpi label="Válidas" value={total} icon={CheckCircle2} color="text-green-600" />
             <MiniKpi label="Abertas" value={abertas} icon={AlertTriangle} color="text-destructive" />
             <MiniKpi label="Em andamento" value={emAndamento} icon={Clock} color="text-yellow-600" />
             <MiniKpi label="Resolvidas" value={resolvidas} icon={CheckCircle2} color="text-green-600" />
