@@ -191,6 +191,7 @@ function daysOpen(createdAt: string, resolvedAt: string | null) {
 export default function PortalDashboard({ campaignId, clientId, permissions }: Props) {
   const canEdit = permissions.canEdit;
   const canDelete = permissions.canDelete;
+  const { statuses: tratativaStatuses } = useEffectiveTratativaStatuses(clientId);
   // Legacy alias for unmodified blocks
   const isAdmin = canDelete; // delete buttons gate
 
