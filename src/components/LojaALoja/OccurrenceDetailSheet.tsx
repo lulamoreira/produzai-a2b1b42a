@@ -88,19 +88,63 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [initialized, setInitialized] = useState<string | null>(null);
   const [noteHistory, setNoteHistory] = useState<string[]>([]);
+  const [reporterType, setReporterType] = useState<string>("lojista");
 
   // Resolve clientId from the campaign so we can load custom statuses
   const { data: campaignRow } = useQuery({
     queryKey: ["campaign-client-id", campaignId],
     enabled: !!campaignId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("campaigns").select("client_id").eq("id", campaignId).maybeSingle();
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("client_id, clients(name, agencies(name))")
+        .eq("id", campaignId)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
   });
   const clientId = campaignRow?.client_id as string | undefined;
   const { statuses: tratativaStatuses } = useEffectiveTratativaStatuses(clientId);
+
+  // Portal config (for custom reporter names)
+  const { data: portalConfig } = useQuery({
+    queryKey: ["portal-config-reporter", campaignId],
+    enabled: !!campaignId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("store_portal_config")
+        .select("reporter_custom, reporter_options")
+        .eq("campaign_id", campaignId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const reporterOptions = useMemo(() => {
+    const opts: Array<{ value: string; label: string }> = [
+      { value: "lojista", label: "Lojista" },
+      { value: "fornecedor", label: "Fornecedor" },
+    ];
+    const agencyName = (campaignRow as any)?.clients?.agencies?.name;
+    const clientName = (campaignRow as any)?.clients?.name;
+    if (agencyName) opts.push({ value: `agencia:${agencyName}`, label: agencyName });
+    if (clientName) opts.push({ value: `cliente:${clientName}`, label: clientName });
+    const customList: string[] = ((portalConfig as any)?.reporter_custom ?? []) as string[];
+    customList.forEach((name) => {
+      if (name && name.trim()) opts.push({ value: `custom:${name.trim()}`, label: name.trim() });
+    });
+    // Ensure current value is present even if not in list
+    if (reporterType && !opts.find((o) => o.value === reporterType)) {
+      const label = reporterType.startsWith("agencia:") || reporterType.startsWith("cliente:") || reporterType.startsWith("custom:")
+        ? reporterType.split(":").slice(1).join(":")
+        : reporterType;
+      opts.push({ value: reporterType, label });
+    }
+    return opts;
+  }, [campaignRow, portalConfig, reporterType]);
+
 
   // Photo check-in for this campaign + store (lazy: only when user opens the modal)
   const checkinQuery = useQuery({
@@ -129,6 +173,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
       setResolutionPhotos(Array.isArray(occurrence.resolution_photo_urls) ? occurrence.resolution_photo_urls : []);
       setReinstallationDate(occurrence.reinstallation_scheduled_at ?? "");
       setReinstallationOs(occurrence.reinstallation_os ?? "");
+      setReporterType(occurrence.reporter_type ?? "lojista");
       setInitialized(occurrence.id);
       // Reset transient UI so leftover lightbox/check-in from a previous occurrence don't reappear
       setLightboxUrl(null);
@@ -217,6 +262,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
           resolution_photo_urls: resolutionPhotos,
           reinstallation_scheduled_at: needsReinst && reinstallationDate ? new Date(reinstallationDate).toISOString() : null,
           reinstallation_os: needsReinst && reinstallationOs.trim() ? reinstallationOs.trim() : null,
+          reporter_type: reporterType || null,
           resolved_by_user_id: (tratativaStatuses.find((s) => s.value === tratativaStatus)?.is_resolved) ? userId : null,
         } as any)
         .eq("id", occurrence.id);
@@ -324,6 +370,20 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
 
               <Field label="Motivo" value={motivoDesc} />
               <Field label="Reportado por" value={reporterLabel} />
+              {canEdit && (
+                <div className="-mt-2">
+                  <Select value={reporterType} onValueChange={setReporterType}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {reporterOptions.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <Field label="Data de abertura" value={formatDateTime(occurrence.created_at)} />
 
               {needsReinst && (
