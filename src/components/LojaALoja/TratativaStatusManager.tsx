@@ -245,7 +245,8 @@ export default function TratativaStatusManager({ clientId, permissions, embedded
                 <SortableRow key={s.id} s={s} canEdit={canEdit} canDelete={canDelete}
                   isEditing={editingId === s.id}
                   editLabel={editLabel} editColor={editColor} editResolved={editResolved}
-                  onChangeLabel={setEditLabel} onChangeColor={setEditColor} onChangeResolved={setEditResolved}
+                  editLabel={editLabel} editColor={editColor} editResolved={editResolved} editCountsAsOcc={editCountsAsOcc}
+                  onChangeLabel={setEditLabel} onChangeColor={setEditColor} onChangeResolved={setEditResolved} onChangeCountsAsOcc={setEditCountsAsOcc}
                   onSave={() => saveEdit(s)} onCancel={() => setEditingId(null)}
                   onStartEdit={() => startEdit(s)} onToggleAtivo={() => toggleAtivo(s)}
                   onSetDefault={() => setDefault(s)} onDelete={() => setDeleteTarget(s)} />
