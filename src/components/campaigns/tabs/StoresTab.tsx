@@ -62,6 +62,8 @@ const PDF_I18N = {
     kitsSectionTitle: "Kit Composition",
     kitSummary: (types: number, units: number) => `${types} piece types · ${units} total units`,
     qty: (n: number) => `× ${n}`,
+    categoryPieceCount: (n: number) => `${n} pieces`,
+    kitsCount: (n: number) => `${n} kits`,
   },
 } as const;
 
