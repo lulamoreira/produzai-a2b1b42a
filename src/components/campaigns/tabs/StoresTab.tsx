@@ -874,7 +874,7 @@ export default function StoresTab({
                             const p = sp.campaign_pieces;
                             if (!p) return null;
                             return (
-                              <div key={i} style={{ border: "1px solid #e5e1d8", borderRadius: 6, overflow: "hidden", background: "#fff", minHeight: 150, display: "flex", flexDirection: "column" }}>
+                              <div key={i} style={{ border: "1px solid #e5e1d8", borderRadius: 6, overflow: "hidden", background: "#fff", minHeight: 160, display: "flex", flexDirection: "column", alignItems: "center" }}>
                                 <div style={{ width: "100%", height: 80, background: "#f4f4f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, padding: 4, flexShrink: 0 }}>
                                   {p.image_url ? (
                                     <img
