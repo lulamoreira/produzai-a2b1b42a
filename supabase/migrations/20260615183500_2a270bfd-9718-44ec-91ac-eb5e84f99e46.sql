@@ -1,0 +1,1 @@
+ALTER TABLE public.store_portal_config ADD COLUMN IF NOT EXISTS whatsapp_contact text DEFAULT NULL;

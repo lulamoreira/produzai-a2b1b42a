@@ -519,6 +519,19 @@ export default function PortalConfigTab({ campaignId, clientId, permissions }: P
                   disabled={!isAdmin}
                 />
               </div>
+              <div>
+                <label className="text-xs font-semibold text-foreground">WhatsApp de Contato</label>
+                <p className="text-xs text-muted-foreground mb-1">
+                  Número que aparece como botão de contato direto no portal da loja (ex: 5511999999999). Deixe vazio para ocultar o botão.
+                </p>
+                <DebouncedInput
+                  className="mt-1"
+                  placeholder="5511999999999 (DDI+DDD+número, sem espaços)"
+                  value={(localConfig as any)?.whatsapp_contact ?? ""}
+                  onValueCommit={(v) => saveConfig({ whatsapp_contact: v || null })}
+                  disabled={!isAdmin}
+                />
+              </div>
             </div>
 
             {(localConfig as any)?.updated_at && (
