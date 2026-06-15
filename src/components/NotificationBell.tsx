@@ -46,6 +46,19 @@ export default function NotificationBell() {
     setOpen(false);
   };
 
+  const groupedNotifications = useMemo(() => {
+    const groups: Record<string, typeof notifications> = {};
+    notifications.slice(0, 20).forEach((n) => {
+      const cat = getCategoryLabel(n.type);
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(n);
+    });
+    return CATEGORY_ORDER.filter((cat) => groups[cat]?.length > 0).map((cat) => ({
+      label: cat,
+      items: groups[cat],
+    }));
+  }, [notifications]);
+
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
