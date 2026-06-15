@@ -897,16 +897,26 @@ export default function StoresTab({
                                     "📦"
                                   )}
                                 </div>
-                                <div style={{ padding: "5px 7px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                                  <div style={{ fontSize: 9.5, fontWeight: 600, color: "#1a1a1a", lineHeight: 1.2 }}>
+                                <div style={{ padding: "5px 7px", width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                                  <div style={{
+                                    minHeight: "22px",
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    justifyContent: "center",
+                                    textAlign: "center",
+                                    width: "100%",
+                                    marginTop: "4px",
+                                    fontSize: "8px",
+                                    lineHeight: 1.3,
+                                    fontWeight: 600,
+                                    color: "#1a1a1a",
+                                  }}>
                                     {p.name}
                                   </div>
-                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 3 }}>
-                                    {p.size ? (
-                                      <span style={{ fontSize: 8.5, color: "#888" }}>{p.size}</span>
-                                    ) : (
-                                      <span />
-                                    )}
+                                  {p.size && (
+                                    <div style={{ fontSize: 8, color: "#888", marginTop: 2 }}>{p.size}</div>
+                                  )}
+                                  <div style={{ marginTop: "5px" }}>
                                     <span style={{ fontSize: 10.5, fontWeight: 700, color: "#8C6F4E", background: "#F5F2ED", padding: "1px 6px", borderRadius: 4 }}>
                                       {PDF_I18N[renderLang].qty(sp.quantity)}
                                     </span>
