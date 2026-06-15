@@ -33,17 +33,18 @@ interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boo
 interface Props { clientId: string; permissions: SubAreaPermission; embedded?: boolean }
 
 function SortableRow({
-  s, canEdit, canDelete, isEditing, editLabel, editColor, editResolved,
-  onChangeLabel, onChangeColor, onChangeResolved,
+  s, canEdit, canDelete, isEditing, editLabel, editColor, editResolved, editCountsAsOcc,
+  onChangeLabel, onChangeColor, onChangeResolved, onChangeCountsAsOcc,
   onSave, onCancel, onStartEdit, onToggleAtivo, onSetDefault, onDelete,
 }: {
   s: TratativaStatus;
   canEdit: boolean; canDelete: boolean;
   isEditing: boolean;
-  editLabel: string; editColor: string; editResolved: boolean;
+  editLabel: string; editColor: string; editResolved: boolean; editCountsAsOcc: boolean;
   onChangeLabel: (v: string) => void;
   onChangeColor: (v: string) => void;
   onChangeResolved: (v: boolean) => void;
+  onChangeCountsAsOcc: (v: boolean) => void;
   onSave: () => void; onCancel: () => void;
   onStartEdit: () => void; onToggleAtivo: () => void;
   onSetDefault: () => void; onDelete: () => void;
@@ -71,6 +72,10 @@ function SortableRow({
             <Switch checked={editResolved} onCheckedChange={onChangeResolved} />
             Resolvido
           </label>
+          <label className="flex items-center gap-1.5 text-xs whitespace-nowrap">
+            <Switch checked={editCountsAsOcc} onCheckedChange={onChangeCountsAsOcc} />
+            Computa ocorrência
+          </label>
           <Button size="sm" variant="ghost" onClick={onSave} className="h-8 px-2" disabled={!canEdit}>
             <Check className="h-4 w-4 text-green-600" />
           </Button>
@@ -85,6 +90,11 @@ function SortableRow({
             {s.label}
             {s.is_default && <Badge variant="outline" className="text-[10px] h-4 px-1">Padrão</Badge>}
             {s.is_resolved && <Badge variant="outline" className="text-[10px] h-4 px-1 text-green-700 border-green-300">Resolvido</Badge>}
+            {s.conta_como_ocorrencia === false && (
+              <Badge variant="outline" className="text-[10px] h-4 px-1 text-orange-600 border-orange-300">
+                Não computa
+              </Badge>
+            )}
           </span>
           {(canEdit || canDelete) && (
             <>
