@@ -524,10 +524,12 @@ export default function PortalConfigTab({ campaignId, clientId, permissions }: P
                 <p className="text-xs text-muted-foreground mb-1">
                   Número que aparece como botão de contato direto no portal da loja (ex: 5511999999999). Deixe vazio para ocultar o botão.
                 </p>
-                <InlineEditField
+                <DebouncedInput
+                  className="mt-1"
+                  placeholder="5511999999999 (DDI+DDD+número, sem espaços)"
                   value={(localConfig as any)?.whatsapp_contact ?? ""}
                   onValueCommit={(v) => saveConfig({ whatsapp_contact: v || null })}
-                  placeholder="5511999999999 (DDI+DDD+número, sem espaços)"
+                  disabled={!isAdmin}
                 />
               </div>
             </div>
