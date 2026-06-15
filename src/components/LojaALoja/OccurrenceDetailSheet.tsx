@@ -87,6 +87,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [initialized, setInitialized] = useState<string | null>(null);
+  const [noteHistory, setNoteHistory] = useState<string[]>([]);
 
   // Resolve clientId from the campaign so we can load custom statuses
   const { data: campaignRow } = useQuery({
