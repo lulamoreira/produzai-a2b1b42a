@@ -224,8 +224,9 @@ export default function OccurrencesPortal() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </header>
 
         {isModuleDisabled && (
