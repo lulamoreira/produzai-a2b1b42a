@@ -42,12 +42,12 @@ function formatDateBR(iso: string | null | undefined) {
   return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-function buildWhatsAppMessage(r: any, data: PortalData) {
+function buildWhatsAppMessage(r: any, data: PortalData, statuses: TratativaStatus[]) {
   const peca = data.pecas.find(p => p.id === r.loja_a_loja_peca_id);
   const tipo = data.tipos.find(t => t.id === r.tipo_id);
   const subdivisao = data.subdivisoes.find(s => s.id === r.subdivisao_id);
   const motivo = data.motivos?.find(m => m.id === r.motive_id);
-  const statusInfo = getTratativaStatusLabel(r.tratativa_status ?? r.status ?? "aberta");
+  const statusInfo = getTratativaDisplay(r.tratativa_status ?? r.status ?? "aberta", statuses);
   const local = [tipo?.nome, subdivisao?.nome].filter(Boolean).join(" / ") || "—";
   const storeName = data.store.nickname || data.store.name;
   const storeCity = [data.store.city, data.store.state].filter(Boolean).join("/");
