@@ -67,7 +67,7 @@ function slugify(s: string) {
 export function useAddTratativaStatus() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (input: { client_id: string; label: string; color?: string; is_resolved?: boolean }) => {
+    mutationFn: async (input: { client_id: string; label: string; color?: string; is_resolved?: boolean; conta_como_ocorrencia?: boolean }) => {
       const baseValue = slugify(input.label);
       // ensure unique value
       const { data: existing } = await supabase
@@ -89,6 +89,7 @@ export function useAddTratativaStatus() {
           display_order: nextOrder,
           is_resolved: !!input.is_resolved,
           ativo: true,
+          conta_como_ocorrencia: input.conta_como_ocorrencia ?? true,
         });
       if (error) throw error;
     },
