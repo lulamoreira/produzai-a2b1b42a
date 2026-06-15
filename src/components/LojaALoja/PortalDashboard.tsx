@@ -143,17 +143,20 @@ const priorityColor: Record<string, string> = {
   baixa: "bg-blue-400 text-white",
 };
 
-const tratativaColor: Record<string, string> = {
-  aberta: "bg-destructive/15 text-destructive",
-  em_andamento: "bg-warning/15 text-warning",
-  resolvida: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-};
-
-const tratativaLabel: Record<string, string> = {
-  aberta: "Aberta",
-  em_andamento: "Em andamento",
-  resolvida: "Resolvida",
-};
+function getTratativaDisplay(
+  value: string,
+  statuses: { value: string; label: string; color: string }[]
+): { label: string; className: string; style: React.CSSProperties } {
+  const BUILTIN: Record<string, { label: string; className: string }> = {
+    aberta: { label: "Aberta", className: "bg-destructive/15 text-destructive" },
+    em_andamento: { label: "Em andamento", className: "bg-warning/15 text-warning" },
+    resolvida: { label: "Resolvida", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+  };
+  if (BUILTIN[value]) return { ...BUILTIN[value], style: {} };
+  const custom = statuses.find((s) => s.value === value);
+  if (custom) return { label: custom.label, className: "text-white font-medium", style: { backgroundColor: custom.color } };
+  return { label: value, className: "bg-muted", style: {} };
+}
 
 const statusColor: Record<string, string> = {
   aberto: "bg-destructive/15 text-destructive",
