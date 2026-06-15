@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type Store,
@@ -12,7 +12,9 @@ import {
 import PieceImageUpload from "@/components/PieceImageUpload";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import ChangeLogPanel from "@/components/ChangeLogPanel";
+import LojaPdfTemplate from "@/components/LojaPdfTemplate";
 import { exportSingleStore } from "@/lib/exportExcel";
+import { toast } from "sonner";
 import {
   Package,
   MapPin,
@@ -28,6 +30,8 @@ import {
   Download,
   ChevronDown,
   ChevronUp,
+  FileDown,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +70,8 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
   const [addPieceOpen, setAddPieceOpen] = useState(false);
   const [addPieceId, setAddPieceId] = useState<string>("");
   const [addPieceQty, setAddPieceQty] = useState<number>(1);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   // Group pieces by category
   const piecesWithQty = storePieces
@@ -136,6 +142,62 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
     exportSingleStore(store, pieces, sps);
   };
 
+  const handleExportPdf = async () => {
+    if (exportingPdf) return;
+    setExportingPdf(true);
+    try {
+      const node = pdfRef.current;
+      if (!node) throw new Error("Template não montado");
+      // Allow images a brief tick to begin loading
+      await new Promise((r) => setTimeout(r, 60));
+      // Wait for all <img> in template to load (or fail)
+      const imgs = Array.from(node.querySelectorAll("img"));
+      await Promise.all(
+        imgs.map(
+          (img) =>
+            new Promise<void>((resolve) => {
+              if (img.complete) return resolve();
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+            })
+        )
+      );
+
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+
+      const canvas = await html2canvas(node, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+
+      const imgRatio = canvas.height / canvas.width;
+      let renderW = pageW;
+      let renderH = pageW * imgRatio;
+      if (renderH > pageH) {
+        renderH = pageH;
+        renderW = pageH / imgRatio;
+      }
+      const x = (pageW - renderW) / 2;
+      const y = 0;
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.92);
+      pdf.addImage(imgData, "JPEG", x, y, renderW, renderH);
+      pdf.save(`Loja_${store.number}.pdf`);
+    } catch (err) {
+      console.error("PDF export failed", err);
+      toast.error("Falha ao gerar PDF");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   const categoryColors: Record<string, string> = {
     CUBOS: "from-amber-500/20 to-amber-500/5 border-amber-500/30",
     SHELFTALKS: "from-emerald-500/20 to-emerald-500/5 border-emerald-500/30",
@@ -194,6 +256,19 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
           </h2>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={exportingPdf}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            {exportingPdf ? (
+              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+            ) : (
+              <FileDown className="w-4 h-4 mr-1" />
+            )}
+            Exportar PDF
+          </Button>
           <Button size="sm" variant="outline" onClick={handleExport}>
             <Download className="w-4 h-4 mr-1" /> Excel
           </Button>
@@ -409,6 +484,9 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
           </div>
         )}
       </div>
+
+      {/* Off-screen PDF template */}
+      <LojaPdfTemplate ref={pdfRef} store={store} items={piecesWithQty} />
     </div>
   );
 };
