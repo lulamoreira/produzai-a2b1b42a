@@ -66,26 +66,26 @@ function buildWhatsAppMessage(r: any, data: PortalData, statuses: TratativaStatu
   ].filter(Boolean).join("\n");
 }
 
-function OcorrenciaCard({ r, data }: { r: any; data: PortalData }) {
+function OcorrenciaCard({ r, data, statuses }: { r: any; data: PortalData; statuses: TratativaStatus[] }) {
   const [expanded, setExpanded] = useState(false);
 
   const peca = data.pecas.find(p => p.id === r.loja_a_loja_peca_id);
   const tipo = data.tipos.find(t => t.id === r.tipo_id);
   const subdivisao = data.subdivisoes.find(s => s.id === r.subdivisao_id);
   const motivo = data.motivos?.find(m => m.id === r.motive_id);
-  const statusInfo = getTratativaStatusLabel(r.tratativa_status ?? r.status ?? "aberta");
+  const statusInfo = getTratativaDisplay(r.tratativa_status ?? r.status ?? "aberta", statuses);
   const local = [tipo?.nome, subdivisao?.nome].filter(Boolean).join(" / ") || "—";
   const whatsappContact = (data.portal_config as any)?.whatsapp_contact;
 
   const handleShare = () => {
-    const msg = encodeURIComponent(buildWhatsAppMessage(r, data));
+    const msg = encodeURIComponent(buildWhatsAppMessage(r, data, statuses));
     window.open(`https://wa.me/?text=${msg}`, "_blank");
   };
 
   const handleContact = () => {
     if (!whatsappContact) return;
     const phone = whatsappContact.replace(/\D/g, "");
-    const msg = encodeURIComponent(buildWhatsAppMessage(r, data));
+    const msg = encodeURIComponent(buildWhatsAppMessage(r, data, statuses));
     window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
   };
 
@@ -97,7 +97,7 @@ function OcorrenciaCard({ r, data }: { r: any; data: PortalData }) {
       <div className="flex items-center justify-between gap-3">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.color}`}>
+            <span className={statusInfo.className} style={statusInfo.style}>
               {statusInfo.label}
             </span>
             <span className="text-sm font-medium truncate">{peca?.nome || "Peça"}</span>
@@ -106,7 +106,12 @@ function OcorrenciaCard({ r, data }: { r: any; data: PortalData }) {
             {local} · {formatDateBR(r.created_at)}
           </p>
         </div>
-        {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
+        <div className="flex flex-col items-end gap-0.5 shrink-0">
+          {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
+          <span className="text-[10px] text-muted-foreground text-right max-w-[140px] leading-tight">
+            clique na seta para ver mais informações e se for o caso, pedir mais explicações, por WhatsApp
+          </span>
+        </div>
       </div>
 
       {expanded && (
