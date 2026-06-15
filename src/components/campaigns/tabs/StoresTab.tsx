@@ -155,31 +155,63 @@ export default function StoresTab({
         import("jspdf"),
         import("html2canvas"),
       ]);
-      const canvas = await html2canvas(pdfTemplateRef.current, {
+
+      const templateEl = pdfTemplateRef.current;
+      const pageHeightDom = templateEl.offsetWidth * (210 / 297);
+
+      const sections = Array.from(
+        templateEl.querySelectorAll("[data-pdf-section]")
+      ) as HTMLElement[];
+      const spacers: HTMLElement[] = [];
+
+      for (const section of sections) {
+        const templateTop = templateEl.getBoundingClientRect().top;
+        const sectionTop = section.getBoundingClientRect().top - templateTop;
+        const sectionBottom = sectionTop + section.getBoundingClientRect().height;
+        const currentPage = Math.floor(sectionTop / pageHeightDom);
+        const pageEnd = (currentPage + 1) * pageHeightDom;
+
+        if (sectionTop < pageEnd && sectionBottom > pageEnd) {
+          const spacerHeight = pageEnd - sectionTop;
+          const spacer = document.createElement("div");
+          spacer.style.cssText = `height:${spacerHeight}px;background:#ffffff;display:block;`;
+          section.parentNode!.insertBefore(spacer, section);
+          spacers.push(spacer);
+        }
+      }
+
+      const canvas = await html2canvas(templateEl, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
         logging: false,
       });
+
+      spacers.forEach((s) => s.remove());
+
+      const pxPerMm = canvas.width / 297;
+      const pageHeightCanvas = Math.round(210 * pxPerMm);
+      const totalPages = Math.ceil(canvas.height / pageHeightCanvas);
+
       const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const pxPerMm = canvas.width / pageW;
-      const pageHeightPx = Math.floor(pageH * pxPerMm);
-      const totalPages = Math.ceil(canvas.height / pageHeightPx);
+
       for (let i = 0; i < totalPages; i++) {
         if (i > 0) pdf.addPage();
-        const startY = i * pageHeightPx;
-        const sliceH = Math.min(pageHeightPx, canvas.height - startY);
+        const startY = i * pageHeightCanvas;
+        const sliceH = Math.min(pageHeightCanvas, canvas.height - startY);
+
         const pageCanvas = document.createElement("canvas");
         pageCanvas.width = canvas.width;
-        pageCanvas.height = sliceH;
+        pageCanvas.height = pageHeightCanvas;
         const ctx = pageCanvas.getContext("2d")!;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, pageCanvas.width, pageCanvas.height);
         ctx.drawImage(canvas, 0, startY, canvas.width, sliceH, 0, 0, canvas.width, sliceH);
+
         const sliceData = pageCanvas.toDataURL("image/jpeg", 0.95);
-        const sliceHmm = sliceH / pxPerMm;
-        pdf.addImage(sliceData, "JPEG", 0, 0, pageW, sliceHmm);
+        pdf.addImage(sliceData, "JPEG", 0, 0, 297, 210);
       }
+
       pdf.save(`Loja_${selectedStore.store_code || selectedStore.name}.pdf`);
     } catch (e) {
       console.error("PDF export error:", e);
@@ -541,7 +573,7 @@ export default function StoresTab({
               {/* PIECES BY CATEGORY */}
               <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
                 {piecesByCategory.map(({ category, pieces }) => (
-                  <div key={category}>
+                  <div key={category} data-pdf-section="true">
                     <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, paddingBottom: 6, borderBottom: "1px solid #e5e1d8" }}>
                       <div style={{ width: 4, height: 16, background: "#8C6F4E", borderRadius: 2 }} />
                       <span style={{ fontSize: 14, fontWeight: 700, color: "#1a1a1a", textTransform: "uppercase", letterSpacing: "0.05em" }}>
@@ -604,7 +636,7 @@ export default function StoresTab({
 
               {/* KITS */}
               {storeKits.length > 0 && (
-                <div>
+                <div data-pdf-section="true">
                   <div style={{
                     width: "100%",
                     background: "linear-gradient(90deg, #1f2937 0%, #374151 100%)",
