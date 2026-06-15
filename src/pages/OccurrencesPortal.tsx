@@ -29,6 +29,7 @@ export default function OccurrencesPortal() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [selectedState, setSelectedState] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
 
   const { data: config, isLoading: loadingConfig } = useQuery({
