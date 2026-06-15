@@ -131,9 +131,17 @@ export default function OccurrencesPortal() {
   }, [tokens]);
 
   const filteredTokens = useMemo(() => {
-    if (selectedState === "all") return tokens;
-    return tokens.filter(s => s.client_stores?.state === selectedState);
-  }, [tokens, selectedState]);
+    let result = tokens;
+    if (selectedState !== "all") result = result.filter(s => s.client_stores?.state === selectedState);
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter(s =>
+        s.client_stores?.name?.toLowerCase().includes(q) ||
+        s.client_stores?.store_code?.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [tokens, selectedState, searchQuery]);
 
   // Group by state -> city
   const grouped = filteredTokens.reduce<Record<string, Record<string, StoreToken[]>>>((acc, t) => {
