@@ -28,6 +28,7 @@ import { useTableSort } from "@/hooks/useTableSort";
 import SortableHeader from "./SortableHeader";
 import { useStorePortalConfig } from "@/hooks/useStorePortalConfig";
 import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
+import { useEffectiveTratativaStatuses } from "@/hooks/useLalTratativaStatuses";
 
 interface CollapsibleCardProps {
   title: string;
@@ -142,17 +143,20 @@ const priorityColor: Record<string, string> = {
   baixa: "bg-blue-400 text-white",
 };
 
-const tratativaColor: Record<string, string> = {
-  aberta: "bg-destructive/15 text-destructive",
-  em_andamento: "bg-warning/15 text-warning",
-  resolvida: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-};
-
-const tratativaLabel: Record<string, string> = {
-  aberta: "Aberta",
-  em_andamento: "Em andamento",
-  resolvida: "Resolvida",
-};
+function getTratativaDisplay(
+  value: string,
+  statuses: { value: string; label: string; color: string }[]
+): { label: string; className: string; style: React.CSSProperties } {
+  const BUILTIN: Record<string, { label: string; className: string }> = {
+    aberta: { label: "Aberta", className: "bg-destructive/15 text-destructive" },
+    em_andamento: { label: "Em andamento", className: "bg-warning/15 text-warning" },
+    resolvida: { label: "Resolvida", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+  };
+  if (BUILTIN[value]) return { ...BUILTIN[value], style: {} };
+  const custom = statuses.find((s) => s.value === value);
+  if (custom) return { label: custom.label, className: "text-white font-medium", style: { backgroundColor: custom.color } };
+  return { label: value, className: "bg-muted", style: {} };
+}
 
 const statusColor: Record<string, string> = {
   aberto: "bg-destructive/15 text-destructive",
@@ -187,6 +191,7 @@ function daysOpen(createdAt: string, resolvedAt: string | null) {
 export default function PortalDashboard({ campaignId, clientId, permissions }: Props) {
   const canEdit = permissions.canEdit;
   const canDelete = permissions.canDelete;
+  const { statuses: tratativaStatuses } = useEffectiveTratativaStatuses(clientId);
   // Legacy alias for unmodified blocks
   const isAdmin = canDelete; // delete buttons gate
 
@@ -590,7 +595,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
                         {showPriority && <TableCell><Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge></TableCell>}
                         <TableCell>
                           <div className="flex items-center gap-1">
-                            <Badge className={tratativaColor[ts] ?? "bg-muted"}>{tratativaLabel[ts] ?? ts}</Badge>
+                            <Badge className={getTratativaDisplay(ts, tratativaStatuses).className} style={getTratativaDisplay(ts, tratativaStatuses).style}>{getTratativaDisplay(ts, tratativaStatuses).label}</Badge>
                             {o.needs_reinstallation && (
                               <span
                                 title={o.reinstallation_scheduled_at
@@ -661,7 +666,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
                     {/* Badges */}
                     <div className="flex flex-wrap gap-1.5">
                       {showPriority && <Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge>}
-                      <Badge className={tratativaColor[ts] ?? "bg-muted"}>{tratativaLabel[ts] ?? ts}</Badge>
+                      <Badge className={getTratativaDisplay(ts, tratativaStatuses).className} style={getTratativaDisplay(ts, tratativaStatuses).style}>{getTratativaDisplay(ts, tratativaStatuses).label}</Badge>
                       {o.needs_reinstallation && (
                         <span
                           title={o.reinstallation_scheduled_at

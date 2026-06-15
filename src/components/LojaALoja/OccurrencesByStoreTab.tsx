@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
 import PieceMultiSelectFilter from "./PieceMultiSelectFilter";
 import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
+import { useEffectiveTratativaStatuses } from "@/hooks/useLalTratativaStatuses";
 
 interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boolean }
 interface Props {
@@ -51,26 +52,30 @@ function useOccurrencesByStore(campaignId: string) {
   });
 }
 
-const tratativaColor: Record<string, string> = {
-  aberta: "bg-destructive/15 text-destructive",
-  em_andamento: "bg-warning/15 text-warning",
-  resolvida: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-};
-
-const tratativaLabel: Record<string, string> = {
-  aberta: "Pendente",
-  em_andamento: "Em andamento",
-  resolvida: "Resolvida",
-};
+function getTratativaDisplay(
+  value: string,
+  statuses: { value: string; label: string; color: string }[]
+): { label: string; className: string; style: React.CSSProperties } {
+  const BUILTIN: Record<string, { label: string; className: string }> = {
+    aberta: { label: "Aberta", className: "bg-destructive/15 text-destructive" },
+    em_andamento: { label: "Em andamento", className: "bg-warning/15 text-warning" },
+    resolvida: { label: "Resolvida", className: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400" },
+  };
+  if (BUILTIN[value]) return { ...BUILTIN[value], style: {} };
+  const custom = statuses.find((s) => s.value === value);
+  if (custom) return { label: custom.label, className: "text-white font-medium", style: { backgroundColor: custom.color } };
+  return { label: value, className: "bg-muted", style: {} };
+}
 
 function formatDate(d: string | null) {
   if (!d) return "—";
   return new Date(d).toLocaleDateString("pt-BR");
 }
 
-export default function OccurrencesByStoreTab({ campaignId, permissions }: Props) {
+export default function OccurrencesByStoreTab({ campaignId, clientId, permissions }: Props) {
   const { data, isLoading } = useOccurrencesByStore(campaignId);
   useRealtimeStoreOccurrences(campaignId);
+  const { statuses: tratativaStatuses } = useEffectiveTratativaStatuses(clientId);
 
   const [filterStore, setFilterStore] = useState<string>("__all__");
   const [filterMotive, setFilterMotive] = useState<string>("__all__");
@@ -196,7 +201,7 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
         UF: (o.client_stores as any)?.state ?? "",
         Peça: (o.loja_a_loja_pecas as any)?.nome ?? "—",
         Motivo: (o.store_portal_motivos as any)?.descricao ?? "—",
-        Status: tratativaLabel[o.tratativa_status ?? "aberta"] ?? o.tratativa_status,
+        Status: getTratativaDisplay(o.tratativa_status ?? "aberta", tratativaStatuses).label,
         Prioridade: o.priority ?? "",
         "Aberta em": formatDate(o.created_at),
         "Prev. resolução": formatDate(o.expected_resolution_date),
@@ -407,9 +412,9 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                         <Badge variant="secondary" className="text-xs">{g.items.length} total</Badge>
-                        {pend > 0 && <Badge className={cn("text-xs", tratativaColor.aberta)}>{pend} pend.</Badge>}
-                        {andamento > 0 && <Badge className={cn("text-xs", tratativaColor.em_andamento)}>{andamento} and.</Badge>}
-                        {resolv > 0 && <Badge className={cn("text-xs", tratativaColor.resolvida)}>{resolv} res.</Badge>}
+                        {pend > 0 && <Badge className={cn("text-xs", "bg-destructive/15 text-destructive")}>{pend} pend.</Badge>}
+                        {andamento > 0 && <Badge className={cn("text-xs", "bg-warning/15 text-warning")}>{andamento} and.</Badge>}
+                        {resolv > 0 && <Badge className={cn("text-xs", "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400")}>{resolv} res.</Badge>}
                       </div>
                     </button>
                   </CollapsibleTrigger>
@@ -427,8 +432,8 @@ export default function OccurrencesByStoreTab({ campaignId, permissions }: Props
                               <span className="text-sm font-medium truncate">
                                 {(o.loja_a_loja_pecas as any)?.nome ?? "Peça —"}
                               </span>
-                              <Badge className={cn("text-xs", tratativaColor[o.tratativa_status ?? "aberta"])}>
-                                {tratativaLabel[o.tratativa_status ?? "aberta"]}
+                              <Badge className={cn("text-xs", getTratativaDisplay(o.tratativa_status ?? "aberta", tratativaStatuses).className)} style={getTratativaDisplay(o.tratativa_status ?? "aberta", tratativaStatuses).style}>
+                                {getTratativaDisplay(o.tratativa_status ?? "aberta", tratativaStatuses).label}
                               </Badge>
                             </div>
                             <div className="text-xs text-muted-foreground mt-0.5 truncate">
