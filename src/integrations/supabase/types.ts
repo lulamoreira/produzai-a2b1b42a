@@ -4622,6 +4622,7 @@ export type Database = {
           reporter_options: string[] | null
           show_priority: boolean
           updated_at: string | null
+          whatsapp_contact: string | null
         }
         Insert: {
           blocked_piece_message?: string | null
@@ -4646,6 +4647,7 @@ export type Database = {
           reporter_options?: string[] | null
           show_priority?: boolean
           updated_at?: string | null
+          whatsapp_contact?: string | null
         }
         Update: {
           blocked_piece_message?: string | null
@@ -4670,6 +4672,7 @@ export type Database = {
           reporter_options?: string[] | null
           show_priority?: boolean
           updated_at?: string | null
+          whatsapp_contact?: string | null
         }
         Relationships: [
           {

@@ -10,24 +10,145 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Loader2, Image as ImageIcon } from "lucide-react";
+import { Loader2, Image as ImageIcon, ArrowLeft, ChevronDown, ChevronUp, MessageCircle, Share2, ClipboardList } from "lucide-react";
 
 interface Props {
   data: PortalData;
   agencyId: string;
 }
 
+function getTratativaStatusLabel(status: string) {
+  const map: Record<string, { label: string; color: string }> = {
+    aberta: { label: "Aberta", color: "bg-yellow-500 text-white" },
+    em_andamento: { label: "Em andamento", color: "bg-blue-500 text-white" },
+    resolvida: { label: "Resolvida", color: "bg-green-600 text-white" },
+    resolvido: { label: "Resolvida", color: "bg-green-600 text-white" },
+  };
+  return map[status] ?? { label: status, color: "bg-gray-400 text-white" };
+}
+
+function formatDateBR(iso: string | null | undefined) {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+}
+
+function buildWhatsAppMessage(r: any, data: PortalData) {
+  const peca = data.pecas.find(p => p.id === r.loja_a_loja_peca_id);
+  const tipo = data.tipos.find(t => t.id === r.tipo_id);
+  const subdivisao = data.subdivisoes.find(s => s.id === r.subdivisao_id);
+  const motivo = data.motivos?.find(m => m.id === r.motive_id);
+  const statusInfo = getTratativaStatusLabel(r.tratativa_status ?? r.status ?? "aberta");
+  const local = [tipo?.nome, subdivisao?.nome].filter(Boolean).join(" / ") || "—";
+  const storeName = data.store.nickname || data.store.name;
+  const storeCity = [data.store.city, data.store.state].filter(Boolean).join("/");
+
+  return [
+    `*Ocorrência — ${data.campaign.name}*`,
+    `🏪 Loja: ${storeName}${storeCity ? ` — ${storeCity}` : ""}${data.store.store_code ? ` (${data.store.store_code})` : ""}`,
+    `📍 Local: ${local}`,
+    `📦 Peça: ${peca?.nome || "—"}`,
+    `🔴 Motivo: ${motivo?.descricao || "—"}`,
+    `📊 Status: ${statusInfo.label}`,
+    `📅 Abertura: ${formatDateBR(r.created_at)}`,
+    r.description ? `📝 Descrição: ${r.description}` : null,
+    r.expected_resolution_date ? `⏰ Previsão: ${formatDateBR(r.expected_resolution_date)}` : null,
+    r.tratativa_notes ? `📋 Tratativa: ${r.tratativa_notes}` : null,
+  ].filter(Boolean).join("\n");
+}
+
+function OcorrenciaCard({ r, data }: { r: any; data: PortalData }) {
+  const [expanded, setExpanded] = useState(false);
+
+  const peca = data.pecas.find(p => p.id === r.loja_a_loja_peca_id);
+  const tipo = data.tipos.find(t => t.id === r.tipo_id);
+  const subdivisao = data.subdivisoes.find(s => s.id === r.subdivisao_id);
+  const motivo = data.motivos?.find(m => m.id === r.motive_id);
+  const statusInfo = getTratativaStatusLabel(r.tratativa_status ?? r.status ?? "aberta");
+  const local = [tipo?.nome, subdivisao?.nome].filter(Boolean).join(" / ") || "—";
+  const whatsappContact = (data.portal_config as any)?.whatsapp_contact;
+
+  const handleShare = () => {
+    const msg = encodeURIComponent(buildWhatsAppMessage(r, data));
+    window.open(`https://wa.me/?text=${msg}`, "_blank");
+  };
+
+  const handleContact = () => {
+    if (!whatsappContact) return;
+    const phone = whatsappContact.replace(/\D/g, "");
+    const msg = encodeURIComponent(buildWhatsAppMessage(r, data));
+    window.open(`https://wa.me/${phone}?text=${msg}`, "_blank");
+  };
+
+  return (
+    <div
+      className="border rounded-lg p-3 bg-card cursor-pointer hover:shadow-sm transition-shadow"
+      onClick={() => setExpanded(v => !v)}
+    >
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusInfo.color}`}>
+              {statusInfo.label}
+            </span>
+            <span className="text-sm font-medium truncate">{peca?.nome || "Peça"}</span>
+          </div>
+          <p className="text-xs text-muted-foreground mt-1 truncate">
+            {local} · {formatDateBR(r.created_at)}
+          </p>
+        </div>
+        {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />}
+      </div>
+
+      {expanded && (
+        <div className="mt-3 space-y-3 border-t pt-3">
+          <Row label="Local" value={local} />
+          <Row label="Peça" value={peca?.nome || "—"} />
+          <Row label="Motivo" value={motivo?.descricao || "—"} />
+          <Row label="Prioridade" value={r.priority || "—"} />
+          <Row label="Status" value={statusInfo.label} />
+          {r.description && <Row label="Descrição" value={r.description} multiline />}
+          {r.expected_resolution_date && <Row label="Previsão" value={formatDateBR(r.expected_resolution_date)} />}
+          {r.tratativa_notes && <Row label="Tratativa" value={r.tratativa_notes} multiline />}
+
+          <div className="flex gap-2 pt-1">
+            <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleShare(); }} className="flex-1 gap-1.5">
+              <Share2 className="w-3.5 h-3.5" /> Compartilhar
+            </Button>
+            {whatsappContact && (
+              <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleContact(); }} className="flex-1 gap-1.5 text-green-700 border-green-300 hover:bg-green-50">
+                <MessageCircle className="w-3.5 h-3.5" /> Contato WhatsApp
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Row({ label, value, multiline }: { label: string; value: string; multiline?: boolean }) {
+  return (
+    <div className="flex items-start gap-2">
+      <span className="text-xs font-medium text-muted-foreground shrink-0 w-24">{label}</span>
+      <span className={`text-sm ${multiline ? "whitespace-pre-line" : ""}`}>{value}</span>
+    </div>
+  );
+}
+
 export default function OcorrenciasTab({ data, agencyId }: Props) {
-  const [selectedPeca, setSelectedPeca] = useState<PortalData["pecas"][number] | null>(null);
-  const [blockedPeca, setBlockedPeca] = useState<PortalData["pecas"][number] | null>(null);
+  const [selectedPeca, setSelectedPeca] = useState<any>(null);
+  const [blockedPeca, setBlockedPeca] = useState<any>(null);
   const [reporterType, setReporterType] = useState("lojista");
-  const [motiveId, setMotiveId] = useState<string>("");
+  const [motiveId, setMotiveId] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState("media");
   const [photos, setPhotos] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reports, setReports] = useState<any[]>([]);
+  const [showSituacao, setShowSituacao] = useState(false);
+  const [allReports, setAllReports] = useState<any[]>([]);
+  const [loadingAll, setLoadingAll] = useState(false);
 
   const handlePieceClick = (peca: PortalData["pecas"][number]) => {
     if (peca.nome.includes("*")) {
@@ -47,27 +168,21 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
   );
 
   const reporterOptions = useMemo(() => {
-    const cfg: any = data.portal_config ?? {};
-    const agencyName = cfg.reporter_agency_label || data.campaign?.clients?.agencies?.name;
-    const clientName = cfg.reporter_client_label || data.campaign?.clients?.name;
-    const customList: string[] = Array.isArray(cfg.reporter_custom) ? cfg.reporter_custom.filter((s: string) => s && s.trim()) : [];
-    const all: Array<{ value: string; label: string }> = [
+    const opts: Array<{ value: string; label: string }> = [
       { value: "lojista", label: "Lojista" },
       { value: "fornecedor", label: "Fornecedor" },
-      ...(agencyName ? [{ value: `agencia:${agencyName}`, label: agencyName }] : []),
-      ...(clientName ? [{ value: `cliente:${clientName}`, label: clientName }] : []),
-      ...customList.map((name) => ({ value: `custom:${name}`, label: name })),
     ];
-    const enabled: string[] | null = cfg.reporter_options ?? null;
-    if (!enabled) return all;
-    return all.filter((o) => {
-      if (o.value === "lojista") return enabled.includes("lojista");
-      if (o.value === "fornecedor") return enabled.includes("fornecedor");
-      if (o.value.startsWith("agencia:")) return enabled.includes("agencia");
-      if (o.value.startsWith("cliente:")) return enabled.includes("cliente");
-      if (o.value.startsWith("custom:")) return true;
-      return true;
+    const agencyName = data.campaign?.clients?.agencies?.name;
+    const clientName = data.campaign?.clients?.name;
+    if (agencyName) opts.push({ value: `agencia:${agencyName}`, label: agencyName });
+    if (clientName) opts.push({ value: `cliente:${clientName}`, label: clientName });
+    const customList: string[] = ((data.portal_config as any)?.reporter_custom ?? []) as string[];
+    customList.forEach((name) => {
+      if (name && name.trim()) {
+        opts.push({ value: `custom:${name.trim()}`, label: name.trim() });
+      }
     });
+    return opts;
   }, [data]);
 
   const loadReports = useCallback(async () => {
@@ -80,30 +195,38 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
     setReports(rows || []);
   }, [data.campaign.id, data.store.id]);
 
+  const loadAllReports = useCallback(async () => {
+    setLoadingAll(true);
+    const { data: rows } = await supabase
+      .from("store_occurrence_reports")
+      .select("*")
+      .eq("campaign_id", data.campaign.id)
+      .eq("store_id", data.store.id)
+      .order("created_at", { ascending: false });
+    setAllReports(rows || []);
+    setLoadingAll(false);
+  }, [data.campaign.id, data.store.id]);
+
   useEffect(() => { loadReports(); }, [loadReports]);
 
-  // Realtime sync — atualiza a lista assim que o status da ocorrência muda no painel admin
   useEffect(() => {
     const channel = supabase
       .channel(`store-occ-${data.campaign.id}-${data.store.id}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "store_occurrence_reports",
-          filter: `store_id=eq.${data.store.id}`,
-        },
-        (payload) => {
-          const row: any = (payload.new ?? payload.old) || {};
-          if (row.campaign_id === data.campaign.id) {
-            loadReports();
-          }
+      .on("postgres_changes", {
+        event: "*",
+        schema: "public",
+        table: "store_occurrence_reports",
+        filter: `store_id=eq.${data.store.id}`,
+      }, (payload) => {
+        const row: any = (payload.new ?? payload.old) || {};
+        if (row.campaign_id === data.campaign.id) {
+          loadReports();
+          if (showSituacao) loadAllReports();
         }
-      )
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [data.campaign.id, data.store.id, loadReports]);
+  }, [data.campaign.id, data.store.id, loadReports, loadAllReports, showSituacao]);
 
   const badgeCounts: Record<string, number> = {};
   reports.forEach(r => {
@@ -167,32 +290,78 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
     setSubmitting(false);
   };
 
+  const handleOpenSituacao = () => {
+    setShowSituacao(true);
+    loadAllReports();
+  };
+
+  if (showSituacao) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowSituacao(false)}>
+            <ArrowLeft className="w-4 h-4 mr-1" /> Voltar
+          </Button>
+          <h2 className="text-base font-semibold">Situação das Ocorrências</h2>
+        </div>
+
+        {loadingAll ? (
+          <div className="flex items-center justify-center py-12">
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
+          </div>
+        ) : allReports.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            Nenhuma ocorrência registrada.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {allReports.map(r => (
+              <OcorrenciaCard key={r.id} r={r} data={data} />
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4 mt-4">
-      <p className="text-sm text-muted-foreground">Toque em uma peça para reportar uma ocorrência.</p>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted-foreground">
+          Toque em uma peça para reportar uma ocorrência.
+        </p>
+        {reports.length > 0 && (
+          <Button size="sm" variant="outline" onClick={handleOpenSituacao}>
+            <ClipboardList className="w-3.5 h-3.5 mr-1.5" />
+            SITUAÇÃO DAS OCORRÊNCIAS
+          </Button>
+        )}
+      </div>
 
-      <StorePortalPieceGrid data={data} onPieceClick={handlePieceClick} badgeCounts={badgeCounts} />
+      <StorePortalPieceGrid
+        data={data}
+        onPieceClick={handlePieceClick}
+        badgeCounts={badgeCounts}
+      />
 
-      {/* Existing reports */}
       {reports.length > 0 && (
-        <div className="mt-6">
-          <h3 className="text-sm font-semibold mb-2">Ocorrências abertas ({reports.length})</h3>
-          <div className="space-y-2">
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-foreground">
+            Ocorrências abertas ({reports.length})
+          </h3>
+          <div className="space-y-3">
             {reports.map(r => {
               const peca = data.pecas.find(p => p.id === r.loja_a_loja_peca_id);
               return (
-                <div key={r.id} className="rounded-lg border border-border p-3 bg-card text-sm">
-                  <div className="flex justify-between items-start gap-2">
-                    <div>
-                      <p className="font-medium">{peca?.nome || "Peça"}</p>
-                      <p className="text-muted-foreground text-xs mt-0.5 line-clamp-2">{r.description}</p>
+                <div key={r.id} className="border rounded-lg p-3 bg-card">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{peca?.nome || "Peça"}</p>
+                      <p className="text-xs text-muted-foreground">{r.description}</p>
                     </div>
-                    <span className={`shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                      r.priority === "critica" ? "bg-red-600 text-white" :
-                      r.priority === "alta" ? "bg-orange-500 text-white" :
-                      r.priority === "media" ? "bg-yellow-500 text-white" :
-                      "bg-blue-400 text-white"
-                    }`}>{r.priority}</span>
+                    <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800">
+                      {r.priority}
+                    </span>
                   </div>
                 </div>
               );
@@ -201,9 +370,8 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
         </div>
       )}
 
-      {/* Dialog */}
-      <Dialog open={!!selectedPeca} onOpenChange={open => { if (!open) resetForm(); }}>
-        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <Dialog open={!!selectedPeca} onOpenChange={(open) => { if (!open) resetForm(); }}>
+        <DialogContent className="max-w-lg max-h-[90dvh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="text-base">Reportar Ocorrência</DialogTitle>
           </DialogHeader>
@@ -224,7 +392,9 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
               <div>
                 <label className="text-xs font-medium text-foreground mb-1 block">Reportado por *</label>
                 <Select value={reporterType} onValueChange={setReporterType}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {reporterOptions.map(o => (
                       <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
@@ -237,7 +407,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
                 <label className="text-xs font-medium text-foreground mb-1 block">Motivo *</label>
                 <Select value={motiveId} onValueChange={setMotiveId}>
                   <SelectTrigger>
-                    <SelectValue placeholder={sortedMotivos.length === 0 ? "Nenhum motivo cadastrado" : "Selecione o motivo"} />
+                    <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
                   <SelectContent>
                     {sortedMotivos.map(m => (
@@ -251,7 +421,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
                 <label className="text-xs font-medium text-foreground mb-1 block">Descrição (não obrigatório)</label>
                 <Textarea
                   value={description}
-                  onChange={e => setDescription(e.target.value)}
+                  onChange={(e) => setDescription(e.target.value)}
                   placeholder="Descreva o problema encontrado..."
                   className="min-h-[80px]"
                 />
@@ -288,7 +458,6 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
         </DialogContent>
       </Dialog>
 
-      {/* Blocked piece dialog */}
       <Dialog open={!!blockedPeca} onOpenChange={(open) => { if (!open) setBlockedPeca(null); }}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -307,9 +476,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
                 <p className="font-medium text-sm">{blockedPeca.nome}</p>
               </div>
               <p className="text-sm text-muted-foreground whitespace-pre-line">{blockedMessage}</p>
-              <Button onClick={() => setBlockedPeca(null)} variant="outline" className="w-full">
-                Fechar
-              </Button>
+              <Button onClick={() => setBlockedPeca(null)} variant="outline" className="w-full">Fechar</Button>
             </div>
           )}
         </DialogContent>
