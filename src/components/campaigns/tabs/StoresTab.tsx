@@ -849,7 +849,7 @@ export default function StoresTab({
                   {/* Footer */}
                   <div style={{ marginTop: 12, paddingTop: 8, borderTop: "1px solid #e5e1d8", display: "flex", justifyContent: "space-between", fontSize: 9, color: "#888" }}>
                     <span>
-                      Gerado em {new Date().toLocaleDateString("pt-BR")} às{" "}
+                      {PDF_I18N[pdfLang].generatedOn} {new Date().toLocaleDateString("pt-BR")}{" "}
                       {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                     <span>ProduzAI · {agencyName} · {clientName}</span>
