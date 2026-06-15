@@ -233,6 +233,15 @@ export default function OccurrencesPortalV2() {
           </div>
           
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+            <div className="relative w-full sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" />
+              <Input
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Buscar loja, código, cidade..."
+                className="pl-9 bg-white border-stone-200"
+              />
+            </div>
             {availableStates.length > 1 && (
               <div className="w-full sm:w-48">
                 <Select value={selectedState} onValueChange={setSelectedState}>
