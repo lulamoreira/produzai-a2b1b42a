@@ -18,14 +18,23 @@ interface Props {
   agencyId: string;
 }
 
-function getTratativaStatusLabel(status: string) {
-  const map: Record<string, { label: string; color: string }> = {
-    aberta: { label: "Aberta", color: "bg-yellow-500 text-white" },
-    em_andamento: { label: "Em andamento", color: "bg-blue-500 text-white" },
-    resolvida: { label: "Resolvida", color: "bg-green-600 text-white" },
-    resolvido: { label: "Resolvida", color: "bg-green-600 text-white" },
+function getTratativaDisplay(status: string, statuses: TratativaStatus[]) {
+  const found = statuses.find((s) => s.value === status);
+  if (found) {
+    return {
+      label: found.label,
+      className: "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white",
+      style: { backgroundColor: found.color },
+    };
+  }
+  const fallbackLabel = status
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (l) => l.toUpperCase());
+  return {
+    label: fallbackLabel,
+    className: "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-700 text-white",
+    style: {} as React.CSSProperties,
   };
-  return map[status] ?? { label: status, color: "bg-gray-400 text-white" };
 }
 
 function formatDateBR(iso: string | null | undefined) {
