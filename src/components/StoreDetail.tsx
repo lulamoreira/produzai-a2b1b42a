@@ -70,6 +70,8 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
   const [addPieceOpen, setAddPieceOpen] = useState(false);
   const [addPieceId, setAddPieceId] = useState<string>("");
   const [addPieceQty, setAddPieceQty] = useState<number>(1);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   // Group pieces by category
   const piecesWithQty = storePieces
