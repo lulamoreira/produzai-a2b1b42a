@@ -316,8 +316,9 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                     <img src={getThumbnailUrl(pieceImageUrl, 200)} alt={pieceName} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   </button>
                 )}
-                <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0">
                   <Field label="Peça" value={pieceName} />
+                  <Field label="Local" value={local} />
                 </div>
               </div>
 
