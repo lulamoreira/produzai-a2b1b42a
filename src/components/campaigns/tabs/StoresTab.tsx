@@ -232,54 +232,9 @@ export default function StoresTab({
     },
   });
 
-  const piecesByCategory = useMemo(() => {
-    const map = new Map<string, typeof storePieces>();
-    storePieces.forEach((sp) => {
-      const cat = sp.campaign_pieces?.category || "Outros";
-      if (!map.has(cat)) map.set(cat, []);
-      map.get(cat)!.push(sp);
-    });
-    return Array.from(map.entries())
-      .sort((a, b) => a[0].localeCompare(b[0], "pt-BR"))
-      .map(([category, pieces]) => ({ category, pieces }));
-  }, [storePieces]);
-
-  // Pre-calculate which categories fit on each piece page (8 cols, 132px card, 36px cat header)
-  const pdfPiecePages = useMemo(() => {
-    const PAGE_H = 710; const COLS = 8; const CARD_H = 150; const CARD_GAP = 7;
-    const CAT_H = 36; const CAT_SEP = 14;
-    type PCat = typeof piecesByCategory[number];
-    const pages: PCat[][] = [[]]; let usedH = 0;
-    for (const cat of piecesByCategory) {
-      const rows = Math.ceil(cat.pieces.length / COLS);
-      const h = CAT_H + rows * CARD_H + Math.max(0, rows - 1) * CARD_GAP;
-      const needed = usedH === 0 ? h : h + CAT_SEP;
-      if (usedH > 0 && usedH + needed > PAGE_H) { pages.push([]); usedH = 0; }
-      pages[pages.length - 1].push(cat);
-      usedH += usedH === 0 ? h : needed;
-    }
-    return pages;
-  }, [piecesByCategory]);
-
-  // Pre-calculate which kits fit on each kit page
-  const pdfKitPages = useMemo(() => {
-    if (!storeKits.length) return [] as any[][];
-    const PAGE_H = 640; const KIT_COLS = 3; const PC = 4;
-    const KIT_H = (kit: any) => {
-      const pieceRows = Math.ceil(kit.pieces.length / PC);
-      return 80 + pieceRows * 110 + Math.max(0, pieceRows - 1) * 8 + 16;
-    };
-    const pages: any[][] = [[]]; let usedH = 0;
-    for (let i = 0; i < storeKits.length; i += KIT_COLS) {
-      const row = (storeKits as any[]).slice(i, i + KIT_COLS);
-      const rowH = Math.max(...row.map(KIT_H));
-      const needed = usedH === 0 ? rowH : rowH + 10;
-      if (usedH > 0 && usedH + needed > PAGE_H) { pages.push([]); usedH = 0; }
-      row.forEach((k) => pages[pages.length - 1].push(k));
-      usedH += usedH === 0 ? rowH : needed;
-    }
-    return pages;
-  }, [storeKits]);
+  const piecesByCategory = useMemo(() => groupPiecesByCategory(storePieces as any[]), [storePieces]);
+  const pdfPiecePages = useMemo(() => buildPiecePages(piecesByCategory), [piecesByCategory]);
+  const pdfKitPages = useMemo(() => buildKitPages(storeKits as any[]), [storeKits]);
 
   const totalPdfPages = 1 + pdfPiecePages.length + pdfKitPages.length;
 
