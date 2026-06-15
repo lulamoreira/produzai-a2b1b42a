@@ -126,15 +126,57 @@ export default function StorePortal() {
   useEffect(() => {
     if (!token) { setError("Token não informado"); setLoading(false); return; }
 
-    supabase.functions.invoke("validate-store-token", { body: { token } })
-      .then(({ data: res, error: fnErr }) => {
-        if (fnErr || !res?.success) {
-          setError(res?.error || fnErr?.message || "Token inválido");
-        } else {
-          setData(res as PortalData);
+    let cancelled = false;
+
+    async function load() {
+      const MAX_RETRIES = 3;
+      const BASE_DELAY_MS = 1000;
+
+      for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+        if (cancelled) return;
+
+        if (attempt > 0) {
+          setRetryState("retrying");
+          await new Promise((r) => setTimeout(r, BASE_DELAY_MS * attempt));
+          if (cancelled) return;
         }
-        setLoading(false);
-      });
+
+        try {
+          const { data: res, error: fnErr } = await supabase.functions.invoke(
+            "validate-store-token",
+            { body: { token } }
+          );
+
+          if (cancelled) return;
+
+          if (!fnErr && res?.success) {
+            setData(res as PortalData);
+            setLoading(false);
+            return;
+          }
+
+          if (!fnErr && res && !res.success) {
+            setError(res.error || "Token inválido");
+            setLoading(false);
+            return;
+          }
+
+          if (attempt === MAX_RETRIES) {
+            setError("Erro de conexão. Recarregue a página e tente novamente.");
+            setLoading(false);
+          }
+        } catch {
+          if (cancelled) return;
+          if (attempt === MAX_RETRIES) {
+            setError("Erro de conexão. Recarregue a página e tente novamente.");
+            setLoading(false);
+          }
+        }
+      }
+    }
+
+    load();
+    return () => { cancelled = true; };
   }, [token]);
 
   const enabledTabs = useMemo(() => {
