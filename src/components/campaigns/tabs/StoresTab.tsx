@@ -664,7 +664,7 @@ export default function StoresTab({
                                   )}
                                 </div>
                                 <div style={{ padding: "5px 7px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                                  <div style={{ fontSize: 9.5, fontWeight: 600, color: "#1a1a1a", lineHeight: 1.2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                  <div style={{ fontSize: 9.5, fontWeight: 600, color: "#1a1a1a", lineHeight: 1.2 }}>
                                     {p.name}
                                   </div>
                                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 3 }}>
