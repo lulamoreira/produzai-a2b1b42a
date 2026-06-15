@@ -25,6 +25,8 @@ interface StoresTabProps {
   onOpenEditStore: (store: any) => void;
   agencyName: string;
   clientName: string;
+  pieces?: any[];
+  storePieces?: any[];
 }
 
 export default function StoresTab({
