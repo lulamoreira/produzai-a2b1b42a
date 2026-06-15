@@ -323,6 +323,58 @@ export default function StoresTab({
     }
   }, [selectedStore]);
 
+  const handleExportAllStoresPdf = useCallback(async (lang: PdfLang) => {
+    if (!stores.length) return;
+    setBatchPdfStatus(`Iniciando exportação de ${stores.length} lojas...`);
+    try {
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas"),
+      ]);
+      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      let firstPage = true;
+
+      for (let i = 0; i < stores.length; i++) {
+        const store = stores[i];
+        setBatchPdfStatus(`Gerando loja ${i + 1} de ${stores.length}: ${store.name}...`);
+
+        const pieces = await fetchStorePiecesData(campaignId, store.id);
+        if (!pieces.length) continue;
+        const pieceIds = pieces.map((p: any) => p.piece_id);
+        const kits = await fetchStoreKitsData(campaignId, store.id, pieceIds);
+        const pbc = groupPiecesByCategory(pieces);
+        const piecePages = buildPiecePages(pbc);
+        const kitPages = buildKitPages(kits);
+        const totalPieces = pieces.reduce((acc: number, sp: any) => acc + sp.quantity, 0);
+
+        setBatchRender({ store, piecesByCategory: pbc, piecePages, kitPages, totalPieces, lang });
+        // Wait for React to paint the new content into pdfTemplateRef
+        await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+        await new Promise((r) => setTimeout(r, 50));
+
+        if (!pdfTemplateRef.current) continue;
+        const pageEls = Array.from(pdfTemplateRef.current.children) as HTMLElement[];
+        for (const pageEl of pageEls) {
+          if (!firstPage) pdf.addPage();
+          firstPage = false;
+          const canvas = await html2canvas(pageEl, {
+            scale: 2, useCORS: true, backgroundColor: "#ffffff", logging: false,
+            width: 1122, height: 794,
+          });
+          pdf.addImage(canvas.toDataURL("image/jpeg", 0.95), "JPEG", 0, 0, 297, 210);
+        }
+      }
+
+      pdf.save(`Todas_as_Lojas_${campaignId}.pdf`);
+    } catch (e) {
+      console.error("Batch PDF export error:", e);
+      toast.error("Falha ao gerar PDF em lote");
+    } finally {
+      setBatchRender(null);
+      setBatchPdfStatus(null);
+    }
+  }, [stores, campaignId]);
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
