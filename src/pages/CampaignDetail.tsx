@@ -568,6 +568,8 @@ const CampaignDetail = () => {
                     onOpenEditStore={() => {}} agencyName={agency?.name || ""} clientName={client?.name || ""}
                     pieces={pieces}
                     storePieces={storePieces}
+                    kits={kits}
+                    kitPieces={kitPieces}
                   />
                 </TabsContent>
               )}

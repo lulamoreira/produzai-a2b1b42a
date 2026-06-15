@@ -27,6 +27,8 @@ interface StoresTabProps {
   clientName: string;
   pieces?: any[];
   storePieces?: any[];
+  kits?: any[];
+  kitPieces?: any[];
 }
 
 export default function StoresTab({
@@ -42,6 +44,8 @@ export default function StoresTab({
   clientName,
   pieces = [],
   storePieces = [],
+  kits = [],
+  kitPieces = [],
 }: StoresTabProps) {
   const { t } = useTranslation();
   const [storeSearch, setStoreSearch] = useState("");
@@ -444,6 +448,26 @@ export default function StoresTab({
                   category: item.piece.category || item.piece.store_category,
                 },
                 qty: item.qty,
+              }))}
+              kits={kits.map((k: any) => ({
+                id: k.id,
+                name: k.name,
+                code: k.code,
+                pieces: kitPieces
+                  .filter((kp: any) => kp.kit_id === k.id)
+                  .map((kp: any) => {
+                    const p = pieces.find((pp: any) => pp.id === kp.piece_id);
+                    return p
+                      ? {
+                          id: p.id,
+                          name: p.name,
+                          image_url: p.image_url,
+                          category: p.category || p.store_category,
+                          qty: kp.quantity || 1,
+                        }
+                      : null;
+                  })
+                  .filter(Boolean) as any[],
               }))}
               footerLabel={`${agencyName} · ${clientName}`}
             />
