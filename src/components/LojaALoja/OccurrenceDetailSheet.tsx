@@ -439,9 +439,26 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
               )}
 
               <div>
+              <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Notas da tratativa</label>
+                {isAdmin && noteHistory.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {noteHistory.map((note, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setTratativaNotes(note)}
+                        title={note}
+                        className="max-w-[200px] truncate text-xs px-2.5 py-1 rounded-full border border-border bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors text-left"
+                      >
+                        {note.length > 40 ? note.slice(0, 38) + "…" : note}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <Textarea value={tratativaNotes} onChange={(e) => setTratativaNotes(e.target.value)} disabled={!isAdmin} className="min-h-[80px]" placeholder="Descreva as ações tomadas..." />
               </div>
+
 
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-2 block">Fotos da resolução ({resolutionPhotos.length}/3)</label>
