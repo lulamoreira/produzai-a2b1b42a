@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 import { useCampaignStoreStatus, useUpsertCampaignStoreStatus } from "@/hooks/useMultiClientData";
 import { useStoreContacts, useStoreContactRoles } from "@/hooks/useStoreContacts";
@@ -15,6 +16,41 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getStateColor } from "@/lib/stateColors";
+
+const PDF_I18N = {
+  "pt-BR": {
+    titlePageSubtitle: "Detalhes da Loja",
+    totalPieces: "Total de peças",
+    generatedOn: "Gerado em",
+    contacts: "Contatos da Loja",
+    pageOf: (p: number, t: number) => `Página ${p} de ${t}`,
+    kitsSectionTitle: "Composição dos Kits",
+    kitSummary: (types: number, units: number) => `${types} tipos de peça · ${units} un. total`,
+    qty: (n: number) => `× ${n}`,
+  },
+  "es-CL": {
+    titlePageSubtitle: "Detalles de la Tienda",
+    totalPieces: "Total de piezas",
+    generatedOn: "Generado el",
+    contacts: "Contactos de la Tienda",
+    pageOf: (p: number, t: number) => `Página ${p} de ${t}`,
+    kitsSectionTitle: "Composición de los Kits",
+    kitSummary: (types: number, units: number) => `${types} tipos de pieza · ${units} un. total`,
+    qty: (n: number) => `× ${n}`,
+  },
+  "en-US": {
+    titlePageSubtitle: "Store Details",
+    totalPieces: "Total pieces",
+    generatedOn: "Generated on",
+    contacts: "Store Contacts",
+    pageOf: (p: number, t: number) => `Page ${p} of ${t}`,
+    kitsSectionTitle: "Kit Composition",
+    kitSummary: (types: number, units: number) => `${types} piece types · ${units} total units`,
+    qty: (n: number) => `× ${n}`,
+  },
+} as const;
+
+type PdfLang = keyof typeof PDF_I18N;
 
 interface StoresTabProps {
   campaignId: string;
