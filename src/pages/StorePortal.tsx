@@ -105,6 +105,7 @@ export default function StorePortal() {
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<PortalData | null>(null);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [retryState, setRetryState] = useState<"idle" | "retrying">("idle");
   const { t } = useTranslation();
   const fmt = useFormatters();
 
