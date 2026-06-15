@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useCallback } from "react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
-import { Store, Search, Filter, X, LayoutList, Users, MapPin, Phone, User, Hash, Info, Truck, FileDown, Loader2 } from "lucide-react";
+import { Store, Search, Filter, X, LayoutList, Users, MapPin, Phone, User, Hash, Info, Truck, FileDown, Loader2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,8 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
-import LojaPdfTemplate from "@/components/LojaPdfTemplate";
 import { useCampaignStoreStatus, useUpsertCampaignStoreStatus } from "@/hooks/useMultiClientData";
+import { useStoreContacts, useStoreContactRoles } from "@/hooks/useStoreContacts";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getStateColor } from "@/lib/stateColors";
 
@@ -42,31 +44,92 @@ export default function StoresTab({
   onOpenEditStore,
   agencyName,
   clientName,
-  pieces = [],
-  storePieces = [],
-  kits = [],
-  kitPieces = [],
 }: StoresTabProps) {
   const { t } = useTranslation();
   const [storeSearch, setStoreSearch] = useState("");
   const [storesViewMode, setStoresViewMode] = useState<"table" | "contacts">("table");
   const [selectedStore, setSelectedStore] = useState<any | null>(null);
   const [exportingPdf, setExportingPdf] = useState(false);
-  const pdfRef = useRef<HTMLDivElement>(null);
+  const pdfTemplateRef = useRef<HTMLDivElement>(null);
 
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
   const upsertStatus = useUpsertCampaignStoreStatus();
+
+  const { data: selectedStoreContacts = [] } = useStoreContacts(selectedStore?.id);
+  const { data: contactRoles = [] } = useStoreContactRoles(clientId);
+
+  const { data: storePieces = [] } = useQuery({
+    queryKey: ["store-pieces-pdf", campaignId, selectedStore?.id],
+    enabled: !!selectedStore?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaign_store_pieces")
+        .select("piece_id, quantity, campaign_pieces(name, image_url, category, code, size)")
+        .eq("campaign_id", campaignId)
+        .eq("store_id", selectedStore!.id)
+        .gt("quantity", 0);
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        piece_id: string;
+        quantity: number;
+        campaign_pieces: { name: string; image_url: string | null; category: string; code: number; size: string } | null;
+      }>;
+    },
+  });
+
+  const { data: storeKits = [] } = useQuery({
+    queryKey: ["store-kits-pdf", campaignId, selectedStore?.id],
+    enabled: !!selectedStore?.id,
+    queryFn: async () => {
+      const [kitsRes, cspRes] = await Promise.all([
+        supabase
+          .from("campaign_kits")
+          .select("id, code, name, display_order, campaign_kit_pieces(piece_id, quantity, display_order, campaign_pieces(name, code))")
+          .eq("campaign_id", campaignId)
+          .eq("is_deleted", false)
+          .order("display_order"),
+        supabase
+          .from("campaign_store_pieces")
+          .select("piece_id")
+          .eq("campaign_id", campaignId)
+          .eq("store_id", selectedStore!.id)
+          .gt("quantity", 0),
+      ]);
+      const storePieceIds = new Set((cspRes.data ?? []).map((s: any) => s.piece_id));
+      return ((kitsRes.data ?? []) as any[])
+        .map((kit) => ({
+          ...kit,
+          pieces: ((kit.campaign_kit_pieces ?? []) as any[]).sort(
+            (a: any, b: any) => a.display_order - b.display_order
+          ),
+        }))
+        .filter((kit) => kit.pieces.some((kp: any) => storePieceIds.has(kp.piece_id)));
+    },
+  });
+
+  const piecesByCategory = useMemo(() => {
+    const map = new Map<string, typeof storePieces>();
+    storePieces.forEach((sp) => {
+      const cat = sp.campaign_pieces?.category || "Outros";
+      if (!map.has(cat)) map.set(cat, []);
+      map.get(cat)!.push(sp);
+    });
+    return Array.from(map.entries())
+      .sort((a, b) => a[0].localeCompare(b[0], "pt-BR"))
+      .map(([category, pieces]) => ({ category, pieces }));
+  }, [storePieces]);
 
   const filteredStores = useMemo(() => {
     let result = allStores;
     if (storeSearch) {
       const q = storeSearch.toLowerCase().trim();
-      result = result.filter(s => 
-        (s.name && s.name.toLowerCase().includes(q)) || 
-        (s.nickname && s.nickname.toLowerCase().includes(q)) ||
-        (s.store_code && s.store_code.toLowerCase().includes(q)) ||
-        (s.city && s.city.toLowerCase().includes(q)) ||
-        (s.state && s.state.toLowerCase().includes(q))
+      result = result.filter(
+        (s) =>
+          (s.name && s.name.toLowerCase().includes(q)) ||
+          (s.nickname && s.nickname.toLowerCase().includes(q)) ||
+          (s.store_code && s.store_code.toLowerCase().includes(q)) ||
+          (s.city && s.city.toLowerCase().includes(q)) ||
+          (s.state && s.state.toLowerCase().includes(q))
       );
     }
     return result;
@@ -77,77 +140,45 @@ export default function StoresTab({
       await upsertStatus.mutateAsync({
         campaignId,
         store_id: storeId,
-        enabled: !currentEnabled
+        enabled: !currentEnabled,
       } as any);
     } catch (error: any) {
       toast.error("Erro ao atualizar status da loja: " + error.message);
     }
   };
 
-  const handleExportPdf = async () => {
-    if (!selectedStore || exportingPdf) return;
+  const handleExportPdf = useCallback(async () => {
+    if (!selectedStore || !pdfTemplateRef.current) return;
     setExportingPdf(true);
     try {
-      const node = pdfRef.current;
-      if (!node) throw new Error("Template não montado");
-      await new Promise((r) => setTimeout(r, 60));
-      const imgs = Array.from(node.querySelectorAll("img"));
-      await Promise.all(
-        imgs.map(
-          (img) =>
-            new Promise<void>((resolve) => {
-              if ((img as HTMLImageElement).complete) return resolve();
-              img.onload = () => resolve();
-              img.onerror = () => resolve();
-            })
-        )
-      );
-
-      const html2canvas = (await import("html2canvas")).default;
-      const { jsPDF } = await import("jspdf");
-
-      const canvas = await html2canvas(node, {
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas"),
+      ]);
+      const canvas = await html2canvas(pdfTemplateRef.current, {
         scale: 2,
         useCORS: true,
         backgroundColor: "#ffffff",
         logging: false,
       });
-
-      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
-
-      const imgRatio = canvas.height / canvas.width;
-      let renderW = pageW;
-      let renderH = pageW * imgRatio;
-      if (renderH > pageH) {
-        renderH = pageH;
-        renderW = pageH / imgRatio;
+      const imgH = (canvas.height / canvas.width) * pageW;
+      const totalPages = Math.ceil(imgH / pageH);
+      for (let i = 0; i < totalPages; i++) {
+        if (i > 0) pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, -(i * pageH), pageW, imgH);
       }
-      const x = (pageW - renderW) / 2;
-      const y = 0;
-
-      const imgData = canvas.toDataURL("image/jpeg", 0.92);
-      pdf.addImage(imgData, "JPEG", x, y, renderW, renderH);
       pdf.save(`Loja_${selectedStore.store_code || selectedStore.name}.pdf`);
-    } catch (err) {
-      console.error("PDF export failed", err);
+    } catch (e) {
+      console.error("PDF export error:", e);
       toast.error("Falha ao gerar PDF");
     } finally {
       setExportingPdf(false);
     }
-  };
-
-  const pdfItems = useMemo(() => {
-    if (!selectedStore) return [];
-    return storePieces
-      .filter((sp: any) => sp.store_id === selectedStore.id)
-      .map((sp: any) => {
-        const piece = pieces.find((p: any) => p.id === sp.piece_id);
-        return piece ? { piece, qty: sp.quantity || 1 } : null;
-      })
-      .filter(Boolean) as { piece: any; qty: number }[];
-  }, [selectedStore, pieces, storePieces]);
+  }, [selectedStore]);
 
   return (
     <div className="space-y-4">
@@ -159,7 +190,7 @@ export default function StoresTab({
             {filteredStores.length} registradas
           </span>
         </div>
-        
+
         <div className="flex items-center gap-1.5">
           <div className="inline-flex rounded-md border border-input bg-background p-1">
             <Button
@@ -194,7 +225,10 @@ export default function StoresTab({
             className="pl-9 h-10"
           />
           {storeSearch && (
-            <button onClick={() => setStoreSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+            <button
+              onClick={() => setStoreSearch("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+            >
               <X className="w-4 h-4" />
             </button>
           )}
@@ -213,25 +247,32 @@ export default function StoresTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredStores.map(store => {
-                const status = campaignStoreStatus.find(s => s.store_id === store.id);
+              {filteredStores.map((store) => {
+                const status = campaignStoreStatus.find((s) => s.store_id === store.id);
                 const isEnabled = status ? status.enabled : true;
 
                 return (
-                  <TableRow key={store.id} className={cn(
-                    "odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-700",
-                    !isEnabled && "opacity-60 grayscale-[0.5]"
-                  )}>
+                  <TableRow
+                    key={store.id}
+                    className={cn(
+                      "odd:bg-white even:bg-gray-50 dark:odd:bg-gray-900 dark:even:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700/50 border-gray-200 dark:border-gray-700",
+                      !isEnabled && "opacity-60 grayscale-[0.5]"
+                    )}
+                  >
                     <TableCell className="font-medium text-gray-900 dark:text-gray-100">
                       <div className="flex flex-col gap-1">
-                        <span 
+                        <span
                           translate="no"
                           className="cursor-pointer hover:underline text-primary"
                           onClick={() => setSelectedStore(store)}
                         >
                           {store.name}
                         </span>
-                        {store.nickname && <span translate="no" className="text-[11px] text-muted-foreground">{store.nickname}</span>}
+                        {store.nickname && (
+                          <span translate="no" className="text-[11px] text-muted-foreground">
+                            {store.nickname}
+                          </span>
+                        )}
                         <div className="flex gap-1 mt-1">
                           {store.tipo_entrega === "frete_apenas" ? (
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-100 text-blue-700 border border-blue-200">
@@ -249,11 +290,15 @@ export default function StoresTab({
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell translate="no" className="text-gray-900 dark:text-gray-100">{store.city} / {store.state}</TableCell>
-                    <TableCell translate="no" className="text-gray-900 dark:text-gray-100">{store.store_model}</TableCell>
+                    <TableCell translate="no" className="text-gray-900 dark:text-gray-100">
+                      {store.city} / {store.state}
+                    </TableCell>
+                    <TableCell translate="no" className="text-gray-900 dark:text-gray-100">
+                      {store.store_model}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end pr-4">
-                        <Switch 
+                        <Switch
                           checked={isEnabled}
                           onCheckedChange={() => handleToggleStore(store.id, isEnabled)}
                           disabled={upsertStatus.isPending}
@@ -267,9 +312,9 @@ export default function StoresTab({
           </Table>
         </Card>
       ) : (
-        <StoreContactsCardView 
-          stores={stores} 
-          clientId={clientId} 
+        <StoreContactsCardView
+          stores={stores}
+          clientId={clientId}
           canEdit={canEditStores}
           agencyName={agencyName}
           clientName={clientName}
@@ -286,18 +331,18 @@ export default function StoresTab({
             <Button
               size="sm"
               onClick={handleExportPdf}
-              disabled={exportingPdf || pdfItems.length === 0}
+              disabled={exportingPdf || storePieces.length === 0}
               className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
             >
               {exportingPdf ? (
                 <Loader2 className="w-4 h-4 mr-1 animate-spin" />
               ) : (
-                <FileDown className="w-4 h-4 mr-1" />
+                <Download className="w-4 h-4 mr-1" />
               )}
-              Exportar PDF
+              {exportingPdf ? "Gerando..." : "Exportar PDF"}
             </Button>
           </DialogHeader>
-          
+
           {selectedStore && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
               <Card className="bg-muted/30">
@@ -361,22 +406,33 @@ export default function StoresTab({
               <Card className="bg-muted/30">
                 <CardHeader className="py-3">
                   <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                    <User className="w-4 h-4 text-muted-foreground" /> Contato Direto
+                    <User className="w-4 h-4 text-muted-foreground" /> Contatos da Loja
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] uppercase text-muted-foreground font-bold">Responsável</span>
-                    <span className="text-sm font-medium">{selectedStore.manager_name || "—"}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] uppercase text-muted-foreground font-bold">Telefone</span>
-                    <span className="text-sm font-medium">{selectedStore.phone || "—"}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] uppercase text-muted-foreground font-bold">E-mail</span>
-                    <span className="text-sm font-medium truncate" title={selectedStore.email}>{selectedStore.email || "—"}</span>
-                  </div>
+                  {selectedStoreContacts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic">Nenhum contato cadastrado</p>
+                  ) : (
+                    selectedStoreContacts.map((contact) => {
+                      const roleName = contact.role_id
+                        ? contactRoles.find((r) => r.id === contact.role_id)?.name
+                        : null;
+                      return (
+                        <div key={contact.id} className="flex flex-col border-b border-border/40 pb-2 last:border-0 last:pb-0">
+                          <span className="text-sm font-medium">{contact.name}</span>
+                          {roleName && (
+                            <span className="text-[10px] uppercase text-muted-foreground font-bold">{roleName}</span>
+                          )}
+                          {contact.phone && (
+                            <span className="text-xs text-muted-foreground">{contact.phone}</span>
+                          )}
+                          {contact.email && (
+                            <span className="text-xs text-muted-foreground truncate" title={contact.email}>{contact.email}</span>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </CardContent>
               </Card>
 
@@ -413,7 +469,7 @@ export default function StoresTab({
                   )}
                 </CardContent>
               </Card>
-              
+
               {selectedStore.observations && (
                 <Card className="bg-muted/30 md:col-span-2">
                   <CardHeader className="py-3">
@@ -427,50 +483,152 @@ export default function StoresTab({
             </div>
           )}
 
-          {/* Hidden PDF template */}
+          {/* Hidden PDF Template — A4 Landscape (1123 x 794) */}
           {selectedStore && (
-            <LojaPdfTemplate
-              ref={pdfRef}
-              store={{
-                name: selectedStore.name,
-                number: selectedStore.store_code,
-                model: selectedStore.store_model,
-                uf: selectedStore.state,
-                type: selectedStore.type,
-                primary_mod: selectedStore.primary_mod,
-                secondary_mod: selectedStore.secondary_mod,
+            <div
+              ref={pdfTemplateRef}
+              style={{
+                position: "fixed",
+                left: "-10000px",
+                top: 0,
+                width: "1123px",
+                background: "#ffffff",
+                color: "#1a1a1a",
+                fontFamily: "Inter, system-ui, sans-serif",
+                padding: "32px 40px",
               }}
-              items={pdfItems.map((item) => ({
-                piece: {
-                  id: item.piece.id,
-                  name: item.piece.name,
-                  image_url: item.piece.image_url,
-                  category: item.piece.category || item.piece.store_category,
-                },
-                qty: item.qty,
-              }))}
-              kits={kits.map((k: any) => ({
-                id: k.id,
-                name: k.name,
-                code: k.code,
-                pieces: kitPieces
-                  .filter((kp: any) => kp.kit_id === k.id)
-                  .map((kp: any) => {
-                    const p = pieces.find((pp: any) => pp.id === kp.piece_id);
-                    return p
-                      ? {
-                          id: p.id,
-                          name: p.name,
-                          image_url: p.image_url,
-                          category: p.category || p.store_category,
-                          qty: kp.quantity || 1,
-                        }
-                      : null;
-                  })
-                  .filter(Boolean) as any[],
-              }))}
-              footerLabel={`${agencyName} · ${clientName}`}
-            />
+            >
+              {/* HEADER */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "3px solid #8C6F4E", paddingBottom: 16, marginBottom: 20 }}>
+                <div style={{ flex: 1 }}>
+                  <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: "#1a1a1a", letterSpacing: "-0.02em" }}>
+                    {selectedStore.name}
+                  </h1>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 8, fontSize: 13, color: "#555" }}>
+                    {selectedStore.store_code && (
+                      <span style={{ background: "#F5F2ED", padding: "3px 8px", borderRadius: 4, fontFamily: "monospace", color: "#8C6F4E", fontWeight: 600 }}>
+                        {selectedStore.store_code}
+                      </span>
+                    )}
+                    {selectedStore.store_model && <span>{selectedStore.store_model}</span>}
+                    {(selectedStore.city || selectedStore.state) && (
+                      <span>📍 {[selectedStore.city, selectedStore.state].filter(Boolean).join(" / ")}</span>
+                    )}
+                    {selectedStoreContacts.length > 0 && (
+                      <span>👤 {selectedStoreContacts.map((c) => c.name).join(" · ")}</span>
+                    )}
+                  </div>
+                </div>
+                <div style={{ textAlign: "right", marginLeft: 24, background: "#8C6F4E", color: "#fff", padding: "12px 20px", borderRadius: 8, minWidth: 130 }}>
+                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.8 }}>
+                    Total de Peças
+                  </div>
+                  <div style={{ fontSize: 32, fontWeight: 800, lineHeight: 1, marginTop: 4 }}>
+                    {storePieces.reduce((acc, sp) => acc + sp.quantity, 0)}
+                  </div>
+                </div>
+              </div>
+
+              {/* PIECES BY CATEGORY */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+                {piecesByCategory.map(({ category, pieces }) => (
+                  <div key={category}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, paddingBottom: 6, borderBottom: "1px solid #e5e1d8" }}>
+                      <div style={{ width: 4, height: 16, background: "#8C6F4E", borderRadius: 2 }} />
+                      <span style={{ fontSize: 14, fontWeight: 700, color: "#1a1a1a", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        {category}
+                      </span>
+                      <span style={{ fontSize: 11, color: "#888", marginLeft: "auto" }}>
+                        {pieces.length} {pieces.length === 1 ? "peça" : "peças"}
+                      </span>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
+                      {pieces.map((sp, i) => {
+                        const p = sp.campaign_pieces;
+                        if (!p) return null;
+                        return (
+                          <div key={i} style={{ border: "1px solid #e5e1d8", borderRadius: 6, overflow: "hidden", background: "#fff" }}>
+                            <div style={{ width: "100%", aspectRatio: "1 / 1", background: "#f4f4f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>
+                              {p.image_url ? (
+                                <img
+                                  src={p.image_url}
+                                  crossOrigin="anonymous"
+                                  alt={p.name}
+                                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).style.display = "none";
+                                  }}
+                                />
+                              ) : (
+                                "📦"
+                              )}
+                            </div>
+                            <div style={{ padding: "6px 8px" }}>
+                              <div style={{ fontSize: 10, fontWeight: 600, color: "#1a1a1a", lineHeight: 1.25, minHeight: 24, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                {p.name}
+                              </div>
+                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
+                                {p.size ? (
+                                  <span style={{ fontSize: 9, color: "#888" }}>{p.size}</span>
+                                ) : (
+                                  <span />
+                                )}
+                                <span style={{ fontSize: 11, fontWeight: 700, color: "#8C6F4E", background: "#F5F2ED", padding: "1px 6px", borderRadius: 4 }}>
+                                  ×{sp.quantity}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* KITS */}
+              {storeKits.length > 0 && (
+                <div style={{ marginTop: 24 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, paddingBottom: 6, borderBottom: "1px solid #e5e1d8" }}>
+                    <div style={{ width: 4, height: 16, background: "#8C6F4E", borderRadius: 2 }} />
+                    <span style={{ fontSize: 14, fontWeight: 700, color: "#1a1a1a", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                      Kits da Campanha — Composição
+                    </span>
+                    <span style={{ fontSize: 11, color: "#888", marginLeft: "auto" }}>{storeKits.length} kits</span>
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
+                    {storeKits.map((kit: any) => (
+                      <div key={kit.id} style={{ border: "1px solid #e5e1d8", borderRadius: 6, padding: 10, background: "#fafaf7" }}>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 6 }}>
+                          <span style={{ fontSize: 10, fontFamily: "monospace", color: "#8C6F4E", fontWeight: 700 }}>
+                            [{kit.code}]
+                          </span>
+                          <span style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a" }}>{kit.name}</span>
+                          <span style={{ fontSize: 10, color: "#888", marginLeft: "auto" }}>{kit.pieces.length}p</span>
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                          {kit.pieces.map((kp: any, j: number) => (
+                            <div key={j} style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#444", padding: "2px 0", borderTop: j === 0 ? "none" : "1px dashed #e5e1d8" }}>
+                              <span>{kp.campaign_pieces?.name || "—"}</span>
+                              <span style={{ fontWeight: 700, color: "#8C6F4E" }}>×{kp.quantity}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* FOOTER */}
+              <div style={{ marginTop: 28, paddingTop: 12, borderTop: "1px solid #e5e1d8", display: "flex", justifyContent: "space-between", fontSize: 9, color: "#888" }}>
+                <span>
+                  Gerado em {new Date().toLocaleDateString("pt-BR")} às{" "}
+                  {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+                <span>ProduzAI · {agencyName} · {clientName}</span>
+              </div>
+            </div>
           )}
         </DialogContent>
       </Dialog>
