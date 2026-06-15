@@ -695,9 +695,11 @@ export default function StoresTab({
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
 
-          {/* Hidden multi-page PDF Template — A4 Landscape (1122 x 794) per page */}
-          {selectedStore && (
+      {/* Hidden multi-page PDF Template — A4 Landscape (1122 x 794) per page */}
+      {renderStore && (
             <div
               ref={pdfTemplateRef}
               style={{
