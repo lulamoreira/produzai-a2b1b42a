@@ -158,9 +158,16 @@ export default function OccurrencesPortalV2() {
 
   const filteredTokens = useMemo(() => {
     if (!storesData?.tokens) return [];
-    if (selectedState === "all") return storesData.tokens;
-    return storesData.tokens.filter(s => s.client_stores?.state === selectedState);
-  }, [storesData?.tokens, selectedState]);
+    const q = searchTerm.trim().toLowerCase();
+    return storesData.tokens.filter(s => {
+      if (selectedState !== "all" && s.client_stores?.state !== selectedState) return false;
+      if (!q) return true;
+      const cs = s.client_stores;
+      return [cs?.name, cs?.city, cs?.state, cs?.store_code]
+        .filter(Boolean)
+        .some(v => String(v).toLowerCase().includes(q));
+    });
+  }, [storesData?.tokens, selectedState, searchTerm]);
 
   if (isLoading) {
     return (
