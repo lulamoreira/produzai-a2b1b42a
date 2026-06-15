@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 import { useCampaignStoreStatus, useUpsertCampaignStoreStatus } from "@/hooks/useMultiClientData";
 import { useStoreContacts, useStoreContactRoles } from "@/hooks/useStoreContacts";
@@ -15,6 +16,41 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getStateColor } from "@/lib/stateColors";
+
+const PDF_I18N = {
+  "pt-BR": {
+    titlePageSubtitle: "Detalhes da Loja",
+    totalPieces: "Total de peças",
+    generatedOn: "Gerado em",
+    contacts: "Contatos da Loja",
+    pageOf: (p: number, t: number) => `Página ${p} de ${t}`,
+    kitsSectionTitle: "Composição dos Kits",
+    kitSummary: (types: number, units: number) => `${types} tipos de peça · ${units} un. total`,
+    qty: (n: number) => `× ${n}`,
+  },
+  "es-CL": {
+    titlePageSubtitle: "Detalles de la Tienda",
+    totalPieces: "Total de piezas",
+    generatedOn: "Generado el",
+    contacts: "Contactos de la Tienda",
+    pageOf: (p: number, t: number) => `Página ${p} de ${t}`,
+    kitsSectionTitle: "Composición de los Kits",
+    kitSummary: (types: number, units: number) => `${types} tipos de pieza · ${units} un. total`,
+    qty: (n: number) => `× ${n}`,
+  },
+  "en-US": {
+    titlePageSubtitle: "Store Details",
+    totalPieces: "Total pieces",
+    generatedOn: "Generated on",
+    contacts: "Store Contacts",
+    pageOf: (p: number, t: number) => `Page ${p} of ${t}`,
+    kitsSectionTitle: "Kit Composition",
+    kitSummary: (types: number, units: number) => `${types} piece types · ${units} total units`,
+    qty: (n: number) => `× ${n}`,
+  },
+} as const;
+
+type PdfLang = keyof typeof PDF_I18N;
 
 interface StoresTabProps {
   campaignId: string;
@@ -50,6 +86,8 @@ export default function StoresTab({
   const [storesViewMode, setStoresViewMode] = useState<"table" | "contacts">("table");
   const [selectedStore, setSelectedStore] = useState<any | null>(null);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [pdfLangPickerOpen, setPdfLangPickerOpen] = useState(false);
+  const [pdfLang, setPdfLang] = useState<PdfLang>("pt-BR");
   const pdfTemplateRef = useRef<HTMLDivElement>(null);
 
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
@@ -186,15 +224,18 @@ export default function StoresTab({
     }
   };
 
-  const handleExportPdf = useCallback(async () => {
+  const handleExportPdf = useCallback(async (lang: PdfLang) => {
     if (!selectedStore || !pdfTemplateRef.current) return;
+    setPdfLang(lang);
     setExportingPdf(true);
+    // wait for React to re-render the template with the new language
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     try {
       const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
         import("jspdf"),
         import("html2canvas"),
       ]);
-      const pageEls = Array.from(pdfTemplateRef.current.children) as HTMLElement[];
+      const pageEls = Array.from(pdfTemplateRef.current!.children) as HTMLElement[];
       const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
       for (let i = 0; i < pageEls.length; i++) {
         if (i > 0) pdf.addPage();
@@ -365,19 +406,37 @@ export default function StoresTab({
               <Store className="w-5 h-5 text-primary" />
               Detalhes da Loja
             </DialogTitle>
-            <Button
-              size="sm"
-              onClick={handleExportPdf}
-              disabled={exportingPdf || storePieces.length === 0}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
-            >
-              {exportingPdf ? (
-                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4 mr-1" />
-              )}
-              {exportingPdf ? "Gerando..." : "Exportar PDF"}
-            </Button>
+            <Popover open={pdfLangPickerOpen} onOpenChange={setPdfLangPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  size="sm"
+                  disabled={exportingPdf || storePieces.length === 0}
+                  onClick={() => setPdfLangPickerOpen(true)}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
+                >
+                  {exportingPdf ? (
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-1" />
+                  )}
+                  {exportingPdf ? "Gerando..." : "Exportar PDF"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-1" align="end">
+                {(["pt-BR", "es-CL", "en-US"] as PdfLang[]).map((lang) => (
+                  <button
+                    key={lang}
+                    className="w-full text-left px-3 py-2 text-sm rounded hover:bg-muted"
+                    onClick={() => {
+                      setPdfLangPickerOpen(false);
+                      handleExportPdf(lang);
+                    }}
+                  >
+                    {lang === "pt-BR" ? "Português Brasileiro" : lang === "es-CL" ? "Español Chileno" : "English (US)"}
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
           </DialogHeader>
 
           {selectedStore && (
@@ -550,7 +609,7 @@ export default function StoresTab({
                 }}
               >
                 <div style={{ fontSize: 20, color: "#8C6F4E", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 20 }}>
-                  Relatório de Peças da Campanha
+                  {PDF_I18N[pdfLang].titlePageSubtitle}
                 </div>
                 <h1 style={{ fontSize: 56, fontWeight: 800, margin: 0, color: "#1a1a1a", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
                   {selectedStore.name}
@@ -578,7 +637,7 @@ export default function StoresTab({
                 <div style={{ display: "flex", gap: 40, marginTop: 60, alignItems: "center" }}>
                   <div style={{ background: "#8C6F4E", color: "#fff", padding: "20px 36px", borderRadius: 12, textAlign: "center" }}>
                     <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.15em", opacity: 0.9 }}>
-                      Total de Peças
+                      {PDF_I18N[pdfLang].totalPieces}
                     </div>
                     <div style={{ fontSize: 52, fontWeight: 800, lineHeight: 1, marginTop: 6 }}>
                       {storePieces.reduce((acc: number, sp: any) => acc + sp.quantity, 0)}
@@ -619,7 +678,7 @@ export default function StoresTab({
                         <span style={{ color: "#888", fontWeight: 500 }}>· #{selectedStore.store_code}</span>
                       )}
                     </div>
-                    <span style={{ fontSize: 11, color: "#888" }}>Página {pi + 2} de {totalPdfPages}</span>
+                    <span style={{ fontSize: 11, color: "#888" }}>{PDF_I18N[pdfLang].pageOf(pi + 2, totalPdfPages)}</span>
                   </div>
 
                   {/* Categories content */}
@@ -674,7 +733,7 @@ export default function StoresTab({
                                       <span />
                                     )}
                                     <span style={{ fontSize: 10.5, fontWeight: 700, color: "#8C6F4E", background: "#F5F2ED", padding: "1px 6px", borderRadius: 4 }}>
-                                      × {sp.quantity}
+                                      {PDF_I18N[pdfLang].qty(sp.quantity)}
                                     </span>
                                   </div>
                                 </div>
@@ -689,7 +748,7 @@ export default function StoresTab({
                   {/* Footer */}
                   <div style={{ marginTop: 12, paddingTop: 8, borderTop: "1px solid #e5e1d8", display: "flex", justifyContent: "space-between", fontSize: 9, color: "#888" }}>
                     <span>
-                      Gerado em {new Date().toLocaleDateString("pt-BR")} às{" "}
+                      {PDF_I18N[pdfLang].generatedOn} {new Date().toLocaleDateString("pt-BR")}{" "}
                       {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                     <span>ProduzAI · {agencyName} · {clientName}</span>
@@ -719,7 +778,7 @@ export default function StoresTab({
                       <span>Kits da Campanha · {selectedStore.name}</span>
                     </div>
                     <span style={{ fontSize: 11, color: "#888" }}>
-                      Página {1 + pdfPiecePages.length + ki + 1} de {totalPdfPages}
+                      {PDF_I18N[pdfLang].pageOf(1 + pdfPiecePages.length + ki + 1, totalPdfPages)}
                     </span>
                   </div>
 
@@ -727,7 +786,7 @@ export default function StoresTab({
                   <div style={{ background: "linear-gradient(90deg, #1f2937 0%, #374151 100%)", padding: "8px 14px", display: "flex", alignItems: "center", gap: 10, borderRadius: 6, marginBottom: 12 }}>
                     <div style={{ width: 3, height: 16, background: "#d97706", borderRadius: 2, flexShrink: 0 }} />
                     <span style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "#ffffff" }}>
-                      Composição dos Kits
+                      {PDF_I18N[pdfLang].kitsSectionTitle}
                     </span>
                     <span style={{ background: "#d97706", color: "#fff", borderRadius: 20, padding: "1px 10px", fontSize: 10, fontWeight: 700, marginLeft: "auto" }}>
                       {pageKits.length} kits
@@ -748,7 +807,7 @@ export default function StoresTab({
                                 {kit.name}
                               </div>
                               <div style={{ fontSize: 8.5, color: "#9ca3af", marginTop: 2 }}>
-                                {kit.pieces.length} {kit.pieces.length === 1 ? "peça" : "peças"} · {totalKitQty} un.
+                                {PDF_I18N[pdfLang].kitSummary(kit.pieces.length, totalKitQty)}
                               </div>
                             </div>
                           </div>
@@ -776,7 +835,7 @@ export default function StoresTab({
                                     {p?.name || "—"}
                                   </div>
                                   <span style={{ fontSize: 9, fontWeight: 700, color: "#92400e", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 3, padding: "0 5px" }}>
-                                    × {kp.quantity}
+                                    {PDF_I18N[pdfLang].qty(kp.quantity)}
                                   </span>
                                 </div>
                               );
@@ -790,7 +849,7 @@ export default function StoresTab({
                   {/* Footer */}
                   <div style={{ marginTop: 12, paddingTop: 8, borderTop: "1px solid #e5e1d8", display: "flex", justifyContent: "space-between", fontSize: 9, color: "#888" }}>
                     <span>
-                      Gerado em {new Date().toLocaleDateString("pt-BR")} às{" "}
+                      {PDF_I18N[pdfLang].generatedOn} {new Date().toLocaleDateString("pt-BR")}{" "}
                       {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                     <span>ProduzAI · {agencyName} · {clientName}</span>
