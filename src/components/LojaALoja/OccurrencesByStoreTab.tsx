@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
 import PieceMultiSelectFilter from "./PieceMultiSelectFilter";
 import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
+import { useEffectiveTratativaStatuses } from "@/hooks/useLalTratativaStatuses";
 
 interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boolean }
 interface Props {
