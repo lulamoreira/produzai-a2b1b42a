@@ -977,8 +977,8 @@ export default function StoresTab({
               ))}
             </div>
           )}
-        </DialogContent>
-      </Dialog>
     </div>
+  );
+}
   );
 }
