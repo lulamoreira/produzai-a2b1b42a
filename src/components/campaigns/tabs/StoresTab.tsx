@@ -39,12 +39,16 @@ export default function StoresTab({
   isLimitedMode,
   onOpenEditStore,
   agencyName,
-  clientName
+  clientName,
+  pieces = [],
+  storePieces = [],
 }: StoresTabProps) {
   const { t } = useTranslation();
   const [storeSearch, setStoreSearch] = useState("");
   const [storesViewMode, setStoresViewMode] = useState<"table" | "contacts">("table");
   const [selectedStore, setSelectedStore] = useState<any | null>(null);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
   const upsertStatus = useUpsertCampaignStoreStatus();
