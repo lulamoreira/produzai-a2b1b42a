@@ -44,6 +44,8 @@ export default function StoresTab({
   clientName,
   pieces = [],
   storePieces = [],
+  kits = [],
+  kitPieces = [],
 }: StoresTabProps) {
   const { t } = useTranslation();
   const [storeSearch, setStoreSearch] = useState("");
