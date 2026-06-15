@@ -28,6 +28,7 @@ import { useTableSort } from "@/hooks/useTableSort";
 import SortableHeader from "./SortableHeader";
 import { useStorePortalConfig } from "@/hooks/useStorePortalConfig";
 import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
+import { useEffectiveTratativaStatuses } from "@/hooks/useLalTratativaStatuses";
 
 interface CollapsibleCardProps {
   title: string;
