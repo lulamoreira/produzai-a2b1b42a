@@ -48,7 +48,7 @@ function formatDateBR(iso: string | null | undefined) {
   return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
-function buildWhatsAppMessage(r: any, data: PortalData, statuses: TratativaStatus[]) {
+function buildWhatsAppMessage(r: any, data: PortalData, statuses: StatusItem[]) {
   const peca = data.pecas.find(p => p.id === r.loja_a_loja_peca_id);
   const tipo = data.tipos.find(t => t.id === r.tipo_id);
   const subdivisao = data.subdivisoes.find(s => s.id === r.subdivisao_id);
