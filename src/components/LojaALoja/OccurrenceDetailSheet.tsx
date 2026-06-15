@@ -159,6 +159,11 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const pieceImageUrl: string | null = occurrence.loja_a_loja_pecas?.image_url ?? null;
   const motivoDesc = occurrence.store_portal_motivos?.descricao ?? "—";
 
+  const tipo = occurrence.loja_a_loja_pecas?.loja_a_loja_tipos;
+  const subdivisao = occurrence.loja_a_loja_pecas?.loja_a_loja_subdivisoes;
+  const local = [tipo?.nome, subdivisao?.nome].filter(Boolean).join(" / ") || "—";
+
+
   const reporterLabel = (() => {
     const r = occurrence.reporter_type ?? "lojista";
     if (r.startsWith("agencia:")) return r.slice(8);
@@ -311,8 +316,9 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                     <img src={getThumbnailUrl(pieceImageUrl, 200)} alt={pieceName} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                   </button>
                 )}
-                <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0">
                   <Field label="Peça" value={pieceName} />
+                  <Field label="Local" value={local} />
                 </div>
               </div>
 
