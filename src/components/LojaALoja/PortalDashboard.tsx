@@ -271,6 +271,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
     o.tratativa_status !== "resolvida"
   ).length;
   const reinst = occList.filter((o) => o.needs_reinstallation && o.tratativa_status !== "resolvida").length;
+  const naoProcede = occList.filter((o) => o.tratativa_status === "nao_procede").length;
 
   const storeOptions = useMemo(() => {
     const m = new Map<string, string>();
