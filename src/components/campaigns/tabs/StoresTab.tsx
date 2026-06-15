@@ -759,7 +759,7 @@ export default function StoresTab({
                       {PDF_I18N[renderLang].totalPieces}
                     </div>
                     <div style={{ fontSize: 52, fontWeight: 800, lineHeight: 1, marginTop: 6 }}>
-                      {storePieces.reduce((acc: number, sp: any) => acc + sp.quantity, 0)}
+                      {renderTotalPieces}
                     </div>
                   </div>
                   <div style={{ textAlign: "left" }}>
