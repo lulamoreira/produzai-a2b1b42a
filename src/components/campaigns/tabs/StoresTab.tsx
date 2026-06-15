@@ -778,7 +778,7 @@ export default function StoresTab({
                       <span>Kits da Campanha · {selectedStore.name}</span>
                     </div>
                     <span style={{ fontSize: 11, color: "#888" }}>
-                      Página {1 + pdfPiecePages.length + ki + 1} de {totalPdfPages}
+                      {PDF_I18N[pdfLang].pageOf(1 + pdfPiecePages.length + ki + 1, totalPdfPages)}
                     </span>
                   </div>
 
