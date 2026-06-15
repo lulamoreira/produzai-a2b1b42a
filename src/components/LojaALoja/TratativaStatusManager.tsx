@@ -220,6 +220,10 @@ export default function TratativaStatusManager({ clientId, permissions, embedded
             <Switch checked={newResolved} onCheckedChange={setNewResolved} />
             Marca como resolvido
           </label>
+          <label className="flex items-center gap-1.5 text-xs whitespace-nowrap">
+            <Switch checked={newCountsAsOcc} onCheckedChange={setNewCountsAsOcc} />
+            Computa ocorrência
+          </label>
           <Button onClick={handleAdd} disabled={!newLabel.trim() || addM.isPending}>
             {addM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             <span className="ml-1">Adicionar</span>
