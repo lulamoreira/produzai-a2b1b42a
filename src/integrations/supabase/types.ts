@@ -5420,6 +5420,11 @@ export type Database = {
         Args: { p_after_order: number; p_campaign_id: string; p_slots: number }
         Returns: undefined
       }
+      store_token_exists: { Args: { _token_id: string }; Returns: boolean }
+      store_token_exists_for: {
+        Args: { _campaign_id: string; _store_id: string }
+        Returns: boolean
+      }
       submit_adjustment_requote: {
         Args: {
           p_extras_jsonb: Json
