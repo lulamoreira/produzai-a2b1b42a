@@ -744,7 +744,7 @@ export default function StoresTab({
                               [{kit.code}]
                             </span>
                             <div style={{ flex: 1 }}>
-                              <div style={{ fontSize: 10.5, fontWeight: 700, color: "#ffffff", lineHeight: 1.3, overflow: "hidden", maxHeight: 26 }}>
+                              <div style={{ fontSize: 10.5, fontWeight: 700, color: "#ffffff", lineHeight: 1.3 }}>
                                 {kit.name}
                               </div>
                               <div style={{ fontSize: 8.5, color: "#9ca3af", marginTop: 2 }}>
