@@ -88,19 +88,63 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [initialized, setInitialized] = useState<string | null>(null);
   const [noteHistory, setNoteHistory] = useState<string[]>([]);
+  const [reporterType, setReporterType] = useState<string>("lojista");
 
   // Resolve clientId from the campaign so we can load custom statuses
   const { data: campaignRow } = useQuery({
     queryKey: ["campaign-client-id", campaignId],
     enabled: !!campaignId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("campaigns").select("client_id").eq("id", campaignId).maybeSingle();
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("client_id, clients(name, agencies(name))")
+        .eq("id", campaignId)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
   });
   const clientId = campaignRow?.client_id as string | undefined;
   const { statuses: tratativaStatuses } = useEffectiveTratativaStatuses(clientId);
+
+  // Portal config (for custom reporter names)
+  const { data: portalConfig } = useQuery({
+    queryKey: ["portal-config-reporter", campaignId],
+    enabled: !!campaignId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("store_portal_config")
+        .select("reporter_custom, reporter_options")
+        .eq("campaign_id", campaignId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const reporterOptions = useMemo(() => {
+    const opts: Array<{ value: string; label: string }> = [
+      { value: "lojista", label: "Lojista" },
+      { value: "fornecedor", label: "Fornecedor" },
+    ];
+    const agencyName = (campaignRow as any)?.clients?.agencies?.name;
+    const clientName = (campaignRow as any)?.clients?.name;
+    if (agencyName) opts.push({ value: `agencia:${agencyName}`, label: agencyName });
+    if (clientName) opts.push({ value: `cliente:${clientName}`, label: clientName });
+    const customList: string[] = ((portalConfig as any)?.reporter_custom ?? []) as string[];
+    customList.forEach((name) => {
+      if (name && name.trim()) opts.push({ value: `custom:${name.trim()}`, label: name.trim() });
+    });
+    // Ensure current value is present even if not in list
+    if (reporterType && !opts.find((o) => o.value === reporterType)) {
+      const label = reporterType.startsWith("agencia:") || reporterType.startsWith("cliente:") || reporterType.startsWith("custom:")
+        ? reporterType.split(":").slice(1).join(":")
+        : reporterType;
+      opts.push({ value: reporterType, label });
+    }
+    return opts;
+  }, [campaignRow, portalConfig, reporterType]);
+
 
   // Photo check-in for this campaign + store (lazy: only when user opens the modal)
   const checkinQuery = useQuery({
