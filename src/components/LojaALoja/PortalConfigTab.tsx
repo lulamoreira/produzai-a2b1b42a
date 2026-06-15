@@ -399,29 +399,89 @@ export default function PortalConfigTab({ campaignId, clientId, permissions }: P
                 <p className="text-sm font-semibold">Quem pode reportar ocorrências</p>
                 <p className="text-xs text-muted-foreground">Selecione quais opções aparecem no campo "Reportado por" no portal da loja. Se nenhuma estiver marcada, todas aparecem.</p>
               </div>
-              {[
-                { key: "lojista", label: "Lojista" },
-                { key: "fornecedor", label: "Fornecedor" },
-                { key: "agencia", label: "Agência (nome automático)" },
-                { key: "cliente", label: "Cliente (nome automático)" },
-              ].map(({ key, label }) => {
+              {(() => {
                 const current: string[] | null = (localConfig as any)?.reporter_options ?? null;
-                const isOn = current === null || current.includes(key);
+                const agencyLabel = (localConfig as any)?.reporter_agency_label ?? namesCtx?.agencyName ?? "";
+                const clientLabel = (localConfig as any)?.reporter_client_label ?? namesCtx?.clientName ?? "";
+                const customList: string[] = ((localConfig as any)?.reporter_custom ?? []) as string[];
+                const items = [
+                  { key: "lojista", label: "Lojista", editable: false },
+                  { key: "fornecedor", label: "Fornecedor", editable: false },
+                  { key: "agencia", label: agencyLabel, editable: true, field: "reporter_agency_label" as const, placeholder: namesCtx?.agencyName ?? "Agência" },
+                  { key: "cliente", label: clientLabel, editable: true, field: "reporter_client_label" as const, placeholder: namesCtx?.clientName ?? "Cliente" },
+                ];
+                const toggleKey = (key: string, v: boolean) => {
+                  const base: string[] = current ?? ["lojista", "fornecedor", "agencia", "cliente"];
+                  const next = v ? [...new Set([...base, key])] : base.filter((k) => k !== key);
+                  saveConfig({ reporter_options: next.length === 4 ? null : next });
+                };
                 return (
-                  <div key={key} className="flex items-center justify-between py-1">
-                    <Label className="text-sm font-normal">{label}</Label>
-                    <Switch
-                      checked={isOn}
-                      disabled={!isAdmin}
-                      onCheckedChange={(v) => {
-                        const base: string[] = current ?? ["lojista", "fornecedor", "agencia", "cliente"];
-                        const next = v ? [...new Set([...base, key])] : base.filter((k) => k !== key);
-                        saveConfig({ reporter_options: next.length === 4 ? null : next });
-                      }}
-                    />
-                  </div>
+                  <>
+                    {items.map((it) => {
+                      const isOn = current === null || current.includes(it.key);
+                      return (
+                        <div key={it.key} className="flex items-center justify-between gap-2 py-1">
+                          {it.editable ? (
+                            <DebouncedInput
+                              className="text-sm h-8 flex-1"
+                              value={(localConfig as any)?.[it.field] ?? ""}
+                              placeholder={it.placeholder}
+                              onValueCommit={(v) => saveConfig({ [it.field]: v?.trim() ? v.trim() : null })}
+                              disabled={!isAdmin}
+                            />
+                          ) : (
+                            <Label className="text-sm font-normal">{it.label}</Label>
+                          )}
+                          <Switch checked={isOn} disabled={!isAdmin} onCheckedChange={(v) => toggleKey(it.key, v)} />
+                        </div>
+                      );
+                    })}
+
+                    <div className="pt-3">
+                      <p className="text-xs font-semibold mb-1">Pessoas adicionais</p>
+                      <p className="text-xs text-muted-foreground mb-2">Quem você adicionar aqui aparece automaticamente no portal de ocorrências da loja.</p>
+                      <div className="space-y-2">
+                        {customList.map((name, idx) => (
+                          <div key={idx} className="flex items-center gap-2">
+                            <DebouncedInput
+                              className="text-sm h-8 flex-1"
+                              value={name}
+                              placeholder="Nome"
+                              onValueCommit={(v) => {
+                                const next = [...customList];
+                                next[idx] = v;
+                                saveConfig({ reporter_custom: next.filter((s) => s && s.trim()) });
+                              }}
+                              disabled={!isAdmin}
+                            />
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              disabled={!isAdmin}
+                              onClick={() => {
+                                const next = customList.filter((_, i) => i !== idx);
+                                saveConfig({ reporter_custom: next.length ? next : null });
+                              }}
+                            >
+                              Remover
+                            </Button>
+                          </div>
+                        ))}
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={!isAdmin}
+                          onClick={() => saveConfig({ reporter_custom: [...customList, ""] })}
+                        >
+                          + Adicionar pessoa
+                        </Button>
+                      </div>
+                    </div>
+                  </>
                 );
-              })}
+              })()}
             </div>
             <Separator />
 
