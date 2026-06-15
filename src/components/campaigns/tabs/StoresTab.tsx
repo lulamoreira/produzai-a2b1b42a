@@ -129,7 +129,7 @@ function buildKitPages(kits: any[]) {
   const PAGE_H = 640, KIT_COLS = 3, PC = 4;
   const KIT_H = (kit: any) => {
     const pieceRows = Math.ceil(kit.pieces.length / PC);
-    return 80 + pieceRows * 110 + Math.max(0, pieceRows - 1) * 8 + 16;
+    return 80 + pieceRows * 120 + Math.max(0, pieceRows - 1) * 8 + 16;
   };
   const pages: any[][] = [[]];
   let usedH = 0;
