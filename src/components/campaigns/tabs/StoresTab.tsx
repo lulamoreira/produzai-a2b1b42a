@@ -728,35 +728,35 @@ export default function StoresTab({
                 }}
               >
                 <div style={{ fontSize: 20, color: "#8C6F4E", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 20 }}>
-                  {PDF_I18N[pdfLang].titlePageSubtitle}
+                  {PDF_I18N[renderLang].titlePageSubtitle}
                 </div>
                 <h1 style={{ fontSize: 56, fontWeight: 800, margin: 0, color: "#1a1a1a", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
-                  {selectedStore.name}
+                  {renderStore.name}
                 </h1>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 24, fontSize: 16, color: "#555", justifyContent: "center" }}>
-                  {selectedStore.store_code && (
+                  {renderStore.store_code && (
                     <span style={{ background: "#F5F2ED", padding: "6px 14px", borderRadius: 6, fontFamily: "monospace", color: "#8C6F4E", fontWeight: 700 }}>
-                      # {selectedStore.store_code}
+                      # {renderStore.store_code}
                     </span>
                   )}
-                  {selectedStore.store_model && (
-                    <span style={{ padding: "6px 14px", background: "#f4f4f5", borderRadius: 6 }}>{selectedStore.store_model}</span>
+                  {renderStore.store_model && (
+                    <span style={{ padding: "6px 14px", background: "#f4f4f5", borderRadius: 6 }}>{renderStore.store_model}</span>
                   )}
-                  {(selectedStore.city || selectedStore.state) && (
+                  {(renderStore.city || renderStore.state) && (
                     <span style={{ padding: "6px 14px", background: "#f4f4f5", borderRadius: 6 }}>
-                      📍 {[selectedStore.city, selectedStore.state].filter(Boolean).join(" / ")}
+                      📍 {[renderStore.city, renderStore.state].filter(Boolean).join(" / ")}
                     </span>
                   )}
                 </div>
-                {selectedStoreContacts.length > 0 && (
+                {renderContacts.length > 0 && (
                   <div style={{ marginTop: 18, fontSize: 14, color: "#666" }}>
-                    👤 {selectedStoreContacts.map((c: any) => c.name).join(" · ")}
+                    👤 {renderContacts.map((c: any) => c.name).join(" · ")}
                   </div>
                 )}
                 <div style={{ display: "flex", gap: 40, marginTop: 60, alignItems: "center" }}>
                   <div style={{ background: "#8C6F4E", color: "#fff", padding: "20px 36px", borderRadius: 12, textAlign: "center" }}>
                     <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.15em", opacity: 0.9 }}>
-                      {PDF_I18N[pdfLang].totalPieces}
+                      {PDF_I18N[renderLang].totalPieces}
                     </div>
                     <div style={{ fontSize: 52, fontWeight: 800, lineHeight: 1, marginTop: 6 }}>
                       {storePieces.reduce((acc: number, sp: any) => acc + sp.quantity, 0)}
@@ -774,7 +774,7 @@ export default function StoresTab({
               </div>
 
               {/* ══════════ PIECE PAGES ══════════ */}
-              {pdfPiecePages.map((pageCategories, pi) => (
+              {renderPiecePages.map((pageCategories, pi) => (
                 <div
                   key={`pp-${pi}`}
                   style={{
@@ -792,12 +792,12 @@ export default function StoresTab({
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 10, borderBottom: "2px solid #8C6F4E", marginBottom: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#1a1a1a", fontWeight: 600 }}>
                       <div style={{ width: 4, height: 18, background: "#8C6F4E", borderRadius: 2 }} />
-                      <span>{selectedStore.name}</span>
-                      {selectedStore.store_code && (
-                        <span style={{ color: "#888", fontWeight: 500 }}>· #{selectedStore.store_code}</span>
+                      <span>{renderStore.name}</span>
+                      {renderStore.store_code && (
+                        <span style={{ color: "#888", fontWeight: 500 }}>· #{renderStore.store_code}</span>
                       )}
                     </div>
-                    <span style={{ fontSize: 11, color: "#888" }}>{PDF_I18N[pdfLang].pageOf(pi + 2, totalPdfPages)}</span>
+                    <span style={{ fontSize: 11, color: "#888" }}>{PDF_I18N[renderLang].pageOf(pi + 2, renderTotalPages)}</span>
                   </div>
 
                   {/* Categories content */}
@@ -852,7 +852,7 @@ export default function StoresTab({
                                       <span />
                                     )}
                                     <span style={{ fontSize: 10.5, fontWeight: 700, color: "#8C6F4E", background: "#F5F2ED", padding: "1px 6px", borderRadius: 4 }}>
-                                      {PDF_I18N[pdfLang].qty(sp.quantity)}
+                                      {PDF_I18N[renderLang].qty(sp.quantity)}
                                     </span>
                                   </div>
                                 </div>
@@ -867,7 +867,7 @@ export default function StoresTab({
                   {/* Footer */}
                   <div style={{ marginTop: 12, paddingTop: 8, borderTop: "1px solid #e5e1d8", display: "flex", justifyContent: "space-between", fontSize: 9, color: "#888" }}>
                     <span>
-                      {PDF_I18N[pdfLang].generatedOn} {new Date().toLocaleDateString("pt-BR")}{" "}
+                      {PDF_I18N[renderLang].generatedOn} {new Date().toLocaleDateString("pt-BR")}{" "}
                       {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                     <span>ProduzAI · {agencyName} · {clientName}</span>
@@ -876,7 +876,7 @@ export default function StoresTab({
               ))}
 
               {/* ══════════ KIT PAGES ══════════ */}
-              {pdfKitPages.map((pageKits, ki) => (
+              {renderKitPages.map((pageKits, ki) => (
                 <div
                   key={`kp-${ki}`}
                   style={{
@@ -894,10 +894,10 @@ export default function StoresTab({
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 10, borderBottom: "2px solid #8C6F4E", marginBottom: 14 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#1a1a1a", fontWeight: 600 }}>
                       <div style={{ width: 4, height: 18, background: "#d97706", borderRadius: 2 }} />
-                      <span>Kits da Campanha · {selectedStore.name}</span>
+                      <span>Kits da Campanha · {renderStore.name}</span>
                     </div>
                     <span style={{ fontSize: 11, color: "#888" }}>
-                      {PDF_I18N[pdfLang].pageOf(1 + pdfPiecePages.length + ki + 1, totalPdfPages)}
+                      {PDF_I18N[renderLang].pageOf(1 + renderPiecePages.length + ki + 1, renderTotalPages)}
                     </span>
                   </div>
 
@@ -905,7 +905,7 @@ export default function StoresTab({
                   <div style={{ background: "linear-gradient(90deg, #1f2937 0%, #374151 100%)", padding: "8px 14px", display: "flex", alignItems: "center", gap: 10, borderRadius: 6, marginBottom: 12 }}>
                     <div style={{ width: 3, height: 16, background: "#d97706", borderRadius: 2, flexShrink: 0 }} />
                     <span style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "#ffffff" }}>
-                      {PDF_I18N[pdfLang].kitsSectionTitle}
+                      {PDF_I18N[renderLang].kitsSectionTitle}
                     </span>
                     <span style={{ background: "#d97706", color: "#fff", borderRadius: 20, padding: "1px 10px", fontSize: 10, fontWeight: 700, marginLeft: "auto" }}>
                       {pageKits.length} kits
@@ -926,7 +926,7 @@ export default function StoresTab({
                                 {kit.name}
                               </div>
                               <div style={{ fontSize: 8.5, color: "#9ca3af", marginTop: 2 }}>
-                                {PDF_I18N[pdfLang].kitSummary(kit.pieces.length, totalKitQty)}
+                                {PDF_I18N[renderLang].kitSummary(kit.pieces.length, totalKitQty)}
                               </div>
                             </div>
                           </div>
@@ -954,7 +954,7 @@ export default function StoresTab({
                                     {p?.name || "—"}
                                   </div>
                                   <span style={{ fontSize: 9, fontWeight: 700, color: "#92400e", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 3, padding: "0 5px" }}>
-                                    {PDF_I18N[pdfLang].qty(kp.quantity)}
+                                    {PDF_I18N[renderLang].qty(kp.quantity)}
                                   </span>
                                 </div>
                               );
@@ -968,7 +968,7 @@ export default function StoresTab({
                   {/* Footer */}
                   <div style={{ marginTop: 12, paddingTop: 8, borderTop: "1px solid #e5e1d8", display: "flex", justifyContent: "space-between", fontSize: 9, color: "#888" }}>
                     <span>
-                      {PDF_I18N[pdfLang].generatedOn} {new Date().toLocaleDateString("pt-BR")}{" "}
+                      {PDF_I18N[renderLang].generatedOn} {new Date().toLocaleDateString("pt-BR")}{" "}
                       {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                     <span>ProduzAI · {agencyName} · {clientName}</span>
