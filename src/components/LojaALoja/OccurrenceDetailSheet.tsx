@@ -262,6 +262,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
           resolution_photo_urls: resolutionPhotos,
           reinstallation_scheduled_at: needsReinst && reinstallationDate ? new Date(reinstallationDate).toISOString() : null,
           reinstallation_os: needsReinst && reinstallationOs.trim() ? reinstallationOs.trim() : null,
+          reporter_type: reporterType || null,
           resolved_by_user_id: (tratativaStatuses.find((s) => s.value === tratativaStatus)?.is_resolved) ? userId : null,
         } as any)
         .eq("id", occurrence.id);
