@@ -330,7 +330,7 @@ const LojaPdfTemplate = forwardRef<HTMLDivElement, LojaPdfTemplateProps>(
         >
           <span>Gerado em {now}</span>
           <span style={{ fontWeight: 700, color: "#8C6F4E" }}>
-            Lindt Excellence Pistache · Campanha Brasil 2026
+            {footerLabel || "ProduzAI"}
           </span>
         </div>
       </div>
