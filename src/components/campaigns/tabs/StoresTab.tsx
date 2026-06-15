@@ -609,7 +609,7 @@ export default function StoresTab({
                 }}
               >
                 <div style={{ fontSize: 20, color: "#8C6F4E", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 20 }}>
-                  Relatório de Peças da Campanha
+                  {PDF_I18N[pdfLang].titlePageSubtitle}
                 </div>
                 <h1 style={{ fontSize: 56, fontWeight: 800, margin: 0, color: "#1a1a1a", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
                   {selectedStore.name}
