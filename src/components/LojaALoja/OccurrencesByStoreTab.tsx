@@ -72,9 +72,10 @@ function formatDate(d: string | null) {
   return new Date(d).toLocaleDateString("pt-BR");
 }
 
-export default function OccurrencesByStoreTab({ campaignId, permissions }: Props) {
+export default function OccurrencesByStoreTab({ campaignId, clientId, permissions }: Props) {
   const { data, isLoading } = useOccurrencesByStore(campaignId);
   useRealtimeStoreOccurrences(campaignId);
+  const { statuses: tratativaStatuses } = useEffectiveTratativaStatuses(clientId);
 
   const [filterStore, setFilterStore] = useState<string>("__all__");
   const [filterMotive, setFilterMotive] = useState<string>("__all__");
