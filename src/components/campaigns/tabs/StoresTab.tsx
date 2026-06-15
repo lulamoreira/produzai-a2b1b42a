@@ -86,6 +86,8 @@ export default function StoresTab({
   const [storesViewMode, setStoresViewMode] = useState<"table" | "contacts">("table");
   const [selectedStore, setSelectedStore] = useState<any | null>(null);
   const [exportingPdf, setExportingPdf] = useState(false);
+  const [pdfLangPickerOpen, setPdfLangPickerOpen] = useState(false);
+  const [pdfLang, setPdfLang] = useState<PdfLang>("pt-BR");
   const pdfTemplateRef = useRef<HTMLDivElement>(null);
 
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
