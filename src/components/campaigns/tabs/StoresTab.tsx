@@ -807,7 +807,7 @@ export default function StoresTab({
                                 {kit.name}
                               </div>
                               <div style={{ fontSize: 8.5, color: "#9ca3af", marginTop: 2 }}>
-                                {kit.pieces.length} {kit.pieces.length === 1 ? "peça" : "peças"} · {totalKitQty} un.
+                                {PDF_I18N[pdfLang].kitSummary(kit.pieces.length, totalKitQty)}
                               </div>
                             </div>
                           </div>
