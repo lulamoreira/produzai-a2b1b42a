@@ -17,6 +17,7 @@ import { ptBR } from "date-fns/locale";
 import { ArrowLeft, Camera, Upload, Trash2, Edit3, X, ChevronLeft, ChevronRight, Image, Download, Video } from "lucide-react";
 import { downloadPhotosAsZip } from "@/lib/downloadPhotosZip";
 import PhasePickerDialog, { type PhotoPhase } from "@/components/PhasePickerDialog";
+import { criarNotificacao } from "@/lib/criarNotificacao";
 
 const CATEGORIES = [
   { value: "before", label: "Antes" },
