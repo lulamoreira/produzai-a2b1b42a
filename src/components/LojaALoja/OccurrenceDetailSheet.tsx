@@ -370,6 +370,20 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
 
               <Field label="Motivo" value={motivoDesc} />
               <Field label="Reportado por" value={reporterLabel} />
+              {canEdit && (
+                <div className="-mt-2">
+                  <Select value={reporterType} onValueChange={setReporterType}>
+                    <SelectTrigger className="h-8 text-xs">
+                      <SelectValue placeholder="Selecione..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {reporterOptions.map((o) => (
+                        <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <Field label="Data de abertura" value={formatDateTime(occurrence.created_at)} />
 
               {needsReinst && (
