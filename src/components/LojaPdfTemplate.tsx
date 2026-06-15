@@ -1,4 +1,4 @@
-import { forwardRef } from "react";
+import { forwardRef, useMemo } from "react";
 
 interface PdfStore {
   name: string;
@@ -17,33 +17,212 @@ interface PdfPiece {
   category?: string | null;
 }
 
+interface PdfKit {
+  id: string | number;
+  name: string;
+  code?: number | string | null;
+  pieces: (PdfPiece & { qty: number })[];
+}
+
 interface LojaPdfTemplateProps {
   store: PdfStore;
   items: { piece: PdfPiece; qty: number }[];
+  kits?: PdfKit[];
   footerLabel?: string;
 }
 
+const BRAND = "#8C6F4E";
+
 /**
- * Off-screen A4 template (794x1123px @96dpi) used to render the store PDF.
- * Renders fixed-size square frames for piece images with object-contain
- * letterboxing so all thumbnails align consistently.
+ * Off-screen A4 template for the store PDF.
+ * Pieces are grouped by Local (category). A separate "Kits" section lists
+ * the kit name + the component pieces of each kit defined in the campaign.
  */
 const LojaPdfTemplate = forwardRef<HTMLDivElement, LojaPdfTemplateProps>(
-  ({ store, items, footerLabel }, ref) => {
+  ({ store, items, kits = [], footerLabel }, ref) => {
     const totalQty = items.reduce((s, i) => s + i.qty, 0);
 
-    // Adaptive card sizing to keep everything on a single A4 page.
-    const count = items.length;
+    // Pieces assigned to this store, grouped by category (Local)
+    const grouped = useMemo(() => {
+      const map = new Map<string, { piece: PdfPiece; qty: number }[]>();
+      for (const it of items) {
+        const key = (it.piece.category || "Outros").trim() || "Outros";
+        if (!map.has(key)) map.set(key, []);
+        map.get(key)!.push(it);
+      }
+      return Array.from(map.entries())
+        .sort(([a], [b]) => a.localeCompare(b, "pt-BR"))
+        .map(([cat, arr]) => ({
+          category: cat,
+          items: arr.sort((a, b) => a.piece.name.localeCompare(b.piece.name, "pt-BR")),
+        }));
+    }, [items]);
+
+    // Pieces assigned to this store that also belong to some kit (badge data)
+    const pieceKitMap = useMemo(() => {
+      const m = new Map<string | number, string[]>();
+      for (const k of kits) {
+        for (const kp of k.pieces) {
+          if (!m.has(kp.id)) m.set(kp.id, []);
+          m.get(kp.id)!.push(k.name);
+        }
+      }
+      return m;
+    }, [kits]);
+
+    // Density: scale thumbnails based on total piece count
+    const total = items.length;
     let cols = 4;
-    let thumb = 120;
-    let pad = 12;
-    let fontName = 12;
-    if (count > 12) { cols = 5; thumb = 100; pad = 10; fontName = 11; }
-    if (count > 20) { cols = 6; thumb = 86; pad = 8; fontName = 10; }
-    if (count > 30) { cols = 7; thumb = 72; pad = 6; fontName = 9; }
-    if (count > 42) { cols = 8; thumb = 62; pad = 5; fontName = 8.5; }
+    let thumb = 110;
+    let pad = 10;
+    let fontName = 11;
+    if (total > 12) { cols = 5; thumb = 92; pad = 8; fontName = 10; }
+    if (total > 22) { cols = 6; thumb = 78; pad = 7; fontName = 9.5; }
+    if (total > 32) { cols = 7; thumb = 66; pad = 6; fontName = 9; }
+    if (total > 44) { cols = 8; thumb = 58; pad = 5; fontName = 8.5; }
 
     const now = new Date().toLocaleString("pt-BR");
+
+    const renderCard = (piece: PdfPiece, qty: number, kitNames?: string[]) => (
+      <div
+        key={`${piece.id}-${qty}`}
+        style={{
+          border: "1px solid #e5e5e5",
+          borderRadius: 8,
+          padding: pad - 2,
+          background: "#fff",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          position: "relative",
+        }}
+      >
+        <div
+          style={{
+            width: thumb,
+            height: thumb,
+            borderRadius: 6,
+            background: "#f4f4f5",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            overflow: "hidden",
+          }}
+        >
+          {piece.image_url ? (
+            <img
+              src={piece.image_url}
+              crossOrigin="anonymous"
+              alt={piece.name}
+              style={{
+                maxWidth: "100%",
+                maxHeight: "100%",
+                width: "auto",
+                height: "auto",
+                objectFit: "contain",
+                display: "block",
+              }}
+              onError={(e) => {
+                (e.currentTarget as HTMLImageElement).style.display = "none";
+              }}
+            />
+          ) : (
+            <span style={{ color: "#bbb", fontSize: 10 }}>sem imagem</span>
+          )}
+        </div>
+
+        <div
+          style={{
+            marginTop: 6,
+            fontSize: fontName,
+            fontWeight: 600,
+            color: "#222",
+            textAlign: "center",
+            lineHeight: 1.2,
+            width: "100%",
+            wordBreak: "break-word",
+          }}
+        >
+          {piece.name}
+        </div>
+
+        {kitNames && kitNames.length > 0 && (
+          <div
+            style={{
+              marginTop: 3,
+              fontSize: fontName - 2.5,
+              color: BRAND,
+              fontWeight: 600,
+              textAlign: "center",
+              lineHeight: 1.1,
+            }}
+          >
+            🧩 {kitNames.join(", ")}
+          </div>
+        )}
+
+        <div
+          style={{
+            marginTop: 6,
+            background: BRAND,
+            color: "#fff",
+            padding: "2px 10px",
+            borderRadius: 999,
+            fontSize: fontName,
+            fontWeight: 700,
+            minWidth: 28,
+            textAlign: "center",
+          }}
+        >
+          {qty}
+        </div>
+      </div>
+    );
+
+    const sectionHeader = (label: string, count: number) => (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          marginTop: 14,
+          marginBottom: 8,
+        }}
+      >
+        <div
+          style={{
+            width: 4,
+            height: 16,
+            background: BRAND,
+            borderRadius: 2,
+          }}
+        />
+        <div
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            color: "#222",
+            textTransform: "uppercase",
+            letterSpacing: 0.6,
+            flex: 1,
+          }}
+        >
+          {label}
+        </div>
+        <div
+          style={{
+            fontSize: 11,
+            color: "#666",
+            background: "#f1efe9",
+            padding: "2px 8px",
+            borderRadius: 999,
+            fontWeight: 600,
+          }}
+        >
+          {count} {count === 1 ? "peça" : "peças"}
+        </div>
+      </div>
+    );
 
     return (
       <div
@@ -69,7 +248,7 @@ const LojaPdfTemplate = forwardRef<HTMLDivElement, LojaPdfTemplateProps>(
             alignItems: "center",
             gap: 16,
             paddingBottom: 16,
-            borderBottom: "2px solid #8C6F4E",
+            borderBottom: `2px solid ${BRAND}`,
           }}
         >
           <div
@@ -77,7 +256,7 @@ const LojaPdfTemplate = forwardRef<HTMLDivElement, LojaPdfTemplateProps>(
               width: 56,
               height: 56,
               borderRadius: 12,
-              background: "linear-gradient(135deg, #8C6F4E, #b08a63)",
+              background: `linear-gradient(135deg, ${BRAND}, #b08a63)`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -88,14 +267,7 @@ const LojaPdfTemplate = forwardRef<HTMLDivElement, LojaPdfTemplateProps>(
             🏬
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div
-              style={{
-                fontSize: 22,
-                fontWeight: 700,
-                lineHeight: 1.15,
-                color: "#1a1a1a",
-              }}
-            >
+            <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.15, color: "#1a1a1a" }}>
               {store.name}
             </div>
             <div
@@ -109,14 +281,12 @@ const LojaPdfTemplate = forwardRef<HTMLDivElement, LojaPdfTemplateProps>(
                 alignItems: "center",
               }}
             >
-              <span>
-                <strong style={{ color: "#333" }}>Código:</strong> {store.number}
-              </span>
+              <span><strong style={{ color: "#333" }}>Código:</strong> {store.number}</span>
               {store.model && (
                 <span
                   style={{
-                    background: "#8C6F4E15",
-                    color: "#8C6F4E",
+                    background: `${BRAND}15`,
+                    color: BRAND,
                     padding: "2px 8px",
                     borderRadius: 999,
                     fontWeight: 600,
@@ -126,33 +296,16 @@ const LojaPdfTemplate = forwardRef<HTMLDivElement, LojaPdfTemplateProps>(
                   {store.model}
                 </span>
               )}
-              {store.uf && (
-                <span>
-                  <strong style={{ color: "#333" }}>UF:</strong> {store.uf}
-                </span>
-              )}
-              {store.type && (
-                <span>
-                  <strong style={{ color: "#333" }}>Tipo:</strong> {store.type}
-                </span>
-              )}
+              {store.uf && <span><strong style={{ color: "#333" }}>UF:</strong> {store.uf}</span>}
+              {store.type && <span><strong style={{ color: "#333" }}>Tipo:</strong> {store.type}</span>}
             </div>
           </div>
-          <div
-            style={{
-              textAlign: "right",
-              fontSize: 12,
-              color: "#555",
-            }}
-          >
+          <div style={{ textAlign: "right", fontSize: 12, color: "#555" }}>
             <div style={{ fontSize: 11, color: "#888" }}>Total de peças</div>
-            <div style={{ fontSize: 24, fontWeight: 700, color: "#8C6F4E" }}>
-              {totalQty}
-            </div>
+            <div style={{ fontSize: 24, fontWeight: 700, color: BRAND }}>{totalQty}</div>
           </div>
         </div>
 
-        {/* Compact info row */}
         {(store.primary_mod || store.secondary_mod) && (
           <div
             style={{
@@ -164,154 +317,128 @@ const LojaPdfTemplate = forwardRef<HTMLDivElement, LojaPdfTemplateProps>(
               flexWrap: "wrap",
             }}
           >
-            {store.primary_mod && (
-              <span>
-                <strong>Primary:</strong> {store.primary_mod}
-              </span>
-            )}
-            {store.secondary_mod && (
-              <span>
-                <strong>Secondary:</strong> {store.secondary_mod}
-              </span>
-            )}
+            {store.primary_mod && <span><strong>Primary:</strong> {store.primary_mod}</span>}
+            {store.secondary_mod && <span><strong>Secondary:</strong> {store.secondary_mod}</span>}
           </div>
         )}
 
-        {/* Pieces grid */}
-        <div style={{ marginTop: 18 }}>
+        {/* Pieces grouped by category */}
+        {items.length === 0 ? (
           <div
             style={{
-              fontSize: 13,
-              fontWeight: 700,
-              color: "#8C6F4E",
-              textTransform: "uppercase",
-              letterSpacing: 0.6,
-              marginBottom: 10,
+              marginTop: 24,
+              padding: 24,
+              textAlign: "center",
+              color: "#888",
+              background: "#fafafa",
+              borderRadius: 8,
             }}
           >
-            Peças associadas ({count})
+            Nenhuma peça associada a esta loja.
           </div>
-
-          {count === 0 ? (
-            <div
-              style={{
-                padding: 24,
-                textAlign: "center",
-                color: "#888",
-                background: "#fafafa",
-                borderRadius: 8,
-              }}
-            >
-              Nenhuma peça associada a esta loja.
+        ) : (
+          grouped.map(({ category, items: catItems }) => (
+            <div key={category}>
+              {sectionHeader(category, catItems.length)}
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: `repeat(${cols}, 1fr)`,
+                  gap: pad,
+                }}
+              >
+                {catItems.map((it) =>
+                  renderCard(it.piece, it.qty, pieceKitMap.get(it.piece.id))
+                )}
+              </div>
             </div>
-          ) : (
+          ))
+        )}
+
+        {/* Kits composition reference */}
+        {kits.length > 0 && (
+          <div style={{ marginTop: 18 }}>
             <div
               style={{
-                display: "grid",
-                gridTemplateColumns: `repeat(${cols}, 1fr)`,
-                gap: pad,
+                display: "flex",
+                alignItems: "center",
+                gap: 10,
+                marginBottom: 10,
+                paddingTop: 10,
+                borderTop: "1px dashed #ddd",
               }}
             >
-              {items.map(({ piece, qty }) => (
+              <div style={{ width: 4, height: 16, background: BRAND, borderRadius: 2 }} />
+              <div
+                style={{
+                  fontSize: 12,
+                  fontWeight: 700,
+                  color: "#222",
+                  textTransform: "uppercase",
+                  letterSpacing: 0.6,
+                }}
+              >
+                Kits da campanha — composição
+              </div>
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {kits.map((kit) => (
                 <div
-                  key={piece.id}
+                  key={kit.id}
                   style={{
                     border: "1px solid #e5e5e5",
-                    borderRadius: 8,
-                    padding: pad - 2,
-                    background: "#fff",
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "center",
-                    position: "relative",
+                    borderLeft: `3px solid ${BRAND}`,
+                    borderRadius: 6,
+                    padding: 8,
+                    background: "#fafaf7",
                   }}
                 >
-                  {/* Square frame, contain-fit image */}
                   <div
                     style={{
-                      width: thumb,
-                      height: thumb,
-                      borderRadius: 6,
-                      background: "#f4f4f5",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      overflow: "hidden",
-                    }}
-                  >
-                    {piece.image_url ? (
-                      <img
-                        src={piece.image_url}
-                        crossOrigin="anonymous"
-                        alt={piece.name}
-                        style={{
-                          maxWidth: "100%",
-                          maxHeight: "100%",
-                          width: "auto",
-                          height: "auto",
-                          objectFit: "contain",
-                          display: "block",
-                        }}
-                        onError={(e) => {
-                          (e.currentTarget as HTMLImageElement).style.display =
-                            "none";
-                        }}
-                      />
-                    ) : (
-                      <span style={{ color: "#bbb", fontSize: 10 }}>
-                        sem imagem
-                      </span>
-                    )}
-                  </div>
-
-                  <div
-                    style={{
-                      marginTop: 6,
-                      fontSize: fontName,
-                      fontWeight: 600,
-                      color: "#222",
-                      textAlign: "center",
-                      lineHeight: 1.2,
-                      width: "100%",
-                      wordBreak: "break-word",
-                    }}
-                  >
-                    {piece.name}
-                  </div>
-
-                  {piece.category && (
-                    <div
-                      style={{
-                        fontSize: fontName - 2,
-                        color: "#777",
-                        marginTop: 2,
-                        textAlign: "center",
-                      }}
-                    >
-                      {piece.category}
-                    </div>
-                  )}
-
-                  <div
-                    style={{
-                      marginTop: 6,
-                      background: "#8C6F4E",
-                      color: "#fff",
-                      padding: "2px 10px",
-                      borderRadius: 999,
-                      fontSize: fontName,
+                      fontSize: 11,
                       fontWeight: 700,
-                      minWidth: 28,
-                      textAlign: "center",
+                      color: "#222",
+                      marginBottom: 6,
                     }}
                   >
-                    {qty}
+                    {kit.code ? `[${kit.code}] ` : ""}{kit.name}
+                    <span style={{ color: "#888", fontWeight: 500, marginLeft: 6 }}>
+                      ({kit.pieces.length} {kit.pieces.length === 1 ? "peça" : "peças"})
+                    </span>
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 6,
+                    }}
+                  >
+                    {kit.pieces.map((p) => (
+                      <div
+                        key={`${kit.id}-${p.id}`}
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                          background: "#fff",
+                          border: "1px solid #e5e5e5",
+                          borderRadius: 4,
+                          padding: "2px 6px",
+                          fontSize: 10,
+                          color: "#333",
+                        }}
+                      >
+                        <span style={{ fontWeight: 600 }}>{p.name}</span>
+                        <span style={{ color: "#888" }}>×{p.qty}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div
@@ -329,9 +456,7 @@ const LojaPdfTemplate = forwardRef<HTMLDivElement, LojaPdfTemplateProps>(
           }}
         >
           <span>Gerado em {now}</span>
-          <span style={{ fontWeight: 700, color: "#8C6F4E" }}>
-            {footerLabel || "ProduzAI"}
-          </span>
+          <span style={{ fontWeight: 700, color: BRAND }}>{footerLabel || "ProduzAI"}</span>
         </div>
       </div>
     );
