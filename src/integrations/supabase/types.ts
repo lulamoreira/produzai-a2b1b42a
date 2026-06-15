@@ -4616,6 +4616,7 @@ export type Database = {
           occurrences_portal_title: string | null
           portal_title: string | null
           portal_welcome_message: string | null
+          reporter_options: string[] | null
           show_priority: boolean
           updated_at: string | null
         }
@@ -4636,6 +4637,7 @@ export type Database = {
           occurrences_portal_title?: string | null
           portal_title?: string | null
           portal_welcome_message?: string | null
+          reporter_options?: string[] | null
           show_priority?: boolean
           updated_at?: string | null
         }
@@ -4656,6 +4658,7 @@ export type Database = {
           occurrences_portal_title?: string | null
           portal_title?: string | null
           portal_welcome_message?: string | null
+          reporter_options?: string[] | null
           show_priority?: boolean
           updated_at?: string | null
         }
