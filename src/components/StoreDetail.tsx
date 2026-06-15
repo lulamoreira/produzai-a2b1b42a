@@ -142,6 +142,62 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
     exportSingleStore(store, pieces, sps);
   };
 
+  const handleExportPdf = async () => {
+    if (exportingPdf) return;
+    setExportingPdf(true);
+    try {
+      const node = pdfRef.current;
+      if (!node) throw new Error("Template não montado");
+      // Allow images a brief tick to begin loading
+      await new Promise((r) => setTimeout(r, 60));
+      // Wait for all <img> in template to load (or fail)
+      const imgs = Array.from(node.querySelectorAll("img"));
+      await Promise.all(
+        imgs.map(
+          (img) =>
+            new Promise<void>((resolve) => {
+              if (img.complete) return resolve();
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+            })
+        )
+      );
+
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+
+      const canvas = await html2canvas(node, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+
+      const imgRatio = canvas.height / canvas.width;
+      let renderW = pageW;
+      let renderH = pageW * imgRatio;
+      if (renderH > pageH) {
+        renderH = pageH;
+        renderW = pageH / imgRatio;
+      }
+      const x = (pageW - renderW) / 2;
+      const y = 0;
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.92);
+      pdf.addImage(imgData, "JPEG", x, y, renderW, renderH);
+      pdf.save(`Loja_${store.number}.pdf`);
+    } catch (err) {
+      console.error("PDF export failed", err);
+      toast.error("Falha ao gerar PDF");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
   const categoryColors: Record<string, string> = {
     CUBOS: "from-amber-500/20 to-amber-500/5 border-amber-500/30",
     SHELFTALKS: "from-emerald-500/20 to-emerald-500/5 border-emerald-500/30",
