@@ -439,7 +439,6 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
               )}
 
               <div>
-              <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Notas da tratativa</label>
                 {isAdmin && noteHistory.length > 0 && (
                   <div className="flex flex-wrap gap-1.5 mb-2">
