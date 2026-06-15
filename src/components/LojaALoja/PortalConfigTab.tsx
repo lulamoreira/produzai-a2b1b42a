@@ -192,6 +192,23 @@ export default function PortalConfigTab({ campaignId, clientId, permissions }: P
     },
   });
 
+  const { data: namesCtx } = useQuery({
+    queryKey: ["portal-config-names", clientId],
+    enabled: !!clientId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("clients")
+        .select("name, agencies(name)")
+        .eq("id", clientId)
+        .maybeSingle();
+      if (error) throw error;
+      return {
+        clientName: (data as any)?.name ?? "",
+        agencyName: (data as any)?.agencies?.name ?? "",
+      };
+    },
+  });
+
   const storesSort = useTableSort(stores as any[], {
     getValue: {
       name: (s: any) => (s.store_code ? `${s.store_code} ${s.name}` : s.name).toLowerCase(),
