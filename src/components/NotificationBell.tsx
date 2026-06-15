@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bell, CheckCheck } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -13,6 +13,21 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useFormatters } from "@/lib/formatters";
+
+const NOTIFICATION_CATEGORY_LABELS: Record<string, string> = {
+  installation_photo: "Instalação",
+  store_occurrence_report: "Ocorrências",
+  ocorrencia_resolvida: "Ocorrências",
+  store_maintenance_request: "Portal da Loja",
+  store_replacement_request: "Portal da Loja",
+  store_compliance_check: "Portal da Loja",
+};
+
+const CATEGORY_ORDER = ["Instalação", "Ocorrências", "Portal da Loja", "Outros"];
+
+function getCategoryLabel(type: string): string {
+  return NOTIFICATION_CATEGORY_LABELS[type] ?? "Outros";
+}
 
 export default function NotificationBell() {
   const { t } = useTranslation();
