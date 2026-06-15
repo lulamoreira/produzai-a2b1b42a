@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useCampaignFavorites } from "@/hooks/useCampaignFavorites";
+import { useCampaignFavorites, useToggleFavorite } from "@/hooks/useCampaignFavorites";
 
 import { Star, ArrowRight } from "lucide-react";
 
@@ -9,6 +9,7 @@ const FavoritesV2 = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: favorites = [], isLoading } = useCampaignFavorites();
+  const toggleFavorite = useToggleFavorite();
 
   if (isLoading) {
     return (
@@ -58,6 +59,19 @@ const FavoritesV2 = () => {
                         Acessar <ArrowRight className="w-3 h-3" />
                       </span>
                     </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite.mutate({ campaignId: fav.campaign_id, isFavorited: true });
+                      }}
+                      disabled={toggleFavorite.isPending}
+                      className="p-1 rounded hover:bg-stone-100 transition-colors flex-shrink-0"
+                      aria-label="Remover dos favoritos"
+                      title="Remover dos favoritos"
+                    >
+                      <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+                    </button>
                   </div>
                 </div>
               );
