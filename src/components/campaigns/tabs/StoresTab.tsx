@@ -980,5 +980,3 @@ export default function StoresTab({
     </div>
   );
 }
-  );
-}
