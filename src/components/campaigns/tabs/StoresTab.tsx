@@ -551,7 +551,7 @@ export default function StoresTab({
                         {pieces.length} {pieces.length === 1 ? "peça" : "peças"}
                       </span>
                     </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10 }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 10 }}>
                       {pieces.map((sp, i) => {
                         const p = sp.campaign_pieces;
                         if (!p) return null;
@@ -604,34 +604,89 @@ export default function StoresTab({
 
               {/* KITS */}
               {storeKits.length > 0 && (
-                <div style={{ marginTop: 24 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, paddingBottom: 6, borderBottom: "1px solid #e5e1d8" }}>
-                    <div style={{ width: 4, height: 16, background: "#8C6F4E", borderRadius: 2 }} />
-                    <span style={{ fontSize: 14, fontWeight: 700, color: "#1a1a1a", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                <div>
+                  <div style={{
+                    width: "100%",
+                    background: "linear-gradient(90deg, #1f2937 0%, #374151 100%)",
+                    padding: "10px 32px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    marginTop: "8px",
+                  }}>
+                    <div style={{ width: "3px", height: "18px", background: "#d97706", borderRadius: "2px", flexShrink: 0 }} />
+                    <span style={{
+                      fontSize: "12px", fontWeight: 800, textTransform: "uppercase",
+                      letterSpacing: "0.1em", color: "#ffffff",
+                    }}>
                       Kits da Campanha — Composição
                     </span>
-                    <span style={{ fontSize: 11, color: "#888", marginLeft: "auto" }}>{storeKits.length} kits</span>
+                    <span style={{
+                      background: "#d97706", color: "#fff",
+                      borderRadius: "20px", padding: "1px 10px",
+                      fontSize: "10px", fontWeight: 700,
+                    }}>
+                      {storeKits.length} kits
+                    </span>
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 10 }}>
-                    {storeKits.map((kit: any) => (
-                      <div key={kit.id} style={{ border: "1px solid #e5e1d8", borderRadius: 6, padding: 10, background: "#fafaf7" }}>
-                        <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginBottom: 6 }}>
-                          <span style={{ fontSize: 10, fontFamily: "monospace", color: "#8C6F4E", fontWeight: 700 }}>
-                            [{kit.code}]
-                          </span>
-                          <span style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a" }}>{kit.name}</span>
-                          <span style={{ fontSize: 10, color: "#888", marginLeft: "auto" }}>{kit.pieces.length}p</span>
-                        </div>
-                        <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                          {kit.pieces.map((kp: any, j: number) => (
-                            <div key={j} style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#444", padding: "2px 0", borderTop: j === 0 ? "none" : "1px dashed #e5e1d8" }}>
-                              <span>{kp.campaign_pieces?.name || "—"}</span>
-                              <span style={{ fontWeight: 700, color: "#8C6F4E" }}>×{kp.quantity}</span>
+
+                  <div style={{ padding: "14px 32px 24px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
+                    {storeKits.map((kit: any) => {
+                      const totalKitQty = kit.pieces.reduce((acc: number, kp: any) => acc + (kp.quantity || 0), 0);
+                      return (
+                        <div key={kit.id} style={{
+                          border: "1px solid #d1d5db", borderRadius: "8px",
+                          overflow: "hidden", background: "#ffffff",
+                          boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+                        }}>
+                          <div style={{
+                            background: "#374151", padding: "7px 12px",
+                            display: "flex", alignItems: "flex-start", gap: "7px",
+                          }}>
+                            <span style={{
+                              background: "#d97706", color: "#fff",
+                              borderRadius: "4px", padding: "2px 7px",
+                              fontSize: "10px", fontWeight: 800, flexShrink: 0, marginTop: "1px",
+                            }}>
+                              [{kit.code}]
+                            </span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{
+                                fontSize: "10px", fontWeight: 700, color: "#ffffff",
+                                lineHeight: 1.3, overflow: "hidden", maxHeight: "26px",
+                              }}>
+                                {kit.name}
+                              </div>
+                              <div style={{ fontSize: "8.5px", color: "#9ca3af", marginTop: "2px" }}>
+                                {kit.pieces.length} {kit.pieces.length === 1 ? "tipo de peça" : "tipos de peça"} · {totalKitQty} un. total
+                              </div>
                             </div>
-                          ))}
+                          </div>
+                          <div style={{ padding: "6px 12px 8px" }}>
+                            {kit.pieces.map((kp: any, j: number) => (
+                              <div key={j} style={{
+                                display: "flex", justifyContent: "space-between", alignItems: "center",
+                                padding: "3px 0",
+                                borderBottom: j < kit.pieces.length - 1 ? "1px solid #f3f4f6" : "none",
+                                gap: "6px",
+                              }}>
+                                <span style={{ fontSize: "8.5px", color: "#374151", flex: 1, lineHeight: 1.3 }}>
+                                  {kp.campaign_pieces?.name || "—"}
+                                </span>
+                                <span style={{
+                                  background: "#fef3c7", color: "#92400e",
+                                  border: "1px solid #fde68a",
+                                  borderRadius: "3px", padding: "0px 5px",
+                                  fontSize: "9px", fontWeight: 700, flexShrink: 0,
+                                }}>
+                                  ×{kp.quantity}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               )}
