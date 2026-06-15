@@ -406,19 +406,37 @@ export default function StoresTab({
               <Store className="w-5 h-5 text-primary" />
               Detalhes da Loja
             </DialogTitle>
-            <Button
-              size="sm"
-              onClick={handleExportPdf}
-              disabled={exportingPdf || storePieces.length === 0}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
-            >
-              {exportingPdf ? (
-                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4 mr-1" />
-              )}
-              {exportingPdf ? "Gerando..." : "Exportar PDF"}
-            </Button>
+            <Popover open={pdfLangPickerOpen} onOpenChange={setPdfLangPickerOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  size="sm"
+                  disabled={exportingPdf || storePieces.length === 0}
+                  onClick={() => setPdfLangPickerOpen(true)}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
+                >
+                  {exportingPdf ? (
+                    <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                  ) : (
+                    <Download className="w-4 h-4 mr-1" />
+                  )}
+                  {exportingPdf ? "Gerando..." : "Exportar PDF"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-48 p-1" align="end">
+                {(["pt-BR", "es-CL", "en-US"] as PdfLang[]).map((lang) => (
+                  <button
+                    key={lang}
+                    className="w-full text-left px-3 py-2 text-sm rounded hover:bg-muted"
+                    onClick={() => {
+                      setPdfLangPickerOpen(false);
+                      handleExportPdf(lang);
+                    }}
+                  >
+                    {lang === "pt-BR" ? "Português Brasileiro" : lang === "es-CL" ? "Español Chileno" : "English (US)"}
+                  </button>
+                ))}
+              </PopoverContent>
+            </Popover>
           </DialogHeader>
 
           {selectedStore && (
