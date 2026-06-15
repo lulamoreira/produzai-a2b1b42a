@@ -188,8 +188,13 @@ export default function StorePortal() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        {retryState === "retrying" && (
+          <p className="text-sm text-muted-foreground animate-pulse">
+            Verificando conexão...
+          </p>
+        )}
       </div>
     );
   }
