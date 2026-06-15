@@ -637,7 +637,7 @@ export default function StoresTab({
                 <div style={{ display: "flex", gap: 40, marginTop: 60, alignItems: "center" }}>
                   <div style={{ background: "#8C6F4E", color: "#fff", padding: "20px 36px", borderRadius: 12, textAlign: "center" }}>
                     <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.15em", opacity: 0.9 }}>
-                      Total de Peças
+                      {PDF_I18N[pdfLang].totalPieces}
                     </div>
                     <div style={{ fontSize: 52, fontWeight: 800, lineHeight: 1, marginTop: 6 }}>
                       {storePieces.reduce((acc: number, sp: any) => acc + sp.quantity, 0)}
