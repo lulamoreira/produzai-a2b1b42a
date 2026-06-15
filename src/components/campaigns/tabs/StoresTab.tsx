@@ -27,6 +27,8 @@ interface StoresTabProps {
   clientName: string;
   pieces?: any[];
   storePieces?: any[];
+  kits?: any[];
+  kitPieces?: any[];
 }
 
 export default function StoresTab({
