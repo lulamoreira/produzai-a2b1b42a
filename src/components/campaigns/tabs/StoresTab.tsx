@@ -274,11 +274,24 @@ export default function StoresTab({
 
       <Dialog open={!!selectedStore} onOpenChange={(open) => !open && setSelectedStore(null)}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader>
+          <DialogHeader className="flex flex-row items-center justify-between gap-4">
             <DialogTitle className="flex items-center gap-2">
               <Store className="w-5 h-5 text-primary" />
               Detalhes da Loja
             </DialogTitle>
+            <Button
+              size="sm"
+              onClick={handleExportPdf}
+              disabled={exportingPdf || pdfItems.length === 0}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
+            >
+              {exportingPdf ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <FileDown className="w-4 h-4 mr-1" />
+              )}
+              Exportar PDF
+            </Button>
           </DialogHeader>
           
           {selectedStore && (
