@@ -72,7 +72,7 @@ function buildWhatsAppMessage(r: any, data: PortalData, statuses: TratativaStatu
   ].filter(Boolean).join("\n");
 }
 
-function OcorrenciaCard({ r, data, statuses }: { r: any; data: PortalData; statuses: TratativaStatus[] }) {
+function OcorrenciaCard({ r, data, statuses }: { r: any; data: PortalData; statuses: StatusItem[] }) {
   const [expanded, setExpanded] = useState(false);
 
   const peca = data.pecas.find(p => p.id === r.loja_a_loja_peca_id);
