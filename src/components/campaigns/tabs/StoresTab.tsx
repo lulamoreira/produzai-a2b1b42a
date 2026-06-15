@@ -557,13 +557,20 @@ export default function StoresTab({
                         if (!p) return null;
                         return (
                           <div key={i} style={{ border: "1px solid #e5e1d8", borderRadius: 6, overflow: "hidden", background: "#fff" }}>
-                            <div style={{ width: "100%", aspectRatio: "1 / 1", background: "#f4f4f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28 }}>
+                            <div style={{ width: "100%", minHeight: 80, background: "#f4f4f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, padding: 4 }}>
                               {p.image_url ? (
                                 <img
-                                  src={p.image_url}
                                   crossOrigin="anonymous"
+                                  src={p.image_url}
                                   alt={p.name}
-                                  style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                                  style={{
+                                    maxWidth: "calc(100% - 8px)",
+                                    maxHeight: "70px",
+                                    width: "auto",
+                                    height: "auto",
+                                    display: "block",
+                                    margin: "0 auto",
+                                  }}
                                   onError={(e) => {
                                     (e.currentTarget as HTMLImageElement).style.display = "none";
                                   }}
