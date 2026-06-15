@@ -38,6 +38,8 @@ const PDF_I18N = {
     kitsSectionTitle: "Composição dos Kits",
     kitSummary: (types: number, units: number) => `${types} tipos de peça · ${units} un. total`,
     qty: (n: number) => `× ${n}`,
+    categoryPieceCount: (n: number) => `${n} peças`,
+    kitsCount: (n: number) => `${n} kits`,
   },
   "es-CL": {
     titlePageSubtitle: "Detalles de la Tienda",
@@ -48,6 +50,8 @@ const PDF_I18N = {
     kitsSectionTitle: "Composición de los Kits",
     kitSummary: (types: number, units: number) => `${types} tipos de pieza · ${units} un. total`,
     qty: (n: number) => `× ${n}`,
+    categoryPieceCount: (n: number) => `${n} piezas`,
+    kitsCount: (n: number) => `${n} kits`,
   },
   "en-US": {
     titlePageSubtitle: "Store Details",
@@ -58,6 +62,8 @@ const PDF_I18N = {
     kitsSectionTitle: "Kit Composition",
     kitSummary: (types: number, units: number) => `${types} piece types · ${units} total units`,
     qty: (n: number) => `× ${n}`,
+    categoryPieceCount: (n: number) => `${n} pieces`,
+    kitsCount: (n: number) => `${n} kits`,
   },
 } as const;
 
@@ -104,7 +110,7 @@ function groupPiecesByCategory(pieces: any[]) {
 }
 
 function buildPiecePages(piecesByCategory: { category: string; pieces: any[] }[]) {
-  const PAGE_H = 710, COLS = 8, CARD_H = 150, CARD_GAP = 7, CAT_H = 36, CAT_SEP = 14;
+  const PAGE_H = 710, COLS = 8, CARD_H = 160, CARD_GAP = 7, CAT_H = 36, CAT_SEP = 14;
   const pages: { category: string; pieces: any[] }[][] = [[]];
   let usedH = 0;
   for (const cat of piecesByCategory) {
@@ -123,7 +129,7 @@ function buildKitPages(kits: any[]) {
   const PAGE_H = 640, KIT_COLS = 3, PC = 4;
   const KIT_H = (kit: any) => {
     const pieceRows = Math.ceil(kit.pieces.length / PC);
-    return 80 + pieceRows * 110 + Math.max(0, pieceRows - 1) * 8 + 16;
+    return 80 + pieceRows * 120 + Math.max(0, pieceRows - 1) * 8 + 16;
   };
   const pages: any[][] = [[]];
   let usedH = 0;
@@ -860,7 +866,7 @@ export default function StoresTab({
                             {category}
                           </span>
                           <span style={{ fontSize: 10, color: "#888", marginLeft: "auto" }}>
-                            {pieces.length} {pieces.length === 1 ? "peça" : "peças"}
+                            {PDF_I18N[renderLang].categoryPieceCount(pieces.length)}
                           </span>
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 7 }}>
@@ -868,7 +874,7 @@ export default function StoresTab({
                             const p = sp.campaign_pieces;
                             if (!p) return null;
                             return (
-                              <div key={i} style={{ border: "1px solid #e5e1d8", borderRadius: 6, overflow: "hidden", background: "#fff", minHeight: 150, display: "flex", flexDirection: "column" }}>
+                              <div key={i} style={{ border: "1px solid #e5e1d8", borderRadius: 6, overflow: "hidden", background: "#fff", minHeight: 160, display: "flex", flexDirection: "column", alignItems: "center" }}>
                                 <div style={{ width: "100%", height: 80, background: "#f4f4f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, padding: 4, flexShrink: 0 }}>
                                   {p.image_url ? (
                                     <img
@@ -891,16 +897,26 @@ export default function StoresTab({
                                     "📦"
                                   )}
                                 </div>
-                                <div style={{ padding: "5px 7px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
-                                  <div style={{ fontSize: 9.5, fontWeight: 600, color: "#1a1a1a", lineHeight: 1.2 }}>
+                                <div style={{ padding: "5px 7px", width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                                  <div style={{
+                                    minHeight: "22px",
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    justifyContent: "center",
+                                    textAlign: "center",
+                                    width: "100%",
+                                    marginTop: "4px",
+                                    fontSize: "8px",
+                                    lineHeight: 1.3,
+                                    fontWeight: 600,
+                                    color: "#1a1a1a",
+                                  }}>
                                     {p.name}
                                   </div>
-                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 3 }}>
-                                    {p.size ? (
-                                      <span style={{ fontSize: 8.5, color: "#888" }}>{p.size}</span>
-                                    ) : (
-                                      <span />
-                                    )}
+                                  {p.size && (
+                                    <div style={{ fontSize: 8, color: "#888", marginTop: 2 }}>{p.size}</div>
+                                  )}
+                                  <div style={{ marginTop: "5px" }}>
                                     <span style={{ fontSize: 10.5, fontWeight: 700, color: "#8C6F4E", background: "#F5F2ED", padding: "1px 6px", borderRadius: 4 }}>
                                       {PDF_I18N[renderLang].qty(sp.quantity)}
                                     </span>
@@ -957,8 +973,8 @@ export default function StoresTab({
                     <span style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "#ffffff" }}>
                       {PDF_I18N[renderLang].kitsSectionTitle}
                     </span>
-                    <span style={{ background: "#d97706", color: "#fff", borderRadius: 20, padding: "1px 10px", fontSize: 10, fontWeight: 700, marginLeft: "auto" }}>
-                      {pageKits.length} kits
+                    <span style={{ background: "#d97706", color: "#fff", borderRadius: 20, padding: "1px 10px", fontSize: 10, fontWeight: 700, marginLeft: "auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      {PDF_I18N[renderLang].kitsCount(pageKits.length)}
                     </span>
                   </div>
 
@@ -968,7 +984,7 @@ export default function StoresTab({
                       return (
                         <div key={kit.id} style={{ border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden", background: "#ffffff", display: "flex", flexDirection: "column" }}>
                           <div style={{ background: "#374151", padding: "7px 10px", display: "flex", alignItems: "flex-start", gap: 7 }}>
-                            <span style={{ background: "#d97706", color: "#fff", borderRadius: 4, padding: "2px 7px", fontSize: 10, fontWeight: 800, flexShrink: 0, marginTop: 1 }}>
+                            <span style={{ background: "#d97706", color: "#fff", borderRadius: 4, padding: "2px 7px", fontSize: 10, fontWeight: 800, flexShrink: 0, alignSelf: "flex-start", marginTop: "1px", display: "flex", alignItems: "center", justifyContent: "center" }}>
                               [{kit.code}]
                             </span>
                             <div style={{ flex: 1 }}>
@@ -984,7 +1000,7 @@ export default function StoresTab({
                             {kit.pieces.map((kp: any, j: number) => {
                               const p = kp.campaign_pieces;
                               return (
-                                <div key={j} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "#fff", minHeight: 110 }}>
+                                <div key={j} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "#fff", minHeight: 120 }}>
                                   <div style={{ width: "100%", height: 58, background: "#f4f4f5", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", fontSize: 18 }}>
                                     {p?.image_url ? (
                                       <img
@@ -1000,10 +1016,21 @@ export default function StoresTab({
                                       "📦"
                                     )}
                                   </div>
-                                  <div style={{ fontSize: 8.5, color: "#1a1a1a", textAlign: "center", lineHeight: 1.2 }}>
+                                  <div style={{
+                                    minHeight: "19px",
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    justifyContent: "center",
+                                    textAlign: "center",
+                                    width: "100%",
+                                    marginTop: "4px",
+                                    fontSize: "7px",
+                                    lineHeight: 1.3,
+                                    color: "#1a1a1a",
+                                  }}>
                                     {p?.name || "—"}
                                   </div>
-                                  <span style={{ fontSize: 9, fontWeight: 700, color: "#92400e", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 3, padding: "0 5px" }}>
+                                  <span style={{ fontSize: 9, fontWeight: 700, color: "#92400e", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 3, padding: "0 5px", marginTop: "5px" }}>
                                     {PDF_I18N[renderLang].qty(kp.quantity)}
                                   </span>
                                 </div>
