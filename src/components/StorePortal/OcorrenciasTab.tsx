@@ -332,7 +332,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
         ) : (
           <div className="space-y-3">
             {allReports.map(r => (
-              <OcorrenciaCard key={r.id} r={r} data={data} />
+              <OcorrenciaCard key={r.id} r={r} data={data} statuses={statuses} />
             ))}
           </div>
         )}
