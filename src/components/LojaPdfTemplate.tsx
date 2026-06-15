@@ -29,7 +29,7 @@ interface LojaPdfTemplateProps {
  * letterboxing so all thumbnails align consistently.
  */
 const LojaPdfTemplate = forwardRef<HTMLDivElement, LojaPdfTemplateProps>(
-  ({ store, items }, ref) => {
+  ({ store, items, footerLabel }, ref) => {
     const totalQty = items.reduce((s, i) => s + i.qty, 0);
 
     // Adaptive card sizing to keep everything on a single A4 page.
