@@ -38,6 +38,8 @@ const PDF_I18N = {
     kitsSectionTitle: "Composição dos Kits",
     kitSummary: (types: number, units: number) => `${types} tipos de peça · ${units} un. total`,
     qty: (n: number) => `× ${n}`,
+    categoryPieceCount: (n: number) => `${n} peças`,
+    kitsCount: (n: number) => `${n} kits`,
   },
   "es-CL": {
     titlePageSubtitle: "Detalles de la Tienda",
