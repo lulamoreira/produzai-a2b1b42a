@@ -121,7 +121,7 @@ export default function StoresTab({
 
   // Pre-calculate which categories fit on each piece page (8 cols, 132px card, 36px cat header)
   const pdfPiecePages = useMemo(() => {
-    const PAGE_H = 710; const COLS = 8; const CARD_H = 132; const CARD_GAP = 7;
+    const PAGE_H = 710; const COLS = 8; const CARD_H = 150; const CARD_GAP = 7;
     const CAT_H = 36; const CAT_SEP = 14;
     type PCat = typeof piecesByCategory[number];
     const pages: PCat[][] = [[]]; let usedH = 0;
