@@ -66,7 +66,7 @@ export default function NotificationBell() {
           )}
         </div>
 
-        <ScrollArea className="max-h-[360px]">
+        <ScrollArea className="h-[360px]">
           {notifications.length === 0 ? (
             <div className="px-4 py-8 text-center text-sm text-muted-foreground">
               {t("notifications.noNotifications", { defaultValue: "Nenhuma notificação" })}
