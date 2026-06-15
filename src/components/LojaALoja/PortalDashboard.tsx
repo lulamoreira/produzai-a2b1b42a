@@ -666,7 +666,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
                     {/* Badges */}
                     <div className="flex flex-wrap gap-1.5">
                       {showPriority && <Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge>}
-                      <Badge className={tratativaColor[ts] ?? "bg-muted"}>{tratativaLabel[ts] ?? ts}</Badge>
+                      <Badge className={getTratativaDisplay(ts, tratativaStatuses).className} style={getTratativaDisplay(ts, tratativaStatuses).style}>{getTratativaDisplay(ts, tratativaStatuses).label}</Badge>
                       {o.needs_reinstallation && (
                         <span
                           title={o.reinstallation_scheduled_at
