@@ -30,6 +30,7 @@ export default function OccurrencesPortalV2() {
   const { user } = useAuth();
   const isPublic = !user;
   const [selectedState, setSelectedState] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState<string>("");
 
   const { data: config, isLoading: loadingConfig } = useQuery({
     queryKey: ["occ-portal-config", campaignId],
