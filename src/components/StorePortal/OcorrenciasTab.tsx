@@ -190,21 +190,31 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
   );
 
   const reporterOptions = useMemo(() => {
-    const opts: Array<{ value: string; label: string }> = [
-      { value: "lojista", label: "Lojista" },
-      { value: "fornecedor", label: "Fornecedor" },
-    ];
+    const configOptions = (data.portal_config as any)?.reporter_options;
     const agencyName = data.campaign?.clients?.agencies?.name;
     const clientName = data.campaign?.clients?.name;
-    if (agencyName) opts.push({ value: `agencia:${agencyName}`, label: agencyName });
-    if (clientName) opts.push({ value: `cliente:${clientName}`, label: clientName });
-    const customList: string[] = ((data.portal_config as any)?.reporter_custom ?? []) as string[];
-    customList.forEach((name) => {
-      if (name && name.trim()) {
-        opts.push({ value: `custom:${name.trim()}`, label: name.trim() });
-      }
-    });
-    return opts;
+
+    if (Array.isArray(configOptions) && configOptions.length > 0 && typeof configOptions[0] === "object" && configOptions[0] !== null) {
+      return (configOptions as Array<{ value: string; label: string; enabled?: boolean }>)
+        .filter((o) => o.enabled !== false)
+        .map((o) => {
+          if (o.value === "agencia") return { value: `agencia:${o.label || agencyName || "Agência"}`, label: o.label || agencyName || "Agência" };
+          if (o.value === "cliente") return { value: `cliente:${o.label || clientName || "Cliente"}`, label: o.label || clientName || "Cliente" };
+          return { value: o.value, label: o.label };
+        });
+    }
+
+    const defaultAll: Array<{ value: string; label: string }> = [
+      { value: "lojista", label: "Lojista" },
+      { value: "fornecedor", label: "Fornecedor" },
+      ...(agencyName ? [{ value: `agencia:${agencyName}`, label: agencyName }] : []),
+      ...(clientName ? [{ value: `cliente:${clientName}`, label: clientName }] : []),
+    ];
+    if (Array.isArray(configOptions) && typeof configOptions[0] === "string") {
+      return defaultAll.filter((o) => configOptions.includes(o.value.split(":")[0]));
+    }
+
+    return defaultAll;
   }, [data]);
 
   const loadReports = useCallback(async () => {
