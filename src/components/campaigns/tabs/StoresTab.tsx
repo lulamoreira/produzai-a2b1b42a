@@ -139,8 +139,11 @@ export default function StoresTab({
   // Pre-calculate which kits fit on each kit page
   const pdfKitPages = useMemo(() => {
     if (!storeKits.length) return [] as any[][];
-    const PAGE_H = 710; const KIT_COLS = 3; const PC = 4;
-    const KIT_H = (kit: any) => 50 + Math.ceil(kit.pieces.length / PC) * 90 + 14;
+    const PAGE_H = 640; const KIT_COLS = 3; const PC = 4;
+    const KIT_H = (kit: any) => {
+      const pieceRows = Math.ceil(kit.pieces.length / PC);
+      return 80 + pieceRows * 110 + Math.max(0, pieceRows - 1) * 8 + 16;
+    };
     const pages: any[][] = [[]]; let usedH = 0;
     for (let i = 0; i < storeKits.length; i += KIT_COLS) {
       const row = (storeKits as any[]).slice(i, i + KIT_COLS);
