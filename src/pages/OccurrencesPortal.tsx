@@ -325,6 +325,9 @@ export default function OccurrencesPortal() {
               </section>
             );
           })}
+          {sortedStates.length === 0 && (searchQuery || selectedState !== "all") && (
+            <p className="text-center text-muted-foreground py-12">Nenhuma loja encontrada para os filtros aplicados.</p>
+          )}
         </div>
       </div>
     </div>
