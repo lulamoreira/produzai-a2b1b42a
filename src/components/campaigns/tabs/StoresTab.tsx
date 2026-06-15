@@ -517,7 +517,7 @@ export default function StoresTab({
             </div>
           )}
 
-          {/* Hidden PDF Template — A4 Landscape (1123 x 794) */}
+          {/* Hidden multi-page PDF Template — A4 Landscape (1122 x 794) per page */}
           {selectedStore && (
             <div
               ref={pdfTemplateRef}
@@ -525,205 +525,275 @@ export default function StoresTab({
                 position: "fixed",
                 left: "-10000px",
                 top: 0,
-                width: "1123px",
+                width: "1122px",
                 background: "#ffffff",
-                color: "#1a1a1a",
                 fontFamily: "Inter, system-ui, sans-serif",
-                padding: "32px 40px",
               }}
             >
-              {/* HEADER */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "3px solid #8C6F4E", paddingBottom: 16, marginBottom: 20 }}>
-                <div style={{ flex: 1 }}>
-                  <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0, color: "#1a1a1a", letterSpacing: "-0.02em" }}>
-                    {selectedStore.name}
-                  </h1>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginTop: 8, fontSize: 13, color: "#555" }}>
-                    {selectedStore.store_code && (
-                      <span style={{ background: "#F5F2ED", padding: "3px 8px", borderRadius: 4, fontFamily: "monospace", color: "#8C6F4E", fontWeight: 600 }}>
-                        {selectedStore.store_code}
-                      </span>
-                    )}
-                    {selectedStore.store_model && <span>{selectedStore.store_model}</span>}
-                    {(selectedStore.city || selectedStore.state) && (
-                      <span>📍 {[selectedStore.city, selectedStore.state].filter(Boolean).join(" / ")}</span>
-                    )}
-                    {selectedStoreContacts.length > 0 && (
-                      <span>👤 {selectedStoreContacts.map((c) => c.name).join(" · ")}</span>
-                    )}
-                  </div>
+              {/* ══════════ PAGE 1 — TITLE ══════════ */}
+              <div
+                style={{
+                  width: "1122px",
+                  height: "794px",
+                  background: "#ffffff",
+                  color: "#1a1a1a",
+                  padding: "60px 80px",
+                  boxSizing: "border-box",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  textAlign: "center",
+                }}
+              >
+                <div style={{ fontSize: 20, color: "#8C6F4E", fontWeight: 600, letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: 20 }}>
+                  Relatório de Peças da Campanha
                 </div>
-                <div style={{ textAlign: "right", marginLeft: 24, background: "#8C6F4E", color: "#fff", padding: "12px 20px", borderRadius: 8, minWidth: 130 }}>
-                  <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: "0.1em", opacity: 0.8 }}>
-                    Total de Peças
+                <h1 style={{ fontSize: 56, fontWeight: 800, margin: 0, color: "#1a1a1a", letterSpacing: "-0.02em", lineHeight: 1.1 }}>
+                  {selectedStore.name}
+                </h1>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 14, marginTop: 24, fontSize: 16, color: "#555", justifyContent: "center" }}>
+                  {selectedStore.store_code && (
+                    <span style={{ background: "#F5F2ED", padding: "6px 14px", borderRadius: 6, fontFamily: "monospace", color: "#8C6F4E", fontWeight: 700 }}>
+                      # {selectedStore.store_code}
+                    </span>
+                  )}
+                  {selectedStore.store_model && (
+                    <span style={{ padding: "6px 14px", background: "#f4f4f5", borderRadius: 6 }}>{selectedStore.store_model}</span>
+                  )}
+                  {(selectedStore.city || selectedStore.state) && (
+                    <span style={{ padding: "6px 14px", background: "#f4f4f5", borderRadius: 6 }}>
+                      📍 {[selectedStore.city, selectedStore.state].filter(Boolean).join(" / ")}
+                    </span>
+                  )}
+                </div>
+                {selectedStoreContacts.length > 0 && (
+                  <div style={{ marginTop: 18, fontSize: 14, color: "#666" }}>
+                    👤 {selectedStoreContacts.map((c: any) => c.name).join(" · ")}
                   </div>
-                  <div style={{ fontSize: 32, fontWeight: 800, lineHeight: 1, marginTop: 4 }}>
-                    {storePieces.reduce((acc, sp) => acc + sp.quantity, 0)}
+                )}
+                <div style={{ display: "flex", gap: 40, marginTop: 60, alignItems: "center" }}>
+                  <div style={{ background: "#8C6F4E", color: "#fff", padding: "20px 36px", borderRadius: 12, textAlign: "center" }}>
+                    <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.15em", opacity: 0.9 }}>
+                      Total de Peças
+                    </div>
+                    <div style={{ fontSize: 52, fontWeight: 800, lineHeight: 1, marginTop: 6 }}>
+                      {storePieces.reduce((acc: number, sp: any) => acc + sp.quantity, 0)}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: "left" }}>
+                    <div style={{ fontSize: 14, color: "#1a1a1a", fontWeight: 600 }}>
+                      {new Date().toLocaleDateString("pt-BR")}
+                    </div>
+                    <div style={{ fontSize: 11, color: "#888", marginTop: 4 }}>
+                      ProduzAI · Vimer Retail Experience
+                    </div>
                   </div>
                 </div>
               </div>
 
-              {/* PIECES BY CATEGORY */}
-              <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-                {piecesByCategory.map(({ category, pieces }) => (
-                  <div key={category} data-pdf-section="true">
-                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, paddingBottom: 6, borderBottom: "1px solid #e5e1d8" }}>
-                      <div style={{ width: 4, height: 16, background: "#8C6F4E", borderRadius: 2 }} />
-                      <span style={{ fontSize: 14, fontWeight: 700, color: "#1a1a1a", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                        {category}
-                      </span>
-                      <span style={{ fontSize: 11, color: "#888", marginLeft: "auto" }}>
-                        {pieces.length} {pieces.length === 1 ? "peça" : "peças"}
-                      </span>
-                    </div>
-                    <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 10 }}>
-                      {pieces.map((sp, i) => {
-                        const p = sp.campaign_pieces;
-                        if (!p) return null;
-                        return (
-                          <div key={i} style={{ border: "1px solid #e5e1d8", borderRadius: 6, overflow: "hidden", background: "#fff" }}>
-                            <div style={{ width: "100%", minHeight: 80, background: "#f4f4f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 28, padding: 4 }}>
-                              {p.image_url ? (
-                                <img
-                                  crossOrigin="anonymous"
-                                  src={p.image_url}
-                                  alt={p.name}
-                                  style={{
-                                    maxWidth: "calc(100% - 8px)",
-                                    maxHeight: "70px",
-                                    width: "auto",
-                                    height: "auto",
-                                    display: "block",
-                                    margin: "0 auto",
-                                  }}
-                                  onError={(e) => {
-                                    (e.currentTarget as HTMLImageElement).style.display = "none";
-                                  }}
-                                />
-                              ) : (
-                                "📦"
-                              )}
-                            </div>
-                            <div style={{ padding: "6px 8px" }}>
-                              <div style={{ fontSize: 10, fontWeight: 600, color: "#1a1a1a", lineHeight: 1.25, minHeight: 24, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                                {p.name}
-                              </div>
-                              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
-                                {p.size ? (
-                                  <span style={{ fontSize: 9, color: "#888" }}>{p.size}</span>
-                                ) : (
-                                  <span />
-                                )}
-                                <span style={{ fontSize: 11, fontWeight: 700, color: "#8C6F4E", background: "#F5F2ED", padding: "1px 6px", borderRadius: 4 }}>
-                                  ×{sp.quantity}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* KITS */}
-              {storeKits.length > 0 && (
-                <div data-pdf-section="true">
-                  <div style={{
-                    width: "100%",
-                    background: "linear-gradient(90deg, #1f2937 0%, #374151 100%)",
-                    padding: "10px 32px",
+              {/* ══════════ PIECE PAGES ══════════ */}
+              {pdfPiecePages.map((pageCategories, pi) => (
+                <div
+                  key={`pp-${pi}`}
+                  style={{
+                    width: "1122px",
+                    height: "794px",
+                    background: "#ffffff",
+                    color: "#1a1a1a",
+                    padding: "24px 32px",
+                    boxSizing: "border-box",
                     display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                    marginTop: "8px",
-                  }}>
-                    <div style={{ width: "3px", height: "18px", background: "#d97706", borderRadius: "2px", flexShrink: 0 }} />
-                    <span style={{
-                      fontSize: "12px", fontWeight: 800, textTransform: "uppercase",
-                      letterSpacing: "0.1em", color: "#ffffff",
-                    }}>
-                      Kits da Campanha — Composição
+                    flexDirection: "column",
+                  }}
+                >
+                  {/* Page top bar */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 10, borderBottom: "2px solid #8C6F4E", marginBottom: 14 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#1a1a1a", fontWeight: 600 }}>
+                      <div style={{ width: 4, height: 18, background: "#8C6F4E", borderRadius: 2 }} />
+                      <span>{selectedStore.name}</span>
+                      {selectedStore.store_code && (
+                        <span style={{ color: "#888", fontWeight: 500 }}>· #{selectedStore.store_code}</span>
+                      )}
+                    </div>
+                    <span style={{ fontSize: 11, color: "#888" }}>Página {pi + 2} de {totalPdfPages}</span>
+                  </div>
+
+                  {/* Categories content */}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1, overflow: "hidden" }}>
+                    {pageCategories.map(({ category, pieces }) => (
+                      <div key={category}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, paddingBottom: 4, borderBottom: "1px solid #e5e1d8" }}>
+                          <div style={{ width: 3, height: 14, background: "#8C6F4E", borderRadius: 2 }} />
+                          <span style={{ fontSize: 13, fontWeight: 700, color: "#1a1a1a", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                            {category}
+                          </span>
+                          <span style={{ fontSize: 10, color: "#888", marginLeft: "auto" }}>
+                            {pieces.length} {pieces.length === 1 ? "peça" : "peças"}
+                          </span>
+                        </div>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 7 }}>
+                          {pieces.map((sp: any, i: number) => {
+                            const p = sp.campaign_pieces;
+                            if (!p) return null;
+                            return (
+                              <div key={i} style={{ border: "1px solid #e5e1d8", borderRadius: 6, overflow: "hidden", background: "#fff", height: 132, display: "flex", flexDirection: "column" }}>
+                                <div style={{ width: "100%", height: 80, background: "#f4f4f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, padding: 4, flexShrink: 0 }}>
+                                  {p.image_url ? (
+                                    <img
+                                      crossOrigin="anonymous"
+                                      src={p.image_url}
+                                      alt={p.name}
+                                      style={{
+                                        maxWidth: "calc(100% - 8px)",
+                                        maxHeight: "70px",
+                                        width: "auto",
+                                        height: "auto",
+                                        display: "block",
+                                        margin: "0 auto",
+                                      }}
+                                      onError={(e) => {
+                                        (e.currentTarget as HTMLImageElement).style.display = "none";
+                                      }}
+                                    />
+                                  ) : (
+                                    "📦"
+                                  )}
+                                </div>
+                                <div style={{ padding: "5px 7px", flex: 1, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                                  <div style={{ fontSize: 9.5, fontWeight: 600, color: "#1a1a1a", lineHeight: 1.2, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                    {p.name}
+                                  </div>
+                                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 3 }}>
+                                    {p.size ? (
+                                      <span style={{ fontSize: 8.5, color: "#888" }}>{p.size}</span>
+                                    ) : (
+                                      <span />
+                                    )}
+                                    <span style={{ fontSize: 10.5, fontWeight: 700, color: "#8C6F4E", background: "#F5F2ED", padding: "1px 6px", borderRadius: 4 }}>
+                                      × {sp.quantity}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Footer */}
+                  <div style={{ marginTop: 12, paddingTop: 8, borderTop: "1px solid #e5e1d8", display: "flex", justifyContent: "space-between", fontSize: 9, color: "#888" }}>
+                    <span>
+                      Gerado em {new Date().toLocaleDateString("pt-BR")} às{" "}
+                      {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                     </span>
-                    <span style={{
-                      background: "#d97706", color: "#fff",
-                      borderRadius: "20px", padding: "1px 10px",
-                      fontSize: "10px", fontWeight: 700,
-                    }}>
-                      {storeKits.length} kits
+                    <span>ProduzAI · {agencyName} · {clientName}</span>
+                  </div>
+                </div>
+              ))}
+
+              {/* ══════════ KIT PAGES ══════════ */}
+              {pdfKitPages.map((pageKits, ki) => (
+                <div
+                  key={`kp-${ki}`}
+                  style={{
+                    width: "1122px",
+                    height: "794px",
+                    background: "#ffffff",
+                    color: "#1a1a1a",
+                    padding: "24px 32px",
+                    boxSizing: "border-box",
+                    display: "flex",
+                    flexDirection: "column",
+                  }}
+                >
+                  {/* Page top bar */}
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 10, borderBottom: "2px solid #8C6F4E", marginBottom: 14 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#1a1a1a", fontWeight: 600 }}>
+                      <div style={{ width: 4, height: 18, background: "#d97706", borderRadius: 2 }} />
+                      <span>Kits da Campanha · {selectedStore.name}</span>
+                    </div>
+                    <span style={{ fontSize: 11, color: "#888" }}>
+                      Página {1 + pdfPiecePages.length + ki + 1} de {totalPdfPages}
                     </span>
                   </div>
 
-                  <div style={{ padding: "14px 32px 24px", display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px" }}>
-                    {storeKits.map((kit: any) => {
+                  {/* Kit composition banner */}
+                  <div style={{ background: "linear-gradient(90deg, #1f2937 0%, #374151 100%)", padding: "8px 14px", display: "flex", alignItems: "center", gap: 10, borderRadius: 6, marginBottom: 12 }}>
+                    <div style={{ width: 3, height: 16, background: "#d97706", borderRadius: 2, flexShrink: 0 }} />
+                    <span style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "#ffffff" }}>
+                      Composição dos Kits
+                    </span>
+                    <span style={{ background: "#d97706", color: "#fff", borderRadius: 20, padding: "1px 10px", fontSize: 10, fontWeight: 700, marginLeft: "auto" }}>
+                      {pageKits.length} kits
+                    </span>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, flex: 1, overflow: "hidden" }}>
+                    {pageKits.map((kit: any) => {
                       const totalKitQty = kit.pieces.reduce((acc: number, kp: any) => acc + (kp.quantity || 0), 0);
                       return (
-                        <div key={kit.id} style={{
-                          border: "1px solid #d1d5db", borderRadius: "8px",
-                          overflow: "hidden", background: "#ffffff",
-                          boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-                        }}>
-                          <div style={{
-                            background: "#374151", padding: "7px 12px",
-                            display: "flex", alignItems: "flex-start", gap: "7px",
-                          }}>
-                            <span style={{
-                              background: "#d97706", color: "#fff",
-                              borderRadius: "4px", padding: "2px 7px",
-                              fontSize: "10px", fontWeight: 800, flexShrink: 0, marginTop: "1px",
-                            }}>
+                        <div key={kit.id} style={{ border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden", background: "#ffffff", display: "flex", flexDirection: "column" }}>
+                          <div style={{ background: "#374151", padding: "7px 10px", display: "flex", alignItems: "flex-start", gap: 7 }}>
+                            <span style={{ background: "#d97706", color: "#fff", borderRadius: 4, padding: "2px 7px", fontSize: 10, fontWeight: 800, flexShrink: 0, marginTop: 1 }}>
                               [{kit.code}]
                             </span>
                             <div style={{ flex: 1 }}>
-                              <div style={{
-                                fontSize: "10px", fontWeight: 700, color: "#ffffff",
-                                lineHeight: 1.3, overflow: "hidden", maxHeight: "26px",
-                              }}>
+                              <div style={{ fontSize: 10.5, fontWeight: 700, color: "#ffffff", lineHeight: 1.3, overflow: "hidden", maxHeight: 26 }}>
                                 {kit.name}
                               </div>
-                              <div style={{ fontSize: "8.5px", color: "#9ca3af", marginTop: "2px" }}>
-                                {kit.pieces.length} {kit.pieces.length === 1 ? "tipo de peça" : "tipos de peça"} · {totalKitQty} un. total
+                              <div style={{ fontSize: 8.5, color: "#9ca3af", marginTop: 2 }}>
+                                {kit.pieces.length} {kit.pieces.length === 1 ? "peça" : "peças"} · {totalKitQty} un.
                               </div>
                             </div>
                           </div>
-                          <div style={{ padding: "6px 12px 8px" }}>
-                            {kit.pieces.map((kp: any, j: number) => (
-                              <div key={j} style={{
-                                display: "flex", justifyContent: "space-between", alignItems: "center",
-                                padding: "3px 0",
-                                borderBottom: j < kit.pieces.length - 1 ? "1px solid #f3f4f6" : "none",
-                                gap: "6px",
-                              }}>
-                                <span style={{ fontSize: "8.5px", color: "#374151", flex: 1, lineHeight: 1.3 }}>
-                                  {kp.campaign_pieces?.name || "—"}
-                                </span>
-                                <span style={{
-                                  background: "#fef3c7", color: "#92400e",
-                                  border: "1px solid #fde68a",
-                                  borderRadius: "3px", padding: "0px 5px",
-                                  fontSize: "9px", fontWeight: 700, flexShrink: 0,
-                                }}>
-                                  ×{kp.quantity}
-                                </span>
-                              </div>
-                            ))}
+                          <div style={{ padding: 8, display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, flex: 1 }}>
+                            {kit.pieces.map((kp: any, j: number) => {
+                              const p = kp.campaign_pieces;
+                              return (
+                                <div key={j} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+                                  <div style={{ width: "100%", height: 54, background: "#f4f4f5", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", fontSize: 18 }}>
+                                    {p?.image_url ? (
+                                      <img
+                                        crossOrigin="anonymous"
+                                        src={p.image_url}
+                                        alt={p?.name || ""}
+                                        style={{ maxWidth: "calc(100% - 4px)", maxHeight: 48, width: "auto", height: "auto", display: "block" }}
+                                        onError={(e) => {
+                                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                                        }}
+                                      />
+                                    ) : (
+                                      "📦"
+                                    )}
+                                  </div>
+                                  <div style={{ fontSize: 8.5, color: "#1a1a1a", textAlign: "center", lineHeight: 1.2, overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", maxHeight: 22 }}>
+                                    {p?.name || "—"}
+                                  </div>
+                                  <span style={{ fontSize: 9, fontWeight: 700, color: "#92400e", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 3, padding: "0 5px" }}>
+                                    × {kp.quantity}
+                                  </span>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                </div>
-              )}
 
-              {/* FOOTER */}
-              <div style={{ marginTop: 28, paddingTop: 12, borderTop: "1px solid #e5e1d8", display: "flex", justifyContent: "space-between", fontSize: 9, color: "#888" }}>
-                <span>
-                  Gerado em {new Date().toLocaleDateString("pt-BR")} às{" "}
-                  {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
-                </span>
-                <span>ProduzAI · {agencyName} · {clientName}</span>
-              </div>
+                  {/* Footer */}
+                  <div style={{ marginTop: 12, paddingTop: 8, borderTop: "1px solid #e5e1d8", display: "flex", justifyContent: "space-between", fontSize: 9, color: "#888" }}>
+                    <span>
+                      Gerado em {new Date().toLocaleDateString("pt-BR")} às{" "}
+                      {new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                    <span>ProduzAI · {agencyName} · {clientName}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </DialogContent>
