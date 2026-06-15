@@ -756,8 +756,8 @@ export default function StoresTab({
                             {kit.pieces.map((kp: any, j: number) => {
                               const p = kp.campaign_pieces;
                               return (
-                                <div key={j} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-                                  <div style={{ width: "100%", height: 54, background: "#f4f4f5", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", fontSize: 18 }}>
+                                <div key={j} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "#fff", minHeight: 110 }}>
+                                  <div style={{ width: "100%", height: 58, background: "#f4f4f5", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", fontSize: 18 }}>
                                     {p?.image_url ? (
                                       <img
                                         crossOrigin="anonymous"
