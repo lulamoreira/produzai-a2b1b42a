@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   type Store,
@@ -12,7 +12,9 @@ import {
 import PieceImageUpload from "@/components/PieceImageUpload";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import ChangeLogPanel from "@/components/ChangeLogPanel";
+import LojaPdfTemplate from "@/components/LojaPdfTemplate";
 import { exportSingleStore } from "@/lib/exportExcel";
+import { toast } from "sonner";
 import {
   Package,
   MapPin,
