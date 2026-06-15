@@ -63,6 +63,82 @@ const PDF_I18N = {
 
 type PdfLang = keyof typeof PDF_I18N;
 
+async function fetchStorePiecesData(campaignId: string, storeId: string) {
+  const { data } = await supabase
+    .from("campaign_store_pieces")
+    .select("piece_id, quantity, campaign_pieces(name, image_url, category, code, size)")
+    .eq("campaign_id", campaignId)
+    .eq("store_id", storeId)
+    .gt("quantity", 0);
+  return (data ?? []) as any[];
+}
+
+async function fetchStoreKitsData(campaignId: string, storeId: string, storePieceIds: string[]) {
+  const { data } = await supabase
+    .from("campaign_kits")
+    .select("id, code, name, display_order, campaign_kit_pieces(piece_id, quantity, display_order, campaign_pieces(name, code, image_url))")
+    .eq("campaign_id", campaignId)
+    .eq("is_deleted", false)
+    .order("display_order");
+  const idSet = new Set(storePieceIds);
+  return ((data ?? []) as any[])
+    .map((kit) => ({
+      ...kit,
+      pieces: ((kit.campaign_kit_pieces ?? []) as any[]).sort(
+        (a: any, b: any) => a.display_order - b.display_order
+      ),
+    }))
+    .filter((kit) => kit.pieces.some((kp: any) => idSet.has(kp.piece_id)));
+}
+
+function groupPiecesByCategory(pieces: any[]) {
+  const map = new Map<string, any[]>();
+  pieces.forEach((sp: any) => {
+    const cat = sp.campaign_pieces?.category || "Outros";
+    if (!map.has(cat)) map.set(cat, []);
+    map.get(cat)!.push(sp);
+  });
+  return Array.from(map.entries())
+    .sort((a, b) => a[0].localeCompare(b[0], "pt-BR"))
+    .map(([category, pieces]) => ({ category, pieces }));
+}
+
+function buildPiecePages(piecesByCategory: { category: string; pieces: any[] }[]) {
+  const PAGE_H = 710, COLS = 8, CARD_H = 150, CARD_GAP = 7, CAT_H = 36, CAT_SEP = 14;
+  const pages: { category: string; pieces: any[] }[][] = [[]];
+  let usedH = 0;
+  for (const cat of piecesByCategory) {
+    const rows = Math.ceil(cat.pieces.length / COLS);
+    const h = CAT_H + rows * CARD_H + Math.max(0, rows - 1) * CARD_GAP;
+    const needed = usedH === 0 ? h : h + CAT_SEP;
+    if (usedH > 0 && usedH + needed > PAGE_H) { pages.push([]); usedH = 0; }
+    pages[pages.length - 1].push(cat);
+    usedH += usedH === 0 ? h : needed;
+  }
+  return pages;
+}
+
+function buildKitPages(kits: any[]) {
+  if (!kits.length) return [] as any[][];
+  const PAGE_H = 640, KIT_COLS = 3, PC = 4;
+  const KIT_H = (kit: any) => {
+    const pieceRows = Math.ceil(kit.pieces.length / PC);
+    return 80 + pieceRows * 110 + Math.max(0, pieceRows - 1) * 8 + 16;
+  };
+  const pages: any[][] = [[]];
+  let usedH = 0;
+  for (let i = 0; i < kits.length; i += KIT_COLS) {
+    const row = kits.slice(i, i + KIT_COLS);
+    const rowH = Math.max(...row.map(KIT_H));
+    const needed = usedH === 0 ? rowH : rowH + 10;
+    if (usedH > 0 && usedH + needed > PAGE_H) { pages.push([]); usedH = 0; }
+    row.forEach((k) => pages[pages.length - 1].push(k));
+    usedH += usedH === 0 ? rowH : needed;
+  }
+  return pages;
+}
+
+
 interface StoresTabProps {
   campaignId: string;
   clientId: string;
