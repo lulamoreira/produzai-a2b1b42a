@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
-import { Store, Search, Filter, X, LayoutList, Users, MapPin, Phone, User, Hash, Info, Truck } from "lucide-react";
+import { Store, Search, Filter, X, LayoutList, Users, MapPin, Phone, User, Hash, Info, Truck, FileDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
+import LojaPdfTemplate from "@/components/LojaPdfTemplate";
 import { useCampaignStoreStatus, useUpsertCampaignStoreStatus } from "@/hooks/useMultiClientData";
 import { toast } from "sonner";
 import { getStateColor } from "@/lib/stateColors";
@@ -24,6 +25,8 @@ interface StoresTabProps {
   onOpenEditStore: (store: any) => void;
   agencyName: string;
   clientName: string;
+  pieces?: any[];
+  storePieces?: any[];
 }
 
 export default function StoresTab({
@@ -36,12 +39,16 @@ export default function StoresTab({
   isLimitedMode,
   onOpenEditStore,
   agencyName,
-  clientName
+  clientName,
+  pieces = [],
+  storePieces = [],
 }: StoresTabProps) {
   const { t } = useTranslation();
   const [storeSearch, setStoreSearch] = useState("");
   const [storesViewMode, setStoresViewMode] = useState<"table" | "contacts">("table");
   const [selectedStore, setSelectedStore] = useState<any | null>(null);
+  const [exportingPdf, setExportingPdf] = useState(false);
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
   const upsertStatus = useUpsertCampaignStoreStatus();
@@ -72,6 +79,71 @@ export default function StoresTab({
       toast.error("Erro ao atualizar status da loja: " + error.message);
     }
   };
+
+  const handleExportPdf = async () => {
+    if (!selectedStore || exportingPdf) return;
+    setExportingPdf(true);
+    try {
+      const node = pdfRef.current;
+      if (!node) throw new Error("Template não montado");
+      await new Promise((r) => setTimeout(r, 60));
+      const imgs = Array.from(node.querySelectorAll("img"));
+      await Promise.all(
+        imgs.map(
+          (img) =>
+            new Promise<void>((resolve) => {
+              if ((img as HTMLImageElement).complete) return resolve();
+              img.onload = () => resolve();
+              img.onerror = () => resolve();
+            })
+        )
+      );
+
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+
+      const canvas = await html2canvas(node, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#ffffff",
+        logging: false,
+      });
+
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+
+      const imgRatio = canvas.height / canvas.width;
+      let renderW = pageW;
+      let renderH = pageW * imgRatio;
+      if (renderH > pageH) {
+        renderH = pageH;
+        renderW = pageH / imgRatio;
+      }
+      const x = (pageW - renderW) / 2;
+      const y = 0;
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.92);
+      pdf.addImage(imgData, "JPEG", x, y, renderW, renderH);
+      pdf.save(`Loja_${selectedStore.store_code || selectedStore.name}.pdf`);
+    } catch (err) {
+      console.error("PDF export failed", err);
+      toast.error("Falha ao gerar PDF");
+    } finally {
+      setExportingPdf(false);
+    }
+  };
+
+  const pdfItems = useMemo(() => {
+    if (!selectedStore) return [];
+    return storePieces
+      .filter((sp: any) => sp.store_id === selectedStore.id)
+      .map((sp: any) => {
+        const piece = pieces.find((p: any) => p.id === sp.piece_id);
+        return piece ? { piece, qty: sp.quantity || 1 } : null;
+      })
+      .filter(Boolean) as { piece: any; qty: number }[];
+  }, [selectedStore, pieces, storePieces]);
 
   return (
     <div className="space-y-4">
@@ -202,11 +274,24 @@ export default function StoresTab({
 
       <Dialog open={!!selectedStore} onOpenChange={(open) => !open && setSelectedStore(null)}>
         <DialogContent className="max-w-2xl">
-          <DialogHeader>
+          <DialogHeader className="flex flex-row items-center justify-between gap-4">
             <DialogTitle className="flex items-center gap-2">
               <Store className="w-5 h-5 text-primary" />
               Detalhes da Loja
             </DialogTitle>
+            <Button
+              size="sm"
+              onClick={handleExportPdf}
+              disabled={exportingPdf || pdfItems.length === 0}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground shrink-0"
+            >
+              {exportingPdf ? (
+                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+              ) : (
+                <FileDown className="w-4 h-4 mr-1" />
+              )}
+              Exportar PDF
+            </Button>
           </DialogHeader>
           
           {selectedStore && (
@@ -336,6 +421,32 @@ export default function StoresTab({
                 </Card>
               )}
             </div>
+          )}
+
+          {/* Hidden PDF template */}
+          {selectedStore && (
+            <LojaPdfTemplate
+              ref={pdfRef}
+              store={{
+                name: selectedStore.name,
+                number: selectedStore.store_code,
+                model: selectedStore.store_model,
+                uf: selectedStore.state,
+                type: selectedStore.type,
+                primary_mod: selectedStore.primary_mod,
+                secondary_mod: selectedStore.secondary_mod,
+              }}
+              items={pdfItems.map((item) => ({
+                piece: {
+                  id: item.piece.id,
+                  name: item.piece.name,
+                  image_url: item.piece.image_url,
+                  category: item.piece.category || item.piece.store_category,
+                },
+                qty: item.qty,
+              }))}
+              footerLabel={`${agencyName} · ${clientName}`}
+            />
           )}
         </DialogContent>
       </Dialog>

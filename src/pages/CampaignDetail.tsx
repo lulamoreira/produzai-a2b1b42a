@@ -566,6 +566,8 @@ const CampaignDetail = () => {
                     campaignId={campaignId!} clientId={clientId!} allStores={allStores} stores={stores}
                     canEditStores={true} canEditCampaignStores={true} isLimitedMode={isLimitedMode}
                     onOpenEditStore={() => {}} agencyName={agency?.name || ""} clientName={client?.name || ""}
+                    pieces={pieces}
+                    storePieces={storePieces}
                   />
                 </TabsContent>
               )}

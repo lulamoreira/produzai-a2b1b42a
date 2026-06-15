@@ -1,9 +1,26 @@
 import { forwardRef } from "react";
-import type { Store, Piece } from "@/hooks/useStoreData";
+
+interface PdfStore {
+  name: string;
+  number?: string | number | null;
+  model?: string | null;
+  uf?: string | null;
+  type?: string | null;
+  primary_mod?: string | null;
+  secondary_mod?: string | null;
+}
+
+interface PdfPiece {
+  id: string | number;
+  name: string;
+  image_url?: string | null;
+  category?: string | null;
+}
 
 interface LojaPdfTemplateProps {
-  store: Store;
-  items: { piece: Piece; qty: number }[];
+  store: PdfStore;
+  items: { piece: PdfPiece; qty: number }[];
+  footerLabel?: string;
 }
 
 /**
@@ -12,7 +29,7 @@ interface LojaPdfTemplateProps {
  * letterboxing so all thumbnails align consistently.
  */
 const LojaPdfTemplate = forwardRef<HTMLDivElement, LojaPdfTemplateProps>(
-  ({ store, items }, ref) => {
+  ({ store, items, footerLabel }, ref) => {
     const totalQty = items.reduce((s, i) => s + i.qty, 0);
 
     // Adaptive card sizing to keep everything on a single A4 page.
@@ -313,7 +330,7 @@ const LojaPdfTemplate = forwardRef<HTMLDivElement, LojaPdfTemplateProps>(
         >
           <span>Gerado em {now}</span>
           <span style={{ fontWeight: 700, color: "#8C6F4E" }}>
-            Lindt Excellence Pistache · Campanha Brasil 2026
+            {footerLabel || "ProduzAI"}
           </span>
         </div>
       </div>
