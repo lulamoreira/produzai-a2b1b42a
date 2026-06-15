@@ -42,6 +42,26 @@ const TRATATIVA_LABELS: Record<string, string> = {
   resolvida: "Resolvida",
 };
 
+const MAX_NOTES_PER_STATUS = 5;
+
+function getNoteHistory(campaignId: string): Record<string, string[]> {
+  try {
+    const raw = localStorage.getItem(`lal_note_history_${campaignId}`);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function addToNoteHistory(campaignId: string, statusValue: string, note: string) {
+  const trimmed = note.trim();
+  if (!trimmed) return;
+  const history = getNoteHistory(campaignId);
+  const existing = history[statusValue] ?? [];
+  const updated = [trimmed, ...existing.filter((n) => n !== trimmed)].slice(0, MAX_NOTES_PER_STATUS);
+  localStorage.setItem(`lal_note_history_${campaignId}`, JSON.stringify({ ...history, [statusValue]: updated }));
+}
+
 function formatDateTime(d: string | null | undefined) {
   if (!d) return "—";
   return new Date(d).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -67,6 +87,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [checkinOpen, setCheckinOpen] = useState(false);
   const [initialized, setInitialized] = useState<string | null>(null);
+  const [noteHistory, setNoteHistory] = useState<string[]>([]);
 
   // Resolve clientId from the campaign so we can load custom statuses
   const { data: campaignRow } = useQuery({
@@ -122,6 +143,13 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
       setCheckinOpen(false);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (open && campaignId) {
+      const h = getNoteHistory(campaignId);
+      setNoteHistory(h[tratativaStatus] ?? []);
+    }
+  }, [tratativaStatus, open, campaignId]);
 
   if (!occurrence) return null;
 
@@ -196,6 +224,8 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
       qc.invalidateQueries({ queryKey: ["loja-a-loja-dashboard", campaignId] });
       qc.invalidateQueries({ queryKey: ["campaign-status-dashboard", campaignId] });
       setInitialized(null);
+      addToNoteHistory(campaignId, tratativaStatus, tratativaNotes);
+      setNoteHistory(getNoteHistory(campaignId)[tratativaStatus] ?? []);
       onOpenChange(false);
     } catch (e: any) {
       toast.error("Erro ao salvar: " + (e.message || ""));
@@ -410,8 +440,24 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
 
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Notas da tratativa</label>
+                {isAdmin && noteHistory.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {noteHistory.map((note, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => setTratativaNotes(note)}
+                        title={note}
+                        className="max-w-[200px] truncate text-xs px-2.5 py-1 rounded-full border border-border bg-muted/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors text-left"
+                      >
+                        {note.length > 40 ? note.slice(0, 38) + "…" : note}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <Textarea value={tratativaNotes} onChange={(e) => setTratativaNotes(e.target.value)} disabled={!isAdmin} className="min-h-[80px]" placeholder="Descreva as ações tomadas..." />
               </div>
+
 
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-2 block">Fotos da resolução ({resolutionPhotos.length}/3)</label>
