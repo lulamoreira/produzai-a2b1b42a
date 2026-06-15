@@ -224,15 +224,18 @@ export default function StoresTab({
     }
   };
 
-  const handleExportPdf = useCallback(async () => {
+  const handleExportPdf = useCallback(async (lang: PdfLang) => {
     if (!selectedStore || !pdfTemplateRef.current) return;
+    setPdfLang(lang);
     setExportingPdf(true);
+    // wait for React to re-render the template with the new language
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
     try {
       const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
         import("jspdf"),
         import("html2canvas"),
       ]);
-      const pageEls = Array.from(pdfTemplateRef.current.children) as HTMLElement[];
+      const pageEls = Array.from(pdfTemplateRef.current!.children) as HTMLElement[];
       const pdf = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
       for (let i = 0; i < pageEls.length; i++) {
         if (i > 0) pdf.addPage();
