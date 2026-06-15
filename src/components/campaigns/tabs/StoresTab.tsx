@@ -1016,10 +1016,21 @@ export default function StoresTab({
                                       "📦"
                                     )}
                                   </div>
-                                  <div style={{ fontSize: 8.5, color: "#1a1a1a", textAlign: "center", lineHeight: 1.2 }}>
+                                  <div style={{
+                                    minHeight: "19px",
+                                    display: "flex",
+                                    alignItems: "flex-start",
+                                    justifyContent: "center",
+                                    textAlign: "center",
+                                    width: "100%",
+                                    marginTop: "4px",
+                                    fontSize: "7px",
+                                    lineHeight: 1.3,
+                                    color: "#1a1a1a",
+                                  }}>
                                     {p?.name || "—"}
                                   </div>
-                                  <span style={{ fontSize: 9, fontWeight: 700, color: "#92400e", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 3, padding: "0 5px" }}>
+                                  <span style={{ fontSize: 9, fontWeight: 700, color: "#92400e", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 3, padding: "0 5px", marginTop: "5px" }}>
                                     {PDF_I18N[renderLang].qty(kp.quantity)}
                                   </span>
                                 </div>
