@@ -261,16 +261,20 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
 
   /* Occurrence KPIs */
   const occList = (occurrences ?? []) as any[];
-  const total = occList.length;
-  const abertas = occList.filter((o) => (o.tratativa_status ?? "aberta") === "aberta").length;
-  const emAndamento = occList.filter((o) => o.tratativa_status === "em_andamento").length;
-  const resolvidas = occList.filter((o) => o.tratativa_status === "resolvida").length;
-  const atrasadas = occList.filter((o) =>
+  const countsAsOccurrence = (status: string | null | undefined) =>
+    tratativaStatuses.find((s) => s.value === (status ?? "aberta"))?.conta_como_ocorrencia !== false;
+  const rawTotal = occList.length;
+  const validOccList = occList.filter((o) => countsAsOccurrence(o.tratativa_status));
+  const total = validOccList.length;
+  const abertas = validOccList.filter((o) => (o.tratativa_status ?? "aberta") === "aberta").length;
+  const emAndamento = validOccList.filter((o) => o.tratativa_status === "em_andamento").length;
+  const resolvidas = validOccList.filter((o) => o.tratativa_status === "resolvida").length;
+  const atrasadas = validOccList.filter((o) =>
     o.expected_resolution_date &&
     new Date(o.expected_resolution_date).getTime() < Date.now() &&
     o.tratativa_status !== "resolvida"
   ).length;
-  const reinst = occList.filter((o) => o.needs_reinstallation && o.tratativa_status !== "resolvida").length;
+  const reinst = validOccList.filter((o) => o.needs_reinstallation && o.tratativa_status !== "resolvida").length;
   const naoProcede = occList.filter((o) => o.tratativa_status === "nao_procede").length;
 
   const storeOptions = useMemo(() => {
@@ -463,7 +467,8 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
     <div className="space-y-6">
       {/* Top KPI Row (overview) — Ocorrências sempre, demais só se > 0 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={AlertTriangle} label="Ocorrências (total)" value={total} color="hsl(var(--destructive))" />
+        <KpiCard icon={AlertTriangle} label="Ocorrências (total)" value={rawTotal} color="hsl(var(--destructive))" />
+        <KpiCard icon={CheckCircle2} label="Ocorrências válidas" value={total} color={BRAND} />
         {openMaintenance > 0 && (
           <KpiCard icon={Wrench} label="Manutenções abertas" value={openMaintenance} color="hsl(var(--warning, 38 92% 50%))" />
         )}
@@ -511,7 +516,8 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
         <CardContent className="space-y-4">
           {/* Occurrence sub-KPIs */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-            <MiniKpi label="Total" value={total} icon={AlertCircle} color="text-muted-foreground" />
+            <MiniKpi label="Total bruto" value={rawTotal} icon={AlertCircle} color="text-muted-foreground" />
+            <MiniKpi label="Válidas" value={total} icon={CheckCircle2} color="text-green-600" />
             <MiniKpi label="Abertas" value={abertas} icon={AlertTriangle} color="text-destructive" />
             <MiniKpi label="Em andamento" value={emAndamento} icon={Clock} color="text-yellow-600" />
             <MiniKpi label="Resolvidas" value={resolvidas} icon={CheckCircle2} color="text-green-600" />
