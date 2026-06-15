@@ -18,7 +18,13 @@ interface Props {
   agencyId: string;
 }
 
-function getTratativaDisplay(status: string, statuses: TratativaStatus[]) {
+interface StatusItem {
+  value: string;
+  label: string;
+  color: string;
+}
+
+function getTratativaDisplay(status: string, statuses: StatusItem[]) {
   const found = statuses.find((s) => s.value === status);
   if (found) {
     return {
