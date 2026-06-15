@@ -144,6 +144,13 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
     }
   }, [open]);
 
+  useEffect(() => {
+    if (open && campaignId) {
+      const h = getNoteHistory(campaignId);
+      setNoteHistory(h[tratativaStatus] ?? []);
+    }
+  }, [tratativaStatus, open, campaignId]);
+
   if (!occurrence) return null;
 
   const photoUrls: string[] = Array.isArray(occurrence.photo_urls) ? occurrence.photo_urls : [];
