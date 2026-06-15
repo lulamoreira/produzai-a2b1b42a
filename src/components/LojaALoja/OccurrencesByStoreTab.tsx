@@ -412,9 +412,9 @@ export default function OccurrencesByStoreTab({ campaignId, clientId, permission
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
                         <Badge variant="secondary" className="text-xs">{g.items.length} total</Badge>
-                        {pend > 0 && <Badge className={cn("text-xs", tratativaColor.aberta)}>{pend} pend.</Badge>}
-                        {andamento > 0 && <Badge className={cn("text-xs", tratativaColor.em_andamento)}>{andamento} and.</Badge>}
-                        {resolv > 0 && <Badge className={cn("text-xs", tratativaColor.resolvida)}>{resolv} res.</Badge>}
+                        {pend > 0 && <Badge className={cn("text-xs", "bg-destructive/15 text-destructive")}>{pend} pend.</Badge>}
+                        {andamento > 0 && <Badge className={cn("text-xs", "bg-warning/15 text-warning")}>{andamento} and.</Badge>}
+                        {resolv > 0 && <Badge className={cn("text-xs", "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400")}>{resolv} res.</Badge>}
                       </div>
                     </button>
                   </CollapsibleTrigger>
