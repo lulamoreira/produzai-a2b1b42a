@@ -866,7 +866,7 @@ export default function StoresTab({
                             {category}
                           </span>
                           <span style={{ fontSize: 10, color: "#888", marginLeft: "auto" }}>
-                            {pieces.length} {pieces.length === 1 ? "peça" : "peças"}
+                            {PDF_I18N[renderLang].categoryPieceCount(pieces.length)}
                           </span>
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 7 }}>
