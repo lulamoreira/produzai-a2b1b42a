@@ -249,6 +249,18 @@ export default function StoresTab({
 
   const totalPdfPages = 1 + pdfPiecePages.length + pdfKitPages.length;
 
+  // Render context: batch export overrides single-store data when active
+  const renderStore = batchRender?.store ?? selectedStore;
+  const renderPiecesByCat = batchRender?.piecesByCategory ?? piecesByCategory;
+  const renderPiecePages = batchRender?.piecePages ?? pdfPiecePages;
+  const renderKitPages = batchRender?.kitPages ?? pdfKitPages;
+  const renderTotalPages = 1 + renderPiecePages.length + renderKitPages.length;
+  const renderLang: PdfLang = batchRender?.lang ?? pdfLang;
+  const renderContacts = batchRender ? [] : selectedStoreContacts;
+  const renderTotalPieces = batchRender
+    ? batchRender.totalPieces
+    : (storePieces as any[]).reduce((acc: number, sp: any) => acc + sp.quantity, 0);
+
   const filteredStores = useMemo(() => {
     let result = allStores;
     if (storeSearch) {
