@@ -244,7 +244,6 @@ export default function TratativaStatusManager({ clientId, permissions, embedded
               {statuses.map((s) => (
                 <SortableRow key={s.id} s={s} canEdit={canEdit} canDelete={canDelete}
                   isEditing={editingId === s.id}
-                  editLabel={editLabel} editColor={editColor} editResolved={editResolved}
                   editLabel={editLabel} editColor={editColor} editResolved={editResolved} editCountsAsOcc={editCountsAsOcc}
                   onChangeLabel={setEditLabel} onChangeColor={setEditColor} onChangeResolved={setEditResolved} onChangeCountsAsOcc={setEditCountsAsOcc}
                   onSave={() => saveEdit(s)} onCancel={() => setEditingId(null)}
