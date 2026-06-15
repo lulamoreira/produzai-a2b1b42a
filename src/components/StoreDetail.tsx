@@ -256,6 +256,19 @@ const StoreDetail = ({ store, pieces, allStorePieces, isAdmin = false }: StoreDe
           </h2>
         </div>
         <div className="flex gap-2 flex-wrap">
+          <Button
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={exportingPdf}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            {exportingPdf ? (
+              <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+            ) : (
+              <FileDown className="w-4 h-4 mr-1" />
+            )}
+            Exportar PDF
+          </Button>
           <Button size="sm" variant="outline" onClick={handleExport}>
             <Download className="w-4 h-4 mr-1" /> Excel
           </Button>
