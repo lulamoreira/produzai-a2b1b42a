@@ -60,7 +60,7 @@ export default function PhotoCheckin() {
   const { data: campaign } = useQuery({
     queryKey: ["campaign-name", campaignId],
     queryFn: async () => {
-      const { data, error } = await supabase.from("campaigns").select("name").eq("id", campaignId!).single();
+      const { data, error } = await supabase.from("campaigns").select("name, agency_id, client_id").eq("id", campaignId!).single();
       if (error) throw error;
       return data;
     },
