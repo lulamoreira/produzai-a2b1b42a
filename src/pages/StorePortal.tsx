@@ -51,6 +51,7 @@ export interface PortalData {
     reporter_agency_label?: string | null;
     reporter_client_label?: string | null;
     reporter_custom?: string[] | null;
+    whatsapp_contact?: string | null;
   } | null;
   store_override?: {
     module_conformidade: boolean | null;
