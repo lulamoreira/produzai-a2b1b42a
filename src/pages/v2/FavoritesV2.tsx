@@ -1,7 +1,7 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { useCampaignFavorites } from "@/hooks/useCampaignFavorites";
+import { useCampaignFavorites, useToggleFavorite } from "@/hooks/useCampaignFavorites";
 
 import { Star, ArrowRight } from "lucide-react";
 
