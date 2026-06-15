@@ -42,6 +42,26 @@ const TRATATIVA_LABELS: Record<string, string> = {
   resolvida: "Resolvida",
 };
 
+const MAX_NOTES_PER_STATUS = 5;
+
+function getNoteHistory(campaignId: string): Record<string, string[]> {
+  try {
+    const raw = localStorage.getItem(`lal_note_history_${campaignId}`);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function addToNoteHistory(campaignId: string, statusValue: string, note: string) {
+  const trimmed = note.trim();
+  if (!trimmed) return;
+  const history = getNoteHistory(campaignId);
+  const existing = history[statusValue] ?? [];
+  const updated = [trimmed, ...existing.filter((n) => n !== trimmed)].slice(0, MAX_NOTES_PER_STATUS);
+  localStorage.setItem(`lal_note_history_${campaignId}`, JSON.stringify({ ...history, [statusValue]: updated }));
+}
+
 function formatDateTime(d: string | null | undefined) {
   if (!d) return "—";
   return new Date(d).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
