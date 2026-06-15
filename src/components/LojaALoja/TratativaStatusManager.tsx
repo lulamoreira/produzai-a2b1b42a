@@ -33,17 +33,18 @@ interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boo
 interface Props { clientId: string; permissions: SubAreaPermission; embedded?: boolean }
 
 function SortableRow({
-  s, canEdit, canDelete, isEditing, editLabel, editColor, editResolved,
-  onChangeLabel, onChangeColor, onChangeResolved,
+  s, canEdit, canDelete, isEditing, editLabel, editColor, editResolved, editCountsAsOcc,
+  onChangeLabel, onChangeColor, onChangeResolved, onChangeCountsAsOcc,
   onSave, onCancel, onStartEdit, onToggleAtivo, onSetDefault, onDelete,
 }: {
   s: TratativaStatus;
   canEdit: boolean; canDelete: boolean;
   isEditing: boolean;
-  editLabel: string; editColor: string; editResolved: boolean;
+  editLabel: string; editColor: string; editResolved: boolean; editCountsAsOcc: boolean;
   onChangeLabel: (v: string) => void;
   onChangeColor: (v: string) => void;
   onChangeResolved: (v: boolean) => void;
+  onChangeCountsAsOcc: (v: boolean) => void;
   onSave: () => void; onCancel: () => void;
   onStartEdit: () => void; onToggleAtivo: () => void;
   onSetDefault: () => void; onDelete: () => void;
@@ -71,6 +72,10 @@ function SortableRow({
             <Switch checked={editResolved} onCheckedChange={onChangeResolved} />
             Resolvido
           </label>
+          <label className="flex items-center gap-1.5 text-xs whitespace-nowrap">
+            <Switch checked={editCountsAsOcc} onCheckedChange={onChangeCountsAsOcc} />
+            Computa ocorrência
+          </label>
           <Button size="sm" variant="ghost" onClick={onSave} className="h-8 px-2" disabled={!canEdit}>
             <Check className="h-4 w-4 text-green-600" />
           </Button>
@@ -85,6 +90,11 @@ function SortableRow({
             {s.label}
             {s.is_default && <Badge variant="outline" className="text-[10px] h-4 px-1">Padrão</Badge>}
             {s.is_resolved && <Badge variant="outline" className="text-[10px] h-4 px-1 text-green-700 border-green-300">Resolvido</Badge>}
+            {s.conta_como_ocorrencia === false && (
+              <Badge variant="outline" className="text-[10px] h-4 px-1 text-orange-600 border-orange-300">
+                Não computa
+              </Badge>
+            )}
           </span>
           {(canEdit || canDelete) && (
             <>
@@ -125,10 +135,12 @@ export default function TratativaStatusManager({ clientId, permissions, embedded
   const [newLabel, setNewLabel] = useState("");
   const [newColor, setNewColor] = useState("#8C6F4E");
   const [newResolved, setNewResolved] = useState(false);
+  const [newCountsAsOcc, setNewCountsAsOcc] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editColor, setEditColor] = useState("#8C6F4E");
   const [editResolved, setEditResolved] = useState(false);
+  const [editCountsAsOcc, setEditCountsAsOcc] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<TratativaStatus | null>(null);
 
   const sensors = useSensors(
@@ -140,8 +152,8 @@ export default function TratativaStatusManager({ clientId, permissions, embedded
     const v = newLabel.trim();
     if (!v) return;
     try {
-      await addM.mutateAsync({ client_id: clientId, label: v, color: newColor, is_resolved: newResolved });
-      setNewLabel(""); setNewColor("#8C6F4E"); setNewResolved(false);
+      await addM.mutateAsync({ client_id: clientId, label: v, color: newColor, is_resolved: newResolved, conta_como_ocorrencia: newCountsAsOcc });
+      setNewLabel(""); setNewColor("#8C6F4E"); setNewResolved(false); setNewCountsAsOcc(true);
       toast.success("Status adicionado.");
     } catch (e: any) {
       toast.error(e?.message || "Erro ao adicionar status.");
@@ -150,13 +162,14 @@ export default function TratativaStatusManager({ clientId, permissions, embedded
 
   const startEdit = (s: TratativaStatus) => {
     setEditingId(s.id); setEditLabel(s.label); setEditColor(s.color); setEditResolved(s.is_resolved);
+    setEditCountsAsOcc(s.conta_como_ocorrencia ?? true);
   };
 
   const saveEdit = async (s: TratativaStatus) => {
     const v = editLabel.trim();
     if (!v) return;
     try {
-      await updateM.mutateAsync({ id: s.id, client_id: clientId, patch: { label: v, color: editColor, is_resolved: editResolved } });
+      await updateM.mutateAsync({ id: s.id, client_id: clientId, patch: { label: v, color: editColor, is_resolved: editResolved, conta_como_ocorrencia: editCountsAsOcc } });
       setEditingId(null);
       toast.success("Status atualizado.");
     } catch (e: any) {
@@ -207,6 +220,10 @@ export default function TratativaStatusManager({ clientId, permissions, embedded
             <Switch checked={newResolved} onCheckedChange={setNewResolved} />
             Marca como resolvido
           </label>
+          <label className="flex items-center gap-1.5 text-xs whitespace-nowrap">
+            <Switch checked={newCountsAsOcc} onCheckedChange={setNewCountsAsOcc} />
+            Computa ocorrência
+          </label>
           <Button onClick={handleAdd} disabled={!newLabel.trim() || addM.isPending}>
             {addM.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
             <span className="ml-1">Adicionar</span>
@@ -227,8 +244,8 @@ export default function TratativaStatusManager({ clientId, permissions, embedded
               {statuses.map((s) => (
                 <SortableRow key={s.id} s={s} canEdit={canEdit} canDelete={canDelete}
                   isEditing={editingId === s.id}
-                  editLabel={editLabel} editColor={editColor} editResolved={editResolved}
-                  onChangeLabel={setEditLabel} onChangeColor={setEditColor} onChangeResolved={setEditResolved}
+                  editLabel={editLabel} editColor={editColor} editResolved={editResolved} editCountsAsOcc={editCountsAsOcc}
+                  onChangeLabel={setEditLabel} onChangeColor={setEditColor} onChangeResolved={setEditResolved} onChangeCountsAsOcc={setEditCountsAsOcc}
                   onSave={() => saveEdit(s)} onCancel={() => setEditingId(null)}
                   onStartEdit={() => startEdit(s)} onToggleAtivo={() => toggleAtivo(s)}
                   onSetDefault={() => setDefault(s)} onDelete={() => setDeleteTarget(s)} />

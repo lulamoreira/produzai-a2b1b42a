@@ -1,0 +1,1 @@
+ALTER TABLE public.lal_tratativa_statuses ADD COLUMN IF NOT EXISTS conta_como_ocorrencia boolean NOT NULL DEFAULT true;
