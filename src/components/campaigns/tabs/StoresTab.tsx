@@ -176,6 +176,17 @@ export default function StoresTab({
   const [pdfLangPickerOpen, setPdfLangPickerOpen] = useState(false);
   const [pdfLang, setPdfLang] = useState<PdfLang>("pt-BR");
   const pdfTemplateRef = useRef<HTMLDivElement>(null);
+  const [batchPdfConfirmOpen, setBatchPdfConfirmOpen] = useState(false);
+  const [batchPdfLangPickerOpen, setBatchPdfLangPickerOpen] = useState(false);
+  const [batchPdfStatus, setBatchPdfStatus] = useState<string | null>(null);
+  const [batchRender, setBatchRender] = useState<{
+    store: any;
+    piecesByCategory: { category: string; pieces: any[] }[];
+    piecePages: { category: string; pieces: any[] }[][];
+    kitPages: any[][];
+    totalPieces: number;
+    lang: PdfLang;
+  } | null>(null);
 
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
   const upsertStatus = useUpsertCampaignStoreStatus();
