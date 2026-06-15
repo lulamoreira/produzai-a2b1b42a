@@ -47,15 +47,23 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
   );
 
   const reporterOptions = useMemo(() => {
-    const opts: Array<{ value: string; label: string }> = [
-      { value: "lojista", label: "Lojista" },
-      { value: "fornecedor", label: "Fornecedor" },
-    ];
     const agencyName = data.campaign?.clients?.agencies?.name;
     const clientName = data.campaign?.clients?.name;
-    if (agencyName) opts.push({ value: `agencia:${agencyName}`, label: agencyName });
-    if (clientName) opts.push({ value: `cliente:${clientName}`, label: clientName });
-    return opts;
+    const all: Array<{ value: string; label: string }> = [
+      { value: "lojista", label: "Lojista" },
+      { value: "fornecedor", label: "Fornecedor" },
+      ...(agencyName ? [{ value: `agencia:${agencyName}`, label: agencyName }] : []),
+      ...(clientName ? [{ value: `cliente:${clientName}`, label: clientName }] : []),
+    ];
+    const enabled: string[] | null = (data.portal_config as any)?.reporter_options ?? null;
+    if (!enabled) return all;
+    return all.filter((o) => {
+      if (o.value === "lojista") return enabled.includes("lojista");
+      if (o.value === "fornecedor") return enabled.includes("fornecedor");
+      if (o.value.startsWith("agencia:")) return enabled.includes("agencia");
+      if (o.value.startsWith("cliente:")) return enabled.includes("cliente");
+      return true;
+    });
   }, [data]);
 
   const loadReports = useCallback(async () => {
