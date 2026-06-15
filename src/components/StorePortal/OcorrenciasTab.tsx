@@ -164,6 +164,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
   const [showSituacao, setShowSituacao] = useState(false);
   const [allReports, setAllReports] = useState<any[]>([]);
   const [loadingAll, setLoadingAll] = useState(false);
+  const { statuses } = useEffectiveTratativaStatuses(data.campaign.client_id);
 
   const handlePieceClick = (peca: PortalData["pecas"][number]) => {
     if (peca.nome.includes("*")) {
