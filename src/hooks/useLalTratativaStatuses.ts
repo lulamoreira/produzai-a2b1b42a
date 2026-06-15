@@ -41,7 +41,16 @@ export function useLalTratativaStatuses(clientId: string | undefined, onlyActive
 /** Returns custom statuses if set, else fallback. */
 export function useEffectiveTratativaStatuses(clientId: string | undefined) {
   const { data, isLoading } = useLalTratativaStatuses(clientId, true);
-  const list: Omit<TratativaStatus, "id" | "client_id">[] = data && data.length > 0 ? data : FALLBACK_TRATATIVA_STATUSES;
+
+  const customStatuses = data ?? [];
+  const customValues = new Set(customStatuses.map((s) => s.value));
+
+  const uniqueFallbacks = FALLBACK_TRATATIVA_STATUSES.filter(
+    (f) => !customValues.has(f.value)
+  );
+
+  const list = [...uniqueFallbacks, ...customStatuses];
+
   return { statuses: list, isLoading };
 }
 
