@@ -1,9 +1,26 @@
 import { forwardRef } from "react";
-import type { Store, Piece } from "@/hooks/useStoreData";
+
+interface PdfStore {
+  name: string;
+  number?: string | number | null;
+  model?: string | null;
+  uf?: string | null;
+  type?: string | null;
+  primary_mod?: string | null;
+  secondary_mod?: string | null;
+}
+
+interface PdfPiece {
+  id: string | number;
+  name: string;
+  image_url?: string | null;
+  category?: string | null;
+}
 
 interface LojaPdfTemplateProps {
-  store: Store;
-  items: { piece: Piece; qty: number }[];
+  store: PdfStore;
+  items: { piece: PdfPiece; qty: number }[];
+  footerLabel?: string;
 }
 
 /**
