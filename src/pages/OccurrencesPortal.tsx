@@ -3,8 +3,9 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Store as StoreIcon, AlertTriangle, Clock, Globe } from "lucide-react";
+import { MapPin, Store as StoreIcon, AlertTriangle, Clock, Globe, Search } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { isAfter } from "date-fns";
 import { OccurrencesPortalEmptyState } from "@/components/v2/campaigns/OccurrencesPortalEmptyState";
@@ -28,6 +29,7 @@ export default function OccurrencesPortal() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [selectedState, setSelectedState] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
 
   const { data: config, isLoading: loadingConfig } = useQuery({
@@ -129,9 +131,17 @@ export default function OccurrencesPortal() {
   }, [tokens]);
 
   const filteredTokens = useMemo(() => {
-    if (selectedState === "all") return tokens;
-    return tokens.filter(s => s.client_stores?.state === selectedState);
-  }, [tokens, selectedState]);
+    let result = tokens;
+    if (selectedState !== "all") result = result.filter(s => s.client_stores?.state === selectedState);
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter(s =>
+        s.client_stores?.name?.toLowerCase().includes(q) ||
+        s.client_stores?.store_code?.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [tokens, selectedState, searchQuery]);
 
   // Group by state -> city
   const grouped = filteredTokens.reduce<Record<string, Record<string, StoreToken[]>>>((acc, t) => {
@@ -181,8 +191,18 @@ export default function OccurrencesPortal() {
             <p className="text-sm sm:text-base text-muted-foreground mt-2">{subtitle}</p>
           </div>
 
-          {availableStates.length > 1 && (
-            <div className="w-full md:w-64">
+          <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
+            <div className="relative w-full md:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+              <Input
+                placeholder="Buscar loja por nome ou código..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            {availableStates.length > 1 && (
+              <div className="w-full md:w-64">
               <Select value={selectedState} onValueChange={setSelectedState}>
                 <SelectTrigger className="w-full">
                   <div className="flex items-center gap-2">
@@ -204,8 +224,9 @@ export default function OccurrencesPortal() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </header>
 
         {isModuleDisabled && (
@@ -304,6 +325,9 @@ export default function OccurrencesPortal() {
               </section>
             );
           })}
+          {sortedStates.length === 0 && (searchQuery || selectedState !== "all") && (
+            <p className="text-center text-muted-foreground py-12">Nenhuma loja encontrada para os filtros aplicados.</p>
+          )}
         </div>
       </div>
     </div>
