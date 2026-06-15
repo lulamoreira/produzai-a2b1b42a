@@ -201,7 +201,7 @@ export default function OccurrencesByStoreTab({ campaignId, clientId, permission
         UF: (o.client_stores as any)?.state ?? "",
         Peça: (o.loja_a_loja_pecas as any)?.nome ?? "—",
         Motivo: (o.store_portal_motivos as any)?.descricao ?? "—",
-        Status: tratativaLabel[o.tratativa_status ?? "aberta"] ?? o.tratativa_status,
+        Status: getTratativaDisplay(o.tratativa_status ?? "aberta", tratativaStatuses).label,
         Prioridade: o.priority ?? "",
         "Aberta em": formatDate(o.created_at),
         "Prev. resolução": formatDate(o.expected_resolution_date),
