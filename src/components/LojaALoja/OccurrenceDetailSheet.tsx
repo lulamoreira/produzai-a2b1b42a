@@ -173,6 +173,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
       setResolutionPhotos(Array.isArray(occurrence.resolution_photo_urls) ? occurrence.resolution_photo_urls : []);
       setReinstallationDate(occurrence.reinstallation_scheduled_at ?? "");
       setReinstallationOs(occurrence.reinstallation_os ?? "");
+      setReporterType(occurrence.reporter_type ?? "lojista");
       setInitialized(occurrence.id);
       // Reset transient UI so leftover lightbox/check-in from a previous occurrence don't reappear
       setLightboxUrl(null);
