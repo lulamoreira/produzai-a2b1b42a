@@ -835,7 +835,7 @@ export default function StoresTab({
                                     {p?.name || "—"}
                                   </div>
                                   <span style={{ fontSize: 9, fontWeight: 700, color: "#92400e", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 3, padding: "0 5px" }}>
-                                    × {kp.quantity}
+                                    {PDF_I18N[pdfLang].qty(kp.quantity)}
                                   </span>
                                 </div>
                               );
