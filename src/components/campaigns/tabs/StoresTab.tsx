@@ -7,19 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Switch } from "@/components/ui/switch";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
 import { useCampaignStoreStatus, useUpsertCampaignStoreStatus } from "@/hooks/useMultiClientData";
 import { useStoreContacts, useStoreContactRoles } from "@/hooks/useStoreContacts";
@@ -182,8 +171,7 @@ export default function StoresTab({
   const [pdfLangPickerOpen, setPdfLangPickerOpen] = useState(false);
   const [pdfLang, setPdfLang] = useState<PdfLang>("pt-BR");
   const pdfTemplateRef = useRef<HTMLDivElement>(null);
-  const [batchPdfConfirmOpen, setBatchPdfConfirmOpen] = useState(false);
-  const [batchPdfLangPickerOpen, setBatchPdfLangPickerOpen] = useState(false);
+  const [batchPdfDialogOpen, setBatchPdfDialogOpen] = useState(false);
   const [batchPdfStatus, setBatchPdfStatus] = useState<string | null>(null);
   const [batchRender, setBatchRender] = useState<{
     store: any;
@@ -414,47 +402,39 @@ export default function StoresTab({
             </Button>
           </div>
 
-          <Popover open={batchPdfLangPickerOpen} onOpenChange={setBatchPdfLangPickerOpen}>
-            <AlertDialog open={batchPdfConfirmOpen} onOpenChange={setBatchPdfConfirmOpen}>
-              <PopoverAnchor asChild>
-                <AlertDialogTrigger asChild>
-                  <Button variant="outline" disabled={!!batchPdfStatus} onClick={() => setBatchPdfConfirmOpen(true)}>
-                    Exportar PDF
-                  </Button>
-                </AlertDialogTrigger>
-              </PopoverAnchor>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Exportar PDF de todas as lojas?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Isso vai gerar um único PDF contendo todas as {stores.length} lojas registradas nesta campanha (peças e kits de cada uma). Pode levar alguns minutos dependendo da quantidade de lojas e imagens.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction
+          <Dialog open={batchPdfDialogOpen} onOpenChange={setBatchPdfDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" disabled={!!batchPdfStatus} onClick={() => setBatchPdfDialogOpen(true)}>
+                Exportar PDF
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Exportar PDF de todas as lojas</DialogTitle>
+                <DialogDescription>
+                  Isso vai gerar um único PDF contendo todas as {stores.length} lojas registradas nesta campanha (peças e kits de cada uma). Pode levar alguns minutos dependendo da quantidade de lojas e imagens. Escolha o idioma para gerar:
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col gap-2 mt-2">
+                {(["pt-BR", "es-CL", "en-US"] as PdfLang[]).map((lang) => (
+                  <Button
+                    key={lang}
+                    variant="outline"
+                    className="justify-start"
                     onClick={() => {
-                      setBatchPdfConfirmOpen(false);
-                      setTimeout(() => setBatchPdfLangPickerOpen(true), 150);
+                      setBatchPdfDialogOpen(false);
+                      handleExportAllStoresPdf(lang);
                     }}
                   >
-                    Continuar
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <PopoverContent className="w-48 p-1" align="end">
-              {(["pt-BR", "es-CL", "en-US"] as PdfLang[]).map((lang) => (
-                <button
-                  key={lang}
-                  className="w-full text-left px-3 py-2 text-sm rounded hover:bg-muted"
-                  onClick={() => { setBatchPdfLangPickerOpen(false); handleExportAllStoresPdf(lang); }}
-                >
-                  {lang === "pt-BR" ? "Português Brasileiro" : lang === "es-CL" ? "Español Chileno" : "English (US)"}
-                </button>
-              ))}
-            </PopoverContent>
-          </Popover>
+                    {lang === "pt-BR" ? "Português Brasileiro" : lang === "es-CL" ? "Español Chileno" : "English (US)"}
+                  </Button>
+                ))}
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => setBatchPdfDialogOpen(false)}>Cancelar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {batchPdfStatus && (
             <span className="text-sm text-muted-foreground ml-2">{batchPdfStatus}</span>
