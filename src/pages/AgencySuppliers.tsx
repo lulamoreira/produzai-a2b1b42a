@@ -63,8 +63,10 @@ import {
   Building2,
   User as UserIcon,
   Loader2,
-  Share2
+  Share2,
+  Eye
 } from "lucide-react";
+import SupplierDetailsSheet from "@/components/SupplierDetailsSheet";
 import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 
@@ -98,6 +100,7 @@ const AgencySuppliers = () => {
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<AgencySupplier | null>(null);
+  const [detailsSupplier, setDetailsSupplier] = useState<AgencySupplier | null>(null);
   
   const [form, setForm] = useState({
     company_name: "",
@@ -522,6 +525,9 @@ Qualquer dúvida, estamos à disposição!` : "";
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailsSupplier(s)} title="Ver detalhes / enviar e-mail de confirmação">
+                          <Eye className="w-4 h-4" />
+                        </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(s)}>
                           <Edit3 className="w-4 h-4" />
                         </Button>
@@ -566,6 +572,9 @@ Qualquer dúvida, estamos à disposição!` : "";
                     <p className="text-xs text-muted-foreground mt-1">{s.cnpj}</p>
                   </div>
                   <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailsSupplier(s)} title="Ver detalhes / enviar e-mail">
+                      <Eye className="w-3.5 h-3.5" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(s)}>
                       <Edit3 className="w-3.5 h-3.5" />
                     </Button>
@@ -947,7 +956,14 @@ Qualquer dúvida, estamos à disposição!` : "";
             )}
           </DialogContent>
         </Dialog>
+
+        <SupplierDetailsSheet
+          open={!!detailsSupplier}
+          onOpenChange={(o) => !o && setDetailsSupplier(null)}
+          supplier={detailsSupplier}
+        />
       </div>
+
   );
 
 

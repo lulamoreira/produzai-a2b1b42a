@@ -18,6 +18,7 @@ import { template as negotiationProposalToSupplier } from './negotiation-proposa
 import { template as adjustmentQuoteRequestToSupplier } from './adjustment-quote-request-to-supplier.tsx'
 import { template as adjustmentFinalToClient } from './adjustment-final-to-client.tsx'
 import { template as adjustmentFinalToSupplier } from './adjustment-final-to-supplier.tsx'
+import { template as supplierDataConfirmation } from './supplier-data-confirmation.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'occurrence-notification': occurrenceNotification,
@@ -29,4 +30,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'adjustment-quote-request-to-supplier': adjustmentQuoteRequestToSupplier,
   'adjustment-final-to-client': adjustmentFinalToClient,
   'adjustment-final-to-supplier': adjustmentFinalToSupplier,
+  'supplier-data-confirmation': supplierDataConfirmation,
 }
