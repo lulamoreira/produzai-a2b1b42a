@@ -665,7 +665,7 @@ export default function PiecesTab({
 
       <AddPieceDialog
         open={editingPiece !== null}
-        onOpenChange={(open) => { if (!open) setEditingPiece(null); }}
+        onOpenChange={(open) => { if (!open) { setEditingPiece(null); restoreScroll(); } }}
         initialPiece={editingPiece}
         existingPieces={pieces}
         customFieldLabels={customFieldLabels}
