@@ -642,7 +642,7 @@ export default function PiecesTab({
         qtyMap={qtyMap}
         canEditPieces={canEditPieces}
         canDeletePieces={canDeletePieces}
-        onEdit={(p: any) => setEditingPiece(p)}
+        onEdit={(p: any) => { editScrollYRef.current = window.scrollY; setEditingPiece(p); }}
         onDelete={(id: string) => deletePiece?.mutate?.(id)}
         onDistribute={handleDistributePiece}
         onMarkKitOnly={async (p: any) => { await updatePiece?.mutateAsync?.({ id: p.id, kit_only: true }); }}
