@@ -111,7 +111,7 @@ function groupPiecesByCategory(pieces: any[]) {
 }
 
 function buildPiecePages(piecesByCategory: { category: string; pieces: any[] }[]) {
-  const PAGE_H = 710, COLS = 8, CARD_H = 160, CARD_GAP = 7, CAT_H = 36, CAT_SEP = 14;
+  const PAGE_H = 555, COLS = 8, CARD_H = 160, CARD_GAP = 7, CAT_H = 36, CAT_SEP = 14;
   const pages: { category: string; pieces: any[] }[][] = [[]];
   let usedH = 0;
   for (const cat of piecesByCategory) {
