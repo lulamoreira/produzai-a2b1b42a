@@ -280,6 +280,9 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
           )}
 
           <Separator />
+          <SupplierComments supplierId={supplier.id} agencyId={supplier.agency_id} />
+
+          <Separator />
 
           {/* Send confirmation email */}
           <section className="bg-muted/40 rounded-lg p-4 space-y-3">
