@@ -19,6 +19,7 @@ interface DateTimePickerProps {
   className?: string;
   buttonClassName?: string;
   size?: "sm" | "default";
+  clearable?: boolean;
 }
 
 export function DateTimePicker({
