@@ -620,6 +620,22 @@ export default function RateioTabV2({
     return groups;
   }, [columns]);
 
+  // Sub-grouping by the actual store_category value (PAREDE PRIMÁRIA, PICK&MIX, QUIOSQUE, ...)
+  const categoryGroups = useMemo(() => {
+    const groups: { label: string; items: ColumnItem[] }[] = [];
+    columns.forEach((c) => {
+      const raw = (c.store_category || "").toString().trim();
+      const label = !raw || raw.toUpperCase() === "TODAS" ? "" : raw.toUpperCase();
+      const last = groups[groups.length - 1];
+      if (!last || last.label !== label) {
+        groups.push({ label, items: [c] });
+      } else {
+        last.items.push(c);
+      }
+    });
+    return groups;
+  }, [columns]);
+
   // Cell editing state
   const [editingCell, setEditingCell] = useState<{ storeId: string; pieceId: string } | null>(null);
   const [editValue, setEditValue] = useState("");
