@@ -120,7 +120,7 @@ export default function PiecesTab({
   const restoreTimersRef = useRef<number[]>([]);
 
   const captureScrollSnapshot = useCallback(() => {
-    restoreTimersRef.current.forEach(window.clearTimeout);
+    restoreTimersRef.current.forEach((timer) => window.clearTimeout(timer));
     restoreTimersRef.current = [];
 
     const snapshots: Array<{ element: Element | Window; top: number; left: number }> = [
@@ -148,7 +148,7 @@ export default function PiecesTab({
     const snapshots = editScrollSnapshotRef.current;
     if (!snapshots) return;
 
-    restoreTimersRef.current.forEach(window.clearTimeout);
+    restoreTimersRef.current.forEach((timer) => window.clearTimeout(timer));
     restoreTimersRef.current = [];
 
     const applySnapshot = () => {
@@ -184,7 +184,7 @@ export default function PiecesTab({
   }, []);
 
   useEffect(() => () => {
-    restoreTimersRef.current.forEach(window.clearTimeout);
+    restoreTimersRef.current.forEach((timer) => window.clearTimeout(timer));
   }, []);
   
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
