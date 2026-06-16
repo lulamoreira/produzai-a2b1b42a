@@ -98,7 +98,7 @@ const Email = ({
           <Text style={text}>Olá, <strong>{contactName}</strong>!</Text>
 
           <Text style={text}>
-            A <strong>{agencyName}</strong> mantém um cadastro do seu fornecedor <strong>{companyName}</strong> em
+            A <strong>{agencyName}</strong> mantém um cadastro da sua empresa como fornecedor <strong>{companyName}</strong> em
             nossa plataforma. Por favor, confira abaixo se todas as informações estão corretas.
             Caso precise atualizar qualquer dado, clique no botão ao final do e-mail.
           </Text>
