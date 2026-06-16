@@ -1776,6 +1776,11 @@ export default function MatrixAutomationDialog({
 
             {/* ──── TAB: Automações salvas ──── */}
             <TabsContent value="saved" className="space-y-2 mt-3">
+              <div className="flex justify-end">
+                <Button size="sm" variant="outline" className="gap-1.5 h-8" onClick={() => setImportDialog({ open: true, mode: "templates" })}>
+                  <Copy className="w-3.5 h-3.5" /> Importar de outra campanha
+                </Button>
+              </div>
               {templates.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-6">{t("automation.noSavedTemplates")}</p>
               ) : (
