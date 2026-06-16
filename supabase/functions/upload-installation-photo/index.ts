@@ -124,6 +124,30 @@ Deno.serve(async (req) => {
       /* silent */
     }
 
+    // Dispatch in-app notification (fire and forget)
+    try {
+      const { data: campInfo } = await supabase
+        .from("campaigns")
+        .select("name, client_id, clients(agency_id)")
+        .eq("id", campaignId)
+        .single();
+      const agencyId = (campInfo as any)?.clients?.agency_id;
+      if (agencyId) {
+        supabase.rpc("criar_notificacao", {
+          _agency_id: agencyId,
+          _campaign_id: campaignId,
+          _store_id: storeId,
+          _client_id: (campInfo as any)?.client_id ?? null,
+          _type: "installation_photo",
+          _title: "Nova foto de instalação",
+          _body: `${storeName?.name || "Loja"} — foto (${category}) enviada pelo instalador`,
+          _action_url: `/campanhas/${campaignId}/instalacoes`,
+        }).then(() => {}).catch(() => {});
+      }
+    } catch { /* silent */ }
+
+
+
     return new Response(
       JSON.stringify({ success: true, photo: newPhoto }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
