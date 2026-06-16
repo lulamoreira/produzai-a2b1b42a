@@ -414,39 +414,37 @@ export default function StoresTab({
             </Button>
           </div>
 
-          <AlertDialog open={batchPdfConfirmOpen} onOpenChange={setBatchPdfConfirmOpen}>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="h-7 px-2 text-xs gap-1.5"
-                disabled={!!batchPdfStatus || stores.length === 0}
-                onClick={() => setBatchPdfConfirmOpen(true)}
-              >
-                <Download className="w-3.5 h-3.5" />
-                Exportar PDF
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Exportar PDF de todas as lojas?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Isso vai gerar um único PDF contendo todas as {stores.length} lojas registradas nesta campanha (peças e kits de cada uma). Pode levar alguns minutos dependendo da quantidade de lojas e imagens.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={() => { setBatchPdfConfirmOpen(false); setBatchPdfLangPickerOpen(true); }}>
-                  Continuar
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
           <Popover open={batchPdfLangPickerOpen} onOpenChange={setBatchPdfLangPickerOpen}>
-            <PopoverTrigger asChild>
-              <span />
-            </PopoverTrigger>
+            <PopoverAnchor asChild>
+              <AlertDialog open={batchPdfConfirmOpen} onOpenChange={setBatchPdfConfirmOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 text-xs gap-1.5"
+                    disabled={!!batchPdfStatus || stores.length === 0}
+                    onClick={() => setBatchPdfConfirmOpen(true)}
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Exportar PDF
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Exportar PDF de todas as lojas?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Isso vai gerar um único PDF contendo todas as {stores.length} lojas registradas nesta campanha (peças e kits de cada uma). Pode levar alguns minutos dependendo da quantidade de lojas e imagens.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => { setBatchPdfConfirmOpen(false); setBatchPdfLangPickerOpen(true); }}>
+                      Continuar
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </PopoverAnchor>
             <PopoverContent className="w-48 p-1" align="end">
               {(["pt-BR", "es-CL", "en-US"] as PdfLang[]).map((lang) => (
                 <button
