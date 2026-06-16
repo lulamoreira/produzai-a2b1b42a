@@ -112,9 +112,25 @@ function groupPiecesByCategory(pieces: any[]) {
 
 function buildPiecePages(piecesByCategory: { category: string; pieces: any[] }[]) {
   const PAGE_H = 555, COLS = 8, CARD_H = 160, CARD_GAP = 7, CAT_H = 36, CAT_SEP = 14;
+  // Max rows of cards that comfortably fit on one page (accounting for html2canvas drift).
+  const MAX_ROWS_PER_PAGE = Math.max(1, Math.floor((PAGE_H - CAT_H + CARD_GAP) / (CARD_H + CARD_GAP)));
+  const MAX_PIECES_PER_CHUNK = MAX_ROWS_PER_PAGE * COLS;
+
+  // Split any oversized category into chunks that fit on a single page.
+  const chunks: { category: string; pieces: any[] }[] = [];
+  for (const cat of piecesByCategory) {
+    if (cat.pieces.length <= MAX_PIECES_PER_CHUNK) {
+      chunks.push(cat);
+    } else {
+      for (let i = 0; i < cat.pieces.length; i += MAX_PIECES_PER_CHUNK) {
+        chunks.push({ category: cat.category, pieces: cat.pieces.slice(i, i + MAX_PIECES_PER_CHUNK) });
+      }
+    }
+  }
+
   const pages: { category: string; pieces: any[] }[][] = [[]];
   let usedH = 0;
-  for (const cat of piecesByCategory) {
+  for (const cat of chunks) {
     const rows = Math.ceil(cat.pieces.length / COLS);
     const h = CAT_H + rows * CARD_H + Math.max(0, rows - 1) * CARD_GAP;
     const needed = usedH === 0 ? h : h + CAT_SEP;
