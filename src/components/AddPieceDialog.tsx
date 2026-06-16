@@ -27,6 +27,8 @@ interface AddPieceDialogProps {
   initialPiece?: any;
   addPieceMutation?: any;
   updatePieceMutation?: any;
+  preserveScrollOnClose?: boolean;
+  onBeforeSave?: () => void;
 }
 
 const AddPieceDialog = ({ 
@@ -38,7 +40,9 @@ const AddPieceDialog = ({
   onOpenChange: controlledOnOpenChange,
   initialPiece,
   addPieceMutation,
-  updatePieceMutation
+  updatePieceMutation,
+  preserveScrollOnClose = false,
+  onBeforeSave
 }: AddPieceDialogProps) => {
   const { t } = useTranslation();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -216,6 +220,7 @@ const AddPieceDialog = ({
     };
 
     try {
+      onBeforeSave?.();
       if (initialPiece) {
         await updatePieceAction.mutateAsync({
           id: initialPiece.id,
@@ -248,7 +253,12 @@ const AddPieceDialog = ({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="flex flex-col max-h-[90vh] overflow-hidden sm:max-w-[600px] p-0">
+      <DialogContent
+        className="flex flex-col max-h-[90vh] overflow-hidden sm:max-w-[600px] p-0"
+        onCloseAutoFocus={(event) => {
+          if (preserveScrollOnClose) event.preventDefault();
+        }}
+      >
         <div className="p-6 pb-2 border-b shrink-0">
           <DialogHeader>
             <DialogTitle className="font-display">
