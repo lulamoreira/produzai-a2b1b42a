@@ -1619,16 +1619,39 @@ export default function RateioTabV2({
                         className="w-[300px] bg-white border-r border-stone-200"
                         style={{ position: 'sticky', left: 0, top: 0, zIndex: 50 }}
                       />
-                      {categoryGroups.map((group, gIdx) => (
-                        <th
-                          key={`cat-${gIdx}`}
-                          colSpan={group.items.length}
-                          className="bg-stone-50/60 border-b border-r border-stone-200 text-[10px] font-semibold text-stone-500 py-1 text-center uppercase tracking-wider"
-                          style={{ position: 'sticky', top: 0, zIndex: 30 }}
-                        >
-                          {group.label || "\u00A0"}
-                        </th>
-                      ))}
+                      {(() => {
+                        const CAT_COLORS = ['#3D2E1E','#1A3A5C','#1A3A2A','#5C2A1A','#2A1A5C','#0A3A3A','#5C3D00','#1C1C1C'];
+                        const colorMap = new Map<string, string>();
+                        let ci = 0;
+                        for (const g of categoryGroups) {
+                          const key = (g.label || '').trim().toUpperCase();
+                          if (!key) continue;
+                          if (!colorMap.has(key)) {
+                            colorMap.set(key, CAT_COLORS[ci % CAT_COLORS.length]);
+                            ci++;
+                          }
+                        }
+                        return categoryGroups.map((group, gIdx) => {
+                          const key = (group.label || '').trim().toUpperCase();
+                          const bg = colorMap.get(key);
+                          return (
+                            <th
+                              key={`cat-${gIdx}`}
+                              colSpan={group.items.length}
+                              className="border-b border-r border-stone-200 text-[10px] font-bold py-1 text-center uppercase tracking-wider"
+                              style={{
+                                position: 'sticky',
+                                top: 0,
+                                zIndex: 30,
+                                background: bg || '#f5f5f4',
+                                color: bg ? '#ffffff' : '#78716c',
+                              }}
+                            >
+                              {group.label || "\u00A0"}
+                            </th>
+                          );
+                        });
+                      })()}
                     </tr>
                     {/* Piece Headers Row */}
                     <tr>
