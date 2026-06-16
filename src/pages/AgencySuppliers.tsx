@@ -63,8 +63,10 @@ import {
   Building2,
   User as UserIcon,
   Loader2,
-  Share2
+  Share2,
+  Eye
 } from "lucide-react";
+import SupplierDetailsSheet from "@/components/SupplierDetailsSheet";
 import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 
