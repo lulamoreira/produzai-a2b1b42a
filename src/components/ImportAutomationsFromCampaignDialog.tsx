@@ -189,7 +189,9 @@ const ImportAutomationsFromCampaignDialog = ({
 
   const usedTargetKeys = useMemo(() => new Set(Object.values(mapping)), [mapping]);
   const mappedCount = Object.keys(mapping).length;
-  const allMapped = distinctItems.length > 0 && mappedCount === distinctItems.length;
+  const excludedCount = distinctItems.filter(d => excludedKeys.has(d.key)).length;
+  const allDecided = distinctItems.length > 0 && distinctItems.every(d => mapping[d.key] || excludedKeys.has(d.key));
+  const canImport = allDecided && mappedCount > 0;
 
   const remoteImageFor = (item: AutomationTemplateItem): string | null => {
     if (item.type === "piece") return remotePieces.find(p => p.id === item.id)?.image_url || null;
