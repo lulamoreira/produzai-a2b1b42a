@@ -1685,7 +1685,7 @@ export default function RateioTabV2({
                             key={`${col._type}-${col.id}`} 
                             className="min-w-[140px] px-1.5 py-1 border-r border-b border-stone-200 align-top bg-white transition-colors hover:bg-stone-50"
 
-                            style={{ position: 'sticky', top: 22, zIndex: 25 }}
+                            style={{ position: 'sticky', top: 44, zIndex: 25 }}
                           >
                             <div className="flex flex-col items-center gap-1">
                               {img ? (
