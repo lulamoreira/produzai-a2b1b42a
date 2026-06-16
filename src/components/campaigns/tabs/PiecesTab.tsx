@@ -647,7 +647,7 @@ export default function PiecesTab({
         onDistribute={handleDistributePiece}
         onMarkKitOnly={async (p: any) => { await updatePiece?.mutateAsync?.({ id: p.id, kit_only: true }); }}
         onToggleMockup={async (p: any) => { await updatePiece?.mutateAsync?.({ id: p.id, is_mockup: !p.is_mockup }); }}
-        onKitClick={(kit: any) => setViewKitDetail(kit)}
+        onKitClick={(kit: any) => { editScrollYRef.current = window.scrollY; setViewKitDetail(kit); }}
         onDeleteKit={(id: string) => deleteKit?.mutate?.(id)}
         onToggleKitMockup={async (kit: any) => {
           const newVal = !kit.is_mockup;
