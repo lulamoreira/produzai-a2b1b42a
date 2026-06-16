@@ -449,14 +449,15 @@ const ImportAutomationsFromCampaignDialog = ({
             ) : (
               <>
                 <p className="text-xs text-muted-foreground py-1">
-                  {mappedCount} de {distinctItems.length} item(ns) mapeado(s)
+                  {mappedCount} mapeado(s) · {excludedCount} excluído(s) · de {distinctItems.length} item(ns)
                 </p>
                 {distinctItems.map(({ key, item }) => {
                   const img = remoteImageFor(item);
                   const isKit = item.type === "kit";
                   const currentTargetKey = mapping[key];
+                  const isExcluded = excludedKeys.has(key);
                   return (
-                    <div key={key} className={`flex items-start gap-3 p-3 rounded-lg border ${currentTargetKey ? "border-primary bg-primary/5" : "border-border"}`}>
+                    <div key={key} className={`flex items-start gap-3 p-3 rounded-lg border ${isExcluded ? "border-border opacity-50" : currentTargetKey ? "border-primary bg-primary/5" : "border-border"}`}>
                       <PieceThumbnail imageUrl={img} name={item.name} size="sm" />
                       <div className="flex-1 min-w-0 space-y-1.5">
                         <div>
@@ -467,37 +468,66 @@ const ImportAutomationsFromCampaignDialog = ({
                           </p>
                           <p className="text-[10px] text-muted-foreground">Código: {item.code}</p>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                          <Select
-                            value={currentTargetKey || ""}
-                            onValueChange={(v) => {
-                              setMapping(prev => {
-                                const next = { ...prev };
-                                if (v) next[key] = v; else delete next[key];
+                        {isExcluded ? (
+                          <p className="text-[11px] italic text-muted-foreground">Não será importado</p>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <ArrowRight className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                            <Select
+                              value={currentTargetKey || ""}
+                              onValueChange={(v) => {
+                                setMapping(prev => {
+                                  const next = { ...prev };
+                                  if (v) next[key] = v; else delete next[key];
+                                  return next;
+                                });
+                                if (v) {
+                                  setExcludedKeys(prev => {
+                                    if (!prev.has(key)) return prev;
+                                    const next = new Set(prev); next.delete(key); return next;
+                                  });
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="h-8 text-xs flex-1">
+                                <SelectValue placeholder={isKit ? "Associar a um kit/peça atual..." : "Associar a uma peça/kit atual..."} />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {targetOptions.map(opt => (
+                                  <SelectItem
+                                    key={opt.key} value={opt.key}
+                                    disabled={usedTargetKeys.has(opt.key) && currentTargetKey !== opt.key}
+                                  >
+                                    <span className="flex items-center gap-1.5">
+                                      {opt.type === "kit" && <Boxes className="w-3 h-3 text-[#1e3a5f]" />}
+                                      <span className="text-muted-foreground text-[10px]">{opt.code}</span>
+                                      <span>{opt.label}</span>
+                                    </span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground cursor-pointer select-none">
+                          <Checkbox
+                            checked={isExcluded}
+                            onCheckedChange={(c) => {
+                              setExcludedKeys(prev => {
+                                const next = new Set(prev);
+                                if (c) next.add(key); else next.delete(key);
                                 return next;
                               });
+                              if (c) {
+                                setMapping(prev => {
+                                  if (!(key in prev)) return prev;
+                                  const next = { ...prev }; delete next[key]; return next;
+                                });
+                              }
                             }}
-                          >
-                            <SelectTrigger className="h-8 text-xs flex-1">
-                              <SelectValue placeholder={isKit ? "Associar a um kit/peça atual..." : "Associar a uma peça/kit atual..."} />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {targetOptions.map(opt => (
-                                <SelectItem
-                                  key={opt.key} value={opt.key}
-                                  disabled={usedTargetKeys.has(opt.key) && currentTargetKey !== opt.key}
-                                >
-                                  <span className="flex items-center gap-1.5">
-                                    {opt.type === "kit" && <Boxes className="w-3 h-3 text-[#1e3a5f]" />}
-                                    <span className="text-muted-foreground text-[10px]">{opt.code}</span>
-                                    <span>{opt.label}</span>
-                                  </span>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                          />
+                          Não importar
+                        </label>
                       </div>
                     </div>
                   );
