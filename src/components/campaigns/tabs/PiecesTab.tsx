@@ -116,15 +116,52 @@ export default function PiecesTab({
   const [convertSelectionDialogOpen, setConvertSelectionDialogOpen] = useState(false);
   const [preSelectedForKit, setPreSelectedForKit] = useState<string[]>([]);
   const [editingPiece, setEditingPiece] = useState<any>(null);
-  const editScrollYRef = useRef<number | null>(null);
+  const editScrollSnapshotRef = useRef<Array<{ element: Element | Window; top: number; left: number }> | null>(null);
+  const captureScrollSnapshot = () => {
+    const snapshots: Array<{ element: Element | Window; top: number; left: number }> = [
+      { element: window, top: window.scrollY, left: window.scrollX },
+    ];
+
+    const scrollingElement = document.scrollingElement;
+    if (scrollingElement) {
+      snapshots.push({ element: scrollingElement, top: scrollingElement.scrollTop, left: scrollingElement.scrollLeft });
+    }
+
+    document.querySelectorAll<HTMLElement>("*").forEach((element) => {
+      const style = window.getComputedStyle(element);
+      const scrollableY = /(auto|scroll|overlay)/.test(style.overflowY) && element.scrollHeight > element.clientHeight;
+      const scrollableX = /(auto|scroll|overlay)/.test(style.overflowX) && element.scrollWidth > element.clientWidth;
+      if (scrollableY || scrollableX) {
+        snapshots.push({ element, top: element.scrollTop, left: element.scrollLeft });
+      }
+    });
+
+    editScrollSnapshotRef.current = snapshots;
+  };
   const restoreScroll = () => {
-    const y = editScrollYRef.current;
-    if (y == null) return;
-    editScrollYRef.current = null;
-    // Restore after Radix focus-restore + React re-render to override any focus-induced scroll
+    const snapshots = editScrollSnapshotRef.current;
+    if (!snapshots) return;
+    editScrollSnapshotRef.current = null;
+
+    const applySnapshot = () => {
+      snapshots.forEach(({ element, top, left }) => {
+        if (element === window) {
+          window.scrollTo({ top, left, behavior: "auto" });
+          return;
+        }
+
+        if (element instanceof Element && element.isConnected) {
+          element.scrollTop = top;
+          element.scrollLeft = left;
+        }
+      });
+    };
+
+    // Restore after mutation re-render and Radix focus restoration, including AppShell's internal scroller.
     requestAnimationFrame(() => {
-      window.scrollTo({ top: y, behavior: "auto" });
-      requestAnimationFrame(() => window.scrollTo({ top: y, behavior: "auto" }));
+      applySnapshot();
+      requestAnimationFrame(applySnapshot);
+      window.setTimeout(applySnapshot, 120);
     });
   };
   
