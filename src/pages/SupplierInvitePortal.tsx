@@ -407,8 +407,8 @@ const SupplierInvitePortal = () => {
                     </div>
                     <Input value={contact.email} placeholder="E-mail" onChange={e => updateContact(index, "email", e.target.value)} className="h-8 text-xs" />
                     <div className="grid grid-cols-2 gap-3">
-                      <Input value={contact.telefone} placeholder="Telefone" onChange={e => updateContact(index, "telefone", e.target.value)} className="h-8 text-xs" />
-                      <Input value={contact.whatsapp} placeholder="WhatsApp" onChange={e => updateContact(index, "whatsapp", e.target.value)} className="h-8 text-xs" />
+                      <Input value={contact.telefone} placeholder="(XX) XXXXX-XXXX" inputMode="numeric" onChange={e => updateContact(index, "telefone", formatPhoneBR(e.target.value))} className="h-8 text-xs" />
+                      <Input value={contact.whatsapp} placeholder="(XX) XXXXX-XXXX" inputMode="numeric" onChange={e => updateContact(index, "whatsapp", formatPhoneBR(e.target.value))} className="h-8 text-xs" />
                     </div>
                   </div>
                 ))}
