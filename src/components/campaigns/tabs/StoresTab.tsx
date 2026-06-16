@@ -803,7 +803,7 @@ export default function StoresTab({
                       {PDF_I18N[renderLang].totalPieces}
                     </div>
                     <div style={{ fontSize: 52, fontWeight: 800, lineHeight: 1, marginTop: 6 }}>
-                      {renderTotalPieces}
+                      <span style={{ position: "relative", top: "-10px" }}>{renderTotalPieces}</span>
                     </div>
                   </div>
                   <div style={{ textAlign: "left" }}>
