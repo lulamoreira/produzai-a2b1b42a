@@ -48,12 +48,13 @@ const ImportAutomationsFromCampaignDialog = ({
   const [selectedTemplateIds, setSelectedTemplateIds] = useState<Set<string>>(new Set());
   const [selectedGroupIds, setSelectedGroupIds] = useState<Set<string>>(new Set());
   const [mapping, setMapping] = useState<Record<ItemKey, string>>({}); // targetKey "piece:id" | "kit:id"
+  const [excludedKeys, setExcludedKeys] = useState<Set<ItemKey>>(new Set());
   const [importing, setImporting] = useState(false);
 
   useEffect(() => {
     if (!open) {
       setStep(1); setSelectedCampaignId(""); setSelectedTemplateIds(new Set());
-      setSelectedGroupIds(new Set()); setMapping({});
+      setSelectedGroupIds(new Set()); setMapping({}); setExcludedKeys(new Set());
     }
   }, [open]);
 
