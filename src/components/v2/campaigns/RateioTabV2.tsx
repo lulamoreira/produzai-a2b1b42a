@@ -1613,35 +1613,18 @@ export default function RateioTabV2({
                     className="bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.05)]"
                     style={{ position: 'sticky', top: 0, zIndex: 30 }}
                   >
-                    {/* Group Labels Row */}
-                    <tr>
-                      <th 
-                        className="w-[300px] bg-white border-r border-stone-200" 
-                        style={{ position: 'sticky', left: 0, top: 0, zIndex: 50 }}
-                      />
-                      {pieceGroups.map((group, gIdx) => (
-                        <th 
-                          key={gIdx} 
-                          colSpan={group.items.length} 
-                          className="bg-stone-50 border-b border-r border-stone-200 text-[10px] font-bold text-stone-500 py-1 text-center uppercase tracking-widest"
-                          style={{ position: 'sticky', top: 0, zIndex: 30 }}
-                        >
-                          {group.label}
-                        </th>
-                      ))}
-                    </tr>
                     {/* Category Sub-Labels Row (store_category: PAREDE PRIMÁRIA, PICK&MIX, QUIOSQUE...) */}
                     <tr>
                       <th
                         className="w-[300px] bg-white border-r border-stone-200"
-                        style={{ position: 'sticky', left: 0, top: 22, zIndex: 50 }}
+                        style={{ position: 'sticky', left: 0, top: 0, zIndex: 50 }}
                       />
                       {categoryGroups.map((group, gIdx) => (
                         <th
                           key={`cat-${gIdx}`}
                           colSpan={group.items.length}
                           className="bg-stone-50/60 border-b border-r border-stone-200 text-[10px] font-semibold text-stone-500 py-1 text-center uppercase tracking-wider"
-                          style={{ position: 'sticky', top: 22, zIndex: 30 }}
+                          style={{ position: 'sticky', top: 0, zIndex: 30 }}
                         >
                           {group.label || "\u00A0"}
                         </th>
