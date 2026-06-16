@@ -979,8 +979,8 @@ export default function StoresTab({
                       const totalKitQty = kit.pieces.reduce((acc: number, kp: any) => acc + (kp.quantity || 0), 0);
                       return (
                         <div key={kit.id} style={{ border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden", background: "#ffffff", display: "flex", flexDirection: "column" }}>
-                          <div style={{ background: "#374151", padding: "7px 10px", display: "flex", alignItems: "flex-start", gap: 7 }}>
-                            <span style={{ background: "#d97706", color: "#fff", borderRadius: 4, padding: "2px 7px", fontSize: 10, fontWeight: 800, flexShrink: 0, alignSelf: "flex-start", marginTop: "1px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <div style={{ background: "#374151", padding: "9px 12px", display: "flex", alignItems: "center", gap: 7 }}>
+                            <span style={{ background: "#d97706", color: "#fff", borderRadius: 5, padding: "4px 10px", fontSize: 10, fontWeight: 800, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
                               [{kit.code}]
                             </span>
                             <div style={{ flex: 1 }}>
