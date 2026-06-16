@@ -525,6 +525,9 @@ Qualquer dúvida, estamos à disposição!` : "";
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailsSupplier(s)} title="Ver detalhes / enviar e-mail de confirmação">
+                          <Eye className="w-4 h-4" />
+                        </Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(s)}>
                           <Edit3 className="w-4 h-4" />
                         </Button>
