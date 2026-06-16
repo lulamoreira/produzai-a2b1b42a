@@ -1832,6 +1832,11 @@ export default function MatrixAutomationDialog({
 
             {/* ──── TAB: Grupos ──── */}
             <TabsContent value="groups" className="space-y-3 mt-3">
+              <div className="flex justify-end">
+                <Button size="sm" variant="outline" className="gap-1.5 h-8" onClick={() => setImportDialog({ open: true, mode: "groups" })}>
+                  <Copy className="w-3.5 h-3.5" /> Importar grupo de outra campanha
+                </Button>
+              </div>
               {/* Create new group */}
               <div className="flex gap-2">
                 <Input
