@@ -797,8 +797,8 @@ export default function StoresTab({
                     👤 {renderContacts.map((c: any) => c.name).join(" · ")}
                   </div>
                 )}
-                <div style={{ display: "flex", gap: 40, marginTop: 60, alignItems: "center" }}>
-                  <div style={{ background: "#8C6F4E", color: "#fff", padding: "20px 36px", borderRadius: 12, textAlign: "center" }}>
+                <div style={{ display: "table", margin: "60px auto 0", borderSpacing: "40px 0" }}>
+                  <div style={{ display: "table-cell", verticalAlign: "middle", background: "#8C6F4E", color: "#fff", padding: "20px 36px", borderRadius: 12, textAlign: "center" }}>
                     <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: "0.15em", opacity: 0.9 }}>
                       {PDF_I18N[renderLang].totalPieces}
                     </div>
@@ -806,7 +806,7 @@ export default function StoresTab({
                       {renderTotalPieces}
                     </div>
                   </div>
-                  <div style={{ textAlign: "left" }}>
+                  <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "left" }}>
                     <div style={{ fontSize: 14, color: "#1a1a1a", fontWeight: 600 }}>
                       {new Date().toLocaleDateString("pt-BR")}
                     </div>
