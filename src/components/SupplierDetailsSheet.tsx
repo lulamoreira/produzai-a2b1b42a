@@ -114,7 +114,7 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
         .single();
       if (invErr) throw invErr;
 
-      const editUrl = `${window.location.origin}/convite/fornecedor/${inv.token}`;
+      const editUrl = `https://produzai.lovable.app/convite/fornecedor/${inv.token}`;
 
       const { error: emailErr } = await supabase.functions.invoke("send-transactional-email", {
         body: {
