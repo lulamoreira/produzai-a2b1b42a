@@ -2219,6 +2219,16 @@ export default function MatrixAutomationDialog({
           handleRunGroup(errorDialog.groupId);
         }}
       />
+
+      <ImportAutomationsFromCampaignDialog
+        open={importDialog.open}
+        onOpenChange={(o) => setImportDialog(prev => ({ ...prev, open: o }))}
+        mode={importDialog.mode}
+        clientId={clientId}
+        currentCampaignId={campaignId}
+        currentPieces={pieces}
+        currentKits={kits}
+      />
     </Dialog>
   );
 }
