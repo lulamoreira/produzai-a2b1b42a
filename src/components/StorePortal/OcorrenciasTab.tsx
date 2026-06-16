@@ -128,7 +128,7 @@ function OcorrenciaCard({ r, data, statuses }: { r: any; data: PortalData; statu
           <Row label="Prioridade" value={r.priority || "—"} />
           <Row label="Status" value={statusInfo.label} />
           {r.description && <Row label="Descrição" value={r.description} multiline />}
-          {r.expected_resolution_date && <Row label="Previsão" value={formatDateBR(r.expected_resolution_date)} />}
+          {r.expected_resolution_date && <Row label="Previsão de atendimento" value={formatDateTimeBR(r.expected_resolution_date)} />}
           {r.tratativa_notes && <Row label="Tratativa" value={r.tratativa_notes} multiline />}
 
           <div className="flex gap-2 pt-1">
