@@ -572,6 +572,9 @@ Qualquer dúvida, estamos à disposição!` : "";
                     <p className="text-xs text-muted-foreground mt-1">{s.cnpj}</p>
                   </div>
                   <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailsSupplier(s)} title="Ver detalhes / enviar e-mail">
+                      <Eye className="w-3.5 h-3.5" />
+                    </Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleOpenEdit(s)}>
                       <Edit3 className="w-3.5 h-3.5" />
                     </Button>
