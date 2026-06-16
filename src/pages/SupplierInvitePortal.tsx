@@ -366,6 +366,14 @@ const SupplierInvitePortal = () => {
                   <Plus className="w-3 h-3 mr-1" /> Adicionar
                 </Button>
               </div>
+              <div className="flex items-start gap-2 p-3 rounded-md border border-primary/20 bg-primary/5 text-xs text-foreground/80">
+                <AlertCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                <p>
+                  Você pode cadastrar <strong>vários contatos</strong>. Recomendamos que o
+                  <strong> primeiro contato</strong> seja o <strong>responsável comercial</strong>,
+                  pois será ele quem receberá as <strong>solicitações de orçamento</strong>.
+                </p>
+              </div>
               <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
                 {form.contacts.map((contact, index) => (
                   <div key={index} className="p-3 border rounded-lg bg-muted/20 relative space-y-3">
