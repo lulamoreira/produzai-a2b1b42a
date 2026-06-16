@@ -30,6 +30,7 @@ export function DateTimePicker({
   className,
   buttonClassName,
   size = "default",
+  clearable = false,
 }: DateTimePickerProps) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState<Date | null>(parseLocalDate(value));
