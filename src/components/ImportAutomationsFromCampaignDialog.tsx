@@ -368,7 +368,7 @@ const ImportAutomationsFromCampaignDialog = ({
             <div className="space-y-1">
               <label className="text-xs font-medium text-muted-foreground">Campanha de origem</label>
               <Select value={selectedCampaignId} onValueChange={(v) => {
-                setSelectedCampaignId(v); setSelectedTemplateIds(new Set()); setSelectedGroupIds(new Set()); setMapping({});
+                setSelectedCampaignId(v); setSelectedTemplateIds(new Set()); setSelectedGroupIds(new Set()); setMapping({}); setExcludedKeys(new Set());
               }}>
                 <SelectTrigger><SelectValue placeholder="Selecione uma campanha..." /></SelectTrigger>
                 <SelectContent>
