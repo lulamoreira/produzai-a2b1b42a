@@ -981,8 +981,8 @@ export default function StoresTab({
                         <div key={kit.id} style={{ border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden", background: "#ffffff", display: "flex", flexDirection: "column" }}>
                           <div style={{ display: "table", width: "100%", background: "#374151", padding: "0 12px", boxSizing: "border-box" }}>
                             <div style={{ display: "table-cell", verticalAlign: "middle", width: "1px", whiteSpace: "nowrap", paddingRight: "8px" }}>
-                            <span style={{ background: "#d97706", color: "#fff", borderRadius: 5, padding: "4px 10px", fontSize: 10, fontWeight: 800, lineHeight: 1, whiteSpace: "nowrap" }}>
-                              [{kit.code}]
+                            <span style={{ display: "inline-block", background: "#d97706", color: "#fff", borderRadius: 5, padding: "4px 10px", fontSize: 10, fontWeight: 800, lineHeight: 1, whiteSpace: "nowrap" }}>
+                              <span style={{ position: "relative", top: "-6px" }}>[{kit.code}]</span>
                             </span>
                             </div>
                             <div style={{ display: "table-cell", verticalAlign: "middle", paddingTop: "9px", paddingBottom: "9px" }}>
