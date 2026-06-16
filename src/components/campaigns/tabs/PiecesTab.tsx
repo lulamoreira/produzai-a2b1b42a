@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect, useRef, useCallback, useLayoutEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { 
   Plus, Download, Upload, Sparkles, RefreshCw, ArrowDownAZ, MapPin, Copy, 
@@ -117,7 +117,12 @@ export default function PiecesTab({
   const [preSelectedForKit, setPreSelectedForKit] = useState<string[]>([]);
   const [editingPiece, setEditingPiece] = useState<any>(null);
   const editScrollSnapshotRef = useRef<Array<{ element: Element | Window; top: number; left: number }> | null>(null);
-  const captureScrollSnapshot = () => {
+  const restoreTimersRef = useRef<number[]>([]);
+
+  const captureScrollSnapshot = useCallback(() => {
+    restoreTimersRef.current.forEach(window.clearTimeout);
+    restoreTimersRef.current = [];
+
     const snapshots: Array<{ element: Element | Window; top: number; left: number }> = [
       { element: window, top: window.scrollY, left: window.scrollX },
     ];
@@ -137,11 +142,14 @@ export default function PiecesTab({
     });
 
     editScrollSnapshotRef.current = snapshots;
-  };
-  const restoreScroll = () => {
+  }, []);
+
+  const restoreScroll = useCallback(() => {
     const snapshots = editScrollSnapshotRef.current;
     if (!snapshots) return;
-    editScrollSnapshotRef.current = null;
+
+    restoreTimersRef.current.forEach(window.clearTimeout);
+    restoreTimersRef.current = [];
 
     const applySnapshot = () => {
       snapshots.forEach(({ element, top, left }) => {
@@ -157,13 +165,27 @@ export default function PiecesTab({
       });
     };
 
-    // Restore after mutation re-render and Radix focus restoration, including AppShell's internal scroller.
+    // Restore through dialog close, Radix focus restoration, optimistic update and realtime refetch.
     requestAnimationFrame(() => {
       applySnapshot();
       requestAnimationFrame(applySnapshot);
-      window.setTimeout(applySnapshot, 120);
     });
-  };
+
+    [50, 120, 250, 500, 900, 1400].forEach((delay, index, delays) => {
+      const timer = window.setTimeout(() => {
+        applySnapshot();
+        if (index === delays.length - 1) {
+          editScrollSnapshotRef.current = null;
+          restoreTimersRef.current = [];
+        }
+      }, delay);
+      restoreTimersRef.current.push(timer);
+    });
+  }, []);
+
+  useEffect(() => () => {
+    restoreTimersRef.current.forEach(window.clearTimeout);
+  }, []);
   
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem(`pieces_columns_${campaignId}`);
