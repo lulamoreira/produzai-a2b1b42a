@@ -949,25 +949,29 @@ export default function StoresTab({
                   }}
                 >
                   {/* Page top bar */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 10, borderBottom: "2px solid #8C6F4E", marginBottom: 14 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#1a1a1a", fontWeight: 600 }}>
-                      <div style={{ width: 4, height: 18, background: "#d97706", borderRadius: 2 }} />
-                      <span>Kits da Campanha · {renderStore.name}</span>
+                  <div style={{ display: "table", width: "100%", paddingBottom: 10, borderBottom: "2px solid #8C6F4E", marginBottom: 14 }}>
+                    <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "left", fontSize: 13, color: "#1a1a1a", fontWeight: 600 }}>
+                      <span style={{ display: "inline-block", verticalAlign: "middle", width: 4, height: 18, background: "#d97706", borderRadius: 2, marginRight: 10 }} />
+                      <span style={{ verticalAlign: "middle" }}>Kits da Campanha · {renderStore.name}</span>
                     </div>
-                    <span style={{ fontSize: 11, color: "#888" }}>
+                    <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "right", whiteSpace: "nowrap", fontSize: 11, color: "#888" }}>
                       {PDF_I18N[renderLang].pageOf(1 + renderPiecePages.length + ki + 1, renderTotalPages)}
-                    </span>
+                    </div>
                   </div>
 
                   {/* Kit composition banner */}
-                  <div style={{ background: "linear-gradient(90deg, #1f2937 0%, #374151 100%)", padding: "8px 14px", display: "flex", alignItems: "center", gap: 10, borderRadius: 6, marginBottom: 12 }}>
-                    <div style={{ width: 3, height: 16, background: "#d97706", borderRadius: 2, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "#ffffff" }}>
-                      {PDF_I18N[renderLang].kitsSectionTitle}
-                    </span>
-                    <span style={{ background: "#d97706", color: "#fff", borderRadius: 20, padding: "1px 10px", fontSize: 10, fontWeight: 700, marginLeft: "auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ background: "linear-gradient(90deg, #1f2937 0%, #374151 100%)", padding: "8px 14px", display: "table", width: "100%", boxSizing: "border-box", borderRadius: 6, marginBottom: 12 }}>
+                    <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "left" }}>
+                      <span style={{ display: "inline-block", verticalAlign: "middle", width: 3, height: 16, background: "#d97706", borderRadius: 2, marginRight: 10 }} />
+                      <span style={{ verticalAlign: "middle", fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "#ffffff" }}>
+                        {PDF_I18N[renderLang].kitsSectionTitle}
+                      </span>
+                    </div>
+                    <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "right", whiteSpace: "nowrap" }}>
+                    <span style={{ background: "#d97706", color: "#fff", borderRadius: 20, padding: "1px 10px", fontSize: 10, fontWeight: 700, display: "inline-block", verticalAlign: "middle" }}>
                       {PDF_I18N[renderLang].kitsCount(pageKits.length)}
                     </span>
+                    </div>
                   </div>
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, flex: 1, overflow: "hidden" }}>
@@ -975,11 +979,13 @@ export default function StoresTab({
                       const totalKitQty = kit.pieces.reduce((acc: number, kp: any) => acc + (kp.quantity || 0), 0);
                       return (
                         <div key={kit.id} style={{ border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden", background: "#ffffff", display: "flex", flexDirection: "column" }}>
-                          <div style={{ background: "#374151", padding: "9px 12px", display: "flex", alignItems: "center", gap: 7 }}>
-                            <span style={{ background: "#d97706", color: "#fff", borderRadius: 5, padding: "4px 10px", fontSize: 10, fontWeight: 800, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
+                          <div style={{ display: "table", width: "100%", background: "#374151", padding: "0 12px", boxSizing: "border-box" }}>
+                            <div style={{ display: "table-cell", verticalAlign: "middle", width: "1px", whiteSpace: "nowrap", paddingRight: "8px" }}>
+                            <span style={{ background: "#d97706", color: "#fff", borderRadius: 5, padding: "4px 10px", fontSize: 10, fontWeight: 800, lineHeight: 1, whiteSpace: "nowrap" }}>
                               [{kit.code}]
                             </span>
-                            <div style={{ flex: 1 }}>
+                            </div>
+                            <div style={{ display: "table-cell", verticalAlign: "middle", paddingTop: "9px", paddingBottom: "9px" }}>
                               <div style={{ fontSize: 10.5, fontWeight: 700, color: "#ffffff", lineHeight: 1.3 }}>
                                 {kit.name}
                               </div>
