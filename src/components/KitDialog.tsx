@@ -484,7 +484,37 @@ export function KitDetailDialog({
   // DnD sensors must be created at the top level (Rules of Hooks)
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
+  // Auto-fill kit location from pieces when empty and all pieces share the same location
+  const pieceCategoriesKey = piecesInKit.map(kp => `${kp.piece?.category ?? ""}|${kp.piece?.sub_location ?? ""}`).join(",");
+  useEffect(() => {
+    if (!kit || !onUpdateKit) return;
+    if (piecesInKit.length === 0) return;
+    const currentCategory = localCategory !== undefined ? localCategory : kit.category;
+    const currentSub = localSubLocation !== undefined ? localSubLocation : kit.sub_location;
+    if (currentCategory && currentCategory.trim() !== "") return;
+
+    const categories = piecesInKit.map(kp => kp.piece?.category).filter(Boolean) as string[];
+    if (categories.length === 0) return;
+    const allSameCat = categories.every(c => c === categories[0]);
+    if (!allSameCat) return;
+    const inferredCategory = categories[0];
+
+    const subs = piecesInKit.map(kp => kp.piece?.sub_location ?? null);
+    const allSameSub = subs.every(s => s === subs[0]);
+    const inferredSub = allSameSub ? subs[0] : null;
+
+    if (inferredCategory === currentCategory && inferredSub === currentSub) return;
+
+    setLocalCategory(inferredCategory);
+    setLocalSubLocation(inferredSub);
+    onUpdateKit({ id: kit.id, category: inferredCategory, sub_location: inferredSub }).catch((err) => {
+      console.error("Auto-fill kit location failed:", err);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kit?.id, pieceCategoriesKey]);
+
   if (!kit) return null;
+
 
   const startEditPiece = (p: CampaignPiece) => {
     setEditingPieceId(p.id);
