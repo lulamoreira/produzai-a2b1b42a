@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { 
   Plus, Download, Upload, Sparkles, RefreshCw, ArrowDownAZ, MapPin, Copy, 
@@ -116,6 +116,17 @@ export default function PiecesTab({
   const [convertSelectionDialogOpen, setConvertSelectionDialogOpen] = useState(false);
   const [preSelectedForKit, setPreSelectedForKit] = useState<string[]>([]);
   const [editingPiece, setEditingPiece] = useState<any>(null);
+  const editScrollYRef = useRef<number | null>(null);
+  const restoreScroll = () => {
+    const y = editScrollYRef.current;
+    if (y == null) return;
+    editScrollYRef.current = null;
+    // Restore after Radix focus-restore + React re-render to override any focus-induced scroll
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: y, behavior: "auto" });
+      requestAnimationFrame(() => window.scrollTo({ top: y, behavior: "auto" }));
+    });
+  };
   
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem(`pieces_columns_${campaignId}`);
@@ -631,12 +642,12 @@ export default function PiecesTab({
         qtyMap={qtyMap}
         canEditPieces={canEditPieces}
         canDeletePieces={canDeletePieces}
-        onEdit={(p: any) => setEditingPiece(p)}
+        onEdit={(p: any) => { editScrollYRef.current = window.scrollY; setEditingPiece(p); }}
         onDelete={(id: string) => deletePiece?.mutate?.(id)}
         onDistribute={handleDistributePiece}
         onMarkKitOnly={async (p: any) => { await updatePiece?.mutateAsync?.({ id: p.id, kit_only: true }); }}
         onToggleMockup={async (p: any) => { await updatePiece?.mutateAsync?.({ id: p.id, is_mockup: !p.is_mockup }); }}
-        onKitClick={(kit: any) => setViewKitDetail(kit)}
+        onKitClick={(kit: any) => { editScrollYRef.current = window.scrollY; setViewKitDetail(kit); }}
         onDeleteKit={(id: string) => deleteKit?.mutate?.(id)}
         onToggleKitMockup={async (kit: any) => {
           const newVal = !kit.is_mockup;
@@ -654,7 +665,7 @@ export default function PiecesTab({
 
       <AddPieceDialog
         open={editingPiece !== null}
-        onOpenChange={(open) => { if (!open) setEditingPiece(null); }}
+        onOpenChange={(open) => { if (!open) { setEditingPiece(null); restoreScroll(); } }}
         initialPiece={editingPiece}
         existingPieces={pieces}
         customFieldLabels={customFieldLabels}
@@ -782,7 +793,7 @@ export default function PiecesTab({
       {viewKitDetail && (
         <KitDetailDialog
           open={!!viewKitDetail}
-          onOpenChange={(open) => !open && setViewKitDetail(null)}
+          onOpenChange={(open) => { if (!open) { setViewKitDetail(null); restoreScroll(); } }}
           kit={viewKitDetail}
           kitPieces={kitPieces.filter(kp => kp.kit_id === viewKitDetail.id)}
           allPieces={pieces}
