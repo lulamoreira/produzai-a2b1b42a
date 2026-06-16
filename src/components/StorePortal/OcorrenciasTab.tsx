@@ -78,7 +78,7 @@ function buildWhatsAppMessage(r: any, data: PortalData, statuses: StatusItem[]) 
     `📊 Status: ${statusInfo.label}`,
     `📅 Abertura: ${formatDateBR(r.created_at)}`,
     r.description ? `📝 Descrição: ${r.description}` : null,
-    r.expected_resolution_date ? `⏰ Previsão: ${formatDateBR(r.expected_resolution_date)}` : null,
+    r.expected_resolution_date ? `⏰ Previsão de atendimento: ${formatDateTimeBR(r.expected_resolution_date)}` : null,
     r.tratativa_notes ? `📋 Tratativa: ${r.tratativa_notes}` : null,
   ].filter(Boolean).join("\n");
 }
