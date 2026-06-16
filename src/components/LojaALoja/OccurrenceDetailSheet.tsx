@@ -467,7 +467,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
 
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Previsão de resolução</label>
-                <DateTimePicker value={expectedDate} onChange={setExpectedDate} disabled={!isAdmin} buttonClassName="h-9" />
+                <DateTimePicker value={expectedDate} onChange={setExpectedDate} disabled={!isAdmin} buttonClassName="h-9" clearable />
               </div>
 
               <div className="flex items-center gap-2">
