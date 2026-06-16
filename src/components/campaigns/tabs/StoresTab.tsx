@@ -803,7 +803,7 @@ export default function StoresTab({
                       {PDF_I18N[renderLang].totalPieces}
                     </div>
                     <div style={{ fontSize: 52, fontWeight: 800, lineHeight: 1, marginTop: 6 }}>
-                      {renderTotalPieces}
+                      <span style={{ position: "relative", top: "-10px" }}>{renderTotalPieces}</span>
                     </div>
                   </div>
                   <div style={{ textAlign: "left" }}>
@@ -909,8 +909,8 @@ export default function StoresTab({
                                     <div style={{ fontSize: 8, color: "#888", marginTop: 2 }}>{p.size}</div>
                                   )}
                                   <div style={{ marginTop: "5px" }}>
-                                    <span style={{ fontSize: 10.5, fontWeight: 700, color: "#8C6F4E", background: "#F5F2ED", padding: "1px 6px", borderRadius: 4 }}>
-                                      {PDF_I18N[renderLang].qty(sp.quantity)}
+                                    <span style={{ display: "inline-block", fontSize: 10.5, fontWeight: 700, lineHeight: 1, whiteSpace: "nowrap", color: "#8C6F4E", background: "#F5F2ED", padding: "1px 6px", borderRadius: 4 }}>
+                                      <span style={{ position: "relative", top: "-6px" }}>{PDF_I18N[renderLang].qty(sp.quantity)}</span>
                                     </span>
                                   </div>
                                 </div>
@@ -1027,8 +1027,8 @@ export default function StoresTab({
                                   }}>
                                     {p?.name || "—"}
                                   </div>
-                                  <span style={{ fontSize: 9, fontWeight: 700, color: "#92400e", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 3, padding: "0 5px", marginTop: "5px" }}>
-                                    {PDF_I18N[renderLang].qty(kp.quantity)}
+                                  <span style={{ display: "inline-block", fontSize: 9, fontWeight: 700, lineHeight: 1, whiteSpace: "nowrap", color: "#92400e", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 3, padding: "0 5px", marginTop: "5px" }}>
+                                    <span style={{ position: "relative", top: "-6px" }}>{PDF_I18N[renderLang].qty(kp.quantity)}</span>
                                   </span>
                                 </div>
                               );
