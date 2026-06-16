@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
-import { Trash2, Plus, ArrowRight, Check, AlertTriangle, Eye, Save, FolderOpen, Play, Layers, Shield, Pencil, Loader2, PlusCircle, X } from "lucide-react";
+import { Trash2, Plus, ArrowRight, Check, AlertTriangle, Eye, Save, FolderOpen, Play, Layers, Shield, Pencil, Loader2, PlusCircle, X, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -26,6 +26,7 @@ import { useAutomationTemplates, type AutomationTemplateItem, type AutomationKin
 import { GroupRunReviewDialog, buildValidations, type TemplateValidation } from "@/components/Matrix/GroupRunReviewDialog";
 import { GroupRunErrorDialog, type GroupRunResult } from "@/components/Matrix/GroupRunErrorDialog";
 import { applyRateioBulk } from "@/lib/applyRateioBulk";
+import ImportAutomationsFromCampaignDialog from "@/components/ImportAutomationsFromCampaignDialog";
 
 /* ─── Types ──────────────────────────────────────────────── */
 
@@ -268,6 +269,9 @@ export default function MatrixAutomationDialog({
 
   // Editing state: when set, "salvar" updates this template instead of creating a new one
   const [editingId, setEditingId] = useState<string | null>(null);
+
+  // Import-from-other-campaign dialog
+  const [importDialog, setImportDialog] = useState<{ open: boolean; mode: "templates" | "groups" }>({ open: false, mode: "templates" });
 
   // Reset on open
   useEffect(() => {
@@ -1772,6 +1776,11 @@ export default function MatrixAutomationDialog({
 
             {/* ──── TAB: Automações salvas ──── */}
             <TabsContent value="saved" className="space-y-2 mt-3">
+              <div className="flex justify-end">
+                <Button size="sm" variant="outline" className="gap-1.5 h-8" onClick={() => setImportDialog({ open: true, mode: "templates" })}>
+                  <Copy className="w-3.5 h-3.5" /> Importar de outra campanha
+                </Button>
+              </div>
               {templates.length === 0 ? (
                 <p className="text-sm text-muted-foreground text-center py-6">{t("automation.noSavedTemplates")}</p>
               ) : (
@@ -1823,6 +1832,11 @@ export default function MatrixAutomationDialog({
 
             {/* ──── TAB: Grupos ──── */}
             <TabsContent value="groups" className="space-y-3 mt-3">
+              <div className="flex justify-end">
+                <Button size="sm" variant="outline" className="gap-1.5 h-8" onClick={() => setImportDialog({ open: true, mode: "groups" })}>
+                  <Copy className="w-3.5 h-3.5" /> Importar grupo de outra campanha
+                </Button>
+              </div>
               {/* Create new group */}
               <div className="flex gap-2">
                 <Input
@@ -2204,6 +2218,16 @@ export default function MatrixAutomationDialog({
           setErrorDialog(prev => ({ ...prev, open: false }));
           handleRunGroup(errorDialog.groupId);
         }}
+      />
+
+      <ImportAutomationsFromCampaignDialog
+        open={importDialog.open}
+        onOpenChange={(o) => setImportDialog(prev => ({ ...prev, open: o }))}
+        mode={importDialog.mode}
+        clientId={clientId}
+        currentCampaignId={campaignId}
+        currentPieces={pieces}
+        currentKits={kits}
       />
     </Dialog>
   );
