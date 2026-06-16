@@ -968,8 +968,8 @@ export default function StoresTab({
                       </span>
                     </div>
                     <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "right", whiteSpace: "nowrap" }}>
-                    <span style={{ background: "#d97706", color: "#fff", borderRadius: 20, padding: "1px 10px", fontSize: 10, fontWeight: 700, display: "inline-block", verticalAlign: "middle" }}>
-                      {PDF_I18N[renderLang].kitsCount(pageKits.length)}
+                    <span style={{ background: "#d97706", color: "#fff", borderRadius: 20, padding: "2px 10px", fontSize: 10, fontWeight: 700, display: "inline-block", verticalAlign: "middle", whiteSpace: "nowrap" }}>
+                      <span style={{ position: "relative", top: "-6px" }}>{PDF_I18N[renderLang].kitsCount(pageKits.length)}</span>
                     </span>
                     </div>
                   </div>
