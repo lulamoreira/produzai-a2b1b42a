@@ -58,6 +58,18 @@ const PDF_I18N = {
 
 type PdfLang = keyof typeof PDF_I18N;
 
+const STORE_MODEL_I18N: Record<PdfLang, Record<string, string>> = {
+  "pt-BR": { LOJA: "LOJA", QUIOSQUE: "QUIOSQUE", ILHA: "ILHA", CORNER: "CORNER", GONDOLA: "GÔNDOLA" },
+  "es-CL": { LOJA: "TIENDA", QUIOSQUE: "QUIOSCO", ILHA: "ISLA", CORNER: "CORNER", GONDOLA: "GÓNDOLA" },
+  "en-US": { LOJA: "STORE", QUIOSQUE: "KIOSK", ILHA: "ISLAND", CORNER: "CORNER", GONDOLA: "GONDOLA" },
+};
+
+function translateStoreModel(model: string | null | undefined, lang: PdfLang): string {
+  if (!model) return "";
+  const key = model.trim().toUpperCase();
+  return STORE_MODEL_I18N[lang][key] ?? model;
+}
+
 async function fetchStorePiecesData(campaignId: string, storeId: string) {
   const { data } = await supabase
     .from("campaign_store_pieces")
