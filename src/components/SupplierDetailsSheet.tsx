@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { addDays } from "date-fns";
+import SupplierComments from "./SupplierComments";
 import type { AgencySupplier } from "@/hooks/useAgencySuppliers";
 
 interface Props {
@@ -278,6 +279,9 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
               </section>
             </>
           )}
+
+          <Separator />
+          <SupplierComments supplierId={supplier.id} agencyId={supplier.agency_id} />
 
           <Separator />
 
