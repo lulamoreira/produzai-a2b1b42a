@@ -999,26 +999,25 @@ export default function StoresTab({
                               const p = kp.campaign_pieces;
                               return (
                                 <div key={j} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "#fff", minHeight: 120 }}>
-                                  <div style={{ width: "100%", height: 58, background: "#f4f4f5", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", fontSize: 18 }}>
-                                    {p?.image_url ? (
-                                      <img
-                                        crossOrigin="anonymous"
-                                        src={p.image_url}
-                                        alt={p?.name || ""}
-                                        style={{ maxWidth: "calc(100% - 4px)", maxHeight: 48, width: "auto", height: "auto", display: "block" }}
-                                        onError={(e) => {
-                                          (e.currentTarget as HTMLImageElement).style.display = "none";
-                                        }}
-                                      />
-                                    ) : (
-                                      "📦"
-                                    )}
+                                  <div style={{ width: "100%", height: 58, background: "#f4f4f5", borderRadius: 4, display: "table", overflow: "hidden", fontSize: 18, textAlign: "center" }}>
+                                    <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "center" }}>
+                                      {p?.image_url ? (
+                                        <img
+                                          crossOrigin="anonymous"
+                                          src={p.image_url}
+                                          alt={p?.name || ""}
+                                          style={{ maxWidth: "calc(100% - 4px)", maxHeight: 48, width: "auto", height: "auto", display: "inline-block", verticalAlign: "middle" }}
+                                          onError={(e) => {
+                                            (e.currentTarget as HTMLImageElement).style.display = "none";
+                                          }}
+                                        />
+                                      ) : (
+                                        "📦"
+                                      )}
+                                    </div>
                                   </div>
                                   <div style={{
                                     minHeight: "19px",
-                                    display: "flex",
-                                    alignItems: "flex-start",
-                                    justifyContent: "center",
                                     textAlign: "center",
                                     width: "100%",
                                     marginTop: "4px",
