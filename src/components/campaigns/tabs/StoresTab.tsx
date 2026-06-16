@@ -1027,8 +1027,8 @@ export default function StoresTab({
                                   }}>
                                     {p?.name || "—"}
                                   </div>
-                                  <span style={{ fontSize: 9, fontWeight: 700, color: "#92400e", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 3, padding: "0 5px", marginTop: "5px" }}>
-                                    {PDF_I18N[renderLang].qty(kp.quantity)}
+                                  <span style={{ display: "inline-block", fontSize: 9, fontWeight: 700, lineHeight: 1, whiteSpace: "nowrap", color: "#92400e", background: "#fef3c7", border: "1px solid #fde68a", borderRadius: 3, padding: "0 5px", marginTop: "5px" }}>
+                                    <span style={{ position: "relative", top: "-6px" }}>{PDF_I18N[renderLang].qty(kp.quantity)}</span>
                                   </span>
                                 </div>
                               );
