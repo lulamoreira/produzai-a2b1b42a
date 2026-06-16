@@ -679,12 +679,12 @@ export default function PiecesTab({
         qtyMap={qtyMap}
         canEditPieces={canEditPieces}
         canDeletePieces={canDeletePieces}
-        onEdit={(p: any) => { editScrollYRef.current = window.scrollY; setEditingPiece(p); }}
+        onEdit={(p: any) => { captureScrollSnapshot(); setEditingPiece(p); }}
         onDelete={(id: string) => deletePiece?.mutate?.(id)}
         onDistribute={handleDistributePiece}
         onMarkKitOnly={async (p: any) => { await updatePiece?.mutateAsync?.({ id: p.id, kit_only: true }); }}
         onToggleMockup={async (p: any) => { await updatePiece?.mutateAsync?.({ id: p.id, is_mockup: !p.is_mockup }); }}
-        onKitClick={(kit: any) => { editScrollYRef.current = window.scrollY; setViewKitDetail(kit); }}
+        onKitClick={(kit: any) => { captureScrollSnapshot(); setViewKitDetail(kit); }}
         onDeleteKit={(id: string) => deleteKit?.mutate?.(id)}
         onToggleKitMockup={async (kit: any) => {
           const newVal = !kit.is_mockup;
