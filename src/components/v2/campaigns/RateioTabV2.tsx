@@ -1620,7 +1620,7 @@ export default function RateioTabV2({
                         style={{ position: 'sticky', left: 0, top: 0, zIndex: 50 }}
                       />
                       {(() => {
-                        const CAT_COLORS = ['#3D2E1E','#1A3A5C','#1A3A2A','#5C2A1A','#2A1A5C','#0A3A3A','#5C3D00','#1C1C1C'];
+                        const CAT_COLORS = ['#C2410C','#B91C1C','#15803D','#1D4ED8','#6B21A8','#78350F'];
                         const colorMap = new Map<string, string>();
                         let ci = 0;
                         for (const g of categoryGroups) {
