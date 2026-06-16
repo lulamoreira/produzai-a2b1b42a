@@ -227,13 +227,45 @@ const ImportAutomationsFromCampaignDialog = ({
 
       // Import templates → map remote template id → new (or reused) id in current campaign
       const tplIdMap = new Map<string, string>();
+      let skippedReplacement = 0;
       for (const tpl of effectiveTemplates) {
-        const newItems = remapItems(tpl.items || []);
-        if (newItems.length === 0) continue;
+        let newFilterValue: string = tpl.filter_value;
+        let newItems: AutomationTemplateItem[] = [];
+
+        if (tpl.kind === "replacement") {
+          const r = parseReplacement(tpl.filter_value);
+          if (!r?.replacementPieceId) { skippedReplacement++; continue; }
+          const targetKey = mapping[keyFor("piece", r.replacementPieceId)];
+          const target = targetKey ? targetByKey.get(targetKey) : null;
+          if (!target || target.type !== "piece") { skippedReplacement++; continue; }
+          let newSourceQtys: Record<string, number> | undefined;
+          if (r.replacementSourceQtys) {
+            newSourceQtys = {};
+            for (const [srcId, qty] of Object.entries(r.replacementSourceQtys)) {
+              const mappedKey = mapping[keyFor("piece", srcId)];
+              const mappedTarget = mappedKey ? targetByKey.get(mappedKey) : null;
+              if (mappedTarget && mappedTarget.type === "piece") {
+                newSourceQtys[mappedTarget.id] = qty;
+              } else {
+                // Keep original key if not a mapped piece (e.g. non-piece keys)
+                newSourceQtys[srcId] = qty;
+              }
+            }
+          }
+          newFilterValue = JSON.stringify({
+            replacementPieceId: target.id,
+            ...(newSourceQtys ? { replacementSourceQtys: newSourceQtys } : {}),
+            ...(r.replacementTargetQty !== undefined ? { replacementTargetQty: r.replacementTargetQty } : {}),
+            ...(r.replaceAnyNonZero !== undefined ? { replaceAnyNonZero: r.replaceAnyNonZero } : {}),
+          });
+        } else {
+          newItems = remapItems(tpl.items || []);
+          if (newItems.length === 0) continue;
+        }
+
         let name = tpl.name;
         if (existingByName.has(name)) {
           if (mode === "groups") {
-            // Reuse existing template by name to avoid duplicates
             tplIdMap.set(tpl.id, existingByName.get(name)!);
             continue;
           }
@@ -246,7 +278,7 @@ const ImportAutomationsFromCampaignDialog = ({
           name,
           kind: tpl.kind as any,
           filter_field: tpl.filter_field,
-          filter_value: tpl.filter_value,
+          filter_value: newFilterValue,
           base_field: tpl.base_field,
           outside_action: tpl.outside_action,
           items: newItems as any,
