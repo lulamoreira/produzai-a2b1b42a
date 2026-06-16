@@ -116,6 +116,17 @@ export default function PiecesTab({
   const [convertSelectionDialogOpen, setConvertSelectionDialogOpen] = useState(false);
   const [preSelectedForKit, setPreSelectedForKit] = useState<string[]>([]);
   const [editingPiece, setEditingPiece] = useState<any>(null);
+  const editScrollYRef = useRef<number | null>(null);
+  const restoreScroll = () => {
+    const y = editScrollYRef.current;
+    if (y == null) return;
+    editScrollYRef.current = null;
+    // Restore after Radix focus-restore + React re-render to override any focus-induced scroll
+    requestAnimationFrame(() => {
+      window.scrollTo({ top: y, behavior: "auto" });
+      requestAnimationFrame(() => window.scrollTo({ top: y, behavior: "auto" }));
+    });
+  };
   
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(() => {
     const saved = localStorage.getItem(`pieces_columns_${campaignId}`);
