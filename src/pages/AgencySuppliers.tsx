@@ -100,6 +100,7 @@ const AgencySuppliers = () => {
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<AgencySupplier | null>(null);
+  const [detailsSupplier, setDetailsSupplier] = useState<AgencySupplier | null>(null);
   
   const [form, setForm] = useState({
     company_name: "",
