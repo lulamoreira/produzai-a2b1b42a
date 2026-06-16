@@ -24,6 +24,17 @@ interface StatusItem {
   color: string;
 }
 
+function formatDateTimeBR(value: string | null | undefined): string {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (isNaN(d.getTime())) {
+    // Fallback for date-only strings
+    return formatDateBR(value);
+  }
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 function getTratativaDisplay(status: string, statuses: StatusItem[]) {
   const found = statuses.find((s) => s.value === status);
   if (found) {
