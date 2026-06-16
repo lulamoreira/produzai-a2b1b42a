@@ -333,6 +333,9 @@ const ImportAutomationsFromCampaignDialog = ({
       } else {
         toast.success(`${groupCount} grupo(s) e ${tplIdMap.size} automação(ões) importado(s)!`);
       }
+      if (skippedReplacement > 0) {
+        toast.warning(`${skippedReplacement} automação(ões) de substituição ignorada(s) por falta de mapeamento da peça-alvo.`);
+      }
       onOpenChange(false);
     } catch (e: any) {
       console.error(e);
