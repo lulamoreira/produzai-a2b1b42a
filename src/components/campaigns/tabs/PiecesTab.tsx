@@ -793,7 +793,7 @@ export default function PiecesTab({
       {viewKitDetail && (
         <KitDetailDialog
           open={!!viewKitDetail}
-          onOpenChange={(open) => !open && setViewKitDetail(null)}
+          onOpenChange={(open) => { if (!open) { setViewKitDetail(null); restoreScroll(); } }}
           kit={viewKitDetail}
           kitPieces={kitPieces.filter(kp => kp.kit_id === viewKitDetail.id)}
           allPieces={pieces}
