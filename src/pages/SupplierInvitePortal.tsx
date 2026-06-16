@@ -349,7 +349,7 @@ const SupplierInvitePortal = () => {
                 <Input
                   id="company_name"
                   value={form.company_name}
-                  onChange={e => setForm(f => ({ ...f, company_name: e.target.value }))}
+                  onChange={e => setForm(f => ({ ...f, company_name: e.target.value.toUpperCase() }))}
                 />
               </div>
               <div className="space-y-2">
@@ -357,7 +357,9 @@ const SupplierInvitePortal = () => {
                 <Input
                   id="cnpj"
                   value={form.cnpj}
-                  onChange={e => setForm(f => ({ ...f, cnpj: e.target.value }))}
+                  placeholder="XX.XXX.XXX/XXXX-XX"
+                  inputMode="numeric"
+                  onChange={e => setForm(f => ({ ...f, cnpj: formatCNPJ(e.target.value) }))}
                 />
               </div>
               <div className="space-y-2">
