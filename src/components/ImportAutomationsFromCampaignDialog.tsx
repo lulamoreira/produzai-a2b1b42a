@@ -136,17 +136,48 @@ const ImportAutomationsFromCampaignDialog = ({
     return remoteTemplates.filter(t => tplIds.has(t.id));
   }, [mode, remoteTemplates, remoteGroupItems, selectedTemplateIds, selectedGroupIds]);
 
+  // Parse replacement filter_value JSON safely
+  const parseReplacement = (raw: string | null | undefined): {
+    replacementPieceId?: string;
+    replacementSourceQtys?: Record<string, number>;
+    replacementTargetQty?: number;
+    replaceAnyNonZero?: boolean;
+  } | null => {
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
+  };
+
   // Distinct items across effective templates
   const distinctItems = useMemo(() => {
     const map = new Map<ItemKey, AutomationTemplateItem>();
+    const addPieceById = (pieceId: string) => {
+      const k = keyFor("piece", pieceId);
+      if (map.has(k)) return;
+      const rp = remotePieces.find(p => p.id === pieceId);
+      map.set(k, {
+        id: pieceId, type: "piece",
+        code: rp?.code ?? 0,
+        name: rp?.name ?? "(peça da origem)",
+        quantity: 0,
+      } as AutomationTemplateItem);
+    };
     effectiveTemplates.forEach(t => {
       (t.items || []).forEach(it => {
         const k = keyFor(it.type, it.id);
         if (!map.has(k)) map.set(k, it);
       });
+      if (t.kind === "replacement") {
+        const r = parseReplacement(t.filter_value);
+        if (r?.replacementPieceId) addPieceById(r.replacementPieceId);
+        if (r?.replacementSourceQtys) {
+          Object.keys(r.replacementSourceQtys).forEach(id => {
+            if (remotePieces.some(p => p.id === id)) addPieceById(id);
+          });
+        }
+      }
     });
     return Array.from(map.entries()).map(([k, it]) => ({ key: k, item: it }));
-  }, [effectiveTemplates]);
+  }, [effectiveTemplates, remotePieces]);
 
   const targetOptions = useMemo(() => {
     const opts: { key: string; id: string; type: "piece" | "kit"; code: number; label: string }[] = [];
@@ -196,13 +227,45 @@ const ImportAutomationsFromCampaignDialog = ({
 
       // Import templates → map remote template id → new (or reused) id in current campaign
       const tplIdMap = new Map<string, string>();
+      let skippedReplacement = 0;
       for (const tpl of effectiveTemplates) {
-        const newItems = remapItems(tpl.items || []);
-        if (newItems.length === 0) continue;
+        let newFilterValue: string = tpl.filter_value;
+        let newItems: AutomationTemplateItem[] = [];
+
+        if (tpl.kind === "replacement") {
+          const r = parseReplacement(tpl.filter_value);
+          if (!r?.replacementPieceId) { skippedReplacement++; continue; }
+          const targetKey = mapping[keyFor("piece", r.replacementPieceId)];
+          const target = targetKey ? targetByKey.get(targetKey) : null;
+          if (!target || target.type !== "piece") { skippedReplacement++; continue; }
+          let newSourceQtys: Record<string, number> | undefined;
+          if (r.replacementSourceQtys) {
+            newSourceQtys = {};
+            for (const [srcId, qty] of Object.entries(r.replacementSourceQtys)) {
+              const mappedKey = mapping[keyFor("piece", srcId)];
+              const mappedTarget = mappedKey ? targetByKey.get(mappedKey) : null;
+              if (mappedTarget && mappedTarget.type === "piece") {
+                newSourceQtys[mappedTarget.id] = qty;
+              } else {
+                // Keep original key if not a mapped piece (e.g. non-piece keys)
+                newSourceQtys[srcId] = qty;
+              }
+            }
+          }
+          newFilterValue = JSON.stringify({
+            replacementPieceId: target.id,
+            ...(newSourceQtys ? { replacementSourceQtys: newSourceQtys } : {}),
+            ...(r.replacementTargetQty !== undefined ? { replacementTargetQty: r.replacementTargetQty } : {}),
+            ...(r.replaceAnyNonZero !== undefined ? { replaceAnyNonZero: r.replaceAnyNonZero } : {}),
+          });
+        } else {
+          newItems = remapItems(tpl.items || []);
+          if (newItems.length === 0) continue;
+        }
+
         let name = tpl.name;
         if (existingByName.has(name)) {
           if (mode === "groups") {
-            // Reuse existing template by name to avoid duplicates
             tplIdMap.set(tpl.id, existingByName.get(name)!);
             continue;
           }
@@ -215,7 +278,7 @@ const ImportAutomationsFromCampaignDialog = ({
           name,
           kind: tpl.kind as any,
           filter_field: tpl.filter_field,
-          filter_value: tpl.filter_value,
+          filter_value: newFilterValue,
           base_field: tpl.base_field,
           outside_action: tpl.outside_action,
           items: newItems as any,
@@ -269,6 +332,9 @@ const ImportAutomationsFromCampaignDialog = ({
         toast.success(`${tplIdMap.size} automação(ões) importada(s)!`);
       } else {
         toast.success(`${groupCount} grupo(s) e ${tplIdMap.size} automação(ões) importado(s)!`);
+      }
+      if (skippedReplacement > 0) {
+        toast.warning(`${skippedReplacement} automação(ões) de substituição ignorada(s) por falta de mapeamento da peça-alvo.`);
       }
       onOpenChange(false);
     } catch (e: any) {
