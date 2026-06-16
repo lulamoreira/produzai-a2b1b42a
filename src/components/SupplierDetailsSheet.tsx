@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { addDays } from "date-fns";
+import SupplierComments from "./SupplierComments";
 import type { AgencySupplier } from "@/hooks/useAgencySuppliers";
 
 interface Props {
