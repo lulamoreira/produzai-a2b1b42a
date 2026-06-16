@@ -552,7 +552,7 @@ const ImportAutomationsFromCampaignDialog = ({
                 Próximo: mapear peças <ArrowRight className="w-3.5 h-3.5" />
               </Button>
             ) : (
-              <Button size="sm" disabled={importing || !allMapped} onClick={handleImport} className="gap-1.5">
+              <Button size="sm" disabled={importing || !canImport} onClick={handleImport} className="gap-1.5">
                 {importing ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Importando...</> : <><Copy className="w-3.5 h-3.5" /> Importar</>}
               </Button>
             )}
