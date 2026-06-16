@@ -26,6 +26,7 @@ import { useAutomationTemplates, type AutomationTemplateItem, type AutomationKin
 import { GroupRunReviewDialog, buildValidations, type TemplateValidation } from "@/components/Matrix/GroupRunReviewDialog";
 import { GroupRunErrorDialog, type GroupRunResult } from "@/components/Matrix/GroupRunErrorDialog";
 import { applyRateioBulk } from "@/lib/applyRateioBulk";
+import ImportAutomationsFromCampaignDialog from "@/components/ImportAutomationsFromCampaignDialog";
 
 /* ─── Types ──────────────────────────────────────────────── */
 
