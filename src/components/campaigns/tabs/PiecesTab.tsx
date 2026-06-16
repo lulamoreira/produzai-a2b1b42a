@@ -263,6 +263,12 @@ export default function PiecesTab({
   const visiblePieces = useMemo(() => pieces.filter(p => !p.kit_only), [pieces]);
   const kitOnlyPieces = useMemo(() => pieces.filter(p => p.kit_only), [pieces]);
 
+  useLayoutEffect(() => {
+    if (editScrollSnapshotRef.current) {
+      restoreScroll();
+    }
+  }, [pieces, kits, restoreScroll]);
+
   const handlePiecesImport = async (rows: Record<string, any>[], options: { updateExisting: boolean; onProgress?: (curr: number, total: number, name?: string) => void }) => {
     if (!addPiece?.mutateAsync) return;
     
