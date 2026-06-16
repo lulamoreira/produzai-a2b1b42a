@@ -833,29 +833,33 @@ export default function StoresTab({
                   }}
                 >
                   {/* Page top bar */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 10, borderBottom: "2px solid #8C6F4E", marginBottom: 14 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#1a1a1a", fontWeight: 600 }}>
-                      <div style={{ width: 4, height: 18, background: "#8C6F4E", borderRadius: 2 }} />
-                      <span>{renderStore.name}</span>
+                  <div style={{ display: "table", width: "100%", paddingBottom: 10, borderBottom: "2px solid #8C6F4E", marginBottom: 14 }}>
+                    <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "left", fontSize: 13, color: "#1a1a1a", fontWeight: 600 }}>
+                      <span style={{ display: "inline-block", verticalAlign: "middle", width: 4, height: 18, background: "#8C6F4E", borderRadius: 2, marginRight: 10 }} />
+                      <span style={{ verticalAlign: "middle" }}>{renderStore.name}</span>
                       {renderStore.store_code && (
-                        <span style={{ color: "#888", fontWeight: 500 }}>· #{renderStore.store_code}</span>
+                        <span style={{ color: "#888", fontWeight: 500, verticalAlign: "middle", marginLeft: 10 }}>· #{renderStore.store_code}</span>
                       )}
                     </div>
-                    <span style={{ fontSize: 11, color: "#888" }}>{PDF_I18N[renderLang].pageOf(pi + 2, renderTotalPages)}</span>
+                    <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "right", whiteSpace: "nowrap", fontSize: 11, color: "#888" }}>
+                      {PDF_I18N[renderLang].pageOf(pi + 2, renderTotalPages)}
+                    </div>
                   </div>
 
                   {/* Categories content */}
                   <div style={{ display: "flex", flexDirection: "column", gap: 14, flex: 1, overflow: "hidden" }}>
                     {pageCategories.map(({ category, pieces }) => (
                       <div key={category}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, paddingBottom: 4, borderBottom: "1px solid #e5e1d8" }}>
-                          <div style={{ width: 3, height: 14, background: "#8C6F4E", borderRadius: 2 }} />
-                          <span style={{ fontSize: 13, fontWeight: 700, color: "#1a1a1a", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                        <div style={{ display: "table", width: "100%", marginBottom: 8, paddingBottom: 4, borderBottom: "1px solid #e5e1d8" }}>
+                          <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "left" }}>
+                            <span style={{ display: "inline-block", verticalAlign: "middle", width: 3, height: 14, background: "#8C6F4E", borderRadius: 2, marginRight: 8 }} />
+                            <span style={{ verticalAlign: "middle", fontSize: 13, fontWeight: 700, color: "#1a1a1a", textTransform: "uppercase", letterSpacing: "0.05em" }}>
                             {category}
-                          </span>
-                          <span style={{ fontSize: 10, color: "#888", marginLeft: "auto" }}>
+                            </span>
+                          </div>
+                          <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "right", whiteSpace: "nowrap", fontSize: 10, color: "#888" }}>
                             {PDF_I18N[renderLang].categoryPieceCount(pieces.length)}
-                          </span>
+                          </div>
                         </div>
                         <div style={{ display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 7 }}>
                           {pieces.map((sp: any, i: number) => {
@@ -863,34 +867,34 @@ export default function StoresTab({
                             if (!p) return null;
                             return (
                               <div key={i} style={{ border: "1px solid #e5e1d8", borderRadius: 6, overflow: "hidden", background: "#fff", minHeight: 160, display: "flex", flexDirection: "column", alignItems: "center" }}>
-                                <div style={{ width: "100%", height: 80, background: "#f4f4f5", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24, padding: 4, flexShrink: 0 }}>
-                                  {p.image_url ? (
-                                    <img
-                                      crossOrigin="anonymous"
-                                      src={p.image_url}
-                                      alt={p.name}
-                                      style={{
-                                        maxWidth: "calc(100% - 8px)",
-                                        maxHeight: "70px",
-                                        width: "auto",
-                                        height: "auto",
-                                        display: "block",
-                                        margin: "0 auto",
-                                      }}
-                                      onError={(e) => {
-                                        (e.currentTarget as HTMLImageElement).style.display = "none";
-                                      }}
-                                    />
-                                  ) : (
-                                    "📦"
-                                  )}
+                                <div style={{ width: "100%", height: 80, background: "#f4f4f5", display: "table", fontSize: 24, padding: 4, flexShrink: 0, boxSizing: "border-box", textAlign: "center" }}>
+                                  <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "center" }}>
+                                    {p.image_url ? (
+                                      <img
+                                        crossOrigin="anonymous"
+                                        src={p.image_url}
+                                        alt={p.name}
+                                        style={{
+                                          maxWidth: "calc(100% - 8px)",
+                                          maxHeight: "70px",
+                                          width: "auto",
+                                          height: "auto",
+                                          display: "inline-block",
+                                          verticalAlign: "middle",
+                                          margin: "0 auto",
+                                        }}
+                                        onError={(e) => {
+                                          (e.currentTarget as HTMLImageElement).style.display = "none";
+                                        }}
+                                      />
+                                    ) : (
+                                      "📦"
+                                    )}
+                                  </div>
                                 </div>
-                                <div style={{ padding: "5px 7px", width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+                                <div style={{ padding: "5px 7px", width: "100%", textAlign: "center" }}>
                                   <div style={{
                                     minHeight: "22px",
-                                    display: "flex",
-                                    alignItems: "flex-start",
-                                    justifyContent: "center",
                                     textAlign: "center",
                                     width: "100%",
                                     marginTop: "4px",
@@ -945,25 +949,29 @@ export default function StoresTab({
                   }}
                 >
                   {/* Page top bar */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingBottom: 10, borderBottom: "2px solid #8C6F4E", marginBottom: 14 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 13, color: "#1a1a1a", fontWeight: 600 }}>
-                      <div style={{ width: 4, height: 18, background: "#d97706", borderRadius: 2 }} />
-                      <span>Kits da Campanha · {renderStore.name}</span>
+                  <div style={{ display: "table", width: "100%", paddingBottom: 10, borderBottom: "2px solid #8C6F4E", marginBottom: 14 }}>
+                    <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "left", fontSize: 13, color: "#1a1a1a", fontWeight: 600 }}>
+                      <span style={{ display: "inline-block", verticalAlign: "middle", width: 4, height: 18, background: "#d97706", borderRadius: 2, marginRight: 10 }} />
+                      <span style={{ verticalAlign: "middle" }}>Kits da Campanha · {renderStore.name}</span>
                     </div>
-                    <span style={{ fontSize: 11, color: "#888" }}>
+                    <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "right", whiteSpace: "nowrap", fontSize: 11, color: "#888" }}>
                       {PDF_I18N[renderLang].pageOf(1 + renderPiecePages.length + ki + 1, renderTotalPages)}
-                    </span>
+                    </div>
                   </div>
 
                   {/* Kit composition banner */}
-                  <div style={{ background: "linear-gradient(90deg, #1f2937 0%, #374151 100%)", padding: "8px 14px", display: "flex", alignItems: "center", gap: 10, borderRadius: 6, marginBottom: 12 }}>
-                    <div style={{ width: 3, height: 16, background: "#d97706", borderRadius: 2, flexShrink: 0 }} />
-                    <span style={{ fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "#ffffff" }}>
-                      {PDF_I18N[renderLang].kitsSectionTitle}
-                    </span>
-                    <span style={{ background: "#d97706", color: "#fff", borderRadius: 20, padding: "1px 10px", fontSize: 10, fontWeight: 700, marginLeft: "auto", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <div style={{ background: "linear-gradient(90deg, #1f2937 0%, #374151 100%)", padding: "8px 14px", display: "table", width: "100%", boxSizing: "border-box", borderRadius: 6, marginBottom: 12 }}>
+                    <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "left" }}>
+                      <span style={{ display: "inline-block", verticalAlign: "middle", width: 3, height: 16, background: "#d97706", borderRadius: 2, marginRight: 10 }} />
+                      <span style={{ verticalAlign: "middle", fontSize: 12, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.1em", color: "#ffffff" }}>
+                        {PDF_I18N[renderLang].kitsSectionTitle}
+                      </span>
+                    </div>
+                    <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "right", whiteSpace: "nowrap" }}>
+                    <span style={{ background: "#d97706", color: "#fff", borderRadius: 20, padding: "1px 10px", fontSize: 10, fontWeight: 700, display: "inline-block", verticalAlign: "middle" }}>
                       {PDF_I18N[renderLang].kitsCount(pageKits.length)}
                     </span>
+                    </div>
                   </div>
 
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, flex: 1, overflow: "hidden" }}>
@@ -971,11 +979,13 @@ export default function StoresTab({
                       const totalKitQty = kit.pieces.reduce((acc: number, kp: any) => acc + (kp.quantity || 0), 0);
                       return (
                         <div key={kit.id} style={{ border: "1px solid #d1d5db", borderRadius: 8, overflow: "hidden", background: "#ffffff", display: "flex", flexDirection: "column" }}>
-                          <div style={{ background: "#374151", padding: "9px 12px", display: "flex", alignItems: "center", gap: 7 }}>
-                            <span style={{ background: "#d97706", color: "#fff", borderRadius: 5, padding: "4px 10px", fontSize: 10, fontWeight: 800, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1 }}>
+                          <div style={{ display: "table", width: "100%", background: "#374151", padding: "0 12px", boxSizing: "border-box" }}>
+                            <div style={{ display: "table-cell", verticalAlign: "middle", width: "1px", whiteSpace: "nowrap", paddingRight: "8px" }}>
+                            <span style={{ background: "#d97706", color: "#fff", borderRadius: 5, padding: "4px 10px", fontSize: 10, fontWeight: 800, lineHeight: 1, whiteSpace: "nowrap" }}>
                               [{kit.code}]
                             </span>
-                            <div style={{ flex: 1 }}>
+                            </div>
+                            <div style={{ display: "table-cell", verticalAlign: "middle", paddingTop: "9px", paddingBottom: "9px" }}>
                               <div style={{ fontSize: 10.5, fontWeight: 700, color: "#ffffff", lineHeight: 1.3 }}>
                                 {kit.name}
                               </div>
@@ -989,26 +999,25 @@ export default function StoresTab({
                               const p = kp.campaign_pieces;
                               return (
                                 <div key={j} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "#fff", minHeight: 120 }}>
-                                  <div style={{ width: "100%", height: 58, background: "#f4f4f5", borderRadius: 4, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", fontSize: 18 }}>
-                                    {p?.image_url ? (
-                                      <img
-                                        crossOrigin="anonymous"
-                                        src={p.image_url}
-                                        alt={p?.name || ""}
-                                        style={{ maxWidth: "calc(100% - 4px)", maxHeight: 48, width: "auto", height: "auto", display: "block" }}
-                                        onError={(e) => {
-                                          (e.currentTarget as HTMLImageElement).style.display = "none";
-                                        }}
-                                      />
-                                    ) : (
-                                      "📦"
-                                    )}
+                                  <div style={{ width: "100%", height: 58, background: "#f4f4f5", borderRadius: 4, display: "table", overflow: "hidden", fontSize: 18, textAlign: "center" }}>
+                                    <div style={{ display: "table-cell", verticalAlign: "middle", textAlign: "center" }}>
+                                      {p?.image_url ? (
+                                        <img
+                                          crossOrigin="anonymous"
+                                          src={p.image_url}
+                                          alt={p?.name || ""}
+                                          style={{ maxWidth: "calc(100% - 4px)", maxHeight: 48, width: "auto", height: "auto", display: "inline-block", verticalAlign: "middle" }}
+                                          onError={(e) => {
+                                            (e.currentTarget as HTMLImageElement).style.display = "none";
+                                          }}
+                                        />
+                                      ) : (
+                                        "📦"
+                                      )}
+                                    </div>
                                   </div>
                                   <div style={{
                                     minHeight: "19px",
-                                    display: "flex",
-                                    alignItems: "flex-start",
-                                    justifyContent: "center",
                                     textAlign: "center",
                                     width: "100%",
                                     marginTop: "4px",
