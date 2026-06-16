@@ -460,26 +460,54 @@ export default function PiecesTab({
   };
 
   const handleDuplicateKit = async (kit: any) => {
-    const maxCode = Math.max(...kits.map(k => k.code ?? 0), 0);
-    
+    const maxKitCode = Math.max(...kits.map(k => k.code ?? 0), 0);
+    let maxPieceCode = Math.max(...pieces.map(p => p.code ?? 0), 0);
+
     const novoKit = await addKit?.mutateAsync?.({
       campaign_id: kit.campaign_id,
       name: `${kit.name} (cópia)`,
-      code: maxCode + 1,
+      code: maxKitCode + 1,
       is_new: kit.is_new,
       is_deleted: false,
       display_order: (kit.display_order ?? 0) + 1,
     });
-    
+
     if (!novoKit) return;
-    
+
+    // Clone each component piece so the new kit is fully independent of the original.
     const pecasDoKit = kitPieces.filter(kp => kp.kit_id === kit.id);
-    await Promise.allSettled(
-      pecasDoKit.map(kp =>
-        addKitPiece?.mutateAsync?.({ kit_id: novoKit.id, piece_id: kp.piece_id })
-      )
-    );
-    
+    const piecesById = new Map(pieces.map(p => [p.id, p]));
+
+    for (const kp of pecasDoKit) {
+      const orig = piecesById.get(kp.piece_id);
+      if (!orig) continue;
+      maxPieceCode += 1;
+      const novaPeca: any = await addPiece?.mutateAsync?.({
+        campaign_id: orig.campaign_id,
+        name: `${orig.name} (cópia)`,
+        code: maxPieceCode,
+        category: orig.category,
+        size: orig.size,
+        store_category: orig.store_category,
+        sub_location: orig.sub_location,
+        specification: orig.specification,
+        installation_instructions: orig.installation_instructions,
+        kit_only: orig.kit_only ?? true,
+        is_mockup: orig.is_mockup ?? false,
+        image_url: orig.image_url,
+        image_thumb_url: orig.image_thumb_url,
+        image_full_url: orig.image_full_url,
+        image_report_url: orig.image_report_url,
+      });
+      if (novaPeca?.id) {
+        await addKitPiece?.mutateAsync?.({
+          kit_id: novoKit.id,
+          piece_id: novaPeca.id,
+          quantity: kp.quantity ?? 1,
+        });
+      }
+    }
+
     toast.success(t("pieces.kitDuplicated"));
   };
 
