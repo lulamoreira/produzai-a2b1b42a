@@ -486,6 +486,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                       onChange={setReinstallationDate}
                       disabled={!isAdmin}
                       buttonClassName="h-9"
+                      clearable
                     />
                   </div>
                   <div>
