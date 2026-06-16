@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
@@ -19,6 +19,7 @@ interface DateTimePickerProps {
   className?: string;
   buttonClassName?: string;
   size?: "sm" | "default";
+  clearable?: boolean;
 }
 
 export function DateTimePicker({
@@ -29,6 +30,7 @@ export function DateTimePicker({
   className,
   buttonClassName,
   size = "default",
+  clearable = false,
 }: DateTimePickerProps) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState<Date | null>(parseLocalDate(value));
@@ -90,27 +92,47 @@ export function DateTimePicker({
     setOpen(next);
   };
 
+  const showClear = clearable && !disabled && !!pending;
+
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <Button
-          type="button"
-          variant="outline"
-          size={size}
-          disabled={disabled}
-          className={cn(
-            "w-full justify-start text-left font-normal normal-case",
-            !pending && "text-muted-foreground",
-            buttonClassName,
-            className,
-          )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-          {pending
-            ? format(pending, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
-            : placeholder}
-        </Button>
-      </PopoverTrigger>
+      <div className={cn("relative w-full", className)}>
+        <PopoverTrigger asChild>
+          <Button
+            type="button"
+            variant="outline"
+            size={size}
+            disabled={disabled}
+            className={cn(
+              "w-full justify-start text-left font-normal normal-case",
+              !pending && "text-muted-foreground",
+              showClear && "pr-9",
+              buttonClassName,
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+            {pending
+              ? format(pending, "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })
+              : placeholder}
+          </Button>
+        </PopoverTrigger>
+        {showClear && (
+          <button
+            type="button"
+            aria-label="Excluir previsão de resolução"
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setPending(null);
+              setTimeStr("");
+              onChange("");
+            }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-sm p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+      </div>
       <PopoverContent className="w-auto p-0 pointer-events-auto" align="start">
         <Calendar
           mode="single"
