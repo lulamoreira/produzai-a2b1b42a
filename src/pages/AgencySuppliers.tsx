@@ -956,7 +956,14 @@ Qualquer dúvida, estamos à disposição!` : "";
             )}
           </DialogContent>
         </Dialog>
+
+        <SupplierDetailsSheet
+          open={!!detailsSupplier}
+          onOpenChange={(o) => !o && setDetailsSupplier(null)}
+          supplier={detailsSupplier}
+        />
       </div>
+
   );
 
 
