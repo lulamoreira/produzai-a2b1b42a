@@ -784,7 +784,7 @@ export default function StoresTab({
                     </span>
                   )}
                   {renderStore.store_model && (
-                    <span style={{ padding: "6px 14px", background: "#f4f4f5", borderRadius: 6 }}>{renderStore.store_model}</span>
+                    <span style={{ padding: "6px 14px", background: "#f4f4f5", borderRadius: 6 }}>{translateStoreModel(renderStore.store_model, renderLang)}</span>
                   )}
                   {(renderStore.city || renderStore.state) && (
                     <span style={{ padding: "6px 14px", background: "#f4f4f5", borderRadius: 6 }}>
