@@ -738,6 +738,8 @@ export default function PiecesTab({
         clientId={clientId}
         addPieceMutation={addPiece}
         updatePieceMutation={updatePiece}
+        preserveScrollOnClose
+        onBeforeSave={captureScrollSnapshot}
       />
 
       {selectedPieceIds.length > 0 && (
