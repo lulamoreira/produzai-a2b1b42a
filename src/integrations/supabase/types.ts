@@ -4948,6 +4948,51 @@ export type Database = {
         }
         Relationships: []
       }
+      supplier_comments: {
+        Row: {
+          agency_id: string
+          content: string
+          created_at: string
+          id: string
+          supplier_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agency_id: string
+          content: string
+          created_at?: string
+          id?: string
+          supplier_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agency_id?: string
+          content?: string
+          created_at?: string
+          id?: string
+          supplier_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_comments_agency_id_fkey"
+            columns: ["agency_id"]
+            isOneToOne: false
+            referencedRelation: "agencies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_comments_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "agency_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       supplier_invitations: {
         Row: {
           agency_id: string
