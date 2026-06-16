@@ -270,6 +270,9 @@ export default function MatrixAutomationDialog({
   // Editing state: when set, "salvar" updates this template instead of creating a new one
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  // Import-from-other-campaign dialog
+  const [importDialog, setImportDialog] = useState<{ open: boolean; mode: "templates" | "groups" }>({ open: false, mode: "templates" });
+
   // Reset on open
   useEffect(() => {
     if (open) {
