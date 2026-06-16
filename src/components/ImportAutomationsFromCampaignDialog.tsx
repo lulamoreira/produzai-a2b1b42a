@@ -136,17 +136,48 @@ const ImportAutomationsFromCampaignDialog = ({
     return remoteTemplates.filter(t => tplIds.has(t.id));
   }, [mode, remoteTemplates, remoteGroupItems, selectedTemplateIds, selectedGroupIds]);
 
+  // Parse replacement filter_value JSON safely
+  const parseReplacement = (raw: string | null | undefined): {
+    replacementPieceId?: string;
+    replacementSourceQtys?: Record<string, number>;
+    replacementTargetQty?: number;
+    replaceAnyNonZero?: boolean;
+  } | null => {
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch { return null; }
+  };
+
   // Distinct items across effective templates
   const distinctItems = useMemo(() => {
     const map = new Map<ItemKey, AutomationTemplateItem>();
+    const addPieceById = (pieceId: string) => {
+      const k = keyFor("piece", pieceId);
+      if (map.has(k)) return;
+      const rp = remotePieces.find(p => p.id === pieceId);
+      map.set(k, {
+        id: pieceId, type: "piece",
+        code: rp?.code ?? 0,
+        name: rp?.name ?? "(peça da origem)",
+        quantity: 0,
+      } as AutomationTemplateItem);
+    };
     effectiveTemplates.forEach(t => {
       (t.items || []).forEach(it => {
         const k = keyFor(it.type, it.id);
         if (!map.has(k)) map.set(k, it);
       });
+      if (t.kind === "replacement") {
+        const r = parseReplacement(t.filter_value);
+        if (r?.replacementPieceId) addPieceById(r.replacementPieceId);
+        if (r?.replacementSourceQtys) {
+          Object.keys(r.replacementSourceQtys).forEach(id => {
+            if (remotePieces.some(p => p.id === id)) addPieceById(id);
+          });
+        }
+      }
     });
     return Array.from(map.entries()).map(([k, it]) => ({ key: k, item: it }));
-  }, [effectiveTemplates]);
+  }, [effectiveTemplates, remotePieces]);
 
   const targetOptions = useMemo(() => {
     const opts: { key: string; id: string; type: "piece" | "kit"; code: number; label: string }[] = [];
