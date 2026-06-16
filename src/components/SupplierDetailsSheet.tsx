@@ -122,6 +122,7 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
           templateName: "supplier-data-confirmation",
           recipientEmail: recipient,
           idempotencyKey: `supplier-data-confirm-${supplier.id}-${inv.id}`,
+          fromName: agency?.name || undefined,
           templateData: {
             contactName: primaryContactName,
             companyName: supplier.company_name,
