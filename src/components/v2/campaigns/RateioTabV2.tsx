@@ -1630,12 +1630,30 @@ export default function RateioTabV2({
                         </th>
                       ))}
                     </tr>
+                    {/* Category Sub-Labels Row (store_category: PAREDE PRIMÁRIA, PICK&MIX, QUIOSQUE...) */}
+                    <tr>
+                      <th
+                        className="w-[300px] bg-white border-r border-stone-200"
+                        style={{ position: 'sticky', left: 0, top: 22, zIndex: 50 }}
+                      />
+                      {categoryGroups.map((group, gIdx) => (
+                        <th
+                          key={`cat-${gIdx}`}
+                          colSpan={group.items.length}
+                          className="bg-stone-50/60 border-b border-r border-stone-200 text-[10px] font-semibold text-stone-500 py-1 text-center uppercase tracking-wider"
+                          style={{ position: 'sticky', top: 22, zIndex: 30 }}
+                        >
+                          {group.label || "\u00A0"}
+                        </th>
+                      ))}
+                    </tr>
                     {/* Piece Headers Row */}
                     <tr>
                       <th 
                         className="w-[300px] bg-white px-3 py-2 border-r border-b border-stone-200 text-left align-top" 
-                        style={{ position: 'sticky', left: 0, top: 22, zIndex: 50 }}
+                        style={{ position: 'sticky', left: 0, top: 44, zIndex: 50 }}
                       >
+
                         <div className="flex items-center justify-between">
                           <div className="text-[11px] font-bold text-stone-400 uppercase tracking-widest">Loja</div>
                           <div className="flex items-center gap-1">
