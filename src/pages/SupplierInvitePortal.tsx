@@ -21,6 +21,17 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { formatPhoneByCountry } from "@/lib/countryConfig";
+
+const formatCNPJ = (value: string) => {
+  const d = value.replace(/\D/g, "").slice(0, 14);
+  if (d.length <= 2) return d;
+  if (d.length <= 5) return `${d.slice(0, 2)}.${d.slice(2)}`;
+  if (d.length <= 8) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5)}`;
+  if (d.length <= 12) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`;
+  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
+};
+const formatPhoneBR = (v: string) => formatPhoneByCountry(v, "BR");
 
 const SupplierInvitePortal = () => {
   const { token } = useParams<{ token: string }>();
@@ -338,7 +349,7 @@ const SupplierInvitePortal = () => {
                 <Input
                   id="company_name"
                   value={form.company_name}
-                  onChange={e => setForm(f => ({ ...f, company_name: e.target.value }))}
+                  onChange={e => setForm(f => ({ ...f, company_name: e.target.value.toUpperCase() }))}
                 />
               </div>
               <div className="space-y-2">
@@ -346,7 +357,9 @@ const SupplierInvitePortal = () => {
                 <Input
                   id="cnpj"
                   value={form.cnpj}
-                  onChange={e => setForm(f => ({ ...f, cnpj: e.target.value }))}
+                  placeholder="XX.XXX.XXX/XXXX-XX"
+                  inputMode="numeric"
+                  onChange={e => setForm(f => ({ ...f, cnpj: formatCNPJ(e.target.value) }))}
                 />
               </div>
               <div className="space-y-2">
@@ -394,8 +407,8 @@ const SupplierInvitePortal = () => {
                     </div>
                     <Input value={contact.email} placeholder="E-mail" onChange={e => updateContact(index, "email", e.target.value)} className="h-8 text-xs" />
                     <div className="grid grid-cols-2 gap-3">
-                      <Input value={contact.telefone} placeholder="Telefone" onChange={e => updateContact(index, "telefone", e.target.value)} className="h-8 text-xs" />
-                      <Input value={contact.whatsapp} placeholder="WhatsApp" onChange={e => updateContact(index, "whatsapp", e.target.value)} className="h-8 text-xs" />
+                      <Input value={contact.telefone} placeholder="(XX) XXXXX-XXXX" inputMode="numeric" onChange={e => updateContact(index, "telefone", formatPhoneBR(e.target.value))} className="h-8 text-xs" />
+                      <Input value={contact.whatsapp} placeholder="(XX) XXXXX-XXXX" inputMode="numeric" onChange={e => updateContact(index, "whatsapp", formatPhoneBR(e.target.value))} className="h-8 text-xs" />
                     </div>
                   </div>
                 ))}
