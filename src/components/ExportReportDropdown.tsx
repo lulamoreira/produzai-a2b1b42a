@@ -129,6 +129,14 @@ export default function ExportReportDropdown({
   const { data: campaign } = useCampaign(campaignId);
   const updateCampaign = useUpdateCampaign();
 
+  const customFieldLabels: Array<string | null> = [
+    (campaign as any)?.piece_custom_field_1_label ?? null,
+    (campaign as any)?.piece_custom_field_2_label ?? null,
+    (campaign as any)?.piece_custom_field_3_label ?? null,
+    (campaign as any)?.piece_custom_field_4_label ?? null,
+    (campaign as any)?.piece_custom_field_5_label ?? null,
+  ];
+
   const handleExport = async (format: "excel" | "pdf") => {
     setLoading(true);
     const toastId = toast.loading(format === "excel" ? "Gerando relatório Excel…" : "Gerando relatório PDF…");
