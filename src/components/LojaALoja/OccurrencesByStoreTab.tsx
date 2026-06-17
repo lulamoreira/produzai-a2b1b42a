@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -77,7 +78,16 @@ export default function OccurrencesByStoreTab({ campaignId, clientId, permission
   useRealtimeStoreOccurrences(campaignId);
   const { statuses: tratativaStatuses } = useEffectiveTratativaStatuses(clientId);
 
-  const [filterStore, setFilterStore] = useState<string>("__all__");
+  const [searchParams] = useSearchParams();
+  const initialStoreId = searchParams.get("storeId") || "__all__";
+  const [filterStore, setFilterStore] = useState<string>(initialStoreId);
+  useEffect(() => {
+    const sid = searchParams.get("storeId");
+    if (sid) {
+      setFilterStore(sid);
+      setOpenStores((prev) => ({ ...prev, [sid]: true }));
+    }
+  }, [searchParams]);
   const [filterMotive, setFilterMotive] = useState<string>("__all__");
   const [filterStatus, setFilterStatus] = useState<string>("__all__");
   const [filterPieceIds, setFilterPieceIds] = useState<string[]>([]);

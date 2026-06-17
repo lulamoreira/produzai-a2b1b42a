@@ -1,6 +1,3 @@
-// @deprecated [REMOVE-CANDIDATE] Módulo antigo de Ocorrências — desabilitado da UI.
-// Substituído pelo módulo de Ocorrências dentro de "Loja a Loja". Pode ser apagado.
-
 import { useEffect, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,46 +5,61 @@ import { supabasePaginate } from "@/lib/supabasePaginate";
 import { computeStoreOccurrenceStatus } from "@/lib/occurrenceHelpers";
 
 /**
- * Shared hook: fetches campaign occurrences (lightweight: id, store_id, status)
- * and provides per-store occurrence status with realtime sync.
- * Used by SchedulingTab and any future module needing this data.
+ * Per-store occurrence status for the active campaign, sourced from the
+ * "Loja a Loja" module (store_occurrence_reports). An occurrence is
+ * considered resolved when resolved_at IS NOT NULL (canonical marker set
+ * by the set_occurrence_resolved_at trigger via lal_tratativa_statuses).
+ *
+ * Returns the same shape consumers already use:
+ *   storeOccurrenceStatus[storeId] = { hasOccurrence, allResolved, count }
+ *
+ * `count` reflects only OPEN (unresolved) occurrences, which is what the
+ * UI badges on the Installations module need to display.
  */
 export function useOccurrenceStatusSync(campaignId?: string) {
   const queryClient = useQueryClient();
 
   const { data: campaignOccurrences = [] } = useQuery({
-    queryKey: ["occurrences_status_sync", campaignId],
+    queryKey: ["store_occ_status_sync", campaignId],
     queryFn: async () => {
-      const data = await supabasePaginate<{ id: string; store_id: string | null; status: string | null }>((from, to) =>
+      const rows = await supabasePaginate<{
+        id: string;
+        store_id: string | null;
+        resolved_at: string | null;
+      }>((from, to) =>
         supabase
-          .from("occurrences")
-          .select("id, store_id, status")
+          .from("store_occurrence_reports")
+          .select("id, store_id, resolved_at")
           .eq("campaign_id", campaignId!)
+          .is("resolved_at", null)
           .range(from, to) as any
       );
-      return data;
+      // Map to the shape expected by computeStoreOccurrenceStatus.
+      return rows.map((r) => ({ store_id: r.store_id, status: "pending" }));
     },
     enabled: !!campaignId,
   });
 
-  // Realtime subscription — single source of truth for occurrences changes per campaign.
-  // Consumers (OccurrencesTab, SchedulingTab, etc.) all reuse this hook to avoid duplicate channels.
   useEffect(() => {
     if (!campaignId) return;
     const channel = supabase
-      .channel(`occ-status-sync-${campaignId}`)
-      .on("postgres_changes", {
-        event: "*",
-        schema: "public",
-        table: "occurrences",
-        filter: `campaign_id=eq.${campaignId}`,
-      }, () => {
-        queryClient.invalidateQueries({ queryKey: ["occurrences_status_sync", campaignId] });
-        queryClient.invalidateQueries({ queryKey: ["occurrences", campaignId] });
-        queryClient.invalidateQueries({ queryKey: ["occurrence_photos", campaignId] });
-      })
+      .channel(`store_occ_status_sync_${campaignId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "store_occurrence_reports",
+          filter: `campaign_id=eq.${campaignId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["store_occ_status_sync", campaignId] });
+        }
+      )
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [campaignId, queryClient]);
 
   const storeOccurrenceStatus = useMemo(
