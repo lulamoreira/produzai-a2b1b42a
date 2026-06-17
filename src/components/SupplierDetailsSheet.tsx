@@ -93,7 +93,8 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
     supplier.contacts?.[0]?.nome || supplier.contact_name || "Fornecedor";
 
   const handleSendEmail = async () => {
-    if (!recipient || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
+    const normalized = (recipient || "").trim().toLowerCase();
+    if (!normalized || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
       toast.error("Informe um e-mail válido");
       return;
     }
