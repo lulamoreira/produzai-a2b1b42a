@@ -407,14 +407,13 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   const clientName = clientData?.name || "";
   const clientEmail = (clientData as any)?.email || "";
 
-  // Client suppliers picker
-  const { data: clientSuppliers = [] } = useClientSuppliers(clientId);
-  const addClientSupplier = useAddClientSupplier();
-  const [clientSupplierSearch, setClientSupplierSearch] = useState("");
-  const [showQuickCreate, setShowQuickCreate] = useState(false);
-  const [quickCreateForm, setQuickCreateForm] = useState({
-    company_name: "", contact_name: "", phone: "", email: "",
-  });
+  // Agency suppliers picker (multi-select)
+  const { data: agencySuppliers = [] } = useAgencySuppliers(agencyId);
+  const [agencySupplierSearch, setAgencySupplierSearch] = useState("");
+  const [selectedAgencySupplierIds, setSelectedAgencySupplierIds] = useState<string[]>([]);
+  const [supplierFormOpen, setSupplierFormOpen] = useState(false);
+
+
 
   // Keep selectedCurrency in sync if settings load after mount
   React.useEffect(() => {
