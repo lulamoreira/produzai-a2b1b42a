@@ -561,6 +561,22 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
                   active={isActive("all", "reinst")} onClick={() => applyKpi("all", "reinst")} />
                 <MiniKpi label="Não procede" value={naoProcede} icon={X} color="text-gray-700"
                   active={isActive("nao_procede", "all")} onClick={() => applyKpi("nao_procede", "all")} />
+                {tratativaStatuses
+                  .filter((s: any) => !["aberta", "em_andamento", "resolvida", "nao_procede"].includes(s.value) && s.ativo !== false)
+                  .map((s: any) => {
+                    const count = occList.filter((o) => o.tratativa_status === s.value).length;
+                    return (
+                      <MiniKpi
+                        key={s.value}
+                        label={s.label}
+                        value={count}
+                        icon={AlertCircle}
+                        color="text-muted-foreground"
+                        active={isActive(s.value, "all")}
+                        onClick={() => applyKpi(s.value, "all")}
+                      />
+                    );
+                  })}
               </div>
             );
           })()}
@@ -575,6 +591,11 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
                 <SelectItem value="em_andamento">Em andamento</SelectItem>
                 <SelectItem value="resolvida">Resolvida</SelectItem>
                 <SelectItem value="nao_procede">Não procede</SelectItem>
+                {tratativaStatuses
+                  .filter((s: any) => !["aberta", "em_andamento", "resolvida", "nao_procede"].includes(s.value) && s.ativo !== false)
+                  .map((s: any) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
             {showPriority && (
