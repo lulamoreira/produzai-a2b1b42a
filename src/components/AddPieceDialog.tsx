@@ -44,7 +44,8 @@ const AddPieceDialog = ({
   addPieceMutation,
   updatePieceMutation,
   preserveScrollOnClose = false,
-  onBeforeSave
+  onBeforeSave,
+  hideTrigger = false
 }: AddPieceDialogProps) => {
   const { t } = useTranslation();
   const [internalOpen, setInternalOpen] = useState(false);
