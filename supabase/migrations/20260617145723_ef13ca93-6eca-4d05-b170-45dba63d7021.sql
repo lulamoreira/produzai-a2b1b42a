@@ -1,0 +1,1 @@
+UPDATE public.lal_tratativa_statuses SET conta_como_ocorrencia = true WHERE value IN ('ocorrencia_duplicada','procedente_externa');
