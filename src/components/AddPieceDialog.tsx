@@ -132,9 +132,31 @@ const AddPieceDialog = ({
   useEffect(() => {
     const fetchAllCategories = async () => {
       try {
+        // Scope to the current client's campaigns to avoid leaking other clients' categories.
+        let campaignIds: string[] = [];
+        if (clientId) {
+          const { data: camps, error: cErr } = await supabase
+            .from("campaigns")
+            .select("id")
+            .eq("client_id", clientId);
+          if (cErr) throw cErr;
+          campaignIds = (camps ?? []).map((c: { id: string }) => c.id);
+        } else if (campaignId) {
+          campaignIds = [campaignId];
+        } else {
+          setAllCategories([]);
+          return;
+        }
+
+        if (campaignIds.length === 0) {
+          setAllCategories([]);
+          return;
+        }
+
         const { data, error } = await supabase
           .from("campaign_pieces")
           .select("category")
+          .in("campaign_id", campaignIds)
           .not("category", "is", null)
           .neq("category", "");
 
@@ -145,7 +167,7 @@ const AddPieceDialog = ({
             data.map((p: any) => p.category.toString().trim().toUpperCase())
           )
         ).sort();
-        
+
         setAllCategories(uniqueCats);
       } catch (error) {
         console.error("Error fetching all categories:", error);
@@ -155,7 +177,8 @@ const AddPieceDialog = ({
     if (open) {
       fetchAllCategories();
     }
-  }, [open]);
+  }, [open, clientId, campaignId]);
+
 
   const maxCode = Array.isArray(existingPieces) 
     ? existingPieces.reduce((max, p) => Math.max(max, Number(p.code) || 0), 0) 
