@@ -261,8 +261,12 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
 
   const isLoading = l1 || l2 || l3 || l4;
 
-  /* Occurrence KPIs */
-  const occList = (occurrences ?? []) as any[];
+  /* Occurrence KPIs — restritos a lojas com frete_instalacao (mesmo escopo da lista) */
+  const occListAll = (occurrences ?? []) as any[];
+  const occList = occListAll.filter((o) => {
+    const storeTipo = (o.client_stores as any)?.tipo_entrega ?? 'frete_instalacao';
+    return storeTipo === 'frete_instalacao';
+  });
   const countsAsOccurrence = (status: string | null | undefined) =>
     tratativaStatuses.find((s) => s.value === (status ?? "aberta"))?.conta_como_ocorrencia !== false;
   const rawTotal = occList.length;
