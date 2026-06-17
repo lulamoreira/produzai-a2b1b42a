@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { supabaseAnon as supabase } from "@/integrations/supabase/anonClient";
 import {
   VISUAL_COMMUNICATION_SERVICES,
   type SupplierContact
