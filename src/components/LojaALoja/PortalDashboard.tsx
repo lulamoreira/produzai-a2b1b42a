@@ -261,8 +261,12 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
 
   const isLoading = l1 || l2 || l3 || l4;
 
-  /* Occurrence KPIs */
-  const occList = (occurrences ?? []) as any[];
+  /* Occurrence KPIs — restritos a lojas com frete_instalacao (mesmo escopo da lista) */
+  const occListAll = (occurrences ?? []) as any[];
+  const occList = occListAll.filter((o) => {
+    const storeTipo = (o.client_stores as any)?.tipo_entrega ?? 'frete_instalacao';
+    return storeTipo === 'frete_instalacao';
+  });
   const countsAsOccurrence = (status: string | null | undefined) =>
     tratativaStatuses.find((s) => s.value === (status ?? "aberta"))?.conta_como_ocorrencia !== false;
   const rawTotal = occList.length;
@@ -290,8 +294,6 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
 
   const filteredOccurrences = useMemo(() => {
     return occList.filter((o) => {
-      const storeTipo = (o.client_stores as any)?.tipo_entrega ?? 'frete_instalacao';
-      if (storeTipo !== 'frete_instalacao') return false;
       if (filterStatus !== "all" && (o.tratativa_status ?? "aberta") !== filterStatus) return false;
       if (filterPriority !== "all" && o.priority !== filterPriority) return false;
       if (filterStore !== "all" && o.store_id !== filterStore) return false;
