@@ -276,8 +276,10 @@ export default function ExportReportDropdown({
     }
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
 
     const toastId = toast.loading("Enviando imagem de capa...");
     try {
