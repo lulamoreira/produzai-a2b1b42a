@@ -1027,15 +1027,17 @@ const ClientDetail = () => {
         </div>
          <div>
            <label className="text-xs font-medium text-muted-foreground mb-1 block">Modelo de Loja</label>
-           <Select value={form.store_model || ""} onValueChange={(val) => setForm((f) => ({ ...f, store_model: val === "__none__" ? "" : val }))}>
-             <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-             <SelectContent>
-               <SelectItem value="__none__">Nenhum</SelectItem>
-               {storeModels.map((m) => (
-                 <SelectItem key={m.id} value={m.name}>{m.name}</SelectItem>
-               ))}
-             </SelectContent>
-           </Select>
+           <Input
+             list="store-models-datalist"
+             value={form.store_model}
+             onChange={(e) => setForm((f) => ({ ...f, store_model: e.target.value }))}
+             placeholder="Digite ou selecione um modelo"
+           />
+           <datalist id="store-models-datalist">
+             {storeModels.map((m) => (
+               <option key={m.id} value={m.name} />
+             ))}
+           </datalist>
          </div>
         <div className="col-span-2">
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Código da Loja</label>
