@@ -17,6 +17,7 @@ interface SupplierInviteProps {
   contactName?: string
   companyName?: string
   agencyName?: string
+  clientName?: string
   campaignName?: string
   portalUrl?: string
   deadline?: string
@@ -28,12 +29,14 @@ const SupplierInviteEmail = ({
   contactName = 'Fornecedor',
   companyName = '',
   agencyName = '',
+  clientName = '',
   campaignName = 'Campanha',
   portalUrl = '#',
   deadline,
   timelineEntries = [],
   locale = 'pt-BR',
 }: SupplierInviteProps) => {
+
   const deadlineDate = deadline ? new Date(deadline) : null
   const daysLeft = deadlineDate
     ? Math.ceil((deadlineDate.getTime() - Date.now()) / 86400000)
@@ -113,6 +116,14 @@ const SupplierInviteEmail = ({
             <strong>{companyName}</strong> {translations.intro_c} <strong>{campaignName}</strong>.
           </Text>
 
+          {clientName && (
+            <Section style={clientBox}>
+              <Text style={clientLabel}>{locale === 'es-CL' ? 'CLIENTE' : 'CLIENTE'}</Text>
+              <Text style={clientNameStyle}>{clientName.toUpperCase()}</Text>
+            </Section>
+          )}
+
+
           <Text style={text}>
             {translations.instructions}
           </Text>
@@ -188,7 +199,9 @@ export const template = {
     contactName: 'João Silva',
     companyName: 'Gráfica Express',
     agencyName: 'Studio Design',
+    clientName: 'Lindt',
     campaignName: 'Campanha Verão 2026',
+
     portalUrl: 'https://example.com/orcamento/abc123',
     deadline: new Date(Date.now() + 2 * 86400000).toISOString(),
     timelineEntries: [
@@ -275,3 +288,26 @@ const timelineAcceptance = {
   paddingTop: '12px',
   borderTop: '1px solid #e5d8c8',
 }
+const clientBox = {
+  backgroundColor: '#fff8ec',
+  border: `2px solid ${BRAND}`,
+  borderRadius: '6px',
+  padding: '12px 16px',
+  margin: '0 0 20px',
+  textAlign: 'center' as const,
+}
+const clientLabel = {
+  fontSize: '11px',
+  color: BRAND,
+  fontWeight: 'bold' as const,
+  letterSpacing: '1.5px',
+  margin: '0 0 4px',
+}
+const clientNameStyle = {
+  fontSize: '20px',
+  color: '#1a1a1a',
+  fontWeight: 'bold' as const,
+  margin: '0',
+  letterSpacing: '0.5px',
+}
+
