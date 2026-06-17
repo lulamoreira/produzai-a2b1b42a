@@ -66,10 +66,10 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
     enabled: !!supplier?.agency_id && open,
   });
 
-  // Preselect primary email
-  useMemo(() => {
+  // Preselect primary email (normalized: trimmed + lowercase)
+  useEffect(() => {
     if (open && supplier) {
-      const primary = supplier.contacts?.[0]?.email || supplier.email || "";
+      const primary = (supplier.contacts?.[0]?.email || supplier.email || "").trim().toLowerCase();
       setRecipient(primary);
     }
   }, [open, supplier?.id]);
