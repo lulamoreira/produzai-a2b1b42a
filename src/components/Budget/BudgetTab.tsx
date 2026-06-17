@@ -1796,9 +1796,8 @@ ${msgLabels.winnerWaFooter}
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm font-semibold text-foreground">Fornecedores</h3>
           {(() => {
-            const supplierCount = suppliers.length;
             const phaseAllowsAdd = currentPhase === "cotacoes" || isAdminOrMaster;
-            const canAddSupplier = phaseAllowsAdd && supplierCount < 3;
+            const canAddSupplier = phaseAllowsAdd;
             return (
               <ResponsiveToolbar
                 primaryActions={
@@ -1806,8 +1805,6 @@ ${msgLabels.winnerWaFooter}
                     <Button size="sm" className="gap-1 min-h-[44px] md:min-h-0" onClick={() => setAddOpen(true)}>
                       <Plus className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Adicionar Fornecedor</span><span className="sm:hidden">Adicionar</span>
                     </Button>
-                  ) : supplierCount >= 3 ? (
-                    <span className="text-xs text-muted-foreground">Limite de 3 fornecedores atingido</span>
                   ) : (
                     <TooltipProvider>
                       <Tooltip>
@@ -1825,6 +1822,7 @@ ${msgLabels.winnerWaFooter}
                     </TooltipProvider>
                   )
                 }
+
                 secondaryActions={
                   <Button size="sm" variant="outline" className="gap-1 min-h-[44px] md:min-h-0 w-full md:w-auto justify-start md:justify-center" onClick={handleExportBudget} disabled={exportingBudget || suppliers.length === 0}>
                     <Download className="w-3.5 h-3.5" /> {exportingBudget ? "Exportando..." : "Exportar Excel"}
