@@ -116,6 +116,14 @@ const SupplierInviteEmail = ({
             <strong>{companyName}</strong> {translations.intro_c} <strong>{campaignName}</strong>.
           </Text>
 
+          {clientName && (
+            <Section style={clientBox}>
+              <Text style={clientLabel}>{locale === 'es-CL' ? 'CLIENTE' : 'CLIENTE'}</Text>
+              <Text style={clientNameStyle}>{clientName.toUpperCase()}</Text>
+            </Section>
+          )}
+
+
           <Text style={text}>
             {translations.instructions}
           </Text>
