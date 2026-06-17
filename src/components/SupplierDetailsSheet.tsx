@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -66,10 +66,10 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
     enabled: !!supplier?.agency_id && open,
   });
 
-  // Preselect primary email
-  useMemo(() => {
+  // Preselect primary email (normalized: trimmed + lowercase)
+  useEffect(() => {
     if (open && supplier) {
-      const primary = supplier.contacts?.[0]?.email || supplier.email || "";
+      const primary = (supplier.contacts?.[0]?.email || supplier.email || "").trim().toLowerCase();
       setRecipient(primary);
     }
   }, [open, supplier?.id]);
@@ -93,7 +93,8 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
     supplier.contacts?.[0]?.nome || supplier.contact_name || "Fornecedor";
 
   const handleSendEmail = async () => {
-    if (!recipient || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient)) {
+    const normalized = (recipient || "").trim().toLowerCase();
+    if (!normalized || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
       toast.error("Informe um e-mail válido");
       return;
     }
@@ -120,7 +121,7 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
       const { error: emailErr } = await supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "supplier-data-confirmation",
-          recipientEmail: recipient,
+          recipientEmail: normalized,
           idempotencyKey: `supplier-data-confirm-${supplier.id}-${inv.id}`,
           fromName: agency?.name || undefined,
           templateData: {
@@ -154,7 +155,7 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
       });
       if (emailErr) throw emailErr;
 
-      toast.success(`E-mail de confirmação enviado para ${recipient}`);
+      toast.success(`E-mail de confirmação enviado para ${normalized}`);
     } catch (err: any) {
       toast.error("Erro ao enviar e-mail: " + (err.message || err));
     } finally {
