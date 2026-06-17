@@ -39,7 +39,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle,
-  Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench,
+  Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, Bomb,
   Camera, Image, Upload, Plus, Key, CheckCircle, Download, ClipboardList, Lock, LockOpen,
   CheckCircle2, AlertCircle, ChevronDown, ChevronUp, SlidersHorizontal, Filter, MoreHorizontal,
   ArrowUpDown, LayoutGrid, MapPin, LogIn, LogOut, Undo2, UserCheck, RefreshCw,
