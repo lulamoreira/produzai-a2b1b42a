@@ -80,6 +80,7 @@ import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 interface BudgetTabProps {
   campaignId: string;
   clientId: string;
+  agencyId: string;
   campaignName: string;
   agencyName: string;
   pieces: CampaignPiece[];
@@ -91,6 +92,7 @@ interface BudgetTabProps {
   onNavigateToSection?: (section: string) => void;
   activeAdjustment?: { id: string; name: string } | null;
 }
+
 
 const PUBLIC_BASE_URL = "https://produzai.lovable.app";
 
