@@ -29,6 +29,8 @@ interface AddPieceDialogProps {
   updatePieceMutation?: any;
   preserveScrollOnClose?: boolean;
   onBeforeSave?: () => void;
+  hideTrigger?: boolean;
+
 }
 
 const AddPieceDialog = ({ 
