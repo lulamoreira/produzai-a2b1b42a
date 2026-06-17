@@ -401,11 +401,24 @@ const AddPieceDialog = ({
             <div className="space-y-2">
               <label className="text-xs font-medium text-muted-foreground">Modelo de Loja</label>
               <Input
+                list="piece-store-models-datalist"
                 value={form.store_category}
                 onChange={(e) => setForm({ ...form, store_category: e.target.value })}
                 placeholder="Ex: CONCEITO, PREMIUM (deixe vazio para todas as lojas)"
               />
+              <datalist id="piece-store-models-datalist">
+                {Array.from(
+                  new Set(
+                    (existingPieces || [])
+                      .map((p: any) => (p?.store_category || "").trim())
+                      .filter(Boolean)
+                  )
+                ).sort().map((m) => (
+                  <option key={m} value={m} />
+                ))}
+              </datalist>
             </div>
+
 
             {customFieldLabels?.map((label, i) => {
               if (!label) return null;
