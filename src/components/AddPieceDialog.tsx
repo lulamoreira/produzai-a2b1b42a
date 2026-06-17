@@ -29,6 +29,8 @@ interface AddPieceDialogProps {
   updatePieceMutation?: any;
   preserveScrollOnClose?: boolean;
   onBeforeSave?: () => void;
+  hideTrigger?: boolean;
+
 }
 
 const AddPieceDialog = ({ 
@@ -42,7 +44,8 @@ const AddPieceDialog = ({
   addPieceMutation,
   updatePieceMutation,
   preserveScrollOnClose = false,
-  onBeforeSave
+  onBeforeSave,
+  hideTrigger = false
 }: AddPieceDialogProps) => {
   const { t } = useTranslation();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -246,7 +249,7 @@ const AddPieceDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {!initialPiece && (
+      {!initialPiece && !hideTrigger && (
         <DialogTrigger asChild>
           <Button size="sm" className="text-[10px] sm:text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground">
             <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.newPiece")}
