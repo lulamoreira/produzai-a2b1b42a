@@ -422,7 +422,18 @@ const AddPieceDialog = ({
             })}
 
             <div className="space-y-2">
-              <label className="text-xs font-medium text-muted-foreground">{t("pieces.specification")}</label>
+              <div className="flex items-center justify-between gap-2">
+                <label className="text-xs font-medium text-muted-foreground">{t("pieces.specification")}</label>
+                {clientId && campaignId && (
+                  <ImportSpecFromCampaign
+                    clientId={clientId}
+                    currentCampaignId={campaignId}
+                    onImport={({ specification }) =>
+                      setForm((f) => ({ ...f, specification }))
+                    }
+                  />
+                )}
+              </div>
               <Textarea
                 value={form.specification}
                 onChange={(e) => setForm({ ...form, specification: e.target.value })}
