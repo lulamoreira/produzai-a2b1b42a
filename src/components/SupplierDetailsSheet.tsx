@@ -121,7 +121,7 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
       const { error: emailErr } = await supabase.functions.invoke("send-transactional-email", {
         body: {
           templateName: "supplier-data-confirmation",
-          recipientEmail: recipient,
+          recipientEmail: normalized,
           idempotencyKey: `supplier-data-confirm-${supplier.id}-${inv.id}`,
           fromName: agency?.name || undefined,
           templateData: {
