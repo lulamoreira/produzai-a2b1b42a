@@ -683,6 +683,9 @@ export default function PiecesTab({
                   <DropdownMenuItem onClick={() => setImportPiecesDialogOpen(true)}>
                     <Copy className="w-4 h-4 mr-2" /> {t("pieces.fromCampaign")}
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFindReplaceOpen(true)}>
+                    <Search className="w-4 h-4 mr-2" /> Localizar e Substituir
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setBulkDeleteOpen(true)} className="text-destructive focus:text-destructive">
                     <Trash2 className="w-4 h-4 mr-2" /> {t("pieces.bulkDelete")}
