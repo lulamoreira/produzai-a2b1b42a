@@ -52,7 +52,9 @@ import {
   useBudgetSuppliers, useAddSupplier, useDeleteSupplier, useUpdateSupplier,
   useBudgetPrices, useBudgetExtraCosts, useSupplierSpecSuggestions, useExchangeRate,
 } from "@/hooks/useBudget";
-import { useClientSuppliers, useAddClientSupplier } from "@/hooks/useClientSuppliers";
+import { useAgencySuppliers } from "@/hooks/useAgencySuppliers";
+import SupplierFormDialog from "@/components/SupplierFormDialog";
+
 import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
 import { useRealtimeBudget } from "@/hooks/useRealtimeBudget";
 import { useBudgetPhase, PHASE_LABELS, type BudgetPhase } from "@/hooks/useBudgetPhase";
