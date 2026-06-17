@@ -17,6 +17,7 @@ interface SupplierInviteProps {
   contactName?: string
   companyName?: string
   agencyName?: string
+  clientName?: string
   campaignName?: string
   portalUrl?: string
   deadline?: string
@@ -28,12 +29,14 @@ const SupplierInviteEmail = ({
   contactName = 'Fornecedor',
   companyName = '',
   agencyName = '',
+  clientName = '',
   campaignName = 'Campanha',
   portalUrl = '#',
   deadline,
   timelineEntries = [],
   locale = 'pt-BR',
 }: SupplierInviteProps) => {
+
   const deadlineDate = deadline ? new Date(deadline) : null
   const daysLeft = deadlineDate
     ? Math.ceil((deadlineDate.getTime() - Date.now()) / 86400000)
