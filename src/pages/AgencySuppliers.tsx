@@ -190,50 +190,8 @@ Qualquer dúvida, estamos à disposição!` : "";
     toast.success("Copiado para a área de transferência!");
   };
 
-  const toggleService = (service: string) => {
-    setForm(f => ({
-      ...f,
-      services: f.services.includes(service)
-        ? f.services.filter(s => s !== service)
-        : [...f.services, service]
-    }));
-  };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || !files.length) return;
 
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const filePath = `suppliers/${agencyId}/${Date.now()}-${file.name}`;
-      
-      const { data, error } = await supabase.storage
-        .from("supplier_files")
-        .upload(filePath, file);
-
-      if (error) {
-        toast.error(`Erro ao enviar arquivo: ${file.name}`);
-        continue;
-      }
-
-      const { data: { publicUrl } } = supabase.storage
-        .from("supplier_files")
-        .getPublicUrl(filePath);
-
-      setForm(f => ({
-        ...f,
-        file_urls: [...f.file_urls, { name: file.name, url: publicUrl }]
-      }));
-    }
-    toast.success("Arquivos enviados!");
-  };
-
-  const removeFile = (index: number) => {
-    setForm(f => ({
-      ...f,
-      file_urls: f.file_urls.filter((_, i) => i !== index)
-    }));
-  };
 
   const content = (
       <div className="space-y-6">
