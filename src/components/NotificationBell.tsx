@@ -9,9 +9,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useFormatters } from "@/lib/formatters";
 
 const NOTIFICATION_CATEGORY_LABELS: Record<string, string> = {
@@ -28,6 +28,13 @@ const CATEGORY_ORDER = ["Instalação", "Ocorrências", "Portal da Loja", "Outro
 function getCategoryLabel(type: string): string {
   return NOTIFICATION_CATEGORY_LABELS[type] ?? "Outros";
 }
+
+const SHORT_LABELS: Record<string, string> = {
+  "Instalação": "Instalação",
+  "Ocorrências": "Ocorr.",
+  "Portal da Loja": "Portal",
+  "Outros": "Outros",
+};
 
 export default function NotificationBell() {
   const { t } = useTranslation();
@@ -48,7 +55,7 @@ export default function NotificationBell() {
 
   const groupedNotifications = useMemo(() => {
     const groups: Record<string, typeof notifications> = {};
-    notifications.slice(0, 20).forEach((n) => {
+    notifications.slice(0, 50).forEach((n) => {
       const cat = getCategoryLabel(n.type);
       if (!groups[cat]) groups[cat] = [];
       groups[cat].push(n);
@@ -56,8 +63,11 @@ export default function NotificationBell() {
     return CATEGORY_ORDER.filter((cat) => groups[cat]?.length > 0).map((cat) => ({
       label: cat,
       items: groups[cat],
+      unread: groups[cat].filter((n) => !n.read).length,
     }));
   }, [notifications]);
+
+  const defaultTab = groupedNotifications[0]?.label ?? "Outros";
 
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -94,40 +104,57 @@ export default function NotificationBell() {
           )}
         </div>
 
-        <ScrollArea className="h-[360px]">
-          {notifications.length === 0 ? (
-            <div className="px-4 py-8 text-center text-sm text-muted-foreground">
-              {t("notifications.noNotifications", { defaultValue: "Nenhuma notificação" })}
-            </div>
-          ) : (
-            groupedNotifications.map((group) => (
-              <div key={group.label}>
-                <div className="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/40 border-b border-border/30">
-                  {group.label}
-                </div>
-                {group.items.map((notif) => (
-                  <DropdownMenuItem
-                    key={notif.id}
-                    className="flex items-start gap-2 px-3 py-2.5 cursor-pointer rounded-none border-b border-border/30 last:border-0"
-                    onClick={() => handleClick(notif)}
-                  >
-                    {!notif.read && (
-                      <span className="mt-1.5 w-2 h-2 rounded-full bg-primary flex-shrink-0" />
-                    )}
-                    {notif.read && <span className="mt-1.5 w-2 h-2 flex-shrink-0" />}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium leading-tight truncate">{notif.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.body}</p>
-                      <p className="text-[10px] text-muted-foreground/70 mt-1">
-                        {fmt.relative(new Date(notif.created_at))}
-                      </p>
-                    </div>
-                  </DropdownMenuItem>
-                ))}
-              </div>
-            ))
-          )}
-        </ScrollArea>
+        {notifications.length === 0 ? (
+          <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+            {t("notifications.noNotifications", { defaultValue: "Nenhuma notificação" })}
+          </div>
+        ) : (
+          <Tabs defaultValue={defaultTab} className="w-full">
+            <TabsList className="w-full justify-start h-auto p-1 rounded-none bg-muted/40 border-b overflow-x-auto flex-nowrap">
+              {groupedNotifications.map((group) => (
+                <TabsTrigger
+                  key={group.label}
+                  value={group.label}
+                  className="text-[11px] px-2 py-1.5 gap-1.5 flex-shrink-0 data-[state=active]:bg-background"
+                >
+                  {SHORT_LABELS[group.label] ?? group.label}
+                  {group.unread > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[16px] h-4 px-1 text-[9px] font-bold text-white bg-destructive rounded-full">
+                      {group.unread > 9 ? "9+" : group.unread}
+                    </span>
+                  )}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+
+            {groupedNotifications.map((group) => (
+              <TabsContent key={group.label} value={group.label} className="mt-0">
+                <ScrollArea className="h-[360px]">
+                  {group.items.map((notif) => (
+                    <DropdownMenuItem
+                      key={notif.id}
+                      className="flex items-start gap-2 px-3 py-2.5 cursor-pointer rounded-none border-b border-border/30 last:border-0"
+                      onClick={() => handleClick(notif)}
+                    >
+                      {!notif.read ? (
+                        <span className="mt-1.5 w-2 h-2 rounded-full bg-primary flex-shrink-0" />
+                      ) : (
+                        <span className="mt-1.5 w-2 h-2 flex-shrink-0" />
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium leading-tight truncate">{notif.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{notif.body}</p>
+                        <p className="text-[10px] text-muted-foreground/70 mt-1">
+                          {fmt.relative(new Date(notif.created_at))}
+                        </p>
+                      </div>
+                    </DropdownMenuItem>
+                  ))}
+                </ScrollArea>
+              </TabsContent>
+            ))}
+          </Tabs>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );
