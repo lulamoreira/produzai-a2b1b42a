@@ -296,9 +296,19 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
       if (filterPriority !== "all" && o.priority !== filterPriority) return false;
       if (filterStore !== "all" && o.store_id !== filterStore) return false;
       if (filterPieceIds.length > 0 && !filterPieceIds.includes(o.loja_a_loja_peca_id)) return false;
+      if (kpiFilter === "valid" && !countsAsOccurrence(o.tratativa_status)) return false;
+      if (kpiFilter === "atrasadas") {
+        const overdue = o.expected_resolution_date &&
+          new Date(o.expected_resolution_date).getTime() < Date.now() &&
+          o.tratativa_status !== "resolvida";
+        if (!overdue) return false;
+      }
+      if (kpiFilter === "reinst") {
+        if (!(o.needs_reinstallation && o.tratativa_status !== "resolvida")) return false;
+      }
       return true;
     });
-  }, [occList, filterStatus, filterPriority, filterStore, filterPieceIds]);
+  }, [occList, filterStatus, filterPriority, filterStore, filterPieceIds, kpiFilter, tratativaStatuses]);
 
   /* Other KPIs */
   const openMaintenance = useMemo(() => (maintenance ?? []).filter((m: any) => ["aberto", "em_andamento"].includes(m.status)).length, [maintenance]);
