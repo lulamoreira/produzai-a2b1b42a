@@ -294,8 +294,6 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
 
   const filteredOccurrences = useMemo(() => {
     return occList.filter((o) => {
-      const storeTipo = (o.client_stores as any)?.tipo_entrega ?? 'frete_instalacao';
-      if (storeTipo !== 'frete_instalacao') return false;
       if (filterStatus !== "all" && (o.tratativa_status ?? "aberta") !== filterStatus) return false;
       if (filterPriority !== "all" && o.priority !== filterPriority) return false;
       if (filterStore !== "all" && o.store_id !== filterStore) return false;
