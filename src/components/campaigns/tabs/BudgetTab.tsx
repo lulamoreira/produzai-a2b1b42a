@@ -4,6 +4,7 @@ import BudgetTabComponent from "@/components/Budget/BudgetTab";
 interface BudgetTabProps {
   campaignId: string;
   clientId: string;
+  agencyId: string;
   campaignName: string;
   agencyName: string;
   pieces: any[];
@@ -17,6 +18,7 @@ interface BudgetTabProps {
 export default function BudgetTab({ 
   campaignId, 
   clientId,
+  agencyId,
   campaignName,
   agencyName,
   pieces = [],
@@ -30,6 +32,7 @@ export default function BudgetTab({
     <BudgetTabComponent
       campaignId={campaignId}
       clientId={clientId}
+      agencyId={agencyId}
       campaignName={campaignName}
       agencyName={agencyName}
       pieces={pieces}
