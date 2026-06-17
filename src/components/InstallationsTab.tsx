@@ -1205,17 +1205,18 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                   <div className="flex items-center gap-1.5 flex-shrink-0">
                     {hasOpenOccurrence && (() => {
                       const currentPath = window.location.pathname;
-                      const occUrl = `${currentPath}?section=occurrences&filterStore=${encodeURIComponent(store.name)}`;
+                      const occUrl = `${currentPath}?section=loja_a_loja&tab=por-loja&storeId=${encodeURIComponent(store.id)}`;
                       return (
                         <a
                           href={occUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="badge-base badge-danger no-underline hover:opacity-80"
+                          title={`${occStatus!.count} ocorrência(s) em aberto — clique para ver`}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-destructive text-destructive-foreground text-[11px] font-semibold no-underline hover:opacity-90 shadow-sm"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          <AlertTriangle className="w-3 h-3" />
-                          Ocorrência ({occStatus!.count})
+                          <Bomb className="w-3 h-3" />
+                          {occStatus!.count}
                         </a>
                       );
                     })()}
