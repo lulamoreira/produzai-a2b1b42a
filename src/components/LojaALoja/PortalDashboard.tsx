@@ -527,16 +527,41 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Occurrence sub-KPIs */}
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-            <MiniKpi label="Total bruto" value={rawTotal} icon={AlertCircle} color="text-muted-foreground" />
-            <MiniKpi label="Válidas" value={total} icon={CheckCircle2} color="text-green-600" />
-            <MiniKpi label="Abertas" value={abertas} icon={AlertTriangle} color="text-destructive" />
-            <MiniKpi label="Em andamento" value={emAndamento} icon={Clock} color="text-yellow-600" />
-            <MiniKpi label="Resolvidas" value={resolvidas} icon={CheckCircle2} color="text-green-600" />
-            <MiniKpi label="Atrasadas" value={atrasadas} icon={Clock} color="text-red-600" />
-            <MiniKpi label="Precisam reinst." value={reinst} icon={RotateCw} color="text-orange-600" />
-            <MiniKpi label="Não procede" value={naoProcede} icon={X} color="text-gray-700" />
-          </div>
+          {(() => {
+            const applyKpi = (status: string, kpi: "all" | "valid" | "atrasadas" | "reinst") => {
+              const sameStatus = filterStatus === status;
+              const sameKpi = kpiFilter === kpi;
+              if (sameStatus && sameKpi) {
+                setFilterStatus("all");
+                setKpiFilter("all");
+              } else {
+                setFilterStatus(status);
+                setKpiFilter(kpi);
+              }
+            };
+            const isActive = (status: string, kpi: "all" | "valid" | "atrasadas" | "reinst") =>
+              filterStatus === status && kpiFilter === kpi;
+            return (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
+                <MiniKpi label="Total bruto" value={rawTotal} icon={AlertCircle} color="text-muted-foreground"
+                  active={isActive("all", "all")} onClick={() => applyKpi("all", "all")} />
+                <MiniKpi label="Válidas" value={total} icon={CheckCircle2} color="text-green-600"
+                  active={isActive("all", "valid")} onClick={() => applyKpi("all", "valid")} />
+                <MiniKpi label="Abertas" value={abertas} icon={AlertTriangle} color="text-destructive"
+                  active={isActive("aberta", "all")} onClick={() => applyKpi("aberta", "all")} />
+                <MiniKpi label="Em andamento" value={emAndamento} icon={Clock} color="text-yellow-600"
+                  active={isActive("em_andamento", "all")} onClick={() => applyKpi("em_andamento", "all")} />
+                <MiniKpi label="Resolvidas" value={resolvidas} icon={CheckCircle2} color="text-green-600"
+                  active={isActive("resolvida", "all")} onClick={() => applyKpi("resolvida", "all")} />
+                <MiniKpi label="Atrasadas" value={atrasadas} icon={Clock} color="text-red-600"
+                  active={isActive("all", "atrasadas")} onClick={() => applyKpi("all", "atrasadas")} />
+                <MiniKpi label="Precisam reinst." value={reinst} icon={RotateCw} color="text-orange-600"
+                  active={isActive("all", "reinst")} onClick={() => applyKpi("all", "reinst")} />
+                <MiniKpi label="Não procede" value={naoProcede} icon={X} color="text-gray-700"
+                  active={isActive("nao_procede", "all")} onClick={() => applyKpi("nao_procede", "all")} />
+              </div>
+            );
+          })()}
 
           {/* Filter bar */}
           <div className="flex flex-wrap gap-2">
