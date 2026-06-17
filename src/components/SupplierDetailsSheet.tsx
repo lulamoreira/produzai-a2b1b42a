@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -51,6 +51,7 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
   const { user } = useAuth();
   const [sending, setSending] = useState(false);
   const [recipient, setRecipient] = useState("");
+  const recipientInputRef = useRef<HTMLInputElement>(null);
 
   const { data: agency } = useQuery({
     queryKey: ["agency_name_for_email", supplier?.agency_id],
@@ -93,8 +94,16 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
     supplier.contacts?.[0]?.nome || supplier.contact_name || "Fornecedor";
 
   const handleSendEmail = async () => {
-    const normalized = (recipient || "").trim().toLowerCase();
-    if (!normalized || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized)) {
+    const currentRecipient = recipientInputRef.current?.value || recipient;
+    const normalized = currentRecipient
+      .normalize("NFKC")
+      .replace(/[\u200B-\u200D\uFEFF]/g, "")
+      .trim()
+      .toLowerCase();
+
+    setRecipient(normalized);
+
+    if (!normalized || !/^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(normalized)) {
       toast.error("Informe um e-mail válido");
       return;
     }
@@ -156,8 +165,9 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
       if (emailErr) throw emailErr;
 
       toast.success(`E-mail de confirmação enviado para ${normalized}`);
-    } catch (err: any) {
-      toast.error("Erro ao enviar e-mail: " + (err.message || err));
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : String(err);
+      toast.error("Erro ao enviar e-mail: " + message);
     } finally {
       setSending(false);
     }
@@ -301,15 +311,17 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
             <div className="space-y-1">
               <Label htmlFor="recipient-email" className="text-xs">E-mail do destinatário</Label>
               <Input
+                ref={recipientInputRef}
                 id="recipient-email"
                 type="email"
                 value={recipient}
                 onChange={(e) => setRecipient(e.target.value)}
+                onBlur={(e) => setRecipient(e.target.value.normalize("NFKC").replace(/[\u200B-\u200D\uFEFF]/g, "").trim().toLowerCase())}
                 placeholder="fornecedor@email.com"
                 disabled={sending}
               />
             </div>
-            <Button onClick={handleSendEmail} disabled={sending || !recipient} className="w-full">
+            <Button type="button" onClick={handleSendEmail} disabled={sending || !recipient} className="w-full">
               {sending ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
               ) : (
