@@ -767,6 +767,7 @@ export default function PiecesTab({
         addPieceMutation={addPiece}
         updatePieceMutation={updatePiece}
         preserveScrollOnClose
+        hideTrigger
         onBeforeSave={captureScrollSnapshot}
       />
 
