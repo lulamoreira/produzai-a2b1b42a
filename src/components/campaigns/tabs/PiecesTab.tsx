@@ -34,6 +34,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import AddPieceDialog from "@/components/AddPieceDialog";
+import FindReplaceSpecDialog from "@/components/FindReplaceSpecDialog";
 
 interface PiecesTabProps {
   campaignId: string;
@@ -111,6 +112,7 @@ export default function PiecesTab({
   const [orderByLocationOpen, setOrderByLocationOpen] = useState(false);
   const [pptExportOpen, setPptExportOpen] = useState(false);
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
+  const [findReplaceOpen, setFindReplaceOpen] = useState(false);
   const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
   const [selectedPieceIds, setSelectedPieceIds] = useState<string[]>([]);
   const [convertSelectionDialogOpen, setConvertSelectionDialogOpen] = useState(false);
@@ -681,6 +683,9 @@ export default function PiecesTab({
                   <DropdownMenuItem onClick={() => setImportPiecesDialogOpen(true)}>
                     <Copy className="w-4 h-4 mr-2" /> {t("pieces.fromCampaign")}
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setFindReplaceOpen(true)}>
+                    <Search className="w-4 h-4 mr-2" /> Localizar e Substituir
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setBulkDeleteOpen(true)} className="text-destructive focus:text-destructive">
                     <Trash2 className="w-4 h-4 mr-2" /> {t("pieces.bulkDelete")}
@@ -770,6 +775,13 @@ export default function PiecesTab({
         hideTrigger
         onBeforeSave={captureScrollSnapshot}
       />
+      <FindReplaceSpecDialog
+        open={findReplaceOpen}
+        onOpenChange={setFindReplaceOpen}
+        pieces={pieces}
+        updatePiece={updatePiece}
+      />
+
 
       {selectedPieceIds.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4">
