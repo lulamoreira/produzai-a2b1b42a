@@ -516,11 +516,12 @@ const CampaignDetail = () => {
             )}
             <TabsContent value="budgets">
               <BudgetTab 
-                campaignId={campaignId!} clientId={clientId!} 
+                campaignId={campaignId!} clientId={clientId!} agencyId={agencyId!}
                 campaignName={campaign.name} agencyName={agency?.name || ""}
                 pieces={pieces} kits={kits} kitPieces={kitPieces} qtyMap={qtyMap}
                 stores={stores} isAdmin={isAdmin}
               />
+
             </TabsContent>
 
 

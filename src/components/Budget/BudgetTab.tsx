@@ -52,7 +52,9 @@ import {
   useBudgetSuppliers, useAddSupplier, useDeleteSupplier, useUpdateSupplier,
   useBudgetPrices, useBudgetExtraCosts, useSupplierSpecSuggestions, useExchangeRate,
 } from "@/hooks/useBudget";
-import { useClientSuppliers, useAddClientSupplier } from "@/hooks/useClientSuppliers";
+import { useAgencySuppliers } from "@/hooks/useAgencySuppliers";
+import SupplierFormDialog from "@/components/SupplierFormDialog";
+
 import { useBudgetTimeline } from "@/hooks/useBudgetTimeline";
 import { useRealtimeBudget } from "@/hooks/useRealtimeBudget";
 import { useBudgetPhase, PHASE_LABELS, type BudgetPhase } from "@/hooks/useBudgetPhase";
@@ -80,6 +82,7 @@ import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 interface BudgetTabProps {
   campaignId: string;
   clientId: string;
+  agencyId: string;
   campaignName: string;
   agencyName: string;
   pieces: CampaignPiece[];
@@ -91,6 +94,7 @@ interface BudgetTabProps {
   onNavigateToSection?: (section: string) => void;
   activeAdjustment?: { id: string; name: string } | null;
 }
+
 
 const PUBLIC_BASE_URL = "https://produzai.lovable.app";
 
@@ -206,7 +210,7 @@ function AdminInlineNumberInput({
 }
 
 // ─── Main Component ──────────────────────────────────────
-export default function BudgetTab({ campaignId, clientId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio, onNavigateToSection, activeAdjustment }: BudgetTabProps) {
+export default function BudgetTab({ campaignId, clientId, agencyId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio, onNavigateToSection, activeAdjustment }: BudgetTabProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -403,14 +407,13 @@ export default function BudgetTab({ campaignId, clientId, campaignName, agencyNa
   const clientName = clientData?.name || "";
   const clientEmail = (clientData as any)?.email || "";
 
-  // Client suppliers picker
-  const { data: clientSuppliers = [] } = useClientSuppliers(clientId);
-  const addClientSupplier = useAddClientSupplier();
-  const [clientSupplierSearch, setClientSupplierSearch] = useState("");
-  const [showQuickCreate, setShowQuickCreate] = useState(false);
-  const [quickCreateForm, setQuickCreateForm] = useState({
-    company_name: "", contact_name: "", phone: "", email: "",
-  });
+  // Agency suppliers picker (multi-select)
+  const { data: agencySuppliers = [] } = useAgencySuppliers(agencyId);
+  const [agencySupplierSearch, setAgencySupplierSearch] = useState("");
+  const [selectedAgencySupplierIds, setSelectedAgencySupplierIds] = useState<string[]>([]);
+  const [supplierFormOpen, setSupplierFormOpen] = useState(false);
+
+
 
   // Keep selectedCurrency in sync if settings load after mount
   React.useEffect(() => {
@@ -2248,184 +2251,156 @@ ${msgLabels.winnerWaFooter}
       </div>
 
       {/* ═══ ADD SUPPLIER DIALOG ═══ */}
-      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) { setShowQuickCreate(false); setClientSupplierSearch(""); } }}>
+      <Dialog open={addOpen} onOpenChange={(o) => { setAddOpen(o); if (!o) { setAgencySupplierSearch(""); setSelectedAgencySupplierIds([]); } }}>
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Adicionar Fornecedor</DialogTitle>
-            <DialogDescription>Selecione um fornecedor cadastrado ou adicione manualmente.</DialogDescription>
+            <DialogDescription>Selecione um ou mais fornecedores do cadastro da agência.</DialogDescription>
           </DialogHeader>
 
-          {/* ─── Picker from client suppliers ─── */}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-semibold">Selecionar do cadastro do cliente</Label>
-              {!showQuickCreate && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 text-xs gap-1 text-primary"
-                  onClick={() => setShowQuickCreate(true)}
-                >
-                  <Plus className="w-3 h-3" /> Cadastrar novo
-                </Button>
+              <Label className="text-xs font-semibold">Selecionar do cadastro da agência</Label>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-6 text-xs gap-1 text-primary"
+                onClick={() => setSupplierFormOpen(true)}
+              >
+                <Plus className="w-3 h-3" /> Cadastrar Novo
+              </Button>
+            </div>
+
+            <Input
+              placeholder="Buscar por empresa ou e-mail..."
+              value={agencySupplierSearch}
+              onChange={(e) => setAgencySupplierSearch(e.target.value)}
+              className="h-8 text-xs"
+            />
+
+            <div className="max-h-72 overflow-y-auto border border-border rounded-md divide-y divide-border">
+              {agencySuppliers.length === 0 ? (
+                <div className="px-3 py-4 text-center text-xs text-muted-foreground">
+                  Nenhum fornecedor cadastrado na agência.
+                </div>
+              ) : (
+                agencySuppliers
+                  .filter((s) => {
+                    const q = agencySupplierSearch.trim().toLowerCase();
+                    if (!q) return true;
+                    const email = (s.contacts?.[0]?.email || s.email || "").toLowerCase();
+                    return s.company_name.toLowerCase().includes(q) || email.includes(q);
+                  })
+                  .map((s) => {
+                    const email = s.contacts?.[0]?.email || s.email || "";
+                    const checked = selectedAgencySupplierIds.includes(s.id);
+                    return (
+                      <label
+                        key={s.id}
+                        className="flex items-center gap-2 px-3 py-2 hover:bg-muted/40 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) =>
+                            setSelectedAgencySupplierIds((prev) =>
+                              e.target.checked ? [...prev, s.id] : prev.filter((id) => id !== s.id)
+                            )
+                          }
+                          className="h-4 w-4"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-medium text-foreground truncate">{s.company_name}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">
+                            {email || <span className="italic">sem e-mail</span>}
+                          </p>
+                        </div>
+                      </label>
+                    );
+                  })
               )}
             </div>
-
-            {showQuickCreate ? (
-              <div className="border border-border rounded-md p-3 space-y-2 bg-muted/30">
-                <p className="text-xs font-medium text-muted-foreground">Novo fornecedor (será salvo no cadastro do cliente)</p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    placeholder="Empresa *"
-                    value={quickCreateForm.company_name}
-                    onChange={(e) => setQuickCreateForm((p) => ({ ...p, company_name: e.target.value }))}
-                    className="h-8 text-xs"
-                  />
-                  <Input
-                    placeholder="Contato"
-                    value={quickCreateForm.contact_name}
-                    onChange={(e) => setQuickCreateForm((p) => ({ ...p, contact_name: e.target.value }))}
-                    className="h-8 text-xs"
-                  />
-                  <Input
-                    placeholder="Telefone"
-                    value={quickCreateForm.phone}
-                    onChange={(e) => setQuickCreateForm((p) => ({ ...p, phone: e.target.value }))}
-                    className="h-8 text-xs"
-                  />
-                  <Input
-                    type="email"
-                    placeholder="E-mail *"
-                    value={quickCreateForm.email}
-                    onChange={(e) => setQuickCreateForm((p) => ({ ...p, email: e.target.value }))}
-                    className="h-8 text-xs"
-                  />
-                </div>
-                <div className="flex justify-end gap-2 pt-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => { setShowQuickCreate(false); setQuickCreateForm({ company_name: "", contact_name: "", phone: "", email: "" }); }}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="h-7 text-xs"
-                    disabled={addClientSupplier.isPending || !quickCreateForm.company_name.trim() || !quickCreateForm.email.trim()}
-                    onClick={async () => {
-                      try {
-                        const created = await addClientSupplier.mutateAsync({
-                          client_id: clientId,
-                          company_name: quickCreateForm.company_name.trim(),
-                          contact_name: quickCreateForm.contact_name.trim() || null,
-                          phone: quickCreateForm.phone.trim() || null,
-                          email: quickCreateForm.email.trim(),
-                        });
-                        setNewSupplier({
-                          company_name: created.company_name,
-                          contact_name: created.contact_name || "",
-                          phone: created.phone || "",
-                          email: created.email,
-                        });
-                        setShowQuickCreate(false);
-                        setQuickCreateForm({ company_name: "", contact_name: "", phone: "", email: "" });
-                      } catch { /* toast handled by hook */ }
-                    }}
-                  >
-                    Salvar e usar
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <Input
-                  placeholder="Buscar por empresa ou e-mail..."
-                  value={clientSupplierSearch}
-                  onChange={(e) => setClientSupplierSearch(e.target.value)}
-                  className="h-8 text-xs"
-                />
-                <div className="max-h-40 overflow-y-auto border border-border rounded-md divide-y divide-border">
-                  {clientSuppliers.length === 0 ? (
-                    <div className="px-3 py-4 text-center text-xs text-muted-foreground">
-                      Nenhum fornecedor cadastrado para este cliente.
-                    </div>
-                  ) : (
-                    clientSuppliers
-                      .filter((s) => {
-                        const q = clientSupplierSearch.trim().toLowerCase();
-                        if (!q) return true;
-                        return s.company_name.toLowerCase().includes(q) || s.email.toLowerCase().includes(q);
-                      })
-                      .map((s) => (
-                        <div key={s.id} className="flex items-center justify-between gap-2 px-3 py-2 hover:bg-muted/40">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-xs font-medium text-foreground truncate">{s.company_name}</p>
-                            <p className="text-[11px] text-muted-foreground truncate">{s.email}</p>
-                          </div>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            className="h-7 text-xs"
-                            onClick={() => setNewSupplier({
-                              company_name: s.company_name,
-                              contact_name: s.contact_name || "",
-                              phone: s.phone || "",
-                              email: s.email,
-                            })}
-                          >
-                            Usar
-                          </Button>
-                        </div>
-                      ))
-                  )}
-                </div>
-              </>
-            )}
           </div>
 
-          {/* ─── Divider ─── */}
-          <div className="relative my-2">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-[10px] uppercase">
-              <span className="bg-background px-2 text-muted-foreground">Ou adicionar manualmente</span>
-            </div>
-          </div>
-
-          {/* ─── Manual entry form ─── */}
-          <div className="space-y-3">
-            <div>
-              <Label className="text-xs">Empresa</Label>
-              <Input value={newSupplier.company_name} onChange={(e) => setNewSupplier((p) => ({ ...p, company_name: e.target.value }))} />
-            </div>
-            <div>
-              <Label className="text-xs">Contato</Label>
-              <Input value={newSupplier.contact_name} onChange={(e) => setNewSupplier((p) => ({ ...p, contact_name: e.target.value }))} />
-            </div>
-            <div>
-              <Label className="text-xs">Telefone</Label>
-              <Input value={newSupplier.phone} onChange={(e) => setNewSupplier((p) => ({ ...p, phone: e.target.value }))} placeholder="+5511999999999" />
-            </div>
-            <div>
-              <Label className="text-xs">Email</Label>
-              <Input type="email" value={newSupplier.email} onChange={(e) => setNewSupplier((p) => ({ ...p, email: e.target.value }))} />
-            </div>
-          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAddOpen(false)}>Cancelar</Button>
-            <Button onClick={handleAddSupplier} disabled={addSupplier.isPending}>
-              {addSupplier.isPending ? "Salvando..." : "Salvar"}
+            <Button
+              disabled={addSupplier.isPending || selectedAgencySupplierIds.length === 0}
+              onClick={async () => {
+                const existingEmails = new Set(
+                  (suppliers || [])
+                    .map((sup: any) => (sup.email || "").trim().toLowerCase())
+                    .filter(Boolean)
+                );
+                const chosen = agencySuppliers.filter((s) => selectedAgencySupplierIds.includes(s.id));
+                const missingEmail: string[] = [];
+                const duplicates: string[] = [];
+                const toAdd: { company_name: string; contact_name: string; phone: string; email: string }[] = [];
+
+                for (const s of chosen) {
+                  const email = (s.contacts?.[0]?.email || s.email || "").trim();
+                  if (!email) {
+                    missingEmail.push(s.company_name);
+                    continue;
+                  }
+                  if (existingEmails.has(email.toLowerCase())) {
+                    duplicates.push(s.company_name);
+                    continue;
+                  }
+                  toAdd.push({
+                    company_name: s.company_name,
+                    contact_name: (s.contacts?.[0]?.nome || s.contact_name || ""),
+                    phone: (s.contacts?.[0]?.telefone || s.phone || ""),
+                    email,
+                  });
+                  existingEmails.add(email.toLowerCase());
+                }
+
+                if (missingEmail.length > 0) {
+                  toast.warning(`Sem e-mail (ignorados): ${missingEmail.join(", ")}`);
+                }
+                if (duplicates.length > 0) {
+                  toast.warning(`Já participam (ignorados): ${duplicates.join(", ")}`);
+                }
+                if (toAdd.length === 0) {
+                  if (missingEmail.length === 0 && duplicates.length === 0) {
+                    toast.error("Selecione ao menos um fornecedor.");
+                  }
+                  return;
+                }
+
+                let added = 0;
+                for (const payload of toAdd) {
+                  try {
+                    await addSupplier.mutateAsync({ campaign_id: campaignId, ...payload });
+                    added++;
+                  } catch (e: any) {
+                    toast.error(`Erro ao adicionar ${payload.company_name}: ${e?.message || ""}`);
+                  }
+                }
+                if (added > 0) toast.success(`${added} fornecedor(es) adicionado(s)!`);
+                setSelectedAgencySupplierIds([]);
+                setAgencySupplierSearch("");
+                setAddOpen(false);
+              }}
+            >
+              {addSupplier.isPending ? "Salvando..." : `Adicionar selecionados (${selectedAgencySupplierIds.length})`}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <SupplierFormDialog
+        open={supplierFormOpen}
+        onOpenChange={setSupplierFormOpen}
+        agencyId={agencyId}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ["agency_suppliers", agencyId] });
+        }}
+      />
+
+
 
       {/* ═══ EDIT SUPPLIER DIALOG ═══ */}
       <Dialog open={!!editSupplierId} onOpenChange={(o) => !o && setEditSupplierId(null)}>
