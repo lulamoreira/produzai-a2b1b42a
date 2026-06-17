@@ -572,6 +572,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
                 <SelectItem value="aberta">Aberta</SelectItem>
                 <SelectItem value="em_andamento">Em andamento</SelectItem>
                 <SelectItem value="resolvida">Resolvida</SelectItem>
+                <SelectItem value="nao_procede">Não procede</SelectItem>
               </SelectContent>
             </Select>
             {showPriority && (
