@@ -67,6 +67,7 @@ import {
   Eye
 } from "lucide-react";
 import SupplierDetailsSheet from "@/components/SupplierDetailsSheet";
+import SupplierFormDialog from "@/components/SupplierFormDialog";
 import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 
