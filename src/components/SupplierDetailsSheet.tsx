@@ -155,7 +155,7 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
       });
       if (emailErr) throw emailErr;
 
-      toast.success(`E-mail de confirmação enviado para ${recipient}`);
+      toast.success(`E-mail de confirmação enviado para ${normalized}`);
     } catch (err: any) {
       toast.error("Erro ao enviar e-mail: " + (err.message || err));
     } finally {
