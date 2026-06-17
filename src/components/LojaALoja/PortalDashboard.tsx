@@ -591,6 +591,11 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
                 <SelectItem value="em_andamento">Em andamento</SelectItem>
                 <SelectItem value="resolvida">Resolvida</SelectItem>
                 <SelectItem value="nao_procede">Não procede</SelectItem>
+                {tratativaStatuses
+                  .filter((s: any) => !["aberta", "em_andamento", "resolvida", "nao_procede"].includes(s.value) && s.ativo !== false)
+                  .map((s: any) => (
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
+                  ))}
               </SelectContent>
             </Select>
             {showPriority && (
