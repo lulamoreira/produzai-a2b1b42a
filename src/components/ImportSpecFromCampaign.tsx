@@ -30,7 +30,6 @@ export default function ImportSpecFromCampaign({ clientId, currentCampaignId, on
         .from("campaigns")
         .select("id, name")
         .eq("client_id", clientId)
-        .neq("id", currentCampaignId)
         .order("created_at", { ascending: false });
       return (data || []) as CampaignOption[];
     },
