@@ -286,3 +286,26 @@ const timelineAcceptance = {
   paddingTop: '12px',
   borderTop: '1px solid #e5d8c8',
 }
+const clientBox = {
+  backgroundColor: '#fff8ec',
+  border: `2px solid ${BRAND}`,
+  borderRadius: '6px',
+  padding: '12px 16px',
+  margin: '0 0 20px',
+  textAlign: 'center' as const,
+}
+const clientLabel = {
+  fontSize: '11px',
+  color: BRAND,
+  fontWeight: 'bold' as const,
+  letterSpacing: '1.5px',
+  margin: '0 0 4px',
+}
+const clientNameStyle = {
+  fontSize: '20px',
+  color: '#1a1a1a',
+  fontWeight: 'bold' as const,
+  margin: '0',
+  letterSpacing: '0.5px',
+}
+
