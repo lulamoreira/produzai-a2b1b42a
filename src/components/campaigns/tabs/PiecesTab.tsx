@@ -659,7 +659,14 @@ export default function PiecesTab({
                     const toastId = "export-pieces";
                     toast.loading("Gerando planilha de peças...", { id: toastId });
                     try {
-                      await exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name);
+                      const labels: Array<string | null> = [
+                        campaign?.piece_custom_field_1_label ?? null,
+                        campaign?.piece_custom_field_2_label ?? null,
+                        campaign?.piece_custom_field_3_label ?? null,
+                        campaign?.piece_custom_field_4_label ?? null,
+                        campaign?.piece_custom_field_5_label ?? null,
+                      ];
+                      await exportCampaignPieces(pieces, campaign?.name || "Campanha", kits, kitPieces, pieces, agency?.name, client?.name, labels);
                       toast.success("Planilha de peças exportada!", { id: toastId });
                     } catch (e: any) { toast.error(`Erro ao exportar: ${e?.message || e}`, { id: toastId }); }
                   }}>

@@ -116,23 +116,35 @@ export function exportCampaignPieces(
   allPieces: CampaignPiece[] = [],
   agencyName?: string,
   clientName?: string,
+  customFieldLabels?: Array<string | null>,
 ) {
-  const rows = pieces.map((p) => ({
-    "Código": p.code,
-    "Localização na Loja": p.sub_location ? `${p.category} / ${p.sub_location}` : p.category,
-    "Nome": p.name,
-    "Medidas": p.size,
-    "Modelo de Loja": p.store_category || "",
-    "Especificação": p.specification || "",
-    "Instruções de Instalação": p.installation_instructions || "",
-    "Mockup": p.is_mockup ? "Sim" : "",
-  }));
+  const rows = pieces.map((p) => {
+    const base: Record<string, string | number | boolean> = {
+      "Codigo": p.code,
+      "Localizacao na Loja": p.sub_location ? `${p.category} / ${p.sub_location}` : p.category,
+      "Nome": p.name,
+      "Medidas": p.size,
+      "Modelo de Loja": p.store_category || "",
+      "Especificacao": p.specification || "",
+      "Instrucoes de Instalacao": p.installation_instructions || "",
+      "Peca Nova": (p as any).is_new ? "Sim" : "",
+      "Mockup": p.is_mockup ? "Sim" : "",
+    };
+    const cfl = customFieldLabels || [];
+    if (cfl[0]) base[cfl[0]] = (p as any).custom_field_1 ?? "";
+    if (cfl[1]) base[cfl[1]] = (p as any).custom_field_2 ?? "";
+    if (cfl[2]) base[cfl[2]] = (p as any).custom_field_3 ?? "";
+    if (cfl[3]) base[cfl[3]] = (p as any).custom_field_4 ?? "";
+    if (cfl[4]) base[cfl[4]] = (p as any).custom_field_5 ?? "";
+    return base;
+  });
   const wb = XLSX.utils.book_new();
   const ws = XLSX.utils.json_to_sheet(rows.length ? rows : [{
-    "Código": "", "Localização na Loja": "", "Nome": "", "Medidas": "", "Modelo de Loja": "",
-    "Especificação": "", "Instruções de Instalação": "", "Mockup": "",
+    "Codigo": "", "Localizacao na Loja": "", "Nome": "", "Medidas": "", "Modelo de Loja": "",
+    "Especificacao": "", "Instrucoes de Instalacao": "", "Peca Nova": "", "Mockup": "",
   }]);
-  ws["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 35 }, { wch: 40 }, { wch: 10 }];
+  const customCols = (customFieldLabels || []).filter(Boolean).map(() => ({ wch: 25 }));
+  ws["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 35 }, { wch: 40 }, { wch: 10 }, { wch: 10 }, ...customCols];
   XLSX.utils.book_append_sheet(wb, ws, "Peças");
 
   // Kit detail sheets
@@ -141,20 +153,28 @@ export function exportCampaignPieces(
     const kpForKit = kitPieces.filter(kp => kp.kit_id === kit.id);
     const kitRows = kpForKit.map(kp => {
       const piece = pieceMap.get(kp.piece_id);
-      return {
-        "Código": piece?.code || 0,
-        "Localização na Loja": piece ? (piece.sub_location ? `${piece.category} / ${piece.sub_location}` : piece.category) : "",
+      const kitRow: Record<string, string | number | boolean> = {
+        "Codigo": piece?.code || 0,
+        "Localizacao na Loja": piece ? (piece.sub_location ? `${piece.category} / ${piece.sub_location}` : piece.category) : "",
         "Nome": piece?.name || "",
         "Medidas": piece?.size || "",
         "Modelo de Loja": piece?.store_category || "",
-        "Especificação": piece?.specification || "",
-        "Instruções de Instalação": piece?.installation_instructions || "",
+        "Especificacao": piece?.specification || "",
+        "Instrucoes de Instalacao": piece?.installation_instructions || "",
+        "Peca Nova": (piece as any)?.is_new ? "Sim" : "",
         "Qtd no Kit": kp.quantity || 1,
       };
+      const cfl = customFieldLabels || [];
+      if (cfl[0]) kitRow[cfl[0]] = (piece as any)?.custom_field_1 ?? "";
+      if (cfl[1]) kitRow[cfl[1]] = (piece as any)?.custom_field_2 ?? "";
+      if (cfl[2]) kitRow[cfl[2]] = (piece as any)?.custom_field_3 ?? "";
+      if (cfl[3]) kitRow[cfl[3]] = (piece as any)?.custom_field_4 ?? "";
+      if (cfl[4]) kitRow[cfl[4]] = (piece as any)?.custom_field_5 ?? "";
+      return kitRow;
     });
     if (kitRows.length > 0) {
       const kitWs = XLSX.utils.json_to_sheet(kitRows);
-      kitWs["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 35 }, { wch: 40 }, { wch: 12 }];
+      kitWs["!cols"] = [{ wch: 8 }, { wch: 20 }, { wch: 35 }, { wch: 25 }, { wch: 20 }, { wch: 35 }, { wch: 40 }, { wch: 10 }, { wch: 12 }, ...customCols];
       XLSX.utils.book_append_sheet(wb, kitWs, `Kit ${kit.code} - ${kit.name}`.slice(0, 31));
     }
   });
