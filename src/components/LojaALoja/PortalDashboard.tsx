@@ -1037,14 +1037,23 @@ function KpiCard({ icon: Icon, label, value, color }: { icon: any; label: string
   );
 }
 
-function MiniKpi({ icon: Icon, label, value, color }: { icon: any; label: string; value: number; color: string }) {
-  return (
-    <div className="border rounded-md p-2.5 flex items-center gap-2 bg-card">
+function MiniKpi({ icon: Icon, label, value, color, active, onClick }: { icon: any; label: string; value: number; color: string; active?: boolean; onClick?: () => void }) {
+  const content = (
+    <>
       <Icon className={`w-4 h-4 shrink-0 ${color}`} />
-      <div className="min-w-0">
+      <div className="min-w-0 text-left">
         <p className="text-[10px] text-muted-foreground truncate uppercase tracking-wide">{label}</p>
         <p className="text-base font-bold leading-none">{value}</p>
       </div>
-    </div>
+    </>
   );
+  const baseCls = `border rounded-md p-2.5 flex items-center gap-2 bg-card transition-all ${active ? "ring-2 ring-primary border-primary" : ""}`;
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={`${baseCls} hover:bg-muted/40 cursor-pointer w-full`}>
+        {content}
+      </button>
+    );
+  }
+  return <div className={baseCls}>{content}</div>;
 }
