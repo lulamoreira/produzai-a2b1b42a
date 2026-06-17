@@ -923,7 +923,9 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     
     const instrStr = labels.inviteInstructions.map((inst, i) => `${i + 1}) ${inst}`).join('\n');
     
-    const msg = `${labels.inviteGreeting} ${sup.contact_name}! A ${agencyName} ${labels.inviteIntro} ${sup.company_name} ${labels.inviteAction} ${campaignName}.\n\n${labels.inviteLinkText}\n${portalUrl}\n\n${labels.inviteDeadline}: ${deadlineStr}${materialsLine}\n\n${labels.inviteInstructionsTitle}\n${instrStr}\n\n${labels.inviteFooter}`;
+    const clientLine = clientName ? `🏢 *${locale === 'es-CL' ? 'CLIENTE' : 'CLIENTE'}: ${clientName.toUpperCase()}*\n` : '';
+    const msg = `${labels.inviteGreeting} ${sup.contact_name}! A ${agencyName} ${labels.inviteIntro} ${sup.company_name} ${labels.inviteAction} ${campaignName}.\n\n${clientLine}${labels.inviteLinkText}\n${portalUrl}\n\n${labels.inviteDeadline}: ${deadlineStr}${materialsLine}\n\n${labels.inviteInstructionsTitle}\n${instrStr}\n\n${labels.inviteFooter}`;
+
     const phone = sup.phone.replace(/\D/g, "");
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
   };
