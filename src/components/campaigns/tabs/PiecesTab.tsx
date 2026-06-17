@@ -775,6 +775,13 @@ export default function PiecesTab({
         hideTrigger
         onBeforeSave={captureScrollSnapshot}
       />
+      <FindReplaceSpecDialog
+        open={findReplaceOpen}
+        onOpenChange={setFindReplaceOpen}
+        pieces={pieces}
+        updatePiece={updatePiece}
+      />
+
 
       {selectedPieceIds.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4">
