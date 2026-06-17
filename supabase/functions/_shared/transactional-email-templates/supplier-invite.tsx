@@ -199,7 +199,9 @@ export const template = {
     contactName: 'João Silva',
     companyName: 'Gráfica Express',
     agencyName: 'Studio Design',
+    clientName: 'Lindt',
     campaignName: 'Campanha Verão 2026',
+
     portalUrl: 'https://example.com/orcamento/abc123',
     deadline: new Date(Date.now() + 2 * 86400000).toISOString(),
     timelineEntries: [
