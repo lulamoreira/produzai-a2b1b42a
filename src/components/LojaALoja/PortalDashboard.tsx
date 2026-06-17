@@ -214,6 +214,8 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [filterStore, setFilterStore] = useState<string>("all");
   const [filterPieceIds, setFilterPieceIds] = useState<string[]>([]);
+  // Extra KPI-driven filters: "all" | "valid" | "atrasadas" | "reinst"
+  const [kpiFilter, setKpiFilter] = useState<"all" | "valid" | "atrasadas" | "reinst">("all");
   const [occViewMode, setOccViewMode] = useState<"list" | "cards">("list");
   const [selectedOccurrence, setSelectedOccurrence] = useState<any | null>(null);
 
