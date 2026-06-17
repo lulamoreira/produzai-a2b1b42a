@@ -220,7 +220,62 @@ export default function ExportReportDropdown({
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCatalogPDFExport = async () => {
+    setLoading(true);
+    const toastId = toast.loading("Gerando catalogo PDF com imagens...");
+    try {
+      const piecesData = pieces.map((p: any) => ({
+        id: p.id,
+        name: p.name,
+        code: String(p.code ?? ""),
+        size: p.size || undefined,
+        category: p.category || undefined,
+        sub_location: p.sub_location || undefined,
+        specification: p.specification || undefined,
+        installation_instructions: p.installation_instructions || undefined,
+        custom_field_1: p.custom_field_1 ?? null,
+        custom_field_2: p.custom_field_2 ?? null,
+        custom_field_3: p.custom_field_3 ?? null,
+        custom_field_4: p.custom_field_4 ?? null,
+        custom_field_5: p.custom_field_5 ?? null,
+        photo_url: p.image_url || undefined,
+        is_new: p.is_new ?? false,
+      }));
+
+      const kitsData = kits.map(k => {
+        const kpForKit = kitPieces.filter((kp: any) => kp.kit_id === k.id);
+        const kitPieceDetails = kpForKit
+          .map((kp: any) => pieces.find(p => p.id === kp.piece_id))
+          .filter(Boolean);
+        return {
+          id: k.id,
+          name: k.name,
+          code: String(k.code ?? ""),
+          pieces: kitPieceDetails.map((p: any) => ({ name: p.name })),
+        };
+      });
+
+      const { exportPiecesCatalogPDF } = await import("@/lib/exportPiecesCatalogPDF");
+      await exportPiecesCatalogPDF({
+        campaign: {
+          name: campaignName,
+          client_name: clientName,
+          agency_name: agencyName,
+          cover_image_url: campaign?.cover_images?.[0]?.url,
+        },
+        pieces: piecesData,
+        kits: kitsData,
+        customFieldLabels,
+      });
+      toast.success("Catalogo PDF exportado com sucesso!", { id: toastId });
+    } catch (err) {
+      console.error("PDF Catalog Export error:", err);
+      toast.error("Erro ao exportar catalogo PDF", { id: toastId });
+    } finally {
+      setLoading(false);
+    }
+  };
+
     const file = e.target.files?.[0];
     if (!file) return;
 
