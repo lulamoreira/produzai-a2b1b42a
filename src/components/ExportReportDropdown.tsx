@@ -130,6 +130,16 @@ export default function ExportReportDropdown({
   const [catalogProgress, setCatalogProgress] = useState<{ open: boolean; current: number; total: number; label: string; title?: string }>({
     open: false, current: 0, total: 0, label: "",
   });
+  const abortRef = useRef<AbortController | null>(null);
+
+  const handleCancelExport = () => {
+    abortRef.current?.abort();
+  };
+
+  const isAbortError = (err: unknown) =>
+    !!err && (((err as any).name === "AbortError") || /cancelad/i.test((err as any).message || ""));
+
+
 
 
 
