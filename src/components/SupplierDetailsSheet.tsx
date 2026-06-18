@@ -1,7 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useSupplierCampaignInvites } from "@/hooks/useSupplierCampaignInvites";
 import {
   Sheet,
   SheetContent,
@@ -14,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Building2,
   Mail,
@@ -25,6 +28,7 @@ import {
   Send,
   Loader2,
   Copy,
+  Trophy,
 } from "lucide-react";
 import { toast } from "sonner";
 import { addDays } from "date-fns";
@@ -49,6 +53,8 @@ function DataRow({ label, value }: { label: string; value?: string | null }) {
 
 export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: Props) {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { data: campaignInvites = [], isLoading: loadingInvites } = useSupplierCampaignInvites(supplier);
   const [sending, setSending] = useState(false);
   const [recipient, setRecipient] = useState("");
   const recipientInputRef = useRef<HTMLInputElement>(null);
@@ -294,6 +300,69 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
 
           <Separator />
           <SupplierComments supplierId={supplier.id} agencyId={supplier.agency_id} />
+
+          <Separator />
+
+          <section>
+            <h3 className="text-sm font-bold uppercase text-muted-foreground mb-2 flex items-center gap-1.5">
+              <Trophy className="w-3.5 h-3.5" /> Campanhas Cotadas
+              {campaignInvites.length > 0 && (
+                <Badge variant="outline" className="ml-1 text-[10px] h-4 px-1.5">
+                  {campaignInvites.length}
+                </Badge>
+              )}
+            </h3>
+
+            {loadingInvites ? (
+              <div className="space-y-2">
+                <Skeleton className="h-9 w-full" />
+                <Skeleton className="h-9 w-full" />
+              </div>
+            ) : campaignInvites.length === 0 ? (
+              <p className="text-sm text-muted-foreground">Nenhuma cotação registrada ainda.</p>
+            ) : (
+              <div className="space-y-2">
+                {campaignInvites.map((invite) => {
+                  const statusConfig: Record<string, { label: string; className: string }> = {
+                    aguardando: { label: "Aguardando", className: "bg-gray-100 text-gray-600" },
+                    enviado:    { label: "Enviado",    className: "bg-blue-100 text-blue-700" },
+                    recusado:   { label: "Recusado",   className: "bg-red-100 text-red-700" },
+                  };
+                  const statusInfo = invite.is_winner
+                    ? { label: "Vencedor", className: "bg-amber-100 text-amber-700" }
+                    : (statusConfig[invite.status] ?? { label: invite.status, className: "bg-gray-100 text-gray-600" });
+
+                  return (
+                    <button
+                      key={invite.campaign_id}
+                      onClick={() =>
+                        navigate(
+                          `/agency/${supplier.agency_id}/clients/${invite.client_id}/campaigns/${invite.campaign_id}?section=budgets`
+                        )
+                      }
+                      className="w-full text-left flex items-center justify-between gap-2 px-3 py-2 rounded-md border border-border hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-sm font-medium text-foreground truncate flex items-center gap-1">
+                          {invite.is_winner && (
+                            <Trophy className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                          )}
+                          {invite.campaign_name}
+                        </span>
+                        <span className="text-xs text-muted-foreground truncate">
+                          {invite.client_name}
+                        </span>
+                      </div>
+
+                      <Badge className={`shrink-0 text-[10px] ${statusInfo.className}`}>
+                        {statusInfo.label}
+                      </Badge>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </section>
 
           <Separator />
 
