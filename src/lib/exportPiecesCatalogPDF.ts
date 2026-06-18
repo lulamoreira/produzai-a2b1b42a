@@ -366,7 +366,11 @@ export async function exportPiecesCatalogPDF(params: PieceCatalogPDFParams): Pro
     if (cfl[4] && p.custom_field_5) addField(cfl[4], p.custom_field_5);
 
     addFooter(pageNum);
+    tick(`Peca ${idx + 1}/${pieces.length}: ${p.name}`);
+    // cede o thread pra UI atualizar a barra
+    if (idx % 3 === 0) await new Promise(r => setTimeout(r, 0));
   }
+
 
   // ── SLIDE FINAL ───────────────────────────────────────────
 
