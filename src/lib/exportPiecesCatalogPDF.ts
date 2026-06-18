@@ -411,4 +411,5 @@ export async function exportPiecesCatalogPDF(params: PieceCatalogPDFParams): Pro
   tick("Finalizando PDF...");
   doc.save(fileName);
   onProgress?.(totalSteps, totalSteps, "Concluido");
+  return fileName;
 }
