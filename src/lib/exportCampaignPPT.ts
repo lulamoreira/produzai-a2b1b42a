@@ -82,7 +82,7 @@ async function urlToBase64(url: string): Promise<string | null> {
   }
 }
 
-export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> {
+export async function exportCampaignPPT(params: ExportPPTParams): Promise<string> {
   const { campaign, pieces, kits, onProgress, signal } = params;
   const pptx = new pptxgen();
   pptx.layout = "LAYOUT_WIDE";
