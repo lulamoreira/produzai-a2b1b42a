@@ -463,6 +463,13 @@ const SupplierInvitePortal = () => {
 
           <div className="space-y-4">
             <Label className="text-sm font-bold">Arquivos e Anexos</Label>
+            <div className="rounded-md border border-primary/20 bg-primary/5 p-3 text-xs text-foreground/80">
+              <p>
+                Aproveite para enviar o <strong>book da empresa</strong>, <strong>apresentação institucional</strong> e
+                demais documentos (portfólio, certificações, referências etc.) que darão melhores condições de avaliação
+                técnica por parte da <strong>{agency?.name || "agência"}</strong>.
+              </p>
+            </div>
             <div 
               className="border-2 border-dashed rounded-md p-6 text-center cursor-pointer hover:bg-muted/30 transition-colors"
               onClick={() => document.getElementById("file-upload-public")?.click()}
