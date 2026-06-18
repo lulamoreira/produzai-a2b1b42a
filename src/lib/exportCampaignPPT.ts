@@ -177,6 +177,8 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   slideCapa.addText("Peças & Kits", {
     x: 10.0, y: 6.9, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 10, fontFace: "Calibri"
   });
+  tick("Capa gerada");
+
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SLIDE 2 — ÍNDICE
