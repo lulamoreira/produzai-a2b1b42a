@@ -197,7 +197,7 @@ export default function ExportReportDropdown({
     setLoading(true);
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Apresentacao PPT" });
+    setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Apresentacao PPT", minimized: false });
     const toastId = toast.loading("Gerando apresentação PPT...");
     try {
       const piecesData = pieces.map(p => {
@@ -238,7 +238,7 @@ export default function ExportReportDropdown({
       });
 
       const { exportCampaignPPT } = await import("@/lib/exportCampaignPPT");
-      await exportCampaignPPT({
+      const fileName = await exportCampaignPPT({
         campaign: {
           name: campaignName,
           client_name: clientName,
@@ -249,10 +249,10 @@ export default function ExportReportDropdown({
         kits: kitsData,
         signal: ctrl.signal,
         onProgress: (current, total, label) => {
-          setCatalogProgress({ open: true, current, total, label, title: "Gerando Apresentacao PPT" });
+          setCatalogProgress(p => ({ ...p, open: true, current, total, label, title: "Gerando Apresentacao PPT" }));
         },
       });
-      toast.success("PPT exportado com sucesso!", { id: toastId });
+      toast.success(`Arquivo gerado: ${fileName}`, { id: toastId });
     } catch (err) {
       if (isAbortError(err)) {
         toast.info("Exportacao cancelada", { id: toastId });
@@ -263,7 +263,7 @@ export default function ExportReportDropdown({
     } finally {
       abortRef.current = null;
       setLoading(false);
-      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false })), 600);
+      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false, minimized: false })), 600);
     }
   };
 
