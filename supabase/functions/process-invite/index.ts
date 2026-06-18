@@ -131,7 +131,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 4. Mark invite as used
+    // 4. Record last use timestamp (multi-use invite — does NOT block reuse)
     await admin
       .from('invites')
       .update({ used_at: new Date().toISOString() })
