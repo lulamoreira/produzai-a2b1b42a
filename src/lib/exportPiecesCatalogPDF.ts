@@ -179,6 +179,8 @@ export async function exportPiecesCatalogPDF(params: PieceCatalogPDFParams): Pro
   doc.setFontSize(8);
   doc.text(exportDate, 10, H - 5);
   doc.text("Pecas & Kits", W - 10, H - 5, { align: "right" });
+  tick("Capa gerada");
+
 
   // ── INDICE ───────────────────────────────────────────────
 
