@@ -456,6 +456,10 @@ export default function SupplierFormDialog({
 
               <div className="space-y-2">
                 <Label>Arquivos e Anexos</Label>
+                <p className="text-[11px] text-muted-foreground leading-snug">
+                  Envie book, apresentação da empresa, portfólio, certificações e referências.
+                  Esses documentos darão melhores condições de avaliação técnica por parte da agência.
+                </p>
                 <div
                   className="border-2 border-dashed rounded-md p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors"
                   onClick={() => document.getElementById("file-upload")?.click()}
