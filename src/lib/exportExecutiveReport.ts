@@ -212,6 +212,7 @@ export async function exportExecutiveExcel(data: ReportData, opts: ExportProgres
   ensureNotAborted(signal);
   downloadWorkbook(wb, fileName);
   tick("Concluido");
+  return fileName;
 }
 
 
@@ -354,5 +355,6 @@ export async function exportExecutivePDF(data: ReportData, opts: ExportProgressO
   ensureNotAborted(signal);
   doc.save(fileName);
   tick("Concluido");
+  return fileName;
 }
 

@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { FileSpreadsheet, FileText, ChevronDown, Presentation, Upload, History, Image as ImageIcon } from "lucide-react";
+import { FileSpreadsheet, FileText, ChevronDown, Presentation, Upload, History, Image as ImageIcon, Minus, Maximize2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -127,8 +127,8 @@ export default function ExportReportDropdown({
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [pptDialogOpen, setPptDialogOpen] = useState(false);
-  const [catalogProgress, setCatalogProgress] = useState<{ open: boolean; current: number; total: number; label: string; title?: string }>({
-    open: false, current: 0, total: 0, label: "",
+  const [catalogProgress, setCatalogProgress] = useState<{ open: boolean; current: number; total: number; label: string; title?: string; minimized?: boolean }>({
+    open: false, current: 0, total: 0, label: "", minimized: false,
   });
   const abortRef = useRef<AbortController | null>(null);
 
@@ -160,22 +160,23 @@ export default function ExportReportDropdown({
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     const title = format === "excel" ? "Gerando Relatorio Excel" : "Gerando Relatorio PDF Executivo";
-    setCatalogProgress({ open: true, current: 0, total: 0, label: "Buscando dados...", title });
+    setCatalogProgress({ open: true, current: 0, total: 0, label: "Buscando dados...", title, minimized: false });
     const toastId = toast.loading(format === "excel" ? "Gerando relatório Excel…" : "Gerando relatório PDF…");
     try {
       const data = await fetchReportData(campaignId, clientId, campaignName, clientName);
       if (ctrl.signal.aborted) throw Object.assign(new Error("Cancelado"), { name: "AbortError" });
       const onProgress = (current: number, total: number, label: string) => {
-        setCatalogProgress({ open: true, current, total, label, title });
+        setCatalogProgress(p => ({ ...p, open: true, current, total, label, title }));
       };
+      let fileName: string;
       if (format === "excel") {
         const { exportExecutiveExcel } = await import("@/lib/exportExecutiveReport");
-        await exportExecutiveExcel(data, { onProgress, signal: ctrl.signal });
+        fileName = await exportExecutiveExcel(data, { onProgress, signal: ctrl.signal });
       } else {
         const { exportExecutivePDF } = await import("@/lib/exportExecutiveReport");
-        await exportExecutivePDF(data, { onProgress, signal: ctrl.signal });
+        fileName = await exportExecutivePDF(data, { onProgress, signal: ctrl.signal });
       }
-      toast.success("Relatório exportado com sucesso!", { id: toastId });
+      toast.success(`Arquivo gerado: ${fileName}`, { id: toastId });
     } catch (err) {
       if (isAbortError(err)) {
         toast.info("Exportacao cancelada", { id: toastId });
@@ -186,7 +187,7 @@ export default function ExportReportDropdown({
     } finally {
       abortRef.current = null;
       setLoading(false);
-      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false })), 600);
+      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false, minimized: false })), 600);
     }
   };
 
@@ -196,7 +197,7 @@ export default function ExportReportDropdown({
     setLoading(true);
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Apresentacao PPT" });
+    setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Apresentacao PPT", minimized: false });
     const toastId = toast.loading("Gerando apresentação PPT...");
     try {
       const piecesData = pieces.map(p => {
@@ -237,7 +238,7 @@ export default function ExportReportDropdown({
       });
 
       const { exportCampaignPPT } = await import("@/lib/exportCampaignPPT");
-      await exportCampaignPPT({
+      const fileName = await exportCampaignPPT({
         campaign: {
           name: campaignName,
           client_name: clientName,
@@ -248,10 +249,10 @@ export default function ExportReportDropdown({
         kits: kitsData,
         signal: ctrl.signal,
         onProgress: (current, total, label) => {
-          setCatalogProgress({ open: true, current, total, label, title: "Gerando Apresentacao PPT" });
+          setCatalogProgress(p => ({ ...p, open: true, current, total, label, title: "Gerando Apresentacao PPT" }));
         },
       });
-      toast.success("PPT exportado com sucesso!", { id: toastId });
+      toast.success(`Arquivo gerado: ${fileName}`, { id: toastId });
     } catch (err) {
       if (isAbortError(err)) {
         toast.info("Exportacao cancelada", { id: toastId });
@@ -262,7 +263,7 @@ export default function ExportReportDropdown({
     } finally {
       abortRef.current = null;
       setLoading(false);
-      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false })), 600);
+      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false, minimized: false })), 600);
     }
   };
 
@@ -272,7 +273,7 @@ export default function ExportReportDropdown({
     setLoading(true);
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Catalogo PDF" });
+    setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Catalogo PDF", minimized: false });
     const toastId = toast.loading("Gerando catalogo PDF com imagens...");
     try {
       const piecesData = pieces.map((p: any) => ({
@@ -307,7 +308,7 @@ export default function ExportReportDropdown({
       });
 
       const { exportPiecesCatalogPDF } = await import("@/lib/exportPiecesCatalogPDF");
-      await exportPiecesCatalogPDF({
+      const fileName = await exportPiecesCatalogPDF({
         campaign: {
           name: campaignName,
           client_name: clientName,
@@ -319,10 +320,10 @@ export default function ExportReportDropdown({
         customFieldLabels,
         signal: ctrl.signal,
         onProgress: (current, total, label) => {
-          setCatalogProgress({ open: true, current, total, label, title: "Gerando Catalogo PDF" });
+          setCatalogProgress(p => ({ ...p, open: true, current, total, label, title: "Gerando Catalogo PDF" }));
         },
       });
-      toast.success("Catalogo PDF exportado com sucesso!", { id: toastId });
+      toast.success(`Arquivo gerado: ${fileName}`, { id: toastId });
     } catch (err) {
       if (isAbortError(err)) {
         toast.info("Exportacao cancelada", { id: toastId });
@@ -333,7 +334,7 @@ export default function ExportReportDropdown({
     } finally {
       abortRef.current = null;
       setLoading(false);
-      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false })), 600);
+      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false, minimized: false })), 600);
     }
   };
 
@@ -475,10 +476,26 @@ export default function ExportReportDropdown({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={catalogProgress.open} onOpenChange={(o) => { if (!o && !loading) setCatalogProgress(p => ({ ...p, open: false })); }}>
+      <Dialog
+        open={catalogProgress.open && !catalogProgress.minimized}
+        onOpenChange={(o) => { if (!o && !loading) setCatalogProgress(p => ({ ...p, open: false })); }}
+      >
         <DialogContent className="max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle>{catalogProgress.title || "Gerando arquivo"}</DialogTitle>
+            <div className="flex items-center justify-between gap-2">
+              <DialogTitle>{catalogProgress.title || "Gerando arquivo"}</DialogTitle>
+              {loading && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setCatalogProgress(p => ({ ...p, minimized: true }))}
+                  title="Minimizar"
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <Progress value={catalogProgress.total > 0 ? (catalogProgress.current / catalogProgress.total) * 100 : 0} />
@@ -491,7 +508,7 @@ export default function ExportReportDropdown({
               </span>
             </div>
             <p className="text-[11px] text-muted-foreground text-center">
-              Nao feche esta janela ate o download iniciar.
+              Voce pode minimizar e continuar usando o app. Nao feche a aba do navegador.
             </p>
           </div>
           <DialogFooter>
@@ -507,6 +524,44 @@ export default function ExportReportDropdown({
 
         </DialogContent>
       </Dialog>
+
+      {catalogProgress.open && catalogProgress.minimized && (
+        <div className="fixed bottom-4 right-4 z-50 w-72 rounded-lg border bg-background shadow-lg p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold truncate">{catalogProgress.title || "Gerando arquivo"}</span>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setCatalogProgress(p => ({ ...p, minimized: false }))}
+                title="Restaurar"
+              >
+                <Maximize2 className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={handleCancelExport}
+                disabled={!loading}
+                title="Cancelar"
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+          <Progress value={catalogProgress.total > 0 ? (catalogProgress.current / catalogProgress.total) * 100 : 0} />
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <span className="truncate pr-2">{catalogProgress.label}</span>
+            <span className="font-mono shrink-0">
+              {catalogProgress.total > 0
+                ? `${Math.round((catalogProgress.current / catalogProgress.total) * 100)}%`
+                : "0%"}
+            </span>
+          </div>
+        </div>
+      )}
     </>
   );
 }
