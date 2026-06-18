@@ -88,9 +88,26 @@ function sanitize(name: string) {
 }
 
 /* ──────────────────────────────────────────
+   Tipo comum de progresso
+   ────────────────────────────────────────── */
+export interface ExportProgressOpts {
+  onProgress?: (current: number, total: number, label: string) => void;
+  signal?: AbortSignal;
+}
+
+function ensureNotAborted(signal?: AbortSignal) {
+  if (signal?.aborted) {
+    const e = new Error("Operacao cancelada pelo usuario");
+    (e as any).name = "AbortError";
+    throw e;
+  }
+}
+
+/* ──────────────────────────────────────────
    EXCEL
    ────────────────────────────────────────── */
-export async function exportExecutiveExcel(data: ReportData) {
+export async function exportExecutiveExcel(data: ReportData, opts: ExportProgressOpts = {}) {
+
   const XLSX = await import("xlsx");
   const wb = XLSX.utils.book_new();
   const sm = scheduleMap(data.schedules);
