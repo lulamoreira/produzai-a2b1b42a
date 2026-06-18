@@ -206,10 +206,14 @@ export async function exportExecutiveExcel(data: ReportData, opts: ExportProgres
   });
   const wsPhoto = XLSX.utils.aoa_to_sheet([photoHeader, ...photoRows]);
   XLSX.utils.book_append_sheet(wb, wsPhoto, sanitize("Fotos por Loja"));
+  tick("Aba Fotos gerada");
 
   const fileName = `Relatório_${data.campaignName.replace(/[^a-zA-Z0-9À-ú ]/g, "")}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  ensureNotAborted(signal);
   downloadWorkbook(wb, fileName);
+  tick("Concluido");
 }
+
 
 /* ──────────────────────────────────────────
    PDF
