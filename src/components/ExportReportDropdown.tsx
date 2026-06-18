@@ -157,24 +157,39 @@ export default function ExportReportDropdown({
 
   const handleExport = async (format: "excel" | "pdf") => {
     setLoading(true);
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    const title = format === "excel" ? "Gerando Relatorio Excel" : "Gerando Relatorio PDF Executivo";
+    setCatalogProgress({ open: true, current: 0, total: 0, label: "Buscando dados...", title });
     const toastId = toast.loading(format === "excel" ? "Gerando relatório Excel…" : "Gerando relatório PDF…");
     try {
       const data = await fetchReportData(campaignId, clientId, campaignName, clientName);
+      if (ctrl.signal.aborted) throw Object.assign(new Error("Cancelado"), { name: "AbortError" });
+      const onProgress = (current: number, total: number, label: string) => {
+        setCatalogProgress({ open: true, current, total, label, title });
+      };
       if (format === "excel") {
         const { exportExecutiveExcel } = await import("@/lib/exportExecutiveReport");
-        exportExecutiveExcel(data);
+        await exportExecutiveExcel(data, { onProgress, signal: ctrl.signal });
       } else {
         const { exportExecutivePDF } = await import("@/lib/exportExecutiveReport");
-        exportExecutivePDF(data);
+        await exportExecutivePDF(data, { onProgress, signal: ctrl.signal });
       }
       toast.success("Relatório exportado com sucesso!", { id: toastId });
     } catch (err) {
-      console.error("Export error:", err);
-      toast.error("Erro ao exportar relatório", { id: toastId });
+      if (isAbortError(err)) {
+        toast.info("Exportacao cancelada", { id: toastId });
+      } else {
+        console.error("Export error:", err);
+        toast.error("Erro ao exportar relatório", { id: toastId });
+      }
     } finally {
+      abortRef.current = null;
       setLoading(false);
+      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false })), 600);
     }
   };
+
 
   const handlePPTExportWithImage = async (imageUrl?: string) => {
     setPptDialogOpen(false);
