@@ -116,8 +116,10 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
     if (!user || !supplier.agency_id) return;
     setSending(true);
     try {
-      // Generate invitation token linked to this supplier (edit mode)
-      const expiresAt = addDays(new Date(), 30);
+      // Link de atualização de dados: eterno para que o fornecedor possa
+      // sempre retornar e corrigir informações sem depender de novo convite.
+      const expiresAt = new Date();
+      expiresAt.setFullYear(expiresAt.getFullYear() + 100);
       const { data: inv, error: invErr } = await supabase
         .from("supplier_invitations")
         .insert([{

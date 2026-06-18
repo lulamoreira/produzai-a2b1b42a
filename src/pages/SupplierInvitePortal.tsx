@@ -324,7 +324,7 @@ const SupplierInvitePortal = () => {
 
           if (recipientRaw && /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(recipientRaw)) {
             const expiresAt = new Date();
-            expiresAt.setDate(expiresAt.getDate() + 30);
+            expiresAt.setFullYear(expiresAt.getFullYear() + 100);
 
             const { data: newInv, error: invErr } = await supabase
               .from("supplier_invitations")
