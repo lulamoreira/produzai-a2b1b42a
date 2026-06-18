@@ -273,7 +273,7 @@ export default function ExportReportDropdown({
     setLoading(true);
     const ctrl = new AbortController();
     abortRef.current = ctrl;
-    setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Catalogo PDF" });
+    setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Catalogo PDF", minimized: false });
     const toastId = toast.loading("Gerando catalogo PDF com imagens...");
     try {
       const piecesData = pieces.map((p: any) => ({
@@ -308,7 +308,7 @@ export default function ExportReportDropdown({
       });
 
       const { exportPiecesCatalogPDF } = await import("@/lib/exportPiecesCatalogPDF");
-      await exportPiecesCatalogPDF({
+      const fileName = await exportPiecesCatalogPDF({
         campaign: {
           name: campaignName,
           client_name: clientName,
@@ -320,10 +320,10 @@ export default function ExportReportDropdown({
         customFieldLabels,
         signal: ctrl.signal,
         onProgress: (current, total, label) => {
-          setCatalogProgress({ open: true, current, total, label, title: "Gerando Catalogo PDF" });
+          setCatalogProgress(p => ({ ...p, open: true, current, total, label, title: "Gerando Catalogo PDF" }));
         },
       });
-      toast.success("Catalogo PDF exportado com sucesso!", { id: toastId });
+      toast.success(`Arquivo gerado: ${fileName}`, { id: toastId });
     } catch (err) {
       if (isAbortError(err)) {
         toast.info("Exportacao cancelada", { id: toastId });
@@ -334,7 +334,7 @@ export default function ExportReportDropdown({
     } finally {
       abortRef.current = null;
       setLoading(false);
-      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false })), 600);
+      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false, minimized: false })), 600);
     }
   };
 
