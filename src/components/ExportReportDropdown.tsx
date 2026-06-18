@@ -160,22 +160,23 @@ export default function ExportReportDropdown({
     const ctrl = new AbortController();
     abortRef.current = ctrl;
     const title = format === "excel" ? "Gerando Relatorio Excel" : "Gerando Relatorio PDF Executivo";
-    setCatalogProgress({ open: true, current: 0, total: 0, label: "Buscando dados...", title });
+    setCatalogProgress({ open: true, current: 0, total: 0, label: "Buscando dados...", title, minimized: false });
     const toastId = toast.loading(format === "excel" ? "Gerando relatório Excel…" : "Gerando relatório PDF…");
     try {
       const data = await fetchReportData(campaignId, clientId, campaignName, clientName);
       if (ctrl.signal.aborted) throw Object.assign(new Error("Cancelado"), { name: "AbortError" });
       const onProgress = (current: number, total: number, label: string) => {
-        setCatalogProgress({ open: true, current, total, label, title });
+        setCatalogProgress(p => ({ ...p, open: true, current, total, label, title }));
       };
+      let fileName: string;
       if (format === "excel") {
         const { exportExecutiveExcel } = await import("@/lib/exportExecutiveReport");
-        await exportExecutiveExcel(data, { onProgress, signal: ctrl.signal });
+        fileName = await exportExecutiveExcel(data, { onProgress, signal: ctrl.signal });
       } else {
         const { exportExecutivePDF } = await import("@/lib/exportExecutiveReport");
-        await exportExecutivePDF(data, { onProgress, signal: ctrl.signal });
+        fileName = await exportExecutivePDF(data, { onProgress, signal: ctrl.signal });
       }
-      toast.success("Relatório exportado com sucesso!", { id: toastId });
+      toast.success(`Arquivo gerado: ${fileName}`, { id: toastId });
     } catch (err) {
       if (isAbortError(err)) {
         toast.info("Exportacao cancelada", { id: toastId });
@@ -186,7 +187,7 @@ export default function ExportReportDropdown({
     } finally {
       abortRef.current = null;
       setLoading(false);
-      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false })), 600);
+      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false, minimized: false })), 600);
     }
   };
 
