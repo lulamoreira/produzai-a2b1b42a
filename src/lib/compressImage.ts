@@ -170,6 +170,39 @@ async function runPass(
   return { blob, width, height, quality };
 }
 
+function isHeic(file: File | Blob): boolean {
+  const name = (file as File).name?.toLowerCase() ?? "";
+  const type = (file.type || "").toLowerCase();
+  return (
+    type === "image/heic" ||
+    type === "image/heif" ||
+    name.endsWith(".heic") ||
+    name.endsWith(".heif")
+  );
+}
+
+/**
+ * Converts HEIC/HEIF to JPEG in the browser. JPEG is used (not PNG) because
+ * photographic HEICs become 10x+ larger as PNG, and the downstream pipeline
+ * already outputs JPEG. Returns the original file if conversion fails.
+ */
+async function convertHeicToJpeg(file: File): Promise<File> {
+  try {
+    const { default: heic2any } = await import("heic2any");
+    const converted = await heic2any({
+      blob: file,
+      toType: "image/jpeg",
+      quality: 0.9,
+    });
+    const blob = Array.isArray(converted) ? converted[0] : converted;
+    const newName = file.name.replace(/\.(heic|heif)$/i, ".jpg");
+    return new File([blob], newName, { type: "image/jpeg", lastModified: Date.now() });
+  } catch (e) {
+    console.warn("[compressImage] HEIC conversion failed — uploading original.", e);
+    return file;
+  }
+}
+
 export async function compressImage(
   file: File,
   maxDimension?: number,
@@ -182,14 +215,19 @@ export async function compressImage(
     if (maxDimension === undefined) maxDimension = profile.maxDimension;
     if (quality === undefined) quality = profile.quality;
   }
-  // If it's not actually an image (HEIC files often have empty type on Android), bail to original
   if (file.size === 0) throw new Error("Empty file");
+
+  // HEIC/HEIF: convert to JPEG first so canvas can decode it on every browser
+  // (Android Chrome and Desktop have no native HEIC decoder).
+  if (isHeic(file)) {
+    file = await convertHeicToJpeg(file);
+  }
 
   let source: Awaited<ReturnType<typeof loadBitmap>>;
   try {
     source = await loadBitmap(file);
   } catch {
-    // Cannot decode (e.g., HEIC on Android Chrome). Upload original.
+    // Cannot decode — upload original as last resort.
     return file;
   }
 
