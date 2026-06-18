@@ -171,8 +171,8 @@ const JoinPage = () => {
   }
 
   const isExpired = invite && new Date(invite.expires_at) < new Date();
-  const isUsed = invite && invite.used_at;
-  const isInvalid = !invite || isExpired || isUsed || queryError;
+  const isUsed = false; // Multi-use invite: do not block after first use
+  const isInvalid = !invite || isExpired || queryError;
 
   if (isInvalid) {
     return (
