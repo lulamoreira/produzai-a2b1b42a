@@ -87,7 +87,7 @@ const C = {
 const W = 338.6;
 const H = 190.5;
 
-export async function exportPiecesCatalogPDF(params: PieceCatalogPDFParams): Promise<void> {
+export async function exportPiecesCatalogPDF(params: PieceCatalogPDFParams): Promise<string> {
   const { jsPDF } = await import("jspdf");
   const { campaign, pieces, kits, customFieldLabels = [], onProgress, signal } = params;
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: [H, W] });
