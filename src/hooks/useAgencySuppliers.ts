@@ -49,6 +49,7 @@ export const VISUAL_COMMUNICATION_SERVICES = [
   "Acrílico e Termoflagagem",
   "Comunicação Visual (Geral)",
   "Projetos 3D",
+  "Impressão 3D",
   "Iluminação",
   "Adesivagem",
   "Fachadas",
