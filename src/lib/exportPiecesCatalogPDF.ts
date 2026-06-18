@@ -89,7 +89,7 @@ const H = 190.5;
 
 export async function exportPiecesCatalogPDF(params: PieceCatalogPDFParams): Promise<void> {
   const { jsPDF } = await import("jspdf");
-  const { campaign, pieces, kits, customFieldLabels = [], onProgress } = params;
+  const { campaign, pieces, kits, customFieldLabels = [], onProgress, signal } = params;
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: [H, W] });
   const exportDate = new Date().toLocaleDateString("pt-BR");
   const totalPages = pieces.length + 3;
@@ -101,8 +101,11 @@ export async function exportPiecesCatalogPDF(params: PieceCatalogPDFParams): Pro
   const tick = (label: string) => {
     step++;
     onProgress?.(step, totalSteps, label);
+    ensureNotAborted(signal);
   };
   onProgress?.(0, totalSteps, "Iniciando...");
+  ensureNotAborted(signal);
+
 
   // mapa peça → kits
   const pieceToKits = new Map<string, string[]>();
