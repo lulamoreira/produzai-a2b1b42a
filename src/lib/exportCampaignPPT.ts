@@ -32,7 +32,17 @@ interface ExportPPTParams {
     pieces?: Array<{ name: string; photo_url?: string }>; 
   }>;
   onProgress?: (current: number, total: number, label: string) => void;
+  signal?: AbortSignal;
 }
+
+function ensureNotAborted(signal?: AbortSignal) {
+  if (signal?.aborted) {
+    const e = new Error("Operacao cancelada pelo usuario");
+    (e as any).name = "AbortError";
+    throw e;
+  }
+}
+
 
 
 const COLORS = {
