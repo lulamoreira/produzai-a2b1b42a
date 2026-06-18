@@ -169,6 +169,7 @@ export default function ExportReportDropdown({
   const handlePPTExportWithImage = async (imageUrl?: string) => {
     setPptDialogOpen(false);
     setLoading(true);
+    setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Apresentacao PPT" });
     const toastId = toast.loading("Gerando apresentação PPT...");
     try {
       const piecesData = pieces.map(p => {
@@ -218,6 +219,9 @@ export default function ExportReportDropdown({
         },
         pieces: piecesData,
         kits: kitsData,
+        onProgress: (current, total, label) => {
+          setCatalogProgress({ open: true, current, total, label, title: "Gerando Apresentacao PPT" });
+        },
       });
       toast.success("PPT exportado com sucesso!", { id: toastId });
     } catch (err) {
@@ -225,8 +229,10 @@ export default function ExportReportDropdown({
       toast.error("Erro ao exportar PPT", { id: toastId });
     } finally {
       setLoading(false);
+      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false })), 600);
     }
   };
+
 
   const handleCatalogPDFExport = async () => {
     setLoading(true);
