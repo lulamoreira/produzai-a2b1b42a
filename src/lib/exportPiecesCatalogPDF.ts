@@ -395,5 +395,7 @@ export async function exportPiecesCatalogPDF(params: PieceCatalogPDFParams): Pro
   doc.text(exportDate, W / 2, H - 5, { align: "center" });
 
   const fileName = `${campaign.name}_catalogo_${new Date().toISOString().slice(0, 10)}.pdf`;
+  tick("Finalizando PDF...");
   doc.save(fileName);
+  onProgress?.(totalSteps, totalSteps, "Concluido");
 }
