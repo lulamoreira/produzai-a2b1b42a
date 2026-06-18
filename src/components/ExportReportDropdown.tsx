@@ -230,7 +230,7 @@ export default function ExportReportDropdown({
 
   const handleCatalogPDFExport = async () => {
     setLoading(true);
-    setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados..." });
+    setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Catalogo PDF" });
     const toastId = toast.loading("Gerando catalogo PDF com imagens...");
     try {
       const piecesData = pieces.map((p: any) => ({
