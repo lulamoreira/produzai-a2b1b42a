@@ -309,10 +309,12 @@ export async function exportExecutivePDF(data: ReportData, opts: ExportProgressO
     alternateRowStyles: { fillColor: LIGHT_BG },
     margin: { left: 14 },
   });
+  tick("Resumo gerado");
 
   // ── Store detail pages ──
   doc.addPage();
   addHeaderBar(doc, `${data.campaignName} — Detalhamento por Loja`);
+
 
   const occCount = countByStore(data.occurrences);
   const photoCountMap = countByStore(data.photos);
