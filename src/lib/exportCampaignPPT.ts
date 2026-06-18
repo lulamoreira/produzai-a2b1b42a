@@ -230,6 +230,8 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   slideIndice.addText(`Página 2 / ${totalSlides}`, {
     x: 10.0, y: 7.2, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri"
   });
+  tick("Indice gerado");
+
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SLIDES DE PEÇA
