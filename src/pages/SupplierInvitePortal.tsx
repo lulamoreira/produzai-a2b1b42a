@@ -324,7 +324,7 @@ const SupplierInvitePortal = () => {
 
           if (recipientRaw && /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(recipientRaw)) {
             const expiresAt = new Date();
-            expiresAt.setDate(expiresAt.getDate() + 30);
+            expiresAt.setFullYear(expiresAt.getFullYear() + 100);
 
             const { data: newInv, error: invErr } = await supabase
               .from("supplier_invitations")
@@ -419,7 +419,9 @@ const SupplierInvitePortal = () => {
       <div className="min-h-screen flex flex-col items-center justify-center p-4 text-center">
         <CheckCircle2 className="w-16 h-16 text-green-500 mb-4" />
         <h1 className="text-2xl font-bold mb-2">Cadastro enviado com sucesso!</h1>
-        <p className="text-muted-foreground">A agência entrará em contato em breve. Obrigado!</p>
+        <p className="text-muted-foreground max-w-md">
+          Guarde este link — ele é <strong>eterno</strong> e você poderá usá-lo sempre que quiser atualizar seus dados.
+        </p>
       </div>
     );
   }
@@ -435,6 +437,13 @@ const SupplierInvitePortal = () => {
             <h1 className="text-2xl font-bold">Cadastro de Fornecedor</h1>
             <p className="text-muted-foreground">
               Você foi convidado para se cadastrar como fornecedor de <span className="font-semibold">{agency?.name}</span>
+            </p>
+          </div>
+          <div className="flex items-start gap-2 p-3 rounded-md border border-primary/20 bg-primary/5 text-xs text-foreground/80 max-w-xl mx-auto">
+            <AlertCircle className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <p>
+              Este link é <strong>eterno</strong>. Você pode acessá-lo sempre que quiser alterar seus dados —
+              não precisa esperar por um novo convite.
             </p>
           </div>
         </div>

@@ -158,11 +158,9 @@ const Email = ({
             </Button>
           </Section>
 
-          {expiresStr && (
-            <Text style={deadlineText}>
-              ⏰ Este link de edição é válido até <strong>{expiresStr}</strong>.
-            </Text>
-          )}
+          <Text style={deadlineText}>
+            🔓 Este link de edição é <strong>eterno</strong>. Guarde este e-mail e use-o sempre que precisar atualizar seus dados.
+          </Text>
 
           <Hr style={hr} />
 
