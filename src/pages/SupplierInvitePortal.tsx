@@ -33,6 +33,8 @@ const formatCNPJ = (value: string) => {
 };
 const formatPhoneBR = (v: string) => formatPhoneByCountry(v, "BR");
 
+const SESSION_KEY_PREFIX = "supplier-invite-session:"; // localStorage key per token
+
 const SupplierInvitePortal = () => {
   const { token } = useParams<{ token: string }>();
   const [loading, setLoading] = useState(true);
@@ -41,6 +43,12 @@ const SupplierInvitePortal = () => {
   const [error, setError] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
+  // Quando o invitation foi criado já vinculado a um fornecedor (modo edição),
+  // este id é fixo durante toda a sessão. Para links genéricos fica null e cada
+  // pessoa cria/edita o próprio cadastro via sessionSupplierId (localStorage).
+  const [editModeSupplierId, setEditModeSupplierId] = useState<string | null>(null);
+  const [sessionSupplierId, setSessionSupplierId] = useState<string | null>(null);
+
 
   const [form, setForm] = useState({
     company_name: "",
