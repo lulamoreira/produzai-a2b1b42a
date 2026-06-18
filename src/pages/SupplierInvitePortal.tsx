@@ -98,42 +98,8 @@ const SupplierInvitePortal = () => {
       setInvitation(inv);
       setAgency(inv.agencies);
 
-      const sessionDraftId = sessionStorage.getItem(`supplier_draft_${token}`);
-      if (sessionDraftId) {
-        const { data: supplier } = await supabase
-          .from("agency_suppliers")
-          .select("*")
-          .eq("id", sessionDraftId)
-          .maybeSingle();
-
-        if (supplier) {
-          setMySupplierDraftId(sessionDraftId);
-          setForm({
-            company_name: supplier.company_name || "",
-            cnpj: supplier.cnpj || "",
-            contact_name: supplier.contact_name || "",
-            address: supplier.address || "",
-            phone: supplier.phone || "",
-            whatsapp: supplier.whatsapp || "",
-            email: supplier.email || "",
-            website: supplier.website || "",
-            observations: supplier.observations || "",
-            services: Array.isArray(supplier.services) ? (supplier.services as string[]) : [],
-            custom_service: "",
-            file_urls: Array.isArray(supplier.file_urls) ? (supplier.file_urls as any[]) : [],
-            contacts: Array.isArray(supplier.contacts) && supplier.contacts.length > 0
-              ? (supplier.contacts as unknown as SupplierContact[])
-              : [{ nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }],
-            cep: supplier.cep || "",
-            logradouro: supplier.logradouro || "",
-            numero: supplier.numero || "",
-            complemento: supplier.complemento || "",
-            bairro: supplier.bairro || "",
-            cidade: supplier.cidade || "",
-            estado: supplier.estado || "",
-          });
-        }
-      }
+      // O formulário SEMPRE abre em branco. Nenhum cadastro existente é carregado
+      // ou exposto por este portal — para garantir que não seja sobrescrito.
 
       setLoading(false);
     };
