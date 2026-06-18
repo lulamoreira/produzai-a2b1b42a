@@ -29,7 +29,9 @@ export interface PieceCatalogPDFParams {
     pieces?: Array<{ name: string }>;
   }>;
   customFieldLabels?: Array<string | null>;
+  onProgress?: (current: number, total: number, label: string) => void;
 }
+
 
 async function urlToBase64PDF(url: string): Promise<{ data: string; ext: "JPEG" | "PNG" } | null> {
   try {
