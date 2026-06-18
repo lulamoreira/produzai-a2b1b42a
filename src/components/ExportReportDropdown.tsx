@@ -494,6 +494,17 @@ export default function ExportReportDropdown({
               Nao feche esta janela ate o download iniciar.
             </p>
           </div>
+          <DialogFooter>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleCancelExport}
+              disabled={!loading || !abortRef.current}
+            >
+              Cancelar exportacao
+            </Button>
+          </DialogFooter>
+
         </DialogContent>
       </Dialog>
     </>
