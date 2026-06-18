@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { FileSpreadsheet, FileText, ChevronDown, Presentation, Upload, History, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
