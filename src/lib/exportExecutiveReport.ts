@@ -348,7 +348,11 @@ export async function exportExecutivePDF(data: ReportData, opts: ExportProgressO
       }
     },
   });
+  tick("Detalhamento gerado");
 
   const fileName = `Relatório_${data.campaignName.replace(/[^a-zA-Z0-9À-ú ]/g, "")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  ensureNotAborted(signal);
   doc.save(fileName);
+  tick("Concluido");
 }
+
