@@ -362,10 +362,14 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   slideFinal.addText(exportDate, {
     x: 0, y: 6.9, w: 13.33, align: "center", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri"
   });
+  tick("Slide final gerado");
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // WRITE FILE
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const fileName = `${campaign.name}_pecas_${new Date().toISOString().slice(0,10)}.pptx`;
+  onProgress?.(totalSteps - 1, totalSteps, "Gerando arquivo .pptx...");
   await pptx.writeFile({ fileName });
+  tick("Concluido");
 }
+
