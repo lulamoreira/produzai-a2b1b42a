@@ -31,7 +31,9 @@ interface ExportPPTParams {
     photo_url?: string; 
     pieces?: Array<{ name: string; photo_url?: string }>; 
   }>;
+  onProgress?: (current: number, total: number, label: string) => void;
 }
+
 
 const COLORS = {
   bg: "#FFFFFF",
