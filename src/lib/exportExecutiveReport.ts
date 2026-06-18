@@ -107,12 +107,20 @@ function ensureNotAborted(signal?: AbortSignal) {
    EXCEL
    ────────────────────────────────────────── */
 export async function exportExecutiveExcel(data: ReportData, opts: ExportProgressOpts = {}) {
+  const { onProgress, signal } = opts;
+  const TOTAL = 6;
+  let step = 0;
+  const tick = (label: string) => { step++; onProgress?.(step, TOTAL, label); ensureNotAborted(signal); };
+  onProgress?.(0, TOTAL, "Carregando biblioteca...");
+  ensureNotAborted(signal);
 
   const XLSX = await import("xlsx");
   const wb = XLSX.utils.book_new();
   const sm = scheduleMap(data.schedules);
   const occCount = countByStore(data.occurrences);
   const photoCount = countByStore(data.photos);
+  tick("Preparando dados...");
+
 
   // 1 — Resumo
   const totalStores = data.stores.length;
