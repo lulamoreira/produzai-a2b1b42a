@@ -276,7 +276,7 @@ export default function ExportReportDropdown({
         kits: kitsData,
         customFieldLabels,
         onProgress: (current, total, label) => {
-          setCatalogProgress({ open: true, current, total, label });
+          setCatalogProgress({ open: true, current, total, label, title: "Gerando Catalogo PDF" });
         },
       });
       toast.success("Catalogo PDF exportado com sucesso!", { id: toastId });
