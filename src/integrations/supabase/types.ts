@@ -101,6 +101,45 @@ export type Database = {
         }
         Relationships: []
       }
+      agency_supplier_audit_log: {
+        Row: {
+          agency_id: string | null
+          changed_by: string | null
+          changed_fields: string[] | null
+          created_at: string
+          id: string
+          new_data: Json | null
+          old_data: Json | null
+          operation: string
+          source: string
+          supplier_id: string | null
+        }
+        Insert: {
+          agency_id?: string | null
+          changed_by?: string | null
+          changed_fields?: string[] | null
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          operation: string
+          source?: string
+          supplier_id?: string | null
+        }
+        Update: {
+          agency_id?: string | null
+          changed_by?: string | null
+          changed_fields?: string[] | null
+          created_at?: string
+          id?: string
+          new_data?: Json | null
+          old_data?: Json | null
+          operation?: string
+          source?: string
+          supplier_id?: string | null
+        }
+        Relationships: []
+      }
       agency_suppliers: {
         Row: {
           address: string | null
