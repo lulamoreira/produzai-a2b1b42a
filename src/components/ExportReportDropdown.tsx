@@ -127,9 +127,11 @@ export default function ExportReportDropdown({
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [pptDialogOpen, setPptDialogOpen] = useState(false);
-  const [catalogProgress, setCatalogProgress] = useState<{ open: boolean; current: number; total: number; label: string }>({
+  const [catalogProgress, setCatalogProgress] = useState<{ open: boolean; current: number; total: number; label: string; title?: string }>({
     open: false, current: 0, total: 0, label: "",
   });
+
+
 
   const { t } = useTranslation();
   const { data: campaign } = useCampaign(campaignId);
@@ -167,6 +169,7 @@ export default function ExportReportDropdown({
   const handlePPTExportWithImage = async (imageUrl?: string) => {
     setPptDialogOpen(false);
     setLoading(true);
+    setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Apresentacao PPT" });
     const toastId = toast.loading("Gerando apresentação PPT...");
     try {
       const piecesData = pieces.map(p => {
@@ -216,6 +219,9 @@ export default function ExportReportDropdown({
         },
         pieces: piecesData,
         kits: kitsData,
+        onProgress: (current, total, label) => {
+          setCatalogProgress({ open: true, current, total, label, title: "Gerando Apresentacao PPT" });
+        },
       });
       toast.success("PPT exportado com sucesso!", { id: toastId });
     } catch (err) {
@@ -223,12 +229,14 @@ export default function ExportReportDropdown({
       toast.error("Erro ao exportar PPT", { id: toastId });
     } finally {
       setLoading(false);
+      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false })), 600);
     }
   };
 
+
   const handleCatalogPDFExport = async () => {
     setLoading(true);
-    setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados..." });
+    setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Catalogo PDF" });
     const toastId = toast.loading("Gerando catalogo PDF com imagens...");
     try {
       const piecesData = pieces.map((p: any) => ({
@@ -274,7 +282,7 @@ export default function ExportReportDropdown({
         kits: kitsData,
         customFieldLabels,
         onProgress: (current, total, label) => {
-          setCatalogProgress({ open: true, current, total, label });
+          setCatalogProgress({ open: true, current, total, label, title: "Gerando Catalogo PDF" });
         },
       });
       toast.success("Catalogo PDF exportado com sucesso!", { id: toastId });
@@ -427,7 +435,7 @@ export default function ExportReportDropdown({
       <Dialog open={catalogProgress.open} onOpenChange={(o) => { if (!o && !loading) setCatalogProgress(p => ({ ...p, open: false })); }}>
         <DialogContent className="max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle>Gerando Catalogo PDF</DialogTitle>
+            <DialogTitle>{catalogProgress.title || "Gerando arquivo"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <Progress value={catalogProgress.total > 0 ? (catalogProgress.current / catalogProgress.total) * 100 : 0} />

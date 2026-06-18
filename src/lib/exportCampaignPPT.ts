@@ -31,7 +31,9 @@ interface ExportPPTParams {
     photo_url?: string; 
     pieces?: Array<{ name: string; photo_url?: string }>; 
   }>;
+  onProgress?: (current: number, total: number, label: string) => void;
 }
+
 
 const COLORS = {
   bg: "#FFFFFF",
@@ -71,7 +73,7 @@ async function urlToBase64(url: string): Promise<string | null> {
 }
 
 export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> {
-  const { campaign, pieces, kits } = params;
+  const { campaign, pieces, kits, onProgress } = params;
   const pptx = new pptxgen();
   pptx.layout = "LAYOUT_WIDE";
 
@@ -88,11 +90,28 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   const totalSlides = 1 + 1 + pieces.length + 1;
   const exportDate = new Date().toLocaleDateString();
 
-  // 1. Preload images
+  // Progresso: imagens + capa + indice + cada peca + final + writeFile
+  const totalImgs = (campaign.cover_image_url ? 1 : 0) + pieces.filter(p => p.photo_url).length;
+  const totalSteps = totalImgs + 1 + 1 + pieces.length + 1 + 1;
+  let step = 0;
+  const tick = (label: string) => {
+    step++;
+    onProgress?.(step, totalSteps, label);
+  };
+  onProgress?.(0, totalSteps, "Iniciando...");
+
+  // 1. Preload images com tick por imagem
+  const loadWithTick = async (url: string | undefined | null, label: string) => {
+    if (!url) return null;
+    const r = await urlToBase64(url);
+    tick(label);
+    return r;
+  };
   const [coverImageB64, ...pieceImages] = await Promise.all([
-    campaign.cover_image_url ? urlToBase64(campaign.cover_image_url) : Promise.resolve(null),
-    ...pieces.map(p => p.photo_url ? urlToBase64(p.photo_url) : Promise.resolve(null))
+    campaign.cover_image_url ? loadWithTick(campaign.cover_image_url, "Carregando capa...") : Promise.resolve(null),
+    ...pieces.map((p, i) => p.photo_url ? loadWithTick(p.photo_url, `Carregando imagem ${i + 1}/${pieces.length}...`) : Promise.resolve(null))
   ]);
+
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SLIDE 1 — CAPA
@@ -158,6 +177,8 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   slideCapa.addText("Peças & Kits", {
     x: 10.0, y: 6.9, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 10, fontFace: "Calibri"
   });
+  tick("Capa gerada");
+
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SLIDE 2 — ÍNDICE
@@ -209,6 +230,8 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   slideIndice.addText(`Página 2 / ${totalSlides}`, {
     x: 10.0, y: 7.2, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri"
   });
+  tick("Indice gerado");
+
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SLIDES DE PEÇA
@@ -315,7 +338,10 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     slide.addShape(pptx.ShapeType.line, { x: 0.4, y: 7.1, w: 12.53, line: { color: COLORS.border, width: 0.5 } });
     slide.addText(campaign.name, { x: 0.4, y: 7.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
     slide.addText(`Página ${pageNum} / ${totalSlides}`, { x: 10.0, y: 7.2, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri" });
+    tick(`Peca ${idx + 1}/${pieces.length}: ${piece.name}`);
+    if (idx % 3 === 0) await new Promise(r => setTimeout(r, 0));
   }
+
 
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -336,10 +362,14 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   slideFinal.addText(exportDate, {
     x: 0, y: 6.9, w: 13.33, align: "center", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri"
   });
+  tick("Slide final gerado");
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // WRITE FILE
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const fileName = `${campaign.name}_pecas_${new Date().toISOString().slice(0,10)}.pptx`;
+  onProgress?.(totalSteps - 1, totalSteps, "Gerando arquivo .pptx...");
   await pptx.writeFile({ fileName });
+  tick("Concluido");
 }
+
