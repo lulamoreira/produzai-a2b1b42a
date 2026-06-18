@@ -423,6 +423,28 @@ export default function ExportReportDropdown({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={catalogProgress.open} onOpenChange={(o) => { if (!o && !loading) setCatalogProgress(p => ({ ...p, open: false })); }}>
+        <DialogContent className="max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>Gerando Catalogo PDF</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <Progress value={catalogProgress.total > 0 ? (catalogProgress.current / catalogProgress.total) * 100 : 0} />
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span className="truncate pr-2">{catalogProgress.label}</span>
+              <span className="font-mono shrink-0">
+                {catalogProgress.total > 0
+                  ? `${Math.round((catalogProgress.current / catalogProgress.total) * 100)}%`
+                  : "0%"}
+              </span>
+            </div>
+            <p className="text-[11px] text-muted-foreground text-center">
+              Nao feche esta janela ate o download iniciar.
+            </p>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
