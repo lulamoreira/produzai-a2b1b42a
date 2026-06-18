@@ -73,7 +73,7 @@ async function urlToBase64(url: string): Promise<string | null> {
 }
 
 export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> {
-  const { campaign, pieces, kits } = params;
+  const { campaign, pieces, kits, onProgress } = params;
   const pptx = new pptxgen();
   pptx.layout = "LAYOUT_WIDE";
 
@@ -90,11 +90,28 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   const totalSlides = 1 + 1 + pieces.length + 1;
   const exportDate = new Date().toLocaleDateString();
 
-  // 1. Preload images
+  // Progresso: imagens + capa + indice + cada peca + final + writeFile
+  const totalImgs = (campaign.cover_image_url ? 1 : 0) + pieces.filter(p => p.photo_url).length;
+  const totalSteps = totalImgs + 1 + 1 + pieces.length + 1 + 1;
+  let step = 0;
+  const tick = (label: string) => {
+    step++;
+    onProgress?.(step, totalSteps, label);
+  };
+  onProgress?.(0, totalSteps, "Iniciando...");
+
+  // 1. Preload images com tick por imagem
+  const loadWithTick = async (url: string | undefined | null, label: string) => {
+    if (!url) return null;
+    const r = await urlToBase64(url);
+    tick(label);
+    return r;
+  };
   const [coverImageB64, ...pieceImages] = await Promise.all([
-    campaign.cover_image_url ? urlToBase64(campaign.cover_image_url) : Promise.resolve(null),
-    ...pieces.map(p => p.photo_url ? urlToBase64(p.photo_url) : Promise.resolve(null))
+    campaign.cover_image_url ? loadWithTick(campaign.cover_image_url, "Carregando capa...") : Promise.resolve(null),
+    ...pieces.map((p, i) => p.photo_url ? loadWithTick(p.photo_url, `Carregando imagem ${i + 1}/${pieces.length}...`) : Promise.resolve(null))
   ]);
+
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SLIDE 1 — CAPA
