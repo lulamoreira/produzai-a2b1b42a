@@ -98,8 +98,59 @@ const SupplierInvitePortal = () => {
       setInvitation(inv);
       setAgency(inv.agencies);
 
-      // O formulário SEMPRE abre em branco. Nenhum cadastro existente é carregado
-      // ou exposto por este portal — para garantir que não seja sobrescrito.
+      // Se o convite está vinculado a um fornecedor específico (link de
+      // "confirmar/atualizar dados" enviado por e-mail), carrega os dados
+      // existentes para que o fornecedor confira e atualize.
+      // Caso contrário (convite genérico de novo cadastro), abre em branco.
+      let supplierIdToLoad: string | null = inv.supplier_id || null;
+
+      // Persistência por aba: se já criamos um rascunho nesta sessão para
+      // este token, continuamos editando o mesmo registro.
+      const draftKey = `supplier_draft_${token}`;
+      const draftId = sessionStorage.getItem(draftKey);
+      if (!supplierIdToLoad && draftId) supplierIdToLoad = draftId;
+
+      if (supplierIdToLoad) {
+        const { data: sup } = await supabase
+          .from("agency_suppliers")
+          .select("*")
+          .eq("id", supplierIdToLoad)
+          .maybeSingle();
+
+        if (sup) {
+          setMySupplierDraftId(sup.id);
+          const services: string[] = Array.isArray(sup.services) ? sup.services : [];
+          const known = new Set(VISUAL_COMMUNICATION_SERVICES);
+          const customSvc = services.find(s => !known.has(s)) || "";
+          const stdServices = services.filter(s => known.has(s));
+          const contacts = Array.isArray(sup.contacts) && sup.contacts.length > 0
+            ? (sup.contacts as any as SupplierContact[])
+            : [{ nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }];
+          setForm(f => ({
+            ...f,
+            company_name: sup.company_name || "",
+            cnpj: sup.cnpj || "",
+            contact_name: sup.contact_name || "",
+            address: sup.address || "",
+            phone: sup.phone || "",
+            whatsapp: sup.whatsapp || "",
+            email: sup.email || "",
+            website: sup.website || "",
+            observations: sup.observations || "",
+            services: stdServices,
+            custom_service: customSvc,
+            file_urls: Array.isArray(sup.file_urls) ? sup.file_urls as any : [],
+            contacts,
+            cep: sup.cep || "",
+            logradouro: sup.logradouro || "",
+            numero: sup.numero || "",
+            complemento: sup.complemento || "",
+            bairro: sup.bairro || "",
+            cidade: sup.cidade || "",
+            estado: sup.estado || "",
+          }));
+        }
+      }
 
       setLoading(false);
     };
