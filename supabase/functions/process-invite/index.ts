@@ -41,17 +41,15 @@ Deno.serve(async (req) => {
 
     const admin = createClient(supabaseUrl, serviceRoleKey);
 
-    // Find the invite
-    const { data: invite, error: invErr } = await admin
-      .from('invites')
-      .select('*')
-    // Find the invite
+    // Find the invite (multi-use: do not filter by used_at)
     const { data: invite, error: invErr } = await admin
       .from('invites')
       .select('*')
       .eq('token', token)
-      .is('used_at', null)
-      .single();
+      .maybeSingle();
+
+    if (invErr || !invite) {
+      return new Response(JSON.stringify({ error: 'Invite not found' }), {
         status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -133,7 +131,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // 4. Mark invite as used
+    // 4. Record last use timestamp (multi-use invite — does NOT block reuse)
     await admin
       .from('invites')
       .update({ used_at: new Date().toISOString() })
