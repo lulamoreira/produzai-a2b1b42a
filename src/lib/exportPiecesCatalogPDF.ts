@@ -220,6 +220,8 @@ export async function exportPiecesCatalogPDF(params: PieceCatalogPDFParams): Pro
   renderIndexCol(pieces.slice(0, half), 10, 0);
   renderIndexCol(pieces.slice(half), W / 2 + 5, half);
   addFooter(2);
+  tick("Indice gerado");
+
 
   // ── PAGINAS DE PECA ──────────────────────────────────────
 
