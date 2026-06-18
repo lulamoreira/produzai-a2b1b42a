@@ -30,7 +30,17 @@ export interface PieceCatalogPDFParams {
   }>;
   customFieldLabels?: Array<string | null>;
   onProgress?: (current: number, total: number, label: string) => void;
+  signal?: AbortSignal;
 }
+
+function ensureNotAborted(signal?: AbortSignal) {
+  if (signal?.aborted) {
+    const e = new Error("Operacao cancelada pelo usuario");
+    (e as any).name = "AbortError";
+    throw e;
+  }
+}
+
 
 
 async function urlToBase64PDF(url: string): Promise<{ data: string; ext: "JPEG" | "PNG" } | null> {
