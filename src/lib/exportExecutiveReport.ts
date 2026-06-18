@@ -173,6 +173,8 @@ export async function exportExecutiveExcel(data: ReportData, opts: ExportProgres
   const wsDetail = XLSX.utils.aoa_to_sheet([detailHeader, ...detailRows]);
   wsDetail["!cols"] = [{ wch: 30 }, { wch: 18 }, { wch: 6 }, { wch: 15 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 8 }, { wch: 12 }];
   XLSX.utils.book_append_sheet(wb, wsDetail, sanitize("Detalhamento por Loja"));
+  tick("Aba Detalhamento gerada");
+
 
   // 3 — Ocorrências
   const storeNameMap: Record<string, string> = {};
