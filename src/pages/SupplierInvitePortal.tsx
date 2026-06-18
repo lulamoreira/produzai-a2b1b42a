@@ -43,11 +43,8 @@ const SupplierInvitePortal = () => {
   const [error, setError] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
-  // Quando o invitation foi criado já vinculado a um fornecedor (modo edição),
-  // este id é fixo durante toda a sessão. Para links genéricos fica null e cada
-  // pessoa cria/edita o próprio cadastro via sessionSupplierId (localStorage).
-  const [editModeSupplierId, setEditModeSupplierId] = useState<string | null>(null);
-  const [sessionSupplierId, setSessionSupplierId] = useState<string | null>(null);
+  const [mySupplierDraftId, setMySupplierDraftId] = useState<string | null>(null);
+
 
 
   const [form, setForm] = useState({
@@ -101,35 +98,16 @@ const SupplierInvitePortal = () => {
       setInvitation(inv);
       setAgency(inv.agencies);
 
-      // Decide qual supplier carregar:
-      //  - Se o invitation já nasceu com supplier_id => modo edição fixa.
-      //  - Caso contrário, link genérico: tenta carregar o supplier que ESTA
-      //    sessão (mesmo navegador) criou anteriormente. Outras pessoas que
-      //    abrirem o mesmo link verão formulário em branco.
-      let supplierIdToLoad: string | null = null;
-      if (inv.supplier_id) {
-        setEditModeSupplierId(inv.supplier_id);
-        supplierIdToLoad = inv.supplier_id;
-      } else {
-        try {
-          const stored = localStorage.getItem(`${SESSION_KEY_PREFIX}${token}`);
-          if (stored) {
-            setSessionSupplierId(stored);
-            supplierIdToLoad = stored;
-          }
-        } catch {
-          /* localStorage indisponível */
-        }
-      }
-
-      if (supplierIdToLoad) {
+      const sessionDraftId = sessionStorage.getItem(`supplier_draft_${token}`);
+      if (sessionDraftId) {
         const { data: supplier } = await supabase
           .from("agency_suppliers")
           .select("*")
-          .eq("id", supplierIdToLoad)
+          .eq("id", sessionDraftId)
           .maybeSingle();
 
         if (supplier) {
+          setMySupplierDraftId(sessionDraftId);
           setForm({
             company_name: supplier.company_name || "",
             cnpj: supplier.cnpj || "",
@@ -154,13 +132,9 @@ const SupplierInvitePortal = () => {
             cidade: supplier.cidade || "",
             estado: supplier.estado || "",
           });
-        } else if (!inv.supplier_id) {
-          // ID gravado no localStorage não existe mais (cadastro deletado).
-          // Limpa para começar do zero.
-          try { localStorage.removeItem(`${SESSION_KEY_PREFIX}${token}`); } catch { /* noop */ }
-          setSessionSupplierId(null);
         }
       }
+
       setLoading(false);
     };
 
