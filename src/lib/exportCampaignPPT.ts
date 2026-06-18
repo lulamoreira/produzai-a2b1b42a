@@ -338,7 +338,10 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
     slide.addShape(pptx.ShapeType.line, { x: 0.4, y: 7.1, w: 12.53, line: { color: COLORS.border, width: 0.5 } });
     slide.addText(campaign.name, { x: 0.4, y: 7.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
     slide.addText(`Página ${pageNum} / ${totalSlides}`, { x: 10.0, y: 7.2, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri" });
+    tick(`Peca ${idx + 1}/${pieces.length}: ${piece.name}`);
+    if (idx % 3 === 0) await new Promise(r => setTimeout(r, 0));
   }
+
 
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
