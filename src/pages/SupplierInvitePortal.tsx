@@ -296,7 +296,11 @@ const SupplierInvitePortal = () => {
         estado: form.estado || null,
       };
 
-      let supplierId = invitation.supplier_id;
+      // Determina qual supplier será gravado:
+      //  - editModeSupplierId: invitation já nasceu vinculado a 1 fornecedor (edição).
+      //  - sessionSupplierId: link genérico que ESTA sessão já criou antes (mesmo navegador).
+      //  - caso contrário: cria um novo cadastro independente.
+      let supplierId: string | null = editModeSupplierId || sessionSupplierId;
 
       if (supplierId) {
         const { error: updateError } = await supabase
@@ -312,17 +316,25 @@ const SupplierInvitePortal = () => {
         if (insertError) throw insertError;
         supplierId = newId;
 
-        await supabase
-          .from("supplier_invitations")
-          .update({ supplier_id: supplierId })
-          .eq("id", invitation.id);
+        // IMPORTANTE: NÃO atualizamos supplier_invitations.supplier_id em links
+        // genéricos — isso causava a sobrescrita do cadastro anterior quando
+        // outra pessoa abria o mesmo link. Guardamos só localmente para que a
+        // mesma pessoa possa retomar o preenchimento neste navegador.
+        try { localStorage.setItem(`${SESSION_KEY_PREFIX}${token}`, newId); } catch { /* noop */ }
+        setSessionSupplierId(newId);
       }
 
       if (isComplete) {
-        await supabase
-          .from("supplier_invitations")
-          .update({ status: "completed" })
-          .eq("id", invitation.id);
+        // Marca o invitation como completed apenas se for modo edição
+        // (1 fornecedor por link). Em links genéricos o mesmo invitation
+        // continua válido para outros fornecedores até expirar.
+        if (editModeSupplierId) {
+          await supabase
+            .from("supplier_invitations")
+            .update({ status: "completed" })
+            .eq("id", invitation.id);
+        }
+
 
         // Auto-send confirmation email (same as the "Enviar e-mail de confirmação" button)
         try {
