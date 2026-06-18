@@ -20,8 +20,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { Progress } from "@/components/ui/progress";
 import type { ReportData } from "@/lib/exportExecutiveReport";
 import { useCampaign, useUpdateCampaign } from "@/hooks/useMultiClientData";
+
 
 interface Props {
   campaignId: string;
