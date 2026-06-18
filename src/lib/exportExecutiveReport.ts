@@ -355,5 +355,6 @@ export async function exportExecutivePDF(data: ReportData, opts: ExportProgressO
   ensureNotAborted(signal);
   doc.save(fileName);
   tick("Concluido");
+  return fileName;
 }
 
