@@ -1302,7 +1302,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                           decoding="async"
                           className="w-8 h-8 rounded object-cover border border-[var(--border-subtle)]"
                           onClick={(e) => { e.stopPropagation(); setCheckinStore(store); }}
-                          onError={() => handleMediaError(photo.id, photo.campaign_id)}
+                          onError={() => handleMediaError(photo.id, photo.campaign_id, photo.photo_url)}
                         />
                         {((photo as any).reinstall_seq ?? 0) > 0 && (
                           <span
@@ -1874,7 +1874,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                               decoding="async"
                               className="w-12 h-12 rounded-md object-cover border border-border cursor-pointer hover:opacity-80"
                               onClick={() => setCheckinStore(store)}
-                              onError={() => handleMediaError(photo.id, photo.campaign_id)}
+                              onError={() => handleMediaError(photo.id, photo.campaign_id, photo.photo_url)}
                             />
                             <ReinstallPhotoBadge
                               reinstallSeq={(photo as any).reinstall_seq}

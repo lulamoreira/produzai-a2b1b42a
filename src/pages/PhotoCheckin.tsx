@@ -321,7 +321,7 @@ export default function PhotoCheckin() {
               <div key={photo.id} className="group relative rounded-lg overflow-hidden border border-border bg-muted/30">
                 {isVideo(photo) ? (
                   <div className="w-full aspect-square relative cursor-pointer bg-black flex items-center justify-center" onClick={() => setLightboxIndex(i)}>
-                    <video src={photo.photo_url} className="w-full h-full object-cover" muted preload="metadata" onError={() => handleMediaError(photo.id, campaignId!)} />
+                    <video src={photo.photo_url} className="w-full h-full object-cover" muted preload="metadata" onError={() => handleMediaError(photo.id, campaignId!, photo.photo_url)} />
                     <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                       <Video className="w-8 h-8 text-white" />
                     </div>
@@ -334,7 +334,7 @@ export default function PhotoCheckin() {
                     decoding="async"
                     className="w-full aspect-square object-cover cursor-pointer transition-transform hover:scale-105"
                     onClick={() => setLightboxIndex(i)}
-                    onError={() => handleMediaError(photo.id, campaignId!)}
+                    onError={() => handleMediaError(photo.id, campaignId!, photo.photo_url)}
                   />
                 )}
                 <span className={cn(
