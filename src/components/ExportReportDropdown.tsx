@@ -270,6 +270,8 @@ export default function ExportReportDropdown({
 
   const handleCatalogPDFExport = async () => {
     setLoading(true);
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Catalogo PDF" });
     const toastId = toast.loading("Gerando catalogo PDF com imagens...");
     try {
@@ -315,19 +317,26 @@ export default function ExportReportDropdown({
         pieces: piecesData,
         kits: kitsData,
         customFieldLabels,
+        signal: ctrl.signal,
         onProgress: (current, total, label) => {
           setCatalogProgress({ open: true, current, total, label, title: "Gerando Catalogo PDF" });
         },
       });
       toast.success("Catalogo PDF exportado com sucesso!", { id: toastId });
     } catch (err) {
-      console.error("PDF Catalog Export error:", err);
-      toast.error("Erro ao exportar catalogo PDF", { id: toastId });
+      if (isAbortError(err)) {
+        toast.info("Exportacao cancelada", { id: toastId });
+      } else {
+        console.error("PDF Catalog Export error:", err);
+        toast.error("Erro ao exportar catalogo PDF", { id: toastId });
+      }
     } finally {
+      abortRef.current = null;
       setLoading(false);
       setTimeout(() => setCatalogProgress(p => ({ ...p, open: false })), 600);
     }
   };
+
 
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
