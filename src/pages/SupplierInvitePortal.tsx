@@ -287,6 +287,78 @@ const SupplierInvitePortal = () => {
           .from("supplier_invitations")
           .update({ status: "completed" })
           .eq("id", invitation.id);
+
+        // Auto-send confirmation email (same as the "Enviar e-mail de confirmação" button)
+        try {
+          const recipientRaw = (form.email || "")
+            .normalize("NFKC")
+            .replace(/[\u200B-\u200D\uFEFF]/g, "")
+            .trim()
+            .toLowerCase();
+
+          if (recipientRaw && /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i.test(recipientRaw)) {
+            const expiresAt = new Date();
+            expiresAt.setDate(expiresAt.getDate() + 30);
+
+            const { data: newInv, error: invErr } = await supabase
+              .from("supplier_invitations")
+              .insert([{
+                agency_id: invitation.agency_id,
+                created_by: invitation.created_by,
+                expires_at: expiresAt.toISOString(),
+                status: "pending",
+                supplier_id: supplierId,
+              }])
+              .select()
+              .single();
+
+            if (!invErr && newInv) {
+              const editUrl = `https://produzai.lovable.app/convite/fornecedor/${newInv.token}`;
+              const primaryContactName =
+                form.contacts?.[0]?.nome || form.contact_name || "Fornecedor";
+
+              await supabase.functions.invoke("send-transactional-email", {
+                body: {
+                  templateName: "supplier-data-confirmation",
+                  recipientEmail: recipientRaw,
+                  idempotencyKey: `supplier-data-confirm-${supplierId}-${newInv.id}`,
+                  fromName: agency?.name || undefined,
+                  templateData: {
+                    contactName: primaryContactName,
+                    companyName: form.company_name,
+                    agencyName: agency?.name || "",
+                    editUrl,
+                    expiresAt: expiresAt.toISOString(),
+                    supplier: {
+                      company_name: form.company_name,
+                      cnpj: form.cnpj,
+                      contact_name: form.contact_name,
+                      email: form.email,
+                      phone: form.phone,
+                      whatsapp: form.whatsapp,
+                      website: form.website,
+                      cep: form.cep,
+                      logradouro: form.logradouro,
+                      numero: form.numero,
+                      complemento: form.complemento,
+                      bairro: form.bairro,
+                      cidade: form.cidade,
+                      estado: form.estado,
+                      address: form.address,
+                      services: finalServices,
+                      contacts: form.contacts,
+                      observations: form.observations,
+                    },
+                  },
+                },
+              });
+            }
+          }
+        } catch (emailErr) {
+          // Não interrompe o fluxo se o e-mail falhar
+          console.error("Falha ao enviar e-mail de confirmação automático:", emailErr);
+        }
+
         setCompleted(true);
       } else {
         toast.success("Dados salvos! Você pode voltar e continuar depois.");
