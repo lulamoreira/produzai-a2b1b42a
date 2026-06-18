@@ -107,8 +107,11 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   const tick = (label: string) => {
     step++;
     onProgress?.(step, totalSteps, label);
+    ensureNotAborted(signal);
   };
   onProgress?.(0, totalSteps, "Iniciando...");
+  ensureNotAborted(signal);
+
 
   // 1. Preload images com tick por imagem
   const loadWithTick = async (url: string | undefined | null, label: string) => {
