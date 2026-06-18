@@ -476,10 +476,26 @@ export default function ExportReportDropdown({
         </DialogContent>
       </Dialog>
 
-      <Dialog open={catalogProgress.open} onOpenChange={(o) => { if (!o && !loading) setCatalogProgress(p => ({ ...p, open: false })); }}>
+      <Dialog
+        open={catalogProgress.open && !catalogProgress.minimized}
+        onOpenChange={(o) => { if (!o && !loading) setCatalogProgress(p => ({ ...p, open: false })); }}
+      >
         <DialogContent className="max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle>{catalogProgress.title || "Gerando arquivo"}</DialogTitle>
+            <div className="flex items-center justify-between gap-2">
+              <DialogTitle>{catalogProgress.title || "Gerando arquivo"}</DialogTitle>
+              {loading && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => setCatalogProgress(p => ({ ...p, minimized: true }))}
+                  title="Minimizar"
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <Progress value={catalogProgress.total > 0 ? (catalogProgress.current / catalogProgress.total) * 100 : 0} />
@@ -492,7 +508,7 @@ export default function ExportReportDropdown({
               </span>
             </div>
             <p className="text-[11px] text-muted-foreground text-center">
-              Nao feche esta janela ate o download iniciar.
+              Voce pode minimizar e continuar usando o app. Nao feche a aba do navegador.
             </p>
           </div>
           <DialogFooter>
@@ -508,6 +524,44 @@ export default function ExportReportDropdown({
 
         </DialogContent>
       </Dialog>
+
+      {catalogProgress.open && catalogProgress.minimized && (
+        <div className="fixed bottom-4 right-4 z-50 w-72 rounded-lg border bg-background shadow-lg p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs font-semibold truncate">{catalogProgress.title || "Gerando arquivo"}</span>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={() => setCatalogProgress(p => ({ ...p, minimized: false }))}
+                title="Restaurar"
+              >
+                <Maximize2 className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                onClick={handleCancelExport}
+                disabled={!loading}
+                title="Cancelar"
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            </div>
+          </div>
+          <Progress value={catalogProgress.total > 0 ? (catalogProgress.current / catalogProgress.total) * 100 : 0} />
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <span className="truncate pr-2">{catalogProgress.label}</span>
+            <span className="font-mono shrink-0">
+              {catalogProgress.total > 0
+                ? `${Math.round((catalogProgress.current / catalogProgress.total) * 100)}%`
+                : "0%"}
+            </span>
+          </div>
+        </div>
+      )}
     </>
   );
 }
