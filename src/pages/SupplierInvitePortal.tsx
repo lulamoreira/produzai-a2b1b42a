@@ -239,16 +239,16 @@ const SupplierInvitePortal = () => {
       let supplierId = mySupplierDraftId;
 
       if (supplierId) {
-        // Atualiza O MEU rascunho desta sessão (nunca o de outro fornecedor)
-
+        // Atualiza APENAS o rascunho criado nesta mesma sessão/aba.
+        // Nunca toca em cadastros pré-existentes de outros fornecedores.
         const { error: updateError } = await supabase
           .from("agency_suppliers")
           .update(payload)
           .eq("id", supplierId);
         if (updateError) throw updateError;
       } else {
-        // Novo fornecedor — sempre cria um registro novo e independente
-
+        // Novo fornecedor — sempre cria um registro novo e independente.
+        // Cadastros existentes JAMAIS são sobrescritos por este portal.
         const newId = crypto.randomUUID();
         const { error: insertError } = await supabase
           .from("agency_suppliers")
@@ -257,9 +257,6 @@ const SupplierInvitePortal = () => {
         supplierId = newId;
         setMySupplierDraftId(newId);
         sessionStorage.setItem(`supplier_draft_${token}`, newId);
-
-        // NÃO atualiza supplier_id na convite — o link é multi-uso
-
       }
 
       if (isComplete) {
