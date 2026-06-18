@@ -435,7 +435,7 @@ export default function ExportReportDropdown({
       <Dialog open={catalogProgress.open} onOpenChange={(o) => { if (!o && !loading) setCatalogProgress(p => ({ ...p, open: false })); }}>
         <DialogContent className="max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
-            <DialogTitle>Gerando Catalogo PDF</DialogTitle>
+            <DialogTitle>{catalogProgress.title || "Gerando arquivo"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <Progress value={catalogProgress.total > 0 ? (catalogProgress.current / catalogProgress.total) * 100 : 0} />
