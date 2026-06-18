@@ -88,14 +88,39 @@ function sanitize(name: string) {
 }
 
 /* ──────────────────────────────────────────
+   Tipo comum de progresso
+   ────────────────────────────────────────── */
+export interface ExportProgressOpts {
+  onProgress?: (current: number, total: number, label: string) => void;
+  signal?: AbortSignal;
+}
+
+function ensureNotAborted(signal?: AbortSignal) {
+  if (signal?.aborted) {
+    const e = new Error("Operacao cancelada pelo usuario");
+    (e as any).name = "AbortError";
+    throw e;
+  }
+}
+
+/* ──────────────────────────────────────────
    EXCEL
    ────────────────────────────────────────── */
-export async function exportExecutiveExcel(data: ReportData) {
+export async function exportExecutiveExcel(data: ReportData, opts: ExportProgressOpts = {}) {
+  const { onProgress, signal } = opts;
+  const TOTAL = 6;
+  let step = 0;
+  const tick = (label: string) => { step++; onProgress?.(step, TOTAL, label); ensureNotAborted(signal); };
+  onProgress?.(0, TOTAL, "Carregando biblioteca...");
+  ensureNotAborted(signal);
+
   const XLSX = await import("xlsx");
   const wb = XLSX.utils.book_new();
   const sm = scheduleMap(data.schedules);
   const occCount = countByStore(data.occurrences);
   const photoCount = countByStore(data.photos);
+  tick("Preparando dados...");
+
 
   // 1 — Resumo
   const totalStores = data.stores.length;
@@ -126,6 +151,8 @@ export async function exportExecutiveExcel(data: ReportData) {
   const wsResumo = XLSX.utils.aoa_to_sheet(kpiRows);
   wsResumo["!cols"] = [{ wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
   XLSX.utils.book_append_sheet(wb, wsResumo, sanitize("Resumo"));
+  tick("Aba Resumo gerada");
+
 
   // 2 — Detalhamento por Loja
   const detailHeader = ["Loja", "Cidade", "UF", "Modelo", "Data agendada", "Concluída em", "Check-in", "Fotos", "Ocorrências"];
@@ -146,6 +173,8 @@ export async function exportExecutiveExcel(data: ReportData) {
   const wsDetail = XLSX.utils.aoa_to_sheet([detailHeader, ...detailRows]);
   wsDetail["!cols"] = [{ wch: 30 }, { wch: 18 }, { wch: 6 }, { wch: 15 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 8 }, { wch: 12 }];
   XLSX.utils.book_append_sheet(wb, wsDetail, sanitize("Detalhamento por Loja"));
+  tick("Aba Detalhamento gerada");
+
 
   // 3 — Ocorrências
   const storeNameMap: Record<string, string> = {};
@@ -163,6 +192,8 @@ export async function exportExecutiveExcel(data: ReportData) {
   const wsOcc = XLSX.utils.aoa_to_sheet([occHeader, ...occRows]);
   wsOcc["!cols"] = [{ wch: 30 }, { wch: 20 }, { wch: 14 }, { wch: 12 }, { wch: 40 }, { wch: 12 }, { wch: 12 }];
   XLSX.utils.book_append_sheet(wb, wsOcc, sanitize("Ocorrências"));
+  tick("Aba Ocorrencias gerada");
+
 
   // 4 — Fotos por Loja
   const psc = photosByStoreCategory(data.photos);
@@ -175,10 +206,14 @@ export async function exportExecutiveExcel(data: ReportData) {
   });
   const wsPhoto = XLSX.utils.aoa_to_sheet([photoHeader, ...photoRows]);
   XLSX.utils.book_append_sheet(wb, wsPhoto, sanitize("Fotos por Loja"));
+  tick("Aba Fotos gerada");
 
   const fileName = `Relatório_${data.campaignName.replace(/[^a-zA-Z0-9À-ú ]/g, "")}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+  ensureNotAborted(signal);
   downloadWorkbook(wb, fileName);
+  tick("Concluido");
 }
+
 
 /* ──────────────────────────────────────────
    PDF
@@ -193,12 +228,21 @@ function addHeaderBar(doc: jsPDFType, text: string) {
   doc.setTextColor(0, 0, 0);
 }
 
-export async function exportExecutivePDF(data: ReportData) {
+export async function exportExecutivePDF(data: ReportData, opts: ExportProgressOpts = {}) {
+  const { onProgress, signal } = opts;
+  const TOTAL = 5;
+  let step = 0;
+  const tick = (label: string) => { step++; onProgress?.(step, TOTAL, label); ensureNotAborted(signal); };
+  onProgress?.(0, TOTAL, "Carregando biblioteca...");
+  ensureNotAborted(signal);
+
   const { jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
+  tick("Preparando documento...");
+
 
   // ── Cover page ──
   doc.setFillColor(...BRAND_RGB);
@@ -213,6 +257,8 @@ export async function exportExecutivePDF(data: ReportData) {
   doc.setFontSize(11);
   doc.text(new Date().toLocaleDateString("pt-BR"), pw / 2, ph / 2 + 32, { align: "center" });
   doc.setTextColor(0, 0, 0);
+  tick("Capa gerada");
+
 
   // ── Summary page ──
   doc.addPage();
@@ -263,10 +309,12 @@ export async function exportExecutivePDF(data: ReportData) {
     alternateRowStyles: { fillColor: LIGHT_BG },
     margin: { left: 14 },
   });
+  tick("Resumo gerado");
 
   // ── Store detail pages ──
   doc.addPage();
   addHeaderBar(doc, `${data.campaignName} — Detalhamento por Loja`);
+
 
   const occCount = countByStore(data.occurrences);
   const photoCountMap = countByStore(data.photos);
@@ -300,7 +348,11 @@ export async function exportExecutivePDF(data: ReportData) {
       }
     },
   });
+  tick("Detalhamento gerado");
 
   const fileName = `Relatório_${data.campaignName.replace(/[^a-zA-Z0-9À-ú ]/g, "")}_${new Date().toISOString().slice(0, 10)}.pdf`;
+  ensureNotAborted(signal);
   doc.save(fileName);
+  tick("Concluido");
 }
+

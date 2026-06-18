@@ -32,7 +32,17 @@ interface ExportPPTParams {
     pieces?: Array<{ name: string; photo_url?: string }>; 
   }>;
   onProgress?: (current: number, total: number, label: string) => void;
+  signal?: AbortSignal;
 }
+
+function ensureNotAborted(signal?: AbortSignal) {
+  if (signal?.aborted) {
+    const e = new Error("Operacao cancelada pelo usuario");
+    (e as any).name = "AbortError";
+    throw e;
+  }
+}
+
 
 
 const COLORS = {
@@ -73,7 +83,7 @@ async function urlToBase64(url: string): Promise<string | null> {
 }
 
 export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> {
-  const { campaign, pieces, kits, onProgress } = params;
+  const { campaign, pieces, kits, onProgress, signal } = params;
   const pptx = new pptxgen();
   pptx.layout = "LAYOUT_WIDE";
 
@@ -97,8 +107,11 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   const tick = (label: string) => {
     step++;
     onProgress?.(step, totalSteps, label);
+    ensureNotAborted(signal);
   };
   onProgress?.(0, totalSteps, "Iniciando...");
+  ensureNotAborted(signal);
+
 
   // 1. Preload images com tick por imagem
   const loadWithTick = async (url: string | undefined | null, label: string) => {

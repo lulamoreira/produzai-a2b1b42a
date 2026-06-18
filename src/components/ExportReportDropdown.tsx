@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { FileSpreadsheet, FileText, ChevronDown, Presentation, Upload, History, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -130,6 +130,16 @@ export default function ExportReportDropdown({
   const [catalogProgress, setCatalogProgress] = useState<{ open: boolean; current: number; total: number; label: string; title?: string }>({
     open: false, current: 0, total: 0, label: "",
   });
+  const abortRef = useRef<AbortController | null>(null);
+
+  const handleCancelExport = () => {
+    abortRef.current?.abort();
+  };
+
+  const isAbortError = (err: unknown) =>
+    !!err && (((err as any).name === "AbortError") || /cancelad/i.test((err as any).message || ""));
+
+
 
 
 
@@ -147,28 +157,45 @@ export default function ExportReportDropdown({
 
   const handleExport = async (format: "excel" | "pdf") => {
     setLoading(true);
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    const title = format === "excel" ? "Gerando Relatorio Excel" : "Gerando Relatorio PDF Executivo";
+    setCatalogProgress({ open: true, current: 0, total: 0, label: "Buscando dados...", title });
     const toastId = toast.loading(format === "excel" ? "Gerando relatório Excel…" : "Gerando relatório PDF…");
     try {
       const data = await fetchReportData(campaignId, clientId, campaignName, clientName);
+      if (ctrl.signal.aborted) throw Object.assign(new Error("Cancelado"), { name: "AbortError" });
+      const onProgress = (current: number, total: number, label: string) => {
+        setCatalogProgress({ open: true, current, total, label, title });
+      };
       if (format === "excel") {
         const { exportExecutiveExcel } = await import("@/lib/exportExecutiveReport");
-        exportExecutiveExcel(data);
+        await exportExecutiveExcel(data, { onProgress, signal: ctrl.signal });
       } else {
         const { exportExecutivePDF } = await import("@/lib/exportExecutiveReport");
-        exportExecutivePDF(data);
+        await exportExecutivePDF(data, { onProgress, signal: ctrl.signal });
       }
       toast.success("Relatório exportado com sucesso!", { id: toastId });
     } catch (err) {
-      console.error("Export error:", err);
-      toast.error("Erro ao exportar relatório", { id: toastId });
+      if (isAbortError(err)) {
+        toast.info("Exportacao cancelada", { id: toastId });
+      } else {
+        console.error("Export error:", err);
+        toast.error("Erro ao exportar relatório", { id: toastId });
+      }
     } finally {
+      abortRef.current = null;
       setLoading(false);
+      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false })), 600);
     }
   };
+
 
   const handlePPTExportWithImage = async (imageUrl?: string) => {
     setPptDialogOpen(false);
     setLoading(true);
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Apresentacao PPT" });
     const toastId = toast.loading("Gerando apresentação PPT...");
     try {
@@ -219,23 +246,32 @@ export default function ExportReportDropdown({
         },
         pieces: piecesData,
         kits: kitsData,
+        signal: ctrl.signal,
         onProgress: (current, total, label) => {
           setCatalogProgress({ open: true, current, total, label, title: "Gerando Apresentacao PPT" });
         },
       });
       toast.success("PPT exportado com sucesso!", { id: toastId });
     } catch (err) {
-      console.error("PPT Export error:", err);
-      toast.error("Erro ao exportar PPT", { id: toastId });
+      if (isAbortError(err)) {
+        toast.info("Exportacao cancelada", { id: toastId });
+      } else {
+        console.error("PPT Export error:", err);
+        toast.error("Erro ao exportar PPT", { id: toastId });
+      }
     } finally {
+      abortRef.current = null;
       setLoading(false);
       setTimeout(() => setCatalogProgress(p => ({ ...p, open: false })), 600);
     }
   };
 
 
+
   const handleCatalogPDFExport = async () => {
     setLoading(true);
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
     setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Catalogo PDF" });
     const toastId = toast.loading("Gerando catalogo PDF com imagens...");
     try {
@@ -281,19 +317,26 @@ export default function ExportReportDropdown({
         pieces: piecesData,
         kits: kitsData,
         customFieldLabels,
+        signal: ctrl.signal,
         onProgress: (current, total, label) => {
           setCatalogProgress({ open: true, current, total, label, title: "Gerando Catalogo PDF" });
         },
       });
       toast.success("Catalogo PDF exportado com sucesso!", { id: toastId });
     } catch (err) {
-      console.error("PDF Catalog Export error:", err);
-      toast.error("Erro ao exportar catalogo PDF", { id: toastId });
+      if (isAbortError(err)) {
+        toast.info("Exportacao cancelada", { id: toastId });
+      } else {
+        console.error("PDF Catalog Export error:", err);
+        toast.error("Erro ao exportar catalogo PDF", { id: toastId });
+      }
     } finally {
+      abortRef.current = null;
       setLoading(false);
       setTimeout(() => setCatalogProgress(p => ({ ...p, open: false })), 600);
     }
   };
+
 
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -451,6 +494,17 @@ export default function ExportReportDropdown({
               Nao feche esta janela ate o download iniciar.
             </p>
           </div>
+          <DialogFooter>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={handleCancelExport}
+              disabled={!loading || !abortRef.current}
+            >
+              Cancelar exportacao
+            </Button>
+          </DialogFooter>
+
         </DialogContent>
       </Dialog>
     </>
