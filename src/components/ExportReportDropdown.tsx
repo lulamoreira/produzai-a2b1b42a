@@ -127,9 +127,10 @@ export default function ExportReportDropdown({
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [pptDialogOpen, setPptDialogOpen] = useState(false);
-  const [catalogProgress, setCatalogProgress] = useState<{ open: boolean; current: number; total: number; label: string }>({
-    open: false, current: 0, total: 0, label: "",
+  const [catalogProgress, setCatalogProgress] = useState<{ open: boolean; current: number; total: number; label: string; title: string }>({
+    open: false, current: 0, total: 0, label: "", title: "Gerando Catalogo PDF",
   });
+
 
   const { t } = useTranslation();
   const { data: campaign } = useCampaign(campaignId);
