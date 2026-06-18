@@ -119,7 +119,7 @@ const SupplierInvitePortal = () => {
 
         if (sup) {
           setMySupplierDraftId(sup.id);
-          const services: string[] = Array.isArray(sup.services) ? sup.services : [];
+          const services: string[] = Array.isArray(sup.services) ? (sup.services as any[]).map(String) : [];
           const known = new Set(VISUAL_COMMUNICATION_SERVICES);
           const customSvc = services.find(s => !known.has(s)) || "";
           const stdServices = services.filter(s => known.has(s));
