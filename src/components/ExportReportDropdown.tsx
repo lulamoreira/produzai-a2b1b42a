@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { FileSpreadsheet, FileText, ChevronDown, Presentation, Upload, History, Image as ImageIcon } from "lucide-react";
+import { FileSpreadsheet, FileText, ChevronDown, Presentation, Upload, History, Image as ImageIcon, Minus, Maximize2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
