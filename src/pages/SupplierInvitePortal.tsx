@@ -33,7 +33,7 @@ const formatCNPJ = (value: string) => {
 };
 const formatPhoneBR = (v: string) => formatPhoneByCountry(v, "BR");
 
-const SESSION_KEY_PREFIX = "supplier-invite-session:"; // localStorage key per token
+
 
 const SupplierInvitePortal = () => {
   const { token } = useParams<{ token: string }>();
@@ -43,11 +43,8 @@ const SupplierInvitePortal = () => {
   const [error, setError] = useState<string | null>(null);
   const [completed, setCompleted] = useState(false);
   const [saving, setSaving] = useState(false);
-  // Quando o invitation foi criado já vinculado a um fornecedor (modo edição),
-  // este id é fixo durante toda a sessão. Para links genéricos fica null e cada
-  // pessoa cria/edita o próprio cadastro via sessionSupplierId (localStorage).
-  const [editModeSupplierId, setEditModeSupplierId] = useState<string | null>(null);
-  const [sessionSupplierId, setSessionSupplierId] = useState<string | null>(null);
+  const [mySupplierDraftId, setMySupplierDraftId] = useState<string | null>(null);
+
 
 
   const [form, setForm] = useState({
@@ -101,35 +98,16 @@ const SupplierInvitePortal = () => {
       setInvitation(inv);
       setAgency(inv.agencies);
 
-      // Decide qual supplier carregar:
-      //  - Se o invitation já nasceu com supplier_id => modo edição fixa.
-      //  - Caso contrário, link genérico: tenta carregar o supplier que ESTA
-      //    sessão (mesmo navegador) criou anteriormente. Outras pessoas que
-      //    abrirem o mesmo link verão formulário em branco.
-      let supplierIdToLoad: string | null = null;
-      if (inv.supplier_id) {
-        setEditModeSupplierId(inv.supplier_id);
-        supplierIdToLoad = inv.supplier_id;
-      } else {
-        try {
-          const stored = localStorage.getItem(`${SESSION_KEY_PREFIX}${token}`);
-          if (stored) {
-            setSessionSupplierId(stored);
-            supplierIdToLoad = stored;
-          }
-        } catch {
-          /* localStorage indisponível */
-        }
-      }
-
-      if (supplierIdToLoad) {
+      const sessionDraftId = sessionStorage.getItem(`supplier_draft_${token}`);
+      if (sessionDraftId) {
         const { data: supplier } = await supabase
           .from("agency_suppliers")
           .select("*")
-          .eq("id", supplierIdToLoad)
+          .eq("id", sessionDraftId)
           .maybeSingle();
 
         if (supplier) {
+          setMySupplierDraftId(sessionDraftId);
           setForm({
             company_name: supplier.company_name || "",
             cnpj: supplier.cnpj || "",
@@ -154,13 +132,9 @@ const SupplierInvitePortal = () => {
             cidade: supplier.cidade || "",
             estado: supplier.estado || "",
           });
-        } else if (!inv.supplier_id) {
-          // ID gravado no localStorage não existe mais (cadastro deletado).
-          // Limpa para começar do zero.
-          try { localStorage.removeItem(`${SESSION_KEY_PREFIX}${token}`); } catch { /* noop */ }
-          setSessionSupplierId(null);
         }
       }
+
       setLoading(false);
     };
 
@@ -296,47 +270,37 @@ const SupplierInvitePortal = () => {
         estado: form.estado || null,
       };
 
-      // Determina qual supplier será gravado:
-      //  - editModeSupplierId: invitation já nasceu vinculado a 1 fornecedor (edição).
-      //  - sessionSupplierId: link genérico que ESTA sessão já criou antes (mesmo navegador).
-      //  - caso contrário: cria um novo cadastro independente.
-      let supplierId: string | null = editModeSupplierId || sessionSupplierId;
+      let supplierId = mySupplierDraftId;
 
       if (supplierId) {
+        // Atualiza O MEU rascunho desta sessão (nunca o de outro fornecedor)
+
         const { error: updateError } = await supabase
           .from("agency_suppliers")
           .update(payload)
           .eq("id", supplierId);
         if (updateError) throw updateError;
       } else {
+        // Novo fornecedor — sempre cria um registro novo e independente
+
         const newId = crypto.randomUUID();
         const { error: insertError } = await supabase
           .from("agency_suppliers")
           .insert([{ id: newId, ...payload }]);
         if (insertError) throw insertError;
         supplierId = newId;
+        setMySupplierDraftId(newId);
+        sessionStorage.setItem(`supplier_draft_${token}`, newId);
 
-        // IMPORTANTE: NÃO atualizamos supplier_invitations.supplier_id em links
-        // genéricos — isso causava a sobrescrita do cadastro anterior quando
-        // outra pessoa abria o mesmo link. Guardamos só localmente para que a
-        // mesma pessoa possa retomar o preenchimento neste navegador.
-        try { localStorage.setItem(`${SESSION_KEY_PREFIX}${token}`, newId); } catch { /* noop */ }
-        setSessionSupplierId(newId);
+        // NÃO atualiza supplier_id na convite — o link é multi-uso
+
       }
 
       if (isComplete) {
-        // Marca o invitation como completed apenas se for modo edição
-        // (1 fornecedor por link). Em links genéricos o mesmo invitation
-        // continua válido para outros fornecedores até expirar.
-        if (editModeSupplierId) {
-          await supabase
-            .from("supplier_invitations")
-            .update({ status: "completed" })
-            .eq("id", invitation.id);
-        }
 
 
         // Auto-send confirmation email (same as the "Enviar e-mail de confirmação" button)
+
         try {
           const recipientRaw = (form.email || "")
             .normalize("NFKC")
