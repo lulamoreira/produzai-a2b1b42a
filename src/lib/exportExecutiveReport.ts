@@ -192,6 +192,8 @@ export async function exportExecutiveExcel(data: ReportData, opts: ExportProgres
   const wsOcc = XLSX.utils.aoa_to_sheet([occHeader, ...occRows]);
   wsOcc["!cols"] = [{ wch: 30 }, { wch: 20 }, { wch: 14 }, { wch: 12 }, { wch: 40 }, { wch: 12 }, { wch: 12 }];
   XLSX.utils.book_append_sheet(wb, wsOcc, sanitize("Ocorrências"));
+  tick("Aba Ocorrencias gerada");
+
 
   // 4 — Fotos por Loja
   const psc = photosByStoreCategory(data.photos);
