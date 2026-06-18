@@ -257,6 +257,8 @@ export async function exportExecutivePDF(data: ReportData, opts: ExportProgressO
   doc.setFontSize(11);
   doc.text(new Date().toLocaleDateString("pt-BR"), pw / 2, ph / 2 + 32, { align: "center" });
   doc.setTextColor(0, 0, 0);
+  tick("Capa gerada");
+
 
   // ── Summary page ──
   doc.addPage();
