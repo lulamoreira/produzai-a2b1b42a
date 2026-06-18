@@ -101,11 +101,32 @@ const SupplierInvitePortal = () => {
       setInvitation(inv);
       setAgency(inv.agencies);
 
+      // Decide qual supplier carregar:
+      //  - Se o invitation já nasceu com supplier_id => modo edição fixa.
+      //  - Caso contrário, link genérico: tenta carregar o supplier que ESTA
+      //    sessão (mesmo navegador) criou anteriormente. Outras pessoas que
+      //    abrirem o mesmo link verão formulário em branco.
+      let supplierIdToLoad: string | null = null;
       if (inv.supplier_id) {
+        setEditModeSupplierId(inv.supplier_id);
+        supplierIdToLoad = inv.supplier_id;
+      } else {
+        try {
+          const stored = localStorage.getItem(`${SESSION_KEY_PREFIX}${token}`);
+          if (stored) {
+            setSessionSupplierId(stored);
+            supplierIdToLoad = stored;
+          }
+        } catch {
+          /* localStorage indisponível */
+        }
+      }
+
+      if (supplierIdToLoad) {
         const { data: supplier } = await supabase
           .from("agency_suppliers")
           .select("*")
-          .eq("id", inv.supplier_id)
+          .eq("id", supplierIdToLoad)
           .maybeSingle();
 
         if (supplier) {
@@ -133,6 +154,11 @@ const SupplierInvitePortal = () => {
             cidade: supplier.cidade || "",
             estado: supplier.estado || "",
           });
+        } else if (!inv.supplier_id) {
+          // ID gravado no localStorage não existe mais (cadastro deletado).
+          // Limpa para começar do zero.
+          try { localStorage.removeItem(`${SESSION_KEY_PREFIX}${token}`); } catch { /* noop */ }
+          setSessionSupplierId(null);
         }
       }
       setLoading(false);
@@ -140,6 +166,8 @@ const SupplierInvitePortal = () => {
 
     loadInvitation();
   }, [token]);
+
+
 
   const handleCepSearch = async (cep: string) => {
     const cleanedCep = cep.replace(/\D/g, "");
