@@ -151,6 +151,8 @@ export async function exportExecutiveExcel(data: ReportData, opts: ExportProgres
   const wsResumo = XLSX.utils.aoa_to_sheet(kpiRows);
   wsResumo["!cols"] = [{ wch: 30 }, { wch: 15 }, { wch: 15 }, { wch: 15 }];
   XLSX.utils.book_append_sheet(wb, wsResumo, sanitize("Resumo"));
+  tick("Aba Resumo gerada");
+
 
   // 2 — Detalhamento por Loja
   const detailHeader = ["Loja", "Cidade", "UF", "Modelo", "Data agendada", "Concluída em", "Check-in", "Fotos", "Ocorrências"];
