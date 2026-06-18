@@ -384,5 +384,6 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<void> 
   onProgress?.(totalSteps - 1, totalSteps, "Gerando arquivo .pptx...");
   await pptx.writeFile({ fileName });
   tick("Concluido");
+  return fileName;
 }
 
