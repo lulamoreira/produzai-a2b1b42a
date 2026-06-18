@@ -212,6 +212,7 @@ export async function exportExecutiveExcel(data: ReportData, opts: ExportProgres
   ensureNotAborted(signal);
   downloadWorkbook(wb, fileName);
   tick("Concluido");
+  return fileName;
 }
 
 
