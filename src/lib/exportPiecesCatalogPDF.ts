@@ -29,7 +29,9 @@ export interface PieceCatalogPDFParams {
     pieces?: Array<{ name: string }>;
   }>;
   customFieldLabels?: Array<string | null>;
+  onProgress?: (current: number, total: number, label: string) => void;
 }
+
 
 async function urlToBase64PDF(url: string): Promise<{ data: string; ext: "JPEG" | "PNG" } | null> {
   try {
@@ -77,10 +79,20 @@ const H = 190.5;
 
 export async function exportPiecesCatalogPDF(params: PieceCatalogPDFParams): Promise<void> {
   const { jsPDF } = await import("jspdf");
-  const { campaign, pieces, kits, customFieldLabels = [] } = params;
+  const { campaign, pieces, kits, customFieldLabels = [], onProgress } = params;
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: [H, W] });
   const exportDate = new Date().toLocaleDateString("pt-BR");
   const totalPages = pieces.length + 3;
+
+  // Steps totais: imagens + capa + indice + paginas de peca + final
+  const totalImgs = (campaign.cover_image_url ? 1 : 0) + pieces.filter(p => p.photo_url).length;
+  const totalSteps = totalImgs + 1 + 1 + pieces.length + 1;
+  let step = 0;
+  const tick = (label: string) => {
+    step++;
+    onProgress?.(step, totalSteps, label);
+  };
+  onProgress?.(0, totalSteps, "Iniciando...");
 
   // mapa peça → kits
   const pieceToKits = new Map<string, string[]>();
@@ -92,11 +104,18 @@ export async function exportPiecesCatalogPDF(params: PieceCatalogPDFParams): Pro
     });
   });
 
-  // pré-carrega todas as imagens em paralelo
+  // pré-carrega todas as imagens em paralelo, reportando progresso individual
+  const loadWithTick = async (url: string | undefined, label: string) => {
+    if (!url) return null;
+    const r = await urlToBase64PDF(url);
+    tick(label);
+    return r;
+  };
   const [coverImg, ...pieceImgs] = await Promise.all([
-    campaign.cover_image_url ? urlToBase64PDF(campaign.cover_image_url) : Promise.resolve(null),
-    ...pieces.map(p => p.photo_url ? urlToBase64PDF(p.photo_url) : Promise.resolve(null)),
+    campaign.cover_image_url ? loadWithTick(campaign.cover_image_url, "Carregando capa...") : Promise.resolve(null),
+    ...pieces.map((p, i) => p.photo_url ? loadWithTick(p.photo_url, `Carregando imagem ${i + 1}/${pieces.length}...`) : Promise.resolve(null)),
   ]);
+
 
   // helper rodapé
   const addFooter = (pageNum: number, text?: string) => {
@@ -160,6 +179,8 @@ export async function exportPiecesCatalogPDF(params: PieceCatalogPDFParams): Pro
   doc.setFontSize(8);
   doc.text(exportDate, 10, H - 5);
   doc.text("Pecas & Kits", W - 10, H - 5, { align: "right" });
+  tick("Capa gerada");
+
 
   // ── INDICE ───────────────────────────────────────────────
 
@@ -199,6 +220,8 @@ export async function exportPiecesCatalogPDF(params: PieceCatalogPDFParams): Pro
   renderIndexCol(pieces.slice(0, half), 10, 0);
   renderIndexCol(pieces.slice(half), W / 2 + 5, half);
   addFooter(2);
+  tick("Indice gerado");
+
 
   // ── PAGINAS DE PECA ──────────────────────────────────────
 
@@ -343,7 +366,11 @@ export async function exportPiecesCatalogPDF(params: PieceCatalogPDFParams): Pro
     if (cfl[4] && p.custom_field_5) addField(cfl[4], p.custom_field_5);
 
     addFooter(pageNum);
+    tick(`Peca ${idx + 1}/${pieces.length}: ${p.name}`);
+    // cede o thread pra UI atualizar a barra
+    if (idx % 3 === 0) await new Promise(r => setTimeout(r, 0));
   }
+
 
   // ── SLIDE FINAL ───────────────────────────────────────────
 
@@ -368,5 +395,7 @@ export async function exportPiecesCatalogPDF(params: PieceCatalogPDFParams): Pro
   doc.text(exportDate, W / 2, H - 5, { align: "center" });
 
   const fileName = `${campaign.name}_catalogo_${new Date().toISOString().slice(0, 10)}.pdf`;
+  tick("Finalizando PDF...");
   doc.save(fileName);
+  onProgress?.(totalSteps, totalSteps, "Concluido");
 }

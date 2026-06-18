@@ -20,8 +20,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { toast } from "sonner";
 import { useTranslation } from "react-i18next";
+import { Progress } from "@/components/ui/progress";
 import type { ReportData } from "@/lib/exportExecutiveReport";
 import { useCampaign, useUpdateCampaign } from "@/hooks/useMultiClientData";
+
 
 interface Props {
   campaignId: string;
@@ -125,6 +127,10 @@ export default function ExportReportDropdown({
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [pptDialogOpen, setPptDialogOpen] = useState(false);
+  const [catalogProgress, setCatalogProgress] = useState<{ open: boolean; current: number; total: number; label: string }>({
+    open: false, current: 0, total: 0, label: "",
+  });
+
   const { t } = useTranslation();
   const { data: campaign } = useCampaign(campaignId);
   const updateCampaign = useUpdateCampaign();
@@ -222,6 +228,7 @@ export default function ExportReportDropdown({
 
   const handleCatalogPDFExport = async () => {
     setLoading(true);
+    setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados..." });
     const toastId = toast.loading("Gerando catalogo PDF com imagens...");
     try {
       const piecesData = pieces.map((p: any) => ({
@@ -266,6 +273,9 @@ export default function ExportReportDropdown({
         pieces: piecesData,
         kits: kitsData,
         customFieldLabels,
+        onProgress: (current, total, label) => {
+          setCatalogProgress({ open: true, current, total, label });
+        },
       });
       toast.success("Catalogo PDF exportado com sucesso!", { id: toastId });
     } catch (err) {
@@ -273,8 +283,10 @@ export default function ExportReportDropdown({
       toast.error("Erro ao exportar catalogo PDF", { id: toastId });
     } finally {
       setLoading(false);
+      setTimeout(() => setCatalogProgress(p => ({ ...p, open: false })), 600);
     }
   };
+
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -409,6 +421,28 @@ export default function ExportReportDropdown({
               Cancelar
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={catalogProgress.open} onOpenChange={(o) => { if (!o && !loading) setCatalogProgress(p => ({ ...p, open: false })); }}>
+        <DialogContent className="max-w-md" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>Gerando Catalogo PDF</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <Progress value={catalogProgress.total > 0 ? (catalogProgress.current / catalogProgress.total) * 100 : 0} />
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span className="truncate pr-2">{catalogProgress.label}</span>
+              <span className="font-mono shrink-0">
+                {catalogProgress.total > 0
+                  ? `${Math.round((catalogProgress.current / catalogProgress.total) * 100)}%`
+                  : "0%"}
+              </span>
+            </div>
+            <p className="text-[11px] text-muted-foreground text-center">
+              Nao feche esta janela ate o download iniciar.
+            </p>
+          </div>
         </DialogContent>
       </Dialog>
     </>
