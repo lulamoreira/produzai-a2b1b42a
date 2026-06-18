@@ -228,12 +228,21 @@ function addHeaderBar(doc: jsPDFType, text: string) {
   doc.setTextColor(0, 0, 0);
 }
 
-export async function exportExecutivePDF(data: ReportData) {
+export async function exportExecutivePDF(data: ReportData, opts: ExportProgressOpts = {}) {
+  const { onProgress, signal } = opts;
+  const TOTAL = 5;
+  let step = 0;
+  const tick = (label: string) => { step++; onProgress?.(step, TOTAL, label); ensureNotAborted(signal); };
+  onProgress?.(0, TOTAL, "Carregando biblioteca...");
+  ensureNotAborted(signal);
+
   const { jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
   const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
   const pw = doc.internal.pageSize.getWidth();
   const ph = doc.internal.pageSize.getHeight();
+  tick("Preparando documento...");
+
 
   // ── Cover page ──
   doc.setFillColor(...BRAND_RGB);
