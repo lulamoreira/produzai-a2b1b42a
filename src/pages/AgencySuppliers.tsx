@@ -75,7 +75,12 @@ const AgencySuppliers = () => {
   const { user } = useAuth();
   
   const { agencyId: agencyIdParam } = useParams<{ agencyId?: string }>();
-  
+  const navigate = useNavigate();
+
+  // Valida formato UUID — protege contra links inválidos tipo /agency/suppliers/suppliers
+  const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const isValidParam = !agencyIdParam || UUID_REGEX.test(agencyIdParam);
+
   // Fetch agency ID
   const { data: profileAgencyId } = useQuery({
     queryKey: ["user_agency_id", user?.id],
@@ -87,10 +92,22 @@ const AgencySuppliers = () => {
         .maybeSingle();
       return data?.agency_id;
     },
-    enabled: !!user && !agencyIdParam,
+    enabled: !!user && (!agencyIdParam || !isValidParam),
   });
 
-  const agencyId = agencyIdParam ?? profileAgencyId;
+  const agencyId = isValidParam ? (agencyIdParam ?? profileAgencyId) : profileAgencyId;
+
+  // Avisa e redireciona se o link era inválido
+  useEffect(() => {
+    if (agencyIdParam && !isValidParam) {
+      toast.error(
+        `Link inválido: "${agencyIdParam}" não é uma agência válida. Redirecionando para sua agência...`
+      );
+      if (profileAgencyId) {
+        navigate(`/agency/${profileAgencyId}/suppliers`, { replace: true });
+      }
+    }
+  }, [agencyIdParam, isValidParam, profileAgencyId, navigate]);
 
   const { data: suppliers = [], isLoading } = useAgencySuppliers(agencyId);
   const addSupplier = useAddAgencySupplier();
