@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -189,6 +190,7 @@ function daysOpen(createdAt: string, resolvedAt: string | null) {
 }
 
 export default function PortalDashboard({ campaignId, clientId, permissions }: Props) {
+  const { t } = useTranslation();
   const canEdit = permissions.canEdit;
   const canDelete = permissions.canDelete;
   const { statuses: tratativaStatuses } = useEffectiveTratativaStatuses(clientId);
@@ -562,6 +564,39 @@ _Relatório gerado pelo ProduzAI_ 🚀`;
             >
               <MessageCircle className="h-3.5 w-3.5" />
               Enviar por WhatsApp
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 border-green-600/40 text-green-700 hover:bg-green-50 hover:text-green-800 dark:text-green-400 dark:hover:bg-green-950"
+              onClick={() => {
+                const inProgress = occList.filter((o) => o.tratativa_status === "em_andamento");
+                if (inProgress.length === 0) {
+                  toast.info(t("occurrences.noInProgress", "Nenhuma ocorrência em andamento"));
+                  return;
+                }
+                const dateStr = new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+                const lines = inProgress
+                  .slice()
+                  .sort((a, b) => {
+                    const da = a.expected_resolution_date ? new Date(a.expected_resolution_date).getTime() : Infinity;
+                    const db = b.expected_resolution_date ? new Date(b.expected_resolution_date).getTime() : Infinity;
+                    return da - db;
+                  })
+                  .map((o) => {
+                    const storeName = (o.client_stores as any)?.name ?? t("common.unknown", "Desconhecida");
+                    const expected = o.expected_resolution_date
+                      ? new Date(o.expected_resolution_date).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })
+                      : t("occurrences.noExpectedResolution", "sem previsão");
+                    return `• ${storeName}: *${expected}*`;
+                  });
+                const msg =
+                  `📊 *${t("occurrences.inProgressReportTitle", "LOJAS EM ANDAMENTO")}*\n🗓️ ${dateStr}\n\n${lines.join("\n")}\n\n_${t("occurrences.reportFooter", "Relatório gerado pelo ProduzAI")}_ 🚀`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+              }}
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              {t("occurrences.inProgressReportButton", "Relatório em andamento")}
             </Button>
           </div>
 
