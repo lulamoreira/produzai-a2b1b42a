@@ -523,6 +523,9 @@ export function SidebarV2() {
               >
                 <span className="flex items-center gap-1.5">
                   <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  <span className="uppercase tracking-wider text-[10px] font-bold">
+                    {t("sidebar.favorites", "Favoritos")}
+                  </span>
                   <span
                     role="button"
                     tabIndex={0}
