@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { NavLink, useLocation, useParams } from "react-router-dom";
-import { Home, Megaphone, Store, Wrench, Menu, X, ChevronRight } from "lucide-react";
+import { Home, Megaphone, Store, Wrench, Menu, X, ChevronRight, Star } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useTranslation } from "react-i18next";
