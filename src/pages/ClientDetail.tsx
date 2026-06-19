@@ -1183,7 +1183,7 @@ const ClientDetail = () => {
             </div>
             <div>
               <p className="text-xl sm:text-2xl font-bold text-foreground">
-                {displayCampaigns.length}
+                {visibleCampaigns.length}
               </p>
               <p className="text-[11px] text-muted-foreground">{t("clientDashboard.campaignCount")}</p>
             </div>
