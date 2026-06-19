@@ -190,6 +190,7 @@ function daysOpen(createdAt: string, resolvedAt: string | null) {
 }
 
 export default function PortalDashboard({ campaignId, clientId, permissions }: Props) {
+  const { t } = useTranslation();
   const canEdit = permissions.canEdit;
   const canDelete = permissions.canDelete;
   const { statuses: tratativaStatuses } = useEffectiveTratativaStatuses(clientId);
