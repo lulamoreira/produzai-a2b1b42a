@@ -492,6 +492,54 @@ export function SidebarV2() {
             ))}
           </div>
 
+          {/* Favorites list (hidden when none) */}
+          {favorites.length > 0 && !collapsed && (
+            <div className="space-y-1">
+              <button
+                type="button"
+                onClick={() => setFavoritesExpanded((v) => !v)}
+                className="w-full flex items-center justify-between px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors rounded-sm"
+                style={{ color: 'var(--v2-sidebar-section-label)' }}
+              >
+                <span className="flex items-center gap-1.5">
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  {t("sidebar.favorites", "Favoritos")}
+                  <span className="opacity-60">({favorites.length})</span>
+                </span>
+                <ChevronDown
+                  className="w-3 h-3 transition-transform"
+                  style={{ transform: favoritesExpanded ? "rotate(0deg)" : "rotate(-90deg)" }}
+                />
+              </button>
+              {favoritesExpanded && (
+                <div className="space-y-0.5">
+                  {favorites.map((fav) => {
+                    const route = `/agency/${fav.agency_id}/clients/${fav.client_id}/campaigns/${fav.campaign_id}`;
+                    const isActive = campaignId === fav.campaign_id;
+                    return (
+                      <NavLink
+                        key={fav.id}
+                        to={route}
+                        className="group flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors text-xs"
+                        style={{
+                          background: isActive ? 'var(--v2-sidebar-active)' : 'transparent',
+                          color: isActive ? 'var(--v2-sidebar-active-text)' : 'var(--v2-sidebar-muted)',
+                        }}
+                        title={`${fav.campaign_name} · ${fav.client_name}`}
+                      >
+                        <span
+                          className="w-2 h-2 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: fav.campaign_color || "#8C6F4E" }}
+                        />
+                        <span className="truncate font-medium">{fav.campaign_name}</span>
+                      </NavLink>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Context Hierarchy (Breadcrumb style) */}
           {(agencyId || clientId || campaignId) && !collapsed && (
             <div 
