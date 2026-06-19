@@ -97,6 +97,30 @@ export function SidebarV2() {
     localStorage.setItem("sidebar-v2-favorites-expanded", String(favoritesExpanded));
   }, [favoritesExpanded]);
 
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const favoritesFilterActive = searchParams.get("filter") === "favorites";
+
+  const handleFavoritesFilterToggle = useCallback(() => {
+    const currentSearch = new URLSearchParams(location.search);
+    const isActive = currentSearch.get("filter") === "favorites";
+
+    if (clientId && !campaignId) {
+      if (isActive) {
+        currentSearch.delete("filter");
+      } else {
+        currentSearch.set("filter", "favorites");
+      }
+      const newSearch = currentSearch.toString();
+      navigate(`${location.pathname}${newSearch ? `?${newSearch}` : ""}`, { replace: true });
+    } else {
+      const first = favorites[0];
+      if (first) {
+        navigate(`/agency/${first.agency_id}/clients/${first.client_id}?filter=favorites`, { replace: true });
+      }
+    }
+  }, [clientId, campaignId, favorites, location.pathname, location.search, navigate]);
+
+
   const toggleCampaignExpanded = useCallback((id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setCampaignExpanded(prev => ({ ...prev, [id]: !prev[id] }));
