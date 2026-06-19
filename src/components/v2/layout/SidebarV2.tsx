@@ -500,10 +500,11 @@ export function SidebarV2() {
                 onClick={() => setFavoritesExpanded((v) => !v)}
                 className="w-full flex items-center justify-between px-3 py-1 text-[10px] font-bold uppercase tracking-wider transition-colors rounded-sm"
                 style={{ color: 'var(--v2-sidebar-section-label)' }}
+                aria-label={t("sidebar.favorites", "Favoritos")}
+                title={t("sidebar.favorites", "Favoritos")}
               >
                 <span className="flex items-center gap-1.5">
                   <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                  {t("sidebar.favorites", "Favoritos")}
                   <span className="opacity-60">({favorites.length})</span>
                 </span>
                 <ChevronDown
