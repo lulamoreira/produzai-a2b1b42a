@@ -17,28 +17,12 @@ export function BottomNavV2() {
       { label: t("sidebar.home"), icon: Home, route: "/", exact: true },
     ];
 
-    if (campaignId && agencyId && clientId) {
-      items.push({ 
-        label: t("sidebar.campaign", "Campanha"), 
-        icon: Megaphone, 
-        route: `/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}`,
-        exact: false
-      });
-    } else if (clientId && agencyId) {
-      items.push({ 
-        label: t("sidebar.client", "Cliente"), 
-        icon: Megaphone, 
-        route: `/agency/${agencyId}/clients/${clientId}`,
-        exact: false
-      });
-    } else {
-      items.push({ 
-        label: t("sidebar.campaigns", "Campanhas"), 
-        icon: Megaphone, 
-        route: "/my-campaigns",
-        exact: false
-      });
-    }
+    items.push({
+      label: t("sidebar.favorites", "Favoritos"),
+      icon: Star,
+      route: "/favorites",
+      exact: false,
+    });
 
     items.push({ label: t("sidebar.agencies", "Agências"), icon: Store, route: "/agencies", exact: false });
     
