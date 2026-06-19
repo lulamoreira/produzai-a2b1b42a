@@ -322,7 +322,7 @@ export function SidebarV2() {
         to={item.route}
         className={({ isActive: linkActive }) => cn(
           "w-full flex items-center gap-3 py-2 px-3 transition-all duration-200 group relative",
-          isSubItem ? "pl-9 text-xs" : "text-sm font-medium",
+          isSubItem ? "pl-7 text-xs" : "text-sm font-medium",
           (activeOverride !== undefined ? activeOverride : linkActive)
             ? "text-white border-l-2 rounded-r-lg"
             : "hover:text-white rounded-lg"
@@ -407,7 +407,7 @@ export function SidebarV2() {
       <div className="space-y-0.5">
         <NavLink 
           to={campBasePath}
-          className="group flex items-center justify-between px-2 py-1.5 rounded-lg transition-colors"
+          className="group flex items-center justify-between px-3 py-1.5 rounded-lg transition-colors"
           style={({ isActive: linkActive }) => ({ 
             background: (isActiveCampaign || linkActive) ? 'rgba(255,255,255,0.05)' : 'transparent' 
           })}
@@ -448,10 +448,7 @@ export function SidebarV2() {
         </NavLink>
         
         {isExpanded && !collapsed && (
-          <div 
-            className="space-y-0.5 border-l ml-3 pl-1"
-            style={{ borderColor: 'var(--v2-sidebar-separator)' }}
-          >
+          <div className="space-y-0.5">
             {filteredModules.map(mod => (
               <NavItem key={mod.key} item={mod} isSubItem activeOverride={mod.active} />
             ))}
