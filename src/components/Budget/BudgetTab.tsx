@@ -2157,9 +2157,9 @@ ${msgLabels.winnerWaFooter}
                       <TableHead className="text-xs">Fornecedor</TableHead>
                       <TableHead className="text-xs">Status</TableHead>
                       <TableHead className="text-xs text-center">Preenchimento</TableHead>
-                      <TableHead className="text-xs text-right">Σ Frete + Inst.</TableHead>
-                      <TableHead className="text-xs text-right">Σ Frete Apenas</TableHead>
-                      <TableHead className="text-xs text-right">Σ Sem Logística</TableHead>
+                      <TableHead className="text-xs text-right">Produção</TableHead>
+                      <TableHead className="text-xs text-right">Frete</TableHead>
+                      <TableHead className="text-xs text-right">Instalação</TableHead>
                       <TableHead className="text-xs text-right">Total Geral</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -2192,36 +2192,13 @@ ${msgLabels.winnerWaFooter}
                             </div>
                           </TableCell>
                           <TableCell className="text-right tabular-nums">
-                            {(() => {
-                              let sum = 0;
-                              pieces.forEach(p => {
-                                const up = prices.find(x => x.supplier_id === sup.id && x.piece_id === p.id)?.unit_price;
-                                if (up != null) sum += Number(up) * (pieceTotalsFull.installationMap[p.id] || 0);
-                              });
-                              return sum > 0 ? fmtCurrency(sum) : "—";
-                            })()}
+                            {piecesTotal > 0 ? fmtCurrency(piecesTotal) : "—"}
                           </TableCell>
                           <TableCell className="text-right tabular-nums">
-                            {(() => {
-                              let sum = 0;
-                              pieces.forEach(p => {
-                                const up = prices.find(x => x.supplier_id === sup.id && x.piece_id === p.id)?.unit_price;
-                                if (up != null) sum += Number(up) * (pieceTotalsFull.freightMap[p.id] || 0);
-                              });
-                              return sum > 0 ? fmtCurrency(sum) : "—";
-                            })()}
+                            {p.freight > 0 ? fmtCurrency(p.freight) : "—"}
                           </TableCell>
                           <TableCell className="text-right tabular-nums">
-                            {(() => {
-                              let sum = 0;
-                              pieces.forEach(p => {
-                                const up = prices.find(x => x.supplier_id === sup.id && x.piece_id === p.id)?.unit_price;
-                                if (up != null) sum += Number(up) * (pieceTotalsFull.noLogisticsMap[p.id] || 0);
-                              });
-                              return sum > 0 ? (
-                                <span className="text-muted-foreground">{fmtCurrency(sum)}</span>
-                              ) : "—";
-                            })()}
+                            {p.installation > 0 ? fmtCurrency(p.installation) : "—"}
                           </TableCell>
                           <TableCell className={cn(
                             "text-right tabular-nums font-semibold",
