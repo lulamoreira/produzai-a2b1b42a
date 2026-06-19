@@ -97,6 +97,30 @@ export function SidebarV2() {
     localStorage.setItem("sidebar-v2-favorites-expanded", String(favoritesExpanded));
   }, [favoritesExpanded]);
 
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  const favoritesFilterActive = searchParams.get("filter") === "favorites";
+
+  const handleFavoritesFilterToggle = useCallback(() => {
+    const currentSearch = new URLSearchParams(location.search);
+    const isActive = currentSearch.get("filter") === "favorites";
+
+    if (clientId && !campaignId) {
+      if (isActive) {
+        currentSearch.delete("filter");
+      } else {
+        currentSearch.set("filter", "favorites");
+      }
+      const newSearch = currentSearch.toString();
+      navigate(`${location.pathname}${newSearch ? `?${newSearch}` : ""}`, { replace: true });
+    } else {
+      const first = favorites[0];
+      if (first) {
+        navigate(`/agency/${first.agency_id}/clients/${first.client_id}?filter=favorites`, { replace: true });
+      }
+    }
+  }, [clientId, campaignId, favorites, location.pathname, location.search, navigate]);
+
+
   const toggleCampaignExpanded = useCallback((id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setCampaignExpanded(prev => ({ ...prev, [id]: !prev[id] }));
@@ -505,7 +529,26 @@ export function SidebarV2() {
               >
                 <span className="flex items-center gap-1.5">
                   <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                  <span className="opacity-60">({favorites.length})</span>
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    className={cn(
+                      "opacity-60 hover:opacity-100 transition-opacity rounded px-1 outline-none focus-visible:ring-1 focus-visible:ring-amber-400",
+                      favoritesFilterActive && "text-amber-400 font-bold opacity-100 bg-amber-400/10"
+                    )}
+                    onClick={(e) => { e.stopPropagation(); handleFavoritesFilterToggle(); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleFavoritesFilterToggle();
+                      }
+                    }}
+                    aria-label={favoritesFilterActive ? "Remover filtro de favoritos" : "Filtrar campanhas favoritas"}
+                    title={favoritesFilterActive ? "Remover filtro de favoritos" : "Filtrar campanhas favoritas"}
+                  >
+                    ({favorites.length})
+                  </span>
                 </span>
                 <ChevronDown
                   className="w-3 h-3 transition-transform"
