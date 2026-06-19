@@ -561,7 +561,7 @@ export function SidebarV2() {
                       <NavLink
                         key={fav.id}
                         to={route}
-                        className="group flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors text-xs"
+                        className="group flex items-center gap-2 pl-[1.875rem] pr-3 py-1.5 rounded-lg transition-colors text-xs"
                         style={{
                           background: isActive ? 'var(--v2-sidebar-active)' : 'transparent',
                           color: isActive ? 'var(--v2-sidebar-active-text)' : 'var(--v2-sidebar-muted)',
