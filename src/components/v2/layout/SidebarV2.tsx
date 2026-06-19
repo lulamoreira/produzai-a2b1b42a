@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { useSidebarPermissions } from "@/hooks/useSidebarPermissions";
+import { useCampaignFavorites } from "@/hooks/useCampaignFavorites";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
