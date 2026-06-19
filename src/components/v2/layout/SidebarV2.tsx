@@ -88,6 +88,15 @@ export function SidebarV2() {
 
   const toggleSidebar = () => setCollapsed(!collapsed);
 
+  // Favorites in sidebar
+  const { data: favorites = [] } = useCampaignFavorites();
+  const [favoritesExpanded, setFavoritesExpanded] = useState(() => {
+    return localStorage.getItem("sidebar-v2-favorites-expanded") !== "false";
+  });
+  useEffect(() => {
+    localStorage.setItem("sidebar-v2-favorites-expanded", String(favoritesExpanded));
+  }, [favoritesExpanded]);
+
   const toggleCampaignExpanded = useCallback((id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     setCampaignExpanded(prev => ({ ...prev, [id]: !prev[id] }));
