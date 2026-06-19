@@ -1260,13 +1260,13 @@ const ClientDetail = () => {
 
             {loadingCampaigns ? (
               <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
-            ) : displayCampaigns.length === 0 ? (
+            ) : visibleCampaigns.length === 0 ? (
               <div className="bg-white rounded-xl border border-stone-200 border-dashed mt-6">
                 <EmptyStateV2
                   icon={Megaphone}
-                  title={t("campaigns.emptyTitle")}
-                  description={t("campaigns.emptyDescription")}
-                  action={canEditCampaigns ? { 
+                  title={favoritesFilterActive ? "Nenhum favorito neste cliente" : t("campaigns.emptyTitle")}
+                  description={favoritesFilterActive ? "As campanhas favoritadas deste cliente aparecerão aqui." : t("campaigns.emptyDescription")}
+                  action={!favoritesFilterActive && canEditCampaigns ? { 
                     label: t("campaigns.newCampaign"), 
                     onClick: () => setCampaignDialogOpen(true) 
                   } : undefined}
@@ -1275,9 +1275,9 @@ const ClientDetail = () => {
             ) : (
               <div className="mt-6">
                 <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
-                  <SortableContext items={displayCampaigns.map((c) => c.id)} strategy={rectSortingStrategy}>
+                  <SortableContext items={visibleCampaigns.map((c) => c.id)} strategy={rectSortingStrategy}>
                     <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1">
-                      {displayCampaigns.map((c) => (
+                      {visibleCampaigns.map((c) => (
                         <SortableCampaignCard
                           key={c.id}
                           campaign={c}
