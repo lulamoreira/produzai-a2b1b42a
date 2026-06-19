@@ -19,7 +19,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle, Wrench, RefreshCw, ClipboardCheck, Check, X, Trash2, Clock, RotateCw, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, ExternalLink } from "lucide-react";
+import { AlertTriangle, Wrench, RefreshCw, ClipboardCheck, Check, X, Trash2, Clock, RotateCw, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, ExternalLink, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import { criarNotificacao } from "@/lib/criarNotificacao";
 import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
@@ -497,7 +497,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
       {/* OCCURRENCE MANAGEMENT */}
       <Card>
         <CardHeader className="pb-3 flex flex-row items-center justify-between gap-2 space-y-0">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 flex-wrap">
             <CardTitle className="text-base">Gestão de Ocorrências</CardTitle>
             <Button
               variant="outline"
@@ -507,6 +507,61 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Abrir Portal Público
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5 border-green-600/40 text-green-700 hover:bg-green-50 hover:text-green-800 dark:text-green-400 dark:hover:bg-green-950"
+              onClick={() => {
+                const customStatusLines = tratativaStatuses
+                  .filter((s: any) => !["aberta", "em_andamento", "resolvida", "nao_procede"].includes(s.value) && s.ativo !== false)
+                  .map((s: any) => {
+                    const count = occList.filter((o) => o.tratativa_status === s.value).length;
+                    return `• ${s.label}: *${count}*`;
+                  })
+                  .join("\n");
+                const pct = total > 0 ? Math.round((resolvidas / total) * 100) : 0;
+                const dateStr = new Date().toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+                const msg =
+`📊 *RELATÓRIO DE OCORRÊNCIAS*
+🗓️ ${dateStr}
+
+━━━━━━━━━━━━━━━━━━━
+📋 *VISÃO GERAL*
+━━━━━━━━━━━━━━━━━━━
+🔢 Total bruto: *${rawTotal}*
+✅ Válidas: *${total}*
+
+━━━━━━━━━━━━━━━━━━━
+🚦 *STATUS DAS TRATATIVAS*
+━━━━━━━━━━━━━━━━━━━
+🆘 Abertas: *${abertas}*
+⏳ Em andamento: *${emAndamento}*
+✅ Resolvidas: *${resolvidas}*
+⛔ Não procede: *${naoProcede}*
+
+━━━━━━━━━━━━━━━━━━━
+⚠️ *PONTOS DE ATENÇÃO*
+━━━━━━━━━━━━━━━━━━━
+⏰ Atrasadas: *${atrasadas}*
+🔁 Precisam reinstalação: *${reinst}*${customStatusLines ? `
+
+━━━━━━━━━━━━━━━━━━━
+🏷️ *OUTROS STATUS*
+━━━━━━━━━━━━━━━━━━━
+${customStatusLines}` : ""}
+
+━━━━━━━━━━━━━━━━━━━
+📈 *PROGRESSO*
+━━━━━━━━━━━━━━━━━━━
+✨ ${pct}% das ocorrências válidas resolvidas
+
+_Relatório gerado pelo ProduzAI_ 🚀`;
+                window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
+              }}
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              Enviar por WhatsApp
             </Button>
           </div>
 
