@@ -381,6 +381,13 @@ const ClientDetail = () => {
     ? campaigns
     : campaigns.filter(c => myCampaignIds.includes(c.id));
 
+  const searchParams = new URLSearchParams(location.search);
+  const favoritesFilterActive = searchParams.get("filter") === "favorites";
+  const visibleCampaigns = favoritesFilterActive
+    ? displayCampaigns.filter(c => favoriteIds?.has(c.id))
+    : displayCampaigns;
+
+
   const { data: favoriteIds } = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
 
