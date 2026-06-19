@@ -268,12 +268,6 @@ export function SidebarV2() {
       });
     }
 
-    items.push({
-      label: t("sidebar.favorites"),
-      icon: Star,
-      route: "/favorites",
-      exact: false,
-    });
 
     return items;
   }, [isAdminOrMaster, t]);
