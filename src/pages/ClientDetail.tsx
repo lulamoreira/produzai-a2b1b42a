@@ -376,6 +376,8 @@ const ClientDetail = () => {
   useLanguage((client as any)?.language);
   const { t } = useTranslation();
   const { data: campaigns = [], isLoading: loadingCampaigns } = useCampaigns(clientId);
+  const { data: favoriteIds } = useFavoriteIds();
+  const toggleFavorite = useToggleFavorite();
 
   const displayCampaigns = isAdminOrMaster
     ? campaigns
@@ -387,9 +389,6 @@ const ClientDetail = () => {
     ? displayCampaigns.filter(c => favoriteIds?.has(c.id))
     : displayCampaigns;
 
-
-  const { data: favoriteIds } = useFavoriteIds();
-  const toggleFavorite = useToggleFavorite();
 
   const { data: agencyInfo } = useQuery({
     queryKey: ["agency_name", agencyId],
