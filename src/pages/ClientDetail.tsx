@@ -1258,6 +1258,27 @@ const ClientDetail = () => {
               </DialogContent>
             </Dialog>
 
+            {favoritesFilterActive && (
+              <div className="mt-4 flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                  <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                  Mostrando favoritos
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = new URLSearchParams(location.search);
+                    next.delete("filter");
+                    const search = next.toString();
+                    navigate(`${location.pathname}${search ? `?${search}` : ""}`, { replace: true });
+                  }}
+                  className="text-xs text-stone-500 hover:text-stone-700 underline"
+                >
+                  Limpar filtro
+                </button>
+              </div>
+            )}
+
             {loadingCampaigns ? (
               <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
             ) : visibleCampaigns.length === 0 ? (
