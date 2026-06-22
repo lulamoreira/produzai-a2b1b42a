@@ -697,7 +697,7 @@ export default function AdjustmentBudgetRequestDialog({
                 disabled={sending || preparingPreview || loading || !selectedSupplierId || !winner?.phone}>
                 <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
               </Button>
-              <Button onClick={handleClickSendEmail} disabled={sending || preparingPreview || loading || !winner}>
+              <Button onClick={handleClickSendEmail} disabled={sending || preparingPreview || loading || !selectedSupplierId}>
                 {preparingPreview ? <Loader2 className="w-4 h-4 mr-1 animate-spin" /> : <Eye className="w-4 h-4 mr-1" />}
                 Visualizar e enviar
               </Button>
