@@ -446,7 +446,7 @@ export default function AdjustmentRequotePortal() {
                       {data.pieces.length === 0 && (
                         <tr>
                           <td
-                            colSpan={6}
+                            colSpan={7}
                             className="px-3 py-8 text-center text-sm text-muted-foreground"
                           >
                             Nenhuma peça neste ajuste.
