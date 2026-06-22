@@ -571,58 +571,76 @@ export default function AdjustmentBudgetRequestDialog({
             <div className="flex items-center gap-2 text-muted-foreground py-6 text-sm">
               <Loader2 className="w-4 h-4 animate-spin" /> Carregando...
             </div>
-          ) : !winner ? (
+          ) : suppliers.length === 0 ? (
             <div className="rounded-md border border-amber-300 bg-amber-50 dark:bg-amber-950/30 p-3 text-sm text-amber-900 dark:text-amber-200">
-              Nenhum fornecedor vencedor declarado para esta campanha.
+              Nenhum fornecedor com cotação submetida nesta campanha
             </div>
           ) : (
             <>
-              <div className="rounded-lg border bg-card p-3">
-                <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Fornecedor vencedor</div>
-                <div className="text-sm font-semibold">{winner.company_name}</div>
-                <div className="text-xs text-muted-foreground mt-0.5">
-                  {winner.contact_name || "—"} · {winner.email || "sem e-mail"} · {winner.phone || "sem telefone"}
-                </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Fornecedor para recotação</Label>
+                <Select value={selectedSupplierId} onValueChange={setSelectedSupplierId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um fornecedor..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {suppliers.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>{s.company_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
-              <div className="grid grid-cols-3 gap-2">
-                <div className="rounded-md border bg-amber-50/60 dark:bg-amber-950/20 p-2 text-center">
-                  <div className="text-[10px] uppercase tracking-wide text-amber-900/70 dark:text-amber-200/70">Modificadas</div>
-                  <div className="text-base font-semibold text-amber-900 dark:text-amber-200">{summary.modified}</div>
-                </div>
-                <div className="rounded-md border bg-emerald-50/60 dark:bg-emerald-950/20 p-2 text-center">
-                  <div className="text-[10px] uppercase tracking-wide text-emerald-900/70 dark:text-emerald-200/70">Novas</div>
-                  <div className="text-base font-semibold text-emerald-900 dark:text-emerald-200">{summary.added}</div>
-                </div>
-                <div className="rounded-md border bg-rose-50/60 dark:bg-rose-950/20 p-2 text-center">
-                  <div className="text-[10px] uppercase tracking-wide text-rose-900/70 dark:text-rose-200/70">Removidas</div>
-                  <div className="text-base font-semibold text-rose-900 dark:text-rose-200">{summary.removed}</div>
-                </div>
-              </div>
+              {winner && (
+                <>
+                  <div className="rounded-lg border bg-card p-3">
+                    <div className="text-xs uppercase tracking-wide text-muted-foreground mb-1">Fornecedor selecionado</div>
+                    <div className="text-sm font-semibold">{winner.company_name}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {winner.contact_name || "—"} · {winner.email || "sem e-mail"} · {winner.phone || "sem telefone"}
+                    </div>
+                  </div>
 
-              <div className="rounded-md border bg-muted/30 p-2.5 text-xs space-y-1">
-                <div className="font-medium text-foreground">Será enviado em anexo:</div>
-                <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
-                  <li>Planilha completa de recotação — todas as peças e kits em ordem crescente de código, com destaque visual nas linhas alteradas.</li>
-                  <li>Aba <strong>Modificações</strong> — detalhamento de peças alteradas/removidas/novas e kits modificados (incluindo peças adicionadas/removidas dentro dos kits).</li>
-                  <li>Aba <strong>Matriz Lojas × Peças</strong> — rateio do ajuste por loja.</li>
-                  <li>Base de comparação: {useNegotiationBaseline ? "Negociação vigente" : "Rateio Original"}.</li>
-                </ul>
-              </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="rounded-md border bg-amber-50/60 dark:bg-amber-950/20 p-2 text-center">
+                      <div className="text-[10px] uppercase tracking-wide text-amber-900/70 dark:text-amber-200/70">Modificadas</div>
+                      <div className="text-base font-semibold text-amber-900 dark:text-amber-200">{summary.modified}</div>
+                    </div>
+                    <div className="rounded-md border bg-emerald-50/60 dark:bg-emerald-950/20 p-2 text-center">
+                      <div className="text-[10px] uppercase tracking-wide text-emerald-900/70 dark:text-emerald-200/70">Novas</div>
+                      <div className="text-base font-semibold text-emerald-900 dark:text-emerald-200">{summary.added}</div>
+                    </div>
+                    <div className="rounded-md border bg-rose-50/60 dark:bg-rose-950/20 p-2 text-center">
+                      <div className="text-[10px] uppercase tracking-wide text-rose-900/70 dark:text-rose-200/70">Removidas</div>
+                      <div className="text-base font-semibold text-rose-900 dark:text-rose-200">{summary.removed}</div>
+                    </div>
+                  </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="adj-email" className="text-xs">E-mail(s) do destinatário</Label>
-                <EmailRecipientsInput id="adj-email" value={email} onChange={setEmail} suggestions={emailSuggestions} disabled={sending} placeholder="email1@empresa.com, email2@empresa.com" className="text-sm" />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="adj-cc" className="text-xs">CC (opcional)</Label>
-                <EmailRecipientsInput id="adj-cc" value={cc} onChange={setCc} suggestions={emailSuggestions} disabled={sending} placeholder="copia@empresa.com" className="text-sm" />
-              </div>
-              <ReplyToField value={replyTo} onChange={setReplyTo} disabled={sending} />
-              <div className="space-y-1.5">
-                <Label htmlFor="adj-msg" className="text-xs">Mensagem (opcional)</Label>
-                <Textarea id="adj-msg" rows={2} value={customMessage} onChange={(e) => setCustomMessage(e.target.value)} disabled={sending} placeholder="Mensagem personalizada incluída no e-mail/WhatsApp." className="text-sm" />
-              </div>
+                  <div className="rounded-md border bg-muted/30 p-2.5 text-xs space-y-1">
+                    <div className="font-medium text-foreground">Será enviado em anexo:</div>
+                    <ul className="list-disc list-inside text-muted-foreground space-y-0.5">
+                      <li>Planilha completa de recotação — todas as peças e kits em ordem crescente de código, com destaque visual nas linhas alteradas.</li>
+                      <li>Aba <strong>Modificações</strong> — detalhamento de peças alteradas/removidas/novas e kits modificados (incluindo peças adicionadas/removidas dentro dos kits).</li>
+                      <li>Aba <strong>Matriz Lojas × Peças</strong> — rateio do ajuste por loja.</li>
+                      <li>Base de comparação: {useNegotiationBaseline ? "Negociação vigente" : "Rateio Original"}.</li>
+                    </ul>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="adj-email" className="text-xs">E-mail(s) do destinatário</Label>
+                    <EmailRecipientsInput id="adj-email" value={email} onChange={setEmail} suggestions={emailSuggestions} disabled={sending} placeholder="email1@empresa.com, email2@empresa.com" className="text-sm" />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="adj-cc" className="text-xs">CC (opcional)</Label>
+                    <EmailRecipientsInput id="adj-cc" value={cc} onChange={setCc} suggestions={emailSuggestions} disabled={sending} placeholder="copia@empresa.com" className="text-sm" />
+                  </div>
+                  <ReplyToField value={replyTo} onChange={setReplyTo} disabled={sending} />
+                  <div className="space-y-1.5">
+                    <Label htmlFor="adj-msg" className="text-xs">Mensagem (opcional)</Label>
+                    <Textarea id="adj-msg" rows={2} value={customMessage} onChange={(e) => setCustomMessage(e.target.value)} disabled={sending} placeholder="Mensagem personalizada incluída no e-mail/WhatsApp." className="text-sm" />
+                  </div>
+                </>
+              )}
             </>
           )}
           {(sending || preparingPreview) && <UploadProgressPanel status={uploadStatus} />}
