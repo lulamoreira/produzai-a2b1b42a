@@ -330,12 +330,18 @@ async function downloadWithTimeout(
   path: string,
   timeoutMs: number,
 ): Promise<ArrayBuffer | null> {
+  // Promise.race guarantees the function does not wait forever even if the
+  // underlying Storage client ignores the AbortController signal.
   const controller = new AbortController();
+  const downloadPromise = bucketRef.download(path, { signal: controller.signal });
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const { data, error } = await bucketRef.download(path, {
-      signal: controller.signal,
-    });
+    const { data, error } = await Promise.race([
+      downloadPromise,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), timeoutMs)
+      ),
+    ]);
     clearTimeout(timer);
     if (error || !data) {
       if (error) console.warn(`[backup] download error ${path}: ${error.message}`);
@@ -346,6 +352,8 @@ async function downloadWithTimeout(
     clearTimeout(timer);
     if (e instanceof Error && e.name === "AbortError") {
       console.warn(`[backup] download timeout ${path}`);
+    } else if (e instanceof Error && e.message === "timeout") {
+      console.warn(`[backup] download hard timeout ${path}`);
     } else {
       console.warn(`[backup] download exception ${path}:`, e);
     }
