@@ -121,6 +121,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const publicPaths = [
     "/orcamento/",
     "/recotacao/",
+    "/recotacao-qtd/",
     "/convite/fornecedor/",
     "/loja/",
     "/ocorrencias-portal/",
