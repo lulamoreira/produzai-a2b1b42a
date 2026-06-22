@@ -58,6 +58,7 @@ interface RateioTabV2Props {
   activeAdjustment: any;
   hasNegotiationRateio: boolean;
   winnerSupplierId: string | null | undefined;
+  negotiationSupplierId?: string | null | undefined;
   winnerSupplierName: string;
   rateioSource: "original" | "negotiation" | "adjustment";
   setRateioSource: (source: "original" | "negotiation" | "adjustment") => void;
