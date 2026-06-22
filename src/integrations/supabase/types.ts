@@ -411,7 +411,7 @@ export type Database = {
           piece_id: string
           quantity: number
           store_id: string
-          supplier_id: string
+          supplier_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -421,7 +421,7 @@ export type Database = {
           piece_id: string
           quantity?: number
           store_id: string
-          supplier_id: string
+          supplier_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -431,7 +431,7 @@ export type Database = {
           piece_id?: string
           quantity?: number
           store_id?: string
-          supplier_id?: string
+          supplier_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -5494,6 +5494,10 @@ export type Database = {
       count_active_suppliers: {
         Args: { p_campaign_id: string }
         Returns: number
+      }
+      create_negotiation_rateio_copy: {
+        Args: { p_campaign_id: string }
+        Returns: Json
       }
       criar_notificacao: {
         Args: {
