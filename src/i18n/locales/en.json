@@ -401,6 +401,8 @@
     "logicAndDesc": "All filters must match",
     "logicOrDesc": "Any filter can match",
     "logicAndOrDesc": "AND between groups, OR within each group",
+    "logicNot": "NOT",
+    "logicNotDesc": "Exclude items matching any filter",
     "checkinDone": "With check-in"
   },
   "stores": {
