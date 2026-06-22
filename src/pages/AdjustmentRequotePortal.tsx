@@ -364,7 +364,8 @@ export default function AdjustmentRequotePortal() {
                         <th className="text-left px-3 py-2 w-12"></th>
                         <th className="text-left px-3 py-2 w-20">Código</th>
                         <th className="text-left px-3 py-2">Peça</th>
-                        <th className="text-right px-3 py-2 w-24">Qtd</th>
+                        <th className="text-center px-3 py-2 w-24 text-muted-foreground">Qtd. Anterior</th>
+                        <th className="text-right px-3 py-2 w-24">Qtd. Nova</th>
                         <th className="text-right px-3 py-2 w-36">Preço anterior</th>
                         <th className="text-right px-3 py-2 w-40">Novo preço</th>
                       </tr>
