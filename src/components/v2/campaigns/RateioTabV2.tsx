@@ -1239,6 +1239,37 @@ export default function RateioTabV2({
         </Tabs>
 
         <div className="flex items-center gap-2">
+          {rateioSource === "negotiation" && hasCampaignNegRateio && (
+            <>
+              {existingPendingRequote ? (
+                <>
+                  <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-800 border-amber-200">
+                    Recotação em aberto
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSwapSupplier}
+                    className="text-xs gap-2 h-8"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    TROCAR FORNECEDOR
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={openRequoteDialog}
+                  className="text-xs gap-2 h-8"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  ENVIAR RECOTAÇÃO
+                </Button>
+              )}
+            </>
+          )}
+
           {currentPhase === "negociacao" && !hasNegotiationRateio && isViewingVigente && (
             <Button
               variant="outline"
