@@ -25,6 +25,7 @@ import { ResponsiveToolbar } from "@/components/ResponsiveToolbar";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
@@ -76,6 +77,7 @@ import BudgetSendClientDialog from "@/components/Budget/BudgetSendClientDialog";
 import BudgetSendNegotiatedDialog from "@/components/Budget/BudgetSendNegotiatedDialog";
 import BudgetWinnerDialog from "@/components/Budget/BudgetWinnerDialog";
 import BudgetNegotiationDialog from "@/components/Budget/BudgetNegotiationDialog";
+import SendQtyRequoteDialog from "@/components/Budget/SendQtyRequoteDialog";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
@@ -224,6 +226,23 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   const { data: prices = [] } = useBudgetPrices(campaignId);
   const { data: extraCosts = [] } = useBudgetExtraCosts(campaignId);
   const { data: timelineEntries = [] } = useBudgetTimeline(campaignId);
+
+  // ═══ Recotação por Quantidade ═══
+  const [qtyRequoteOpen, setQtyRequoteOpen] = useState(false);
+  const [reviewingQtyRequote, setReviewingQtyRequote] = useState<any | null>(null);
+  const [qtyRejectNotes, setQtyRejectNotes] = useState("");
+  const [qtyReviewProcessing, setQtyReviewProcessing] = useState(false);
+  const { data: qtyRequotes = [] } = useQuery({
+    queryKey: ["budget_qty_requotes", campaignId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("budget_qty_requotes" as any)
+        .select("id, status, supplier_id, created_at, submitted_at, qty_changes, submitted_prices, notes, rejection_notes, expires_at, access_token")
+        .eq("campaign_id", campaignId)
+        .order("created_at", { ascending: false });
+      return (data as any[]) ?? [];
+    },
+  });
 
   // Realtime: refresh comparison & best proposal as soon as a supplier submits
   useRealtimeBudget(campaignId);
@@ -1794,8 +1813,61 @@ ${msgLabels.winnerWaFooter}
         />
       )}
 
+      {/* ═══ QTY REQUOTES LIST ═══ */}
+      {qtyRequotes.length > 0 && (
+        <div className="border rounded-lg p-4 bg-muted/20 space-y-2">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Recotações por Quantidade
+          </div>
+          {qtyRequotes.map((rq: any) => {
+            const sup = suppliers.find((s) => s.id === rq.supplier_id);
+            const piecesCount = Object.keys(rq.qty_changes ?? {}).length;
+            const statusLabel =
+              rq.status === "pending" ? "Aguardando" :
+              rq.status === "submitted" ? "Respondida" :
+              rq.status === "approved" ? "Aprovada" : "Recusada";
+            const statusVariant: any =
+              rq.status === "submitted" ? "default" :
+              rq.status === "approved" ? "secondary" :
+              rq.status === "rejected" ? "destructive" : "outline";
+            return (
+              <div key={rq.id} className="flex items-center justify-between text-sm border rounded p-2 bg-background gap-2 flex-wrap">
+                <div>
+                  <span className="font-medium">{sup?.company_name ?? "—"}</span>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    {piecesCount} peças · criada {format(new Date(rq.created_at), "dd/MM HH:mm")}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={statusVariant}>{statusLabel}</Badge>
+                  {rq.status === "pending" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/recotacao-qtd/${rq.access_token}`);
+                        toast.success("Link copiado!");
+                      }}
+                    >
+                      <Copy className="w-3 h-3" /> Copiar link
+                    </Button>
+                  )}
+                  {rq.status === "submitted" && (
+                    <Button size="sm" className="h-7 text-xs" onClick={() => setReviewingQtyRequote(rq)}>
+                      Revisar
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* ═══ SUPPLIERS SECTION ═══ */}
       <div className="space-y-3">
+
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm font-semibold text-foreground">Fornecedores</h3>
           {(() => {
@@ -1827,9 +1899,21 @@ ${msgLabels.winnerWaFooter}
                 }
 
                 secondaryActions={
-                  <Button size="sm" variant="outline" className="gap-1 min-h-[44px] md:min-h-0 w-full md:w-auto justify-start md:justify-center" onClick={handleExportBudget} disabled={exportingBudget || suppliers.length === 0}>
-                    <Download className="w-3.5 h-3.5" /> {exportingBudget ? "Exportando..." : "Exportar Excel"}
-                  </Button>
+                  <>
+                    {(currentPhase === "cotacoes" || isAdminOrMaster) && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 min-h-[44px] md:min-h-0 w-full md:w-auto justify-start md:justify-center"
+                        onClick={() => setQtyRequoteOpen(true)}
+                      >
+                        <RefreshCw className="w-3.5 h-3.5" /> Recotação por Qtd.
+                      </Button>
+                    )}
+                    <Button size="sm" variant="outline" className="gap-1 min-h-[44px] md:min-h-0 w-full md:w-auto justify-start md:justify-center" onClick={handleExportBudget} disabled={exportingBudget || suppliers.length === 0}>
+                      <Download className="w-3.5 h-3.5" /> {exportingBudget ? "Exportando..." : "Exportar Excel"}
+                    </Button>
+                  </>
                 }
               />
             );
@@ -3050,7 +3134,158 @@ ${msgLabels.winnerWaFooter}
         }}
         isUnlocking={isUnlocking}
       />
+
+      {/* Send qty requote */}
+      <SendQtyRequoteDialog
+        open={qtyRequoteOpen}
+        onOpenChange={(o) => {
+          setQtyRequoteOpen(o);
+          if (!o) queryClient.invalidateQueries({ queryKey: ["budget_qty_requotes", campaignId] });
+        }}
+        campaignId={campaignId}
+        campaignName={campaignName}
+        pieces={pieces}
+      />
+
+      {/* Review qty requote */}
+      <Dialog
+        open={!!reviewingQtyRequote}
+        onOpenChange={(o) => { if (!o) { setReviewingQtyRequote(null); setQtyRejectNotes(""); } }}
+      >
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Revisar Recotação por Quantidade</DialogTitle>
+            <DialogDescription>
+              {(() => {
+                const sup = suppliers.find((s) => s.id === reviewingQtyRequote?.supplier_id);
+                return sup?.company_name ?? "—";
+              })()}
+            </DialogDescription>
+          </DialogHeader>
+
+          {reviewingQtyRequote && (() => {
+            const submitted = (reviewingQtyRequote.submitted_prices ?? {}) as Record<string, number>;
+            const qtyChanges = (reviewingQtyRequote.qty_changes ?? {}) as Record<string, { old_qty: number; new_qty: number }>;
+            const previousPrices: Record<string, number> = {};
+            (prices as any[]).forEach((p: any) => {
+              if (p.supplier_id === reviewingQtyRequote.supplier_id && p.piece_id) {
+                previousPrices[p.piece_id] = Number(p.adjusted_unit_price ?? p.unit_price ?? 0);
+              }
+            });
+            const pieceRows = Object.keys(qtyChanges).map((pid) => {
+              const piece = pieces.find((p) => p.id === pid);
+              const prev = previousPrices[pid] ?? 0;
+              const next = Number(submitted[pid] ?? 0);
+              const pct = prev > 0 ? ((next - prev) / prev) * 100 : 0;
+              return { pid, name: piece?.name ?? "(peça)", code: piece?.code ?? 0, prev, next, pct };
+            });
+            return (
+              <div className="space-y-3 max-h-[60vh] overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Peça</TableHead>
+                      <TableHead className="text-right">Preço anterior</TableHead>
+                      <TableHead className="text-right">Novo preço</TableHead>
+                      <TableHead className="text-right w-24">Variação</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {pieceRows.map((r) => (
+                      <TableRow key={r.pid}>
+                        <TableCell className="text-sm">#{r.code} {r.name}</TableCell>
+                        <TableCell className="text-right tabular-nums text-muted-foreground">
+                          {r.prev.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums font-semibold">
+                          {r.next.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                        </TableCell>
+                        <TableCell className={cn("text-right tabular-nums text-xs", r.pct > 0 ? "text-destructive" : r.pct < 0 ? "text-emerald-600" : "text-muted-foreground")}>
+                          {r.pct > 0 ? "+" : ""}{r.pct.toFixed(1)}%
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                {(submitted.installation != null || submitted.freight != null) && (
+                  <div className="text-xs text-muted-foreground border rounded p-2 bg-muted/30">
+                    Instalação: {Number(submitted.installation ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} ·
+                    Frete: {Number(submitted.freight ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                  </div>
+                )}
+                {reviewingQtyRequote.notes && (
+                  <div className="text-xs border rounded p-2 bg-muted/30 whitespace-pre-wrap">
+                    <span className="font-semibold">Observações: </span>{reviewingQtyRequote.notes}
+                  </div>
+                )}
+                <div className="space-y-1.5 pt-2">
+                  <Label className="text-xs">Motivo (apenas se recusar)</Label>
+                  <Textarea
+                    rows={2}
+                    value={qtyRejectNotes}
+                    onChange={(e) => setQtyRejectNotes(e.target.value)}
+                    placeholder="Opcional"
+                  />
+                </div>
+              </div>
+            );
+          })()}
+
+          <DialogFooter className="gap-2">
+            <Button
+              variant="destructive"
+              disabled={qtyReviewProcessing}
+              onClick={async () => {
+                if (!reviewingQtyRequote) return;
+                setQtyReviewProcessing(true);
+                try {
+                  const { error } = await supabase.rpc(
+                    "reject_budget_qty_requote" as any,
+                    { p_id: reviewingQtyRequote.id, p_notes: qtyRejectNotes || null } as any
+                  );
+                  if (error) throw error;
+                  toast.success("Recotação recusada");
+                  setReviewingQtyRequote(null);
+                  setQtyRejectNotes("");
+                  queryClient.invalidateQueries({ queryKey: ["budget_qty_requotes", campaignId] });
+                } catch (e: any) {
+                  toast.error(e?.message || "Erro");
+                } finally {
+                  setQtyReviewProcessing(false);
+                }
+              }}
+            >
+              Recusar
+            </Button>
+            <Button
+              disabled={qtyReviewProcessing}
+              onClick={async () => {
+                if (!reviewingQtyRequote) return;
+                setQtyReviewProcessing(true);
+                try {
+                  const { error } = await supabase.rpc(
+                    "approve_budget_qty_requote" as any,
+                    { p_id: reviewingQtyRequote.id } as any
+                  );
+                  if (error) throw error;
+                  toast.success("Recotação aprovada! Preços atualizados.");
+                  setReviewingQtyRequote(null);
+                  queryClient.invalidateQueries({ queryKey: ["budget_qty_requotes", campaignId] });
+                  queryClient.invalidateQueries({ queryKey: ["budget_prices", campaignId] });
+                } catch (e: any) {
+                  toast.error(e?.message || "Erro");
+                } finally {
+                  setQtyReviewProcessing(false);
+                }
+              }}
+            >
+              Aprovar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
+
   );
 }
 
