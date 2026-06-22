@@ -412,6 +412,8 @@
     "logicAndDesc": "Todos los filtros deben coincidir",
     "logicOrDesc": "Cualquier filtro puede coincidir",
     "logicAndOrDesc": "Y entre grupos, O dentro de cada grupo",
+    "logicNot": "NO",
+    "logicNotDesc": "Excluir elementos que coincidan con cualquier filtro",
     "checkinDone": "Con check-in"
   },
   "stores": {

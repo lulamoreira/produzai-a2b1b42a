@@ -13,7 +13,7 @@ import { ChevronDown, ChevronRight, ChevronLeft, Filter, SlidersHorizontal, X, S
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
 
-export type FilterLogicMode = "and" | "or" | "and_or";
+export type FilterLogicMode = "and" | "or" | "and_or" | "not";
 
 export type PieceFilters = {
   category: Set<string>;
@@ -352,6 +352,7 @@ const MatrixFilterSidebar = ({
             { value: "and" as FilterLogicMode, label: t("filters.logicAnd") },
             { value: "or" as FilterLogicMode, label: t("filters.logicOr") },
             { value: "and_or" as FilterLogicMode, label: t("filters.logicAndOr") },
+            { value: "not" as FilterLogicMode, label: t("filters.logicNot") },
           ]).map((opt) => (
             <button
               key={opt.value}
@@ -370,6 +371,7 @@ const MatrixFilterSidebar = ({
           {filterLogicMode === "and" && t("filters.logicAndDesc")}
           {filterLogicMode === "or" && t("filters.logicOrDesc")}
           {filterLogicMode === "and_or" && t("filters.logicAndOrDesc")}
+          {filterLogicMode === "not" && t("filters.logicNotDesc")}
         </p>
       </div>
 

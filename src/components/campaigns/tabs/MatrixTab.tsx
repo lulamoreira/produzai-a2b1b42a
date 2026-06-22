@@ -135,6 +135,7 @@ export default function MatrixTab({
       filtered = filtered.filter((p) => {
         const results = activeChecks.map((check) => check(p));
         if (filterLogicMode === "and") return results.every(Boolean);
+        if (filterLogicMode === "not") return results.every((r) => !r);
         return results.some(Boolean);
       });
     }
