@@ -322,6 +322,37 @@ async function listBucketRecursive(
   }
 }
 
+// Download a Storage object with an explicit timeout. Returns the ArrayBuffer
+// or null on failure/timeout.
+// deno-lint-ignore no-explicit-any
+async function downloadWithTimeout(
+  bucketRef: any,
+  path: string,
+  timeoutMs: number,
+): Promise<ArrayBuffer | null> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const { data, error } = await bucketRef.download(path, {
+      signal: controller.signal,
+    });
+    clearTimeout(timer);
+    if (error || !data) {
+      if (error) console.warn(`[backup] download error ${path}: ${error.message}`);
+      return null;
+    }
+    return await data.arrayBuffer();
+  } catch (e) {
+    clearTimeout(timer);
+    if (e instanceof Error && e.name === "AbortError") {
+      console.warn(`[backup] download timeout ${path}`);
+    } else {
+      console.warn(`[backup] download exception ${path}:`, e);
+    }
+    return null;
+  }
+}
+
 // ──────────────────────────────────────────────────────────────────────
 // RESTORE (upsert/merge)
 // ──────────────────────────────────────────────────────────────────────
