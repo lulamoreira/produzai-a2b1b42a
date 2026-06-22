@@ -339,7 +339,7 @@ export default function RateioTabV2({
   const versionTabs = useMemo(() => {
     const tabs: { id: string; label: string; isVigente?: boolean; type?: string; parent?: string }[] = [{ id: "original", label: "Rateio Original", type: "original" }];
     
-    if (hasNegotiationRateio && winnerSupplierId) {
+    if (hasNegotiationRateio && effectiveNegSupplierId) {
       tabs.push({ 
         id: "negotiation", 
         label: `Negociação · ${winnerSupplierName}`,
