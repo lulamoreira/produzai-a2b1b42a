@@ -226,6 +226,23 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   const { data: extraCosts = [] } = useBudgetExtraCosts(campaignId);
   const { data: timelineEntries = [] } = useBudgetTimeline(campaignId);
 
+  // ═══ Recotação por Quantidade ═══
+  const [qtyRequoteOpen, setQtyRequoteOpen] = useState(false);
+  const [reviewingQtyRequote, setReviewingQtyRequote] = useState<any | null>(null);
+  const [qtyRejectNotes, setQtyRejectNotes] = useState("");
+  const [qtyReviewProcessing, setQtyReviewProcessing] = useState(false);
+  const { data: qtyRequotes = [] } = useQuery({
+    queryKey: ["budget_qty_requotes", campaignId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("budget_qty_requotes" as any)
+        .select("id, status, supplier_id, created_at, submitted_at, qty_changes, submitted_prices, notes, rejection_notes, expires_at, access_token")
+        .eq("campaign_id", campaignId)
+        .order("created_at", { ascending: false });
+      return (data as any[]) ?? [];
+    },
+  });
+
   // Realtime: refresh comparison & best proposal as soon as a supplier submits
   useRealtimeBudget(campaignId);
 
