@@ -16,6 +16,7 @@ export interface RateioDelete {
 export interface RateioBulkOptions {
   isNegotiationView: boolean;
   negotiationSupplierId?: string | null;
+  isCampaignNegView?: boolean;
   isAdjustmentView?: boolean;
   adjustmentId?: string | null;
   /** Map of source (campaign) piece_id -> adjustment piece_id. Required for adjustment writes. */
@@ -27,7 +28,7 @@ export async function applyRateioBulk(
   deletes: RateioDelete[],
   options: RateioBulkOptions
 ): Promise<void> {
-  const { isNegotiationView, negotiationSupplierId, isAdjustmentView, adjustmentId, srcToAdjPieceId } = options;
+  const { isNegotiationView, negotiationSupplierId, isCampaignNegView, isAdjustmentView, adjustmentId, srcToAdjPieceId } = options;
   
   // ━━━ REDE DE SEGURANÇA: deduplica upserts pela chave única ━━━
   // O Postgres não permite múltiplos upserts da mesma chave em um único comando.

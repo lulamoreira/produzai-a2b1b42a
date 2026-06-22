@@ -35,7 +35,7 @@ import { useUIVersion } from "@/hooks/useUIVersion";
 import RateioTabV2 from "@/components/v2/campaigns/RateioTabV2";
 import { useActiveAdjustment } from "@/hooks/useAdjustments";
 import { useAdjustmentRateio } from "@/hooks/useAdjustmentRateio";
-import { useNegotiationStorePieces } from "@/hooks/useNegotiationStorePieces";
+import { useNegotiationStorePieces, useCampaignNegotiationStorePieces } from "@/hooks/useNegotiationStorePieces";
 import OccurrencesPortalV2 from "@/pages/v2/OccurrencesPortalV2";
 import OccurrencesPortal from "@/pages/OccurrencesPortal";
 import CampaignBackupDialog from "@/components/CampaignBackupDialog";
@@ -254,6 +254,11 @@ const CampaignDetail = () => {
     resolvedRateioSource === "negotiation",
   );
 
+  const { data: campaignNegRows = [] } = useCampaignNegotiationStorePieces(
+    campaignId,
+    resolvedRateioSource === "negotiation" && hasCampaignNegRateio,
+  );
+
   // Pick the qtyMap that matches the currently selected rateio source so the
   // matrix shows the correct quantities for Original / Negociação / Ajuste.
   const matrixQtyMap = useMemo(() => {
@@ -261,14 +266,15 @@ const CampaignDetail = () => {
       return adjustmentRateio.qtyMap;
     }
     if (resolvedRateioSource === "negotiation") {
+      const rows = hasCampaignNegRateio ? campaignNegRows : negotiationRows;
       const map: Record<string, number> = {};
-      for (const row of negotiationRows as any[]) {
+      for (const row of rows as any[]) {
         map[`${row.store_id}-${row.piece_id}`] = Number(row.quantity) || 0;
       }
       return map;
     }
     return qtyMap;
-  }, [resolvedRateioSource, adjustmentRateio, negotiationRows, qtyMap]);
+  }, [resolvedRateioSource, adjustmentRateio, negotiationRows, qtyMap, hasCampaignNegRateio, campaignNegRows]);
 
 
 
