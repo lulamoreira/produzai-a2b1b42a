@@ -469,6 +469,7 @@ const CampaignDetail = () => {
                   activeAdjustment={activeAdjustment} 
                   hasNegotiationRateio={hasNegotiationRateio}
                   winnerSupplierId={winnerSupplierId} 
+                  negotiationSupplierId={negotiationSupplierId}
                   winnerSupplierName={winnerSupplierName} 
                   rateioSource={resolvedRateioSource}
                   setRateioSource={setRateioSource}
