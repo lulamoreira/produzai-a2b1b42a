@@ -203,3 +203,56 @@ export async function cancelNegotiationRateio(supplierId: string, campaignId?: s
     if (settingsErr) throw settingsErr;
   }
 }
+
+export function useCampaignNegotiationStorePieces(
+  campaignId: string | null | undefined,
+  enabled: boolean = true
+) {
+  return useQuery({
+    queryKey: ["campaign_negotiation_store_pieces", campaignId],
+    enabled: !!campaignId && enabled,
+    queryFn: async () => {
+      return supabasePaginate<NegotiationStorePiece>((from, to) =>
+        supabase
+          .from("budget_negotiation_store_pieces" as never)
+          .select("id, supplier_id, campaign_id, store_id, piece_id, quantity", { count: "exact" })
+          .eq("campaign_id", campaignId as string)
+          .is("supplier_id", null)
+          .range(from, to) as any
+      );
+    },
+  });
+}
+
+export function useUpdateCampaignNegotiationStorePiece() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      campaign_id: string;
+      store_id: string;
+      piece_id: string;
+      quantity: number;
+    }) => {
+      const { campaign_id, store_id, piece_id, quantity } = params;
+      const { error: delErr } = await supabase
+        .from("budget_negotiation_store_pieces" as never)
+        .delete()
+        .eq("campaign_id", campaign_id)
+        .eq("store_id", store_id)
+        .eq("piece_id", piece_id)
+        .is("supplier_id", null);
+      if (delErr) throw delErr;
+      if (quantity > 0) {
+        const { error: insErr } = await supabase
+          .from("budget_negotiation_store_pieces" as never)
+          .insert({ campaign_id, store_id, piece_id, quantity, supplier_id: null } as never);
+        if (insErr) throw insErr;
+      }
+    },
+    onSettled: (_data, _err, vars) => {
+      qc.invalidateQueries({ queryKey: ["campaign_negotiation_store_pieces", vars?.campaign_id] });
+      qc.invalidateQueries({ queryKey: ["has_campaign_neg_rateio", vars?.campaign_id] });
+    },
+  });
+}
+
