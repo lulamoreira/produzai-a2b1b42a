@@ -282,6 +282,45 @@ export async function runBackup(admin: any, opts: BackupOptions = {}): Promise<B
   return { zipBytes, manifest };
 }
 
+// Recursively list every object path inside a bucket using the Storage API.
+// Stops early once `cap` paths have been collected.
+// deno-lint-ignore no-explicit-any
+async function listBucketRecursive(
+  admin: any,
+  bucket: string,
+  prefix: string,
+  out: string[],
+  cap: number,
+): Promise<void> {
+  if (out.length >= cap) return;
+  const pageSize = 1000;
+  let offset = 0;
+  while (true) {
+    const { data, error } = await admin.storage.from(bucket).list(prefix, {
+      limit: pageSize,
+      offset,
+      sortBy: { column: "name", order: "asc" },
+    });
+    if (error) {
+      console.warn(`[backup] list ${bucket}/${prefix}: ${error.message}`);
+      return;
+    }
+    if (!data || data.length === 0) break;
+    for (const entry of data as Array<{ name: string; id: string | null; metadata: unknown }>) {
+      if (out.length >= cap) return;
+      // Folders have id === null in Storage API listings.
+      const fullPath = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.id === null) {
+        await listBucketRecursive(admin, bucket, fullPath, out, cap);
+      } else {
+        out.push(fullPath);
+      }
+    }
+    if (data.length < pageSize) break;
+    offset += pageSize;
+  }
+}
+
 // ──────────────────────────────────────────────────────────────────────
 // RESTORE (upsert/merge)
 // ──────────────────────────────────────────────────────────────────────
