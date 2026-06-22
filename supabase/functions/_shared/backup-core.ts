@@ -217,40 +217,39 @@ export async function runBackup(admin: any, opts: BackupOptions = {}): Promise<B
       let count = 0;
       let truncatedHere = false;
       try {
-        // Recursive listing via storage.objects table (service_role only).
-        const { data: objects, error } = await admin
-          .schema("storage")
-          .from("objects")
-          .select("name")
-          .eq("bucket_id", bucket)
-          .limit(fileCap + 1);
-        if (error) {
-          console.warn(`[backup] list bucket ${bucket}: ${error.message}`);
-          continue;
-        }
-        if (!objects) continue;
-        if (objects.length > fileCap) {
+        // Recursively list all objects in the bucket via the Storage API.
+        // (We cannot query storage.objects through PostgREST because the
+        // `storage` schema is not exposed by default.)
+        const allPaths: string[] = [];
+        await listBucketRecursive(admin, bucket, "", allPaths, fileCap + 1);
+
+        if (allPaths.length > fileCap) {
           truncatedHere = true;
           truncated.push(bucket);
         }
-        const list = objects.slice(0, fileCap);
+        const list = allPaths.slice(0, fileCap);
+        console.log(`[backup] bucket ${bucket}: ${list.length} files to download`);
+
         // Download in small concurrent batches
         const concurrency = 5;
         for (let i = 0; i < list.length; i += concurrency) {
           const batch = list.slice(i, i + concurrency);
           await Promise.all(
-            batch.map(async (obj: { name: string }) => {
+            batch.map(async (objPath: string) => {
               try {
                 const { data: blob, error: dErr } = await admin
                   .storage
                   .from(bucket)
-                  .download(obj.name);
-                if (dErr || !blob) return;
+                  .download(objPath);
+                if (dErr || !blob) {
+                  if (dErr) console.warn(`[backup] download ${bucket}/${objPath}: ${dErr.message}`);
+                  return;
+                }
                 const ab = await blob.arrayBuffer();
-                files[`storage/${bucket}/${obj.name}`] = new Uint8Array(ab);
+                files[`storage/${bucket}/${objPath}`] = new Uint8Array(ab);
                 count++;
               } catch (e) {
-                console.warn(`[backup] download ${bucket}/${obj.name}:`, e);
+                console.warn(`[backup] download ${bucket}/${objPath}:`, e);
               }
             }),
           );
