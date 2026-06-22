@@ -215,7 +215,7 @@ export default function AdjustmentBudgetRequestDialog({
   }, [open, campaignId, adjustment.id, useNegotiationBaseline, winnerSupplierId, selectedSupplierId]);
 
   const buildAndUpload = async () => {
-    if (!winner) throw new Error("Nenhum fornecedor vencedor encontrado para esta campanha.");
+    if (!winner) throw new Error("Selecione um fornecedor para enviar a recotação.");
     const adjSpFlat = (adjSp as any[]).map((r) => ({
       store_id: r.store_id, piece_id: r.piece_id, quantity: Number(r.quantity || 0),
     }));
