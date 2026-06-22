@@ -412,6 +412,15 @@ export default function AdjustmentRequotePortal() {
                                 </div>
                               )}
                             </td>
+                            <td className="px-3 py-2 text-center tabular-nums">
+                              {qtyChanged ? (
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900 font-normal tabular-nums">
+                                  {origQty}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground">{origQty}</span>
+                              )}
+                            </td>
                             <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
                               {qty}
                             </td>
