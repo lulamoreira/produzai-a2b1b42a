@@ -179,7 +179,9 @@ export interface BackupManifest {
 // deno-lint-ignore no-explicit-any
 export async function runBackup(admin: any, opts: BackupOptions = {}): Promise<BackupResult> {
   const includeStorage = opts.includeStorage ?? true;
-  const fileCap = opts.storageFileLimitPerBucket ?? 5000;
+  // Manual backups often hit the 150s Edge Function limit, so keep the per-bucket
+  // cap conservative. The scheduled job runs off-peak and can afford more files.
+  const fileCap = opts.storageFileLimitPerBucket ?? 1000;
 
   const files: Record<string, Uint8Array> = {};
   const tableCounts: Record<string, number> = {};
