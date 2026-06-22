@@ -373,6 +373,8 @@ export default function AdjustmentRequotePortal() {
                     <tbody>
                       {data.pieces.map((p) => {
                         const qty = data.piece_qty[p.id] || 0;
+                        const origQty = data.original_piece_qty?.[p.id] ?? 0;
+                        const qtyChanged = origQty !== qty;
                         const prev = data.baseline_prices[p.id] || 0;
                         return (
                           <tr key={p.id} className="border-t">
