@@ -487,6 +487,31 @@ export default function RateioTabV2({
 
   // Filter stores
   const filteredStores = useMemo(() => {
+    const storeMatchesFilters = (s: any): boolean => {
+      const checks: boolean[] = [];
+      if (storeFilters.city.size > 0) checks.push(storeFilters.city.has(s.city));
+      if (storeFilters.state.size > 0) checks.push(storeFilters.state.has(s.state?.trim()));
+      if (storeFilters.store_model.size > 0) checks.push(storeFilters.store_model.has(s.store_model));
+      for (let i = 1; i <= 15; i++) {
+        const key = `custom_field_${i}` as keyof typeof storeFilters;
+        const set = storeFilters[key] as Set<string> | undefined;
+        if (set && set.size > 0) checks.push(!!((s as any)[key]) && set.has((s as any)[key]));
+      }
+      return checks.length === 0 || checks.some(Boolean);
+    };
+
+    const storeMatchesAllFilters = (s: any): boolean => {
+      if (storeFilters.city.size > 0 && !storeFilters.city.has(s.city)) return false;
+      if (storeFilters.state.size > 0 && !storeFilters.state.has(s.state?.trim())) return false;
+      if (storeFilters.store_model.size > 0 && !storeFilters.store_model.has(s.store_model)) return false;
+      for (let i = 1; i <= 15; i++) {
+        const key = `custom_field_${i}` as keyof typeof storeFilters;
+        const set = storeFilters[key] as Set<string> | undefined;
+        if (set && set.size > 0 && (!((s as any)[key]) || !set.has((s as any)[key]))) return false;
+      }
+      return true;
+    };
+
     let result = stores.filter(s => {
       const q = deferredStoreSearch.toLowerCase().trim();
       const matchesSearch = !q || Object.values(s).some(val => 
@@ -494,19 +519,17 @@ export default function RateioTabV2({
         val.toString().toLowerCase().includes(q)
       );
       
-      // Apply sidebar filters
-      if (storeFilters.city.size > 0 && !storeFilters.city.has(s.city)) return false;
-      if (storeFilters.state.size > 0 && !storeFilters.state.has(s.state?.trim())) return false;
-      if (storeFilters.store_model.size > 0 && !storeFilters.store_model.has(s.store_model)) return false;
-
-      // Custom field filters
-      for (let i = 1; i <= 15; i++) {
-        const key = `custom_field_${i}` as keyof typeof storeFilters;
-        const set = storeFilters[key] as Set<string> | undefined;
-        if (set && set.size > 0) {
-          const val = (s as any)[key];
-          if (!val || !set.has(val)) return false;
-        }
+      if (filterLogicMode === "and") {
+        if (!storeMatchesAllFilters(s)) return false;
+      } else if (filterLogicMode === "or") {
+        const hasAnyActiveFilter =
+          storeFilters.city.size > 0 || storeFilters.state.size > 0 || storeFilters.store_model.size > 0 ||
+          Array.from({ length: 15 }, (_, i) => storeFilters[`custom_field_${i + 1}` as keyof typeof storeFilters] as Set<string>).some(s => s?.size > 0);
+        if (hasAnyActiveFilter && !storeMatchesFilters(s)) return false;
+      } else if (filterLogicMode === "and_or") {
+        if (!storeMatchesAllFilters(s)) return false;
+      } else if (filterLogicMode === "not") {
+        if (storeMatchesFilters(s)) return false;
       }
 
       return matchesSearch;
