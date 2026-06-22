@@ -206,6 +206,7 @@ export default function RateioTabV2({
   canEditCampaignStores,
   activeAdjustment,
   hasNegotiationRateio,
+  hasCampaignNegRateio = false,
   winnerSupplierId,
   negotiationSupplierId,
   winnerSupplierName,
