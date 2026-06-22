@@ -13,7 +13,7 @@ import { ChevronDown, ChevronRight, ChevronLeft, Filter, SlidersHorizontal, X, S
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import type { CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
 
-export type FilterLogicMode = "and" | "or" | "and_or";
+export type FilterLogicMode = "and" | "or" | "and_or" | "not";
 
 export type PieceFilters = {
   category: Set<string>;
