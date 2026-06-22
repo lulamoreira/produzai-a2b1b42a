@@ -45,6 +45,7 @@ const InstallerPortal = lazy(() => import("./pages/InstallerPortal"));
 const Unsubscribe = lazy(() => import("./pages/Unsubscribe"));
 const SupplierPortal = lazy(() => import("./pages/SupplierPortal"));
 const AdjustmentRequotePortal = lazy(() => import("./pages/AdjustmentRequotePortal"));
+const BudgetQtyRequotePortal = lazy(() => import("./pages/BudgetQtyRequotePortal"));
 const StorePortal = lazy(() => import("./pages/StorePortal"));
 const OccurrencesPortal = lazy(() => import("./pages/OccurrencesPortal"));
 const HomeV2 = lazy(() => import("./pages/v2/HomeV2").then(m => ({ default: m.HomeV2 })));
