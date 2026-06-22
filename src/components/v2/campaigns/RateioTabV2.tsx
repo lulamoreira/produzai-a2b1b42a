@@ -2156,6 +2156,74 @@ export default function RateioTabV2({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={requoteDialogOpen} onOpenChange={setRequoteDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Enviar Recotação por Quantidade</DialogTitle>
+            <DialogDescription>
+              Gere um link para o fornecedor recotar com base nas novas quantidades do Rateio de Negociação.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-xs font-semibold text-stone-700 mb-1 block">Fornecedor</label>
+              <select
+                className="h-10 w-full rounded-md border border-stone-300 bg-white text-sm px-2"
+                value={requoteSelectedSupplier}
+                onChange={(e) => setRequoteSelectedSupplier(e.target.value)}
+                disabled={!!generatedRequoteLink}
+              >
+                <option value="">Selecione o fornecedor...</option>
+                {requoteSuppliers.map((s) => (
+                  <option key={s.id} value={s.id}>{s.company_name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-stone-700 mb-1 block">Observações (opcional)</label>
+              <textarea
+                className="w-full min-h-[80px] rounded-md border border-stone-300 bg-white text-sm p-2"
+                value={requoteNotes}
+                onChange={(e) => setRequoteNotes(e.target.value)}
+                disabled={!!generatedRequoteLink}
+              />
+            </div>
+            {generatedRequoteLink && (
+              <div className="rounded-md border border-emerald-200 bg-emerald-50/60 p-3">
+                <div className="text-xs font-semibold text-stone-700 mb-1">Link de recotação</div>
+                <div className="flex items-center gap-2">
+                  <input
+                    readOnly
+                    value={generatedRequoteLink}
+                    className="flex-1 text-xs px-2 py-1 rounded border border-stone-300 bg-white"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedRequoteLink);
+                      toast.success("Link copiado");
+                    }}
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRequoteDialogOpen(false)}>
+              Fechar
+            </Button>
+            {!generatedRequoteLink && (
+              <Button onClick={handleGenerateRequoteLink} disabled={isGeneratingLink || !requoteSelectedSupplier}>
+                {isGeneratingLink ? "Gerando..." : "GERAR LINK"}
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
