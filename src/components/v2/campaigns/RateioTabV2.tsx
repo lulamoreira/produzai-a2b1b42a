@@ -57,6 +57,7 @@ interface RateioTabV2Props {
   canEditCampaignStores: boolean;
   activeAdjustment: any;
   hasNegotiationRateio: boolean;
+  hasCampaignNegRateio?: boolean;
   winnerSupplierId: string | null | undefined;
   negotiationSupplierId?: string | null | undefined;
   winnerSupplierName: string;
