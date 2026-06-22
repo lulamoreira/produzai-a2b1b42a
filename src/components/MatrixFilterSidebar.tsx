@@ -352,6 +352,7 @@ const MatrixFilterSidebar = ({
             { value: "and" as FilterLogicMode, label: t("filters.logicAnd") },
             { value: "or" as FilterLogicMode, label: t("filters.logicOr") },
             { value: "and_or" as FilterLogicMode, label: t("filters.logicAndOr") },
+            { value: "not" as FilterLogicMode, label: t("filters.logicNot") },
           ]).map((opt) => (
             <button
               key={opt.value}
@@ -370,6 +371,7 @@ const MatrixFilterSidebar = ({
           {filterLogicMode === "and" && t("filters.logicAndDesc")}
           {filterLogicMode === "or" && t("filters.logicOrDesc")}
           {filterLogicMode === "and_or" && t("filters.logicAndOrDesc")}
+          {filterLogicMode === "not" && t("filters.logicNotDesc")}
         </p>
       </div>
 
