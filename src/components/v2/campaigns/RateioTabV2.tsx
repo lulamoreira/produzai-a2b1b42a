@@ -561,7 +561,7 @@ export default function RateioTabV2({
     });
 
     return result;
-  }, [stores, deferredStoreSearch, storeFilters, sortConfig, storeSortField]);
+  }, [stores, deferredStoreSearch, storeFilters, sortConfig, storeSortField, filterLogicMode]);
 
   const rowVirtualizer = useVirtualizer({
     count: filteredStores.length,
