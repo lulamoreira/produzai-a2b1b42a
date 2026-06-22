@@ -124,19 +124,22 @@ export default function AdjustmentBudgetRequestDialog({
         const _clientId = (campaignRow as any)?.client_id || null;
         setClientId(_clientId);
 
-        const { data: w } = await supabase
+        const { data: supList } = await supabase
           .from("budget_suppliers")
           .select("id, company_name, contact_name, email, phone")
           .eq("campaign_id", campaignId)
-          .eq("is_winner", true)
-          .maybeSingle();
-        setWinner(w);
-        if (w) setEmail((w as any).email || "");
+          .in("status", ["submitted", "winner", "negotiation_submitted"])
+          .order("company_name");
+        setSuppliers(supList || []);
 
-        if (!w) {
+        const activeSupplierId = selectedSupplierId || (winnerSupplierId && (supList || []).find((s: any) => s.id === winnerSupplierId) ? winnerSupplierId : "");
+        if (!activeSupplierId) {
           setLoading(false);
           return;
         }
+
+        const w = (supList || []).find((s: any) => s.id === activeSupplierId);
+        if (w) setEmail((w as any).email || "");
 
         const [pricesRes, extrasRes, storesRes, baselineSpRows, srcKitsRes, srcPiecesRes, origKpRows, snapStoreRows] = await Promise.all([
           supabase.from("budget_prices" as any)
