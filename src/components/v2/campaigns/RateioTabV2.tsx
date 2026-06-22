@@ -360,7 +360,7 @@ export default function RateioTabV2({
     if (lastTab) lastTab.isVigente = true;
 
     return tabs;
-  }, [hasNegotiationRateio, winnerSupplierId, winnerSupplierName, activeAdjustment]);
+  }, [hasNegotiationRateio, effectiveNegSupplierId, winnerSupplierName, activeAdjustment]);
 
   const activeTabData = versionTabs.find(t => t.id === rateioSource) || versionTabs.find(t => t.id === vigenteSource) || versionTabs[0];
   const activeVersionTab = activeTabData?.id || vigenteSource;
