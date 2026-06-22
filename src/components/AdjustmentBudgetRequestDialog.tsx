@@ -84,7 +84,9 @@ export default function AdjustmentBudgetRequestDialog({
   const generatePortalLink = useGeneratePortalLink();
   const [portalPreviewOpen, setPortalPreviewOpen] = useState(false);
 
-  const [winner, setWinner] = useState<any | null>(null);
+  const [suppliers, setSuppliers] = useState<any[]>([]);
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
+  const winner = suppliers.find((s) => s.id === selectedSupplierId) ?? null;
   const [origSp, setOrigSp] = useState<any[]>([]);
   const [prices, setPrices] = useState<any[]>([]);
   const [extras, setExtras] = useState<{ installation_value: number; freight_value: number }>({
