@@ -199,15 +199,13 @@ export default function AdjustmentBudgetRequestDialog({
         setAdjustmentStoresSnapshot(((snapStoreRows as any[]) || []));
 
         // Load existing requote row (for token / deadline reuse)
-        if (w) {
-          const { data: reqRow } = await supabase
-            .from("campaign_adjustment_budget_request" as any)
-            .select("id, access_token, token_expires_at, deadline_days, status")
-            .eq("adjustment_id", adjustment.id)
-            .eq("supplier_id", (w as any).id)
-            .maybeSingle();
-          setExistingRequest(reqRow || null);
-        }
+        const { data: reqRow } = await supabase
+          .from("campaign_adjustment_budget_request" as any)
+          .select("id, access_token, token_expires_at, deadline_days, status")
+          .eq("adjustment_id", adjustment.id)
+          .eq("supplier_id", activeSupplierId)
+          .maybeSingle();
+        setExistingRequest(reqRow || null);
       } catch (e: any) {
         toast.error(e?.message || "Falha ao carregar dados.");
       } finally {
