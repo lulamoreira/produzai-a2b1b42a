@@ -182,14 +182,20 @@ const CampaignDetail = () => {
   const winnerSupplierId: string | null = winnerSupplier?.id ?? null;
   const winnerSupplierName: string = winnerSupplier?.company_name ?? "";
 
+  // Negotiation target: winner if declared, else first supplier with negotiation_status set
+  const negotiationTargetSupplier = winnerSupplier ??
+    (budgetSuppliers as any[]).find((s: any) => s.negotiation_status != null) ?? null;
+  const negotiationSupplierId: string | null = negotiationTargetSupplier?.id ?? null;
+
   const { data: negRateioCount = 0, isLoading: loadingNegRateioCount } = useQuery({
-    queryKey: ["has_negotiation_rateio", campaignId],
-    enabled: !!campaignId,
+    queryKey: ["has_negotiation_rateio", campaignId, negotiationSupplierId],
+    enabled: !!campaignId && !!negotiationSupplierId,
     queryFn: async () => {
       const { count } = await supabase
         .from("budget_negotiation_store_pieces" as any)
         .select("id", { count: "exact", head: true })
-        .eq("campaign_id", campaignId!);
+        .eq("campaign_id", campaignId!)
+        .eq("supplier_id", negotiationSupplierId!);
       return count || 0;
     },
   });
@@ -199,13 +205,13 @@ const CampaignDetail = () => {
   const vigenteSource: RateioSource =
     activeAdjustment ? "adjustment" : hasNegotiationRateio ? "negotiation" : "original";
 
-  const rateioVersionsReady = !loadingActiveAdjustment && !loadingBudgetSuppliers && !loadingNegRateioCount;
+  const rateioVersionsReady = !loadingActiveAdjustment && !loadingBudgetSuppliers && (!negotiationSupplierId || !loadingNegRateioCount);
   const availableRateioSources = useMemo<RateioSource[]>(() => {
     const sources: RateioSource[] = ["original"];
-    if (hasNegotiationRateio) sources.push("negotiation");
+    if (hasNegotiationRateio && negotiationSupplierId) sources.push("negotiation");
     if (activeAdjustment) sources.push("adjustment");
     return sources;
-  }, [activeAdjustment, hasNegotiationRateio]);
+  }, [activeAdjustment, hasNegotiationRateio, negotiationSupplierId]);
 
   const [rateioSource, setRateioSource] = useState<RateioSource | null>(null);
   useEffect(() => {
@@ -226,7 +232,7 @@ const CampaignDetail = () => {
   );
   // Negotiation overlay: budget_negotiation_store_pieces is already keyed by base piece_id.
   const { data: negotiationRows = [] } = useNegotiationStorePieces(
-    resolvedRateioSource === "negotiation" ? winnerSupplierId : null,
+    resolvedRateioSource === "negotiation" ? negotiationSupplierId : null,
     campaignId,
     resolvedRateioSource === "negotiation",
   );
@@ -463,6 +469,7 @@ const CampaignDetail = () => {
                   activeAdjustment={activeAdjustment} 
                   hasNegotiationRateio={hasNegotiationRateio}
                   winnerSupplierId={winnerSupplierId} 
+                  negotiationSupplierId={negotiationSupplierId}
                   winnerSupplierName={winnerSupplierName} 
                   rateioSource={resolvedRateioSource}
                   setRateioSource={setRateioSource}

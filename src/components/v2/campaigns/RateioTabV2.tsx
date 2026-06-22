@@ -58,6 +58,7 @@ interface RateioTabV2Props {
   activeAdjustment: any;
   hasNegotiationRateio: boolean;
   winnerSupplierId: string | null | undefined;
+  negotiationSupplierId?: string | null | undefined;
   winnerSupplierName: string;
   rateioSource: "original" | "negotiation" | "adjustment";
   setRateioSource: (source: "original" | "negotiation" | "adjustment") => void;
@@ -205,6 +206,7 @@ export default function RateioTabV2({
   activeAdjustment,
   hasNegotiationRateio,
   winnerSupplierId,
+  negotiationSupplierId,
   winnerSupplierName,
   rateioSource,
   setRateioSource,
@@ -224,6 +226,56 @@ export default function RateioTabV2({
   const queryClient = useQueryClient();
   const { currentPhase } = useBudgetPhase(campaignId);
   const [isCreatingNegCopy, setIsCreatingNegCopy] = useState(false);
+  const effectiveNegSupplierId = negotiationSupplierId ?? winnerSupplierId ?? null;
+
+  // PART 2: callout state
+  const [calloutSuppliers, setCalloutSuppliers] = useState<any[]>([]);
+  const [calloutSelectedId, setCalloutSelectedId] = useState<string>("");
+  const [isCreatingCalloutCopy, setIsCreatingCalloutCopy] = useState(false);
+  const showStartNegotiationCallout =
+    rateioSource === "original" && !effectiveNegSupplierId && !hasNegotiationRateio;
+
+  useEffect(() => {
+    if (!showStartNegotiationCallout || !campaignId) return;
+    (async () => {
+      const { data } = await supabase
+        .from("budget_suppliers")
+        .select("id, company_name, status")
+        .eq("campaign_id", campaignId)
+        .in("status", ["submitted", "winner"]);
+      setCalloutSuppliers(data || []);
+    })();
+  }, [showStartNegotiationCallout, campaignId]);
+
+  const handleStartNegotiationFromCallout = useCallback(async () => {
+    if (!calloutSelectedId) {
+      toast.error("Selecione um fornecedor");
+      return;
+    }
+    try {
+      setIsCreatingCalloutCopy(true);
+      const { snapshotNegotiationRateio } = await import("@/hooks/useNegotiationStorePieces");
+      await snapshotNegotiationRateio(calloutSelectedId, campaignId);
+      const { error: updErr } = await supabase
+        .from("budget_suppliers")
+        .update({ negotiation_status: "pending" } as never)
+        .eq("id", calloutSelectedId);
+      if (updErr) throw updErr;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] }),
+        queryClient.invalidateQueries({ queryKey: ["has_negotiation_rateio", campaignId, calloutSelectedId] }),
+        queryClient.invalidateQueries({ queryKey: ["has_negotiation_rateio", campaignId] }),
+        queryClient.invalidateQueries({ queryKey: ["negotiation_store_pieces", calloutSelectedId] }),
+      ]);
+      setRateioSource("negotiation");
+      toast.success("Rateio de Negociação criado");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro ao iniciar negociação");
+    } finally {
+      setIsCreatingCalloutCopy(false);
+    }
+  }, [calloutSelectedId, campaignId, queryClient, setRateioSource]);
+
 
   const handleCreateNegotiationCopy = useCallback(async () => {
     try {
@@ -287,7 +339,7 @@ export default function RateioTabV2({
   const versionTabs = useMemo(() => {
     const tabs: { id: string; label: string; isVigente?: boolean; type?: string; parent?: string }[] = [{ id: "original", label: "Rateio Original", type: "original" }];
     
-    if (hasNegotiationRateio && winnerSupplierId) {
+    if (hasNegotiationRateio && effectiveNegSupplierId) {
       tabs.push({ 
         id: "negotiation", 
         label: `Negociação · ${winnerSupplierName}`,
@@ -308,7 +360,7 @@ export default function RateioTabV2({
     if (lastTab) lastTab.isVigente = true;
 
     return tabs;
-  }, [hasNegotiationRateio, winnerSupplierId, winnerSupplierName, activeAdjustment]);
+  }, [hasNegotiationRateio, effectiveNegSupplierId, winnerSupplierName, activeAdjustment]);
 
   const activeTabData = versionTabs.find(t => t.id === rateioSource) || versionTabs.find(t => t.id === vigenteSource) || versionTabs[0];
   const activeVersionTab = activeTabData?.id || vigenteSource;
@@ -526,7 +578,7 @@ export default function RateioTabV2({
 
   useEffect(() => {
     setLocalQtyOverrides({});
-  }, [campaignId, rateioSource, activeAdjustment?.id, winnerSupplierId]);
+  }, [campaignId, rateioSource, activeAdjustment?.id, effectiveNegSupplierId]);
 
   const visibleQtyMap = useMemo(() => {
     return { ...qtyMap, ...localQtyOverrides };
@@ -722,7 +774,7 @@ export default function RateioTabV2({
     try {
       await applyRateioBulk(upserts, deletes, {
         isNegotiationView: rateioSource === 'negotiation',
-        negotiationSupplierId: winnerSupplierId,
+        negotiationSupplierId: effectiveNegSupplierId,
         isAdjustmentView: rateioSource === 'adjustment',
         adjustmentId: activeAdjustment?.id,
         srcToAdjPieceId
@@ -760,7 +812,7 @@ export default function RateioTabV2({
     try {
       await applyRateioBulk(upserts, deletes, {
         isNegotiationView: rateioSource === 'negotiation',
-        negotiationSupplierId: winnerSupplierId,
+        negotiationSupplierId: effectiveNegSupplierId,
         isAdjustmentView: rateioSource === 'adjustment',
         adjustmentId: activeAdjustment?.id,
         srcToAdjPieceId
@@ -792,7 +844,7 @@ export default function RateioTabV2({
     try {
       await applyRateioBulk(upserts, deletes, {
         isNegotiationView: rateioSource === 'negotiation',
-        negotiationSupplierId: winnerSupplierId,
+        negotiationSupplierId: effectiveNegSupplierId,
         isAdjustmentView: rateioSource === 'adjustment',
         adjustmentId: activeAdjustment?.id,
         srcToAdjPieceId
@@ -1025,7 +1077,7 @@ export default function RateioTabV2({
     if (changes.length > 0) {
       applyPasteChanges(changes);
     }
-  }, [filteredStores, columns, visibleQtyMap, kitQtyMap, activeKitPieces, campaignId, rateioSource, winnerSupplierId, activeAdjustment, queryClient]);
+  }, [filteredStores, columns, visibleQtyMap, kitQtyMap, activeKitPieces, campaignId, rateioSource, effectiveNegSupplierId, activeAdjustment, queryClient]);
 
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
@@ -1200,6 +1252,35 @@ export default function RateioTabV2({
                 })}
               </div>
 
+
+              {showStartNegotiationCallout && (
+                <div className="mx-6 my-2 border border-amber-200 bg-amber-50/60 rounded-lg p-4 flex flex-col md:flex-row md:items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-stone-900">Iniciar Rateio de Negociação</div>
+                    <div className="text-xs text-stone-600 mt-0.5">Selecione o fornecedor para criar uma cópia editável. O rateio original não será alterado.</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      className="h-9 rounded-md border border-stone-300 bg-white text-xs px-2 min-w-[220px]"
+                      value={calloutSelectedId}
+                      onChange={(e) => setCalloutSelectedId(e.target.value)}
+                    >
+                      <option value="">Selecione o fornecedor...</option>
+                      {calloutSuppliers.map((s) => (
+                        <option key={s.id} value={s.id}>{s.company_name}</option>
+                      ))}
+                    </select>
+                    <Button
+                      size="sm"
+                      onClick={handleStartNegotiationFromCallout}
+                      disabled={!calloutSelectedId || isCreatingCalloutCopy}
+                      className="h-9 text-xs"
+                    >
+                      {isCreatingCalloutCopy ? "Criando..." : "Criar cópia"}
+                    </Button>
+                  </div>
+                </div>
+              )}
 
               {/* Rateio Header Banner */}
               <div className={cn(
@@ -1878,7 +1959,7 @@ export default function RateioTabV2({
         isAdjustmentView={activeTabData?.type === "adjustment"}
         adjustmentId={activeAdjustment?.id}
         isNegotiationView={activeTabData?.type === "negotiation"}
-        negotiationSupplierId={winnerSupplierId}
+        negotiationSupplierId={effectiveNegSupplierId}
       />
       <CopyQuantitiesDialog 
         open={copyQtyOpen}
@@ -1895,7 +1976,7 @@ export default function RateioTabV2({
           queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
         }}
         isNegotiationView={rateioSource === 'negotiation'}
-        negotiationSupplierId={winnerSupplierId}
+        negotiationSupplierId={effectiveNegSupplierId}
         isAdjustmentView={rateioSource === 'adjustment'}
         adjustmentId={activeAdjustment?.id}
         runBulkWithHistory={async (label, upserts, deletes) => {
