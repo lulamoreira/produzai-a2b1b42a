@@ -561,6 +561,66 @@ export type Database = {
           },
         ]
       }
+      budget_qty_requotes: {
+        Row: {
+          access_token: string
+          campaign_id: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          notes: string | null
+          qty_changes: Json
+          rejection_notes: string | null
+          status: string
+          submitted_at: string | null
+          submitted_prices: Json | null
+          supplier_id: string
+        }
+        Insert: {
+          access_token?: string
+          campaign_id: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          qty_changes?: Json
+          rejection_notes?: string | null
+          status?: string
+          submitted_at?: string | null
+          submitted_prices?: Json | null
+          supplier_id: string
+        }
+        Update: {
+          access_token?: string
+          campaign_id?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          notes?: string | null
+          qty_changes?: Json
+          rejection_notes?: string | null
+          status?: string
+          submitted_at?: string | null
+          submitted_prices?: Json | null
+          supplier_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "budget_qty_requotes_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "budget_qty_requotes_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "budget_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budget_settings: {
         Row: {
           budget_amount: number | null
@@ -5418,6 +5478,7 @@ export type Database = {
         }
         Returns: Json
       }
+      approve_budget_qty_requote: { Args: { p_id: string }; Returns: Json }
       campaigns_set_active: { Args: never; Returns: undefined }
       can_edit_prices: { Args: { p_campaign_id: string }; Returns: boolean }
       can_edit_rateio: { Args: { p_campaign_id: string }; Returns: boolean }
@@ -5460,6 +5521,7 @@ export type Database = {
         Returns: string
       }
       get_adjustment_requote: { Args: { p_token: string }; Returns: Json }
+      get_budget_qty_requote: { Args: { p_token: string }; Returns: Json }
       get_campaign_store_links: {
         Args: { _campaign_id: string }
         Returns: {
@@ -5560,6 +5622,10 @@ export type Database = {
         Args: { _client_id: string; _emails: string[] }
         Returns: undefined
       }
+      reject_budget_qty_requote: {
+        Args: { p_id: string; p_notes?: string }
+        Returns: Json
+      }
       shift_display_orders: {
         Args: { p_after_order: number; p_campaign_id: string; p_slots: number }
         Returns: undefined
@@ -5576,6 +5642,10 @@ export type Database = {
           p_prices_jsonb: Json
           p_token: string
         }
+        Returns: Json
+      }
+      submit_budget_qty_requote: {
+        Args: { p_notes?: string; p_prices: Json; p_token: string }
         Returns: Json
       }
       supplier_portal_delete_suggestion: {
