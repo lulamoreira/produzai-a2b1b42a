@@ -578,7 +578,7 @@ export default function RateioTabV2({
 
   useEffect(() => {
     setLocalQtyOverrides({});
-  }, [campaignId, rateioSource, activeAdjustment?.id, winnerSupplierId]);
+  }, [campaignId, rateioSource, activeAdjustment?.id, effectiveNegSupplierId]);
 
   const visibleQtyMap = useMemo(() => {
     return { ...qtyMap, ...localQtyOverrides };
