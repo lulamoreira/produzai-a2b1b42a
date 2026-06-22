@@ -315,6 +315,7 @@ const App = () => (
                   <Route path="/instalador" element={<InstallerPortal />} />
                   <Route path="/orcamento/:token" element={<SupplierPortal />} />
                   <Route path="/recotacao/:token" element={<AdjustmentRequotePortal />} />
+                  <Route path="/recotacao-qtd/:token" element={<BudgetQtyRequotePortal />} />
                   <Route path="/convite/fornecedor/:token" element={<SupplierInvitePortal />} />
                   <Route path="/loja/:token" element={<StorePortal />} />
                   <Route path="/ocorrencias-portal/:campaignId" element={<OccurrencesPortal />} />
