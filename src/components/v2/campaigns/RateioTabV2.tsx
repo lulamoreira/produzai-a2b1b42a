@@ -242,7 +242,7 @@ export default function RateioTabV2({
         .from("budget_suppliers")
         .select("id, company_name, status")
         .eq("campaign_id", campaignId)
-        .in("status", ["submitted", "winner"]);
+        .eq("status", "enviado");
       setCalloutSuppliers(data || []);
     })();
   }, [showStartNegotiationCallout, campaignId]);
