@@ -16,6 +16,7 @@ export interface RateioDelete {
 export interface RateioBulkOptions {
   isNegotiationView: boolean;
   negotiationSupplierId?: string | null;
+  isCampaignNegView?: boolean;
   isAdjustmentView?: boolean;
   adjustmentId?: string | null;
   /** Map of source (campaign) piece_id -> adjustment piece_id. Required for adjustment writes. */
@@ -27,7 +28,7 @@ export async function applyRateioBulk(
   deletes: RateioDelete[],
   options: RateioBulkOptions
 ): Promise<void> {
-  const { isNegotiationView, negotiationSupplierId, isAdjustmentView, adjustmentId, srcToAdjPieceId } = options;
+  const { isNegotiationView, negotiationSupplierId, isCampaignNegView, isAdjustmentView, adjustmentId, srcToAdjPieceId } = options;
   
   // ━━━ REDE DE SEGURANÇA: deduplica upserts pela chave única ━━━
   // O Postgres não permite múltiplos upserts da mesma chave em um único comando.
@@ -98,6 +99,35 @@ export async function applyRateioBulk(
           }
         }));
       }
+    }
+  } else if (isNegotiationView && isCampaignNegView) {
+    // Campaign-level negotiation: supplier_id IS NULL, usa delete+insert
+    for (const u of upserts) {
+      await supabase
+        .from("budget_negotiation_store_pieces" as never)
+        .delete()
+        .eq("campaign_id", u.campaignId)
+        .eq("store_id", u.storeId)
+        .eq("piece_id", u.pieceId)
+        .is("supplier_id", null);
+      await supabase
+        .from("budget_negotiation_store_pieces" as never)
+        .insert({
+          campaign_id: u.campaignId,
+          store_id: u.storeId,
+          piece_id: u.pieceId,
+          quantity: u.quantity,
+          supplier_id: null,
+        } as never);
+    }
+    for (const d of deletes) {
+      await supabase
+        .from("budget_negotiation_store_pieces" as never)
+        .delete()
+        .eq("campaign_id", d.campaignId)
+        .eq("store_id", d.storeId)
+        .eq("piece_id", d.pieceId)
+        .is("supplier_id", null);
     }
   } else if (isNegotiationView && negotiationSupplierId) {
     if (upserts.length > 0) {

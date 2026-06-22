@@ -838,6 +838,7 @@ export default function RateioTabV2({
       await applyRateioBulk(upserts, deletes, {
         isNegotiationView: rateioSource === 'negotiation',
         negotiationSupplierId: effectiveNegSupplierId,
+        isCampaignNegView: hasCampaignNegRateio && !effectiveNegSupplierId,
         isAdjustmentView: rateioSource === 'adjustment',
         adjustmentId: activeAdjustment?.id,
         srcToAdjPieceId
@@ -876,6 +877,7 @@ export default function RateioTabV2({
       await applyRateioBulk(upserts, deletes, {
         isNegotiationView: rateioSource === 'negotiation',
         negotiationSupplierId: effectiveNegSupplierId,
+        isCampaignNegView: hasCampaignNegRateio && !effectiveNegSupplierId,
         isAdjustmentView: rateioSource === 'adjustment',
         adjustmentId: activeAdjustment?.id,
         srcToAdjPieceId
@@ -908,6 +910,7 @@ export default function RateioTabV2({
       await applyRateioBulk(upserts, deletes, {
         isNegotiationView: rateioSource === 'negotiation',
         negotiationSupplierId: effectiveNegSupplierId,
+        isCampaignNegView: hasCampaignNegRateio && !effectiveNegSupplierId,
         isAdjustmentView: rateioSource === 'adjustment',
         adjustmentId: activeAdjustment?.id,
         srcToAdjPieceId
