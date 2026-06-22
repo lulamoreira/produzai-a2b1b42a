@@ -231,7 +231,7 @@ export default function RateioTabV2({
   const effectiveNegSupplierId = negotiationSupplierId ?? winnerSupplierId ?? null;
 
   const showStartNegotiationCallout =
-    rateioSource === "original" && !effectiveNegSupplierId && !hasNegotiationRateio && !hasCampaignNegRateio;
+    rateioSource === "original" && !hasNegotiationRateio && !hasCampaignNegRateio;
 
   const handleCreateNegotiationCopy = useCallback(async () => {
     try {
@@ -402,9 +402,15 @@ export default function RateioTabV2({
   const versionTabs = useMemo(() => {
     const tabs: { id: string; label: string; isVigente?: boolean; type?: string; parent?: string }[] = [{ id: "original", label: "Rateio Original", type: "original" }];
     
-    if (hasNegotiationRateio && effectiveNegSupplierId) {
-      tabs.push({ 
-        id: "negotiation", 
+    if (hasCampaignNegRateio) {
+      tabs.push({
+        id: "negotiation",
+        label: "Rateio de Negociação",
+        type: "negotiation"
+      });
+    } else if (hasNegotiationRateio && effectiveNegSupplierId) {
+      tabs.push({
+        id: "negotiation",
         label: `Negociação · ${winnerSupplierName}`,
         type: "negotiation"
       });
@@ -838,7 +844,7 @@ export default function RateioTabV2({
       await applyRateioBulk(upserts, deletes, {
         isNegotiationView: rateioSource === 'negotiation',
         negotiationSupplierId: effectiveNegSupplierId,
-        isCampaignNegView: hasCampaignNegRateio && !effectiveNegSupplierId,
+        isCampaignNegView: hasCampaignNegRateio,
         isAdjustmentView: rateioSource === 'adjustment',
         adjustmentId: activeAdjustment?.id,
         srcToAdjPieceId
@@ -877,7 +883,7 @@ export default function RateioTabV2({
       await applyRateioBulk(upserts, deletes, {
         isNegotiationView: rateioSource === 'negotiation',
         negotiationSupplierId: effectiveNegSupplierId,
-        isCampaignNegView: hasCampaignNegRateio && !effectiveNegSupplierId,
+        isCampaignNegView: hasCampaignNegRateio,
         isAdjustmentView: rateioSource === 'adjustment',
         adjustmentId: activeAdjustment?.id,
         srcToAdjPieceId
@@ -910,7 +916,7 @@ export default function RateioTabV2({
       await applyRateioBulk(upserts, deletes, {
         isNegotiationView: rateioSource === 'negotiation',
         negotiationSupplierId: effectiveNegSupplierId,
-        isCampaignNegView: hasCampaignNegRateio && !effectiveNegSupplierId,
+        isCampaignNegView: hasCampaignNegRateio,
         isAdjustmentView: rateioSource === 'adjustment',
         adjustmentId: activeAdjustment?.id,
         srcToAdjPieceId
