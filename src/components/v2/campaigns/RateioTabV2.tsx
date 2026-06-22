@@ -206,6 +206,7 @@ export default function RateioTabV2({
   activeAdjustment,
   hasNegotiationRateio,
   winnerSupplierId,
+  negotiationSupplierId,
   winnerSupplierName,
   rateioSource,
   setRateioSource,
