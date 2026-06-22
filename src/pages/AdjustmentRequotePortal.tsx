@@ -49,6 +49,7 @@ interface PortalData {
   }>;
   kit_pieces: Array<{ kit_id: string; piece_id: string; quantity: number }>;
   piece_qty: Record<string, number>;
+  original_piece_qty: Record<string, number>;
   baseline_prices: Record<string, number>;
   baseline_extras: { installation: number; freight: number };
 }
@@ -363,7 +364,8 @@ export default function AdjustmentRequotePortal() {
                         <th className="text-left px-3 py-2 w-12"></th>
                         <th className="text-left px-3 py-2 w-20">Código</th>
                         <th className="text-left px-3 py-2">Peça</th>
-                        <th className="text-right px-3 py-2 w-24">Qtd</th>
+                        <th className="text-center px-3 py-2 w-24 text-muted-foreground">Qtd. Anterior</th>
+                        <th className="text-right px-3 py-2 w-24">Qtd. Nova</th>
                         <th className="text-right px-3 py-2 w-36">Preço anterior</th>
                         <th className="text-right px-3 py-2 w-40">Novo preço</th>
                       </tr>
@@ -371,6 +373,8 @@ export default function AdjustmentRequotePortal() {
                     <tbody>
                       {data.pieces.map((p) => {
                         const qty = data.piece_qty[p.id] || 0;
+                        const origQty = data.original_piece_qty?.[p.id] ?? 0;
+                        const qtyChanged = origQty !== qty;
                         const prev = data.baseline_prices[p.id] || 0;
                         return (
                           <tr key={p.id} className="border-t">
@@ -408,6 +412,15 @@ export default function AdjustmentRequotePortal() {
                                 </div>
                               )}
                             </td>
+                            <td className="px-3 py-2 text-center tabular-nums">
+                              {qtyChanged ? (
+                                <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/30 dark:text-blue-300 dark:border-blue-900 font-normal tabular-nums">
+                                  {origQty}
+                                </Badge>
+                              ) : (
+                                <span className="text-muted-foreground">{origQty}</span>
+                              )}
+                            </td>
                             <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
                               {qty}
                             </td>
@@ -433,7 +446,7 @@ export default function AdjustmentRequotePortal() {
                       {data.pieces.length === 0 && (
                         <tr>
                           <td
-                            colSpan={6}
+                            colSpan={7}
                             className="px-3 py-8 text-center text-sm text-muted-foreground"
                           >
                             Nenhuma peça neste ajuste.
