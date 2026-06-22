@@ -259,7 +259,7 @@ export default function AdjustmentBudgetRequestDialog({
     portalUrl: string;
     tokenExpiresAt: string | null;
   }> => {
-    if (!winner) throw new Error("Sem fornecedor vencedor.");
+    if (!winner) throw new Error("Selecione um fornecedor para enviar a recotação.");
     let requestId: string | undefined = existingRequest?.id;
     if (!requestId) {
       const { data: newReq, error: upErr } = await supabase
