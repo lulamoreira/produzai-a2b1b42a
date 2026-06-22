@@ -774,7 +774,7 @@ export default function RateioTabV2({
     try {
       await applyRateioBulk(upserts, deletes, {
         isNegotiationView: rateioSource === 'negotiation',
-        negotiationSupplierId: winnerSupplierId,
+        negotiationSupplierId: effectiveNegSupplierId,
         isAdjustmentView: rateioSource === 'adjustment',
         adjustmentId: activeAdjustment?.id,
         srcToAdjPieceId
@@ -812,7 +812,7 @@ export default function RateioTabV2({
     try {
       await applyRateioBulk(upserts, deletes, {
         isNegotiationView: rateioSource === 'negotiation',
-        negotiationSupplierId: winnerSupplierId,
+        negotiationSupplierId: effectiveNegSupplierId,
         isAdjustmentView: rateioSource === 'adjustment',
         adjustmentId: activeAdjustment?.id,
         srcToAdjPieceId
@@ -844,7 +844,7 @@ export default function RateioTabV2({
     try {
       await applyRateioBulk(upserts, deletes, {
         isNegotiationView: rateioSource === 'negotiation',
-        negotiationSupplierId: winnerSupplierId,
+        negotiationSupplierId: effectiveNegSupplierId,
         isAdjustmentView: rateioSource === 'adjustment',
         adjustmentId: activeAdjustment?.id,
         srcToAdjPieceId
@@ -1930,7 +1930,7 @@ export default function RateioTabV2({
         isAdjustmentView={activeTabData?.type === "adjustment"}
         adjustmentId={activeAdjustment?.id}
         isNegotiationView={activeTabData?.type === "negotiation"}
-        negotiationSupplierId={winnerSupplierId}
+        negotiationSupplierId={effectiveNegSupplierId}
       />
       <CopyQuantitiesDialog 
         open={copyQtyOpen}
@@ -1947,7 +1947,7 @@ export default function RateioTabV2({
           queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
         }}
         isNegotiationView={rateioSource === 'negotiation'}
-        negotiationSupplierId={winnerSupplierId}
+        negotiationSupplierId={effectiveNegSupplierId}
         isAdjustmentView={rateioSource === 'adjustment'}
         adjustmentId={activeAdjustment?.id}
         runBulkWithHistory={async (label, upserts, deletes) => {
