@@ -49,6 +49,7 @@ interface PortalData {
   }>;
   kit_pieces: Array<{ kit_id: string; piece_id: string; quantity: number }>;
   piece_qty: Record<string, number>;
+  original_piece_qty: Record<string, number>;
   baseline_prices: Record<string, number>;
   baseline_extras: { installation: number; freight: number };
 }
