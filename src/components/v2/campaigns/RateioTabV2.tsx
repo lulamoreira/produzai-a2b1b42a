@@ -222,6 +222,24 @@ export default function RateioTabV2({
   const { t } = useTranslation();
   const { isAdminOrMaster } = useUserRole();
   const queryClient = useQueryClient();
+  const { currentPhase } = useBudgetPhase(campaignId);
+  const [isCreatingNegCopy, setIsCreatingNegCopy] = useState(false);
+
+  const handleCreateNegotiationCopy = useCallback(async () => {
+    try {
+      setIsCreatingNegCopy(true);
+      const { error } = await supabase.rpc("create_negotiation_rateio_copy" as any, { p_campaign_id: campaignId });
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["has_negotiation_rateio", campaignId] });
+      await queryClient.invalidateQueries({ queryKey: ["negotiation_store_pieces"] });
+      toast.success("Cópia para negociação criada");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro ao criar cópia");
+    } finally {
+      setIsCreatingNegCopy(false);
+    }
+  }, [campaignId, queryClient]);
+  
   
   const [rateioView, setRateioView] = useState("planilha");
   const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(true);
