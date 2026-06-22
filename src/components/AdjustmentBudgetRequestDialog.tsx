@@ -212,7 +212,7 @@ export default function AdjustmentBudgetRequestDialog({
         setLoading(false);
       }
     })();
-  }, [open, campaignId, adjustment.id, useNegotiationBaseline, winnerSupplierId]);
+  }, [open, campaignId, adjustment.id, useNegotiationBaseline, winnerSupplierId, selectedSupplierId]);
 
   const buildAndUpload = async () => {
     if (!winner) throw new Error("Nenhum fornecedor vencedor encontrado para esta campanha.");
