@@ -232,22 +232,21 @@ export async function runBackup(admin: any, opts: BackupOptions = {}): Promise<B
         const list = allPaths.slice(0, fileCap);
         console.log(`[backup] bucket ${bucket}: ${list.length} files to download`);
 
-        // Download in small concurrent batches
-        const concurrency = 5;
+        // Download in concurrent batches with a per-file timeout so one slow
+        // object does not consume the whole Edge Function budget.
+        const concurrency = 50;
+        const perFileTimeoutMs = 15000;
         for (let i = 0; i < list.length; i += concurrency) {
           const batch = list.slice(i, i + concurrency);
           await Promise.all(
             batch.map(async (objPath: string) => {
               try {
-                const { data: blob, error: dErr } = await admin
-                  .storage
-                  .from(bucket)
-                  .download(objPath);
-                if (dErr || !blob) {
-                  if (dErr) console.warn(`[backup] download ${bucket}/${objPath}: ${dErr.message}`);
-                  return;
-                }
-                const ab = await blob.arrayBuffer();
+                const ab = await downloadWithTimeout(
+                  admin.storage.from(bucket),
+                  objPath,
+                  perFileTimeoutMs,
+                );
+                if (!ab) return;
                 files[`storage/${bucket}/${objPath}`] = new Uint8Array(ab);
                 count++;
               } catch (e) {
