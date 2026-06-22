@@ -1123,18 +1123,33 @@ export default function RateioTabV2({
           </TabsList>
         </Tabs>
 
-        {isAdminOrMaster && hasNegotiationRateio && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setActiveSection("adjustments")}
-            className="text-xs gap-2 text-stone-500 hover:text-stone-900"
-          >
-            <Layers className="w-3.5 h-3.5" />
-            {t("modules.adjustments", "Ajustes")}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {currentPhase === "negociacao" && !hasNegotiationRateio && isViewingVigente && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCreateNegotiationCopy}
+              disabled={isCreatingNegCopy}
+              className="text-xs gap-2 h-8"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              {isCreatingNegCopy ? "Criando..." : "Criar cópia para negociação"}
+            </Button>
+          )}
+          {isAdminOrMaster && hasNegotiationRateio && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setActiveSection("adjustments")}
+              className="text-xs gap-2 text-stone-500 hover:text-stone-900"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              {t("modules.adjustments", "Ajustes")}
+            </Button>
+          )}
+        </div>
       </div>
+
 
       <div className="flex flex-1 relative min-h-0 overflow-hidden">
         <MatrixFilterSidebar
