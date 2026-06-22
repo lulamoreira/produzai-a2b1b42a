@@ -694,7 +694,7 @@ export default function AdjustmentBudgetRequestDialog({
                 </Button>
               )}
               <Button variant="outline" onClick={handleClickSendWhatsAppGated}
-                disabled={sending || preparingPreview || loading || !winner || !winner?.phone}>
+                disabled={sending || preparingPreview || loading || !selectedSupplierId || !winner?.phone}>
                 <MessageCircle className="w-4 h-4 mr-1" /> WhatsApp
               </Button>
               <Button onClick={handleClickSendEmail} disabled={sending || preparingPreview || loading || !winner}>
