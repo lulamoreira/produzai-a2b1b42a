@@ -40,6 +40,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { buildRateioPasteOperations, parseRateioClipboard, type RateioPasteChange } from "@/lib/rateioPaste";
 import { exportRateioSpreadsheet, parseRateioSpreadsheet } from '@/lib/rateioSpreadsheet';
+import { supabase } from "@/integrations/supabase/client";
+import { useBudgetPhase } from "@/hooks/useBudgetPhase";
 
 interface RateioTabV2Props {
   campaignId: string;
@@ -220,6 +222,24 @@ export default function RateioTabV2({
   const { t } = useTranslation();
   const { isAdminOrMaster } = useUserRole();
   const queryClient = useQueryClient();
+  const { currentPhase } = useBudgetPhase(campaignId);
+  const [isCreatingNegCopy, setIsCreatingNegCopy] = useState(false);
+
+  const handleCreateNegotiationCopy = useCallback(async () => {
+    try {
+      setIsCreatingNegCopy(true);
+      const { error } = await supabase.rpc("create_negotiation_rateio_copy" as any, { p_campaign_id: campaignId });
+      if (error) throw error;
+      await queryClient.invalidateQueries({ queryKey: ["has_negotiation_rateio", campaignId] });
+      await queryClient.invalidateQueries({ queryKey: ["negotiation_store_pieces"] });
+      toast.success("Cópia para negociação criada");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro ao criar cópia");
+    } finally {
+      setIsCreatingNegCopy(false);
+    }
+  }, [campaignId, queryClient]);
+  
   
   const [rateioView, setRateioView] = useState("planilha");
   const [filterSidebarCollapsed, setFilterSidebarCollapsed] = useState(true);
@@ -1103,18 +1123,33 @@ export default function RateioTabV2({
           </TabsList>
         </Tabs>
 
-        {isAdminOrMaster && hasNegotiationRateio && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => setActiveSection("adjustments")}
-            className="text-xs gap-2 text-stone-500 hover:text-stone-900"
-          >
-            <Layers className="w-3.5 h-3.5" />
-            {t("modules.adjustments", "Ajustes")}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {currentPhase === "negociacao" && !hasNegotiationRateio && isViewingVigente && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleCreateNegotiationCopy}
+              disabled={isCreatingNegCopy}
+              className="text-xs gap-2 h-8"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              {isCreatingNegCopy ? "Criando..." : "Criar cópia para negociação"}
+            </Button>
+          )}
+          {isAdminOrMaster && hasNegotiationRateio && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setActiveSection("adjustments")}
+              className="text-xs gap-2 text-stone-500 hover:text-stone-900"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              {t("modules.adjustments", "Ajustes")}
+            </Button>
+          )}
+        </div>
       </div>
+
 
       <div className="flex flex-1 relative min-h-0 overflow-hidden">
         <MatrixFilterSidebar

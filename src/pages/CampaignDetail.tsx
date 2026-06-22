@@ -183,14 +183,13 @@ const CampaignDetail = () => {
   const winnerSupplierName: string = winnerSupplier?.company_name ?? "";
 
   const { data: negRateioCount = 0, isLoading: loadingNegRateioCount } = useQuery({
-    queryKey: ["has_negotiation_rateio", campaignId, winnerSupplierId],
-    enabled: !!campaignId && !!winnerSupplierId,
+    queryKey: ["has_negotiation_rateio", campaignId],
+    enabled: !!campaignId,
     queryFn: async () => {
       const { count } = await supabase
         .from("budget_negotiation_store_pieces" as any)
         .select("id", { count: "exact", head: true })
-        .eq("campaign_id", campaignId!)
-        .eq("supplier_id", winnerSupplierId!);
+        .eq("campaign_id", campaignId!);
       return count || 0;
     },
   });
@@ -200,13 +199,13 @@ const CampaignDetail = () => {
   const vigenteSource: RateioSource =
     activeAdjustment ? "adjustment" : hasNegotiationRateio ? "negotiation" : "original";
 
-  const rateioVersionsReady = !loadingActiveAdjustment && !loadingBudgetSuppliers && (!winnerSupplierId || !loadingNegRateioCount);
+  const rateioVersionsReady = !loadingActiveAdjustment && !loadingBudgetSuppliers && !loadingNegRateioCount;
   const availableRateioSources = useMemo<RateioSource[]>(() => {
     const sources: RateioSource[] = ["original"];
-    if (hasNegotiationRateio && winnerSupplierId) sources.push("negotiation");
+    if (hasNegotiationRateio) sources.push("negotiation");
     if (activeAdjustment) sources.push("adjustment");
     return sources;
-  }, [activeAdjustment, hasNegotiationRateio, winnerSupplierId]);
+  }, [activeAdjustment, hasNegotiationRateio]);
 
   const [rateioSource, setRateioSource] = useState<RateioSource | null>(null);
   useEffect(() => {
