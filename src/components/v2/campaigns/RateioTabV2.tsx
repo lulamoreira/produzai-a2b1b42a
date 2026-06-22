@@ -1253,6 +1253,35 @@ export default function RateioTabV2({
               </div>
 
 
+              {showStartNegotiationCallout && (
+                <div className="mx-6 my-2 border border-amber-200 bg-amber-50/60 rounded-lg p-4 flex flex-col md:flex-row md:items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-semibold text-stone-900">Iniciar Rateio de Negociação</div>
+                    <div className="text-xs text-stone-600 mt-0.5">Selecione o fornecedor para criar uma cópia editável. O rateio original não será alterado.</div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      className="h-9 rounded-md border border-stone-300 bg-white text-xs px-2 min-w-[220px]"
+                      value={calloutSelectedId}
+                      onChange={(e) => setCalloutSelectedId(e.target.value)}
+                    >
+                      <option value="">Selecione o fornecedor...</option>
+                      {calloutSuppliers.map((s) => (
+                        <option key={s.id} value={s.id}>{s.company_name}</option>
+                      ))}
+                    </select>
+                    <Button
+                      size="sm"
+                      onClick={handleStartNegotiationFromCallout}
+                      disabled={!calloutSelectedId || isCreatingCalloutCopy}
+                      className="h-9 text-xs"
+                    >
+                      {isCreatingCalloutCopy ? "Criando..." : "Criar cópia"}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Rateio Header Banner */}
               <div className={cn(
                 "px-6 py-1.5 border-b flex flex-col md:flex-row md:items-center justify-between gap-2",
