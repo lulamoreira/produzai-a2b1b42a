@@ -57,6 +57,7 @@ interface RateioTabV2Props {
   canEditCampaignStores: boolean;
   activeAdjustment: any;
   hasNegotiationRateio: boolean;
+  hasCampaignNegRateio?: boolean;
   winnerSupplierId: string | null | undefined;
   negotiationSupplierId?: string | null | undefined;
   winnerSupplierName: string;
@@ -205,6 +206,7 @@ export default function RateioTabV2({
   canEditCampaignStores,
   activeAdjustment,
   hasNegotiationRateio,
+  hasCampaignNegRateio = false,
   winnerSupplierId,
   negotiationSupplierId,
   winnerSupplierName,
@@ -228,54 +230,8 @@ export default function RateioTabV2({
   const [isCreatingNegCopy, setIsCreatingNegCopy] = useState(false);
   const effectiveNegSupplierId = negotiationSupplierId ?? winnerSupplierId ?? null;
 
-  // PART 2: callout state
-  const [calloutSuppliers, setCalloutSuppliers] = useState<any[]>([]);
-  const [calloutSelectedId, setCalloutSelectedId] = useState<string>("");
-  const [isCreatingCalloutCopy, setIsCreatingCalloutCopy] = useState(false);
   const showStartNegotiationCallout =
-    rateioSource === "original" && !effectiveNegSupplierId && !hasNegotiationRateio;
-
-  useEffect(() => {
-    if (!showStartNegotiationCallout || !campaignId) return;
-    (async () => {
-      const { data } = await supabase
-        .from("budget_suppliers")
-        .select("id, company_name, status")
-        .eq("campaign_id", campaignId)
-        .eq("status", "enviado");
-      setCalloutSuppliers(data || []);
-    })();
-  }, [showStartNegotiationCallout, campaignId]);
-
-  const handleStartNegotiationFromCallout = useCallback(async () => {
-    if (!calloutSelectedId) {
-      toast.error("Selecione um fornecedor");
-      return;
-    }
-    try {
-      setIsCreatingCalloutCopy(true);
-      const { snapshotNegotiationRateio } = await import("@/hooks/useNegotiationStorePieces");
-      await snapshotNegotiationRateio(calloutSelectedId, campaignId);
-      const { error: updErr } = await supabase
-        .from("budget_suppliers")
-        .update({ negotiation_status: "pending" } as never)
-        .eq("id", calloutSelectedId);
-      if (updErr) throw updErr;
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] }),
-        queryClient.invalidateQueries({ queryKey: ["has_negotiation_rateio", campaignId, calloutSelectedId] }),
-        queryClient.invalidateQueries({ queryKey: ["has_negotiation_rateio", campaignId] }),
-        queryClient.invalidateQueries({ queryKey: ["negotiation_store_pieces", calloutSelectedId] }),
-      ]);
-      setRateioSource("negotiation");
-      toast.success("Rateio de Negociação criado");
-    } catch (err: any) {
-      toast.error(err?.message ?? "Erro ao iniciar negociação");
-    } finally {
-      setIsCreatingCalloutCopy(false);
-    }
-  }, [calloutSelectedId, campaignId, queryClient, setRateioSource]);
-
+    rateioSource === "original" && !effectiveNegSupplierId && !hasNegotiationRateio && !hasCampaignNegRateio;
 
   const handleCreateNegotiationCopy = useCallback(async () => {
     try {
@@ -283,14 +239,121 @@ export default function RateioTabV2({
       const { error } = await supabase.rpc("create_negotiation_rateio_copy" as any, { p_campaign_id: campaignId });
       if (error) throw error;
       await queryClient.invalidateQueries({ queryKey: ["has_negotiation_rateio", campaignId] });
+      await queryClient.invalidateQueries({ queryKey: ["has_campaign_neg_rateio", campaignId] });
       await queryClient.invalidateQueries({ queryKey: ["negotiation_store_pieces"] });
+      await queryClient.invalidateQueries({ queryKey: ["campaign_negotiation_store_pieces", campaignId] });
       toast.success("Cópia para negociação criada");
+      setRateioSource("negotiation");
     } catch (err: any) {
       toast.error(err?.message ?? "Erro ao criar cópia");
     } finally {
       setIsCreatingNegCopy(false);
     }
-  }, [campaignId, queryClient]);
+  }, [campaignId, queryClient, setRateioSource]);
+
+  // ─── Recotação por quantidade (campaign-level negotiation rateio) ───
+  const [requoteDialogOpen, setRequoteDialogOpen] = useState(false);
+  const [requoteSuppliers, setRequoteSuppliers] = useState<any[]>([]);
+  const [requoteSelectedSupplier, setRequoteSelectedSupplier] = useState<string>("");
+  const [requoteNotes, setRequoteNotes] = useState("");
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
+  const [generatedRequoteLink, setGeneratedRequoteLink] = useState<string | null>(null);
+  const [existingPendingRequote, setExistingPendingRequote] = useState<any | null>(null);
+
+  const refreshPendingRequote = useCallback(async () => {
+    if (!campaignId) return;
+    const { data } = await supabase
+      .from("budget_qty_requotes" as any)
+      .select("id, supplier_id, access_token, status, created_at")
+      .eq("campaign_id", campaignId)
+      .eq("status", "pending")
+      .order("created_at", { ascending: false })
+      .limit(1);
+    setExistingPendingRequote((data && data[0]) || null);
+  }, [campaignId]);
+
+  useEffect(() => {
+    if (rateioSource === "negotiation" && hasCampaignNegRateio) refreshPendingRequote();
+  }, [rateioSource, hasCampaignNegRateio, refreshPendingRequote]);
+
+  const openRequoteDialog = useCallback(async () => {
+    setGeneratedRequoteLink(null);
+    setRequoteSelectedSupplier("");
+    setRequoteNotes("");
+    const { data } = await supabase
+      .from("budget_suppliers")
+      .select("id, company_name")
+      .eq("campaign_id", campaignId)
+      .eq("status", "enviado");
+    setRequoteSuppliers(data || []);
+    setRequoteDialogOpen(true);
+  }, [campaignId]);
+
+  const handleSwapSupplier = useCallback(async () => {
+    if (!existingPendingRequote) return;
+    const { error } = await supabase
+      .from("budget_qty_requotes" as any)
+      .update({ status: "rejected" } as any)
+      .eq("id", existingPendingRequote.id);
+    if (error) { toast.error(error.message); return; }
+    setExistingPendingRequote(null);
+    await openRequoteDialog();
+  }, [existingPendingRequote, openRequoteDialog]);
+
+  const handleGenerateRequoteLink = useCallback(async () => {
+    if (!requoteSelectedSupplier) { toast.error("Selecione um fornecedor"); return; }
+    try {
+      setIsGeneratingLink(true);
+      const { supabasePaginate } = await import("@/lib/supabasePaginate");
+      const negRows = await supabasePaginate<any>((from, to) =>
+        supabase
+          .from("budget_negotiation_store_pieces" as never)
+          .select("store_id, piece_id, quantity", { count: "exact" })
+          .eq("campaign_id", campaignId)
+          .is("supplier_id", null)
+          .range(from, to) as any
+      );
+      const origRows = await supabasePaginate<any>((from, to) =>
+        supabase
+          .from("campaign_store_pieces")
+          .select("store_id, piece_id, quantity", { count: "exact" })
+          .eq("campaign_id", campaignId)
+          .range(from, to) as any
+      );
+      const origMap = new Map<string, number>();
+      for (const r of origRows) origMap.set(`${r.store_id}:${r.piece_id}`, Number(r.quantity) || 0);
+      const negMap = new Map<string, number>();
+      for (const r of negRows) negMap.set(`${r.store_id}:${r.piece_id}`, Number(r.quantity) || 0);
+      const keys = new Set<string>([...origMap.keys(), ...negMap.keys()]);
+      const qty_changes: Record<string, { old_qty: number; new_qty: number }> = {};
+      for (const k of keys) {
+        const oldQ = origMap.get(k) ?? 0;
+        const newQ = negMap.get(k) ?? 0;
+        if (oldQ !== newQ) qty_changes[k] = { old_qty: oldQ, new_qty: newQ };
+      }
+      const { data: inserted, error } = await supabase
+        .from("budget_qty_requotes" as any)
+        .insert({
+          campaign_id: campaignId,
+          supplier_id: requoteSelectedSupplier,
+          qty_changes,
+          notes: requoteNotes || null,
+          status: "pending",
+        } as any)
+        .select("access_token")
+        .single();
+      if (error) throw error;
+      const link = `${window.location.origin}/recotacao-qtd/${(inserted as any).access_token}`;
+      setGeneratedRequoteLink(link);
+      await refreshPendingRequote();
+      toast.success("Link de recotação gerado");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro ao gerar link");
+    } finally {
+      setIsGeneratingLink(false);
+    }
+  }, [campaignId, requoteSelectedSupplier, requoteNotes, refreshPendingRequote]);
+
   
   
   const [rateioView, setRateioView] = useState("planilha");
@@ -1176,6 +1239,37 @@ export default function RateioTabV2({
         </Tabs>
 
         <div className="flex items-center gap-2">
+          {rateioSource === "negotiation" && hasCampaignNegRateio && (
+            <>
+              {existingPendingRequote ? (
+                <>
+                  <Badge variant="secondary" className="text-[10px] bg-amber-100 text-amber-800 border-amber-200">
+                    Recotação em aberto
+                  </Badge>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSwapSupplier}
+                    className="text-xs gap-2 h-8"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    TROCAR FORNECEDOR
+                  </Button>
+                </>
+              ) : (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={openRequoteDialog}
+                  className="text-xs gap-2 h-8"
+                >
+                  <Upload className="w-3.5 h-3.5" />
+                  ENVIAR RECOTAÇÃO
+                </Button>
+              )}
+            </>
+          )}
+
           {currentPhase === "negociacao" && !hasNegotiationRateio && isViewingVigente && (
             <Button
               variant="outline"
@@ -1257,30 +1351,21 @@ export default function RateioTabV2({
                 <div className="mx-6 my-2 border border-amber-200 bg-amber-50/60 rounded-lg p-4 flex flex-col md:flex-row md:items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold text-stone-900">Iniciar Rateio de Negociação</div>
-                    <div className="text-xs text-stone-600 mt-0.5">Selecione o fornecedor para criar uma cópia editável. O rateio original não será alterado.</div>
+                    <div className="text-xs text-stone-600 mt-0.5">Crie uma cópia editável do rateio para trabalhar durante a negociação. O rateio original não será alterado.</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <select
-                      className="h-9 rounded-md border border-stone-300 bg-white text-xs px-2 min-w-[220px]"
-                      value={calloutSelectedId}
-                      onChange={(e) => setCalloutSelectedId(e.target.value)}
-                    >
-                      <option value="">Selecione o fornecedor...</option>
-                      {calloutSuppliers.map((s) => (
-                        <option key={s.id} value={s.id}>{s.company_name}</option>
-                      ))}
-                    </select>
                     <Button
                       size="sm"
-                      onClick={handleStartNegotiationFromCallout}
-                      disabled={!calloutSelectedId || isCreatingCalloutCopy}
+                      onClick={handleCreateNegotiationCopy}
+                      disabled={isCreatingNegCopy}
                       className="h-9 text-xs"
                     >
-                      {isCreatingCalloutCopy ? "Criando..." : "Criar cópia"}
+                      {isCreatingNegCopy ? "Criando..." : "CRIAR CÓPIA"}
                     </Button>
                   </div>
                 </div>
               )}
+
 
               {/* Rateio Header Banner */}
               <div className={cn(
@@ -2068,6 +2153,74 @@ export default function RateioTabV2({
                 <>Confirmar colagem ({pendingChanges.length})</>
               )}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={requoteDialogOpen} onOpenChange={setRequoteDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Enviar Recotação por Quantidade</DialogTitle>
+            <DialogDescription>
+              Gere um link para o fornecedor recotar com base nas novas quantidades do Rateio de Negociação.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <label className="text-xs font-semibold text-stone-700 mb-1 block">Fornecedor</label>
+              <select
+                className="h-10 w-full rounded-md border border-stone-300 bg-white text-sm px-2"
+                value={requoteSelectedSupplier}
+                onChange={(e) => setRequoteSelectedSupplier(e.target.value)}
+                disabled={!!generatedRequoteLink}
+              >
+                <option value="">Selecione o fornecedor...</option>
+                {requoteSuppliers.map((s) => (
+                  <option key={s.id} value={s.id}>{s.company_name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-stone-700 mb-1 block">Observações (opcional)</label>
+              <textarea
+                className="w-full min-h-[80px] rounded-md border border-stone-300 bg-white text-sm p-2"
+                value={requoteNotes}
+                onChange={(e) => setRequoteNotes(e.target.value)}
+                disabled={!!generatedRequoteLink}
+              />
+            </div>
+            {generatedRequoteLink && (
+              <div className="rounded-md border border-emerald-200 bg-emerald-50/60 p-3">
+                <div className="text-xs font-semibold text-stone-700 mb-1">Link de recotação</div>
+                <div className="flex items-center gap-2">
+                  <input
+                    readOnly
+                    value={generatedRequoteLink}
+                    className="flex-1 text-xs px-2 py-1 rounded border border-stone-300 bg-white"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      navigator.clipboard.writeText(generatedRequoteLink);
+                      toast.success("Link copiado");
+                    }}
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setRequoteDialogOpen(false)}>
+              Fechar
+            </Button>
+            {!generatedRequoteLink && (
+              <Button onClick={handleGenerateRequoteLink} disabled={isGeneratingLink || !requoteSelectedSupplier}>
+                {isGeneratingLink ? "Gerando..." : "GERAR LINK"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
