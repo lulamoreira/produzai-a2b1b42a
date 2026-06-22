@@ -39,6 +39,8 @@ project_id = "dryngkjeerlssebnpymb"
     verify_jwt = true
   [functions.render-transactional-email]
     verify_jwt = false
+  [functions.scheduled-backup]
+    verify_jwt = false
   [functions.send-transactional-email]
     verify_jwt = false
   [functions.upload-installation-photo]

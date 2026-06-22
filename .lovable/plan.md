@@ -1,54 +1,87 @@
-## Diagnóstico
 
-A campanha Outlet tem **5 lojas × 12 peças (22 registros em `campaign_store_pieces`)** — volume mínimo. As queries no banco são instantâneas (índice composto `(campaign_id, store_id, piece_id)` está OK, EXPLAIN ANALYZE = 0,04 ms). **A lentidão não está no banco**, está no caminho cliente ⇄ rede ⇄ React Query.
+# Backup Geral v2 — Cobertura total, Storage incluído, agendamento diário
 
-### Gargalos identificados em `src/hooks/useMultiClientData.ts`
+## Objetivo
 
-1. **Dois round-trips por célula editada** (linhas 800–823 e 915–935 em `useUpdateCampaignStorePiece` / `useBulkUpdateCampaignStorePieces`):
-   - 1ª chamada: `SELECT id` em `campaign_store_pieces`
-   - 2ª chamada: `UPDATE` ou `INSERT`
-   - Já existe um índice único em `(campaign_id, store_id, piece_id)`, então um único `UPSERT` resolveria.
-   - **Cada edição custa ~2× a latência da rede** (em conexão de ~250 ms vira ~500 ms perceptíveis antes do toast/animação).
+Substituir o `backup-restore` atual (27 tabelas, sem binários, sem agendamento) por um sistema confiável que:
+- faz snapshot de **todas as tabelas relevantes** do schema `public`,
+- inclui os **arquivos do Storage** (fotos, anexos, logos),
+- roda **diariamente de forma automática** com retenção,
+- faz **restore por upsert** (merge por `id`), sem apagar dados criados depois.
 
-2. **Refetch duplicado a cada commit** (linhas 766–767 + 862–872 + 978–986):
-   - O canal realtime de `campaign_store_pieces` chama `invalidateQueries` assim que o evento chega.
-   - Em paralelo, o `onSettled` da mutação agenda outro `invalidateQueries` 500 ms depois.
-   - Resultado: o componente refaz o `SELECT * FROM campaign_store_pieces WHERE campaign_id=…` **duas vezes** por célula, sobrescrevendo o estado otimista no meio do caminho.
+## O que muda
 
-3. **Re-render do grid inteiro** a cada refetch — a query retorna nova referência de array, e o `StoresMatrixTable` não memoiza linhas/colunas, então todas as células re-renderizam (afeta a sensação de "digitação travada").
+### 1. Edge Function `backup-restore` (reescrita)
 
-4. **Cascata de subscriptions** adicionadas recentemente (`campaign_pieces`, `campaign_kits`, `campaign_kit_pieces`, `campaign_store_status` no hook + `campaigns/clients/agencies` no sidebar) — cada uma dispara `invalidateQueries` em `*` (insert/update/delete). Pouco custo isolado, mas multiplica os refetches durante edições em lote.
+**GET (gerar backup):**
+- Lista todas as tabelas do `public` via `information_schema.tables` (exceto tabelas Quitanda `q3d_*` que não usam RLS e tabelas de auditoria pesadas — opcional excluir `agency_supplier_audit_log`, `email_send_log`, `install_access_log`).
+- Para cada tabela, paginação de 1.000 linhas (evita timeout em `installation_photos`, `campaign_schedules`, etc.).
+- Para cada bucket do Storage (`installation-photos`, `occurrence-photos`, `piece-images`, `agency-logos`, `support-materials`, `campaign-mockups`, etc.), baixa cada arquivo e adiciona ao ZIP em `storage/<bucket>/<path>`.
+- Saída: **ZIP** contendo:
+  - `manifest.json` — versão do schema, timestamp, contagem por tabela, contagem por bucket
+  - `tables/<table>.json` — uma por tabela
+  - `storage/<bucket>/...` — binários preservando o path original
+- Streaming response (não acumula em memória).
 
-## Plano de correção
+**POST (restore por upsert):**
+- Aceita ZIP ou JSON legado.
+- Valida `manifest.json` contra schema atual; avisa colunas ausentes/extras sem abortar.
+- Para cada tabela faz `upsert` em lotes de 500 com `onConflict: 'id'` (tabelas sem `id` — `campaign_kit_pieces`, `store_pieces`, `campaign_store_pieces` — usam chave composta declarada no código).
+- Para cada arquivo do Storage, faz `upload` com `upsert: true` no path original.
+- Tudo dentro de um único request transacional **por tabela** (rollback parcial é aceitável e relatado no resultado).
+- Retorna relatório `{ tabela: { inserted, updated, skipped, error } }` + `{ bucket: { uploaded, skipped, error } }`.
 
-### 1. Trocar SELECT+INSERT/UPDATE por UPSERT (corta latência pela metade)
-Em `src/hooks/useMultiClientData.ts`:
-- `useUpdateCampaignStorePiece` (linhas 785–823): substituir o bloco `select().maybeSingle()` + branch `update/insert` por:
-  ```ts
-  supabase.from("campaign_store_pieces")
-    .upsert({ campaign_id, store_id, piece_id, quantity },
-            { onConflict: "campaign_id,store_id,piece_id" })
-  ```
-- `useBulkUpdateCampaignStorePieces` (linhas 891–937): mesma troca, e enviar **todos os updates em um único `.upsert([...])`** em vez de `Promise.all` de N chamadas. Deletes (qty=0) continuam num único `.delete().in("piece_id", […])`.
+### 2. Agendamento (`pg_cron` + `pg_net`)
 
-### 2. Eliminar invalidação dupla (realtime + onSettled)
-- Manter apenas a invalidação do **realtime** (que é a fonte de verdade autoritativa do servidor).
-- Remover o `setTimeout(invalidateQueries, 500)` do `onSettled` das duas mutações.
-- Manter o `lastMutationRef` guard só para o caso de o realtime não disparar (fallback opcional de 2 s).
+- Habilitar extensões `pg_cron` e `pg_net`.
+- Job diário às **03:00 BRT (06:00 UTC)** invocando uma nova Edge Function `scheduled-backup` que:
+  1. chama internamente a lógica do `backup-restore` em modo GET,
+  2. faz upload do ZIP em bucket privado **`system-backups`** com path `daily/YYYY-MM-DD.zip`,
+  3. promove o backup de domingo para `weekly/YYYY-WW.zip`,
+  4. aplica retenção: mantém **últimos 7 diários** + **últimos 4 semanais**, apaga o resto,
+  5. registra resultado em nova tabela `system_backup_runs` (id, started_at, finished_at, status, size_bytes, tables_count, files_count, error_message, path).
 
-### 3. Realtime channel único e debounced
-- Consolidar os 5 canais (`campaign_pieces`, `campaign_kits`, `campaign_kit_pieces`, `campaign_store_status`, `campaign_store_pieces`) em **um único `.channel("campaign-"+campaignId)`** com vários `.on(...)`. Hoje cada hook cria seu próprio canal/WebSocket.
-- Adicionar debounce de ~150 ms na invalidação do `campaign_store_pieces` para coalescer rajadas de edição em lote.
+### 3. UI (`BackupRestorePanel`)
 
-### 4. Memoização do grid (ganho de UX)
-- Em `StoresMatrixTable.tsx`: envolver a linha/celula da matriz em `React.memo` comparando por `(storeId, pieceId, quantity)`. Sem isto, mesmo após reduzir refetches, cada commit re-renderiza 60 células.
+- Substituir botão único por:
+  - **"Backup agora"** → dispara função e baixa o ZIP.
+  - **Lista de backups automáticos** (lê `system_backup_runs` + Storage) com colunas: data, tamanho, status, ações (baixar / restaurar).
+  - **Restaurar** abre dialog reforçado: escolha entre "Mesclar (upsert)" — padrão — e (futuramente) "Substituir tudo".
+- Mostrar relatório por tabela e por bucket após restore.
 
-### 5. Verificação
-- Antes/depois: rodar `bulkUpdateStorePieces.test.tsx` (já existe) e validar que continua passando.
-- Medir clicks→toast no preview com `browser--performance_profile` em uma campanha real.
+### 4. Banco
+
+Nova tabela `system_backup_runs` (admin-only via RLS), novo bucket privado `system-backups`.
+
+## Detalhes técnicos
+
+**Tabelas cobertas (todas do `public` exceto excluídas explicitamente):**
+- Inclui hoje faltantes: `campaign_schedules`, `campaign_kits`, `campaign_kit_pieces`, `campaign_adjustments*` (8 tabelas), `installation_photos`, `installation_teams*`, `store_portal_*`, `store_occurrence_reports`, todos os `budget_*` (10 tabelas), `loja_a_loja_*`, `lal_tratativa_statuses`, `notifications`, `messages`, `campaign_messages`, `campaign_activity_log`, `activity_logs`, `user_campaign_access`, `user_campaign_favorites`, `agency_suppliers`, `q3d_*`, etc.
+- Excluídas por padrão: `_backup_showcase_count` (lixo), logs de auditoria volumosos (configurável).
+
+**Buckets cobertos:** detectados dinamicamente via `storage.buckets`.
+
+**Ordem de upsert:** topológica por FK — agencies → permission_categories → clients → campaigns → ... → tabelas filhas. Definida em constante no código.
+
+**Limites:** Edge Function tem timeout de ~150s; se o backup completo passar disso, o `scheduled-backup` particiona em fases (dados → binários por bucket) e concatena no ZIP final via Storage temporário.
+
+**Segurança:** ambas as funções exigem `role = 'admin'` (já feito hoje). `scheduled-backup` valida um header secreto (`X-Cron-Secret`) gerado via `generate_secret` para impedir invocação externa.
 
 ## Arquivos afetados
-- `src/hooks/useMultiClientData.ts` (mutations + subscriptions)
-- `src/components/StoresMatrixTable.tsx` (memoização)
 
-Nenhuma migração de banco é necessária — o índice único já existe.
+- `supabase/functions/backup-restore/index.ts` — reescrita
+- `supabase/functions/scheduled-backup/index.ts` — novo
+- `supabase/config.toml` — registrar nova função
+- Migration: tabela `system_backup_runs` + grants/RLS, extensões `pg_cron`/`pg_net`, agendamento cron, bucket `system-backups`
+- `src/components/BackupRestorePanel.tsx` — nova UI (lista de backups, restore upsert)
+- `src/i18n/locales/pt-BR.json` (e en/es) — novas strings
+
+## Fora do escopo (não faz parte deste plano)
+
+- Restauração ponto-no-tempo do Postgres (PITR) — é recurso da plataforma, não do app.
+- Backup do schema `auth` (gerenciado pelo Supabase; usuários já vivem em `profiles`/`user_roles` que são incluídos).
+- Criptografia client-side do ZIP (pode ser próxima iteração).
+
+## Confirmação necessária antes de implementar
+
+O `scheduled-backup` precisa de um secret `CRON_SECRET` — vou gerar via `generate_secret` durante a implementação, sem pedir nada a você.

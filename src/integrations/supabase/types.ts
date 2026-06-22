@@ -5152,6 +5152,48 @@ export type Database = {
         }
         Relationships: []
       }
+      system_backup_runs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          files_count: number | null
+          finished_at: string | null
+          id: string
+          size_bytes: number | null
+          started_at: string
+          status: string
+          storage_path: string | null
+          tables_count: number | null
+          trigger: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          files_count?: number | null
+          finished_at?: string | null
+          id?: string
+          size_bytes?: number | null
+          started_at?: string
+          status?: string
+          storage_path?: string | null
+          tables_count?: number | null
+          trigger?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          files_count?: number | null
+          finished_at?: string | null
+          id?: string
+          size_bytes?: number | null
+          started_at?: string
+          status?: string
+          storage_path?: string | null
+          tables_count?: number | null
+          trigger?: string
+        }
+        Relationships: []
+      }
       user_agency_access: {
         Row: {
           agency_id: string
