@@ -232,7 +232,7 @@ const CampaignDetail = () => {
   );
   // Negotiation overlay: budget_negotiation_store_pieces is already keyed by base piece_id.
   const { data: negotiationRows = [] } = useNegotiationStorePieces(
-    resolvedRateioSource === "negotiation" ? winnerSupplierId : null,
+    resolvedRateioSource === "negotiation" ? negotiationSupplierId : null,
     campaignId,
     resolvedRateioSource === "negotiation",
   );
