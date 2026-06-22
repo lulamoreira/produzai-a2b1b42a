@@ -144,10 +144,10 @@ export default function AdjustmentBudgetRequestDialog({
         const [pricesRes, extrasRes, storesRes, baselineSpRows, srcKitsRes, srcPiecesRes, origKpRows, snapStoreRows] = await Promise.all([
           supabase.from("budget_prices" as any)
             .select("piece_id, unit_price, adjusted_unit_price")
-            .eq("supplier_id", (w as any).id),
+            .eq("supplier_id", activeSupplierId),
           supabase.from("budget_extra_costs" as any)
             .select("installation_value, freight_value")
-            .eq("supplier_id", (w as any).id).maybeSingle(),
+            .eq("supplier_id", activeSupplierId).maybeSingle(),
           _clientId
             ? supabase.from("client_stores" as any)
                 .select("id, name, nickname, city, state, store_code, showcase_count").eq("client_id", _clientId)
