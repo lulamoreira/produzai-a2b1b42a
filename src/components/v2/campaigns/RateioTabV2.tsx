@@ -40,6 +40,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { buildRateioPasteOperations, parseRateioClipboard, type RateioPasteChange } from "@/lib/rateioPaste";
 import { exportRateioSpreadsheet, parseRateioSpreadsheet } from '@/lib/rateioSpreadsheet';
+import { supabase } from "@/integrations/supabase/client";
+import { useBudgetPhase } from "@/hooks/useBudgetPhase";
+import { Copy } from "lucide-react";
 
 interface RateioTabV2Props {
   campaignId: string;
