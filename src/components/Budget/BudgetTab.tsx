@@ -1812,8 +1812,61 @@ ${msgLabels.winnerWaFooter}
         />
       )}
 
+      {/* ═══ QTY REQUOTES LIST ═══ */}
+      {qtyRequotes.length > 0 && (
+        <div className="border rounded-lg p-4 bg-muted/20 space-y-2">
+          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            Recotações por Quantidade
+          </div>
+          {qtyRequotes.map((rq: any) => {
+            const sup = suppliers.find((s) => s.id === rq.supplier_id);
+            const piecesCount = Object.keys(rq.qty_changes ?? {}).length;
+            const statusLabel =
+              rq.status === "pending" ? "Aguardando" :
+              rq.status === "submitted" ? "Respondida" :
+              rq.status === "approved" ? "Aprovada" : "Recusada";
+            const statusVariant: any =
+              rq.status === "submitted" ? "default" :
+              rq.status === "approved" ? "secondary" :
+              rq.status === "rejected" ? "destructive" : "outline";
+            return (
+              <div key={rq.id} className="flex items-center justify-between text-sm border rounded p-2 bg-background gap-2 flex-wrap">
+                <div>
+                  <span className="font-medium">{sup?.company_name ?? "—"}</span>
+                  <span className="text-xs text-muted-foreground ml-2">
+                    {piecesCount} peças · criada {format(new Date(rq.created_at), "dd/MM HH:mm")}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant={statusVariant}>{statusLabel}</Badge>
+                  {rq.status === "pending" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs gap-1"
+                      onClick={() => {
+                        navigator.clipboard.writeText(`${window.location.origin}/recotacao-qtd/${rq.access_token}`);
+                        toast.success("Link copiado!");
+                      }}
+                    >
+                      <Copy className="w-3 h-3" /> Copiar link
+                    </Button>
+                  )}
+                  {rq.status === "submitted" && (
+                    <Button size="sm" className="h-7 text-xs" onClick={() => setReviewingQtyRequote(rq)}>
+                      Revisar
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* ═══ SUPPLIERS SECTION ═══ */}
       <div className="space-y-3">
+
         <div className="flex items-center justify-between gap-2">
           <h3 className="text-sm font-semibold text-foreground">Fornecedores</h3>
           {(() => {
