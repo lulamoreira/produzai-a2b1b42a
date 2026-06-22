@@ -179,7 +179,9 @@ export interface BackupManifest {
 // deno-lint-ignore no-explicit-any
 export async function runBackup(admin: any, opts: BackupOptions = {}): Promise<BackupResult> {
   const includeStorage = opts.includeStorage ?? true;
-  const fileCap = opts.storageFileLimitPerBucket ?? 5000;
+  // Manual backups often hit the 150s Edge Function limit, so keep the per-bucket
+  // cap conservative. The scheduled job runs off-peak and can afford more files.
+  const fileCap = opts.storageFileLimitPerBucket ?? 1000;
 
   const files: Record<string, Uint8Array> = {};
   const tableCounts: Record<string, number> = {};
@@ -217,40 +219,38 @@ export async function runBackup(admin: any, opts: BackupOptions = {}): Promise<B
       let count = 0;
       let truncatedHere = false;
       try {
-        // Recursive listing via storage.objects table (service_role only).
-        const { data: objects, error } = await admin
-          .schema("storage")
-          .from("objects")
-          .select("name")
-          .eq("bucket_id", bucket)
-          .limit(fileCap + 1);
-        if (error) {
-          console.warn(`[backup] list bucket ${bucket}: ${error.message}`);
-          continue;
-        }
-        if (!objects) continue;
-        if (objects.length > fileCap) {
+        // Recursively list all objects in the bucket via the Storage API.
+        // (We cannot query storage.objects through PostgREST because the
+        // `storage` schema is not exposed by default.)
+        const allPaths: string[] = [];
+        await listBucketRecursive(admin, bucket, "", allPaths, fileCap + 1);
+
+        if (allPaths.length > fileCap) {
           truncatedHere = true;
           truncated.push(bucket);
         }
-        const list = objects.slice(0, fileCap);
-        // Download in small concurrent batches
-        const concurrency = 5;
+        const list = allPaths.slice(0, fileCap);
+        console.log(`[backup] bucket ${bucket}: ${list.length} files to download`);
+
+        // Download in concurrent batches with a per-file timeout so one slow
+        // object does not consume the whole Edge Function budget.
+        const concurrency = 50;
+        const perFileTimeoutMs = 15000;
         for (let i = 0; i < list.length; i += concurrency) {
           const batch = list.slice(i, i + concurrency);
           await Promise.all(
-            batch.map(async (obj: { name: string }) => {
+            batch.map(async (objPath: string) => {
               try {
-                const { data: blob, error: dErr } = await admin
-                  .storage
-                  .from(bucket)
-                  .download(obj.name);
-                if (dErr || !blob) return;
-                const ab = await blob.arrayBuffer();
-                files[`storage/${bucket}/${obj.name}`] = new Uint8Array(ab);
+                const ab = await downloadWithTimeout(
+                  admin.storage.from(bucket),
+                  objPath,
+                  perFileTimeoutMs,
+                );
+                if (!ab) return;
+                files[`storage/${bucket}/${objPath}`] = new Uint8Array(ab);
                 count++;
               } catch (e) {
-                console.warn(`[backup] download ${bucket}/${obj.name}:`, e);
+                console.warn(`[backup] download ${bucket}/${objPath}:`, e);
               }
             }),
           );
@@ -281,6 +281,84 @@ export async function runBackup(admin: any, opts: BackupOptions = {}): Promise<B
 
   const zipBytes = zipSync(files, { level: 6 });
   return { zipBytes, manifest };
+}
+
+// Recursively list every object path inside a bucket using the Storage API.
+// Stops early once `cap` paths have been collected.
+// deno-lint-ignore no-explicit-any
+async function listBucketRecursive(
+  admin: any,
+  bucket: string,
+  prefix: string,
+  out: string[],
+  cap: number,
+): Promise<void> {
+  if (out.length >= cap) return;
+  const pageSize = 1000;
+  let offset = 0;
+  while (true) {
+    const { data, error } = await admin.storage.from(bucket).list(prefix, {
+      limit: pageSize,
+      offset,
+      sortBy: { column: "name", order: "asc" },
+    });
+    if (error) {
+      console.warn(`[backup] list ${bucket}/${prefix}: ${error.message}`);
+      return;
+    }
+    if (!data || data.length === 0) break;
+    for (const entry of data as Array<{ name: string; id: string | null; metadata: unknown }>) {
+      if (out.length >= cap) return;
+      // Folders have id === null in Storage API listings.
+      const fullPath = prefix ? `${prefix}/${entry.name}` : entry.name;
+      if (entry.id === null) {
+        await listBucketRecursive(admin, bucket, fullPath, out, cap);
+      } else {
+        out.push(fullPath);
+      }
+    }
+    if (data.length < pageSize) break;
+    offset += pageSize;
+  }
+}
+
+// Download a Storage object with an explicit timeout. Returns the ArrayBuffer
+// or null on failure/timeout.
+// deno-lint-ignore no-explicit-any
+async function downloadWithTimeout(
+  bucketRef: any,
+  path: string,
+  timeoutMs: number,
+): Promise<ArrayBuffer | null> {
+  // Promise.race guarantees the function does not wait forever even if the
+  // underlying Storage client ignores the AbortController signal.
+  const controller = new AbortController();
+  const downloadPromise = bucketRef.download(path, { signal: controller.signal });
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const { data, error } = await Promise.race([
+      downloadPromise,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("timeout")), timeoutMs)
+      ),
+    ]);
+    clearTimeout(timer);
+    if (error || !data) {
+      if (error) console.warn(`[backup] download error ${path}: ${error.message}`);
+      return null;
+    }
+    return await data.arrayBuffer();
+  } catch (e) {
+    clearTimeout(timer);
+    if (e instanceof Error && e.name === "AbortError") {
+      console.warn(`[backup] download timeout ${path}`);
+    } else if (e instanceof Error && e.message === "timeout") {
+      console.warn(`[backup] download hard timeout ${path}`);
+    } else {
+      console.warn(`[backup] download exception ${path}:`, e);
+    }
+    return null;
+  }
 }
 
 // ──────────────────────────────────────────────────────────────────────
