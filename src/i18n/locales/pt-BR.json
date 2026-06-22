@@ -413,6 +413,8 @@
     "logicAndDesc": "Todos os filtros devem corresponder",
     "logicOrDesc": "Qualquer filtro pode corresponder",
     "logicAndOrDesc": "E entre grupos, OU dentro de cada grupo",
+    "logicNot": "NÃO",
+    "logicNotDesc": "Excluir itens que correspondem a qualquer filtro",
     "checkinDone": "Com check-in"
   },
   "stores": {
