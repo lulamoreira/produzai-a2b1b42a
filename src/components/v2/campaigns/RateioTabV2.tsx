@@ -226,6 +226,56 @@ export default function RateioTabV2({
   const queryClient = useQueryClient();
   const { currentPhase } = useBudgetPhase(campaignId);
   const [isCreatingNegCopy, setIsCreatingNegCopy] = useState(false);
+  const effectiveNegSupplierId = negotiationSupplierId ?? winnerSupplierId ?? null;
+
+  // PART 2: callout state
+  const [calloutSuppliers, setCalloutSuppliers] = useState<any[]>([]);
+  const [calloutSelectedId, setCalloutSelectedId] = useState<string>("");
+  const [isCreatingCalloutCopy, setIsCreatingCalloutCopy] = useState(false);
+  const showStartNegotiationCallout =
+    rateioSource === "original" && !effectiveNegSupplierId && !hasNegotiationRateio;
+
+  useEffect(() => {
+    if (!showStartNegotiationCallout || !campaignId) return;
+    (async () => {
+      const { data } = await supabase
+        .from("budget_suppliers")
+        .select("id, company_name, status")
+        .eq("campaign_id", campaignId)
+        .in("status", ["submitted", "winner"]);
+      setCalloutSuppliers(data || []);
+    })();
+  }, [showStartNegotiationCallout, campaignId]);
+
+  const handleStartNegotiationFromCallout = useCallback(async () => {
+    if (!calloutSelectedId) {
+      toast.error("Selecione um fornecedor");
+      return;
+    }
+    try {
+      setIsCreatingCalloutCopy(true);
+      const { snapshotNegotiationRateio } = await import("@/hooks/useNegotiationStorePieces");
+      await snapshotNegotiationRateio(calloutSelectedId, campaignId);
+      const { error: updErr } = await supabase
+        .from("budget_suppliers")
+        .update({ negotiation_status: "pending" } as never)
+        .eq("id", calloutSelectedId);
+      if (updErr) throw updErr;
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["budget_suppliers", campaignId] }),
+        queryClient.invalidateQueries({ queryKey: ["has_negotiation_rateio", campaignId, calloutSelectedId] }),
+        queryClient.invalidateQueries({ queryKey: ["has_negotiation_rateio", campaignId] }),
+        queryClient.invalidateQueries({ queryKey: ["negotiation_store_pieces", calloutSelectedId] }),
+      ]);
+      setRateioSource("negotiation");
+      toast.success("Rateio de Negociação criado");
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erro ao iniciar negociação");
+    } finally {
+      setIsCreatingCalloutCopy(false);
+    }
+  }, [calloutSelectedId, campaignId, queryClient, setRateioSource]);
+
 
   const handleCreateNegotiationCopy = useCallback(async () => {
     try {
