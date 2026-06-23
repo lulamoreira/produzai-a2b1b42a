@@ -59,6 +59,12 @@ const parseNum = (v: string | number | null | undefined): number => {
   return Number.isFinite(n) ? n : 0;
 };
 
+const fmtInput = (n: number) =>
+  new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number.isFinite(n) ? n : 0);
+
 const kitKey = (kitId: string) => `kit:${kitId}`;
 
 export default function BudgetQtyRequotePortal() {
