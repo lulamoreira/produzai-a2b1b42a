@@ -26,8 +26,10 @@ interface PortalData {
   pieces: Array<{
     id: string; name: string; code: number;
     specification: string | null; image_url: string | null;
+    is_kit: boolean;
     old_qty: number; new_qty: number;
   }>;
+
   baseline_prices: Record<string, number>;
   baseline_extras: { installation: number; freight: number };
 }
@@ -248,14 +250,18 @@ export default function BudgetQtyRequotePortal() {
                             <img src={p.image_url} alt="" className="w-10 h-10 rounded object-cover" />
                           )}
                           <div>
-                            <div className="font-medium text-sm">
-                              #{p.code} {p.name}
+                            <div className="font-medium text-sm flex items-center gap-2 flex-wrap">
+                              {p.is_kit && (
+                                <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">KIT</span>
+                              )}
+                              <span>#{p.code} {p.name}</span>
                               {changed && (
-                                <span className="ml-2 inline-flex items-center rounded-full bg-[#C2714F]/10 px-2 py-0.5 text-[10px] font-bold text-[#C2714F]">
+                                <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
                                   Alterado
                                 </span>
                               )}
                             </div>
+
                             {p.specification && (
                               <div className="text-xs text-muted-foreground line-clamp-1">{p.specification}</div>
                             )}
