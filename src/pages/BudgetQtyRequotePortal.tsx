@@ -447,7 +447,12 @@ export default function BudgetQtyRequotePortal() {
           <Card>
             <CardContent className="p-4 space-y-2">
               <label className="text-xs text-muted-foreground">Frete (R$)</label>
-              <Input value={freight} onChange={(e) => setFreight(e.target.value)} />
+              <Input
+                value={freight}
+                onChange={(e) => setFreight(e.target.value)}
+                onBlur={() => setFreight(fmtInput(parseNum(freight)))}
+                className="text-right"
+              />
             </CardContent>
           </Card>
         </div>
