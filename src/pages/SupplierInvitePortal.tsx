@@ -326,22 +326,17 @@ const SupplierInvitePortal = () => {
             const expiresAt = new Date();
             expiresAt.setFullYear(expiresAt.getFullYear() + 100);
 
-            const { data: newInv, error: invErr } = await supabase
-              .from("supplier_invitations")
-              .insert([{
-                agency_id: invitation.agency_id,
-                created_by: invitation.created_by,
-                expires_at: expiresAt.toISOString(),
-                status: "pending",
-                supplier_id: supplierId,
-              }])
-              .select()
-              .single();
+            const { data: followupRes, error: invErr } = await (supabase.rpc as any)(
+              "create_followup_supplier_invitation",
+              { p_original_token: token, p_supplier_id: supplierId }
+            );
+            const newInv = (followupRes as any)?.invitation;
 
             if (!invErr && newInv) {
               const editUrl = `https://produzai.lovable.app/convite/fornecedor/${newInv.token}`;
               const primaryContactName =
                 form.contacts?.[0]?.nome || form.contact_name || "Fornecedor";
+
 
               await supabase.functions.invoke("send-transactional-email", {
                 body: {
