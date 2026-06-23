@@ -35,6 +35,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import AddPieceDialog from "@/components/AddPieceDialog";
 import FindReplaceSpecDialog from "@/components/FindReplaceSpecDialog";
+import KitOnlyPiecesDialog from "@/components/KitOnlyPiecesDialog";
 
 interface PiecesTabProps {
   campaignId: string;
@@ -114,6 +115,7 @@ export default function PiecesTab({
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
   const [findReplaceOpen, setFindReplaceOpen] = useState(false);
   const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
+  const [kitOnlyDialogOpen, setKitOnlyDialogOpen] = useState(false);
   const [selectedPieceIds, setSelectedPieceIds] = useState<string[]>([]);
   const [convertSelectionDialogOpen, setConvertSelectionDialogOpen] = useState(false);
   const [preSelectedForKit, setPreSelectedForKit] = useState<string[]>([]);
@@ -693,6 +695,9 @@ export default function PiecesTab({
                   <DropdownMenuItem onClick={() => setFindReplaceOpen(true)}>
                     <Search className="w-4 h-4 mr-2" /> Localizar e Substituir
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setKitOnlyDialogOpen(true)}>
+                    <Package className="w-4 h-4 mr-2" /> Peças de kits
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setBulkDeleteOpen(true)} className="text-destructive focus:text-destructive">
                     <Trash2 className="w-4 h-4 mr-2" /> {t("pieces.bulkDelete")}
@@ -788,6 +793,21 @@ export default function PiecesTab({
         pieces={pieces}
         updatePiece={updatePiece}
       />
+
+      <KitOnlyPiecesDialog
+        open={kitOnlyDialogOpen}
+        onOpenChange={setKitOnlyDialogOpen}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        canEdit={canEditPieces}
+        canDelete={canDeletePieces}
+        onEditPiece={(p) => { captureScrollSnapshot(); setEditingPiece(p); }}
+        updatePiece={updatePiece}
+        deletePiece={deletePiece}
+        deleteKitPiece={deleteKitPiece}
+      />
+
 
 
       {selectedPieceIds.length > 0 && (
