@@ -1956,17 +1956,40 @@ ${msgLabels.winnerWaFooter}
                 <div className="flex items-center gap-2">
                   <Badge variant={statusVariant}>{statusLabel}</Badge>
                   {rq.status === "pending" && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs gap-1"
-                      onClick={() => {
-                        navigator.clipboard.writeText(`${window.location.origin}/recotacao-qtd/${rq.access_token}`);
-                        toast.success("Link copiado!");
-                      }}
-                    >
-                      <Copy className="w-3 h-3" /> Copiar link
-                    </Button>
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/recotacao-qtd/${rq.access_token}`);
+                          toast.success("Link copiado!");
+                        }}
+                      >
+                        <Copy className="w-3 h-3" /> Copiar link
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs gap-1 text-destructive hover:text-destructive"
+                        title="Excluir recotação"
+                        onClick={async () => {
+                          if (!window.confirm("Excluir esta recotação não respondida? O link ficará inválido.")) return;
+                          const { error } = await supabase
+                            .from("budget_qty_requotes" as any)
+                            .delete()
+                            .eq("id", rq.id);
+                          if (error) {
+                            toast.error("Erro ao excluir: " + error.message);
+                          } else {
+                            toast.success("Recotação excluída");
+                            queryClient.invalidateQueries({ queryKey: ["budget_qty_requotes", campaignId] });
+                          }
+                        }}
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </Button>
+                    </>
                   )}
                   {rq.status === "submitted" && (
                     <Button size="sm" className="h-7 text-xs" onClick={() => setReviewingQtyRequote(rq)}>
