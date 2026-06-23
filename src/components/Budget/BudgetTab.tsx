@@ -1231,6 +1231,9 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     } finally {
       setDownloadingRequoteId(null);
     }
+  };
+
+
   const detailSup = detailSupplier ? suppliers.find((s) => s.id === detailSupplier) : null;
   const detailPrices = detailSupplier ? prices.filter((p) => p.supplier_id === detailSupplier) : [];
   const detailCosts = detailSupplier ? extraCosts.find((e) => e.supplier_id === detailSupplier) : null;
