@@ -2402,7 +2402,6 @@ export default function RateioTabV2({
                     <Copy className="w-3.5 h-3.5" />
                   </Button>
                 </div>
-              </div>
               {(() => {
                 const selectedSupplierData = requoteSuppliers.find(s => s.id === requoteSelectedSupplier);
                 const supplierName = selectedSupplierData?.contact_name || selectedSupplierData?.company_name || "Fornecedor";
