@@ -104,8 +104,8 @@ export default function BudgetQtyRequotePortal() {
         else pre[key] = "";
       }
       setPrices(pre);
-      setInstallation(String((sub as any).installation ?? d.baseline_extras.installation ?? 0));
-      setFreight(String((sub as any).freight ?? d.baseline_extras.freight ?? 0));
+      setInstallation(fmtInput((sub as any).installation ?? d.baseline_extras.installation ?? 0));
+      setFreight(fmtInput((sub as any).freight ?? d.baseline_extras.freight ?? 0));
       setNotes(d.notes || "");
     } catch (e: any) {
       setError(e?.message || "Erro ao carregar");
