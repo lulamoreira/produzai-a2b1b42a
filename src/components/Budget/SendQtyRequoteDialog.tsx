@@ -90,21 +90,22 @@ export default function SendQtyRequoteDialog({
         const origRowsP = supabasePaginate<any>((from, to) =>
           (supabase as any)
             .from("campaign_store_pieces")
-            .select("store_id, piece_id, quantity", { count: "exact" })
+            .select("id, store_id, piece_id, quantity", { count: "exact" })
             .eq("campaign_id", campaignId)
-            .order("store_id")
+            .order("id")
             .range(from, to)
         );
 
         const negRowsP = supabasePaginate<any>((from, to) =>
           (supabase as any)
             .from("budget_negotiation_store_pieces")
-            .select("store_id, piece_id, quantity", { count: "exact" })
+            .select("id, store_id, piece_id, quantity", { count: "exact" })
             .eq("campaign_id", campaignId)
             .is("supplier_id", null)
-            .order("store_id")
+            .order("id")
             .range(from, to)
         );
+
 
         const kitsP = (supabase as any)
           .from("campaign_kits")
