@@ -442,6 +442,17 @@ export default function RateioTabV2({
   const [isImporting, setIsImporting] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
+  // Fullscreen mode for easier editing
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsFullscreen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isFullscreen]);
+
   // Undo/Redo history
   const [history, setHistory] = useState<{ storeId: string; pieceId: string; oldVal: number; newVal: number }[][]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
