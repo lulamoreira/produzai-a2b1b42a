@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Copy, Send, MessageCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -53,6 +54,7 @@ const kitKey = (id: string) => `kit:${id}`;
 export default function SendQtyRequoteDialog({
   open, onOpenChange, campaignId, campaignName, pieces,
 }: Props) {
+  const queryClient = useQueryClient();
   const [suppliers, setSuppliers] = useState<SupplierLite[]>([]);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
 
@@ -227,10 +229,6 @@ export default function SendQtyRequoteDialog({
     setSelected((s) => ({ ...s, [key]: checked }));
   };
 
-  const updateNewQty = (key: RowKey, v: string) => {
-    setNewQtyInputs((s) => ({ ...s, [key]: v }));
-  };
-
   // Rows interleaved by código (peças visíveis + kits).
   const rows = useMemo(() => {
     const pieceRows = pieces
@@ -250,31 +248,29 @@ export default function SendQtyRequoteDialog({
     if (!canGenerate) return;
     setGenerating(true);
     try {
-      const qty_changes: Record<string, { old_qty: number; new_qty: number }> = {};
-      for (const row of rows) {
-        if (!selected[row.key]) continue;
-        const newRaw = newQtyInputs[row.key];
-        const live = liveQtyFor(row.key);
-        const parsed = parseInt(newRaw ?? "", 10);
-        const newQ = Number.isFinite(parsed) ? parsed : live;
-        qty_changes[row.key] = { old_qty: origQtyFor(row.key), new_qty: newQ };
-      }
+      const selectedKeys = rows
+        .filter((row) => selected[row.key])
+        .map((row) => row.key);
 
       const expiresAt = new Date(Date.now() + expiresInDays * 24 * 3600 * 1000).toISOString();
-      const { data, error } = await supabase
-        .from("budget_qty_requotes" as any)
-        .insert({
-          campaign_id: campaignId,
-          supplier_id: selectedSupplierId,
-          qty_changes,
-          expires_at: expiresAt,
-        } as any)
-        .select("access_token")
-        .single();
+      const { data, error } = await supabase.rpc(
+        "create_budget_qty_requote" as any,
+        {
+          p_campaign_id: campaignId,
+          p_supplier_id: selectedSupplierId,
+          p_selected_keys: selectedKeys,
+          p_expires_at: expiresAt,
+        } as any,
+      );
       if (error) throw error;
-      const token = (data as any).access_token;
+      const payload = data as { access_token?: string; error?: string } | null;
+      if (!payload?.access_token || payload.error) {
+        throw new Error(payload?.error || "Erro ao gerar link");
+      }
+      const token = payload.access_token;
       const link = buildPublicAppUrl(`/recotacao-qtd/${token}`);
       setGeneratedLink(link);
+      queryClient.invalidateQueries({ queryKey: ["budget_qty_requotes", campaignId] });
       toast.success("Link gerado!");
     } catch (e: any) {
       toast.error(e?.message || "Erro ao gerar link");
@@ -372,7 +368,7 @@ export default function SendQtyRequoteDialog({
                     <TableHead className="w-10"></TableHead>
                     <TableHead>Peça / Kit</TableHead>
                     <TableHead className="text-center w-24">Qtd. atual</TableHead>
-                    <TableHead className="text-center w-32">Nova Qtd.</TableHead>
+                    <TableHead className="text-center w-32">Qtd. negociação</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -410,12 +406,10 @@ export default function SendQtyRequoteDialog({
                         </TableCell>
                         <TableCell>
                           <Input
-                            type="number"
-                            min={0}
-                            className="h-8 text-center"
-                            value={newQtyInputs[row.key] ?? String(live)}
-                            onChange={(e) => updateNewQty(row.key, e.target.value)}
-                            placeholder={String(live)}
+                            readOnly
+                            className="h-8 text-center bg-muted/30"
+                            value={String(live)}
+                            aria-label={`Quantidade de negociação de ${row.name}`}
                           />
                         </TableCell>
                       </TableRow>
