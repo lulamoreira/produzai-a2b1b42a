@@ -37,18 +37,14 @@ const JoinPage = () => {
     queryKey: ['invite', token],
     queryFn: async () => {
       if (!token) throw new Error("No token provided");
-      const { data, error } = await supabase
-        .from('invites')
-        .select('*, agencies(name)')
-        .eq('token', token)
-        .maybeSingle();
-      
+      const { data, error } = await (supabase.rpc as any)('get_invite_by_token', { p_token: token });
       if (error) throw error;
-      return data;
+      return data as any;
     },
     enabled: !!token,
     retry: false
   });
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
