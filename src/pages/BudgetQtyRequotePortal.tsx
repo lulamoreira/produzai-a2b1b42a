@@ -239,6 +239,7 @@ export default function BudgetQtyRequotePortal() {
               <TableBody>
                 {data.pieces.map((p) => {
                   const baseline = data.baseline_prices[p.id];
+                  const changed = p.old_qty !== p.new_qty;
                   return (
                     <TableRow key={p.id}>
                       <TableCell>
@@ -247,15 +248,26 @@ export default function BudgetQtyRequotePortal() {
                             <img src={p.image_url} alt="" className="w-10 h-10 rounded object-cover" />
                           )}
                           <div>
-                            <div className="font-medium text-sm">#{p.code} {p.name}</div>
+                            <div className="font-medium text-sm">
+                              #{p.code} {p.name}
+                              {changed && (
+                                <span className="ml-2 inline-flex items-center rounded-full bg-[#C2714F]/10 px-2 py-0.5 text-[10px] font-bold text-[#C2714F]">
+                                  Alterado
+                                </span>
+                              )}
+                            </div>
                             {p.specification && (
                               <div className="text-xs text-muted-foreground line-clamp-1">{p.specification}</div>
                             )}
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center text-muted-foreground">{p.old_qty ?? 0}</TableCell>
-                      <TableCell className="text-center font-semibold">{p.new_qty ?? 0}</TableCell>
+                      <TableCell className={`text-center ${changed ? "text-muted-foreground line-through" : "text-muted-foreground"}`}>
+                        {changed ? p.old_qty ?? 0 : p.new_qty ?? 0}
+                      </TableCell>
+                      <TableCell className={`text-center ${changed ? "font-bold text-[#C2714F]" : "font-semibold"}`}>
+                        {p.new_qty ?? 0}
+                      </TableCell>
                       <TableCell className="text-right text-muted-foreground tabular-nums">
                         {baseline != null ? fmtBRL(baseline) : "—"}
                       </TableCell>

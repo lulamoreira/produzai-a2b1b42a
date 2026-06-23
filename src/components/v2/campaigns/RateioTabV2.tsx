@@ -305,29 +305,44 @@ export default function RateioTabV2({
     try {
       setIsGeneratingLink(true);
       const { supabasePaginate } = await import("@/lib/supabasePaginate");
-      const negRows = await supabasePaginate<any>((from, to) =>
-        (supabase as any)
-          .from("budget_negotiation_store_pieces")
-          .select("store_id, piece_id, quantity, original_quantity", { count: "exact" })
-          .eq("campaign_id", campaignId)
-          .is("supplier_id", null)
-          .order("id")
-          .range(from, to)
-      );
+
+      const [negRows, origRows] = await Promise.all([
+        supabasePaginate<any>((from, to) =>
+          (supabase as any)
+            .from("budget_negotiation_store_pieces")
+            .select("store_id, piece_id, quantity", { count: "exact" })
+            .eq("campaign_id", campaignId)
+            .is("supplier_id", null)
+            .order("store_id")
+            .range(from, to)
+        ),
+        supabasePaginate<any>((from, to) =>
+          (supabase as any)
+            .from("campaign_store_pieces")
+            .select("store_id, piece_id, quantity", { count: "exact" })
+            .eq("campaign_id", campaignId)
+            .order("store_id")
+            .range(from, to)
+        ),
+      ]);
+
       const origByPiece = new Map<string, number>();
       const negByPiece = new Map<string, number>();
+      for (const r of origRows) {
+        const pid = r.piece_id as string;
+        origByPiece.set(pid, (origByPiece.get(pid) ?? 0) + (Number(r.quantity) || 0));
+      }
       for (const r of negRows) {
         const pid = r.piece_id as string;
-        origByPiece.set(pid, (origByPiece.get(pid) ?? 0) + (Number(r.original_quantity) || 0));
-        negByPiece.set(pid,  (negByPiece.get(pid)  ?? 0) + (Number(r.quantity)          || 0));
+        negByPiece.set(pid, (negByPiece.get(pid) ?? 0) + (Number(r.quantity) || 0));
       }
-      const allPieceIds = new Set<string>([...origByPiece.keys(), ...negByPiece.keys()]);
+
       const qty_changes: Record<string, { old_qty: number; new_qty: number }> = {};
-      for (const pieceId of allPieceIds) {
+      for (const [pieceId, newQ] of negByPiece) {
         const oldQ = origByPiece.get(pieceId) ?? 0;
-        const newQ = negByPiece.get(pieceId) ?? 0;
-        if (oldQ !== newQ) qty_changes[pieceId] = { old_qty: oldQ, new_qty: newQ };
+        qty_changes[pieceId] = { old_qty: oldQ, new_qty: newQ };
       }
+
       const { data: rpcResult, error } = await supabase.rpc(
         "create_budget_qty_requote" as any,
         {
