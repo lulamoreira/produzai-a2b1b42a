@@ -2325,6 +2325,69 @@ ${msgLabels.winnerWaFooter}
                         </Button>
                       </div>
                     )}
+
+                    {/* ─── Recotação por Quantidade para este fornecedor ─── */}
+                    {(() => {
+                      const supRequotes = (qtyRequotes as any[]).filter((r) => r.supplier_id === sup.id);
+                      if (supRequotes.length === 0) return null;
+                      const rq = supRequotes[0]; // most recent (query is desc)
+                      const statusMeta: Record<string, { label: string; cls: string }> = {
+                        pending: { label: "Recotação — Aguardando", cls: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300" },
+                        submitted: { label: "Recotação — Respondida", cls: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300" },
+                        approved: { label: "Recotação — Aprovada", cls: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300" },
+                        rejected: { label: "Recotação — Recusada", cls: "bg-rose-100 text-rose-800 dark:bg-rose-900/30 dark:text-rose-300" },
+                      };
+                      const meta = statusMeta[rq.status] ?? { label: rq.status, cls: "" };
+                      const piecesCount = Object.keys(rq.qty_changes ?? {}).length;
+                      const canDownload = rq.status === "submitted" || rq.status === "approved";
+                      return (
+                        <div className="flex items-center justify-between gap-2 pt-2 mt-1 border-t border-border/60 flex-wrap">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <RefreshCw className="w-3.5 h-3.5 text-primary shrink-0" />
+                            <Badge className={cn("text-[10px]", meta.cls)}>{meta.label}</Badge>
+                            <span className="text-[11px] text-muted-foreground truncate">
+                              {piecesCount} peça{piecesCount === 1 ? "" : "s"}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            {rq.status === "pending" && (
+                              <Button
+                                size="sm" variant="ghost" className="h-7 text-[11px] gap-1"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`${window.location.origin}/recotacao-qtd/${rq.access_token}`);
+                                  toast.success("Link copiado!");
+                                }}
+                                title="Copiar link público da recotação"
+                              >
+                                <Copy className="w-3 h-3" /> Copiar link
+                              </Button>
+                            )}
+                            {rq.status === "submitted" && (
+                              <Button
+                                size="sm" className="h-7 text-[11px]"
+                                onClick={() => setReviewingQtyRequote(rq)}
+                              >
+                                Revisar
+                              </Button>
+                            )}
+                            {canDownload && (
+                              <Button
+                                size="sm" variant="ghost" className="h-7 w-7 p-0"
+                                title="Baixar planilha da recotação"
+                                disabled={downloadingRequoteId === rq.id}
+                                onClick={() => handleDownloadRequoteSheet(sup, rq)}
+                              >
+                                {downloadingRequoteId === rq.id ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Download className="w-3.5 h-3.5" />
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </CardContent>
                 </Card>
               );
