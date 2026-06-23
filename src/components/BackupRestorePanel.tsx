@@ -57,6 +57,12 @@ export const BackupRestorePanel = () => {
 
   const loadRuns = async () => {
     setLoadingRuns(true);
+    // Sweep stale "running" rows (>10 min abandoned) so the history doesn't lie.
+    try {
+      await supabase.rpc("mark_stale_backup_runs" as any);
+    } catch {
+      // non-blocking
+    }
     const { data } = await supabase
       .from("system_backup_runs")
       .select("*")
@@ -71,6 +77,8 @@ export const BackupRestorePanel = () => {
   const handleBackupNow = async () => {
     setDownloading(true);
     try {
+      // Clear any zombie "running" rows before starting (also unblocks rate limit).
+      try { await supabase.rpc("mark_stale_backup_runs" as any); } catch { /* noop */ }
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Sessão expirada");
 
