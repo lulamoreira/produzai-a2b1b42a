@@ -1464,6 +1464,18 @@ export default function RateioTabV2({
               {t("modules.adjustments", "Ajustes")}
             </Button>
           )}
+          {rateioSource !== "original" && (hasNegotiationRateio || hasCampaignNegRateio || hasAnyAdjustment) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setComparisonDialogOpen(true)}
+              className="text-xs gap-2 h-8"
+              title="Comparar este rateio com o rateio anterior"
+            >
+              <GitCompare className="w-3.5 h-3.5" />
+              Comparar rateios
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
