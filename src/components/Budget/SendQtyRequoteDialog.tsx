@@ -139,21 +139,15 @@ export default function SendQtyRequoteDialog({
         const kitPieces: Array<{ kit_id: string; piece_id: string; quantity: number }> =
           kitPiecesRes.data ?? [];
 
-        // Per-piece totals
+        // Per-piece totals. A negociação is a sparse override by store×piece:
+        // rows not present in budget_negotiation_store_pieces must keep the
+        // original campaign_store_pieces quantity instead of being counted as 0.
         const origByPiece: Record<string, number> = {};
-        const negByPiece: Record<string, number> = {};
         for (const r of origRows as any[]) {
           origByPiece[r.piece_id] = (origByPiece[r.piece_id] || 0) + Number(r.quantity || 0);
         }
-        for (const r of negRows as any[]) {
-          negByPiece[r.piece_id] = (negByPiece[r.piece_id] || 0) + Number(r.quantity || 0);
-        }
         const hasNeg = (negRows as any[]).length > 0;
         setOrigQtyByPiece(origByPiece);
-        // Merge: negociação sobrescreve original apenas onde existe linha.
-        const livePieceMerged: Record<string, number> = { ...origByPiece };
-        for (const pid of Object.keys(negByPiece)) livePieceMerged[pid] = negByPiece[pid];
-        setLiveQtyByPiece(livePieceMerged);
 
         // Per-(store, piece) for kit derivation
         const origByStore = new Map<string, number>();
@@ -163,6 +157,14 @@ export default function SendQtyRequoteDialog({
         // Merge por (loja×peça): começa com original e sobrescreve com negociação.
         const liveByStore = new Map(origByStore);
         for (const [k, v] of negByStore) liveByStore.set(k, v);
+
+        const livePieceMerged: Record<string, number> = {};
+        for (const [storePieceKey, qty] of liveByStore) {
+          const pieceId = storePieceKey.slice(storePieceKey.indexOf(":") + 1);
+          livePieceMerged[pieceId] = (livePieceMerged[pieceId] || 0) + qty;
+        }
+        setLiveQtyByPiece(livePieceMerged);
+
         const allStoreIds = [...new Set<string>([
           ...(origRows as any[]).map((r) => r.store_id as string),
           ...(negRows as any[]).map((r) => r.store_id as string),
