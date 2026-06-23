@@ -2458,6 +2458,7 @@ export default function RateioTabV2({
                   </div>
                 );
               })()}
+              </div>
             )}
           </div>
           <DialogFooter>
