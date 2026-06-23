@@ -1120,6 +1120,117 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       setDownloadingSupplierId(null);
     }
   };
+
+  // ─── Download per-supplier requote sheet (same layout as supplier sheet, but with requote prices/qtys) ───
+  const handleDownloadRequoteSheet = async (sup: typeof suppliers[0], rq: any) => {
+    if (downloadingRequoteId) return;
+    setDownloadingRequoteId(rq.id);
+    const toastId = toast.loading(`Gerando planilha da recotação de ${sup.company_name}...`, {
+      description: "Aplicando preços e quantidades recotadas.",
+    });
+    try {
+      const submittedPrices = (rq.submitted_prices ?? {}) as Record<string, number>;
+      const qtyChanges = (rq.qty_changes ?? {}) as Record<string, { old_qty: number; new_qty: number }>;
+
+      type Merged =
+        | { type: "piece"; data: typeof pieces[number] }
+        | { type: "kit"; data: typeof kits[number] };
+      const merged: Merged[] = [
+        ...pieces.filter((p) => !p.kit_only).map((p) => ({ type: "piece" as const, data: p })),
+        ...kits.map((k) => ({ type: "kit" as const, data: k })),
+      ];
+      merged.sort((a, b) => (a.data.display_order ?? 0) - (b.data.display_order ?? 0));
+
+      const supPrices = prices.filter((p) => p.supplier_id === sup.id);
+      const priceFor = (pieceId: string): number | null => {
+        if (submittedPrices[pieceId] != null) return Number(submittedPrices[pieceId]);
+        const pr = supPrices.find((x) => x.piece_id === pieceId);
+        return pr && pr.unit_price != null ? Number(pr.unit_price) : null;
+      };
+      const qtyFor = (pieceId: string): number => {
+        if (qtyChanges[pieceId]?.new_qty != null) return Number(qtyChanges[pieceId].new_qty);
+        return pieceTotals[pieceId] || 0;
+      };
+
+      const rows: SupplierExportRow[] = [];
+      merged.forEach((item) => {
+        if (item.type === "kit") {
+          const kit = item.data;
+          const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
+          if (kpList.length === 0) return;
+          const kitTotalQty = Math.min(
+            ...kpList.map((kp) => Math.floor(qtyFor(kp.piece_id) / (kp.quantity || 1)))
+          );
+          rows.push({
+            type: "kit_header",
+            name: kit.name,
+            code: kit.code,
+            totalQty: kitTotalQty,
+            unitPrice: null,
+            lineTotal: 0,
+            image_url: (kit as any).image_report_url ?? kit.image_url ?? null,
+          });
+          kpList.forEach((kp) => {
+            const piece = pieces.find((p) => p.id === kp.piece_id);
+            if (!piece) return;
+            const qty = kitTotalQty * kp.quantity;
+            const up = priceFor(kp.piece_id);
+            rows.push({
+              type: "kit_piece",
+              name: piece.name,
+              code: piece.code,
+              specification: (piece as any).specification ?? "",
+              size: (piece as any).size ?? "",
+              totalQty: qty,
+              unitPrice: up,
+              lineTotal: up != null ? up * qty : 0,
+              image_url: (piece as any).image_report_url ?? piece.image_url ?? null,
+            });
+          });
+        } else {
+          const p = item.data;
+          const qty = qtyFor(p.id);
+          const up = priceFor(p.id);
+          rows.push({
+            type: "standalone_piece",
+            name: p.name,
+            code: p.code,
+            specification: (p as any).specification ?? "",
+            size: (p as any).size ?? "",
+            totalQty: qty,
+            unitPrice: up,
+            lineTotal: up != null ? up * qty : 0,
+            image_url: (p as any).image_report_url ?? p.image_url ?? null,
+          });
+        }
+      });
+
+      const ec = extraCosts.find((e) => e.supplier_id === sup.id);
+      const installation = ec?.installation_value != null ? Number(ec.installation_value) : null;
+      const freight = ec?.freight_value != null ? Number(ec.freight_value) : null;
+      const itemsTotal = rows.reduce((s, r) => s + (r.type === "kit_header" ? 0 : r.lineTotal), 0);
+      const grandTotal = itemsTotal + (installation || 0) + (freight || 0);
+
+      await exportSupplierBudget({
+        campaignName: `${campaignName} — Recotação`,
+        agencyName,
+        clientName: "",
+        supplierName: sup.company_name,
+        currencyCode,
+        rows,
+        installation,
+        freight,
+        grandTotal,
+      });
+      toast.dismiss(toastId);
+      toast.success("Planilha da recotação gerada.");
+    } catch (e) {
+      console.error("Requote sheet export error:", e);
+      toast.dismiss(toastId);
+      toast.error("Erro ao gerar planilha da recotação.");
+    } finally {
+      setDownloadingRequoteId(null);
+    }
   const detailSup = detailSupplier ? suppliers.find((s) => s.id === detailSupplier) : null;
   const detailPrices = detailSupplier ? prices.filter((p) => p.supplier_id === detailSupplier) : [];
   const detailCosts = detailSupplier ? extraCosts.find((e) => e.supplier_id === detailSupplier) : null;
