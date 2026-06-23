@@ -46,10 +46,20 @@ const fmtBRL = (n: number) =>
 
 const parseNum = (v: string | number | null | undefined): number => {
   if (v == null) return 0;
-  const s = String(v).replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", ".");
-  const n = parseFloat(s);
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+
+  const s = String(v).trim().replace(/[^\d,.-]/g, "");
+  if (!s) return 0;
+
+  const n = parseFloat(
+    s.includes(",")
+      ? s.replace(/\./g, "").replace(",", ".")
+      : s
+  );
   return Number.isFinite(n) ? n : 0;
 };
+
+const kitKey = (kitId: string) => `kit:${kitId}`;
 
 export default function BudgetQtyRequotePortal() {
   const { token } = useParams<{ token: string }>();
@@ -81,6 +91,12 @@ export default function BudgetQtyRequotePortal() {
         else if (d.baseline_prices[p.id] != null) pre[p.id] = String(d.baseline_prices[p.id]);
         else pre[p.id] = "";
       }
+      for (const k of d.kits ?? []) {
+        const key = kitKey(k.id);
+        if (sub[key] != null) pre[key] = String(sub[key]);
+        else if (d.baseline_prices[key] != null) pre[key] = String(d.baseline_prices[key]);
+        else pre[key] = "";
+      }
       setPrices(pre);
       setInstallation(String((sub as any).installation ?? d.baseline_extras.installation ?? 0));
       setFreight(String((sub as any).freight ?? d.baseline_extras.freight ?? 0));
@@ -94,52 +110,96 @@ export default function BudgetQtyRequotePortal() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [token]);
 
-  // Valor unitário de um kit = soma(multiplicador × preço unitário da peça)
-  const kitUnitValue = (kit: KitItem, priceMap: Record<string, string>) =>
-    (kit.kit_pieces ?? []).reduce((s, kp) => s + kp.quantity * parseNum(priceMap[kp.piece_id]), 0);
+  const kitComponentUnitValue = (kit: KitItem) =>
+    (kit.kit_pieces ?? []).reduce((s, kp) => s + kp.quantity * parseNum(prices[kp.piece_id]), 0);
 
-  const kitBaselineUnit = (kit: KitItem) =>
-    (kit.kit_pieces ?? []).reduce((s, kp) => s + kp.quantity * (data?.baseline_prices[kp.piece_id] ?? 0), 0);
+  // Kits usam preço unitário próprio quando existir; caso contrário, derivam do somatório dos componentes.
+  const kitUnitValue = (kit: KitItem) => {
+    const directUnit = parseNum(prices[kitKey(kit.id)]);
+    return directUnit > 0 ? directUnit : kitComponentUnitValue(kit);
+  };
 
-  // Lista ordenada: kit → suas peças (com seta ↳) → peças soltas
+  const kitBaselineUnit = (kit: KitItem) => {
+    const directUnit = data?.baseline_prices[kitKey(kit.id)] ?? 0;
+    if (directUnit > 0) return directUnit;
+    return (kit.kit_pieces ?? []).reduce((s, kp) => s + kp.quantity * (data?.baseline_prices[kp.piece_id] ?? 0), 0);
+  };
+
+  // Lista ordenada por código: peças soltas e kits no mesmo nível; componentes ficam abaixo do kit.
   const orderedRows = useMemo(() => {
     type Row =
       | { kind: "kit"; item: KitItem }
       | { kind: "piece"; item: PieceItem; inKit: boolean };
     if (!data) return [] as Row[];
+
     const rows: Row[] = [];
     const pieceMap = new Map(data.pieces.map((p) => [p.id, p]));
-    const usedIds = new Set<string>();
-    for (const kit of [...(data.kits ?? [])].sort((a, b) => a.code - b.code)) {
-      rows.push({ kind: "kit", item: kit });
-      for (const kp of (kit.kit_pieces ?? [])) {
+    const componentIds = new Set<string>();
+
+    for (const kit of data.kits ?? []) {
+      for (const kp of kit.kit_pieces ?? []) componentIds.add(kp.piece_id);
+    }
+
+    const topLevelRows: Row[] = [
+      ...(data.kits ?? []).map((kit) => ({ kind: "kit" as const, item: kit })),
+      ...data.pieces
+        .filter((piece) => !componentIds.has(piece.id))
+        .map((piece) => ({ kind: "piece" as const, item: piece, inKit: false })),
+    ].sort((a, b) => a.item.code - b.item.code);
+
+    for (const topLevelRow of topLevelRows) {
+      rows.push(topLevelRow);
+
+      if (topLevelRow.kind !== "kit") continue;
+
+      const components = [...(topLevelRow.item.kit_pieces ?? [])].sort((a, b) => {
+        const pieceA = pieceMap.get(a.piece_id);
+        const pieceB = pieceMap.get(b.piece_id);
+        return (pieceA?.code ?? 0) - (pieceB?.code ?? 0);
+      });
+
+      for (const kp of components) {
         const piece = pieceMap.get(kp.piece_id);
-        if (piece) { rows.push({ kind: "piece", item: piece, inKit: true }); usedIds.add(kp.piece_id); }
+        if (piece) rows.push({ kind: "piece", item: piece, inKit: true });
       }
     }
-    for (const piece of [...data.pieces].sort((a, b) => a.code - b.code)) {
-      if (!usedIds.has(piece.id)) rows.push({ kind: "piece", item: piece, inKit: false });
-    }
+
     return rows;
   }, [data]);
 
   const oldTotal = useMemo(() => {
     if (!data) return 0;
-    return data.pieces.reduce((s, p) => s + (p.old_qty ?? 0) * (data.baseline_prices[p.id] ?? 0), 0)
+    const kitComponentIds = new Set(
+      (data.kits ?? []).flatMap((kit) => (kit.kit_pieces ?? []).map((kp) => kp.piece_id))
+    );
+    return data.pieces
+      .filter((p) => !kitComponentIds.has(p.id))
+      .reduce((s, p) => s + (p.old_qty ?? 0) * (data.baseline_prices[p.id] ?? 0), 0)
+      + (data.kits ?? []).reduce((s, k) => s + (k.old_qty ?? 0) * kitBaselineUnit(k), 0)
       + (data.baseline_extras.installation ?? 0)
       + (data.baseline_extras.freight ?? 0);
   }, [data]);
 
   const newTotal = useMemo(() => {
     if (!data) return 0;
-    return data.pieces.reduce((s, p) => s + (p.new_qty ?? 0) * parseNum(prices[p.id]), 0)
+    const kitComponentIds = new Set(
+      (data.kits ?? []).flatMap((kit) => (kit.kit_pieces ?? []).map((kp) => kp.piece_id))
+    );
+    return data.pieces
+      .filter((p) => !kitComponentIds.has(p.id))
+      .reduce((s, p) => s + (p.new_qty ?? 0) * parseNum(prices[p.id]), 0)
+      + (data.kits ?? []).reduce((s, k) => s + (k.new_qty ?? 0) * kitUnitValue(k), 0)
       + parseNum(installation)
       + parseNum(freight);
   }, [data, prices, installation, freight]);
 
   const handleSubmit = async () => {
     if (!data || !token) return;
-    const missing = data.pieces.filter((p) => !prices[p.id] || parseNum(prices[p.id]) <= 0);
+    const missingPieces = data.pieces.filter((p) => !prices[p.id] || parseNum(prices[p.id]) <= 0);
+    const missingKits = (data.kits ?? []).filter(
+      (k) => data.baseline_prices[kitKey(k.id)] != null && (!prices[kitKey(k.id)] || parseNum(prices[kitKey(k.id)]) <= 0)
+    );
+    const missing = [...missingPieces, ...missingKits];
     if (missing.length > 0) { toast.error(`Informe o preço de ${missing.length} peça(s)`); return; }
     setSubmitting(true);
     try {
@@ -148,6 +208,7 @@ export default function BudgetQtyRequotePortal() {
         freight: parseNum(freight),
       };
       for (const p of data.pieces) payload[p.id] = parseNum(prices[p.id]);
+      for (const k of data.kits ?? []) payload[kitKey(k.id)] = kitUnitValue(k);
       const { data: res, error: err } = await supabase.rpc(
         "submit_budget_qty_requote" as any,
         { p_token: token, p_prices: payload, p_notes: notes || null } as any
@@ -270,7 +331,7 @@ export default function BudgetQtyRequotePortal() {
                     const k = row.item;
                     const changed = k.old_qty !== k.new_qty;
                     const baseUnit = kitBaselineUnit(k);
-                    const newUnit = kitUnitValue(k, prices);
+                    const newUnit = kitUnitValue(k);
                     const totalAnt = (k.old_qty ?? 0) * baseUnit;
                     const totalNov = (k.new_qty ?? 0) * newUnit;
                     return (
