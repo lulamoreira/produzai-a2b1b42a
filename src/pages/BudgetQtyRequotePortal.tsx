@@ -26,8 +26,10 @@ interface PortalData {
   pieces: Array<{
     id: string; name: string; code: number;
     specification: string | null; image_url: string | null;
+    is_kit: boolean;
     old_qty: number; new_qty: number;
   }>;
+
   baseline_prices: Record<string, number>;
   baseline_extras: { installation: number; freight: number };
 }
