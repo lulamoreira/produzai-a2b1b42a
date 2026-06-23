@@ -5495,6 +5495,15 @@ export type Database = {
         Args: { p_campaign_id: string }
         Returns: number
       }
+      create_budget_qty_requote: {
+        Args: {
+          p_campaign_id: string
+          p_notes?: string
+          p_qty_changes: Json
+          p_supplier_id: string
+        }
+        Returns: Json
+      }
       create_negotiation_rateio_copy: {
         Args: { p_campaign_id: string }
         Returns: Json
