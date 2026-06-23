@@ -14,6 +14,25 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 
+interface PieceItem {
+  id: string;
+  name: string;
+  code: number;
+  specification: string | null;
+  image_url: string | null;
+  old_qty: number;
+  new_qty: number;
+}
+
+interface KitItem {
+  id: string;
+  name: string;
+  code: number;
+  old_qty: number;
+  new_qty: number;
+  kit_piece_ids: string[];
+}
+
 interface PortalData {
   id: string;
   status: string;
@@ -23,13 +42,8 @@ interface PortalData {
   notes: string | null;
   rejection_notes: string | null;
   supplier: { id: string; company_name: string; contact_name: string };
-  pieces: Array<{
-    id: string; name: string; code: number;
-    specification: string | null; image_url: string | null;
-    is_kit: boolean;
-    old_qty: number; new_qty: number;
-  }>;
-
+  pieces: PieceItem[];
+  kits: KitItem[];
   baseline_prices: Record<string, number>;
   baseline_extras: { installation: number; freight: number };
 }
@@ -73,16 +87,24 @@ export default function BudgetQtyRequotePortal() {
       const d = payload as PortalData;
       setData(d);
 
-      const pre: Record<string, string> = {};
       const sub = d.submitted_prices || {};
+      const pre: Record<string, string> = {};
+
       for (const p of d.pieces) {
         if (sub[p.id] != null) pre[p.id] = String(sub[p.id]);
         else if (d.baseline_prices[p.id] != null) pre[p.id] = String(d.baseline_prices[p.id]);
         else pre[p.id] = "";
       }
+      for (const k of (d.kits ?? [])) {
+        const key = `kit:${k.id}`;
+        if (sub[key] != null) pre[key] = String(sub[key]);
+        else if (d.baseline_prices[key] != null) pre[key] = String(d.baseline_prices[key]);
+        else pre[key] = "";
+      }
+
       setPrices(pre);
-      setInstallation(String(sub.installation ?? d.baseline_extras.installation ?? 0));
-      setFreight(String(sub.freight ?? d.baseline_extras.freight ?? 0));
+      setInstallation(String((sub as any).installation ?? d.baseline_extras.installation ?? 0));
+      setFreight(String((sub as any).freight ?? d.baseline_extras.freight ?? 0));
       setNotes(d.notes || "");
     } catch (e: any) {
       setError(e?.message || "Erro ao carregar");
@@ -93,22 +115,60 @@ export default function BudgetQtyRequotePortal() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [token]);
 
+  const orderedRows = useMemo(() => {
+    if (!data) return [] as Array<
+      | { kind: "kit"; item: KitItem }
+      | { kind: "piece"; item: PieceItem; inKit?: boolean }
+    >;
+    type Row =
+      | { kind: "kit"; item: KitItem }
+      | { kind: "piece"; item: PieceItem; inKit?: boolean };
+
+    const rows: Row[] = [];
+    const pieceMap = new Map(data.pieces.map((p) => [p.id, p]));
+    const usedPieceIds = new Set<string>();
+
+    for (const kit of [...(data.kits ?? [])].sort((a, b) => a.code - b.code)) {
+      rows.push({ kind: "kit", item: kit });
+      for (const pid of (kit.kit_piece_ids ?? [])) {
+        const piece = pieceMap.get(pid);
+        if (piece) {
+          rows.push({ kind: "piece", item: piece, inKit: true });
+          usedPieceIds.add(pid);
+        }
+      }
+    }
+
+    for (const piece of [...data.pieces].sort((a, b) => a.code - b.code)) {
+      if (!usedPieceIds.has(piece.id)) {
+        rows.push({ kind: "piece", item: piece });
+      }
+    }
+
+    return rows;
+  }, [data]);
+
   const total = useMemo(() => {
     if (!data) return 0;
     let sum = 0;
-    for (const p of data.pieces) {
-      sum += (p.new_qty || 0) * parseNum(prices[p.id] ?? "");
-    }
+    for (const p of data.pieces) sum += (p.new_qty || 0) * parseNum(prices[p.id] ?? "");
+    for (const k of (data.kits ?? [])) sum += (k.new_qty || 0) * parseNum(prices[`kit:${k.id}`] ?? "");
     return sum + parseNum(installation) + parseNum(freight);
   }, [data, prices, installation, freight]);
 
   const handleSubmit = async () => {
     if (!data || !token) return;
-    const missing = data.pieces.filter((p) => !prices[p.id] || parseNum(prices[p.id]) <= 0);
-    if (missing.length > 0) {
-      toast.error(`Informe o preço de ${missing.length} peça(s)`);
+
+    const missingPieces = data.pieces.filter((p) => !prices[p.id] || parseNum(prices[p.id]) <= 0);
+    const missingKits = (data.kits ?? []).filter((k) => {
+      const key = `kit:${k.id}`;
+      return !prices[key] || parseNum(prices[key]) <= 0;
+    });
+    if (missingPieces.length + missingKits.length > 0) {
+      toast.error(`Informe o preço de ${missingPieces.length + missingKits.length} item(s)`);
       return;
     }
+
     setSubmitting(true);
     try {
       const payload: Record<string, number> = {
@@ -116,6 +176,7 @@ export default function BudgetQtyRequotePortal() {
         freight: parseNum(freight),
       };
       for (const p of data.pieces) payload[p.id] = parseNum(prices[p.id]);
+      for (const k of (data.kits ?? [])) payload[`kit:${k.id}`] = parseNum(prices[`kit:${k.id}`]);
 
       const { data: res, error: err } = await supabase.rpc(
         "submit_budget_qty_requote" as any,
@@ -231,7 +292,7 @@ export default function BudgetQtyRequotePortal() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Peça</TableHead>
+                  <TableHead>Peça / Kit</TableHead>
                   <TableHead className="text-center w-24">Qtd. Anterior</TableHead>
                   <TableHead className="text-center w-24">Qtd. Nova</TableHead>
                   <TableHead className="text-right w-32">Preço unit. anterior</TableHead>
@@ -239,21 +300,62 @@ export default function BudgetQtyRequotePortal() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.pieces.map((p) => {
+                {orderedRows.map((row) => {
+                  if (row.kind === "kit") {
+                    const k = row.item;
+                    const key = `kit:${k.id}`;
+                    const baseline = data.baseline_prices[key];
+                    const changed = k.old_qty !== k.new_qty;
+                    return (
+                      <TableRow key={`kit-${k.id}`} className="bg-blue-50/40 dark:bg-blue-950/10">
+                        <TableCell>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                              KIT
+                            </span>
+                            <span className="font-medium text-sm">#{k.code} {k.name}</span>
+                            {changed && (
+                              <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                                Alterado
+                              </span>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className={`text-center ${changed ? "text-muted-foreground line-through" : "text-muted-foreground"}`}>
+                          {k.old_qty ?? 0}
+                        </TableCell>
+                        <TableCell className={`text-center ${changed ? "font-bold text-[#C2714F]" : "font-semibold"}`}>
+                          {k.new_qty ?? 0}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground tabular-nums">
+                          {baseline != null ? fmtBRL(baseline) : "—"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            className="text-right h-9"
+                            value={prices[key] ?? ""}
+                            onChange={(e) => setPrices((s) => ({ ...s, [key]: e.target.value }))}
+                          />
+                        </TableCell>
+                      </TableRow>
+                    );
+                  }
+
+                  const p = row.item;
                   const baseline = data.baseline_prices[p.id];
                   const changed = p.old_qty !== p.new_qty;
                   return (
-                    <TableRow key={p.id}>
+                    <TableRow key={`piece-${p.id}${row.inKit ? "-inkit" : ""}`}>
                       <TableCell>
-                        <div className="flex items-center gap-2">
+                        <div className={`flex items-center gap-2 ${row.inKit ? "pl-6" : ""}`}>
+                          {row.inKit && <span className="text-xs text-muted-foreground">↳</span>}
                           {p.image_url && (
                             <img src={p.image_url} alt="" className="w-10 h-10 rounded object-cover" />
                           )}
                           <div>
                             <div className="font-medium text-sm flex items-center gap-2 flex-wrap">
-                              {p.is_kit && (
-                                <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">KIT</span>
-                              )}
                               <span>#{p.code} {p.name}</span>
                               {changed && (
                                 <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
@@ -261,7 +363,6 @@ export default function BudgetQtyRequotePortal() {
                                 </span>
                               )}
                             </div>
-
                             {p.specification && (
                               <div className="text-xs text-muted-foreground line-clamp-1">{p.specification}</div>
                             )}
@@ -269,7 +370,7 @@ export default function BudgetQtyRequotePortal() {
                         </div>
                       </TableCell>
                       <TableCell className={`text-center ${changed ? "text-muted-foreground line-through" : "text-muted-foreground"}`}>
-                        {changed ? p.old_qty ?? 0 : p.new_qty ?? 0}
+                        {p.old_qty ?? 0}
                       </TableCell>
                       <TableCell className={`text-center ${changed ? "font-bold text-[#C2714F]" : "font-semibold"}`}>
                         {p.new_qty ?? 0}
