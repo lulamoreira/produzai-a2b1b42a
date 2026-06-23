@@ -42,6 +42,8 @@ import { buildRateioPasteOperations, parseRateioClipboard, type RateioPasteChang
 import { exportRateioSpreadsheet, parseRateioSpreadsheet } from '@/lib/rateioSpreadsheet';
 import { supabase } from "@/integrations/supabase/client";
 import { useBudgetPhase } from "@/hooks/useBudgetPhase";
+import RateioComparisonDialog from "./RateioComparisonDialog";
+import { GitCompare } from "lucide-react";
 
 interface RateioTabV2Props {
   campaignId: string;
