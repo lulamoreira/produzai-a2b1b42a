@@ -1678,10 +1678,69 @@ export function useDeleteCampaignKitPiece() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      // 1. Look up the kit_piece row so we know which piece + kit + campaign we're touching.
+      const { data: kp, error: kpErr } = await supabase
+        .from("campaign_kit_pieces")
+        .select("piece_id, kit_id")
+        .eq("id", id)
+        .maybeSingle();
+      if (kpErr) throw kpErr;
+
+      let campaignId: string | null = null;
+      let pieceId: string | null = null;
+
+      if (kp) {
+        pieceId = kp.piece_id as string;
+        const { data: kit } = await supabase
+          .from("campaign_kits")
+          .select("campaign_id")
+          .eq("id", kp.kit_id as string)
+          .maybeSingle();
+        campaignId = (kit?.campaign_id as string) ?? null;
+      }
+
+      // 2. Delete the kit_piece link.
       const { error } = await supabase.from("campaign_kit_pieces").delete().eq("id", id);
       if (error) throw error;
+
+      // 3. If the piece no longer belongs to ANY kit in this campaign, clear its
+      //    leftover store allocations — otherwise it keeps showing up as an orphan
+      //    "peça avulsa" in rateio and requote portals.
+      if (campaignId && pieceId) {
+        const { data: otherKits, error: otherErr } = await supabase
+          .from("campaign_kit_pieces")
+          .select("id, campaign_kits!inner(campaign_id)")
+          .eq("piece_id", pieceId)
+          .eq("campaign_kits.campaign_id", campaignId)
+          .limit(1);
+        if (otherErr) throw otherErr;
+
+        if (!otherKits || otherKits.length === 0) {
+          const [{ error: cspErr }, { error: negErr }] = await Promise.all([
+            supabase
+              .from("campaign_store_pieces")
+              .delete()
+              .eq("campaign_id", campaignId)
+              .eq("piece_id", pieceId),
+            supabase
+              .from("budget_negotiation_store_pieces")
+              .delete()
+              .eq("campaign_id", campaignId)
+              .eq("piece_id", pieceId),
+          ]);
+          if (cspErr) throw cspErr;
+          if (negErr) throw negErr;
+          toast.success(
+            "Peça removida do kit. Como ela não pertence a nenhum outro kit, as quantidades dela em lojas e no rateio também foram zeradas."
+          );
+        }
+      }
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] }); },
-    onError: (e) => toast.error("Erro: " + e.message),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] });
+      qc.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
+      qc.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
+    },
+    onError: (e: any) => toast.error("Erro: " + (e?.message ?? e)),
   });
 }
