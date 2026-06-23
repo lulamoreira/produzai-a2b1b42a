@@ -15,32 +15,24 @@ import {
 } from "@/components/ui/table";
 
 interface PieceItem {
-  id: string;
-  name: string;
-  code: number;
-  specification: string | null;
-  image_url: string | null;
-  old_qty: number;
-  new_qty: number;
+  id: string; name: string; code: number;
+  specification: string | null; image_url: string | null;
+  old_qty: number; new_qty: number;
 }
 
+interface KitPieceRef { piece_id: string; quantity: number; }
+
 interface KitItem {
-  id: string;
-  name: string;
-  code: number;
-  old_qty: number;
-  new_qty: number;
-  kit_piece_ids: string[];
+  id: string; name: string; code: number;
+  old_qty: number; new_qty: number;
+  kit_pieces: KitPieceRef[];
 }
 
 interface PortalData {
-  id: string;
-  status: string;
-  expires_at: string | null;
-  submitted_at: string | null;
+  id: string; status: string;
+  expires_at: string | null; submitted_at: string | null;
   submitted_prices: Record<string, number> | null;
-  notes: string | null;
-  rejection_notes: string | null;
+  notes: string | null; rejection_notes: string | null;
   supplier: { id: string; company_name: string; contact_name: string };
   pieces: PieceItem[];
   kits: KitItem[];
@@ -52,9 +44,10 @@ const fmtBRL = (n: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" })
     .format(Number.isFinite(n) ? n : 0);
 
-const parseNum = (v: string): number => {
-  const cleaned = (v || "").toString().replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", ".");
-  const n = parseFloat(cleaned);
+const parseNum = (v: string | number | null | undefined): number => {
+  if (v == null) return 0;
+  const s = String(v).replace(/[^\d,.-]/g, "").replace(/\./g, "").replace(",", ".");
+  const n = parseFloat(s);
   return Number.isFinite(n) ? n : 0;
 };
 
@@ -63,7 +56,6 @@ export default function BudgetQtyRequotePortal() {
   const [data, setData] = useState<PortalData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
   const [prices, setPrices] = useState<Record<string, string>>({});
   const [installation, setInstallation] = useState("");
   const [freight, setFreight] = useState("");
@@ -75,33 +67,20 @@ export default function BudgetQtyRequotePortal() {
     setLoading(true);
     try {
       const { data: rpc, error: err } = await supabase.rpc(
-        "get_budget_qty_requote" as any,
-        { p_token: token } as any
+        "get_budget_qty_requote" as any, { p_token: token } as any
       );
       if (err) throw err;
       const payload = rpc as any;
-      if (!payload || payload.error) {
-        setError(payload?.error || "Token inválido");
-        return;
-      }
+      if (!payload || payload.error) { setError(payload?.error || "Token inválido"); return; }
       const d = payload as PortalData;
       setData(d);
-
-      const sub = d.submitted_prices || {};
+      const sub = (d.submitted_prices || {}) as Record<string, number>;
       const pre: Record<string, string> = {};
-
       for (const p of d.pieces) {
         if (sub[p.id] != null) pre[p.id] = String(sub[p.id]);
         else if (d.baseline_prices[p.id] != null) pre[p.id] = String(d.baseline_prices[p.id]);
         else pre[p.id] = "";
       }
-      for (const k of (d.kits ?? [])) {
-        const key = `kit:${k.id}`;
-        if (sub[key] != null) pre[key] = String(sub[key]);
-        else if (d.baseline_prices[key] != null) pre[key] = String(d.baseline_prices[key]);
-        else pre[key] = "";
-      }
-
       setPrices(pre);
       setInstallation(String((sub as any).installation ?? d.baseline_extras.installation ?? 0));
       setFreight(String((sub as any).freight ?? d.baseline_extras.freight ?? 0));
@@ -115,60 +94,53 @@ export default function BudgetQtyRequotePortal() {
 
   useEffect(() => { load(); /* eslint-disable-next-line */ }, [token]);
 
+  // Valor unitário de um kit = soma(multiplicador × preço unitário da peça)
+  const kitUnitValue = (kit: KitItem, priceMap: Record<string, string>) =>
+    (kit.kit_pieces ?? []).reduce((s, kp) => s + kp.quantity * parseNum(priceMap[kp.piece_id]), 0);
+
+  const kitBaselineUnit = (kit: KitItem) =>
+    (kit.kit_pieces ?? []).reduce((s, kp) => s + kp.quantity * (data?.baseline_prices[kp.piece_id] ?? 0), 0);
+
+  // Lista ordenada: kit → suas peças (com seta ↳) → peças soltas
   const orderedRows = useMemo(() => {
-    if (!data) return [] as Array<
-      | { kind: "kit"; item: KitItem }
-      | { kind: "piece"; item: PieceItem; inKit?: boolean }
-    >;
     type Row =
       | { kind: "kit"; item: KitItem }
-      | { kind: "piece"; item: PieceItem; inKit?: boolean };
-
+      | { kind: "piece"; item: PieceItem; inKit: boolean };
+    if (!data) return [] as Row[];
     const rows: Row[] = [];
     const pieceMap = new Map(data.pieces.map((p) => [p.id, p]));
-    const usedPieceIds = new Set<string>();
-
+    const usedIds = new Set<string>();
     for (const kit of [...(data.kits ?? [])].sort((a, b) => a.code - b.code)) {
       rows.push({ kind: "kit", item: kit });
-      for (const pid of (kit.kit_piece_ids ?? [])) {
-        const piece = pieceMap.get(pid);
-        if (piece) {
-          rows.push({ kind: "piece", item: piece, inKit: true });
-          usedPieceIds.add(pid);
-        }
+      for (const kp of (kit.kit_pieces ?? [])) {
+        const piece = pieceMap.get(kp.piece_id);
+        if (piece) { rows.push({ kind: "piece", item: piece, inKit: true }); usedIds.add(kp.piece_id); }
       }
     }
-
     for (const piece of [...data.pieces].sort((a, b) => a.code - b.code)) {
-      if (!usedPieceIds.has(piece.id)) {
-        rows.push({ kind: "piece", item: piece });
-      }
+      if (!usedIds.has(piece.id)) rows.push({ kind: "piece", item: piece, inKit: false });
     }
-
     return rows;
   }, [data]);
 
-  const total = useMemo(() => {
+  const oldTotal = useMemo(() => {
     if (!data) return 0;
-    let sum = 0;
-    for (const p of data.pieces) sum += (p.new_qty || 0) * parseNum(prices[p.id] ?? "");
-    for (const k of (data.kits ?? [])) sum += (k.new_qty || 0) * parseNum(prices[`kit:${k.id}`] ?? "");
-    return sum + parseNum(installation) + parseNum(freight);
+    return data.pieces.reduce((s, p) => s + (p.old_qty ?? 0) * (data.baseline_prices[p.id] ?? 0), 0)
+      + (data.baseline_extras.installation ?? 0)
+      + (data.baseline_extras.freight ?? 0);
+  }, [data]);
+
+  const newTotal = useMemo(() => {
+    if (!data) return 0;
+    return data.pieces.reduce((s, p) => s + (p.new_qty ?? 0) * parseNum(prices[p.id]), 0)
+      + parseNum(installation)
+      + parseNum(freight);
   }, [data, prices, installation, freight]);
 
   const handleSubmit = async () => {
     if (!data || !token) return;
-
-    const missingPieces = data.pieces.filter((p) => !prices[p.id] || parseNum(prices[p.id]) <= 0);
-    const missingKits = (data.kits ?? []).filter((k) => {
-      const key = `kit:${k.id}`;
-      return !prices[key] || parseNum(prices[key]) <= 0;
-    });
-    if (missingPieces.length + missingKits.length > 0) {
-      toast.error(`Informe o preço de ${missingPieces.length + missingKits.length} item(s)`);
-      return;
-    }
-
+    const missing = data.pieces.filter((p) => !prices[p.id] || parseNum(prices[p.id]) <= 0);
+    if (missing.length > 0) { toast.error(`Informe o preço de ${missing.length} peça(s)`); return; }
     setSubmitting(true);
     try {
       const payload: Record<string, number> = {
@@ -176,8 +148,6 @@ export default function BudgetQtyRequotePortal() {
         freight: parseNum(freight),
       };
       for (const p of data.pieces) payload[p.id] = parseNum(prices[p.id]);
-      for (const k of (data.kits ?? [])) payload[`kit:${k.id}`] = parseNum(prices[`kit:${k.id}`]);
-
       const { data: res, error: err } = await supabase.rpc(
         "submit_budget_qty_requote" as any,
         { p_token: token, p_prices: payload, p_notes: notes || null } as any
@@ -220,12 +190,8 @@ export default function BudgetQtyRequotePortal() {
         <Card className="max-w-md w-full border-emerald-300 bg-emerald-50 dark:bg-emerald-950/20">
           <CardContent className="py-10 text-center space-y-3">
             <CheckCircle2 className="w-12 h-12 text-emerald-600 mx-auto" />
-            <p className="text-emerald-800 dark:text-emerald-300 font-semibold text-lg">
-              Recotação aprovada pela agência
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Os novos preços já constam como oficiais.
-            </p>
+            <p className="text-emerald-800 dark:text-emerald-300 font-semibold text-lg">Recotação aprovada pela agência</p>
+            <p className="text-sm text-muted-foreground">Os novos preços já constam como oficiais.</p>
           </CardContent>
         </Card>
       </div>
@@ -256,12 +222,10 @@ export default function BudgetQtyRequotePortal() {
         <Card className="max-w-md w-full border-blue-300 bg-blue-50 dark:bg-blue-950/20">
           <CardContent className="py-10 text-center space-y-3">
             <Clock className="w-12 h-12 text-blue-600 mx-auto" />
-            <p className="text-blue-800 dark:text-blue-300 font-semibold text-lg">
-              Aguardando revisão da agência
-            </p>
+            <p className="text-blue-800 dark:text-blue-300 font-semibold text-lg">Aguardando revisão da agência</p>
             {data.submitted_at && (
               <p className="text-sm text-muted-foreground">
-                Preços enviados em {format(new Date(data.submitted_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
+                Enviado em {format(new Date(data.submitted_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
               </p>
             )}
           </CardContent>
@@ -270,10 +234,9 @@ export default function BudgetQtyRequotePortal() {
     );
   }
 
-  // pending
   return (
     <div className="min-h-screen bg-background py-6 px-3 md:px-6">
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Recotação por Quantidade</h1>
           <p className="text-sm text-muted-foreground mt-1">
@@ -288,36 +251,36 @@ export default function BudgetQtyRequotePortal() {
         </div>
 
         <Card>
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Peça / Kit</TableHead>
-                  <TableHead className="text-center w-24">Qtd. Anterior</TableHead>
-                  <TableHead className="text-center w-24">Qtd. Nova</TableHead>
-                  <TableHead className="text-right w-32">Preço unit. anterior</TableHead>
+                  <TableHead className="text-center w-20">Qtd. ant.</TableHead>
+                  <TableHead className="text-center w-20">Qtd. nova</TableHead>
+                  <TableHead className="text-right w-32">Preço unit. ant.</TableHead>
                   <TableHead className="text-right w-40">Novo preço unit.</TableHead>
+                  <TableHead className="text-right w-32">Total anterior</TableHead>
+                  <TableHead className="text-right w-32">Total novo</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {orderedRows.map((row) => {
                   if (row.kind === "kit") {
                     const k = row.item;
-                    const key = `kit:${k.id}`;
-                    const baseline = data.baseline_prices[key];
                     const changed = k.old_qty !== k.new_qty;
+                    const baseUnit = kitBaselineUnit(k);
+                    const newUnit = kitUnitValue(k, prices);
+                    const totalAnt = (k.old_qty ?? 0) * baseUnit;
+                    const totalNov = (k.new_qty ?? 0) * newUnit;
                     return (
                       <TableRow key={`kit-${k.id}`} className="bg-blue-50/40 dark:bg-blue-950/10">
                         <TableCell>
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                              KIT
-                            </span>
+                            <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">KIT</span>
                             <span className="font-medium text-sm">#{k.code} {k.name}</span>
                             {changed && (
-                              <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                                Alterado
-                              </span>
+                              <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">Alterado</span>
                             )}
                           </div>
                         </TableCell>
@@ -328,24 +291,27 @@ export default function BudgetQtyRequotePortal() {
                           {k.new_qty ?? 0}
                         </TableCell>
                         <TableCell className="text-right text-muted-foreground tabular-nums">
-                          {baseline != null ? fmtBRL(baseline) : "—"}
+                          {baseUnit > 0 ? fmtBRL(baseUnit) : "—"}
                         </TableCell>
-                        <TableCell className="text-right">
-                          <Input
-                            type="text"
-                            inputMode="decimal"
-                            className="text-right h-9"
-                            value={prices[key] ?? ""}
-                            onChange={(e) => setPrices((s) => ({ ...s, [key]: e.target.value }))}
-                          />
+                        <TableCell className="text-right tabular-nums text-muted-foreground">
+                          {newUnit > 0 ? fmtBRL(newUnit) : "—"}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums text-muted-foreground">
+                          {totalAnt > 0 ? fmtBRL(totalAnt) : "—"}
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums font-semibold">
+                          {totalNov > 0 ? fmtBRL(totalNov) : "—"}
                         </TableCell>
                       </TableRow>
                     );
                   }
 
                   const p = row.item;
-                  const baseline = data.baseline_prices[p.id];
+                  const baseline = data.baseline_prices[p.id] ?? 0;
+                  const newPrice = parseNum(prices[p.id]);
                   const changed = p.old_qty !== p.new_qty;
+                  const totalAnt = (p.old_qty ?? 0) * baseline;
+                  const totalNov = (p.new_qty ?? 0) * newPrice;
                   return (
                     <TableRow key={`piece-${p.id}${row.inKit ? "-inkit" : ""}`}>
                       <TableCell>
@@ -358,9 +324,7 @@ export default function BudgetQtyRequotePortal() {
                             <div className="font-medium text-sm flex items-center gap-2 flex-wrap">
                               <span>#{p.code} {p.name}</span>
                               {changed && (
-                                <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
-                                  Alterado
-                                </span>
+                                <span className="text-xs font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300">Alterado</span>
                               )}
                             </div>
                             {p.specification && (
@@ -376,7 +340,7 @@ export default function BudgetQtyRequotePortal() {
                         {p.new_qty ?? 0}
                       </TableCell>
                       <TableCell className="text-right text-muted-foreground tabular-nums">
-                        {baseline != null ? fmtBRL(baseline) : "—"}
+                        {baseline > 0 ? fmtBRL(baseline) : "—"}
                       </TableCell>
                       <TableCell className="text-right">
                         <Input
@@ -386,6 +350,12 @@ export default function BudgetQtyRequotePortal() {
                           value={prices[p.id] ?? ""}
                           onChange={(e) => setPrices((s) => ({ ...s, [p.id]: e.target.value }))}
                         />
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums text-muted-foreground">
+                        {totalAnt > 0 ? fmtBRL(totalAnt) : "—"}
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums font-semibold">
+                        {newPrice > 0 ? fmtBRL(totalNov) : "—"}
                       </TableCell>
                     </TableRow>
                   );
@@ -422,12 +392,30 @@ export default function BudgetQtyRequotePortal() {
           </CardContent>
         </Card>
 
-        <Card className="bg-primary/5 border-primary/30">
-          <CardContent className="p-4 flex items-center justify-between">
-            <span className="text-sm font-semibold">Total estimado</span>
-            <span className="text-2xl font-bold text-primary tabular-nums">{fmtBRL(total)}</span>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="border-muted">
+            <CardContent className="p-5 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Total anterior</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Qtd. antiga × preços anteriores + extras</p>
+              </div>
+              <span className="text-2xl font-bold text-muted-foreground tabular-nums whitespace-nowrap">
+                {fmtBRL(oldTotal)}
+              </span>
+            </CardContent>
+          </Card>
+          <Card className="bg-primary/5 border-primary/30">
+            <CardContent className="p-5 flex items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-foreground">Total proposto</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Qtd. nova × novos preços + extras</p>
+              </div>
+              <span className="text-2xl font-bold text-primary tabular-nums whitespace-nowrap">
+                {fmtBRL(newTotal)}
+              </span>
+            </CardContent>
+          </Card>
+        </div>
 
         <div className="flex justify-end">
           <Button size="lg" className="gap-2" onClick={handleSubmit} disabled={submitting}>
