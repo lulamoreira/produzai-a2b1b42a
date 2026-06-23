@@ -66,6 +66,20 @@ export function useRealtimeBudget(campaignId?: string) {
           qc.invalidateQueries({ queryKey: ["supplier_spec_suggestions"] });
         }
       )
+      // Recotações por quantidade: invalida assim que o fornecedor responder
+      // (status muda para "submitted") ou quando uma nova for criada/aprovada.
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "budget_qty_requotes",
+          filter: `campaign_id=eq.${campaignId}`,
+        },
+        () => {
+          qc.invalidateQueries({ queryKey: ["budget_qty_requotes", campaignId] });
+        }
+      )
       .subscribe();
 
     return () => {
