@@ -794,6 +794,21 @@ export default function PiecesTab({
         updatePiece={updatePiece}
       />
 
+      <KitOnlyPiecesDialog
+        open={kitOnlyDialogOpen}
+        onOpenChange={setKitOnlyDialogOpen}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        canEdit={canEditPieces}
+        canDelete={canDeletePieces}
+        onEditPiece={(p) => { captureScrollSnapshot(); setEditingPiece(p); }}
+        updatePiece={updatePiece}
+        deletePiece={deletePiece}
+        deleteKitPiece={deleteKitPiece}
+      />
+
+
 
       {selectedPieceIds.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-4">
