@@ -42,6 +42,8 @@ import { buildRateioPasteOperations, parseRateioClipboard, type RateioPasteChang
 import { exportRateioSpreadsheet, parseRateioSpreadsheet } from '@/lib/rateioSpreadsheet';
 import { supabase } from "@/integrations/supabase/client";
 import { useBudgetPhase } from "@/hooks/useBudgetPhase";
+import RateioComparisonDialog from "./RateioComparisonDialog";
+import { GitCompare } from "lucide-react";
 
 interface RateioTabV2Props {
   campaignId: string;
@@ -228,6 +230,7 @@ export default function RateioTabV2({
   const queryClient = useQueryClient();
   const { currentPhase } = useBudgetPhase(campaignId);
   const [isCreatingNegCopy, setIsCreatingNegCopy] = useState(false);
+  const [comparisonDialogOpen, setComparisonDialogOpen] = useState(false);
   const effectiveNegSupplierId = negotiationSupplierId ?? winnerSupplierId ?? null;
 
   const showStartNegotiationCallout =
@@ -1461,6 +1464,18 @@ export default function RateioTabV2({
               {t("modules.adjustments", "Ajustes")}
             </Button>
           )}
+          {rateioSource !== "original" && (hasNegotiationRateio || hasCampaignNegRateio || hasAnyAdjustment) && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setComparisonDialogOpen(true)}
+              className="text-xs gap-2 h-8"
+              title="Comparar este rateio com o rateio anterior"
+            >
+              <GitCompare className="w-3.5 h-3.5" />
+              Comparar rateios
+            </Button>
+          )}
           <Button
             variant="outline"
             size="sm"
@@ -2402,6 +2417,25 @@ export default function RateioTabV2({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <RateioComparisonDialog
+        open={comparisonDialogOpen}
+        onOpenChange={setComparisonDialogOpen}
+        campaignId={campaignId}
+        campaignName={campaign?.name || "Campanha"}
+        clientName={client?.name || ""}
+        agencyName={agency?.name || ""}
+        pieces={pieces as any}
+        kits={kits as any}
+        kitPieces={activeKitPieces as any}
+        stores={stores as any}
+        currentQtyMap={visibleQtyMap}
+        currentSource={rateioSource}
+        currentLabel={activeTabData?.label || "Rateio atual"}
+        hasNegotiationRateio={hasNegotiationRateio}
+        hasCampaignNegRateio={hasCampaignNegRateio}
+        negotiationSupplierId={effectiveNegSupplierId}
+      />
     </div>
   );
 }
