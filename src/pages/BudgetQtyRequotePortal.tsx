@@ -436,7 +436,12 @@ export default function BudgetQtyRequotePortal() {
           <Card>
             <CardContent className="p-4 space-y-2">
               <label className="text-xs text-muted-foreground">Instalação (R$)</label>
-              <Input value={installation} onChange={(e) => setInstallation(e.target.value)} />
+              <Input
+                value={installation}
+                onChange={(e) => setInstallation(e.target.value)}
+                onBlur={() => setInstallation(fmtInput(parseNum(installation)))}
+                className="text-right"
+              />
             </CardContent>
           </Card>
           <Card>
