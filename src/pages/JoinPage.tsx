@@ -121,11 +121,8 @@ const JoinPage = () => {
         if (campaignError) console.error("Error applying campaign permissions:", campaignError);
       }
 
-      // 4. Mark invite used
-      const { error: updateError } = await supabase
-        .from('invites')
-        .update({ used_at: new Date().toISOString() })
-        .eq('token', token);
+      // 4. Mark invite used (via SECURITY DEFINER RPC; token-scoped)
+      const { error: updateError } = await (supabase.rpc as any)('mark_invite_used', { p_token: token });
       if (updateError) throw updateError;
 
       toast.success(t("invite.accountCreated"));
