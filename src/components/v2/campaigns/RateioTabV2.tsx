@@ -324,12 +324,22 @@ export default function RateioTabV2({
       for (const r of origRows) origMap.set(`${r.store_id}:${r.piece_id}`, Number(r.quantity) || 0);
       const negMap = new Map<string, number>();
       for (const r of negRows) negMap.set(`${r.store_id}:${r.piece_id}`, Number(r.quantity) || 0);
-      const keys = new Set<string>([...origMap.keys(), ...negMap.keys()]);
+      const origByPiece = new Map<string, number>();
+      const negByPiece = new Map<string, number>();
+      for (const [k, qty] of origMap) {
+        const pieceId = k.split(":")[1];
+        origByPiece.set(pieceId, (origByPiece.get(pieceId) ?? 0) + qty);
+      }
+      for (const [k, qty] of negMap) {
+        const pieceId = k.split(":")[1];
+        negByPiece.set(pieceId, (negByPiece.get(pieceId) ?? 0) + qty);
+      }
+      const allPieceIds = new Set<string>([...origByPiece.keys(), ...negByPiece.keys()]);
       const qty_changes: Record<string, { old_qty: number; new_qty: number }> = {};
-      for (const k of keys) {
-        const oldQ = origMap.get(k) ?? 0;
-        const newQ = negMap.get(k) ?? 0;
-        if (oldQ !== newQ) qty_changes[k] = { old_qty: oldQ, new_qty: newQ };
+      for (const pieceId of allPieceIds) {
+        const oldQ = origByPiece.get(pieceId) ?? 0;
+        const newQ = negByPiece.get(pieceId) ?? 0;
+        if (oldQ !== newQ) qty_changes[pieceId] = { old_qty: oldQ, new_qty: newQ };
       }
       const { data: inserted, error } = await supabase
         .from("budget_qty_requotes" as any)
