@@ -1546,6 +1546,8 @@ export function useDeleteCampaignKit() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["campaign_kits"] });
       qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] });
+      qc.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
+      qc.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
       toast.success("Kit removido!");
     },
     onError: (e) => toast.error("Erro: " + e.message),
@@ -1703,35 +1705,23 @@ export function useDeleteCampaignKitPiece() {
       const { error } = await supabase.from("campaign_kit_pieces").delete().eq("id", id);
       if (error) throw error;
 
-      // 3. If the piece no longer belongs to ANY kit in this campaign, clear its
-      //    leftover store allocations — otherwise it keeps showing up as an orphan
-      //    "peça avulsa" in rateio and requote portals.
+      // 3. Ask the database to apply the same cleanup rule used by triggers:
+      //    only pieces marked as kit-only and no longer linked to any active kit
+      //    have their leftover store/negotiation quantities removed.
       if (campaignId && pieceId) {
-        const { data: otherKits, error: otherErr } = await supabase
-          .from("campaign_kit_pieces")
-          .select("id, campaign_kits!inner(campaign_id)")
-          .eq("piece_id", pieceId)
-          .eq("campaign_kits.campaign_id", campaignId)
-          .limit(1);
-        if (otherErr) throw otherErr;
+        const { data: cleanedRows, error: cleanupErr } = await supabase.rpc(
+          "cleanup_kit_only_piece_allocations" as any,
+          {
+            p_campaign_id: campaignId,
+            p_piece_id: pieceId,
+            p_excluding_kit_id: null,
+          } as any
+        );
+        if (cleanupErr) throw cleanupErr;
 
-        if (!otherKits || otherKits.length === 0) {
-          const [{ error: cspErr }, { error: negErr }] = await Promise.all([
-            supabase
-              .from("campaign_store_pieces")
-              .delete()
-              .eq("campaign_id", campaignId)
-              .eq("piece_id", pieceId),
-            supabase
-              .from("budget_negotiation_store_pieces")
-              .delete()
-              .eq("campaign_id", campaignId)
-              .eq("piece_id", pieceId),
-          ]);
-          if (cspErr) throw cspErr;
-          if (negErr) throw negErr;
+        if (Number(cleanedRows ?? 0) > 0) {
           toast.success(
-            "Peça removida do kit. Como ela não pertence a nenhum outro kit, as quantidades dela em lojas e no rateio também foram zeradas."
+            "Peça removida do kit. Como ela é somente de kit e não pertence a nenhum outro kit ativo, as quantidades dela em lojas e na recotação também foram zeradas."
           );
         }
       }
