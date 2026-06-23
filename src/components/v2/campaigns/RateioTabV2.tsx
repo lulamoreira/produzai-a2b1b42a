@@ -1064,6 +1064,8 @@ export default function RateioTabV2({
       });
       setHistoryIndex(historyIndex + 1);
       queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
+      queryClient.invalidateQueries({ queryKey: ["campaign_negotiation_store_pieces", campaignId] });
+      queryClient.invalidateQueries({ queryKey: ["negotiation_store_pieces", effectiveNegSupplierId] });
       queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
       queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
       toast.success("Refeito");
