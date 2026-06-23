@@ -2417,6 +2417,25 @@ export default function RateioTabV2({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <RateioComparisonDialog
+        open={comparisonDialogOpen}
+        onOpenChange={setComparisonDialogOpen}
+        campaignId={campaignId}
+        campaignName={campaign?.name || "Campanha"}
+        clientName={client?.name || ""}
+        agencyName={agency?.name || ""}
+        pieces={pieces as any}
+        kits={kits as any}
+        kitPieces={activeKitPieces as any}
+        stores={stores as any}
+        currentQtyMap={visibleQtyMap}
+        currentSource={rateioSource}
+        currentLabel={activeTabData?.label || "Rateio atual"}
+        hasNegotiationRateio={hasNegotiationRateio}
+        hasCampaignNegRateio={hasCampaignNegRateio}
+        negotiationSupplierId={effectiveNegSupplierId}
+      />
     </div>
   );
 }
