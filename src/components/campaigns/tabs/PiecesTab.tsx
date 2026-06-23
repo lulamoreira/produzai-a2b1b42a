@@ -695,6 +695,9 @@ export default function PiecesTab({
                   <DropdownMenuItem onClick={() => setFindReplaceOpen(true)}>
                     <Search className="w-4 h-4 mr-2" /> Localizar e Substituir
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setKitOnlyDialogOpen(true)}>
+                    <Package className="w-4 h-4 mr-2" /> Peças de kits
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setBulkDeleteOpen(true)} className="text-destructive focus:text-destructive">
                     <Trash2 className="w-4 h-4 mr-2" /> {t("pieces.bulkDelete")}
