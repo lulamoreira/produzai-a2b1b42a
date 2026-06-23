@@ -69,7 +69,6 @@ export default function SendQtyRequoteDialog({
   const [origQtyByKit, setOrigQtyByKit] = useState<Record<string, number>>({});
 
   const [selected, setSelected] = useState<Record<RowKey, boolean>>({});
-  const [newQtyInputs, setNewQtyInputs] = useState<Record<RowKey, string>>({});
 
   const [expiresInDays, setExpiresInDays] = useState<number>(3);
   const [generating, setGenerating] = useState(false);
@@ -212,7 +211,6 @@ export default function SendQtyRequoteDialog({
     if (!open) {
       setSelectedSupplierId("");
       setSelected({});
-      setNewQtyInputs({});
       setGeneratedLink(null);
       setCopied(false);
       setExpiresInDays(3);
