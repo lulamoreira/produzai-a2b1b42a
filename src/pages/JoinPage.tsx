@@ -37,18 +37,14 @@ const JoinPage = () => {
     queryKey: ['invite', token],
     queryFn: async () => {
       if (!token) throw new Error("No token provided");
-      const { data, error } = await supabase
-        .from('invites')
-        .select('*, agencies(name)')
-        .eq('token', token)
-        .maybeSingle();
-      
+      const { data, error } = await (supabase.rpc as any)('get_invite_by_token', { p_token: token });
       if (error) throw error;
-      return data;
+      return data as any;
     },
     enabled: !!token,
     retry: false
   });
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,11 +121,8 @@ const JoinPage = () => {
         if (campaignError) console.error("Error applying campaign permissions:", campaignError);
       }
 
-      // 4. Mark invite used
-      const { error: updateError } = await supabase
-        .from('invites')
-        .update({ used_at: new Date().toISOString() })
-        .eq('token', token);
+      // 4. Mark invite used (via SECURITY DEFINER RPC; token-scoped)
+      const { error: updateError } = await (supabase.rpc as any)('mark_invite_used', { p_token: token });
       if (updateError) throw updateError;
 
       toast.success(t("invite.accountCreated"));
