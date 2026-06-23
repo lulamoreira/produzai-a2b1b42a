@@ -76,12 +76,11 @@ const SupplierInvitePortal = () => {
   useEffect(() => {
     const loadInvitation = async () => {
       if (!token) return;
-      
-      const { data: inv, error: invError } = await supabase
-        .from("supplier_invitations")
-        .select("*, agencies(*)")
-        .eq("token", token)
-        .maybeSingle();
+
+      const { data: inv, error: invError } = await (supabase.rpc as any)(
+        "get_supplier_invitation_by_token",
+        { p_token: token }
+      );
 
       if (invError || !inv) {
         setError("Link inválido");
@@ -89,14 +88,15 @@ const SupplierInvitePortal = () => {
         return;
       }
 
-      if (new Date(inv.expires_at) < new Date()) {
-        setError(`Este link expirou em ${format(new Date(inv.expires_at), "dd/MM/yyyy HH:mm")}`);
+      if (new Date((inv as any).expires_at) < new Date()) {
+        setError(`Este link expirou em ${format(new Date((inv as any).expires_at), "dd/MM/yyyy HH:mm")}`);
         setLoading(false);
         return;
       }
 
       setInvitation(inv);
-      setAgency(inv.agencies);
+      setAgency((inv as any).agencies);
+
 
       // Se o convite está vinculado a um fornecedor específico (link de
       // "confirmar/atualizar dados" enviado por e-mail), carrega os dados
