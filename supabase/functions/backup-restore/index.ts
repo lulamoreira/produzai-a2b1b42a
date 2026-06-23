@@ -60,7 +60,12 @@ Deno.serve(async (req) => {
       const runId = runRow?.id;
 
       try {
-        const { zipBytes, manifest } = await runBackup(admin, { includeStorage });
+        const { zipBytes, manifest } = await runBackup(admin, {
+          includeStorage,
+          // Manual backups must finish inside the Edge Function wall-clock budget (~150s).
+          // Cap files per bucket aggressively; the scheduled job uses the default (1000).
+          storageFileLimitPerBucket: 250,
+        });
 
         if (runId) {
           await admin.from("system_backup_runs").update({
