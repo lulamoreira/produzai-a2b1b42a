@@ -5515,6 +5515,10 @@ export type Database = {
         }
         Returns: Json
       }
+      create_followup_supplier_invitation: {
+        Args: { p_original_token: string; p_supplier_id: string }
+        Returns: Json
+      }
       create_negotiation_rateio_copy: {
         Args: { p_campaign_id: string }
         Returns: Json
@@ -5553,12 +5557,17 @@ export type Database = {
           token: string
         }[]
       }
+      get_invite_by_token: { Args: { p_token: string }; Returns: Json }
       get_public_occurrence_context: {
         Args: { _campaign_id: string }
         Returns: Json
       }
       get_public_occurrence_detail_context: {
         Args: { _occurrence_id: string }
+        Returns: Json
+      }
+      get_supplier_invitation_by_token: {
+        Args: { p_token: string }
         Returns: Json
       }
       get_supplier_portal_budget: { Args: { _token: string }; Returns: Json }
@@ -5624,6 +5633,7 @@ export type Database = {
         Args: { p_supplier_id: string }
         Returns: boolean
       }
+      mark_invite_used: { Args: { p_token: string }; Returns: Json }
       mark_requote_filling: { Args: { p_token: string }; Returns: boolean }
       mark_stale_backup_runs: { Args: never; Returns: number }
       move_to_dlq: {
@@ -5715,6 +5725,10 @@ export type Database = {
       to_title_case: { Args: { input: string }; Returns: string }
       unlock_budget_phase: {
         Args: { p_campaign_id: string; p_target_phase: string }
+        Returns: Json
+      }
+      update_supplier_invitation_status: {
+        Args: { p_status: string; p_supplier_id?: string; p_token: string }
         Returns: Json
       }
     }
