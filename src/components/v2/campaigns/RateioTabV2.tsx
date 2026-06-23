@@ -882,6 +882,16 @@ export default function RateioTabV2({
     const rafId = requestAnimationFrame(() => {
       inputRef.current?.focus();
       inputRef.current?.select();
+      // Center the focused row/cell within the scroll container so it's never
+      // hidden behind sticky headers or off-screen due to manual scrolling.
+      const cell = inputRef.current?.closest("td") as HTMLElement | null;
+      if (cell) {
+        try {
+          cell.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" });
+        } catch {
+          cell.scrollIntoView();
+        }
+      }
     });
     return () => cancelAnimationFrame(rafId);
   }, [editingCell]);
