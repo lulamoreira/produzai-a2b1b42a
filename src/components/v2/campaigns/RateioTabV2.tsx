@@ -343,6 +343,58 @@ export default function RateioTabV2({
         qty_changes[pieceId] = { old_qty: oldQ, new_qty: newQ };
       }
 
+      // Busca kits e componentes para calcular qtd derivada
+      const kitsRes = await (supabase as any)
+        .from("campaign_kits")
+        .select("id, name, code")
+        .eq("campaign_id", campaignId);
+      const kits: Array<{ id: string; name: string; code: number }> = kitsRes.data ?? [];
+      const kitIds = kits.map((k) => k.id);
+      const kitPiecesRes = kitIds.length
+        ? await (supabase as any)
+            .from("campaign_kit_pieces")
+            .select("kit_id, piece_id, quantity")
+            .in("kit_id", kitIds)
+        : { data: [] };
+      const kitPieces: Array<{ kit_id: string; piece_id: string; quantity: number }> =
+        kitPiecesRes.data ?? [];
+
+      const componentsByKit = new Map<string, Array<{ piece_id: string; quantity: number }>>();
+      for (const kp of kitPieces) {
+        if (!componentsByKit.has(kp.kit_id)) componentsByKit.set(kp.kit_id, []);
+        componentsByKit.get(kp.kit_id)!.push({ piece_id: kp.piece_id, quantity: kp.quantity });
+      }
+
+      const origByStore = new Map<string, number>();
+      const negByStore = new Map<string, number>();
+      for (const r of origRows as any[]) origByStore.set(`${r.store_id}:${r.piece_id}`, Number(r.quantity) || 0);
+      for (const r of negRows as any[]) negByStore.set(`${r.store_id}:${r.piece_id}`, Number(r.quantity) || 0);
+      const allStoreIds = [...new Set<string>([
+        ...(origRows as any[]).map((r) => r.store_id as string),
+        ...(negRows as any[]).map((r) => r.store_id as string),
+      ])];
+
+      for (const kit of kits) {
+        const components = componentsByKit.get(kit.id) ?? [];
+        if (components.length === 0) continue;
+        let oldKitTotal = 0;
+        let newKitTotal = 0;
+        for (const storeId of allStoreIds) {
+          let oldMin = Infinity;
+          let newMin = Infinity;
+          for (const comp of components) {
+            const key = `${storeId}:${comp.piece_id}`;
+            const mult = comp.quantity || 1;
+            oldMin = Math.min(oldMin, Math.floor((origByStore.get(key) ?? 0) / mult));
+            newMin = Math.min(newMin, Math.floor((negByStore.get(key) ?? 0) / mult));
+          }
+          oldKitTotal += oldMin === Infinity ? 0 : oldMin;
+          newKitTotal += newMin === Infinity ? 0 : newMin;
+        }
+        qty_changes[`kit:${kit.id}`] = { old_qty: oldKitTotal, new_qty: newKitTotal };
+      }
+
+
       const { data: rpcResult, error } = await supabase.rpc(
         "create_budget_qty_requote" as any,
         {
