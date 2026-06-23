@@ -285,7 +285,7 @@ export default function RateioTabV2({
     setRequoteNotes("");
     const { data } = await supabase
       .from("budget_suppliers")
-      .select("id, company_name")
+      .select("id, company_name, contact_name, email")
       .eq("campaign_id", campaignId)
       .eq("status", "enviado");
     setRequoteSuppliers(data || []);
