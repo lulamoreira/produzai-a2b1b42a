@@ -5494,6 +5494,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      cleanup_kit_only_piece_allocations: {
+        Args: {
+          p_campaign_id: string
+          p_excluding_kit_id?: string
+          p_piece_id: string
+        }
+        Returns: number
+      }
       count_active_suppliers: {
         Args: { p_campaign_id: string }
         Returns: number
