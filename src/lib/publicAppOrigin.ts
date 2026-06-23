@@ -10,20 +10,27 @@
  * publicado oficial.
  */
 const PRODUCTION_ORIGIN = "https://produzai.lovable.app";
+const PRODUCTION_HOST = "produzai.lovable.app";
 
-const PREVIEW_HOST_PATTERNS = [
-  /^id-preview--/i,
-  /\.sandbox\.lovable\.dev$/i,
-  /\.lovableproject\.com$/i,
-  /^localhost$/i,
-  /^127\.0\.0\.1$/,
+// Domínios Lovable de preview/sandbox que NÃO devem ser usados em links
+// compartilhados externamente. Qualquer host nesses domínios (exceto o de
+// produção) é trocado pelo PRODUCTION_ORIGIN.
+const LOVABLE_INTERNAL_DOMAINS = [
+  ".lovable.app",
+  ".lovable.dev",
+  ".lovableproject.com",
+  ".sandbox.lovable.dev",
 ];
+
+const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "0.0.0.0"]);
 
 export function getPublicAppOrigin(): string {
   if (typeof window === "undefined") return PRODUCTION_ORIGIN;
   try {
     const { hostname, origin } = window.location;
-    if (PREVIEW_HOST_PATTERNS.some((re) => re.test(hostname))) {
+    if (hostname === PRODUCTION_HOST) return origin;
+    if (LOCAL_HOSTS.has(hostname)) return PRODUCTION_ORIGIN;
+    if (LOVABLE_INTERNAL_DOMAINS.some((d) => hostname.endsWith(d))) {
       return PRODUCTION_ORIGIN;
     }
     return origin;
