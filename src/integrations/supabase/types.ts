@@ -408,6 +408,7 @@ export type Database = {
           campaign_id: string
           created_at: string | null
           id: string
+          original_quantity: number | null
           piece_id: string
           quantity: number
           store_id: string
@@ -418,6 +419,7 @@ export type Database = {
           campaign_id: string
           created_at?: string | null
           id?: string
+          original_quantity?: number | null
           piece_id: string
           quantity?: number
           store_id: string
@@ -428,6 +430,7 @@ export type Database = {
           campaign_id?: string
           created_at?: string | null
           id?: string
+          original_quantity?: number | null
           piece_id?: string
           quantity?: number
           store_id?: string
