@@ -147,13 +147,19 @@ export default function SendQtyRequoteDialog({
         }
         const hasNeg = (negRows as any[]).length > 0;
         setOrigQtyByPiece(origByPiece);
-        setLiveQtyByPiece(hasNeg ? negByPiece : origByPiece);
+        // Merge: negociação sobrescreve original apenas onde existe linha.
+        const livePieceMerged: Record<string, number> = { ...origByPiece };
+        for (const pid of Object.keys(negByPiece)) livePieceMerged[pid] = negByPiece[pid];
+        setLiveQtyByPiece(livePieceMerged);
 
         // Per-(store, piece) for kit derivation
         const origByStore = new Map<string, number>();
         const negByStore = new Map<string, number>();
         for (const r of origRows as any[]) origByStore.set(`${r.store_id}:${r.piece_id}`, Number(r.quantity) || 0);
         for (const r of negRows as any[]) negByStore.set(`${r.store_id}:${r.piece_id}`, Number(r.quantity) || 0);
+        // Merge por (loja×peça): começa com original e sobrescreve com negociação.
+        const liveByStore = new Map(origByStore);
+        for (const [k, v] of negByStore) liveByStore.set(k, v);
         const allStoreIds = [...new Set<string>([
           ...(origRows as any[]).map((r) => r.store_id as string),
           ...(negRows as any[]).map((r) => r.store_id as string),
@@ -179,8 +185,7 @@ export default function SendQtyRequoteDialog({
               const key = `${storeId}:${comp.piece_id}`;
               const mult = comp.quantity || 1;
               oldMin = Math.min(oldMin, Math.floor((origByStore.get(key) ?? 0) / mult));
-              const liveSrc = hasNeg ? negByStore : origByStore;
-              liveMin = Math.min(liveMin, Math.floor((liveSrc.get(key) ?? 0) / mult));
+              liveMin = Math.min(liveMin, Math.floor((liveByStore.get(key) ?? 0) / mult));
             }
             oldTotal += oldMin === Infinity ? 0 : oldMin;
             liveTotal += liveMin === Infinity ? 0 : liveMin;
@@ -190,6 +195,8 @@ export default function SendQtyRequoteDialog({
         }
         setOrigQtyByKit(origKit);
         setLiveQtyByKit(liveKit);
+        void hasNeg;
+
       } finally {
         if (!cancelled) setLoadingData(false);
       }
