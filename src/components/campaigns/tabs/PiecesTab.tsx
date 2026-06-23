@@ -35,6 +35,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import AddPieceDialog from "@/components/AddPieceDialog";
 import FindReplaceSpecDialog from "@/components/FindReplaceSpecDialog";
+import KitOnlyPiecesDialog from "@/components/KitOnlyPiecesDialog";
 
 interface PiecesTabProps {
   campaignId: string;
