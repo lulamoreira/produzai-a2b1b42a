@@ -3,6 +3,7 @@ import { Loader2, Copy, Send, MessageCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { buildPublicAppUrl } from "@/lib/publicAppOrigin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -272,7 +273,7 @@ export default function SendQtyRequoteDialog({
         .single();
       if (error) throw error;
       const token = (data as any).access_token;
-      const link = `${window.location.origin}/recotacao-qtd/${token}`;
+      const link = buildPublicAppUrl(`/recotacao-qtd/${token}`);
       setGeneratedLink(link);
       toast.success("Link gerado!");
     } catch (e: any) {
