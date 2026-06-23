@@ -341,19 +341,18 @@ export default function RateioTabV2({
         const newQ = negByPiece.get(pieceId) ?? 0;
         if (oldQ !== newQ) qty_changes[pieceId] = { old_qty: oldQ, new_qty: newQ };
       }
-      const { data: inserted, error } = await supabase
-        .from("budget_qty_requotes" as any)
-        .insert({
-          campaign_id: campaignId,
-          supplier_id: requoteSelectedSupplier,
-          qty_changes,
-          notes: requoteNotes || null,
-          status: "pending",
-        } as any)
-        .select("access_token")
-        .single();
+      const { data: rpcResult, error } = await supabase.rpc(
+        "create_budget_qty_requote" as any,
+        {
+          p_campaign_id: campaignId,
+          p_supplier_id: requoteSelectedSupplier,
+          p_qty_changes: qty_changes,
+          p_notes: requoteNotes || null,
+        } as any
+      );
       if (error) throw error;
-      const link = `${window.location.origin}/recotacao-qtd/${(inserted as any).access_token}`;
+      if ((rpcResult as any)?.error) throw new Error((rpcResult as any).error);
+      const link = `${window.location.origin}/recotacao-qtd/${(rpcResult as any).access_token}`;
       setGeneratedRequoteLink(link);
       await refreshPendingRequote();
       toast.success("Link de recotação gerado");
