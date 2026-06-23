@@ -417,6 +417,11 @@ export default function BudgetQtyRequotePortal() {
                           className="text-right h-9"
                           value={prices[p.id] ?? ""}
                           onChange={(e) => setPrices((s) => ({ ...s, [p.id]: e.target.value }))}
+                          onBlur={(e) => {
+                            const v = e.target.value.trim();
+                            setPrices((s) => ({ ...s, [p.id]: v === "" ? "" : fmtInput(parseNum(v)) }));
+                          }}
+
                         />
                       </TableCell>
                       <TableCell className="text-right tabular-nums text-muted-foreground">
