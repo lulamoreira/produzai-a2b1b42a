@@ -404,9 +404,9 @@ export default function SendQtyRequoteDialog({
                             type="number"
                             min={0}
                             className="h-8 text-center"
-                            value={newQtyInputs[row.key] ?? ""}
+                            value={newQtyInputs[row.key] ?? String(live)}
                             onChange={(e) => updateNewQty(row.key, e.target.value)}
-                            placeholder={String(curr)}
+                            placeholder={String(live)}
                           />
                         </TableCell>
                       </TableRow>
