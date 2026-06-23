@@ -93,16 +93,17 @@ export default function BudgetQtyRequotePortal() {
       const sub = (d.submitted_prices || {}) as Record<string, number>;
       const pre: Record<string, string> = {};
       for (const p of d.pieces) {
-        if (sub[p.id] != null) pre[p.id] = String(sub[p.id]);
-        else if (d.baseline_prices[p.id] != null) pre[p.id] = String(d.baseline_prices[p.id]);
+        if (sub[p.id] != null) pre[p.id] = fmtInput(sub[p.id]);
+        else if (d.baseline_prices[p.id] != null) pre[p.id] = fmtInput(d.baseline_prices[p.id]);
         else pre[p.id] = "";
       }
       for (const k of d.kits ?? []) {
         const key = kitKey(k.id);
-        if (sub[key] != null) pre[key] = String(sub[key]);
-        else if (d.baseline_prices[key] != null) pre[key] = String(d.baseline_prices[key]);
+        if (sub[key] != null) pre[key] = fmtInput(sub[key]);
+        else if (d.baseline_prices[key] != null) pre[key] = fmtInput(d.baseline_prices[key]);
         else pre[key] = "";
       }
+
       setPrices(pre);
       setInstallation(fmtInput((sub as any).installation ?? d.baseline_extras.installation ?? 0));
       setFreight(fmtInput((sub as any).freight ?? d.baseline_extras.freight ?? 0));
