@@ -893,16 +893,46 @@ export default function RateioTabV2({
     const rafId = requestAnimationFrame(() => {
       inputRef.current?.focus();
       inputRef.current?.select();
-      // Center the focused row/cell within the scroll container so it's never
-      // hidden behind sticky headers or off-screen due to manual scrolling.
+      // Center the focused cell within the scroll container, accounting for
+      // sticky thead (top) / tfoot (bottom) and sticky first column (left) so
+      // the row/cell is never hidden behind them.
       const cell = inputRef.current?.closest("td") as HTMLElement | null;
-      if (cell) {
-        try {
-          cell.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" });
-        } catch {
-          cell.scrollIntoView();
-        }
+      if (!cell) return;
+      const table = cell.closest("table") as HTMLElement | null;
+      // Find nearest scrollable ancestor
+      let scroller: HTMLElement | null = cell.parentElement;
+      while (scroller && scroller !== document.body) {
+        const s = getComputedStyle(scroller);
+        const oy = s.overflowY, ox = s.overflowX;
+        if (/(auto|scroll|overlay)/.test(oy) || /(auto|scroll|overlay)/.test(ox)) break;
+        scroller = scroller.parentElement;
       }
+      if (!scroller) {
+        try { cell.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" }); } catch { cell.scrollIntoView(); }
+        return;
+      }
+      const thead = table?.querySelector("thead") as HTMLElement | null;
+      const tfoot = table?.querySelector("tfoot") as HTMLElement | null;
+      const firstCol = table?.querySelector("thead th:first-child") as HTMLElement | null;
+      const headerH = thead?.offsetHeight ?? 0;
+      const footerH = tfoot?.offsetHeight ?? 0;
+      const leftW = firstCol?.offsetWidth ?? 0;
+
+      const sRect = scroller.getBoundingClientRect();
+      const cRect = cell.getBoundingClientRect();
+      const visibleH = scroller.clientHeight - headerH - footerH;
+      const visibleW = scroller.clientWidth - leftW;
+
+      const cellTopInScroller = (cRect.top - sRect.top) + scroller.scrollTop;
+      const cellLeftInScroller = (cRect.left - sRect.left) + scroller.scrollLeft;
+      const targetTop = cellTopInScroller - headerH - Math.max(0, (visibleH - cell.offsetHeight) / 2);
+      const targetLeft = cellLeftInScroller - leftW - Math.max(0, (visibleW - cell.offsetWidth) / 2);
+
+      scroller.scrollTo({
+        top: Math.max(0, targetTop),
+        left: Math.max(0, targetLeft),
+        behavior: "smooth",
+      });
     });
     return () => cancelAnimationFrame(rafId);
   }, [editingCell]);
