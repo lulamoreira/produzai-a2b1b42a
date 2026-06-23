@@ -5,7 +5,7 @@ import {
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
   Search, Filter, Download, Sparkles, Copy, MoreHorizontal, Lock, CheckCircle2,
   Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw, X,
-  ArrowUpDown, Check, Loader2, Upload, FileDown
+  ArrowUpDown, Check, Loader2, Upload, FileDown, Maximize2, Minimize2
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -441,6 +441,17 @@ export default function RateioTabV2({
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
+
+  // Fullscreen mode for easier editing
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsFullscreen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isFullscreen]);
 
   // Undo/Redo history
   const [history, setHistory] = useState<{ storeId: string; pieceId: string; oldVal: number; newVal: number }[][]>([]);
@@ -882,6 +893,16 @@ export default function RateioTabV2({
     const rafId = requestAnimationFrame(() => {
       inputRef.current?.focus();
       inputRef.current?.select();
+      // Center the focused row/cell within the scroll container so it's never
+      // hidden behind sticky headers or off-screen due to manual scrolling.
+      const cell = inputRef.current?.closest("td") as HTMLElement | null;
+      if (cell) {
+        try {
+          cell.scrollIntoView({ block: "center", inline: "center", behavior: "smooth" });
+        } catch {
+          cell.scrollIntoView();
+        }
+      }
     });
     return () => cancelAnimationFrame(rafId);
   }, [editingCell]);
@@ -1317,9 +1338,25 @@ export default function RateioTabV2({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-hidden">
+    <div
+      className={cn(
+        "flex flex-col h-full bg-white overflow-hidden",
+        isFullscreen && "fixed inset-0 z-[100] h-screen w-screen"
+      )}
+    >
       {/* Top Navigation for Spreadsheet/Dashboard */}
       <div className="flex items-center justify-between px-6 py-1 border-b border-stone-200">
+        {isFullscreen && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsFullscreen(false)}
+            title="Fechar tela cheia (Esc)"
+            className="absolute right-3 top-2 h-9 w-9 rounded-full bg-white shadow-md border border-stone-200 hover:bg-stone-100 z-[110]"
+          >
+            <X className="w-5 h-5 text-stone-700" />
+          </Button>
+        )}
         <Tabs value={rateioView} onValueChange={setRateioView} className="w-auto">
           <TabsList className="bg-stone-100 h-9 p-1">
             <TabsTrigger value="planilha" className="text-xs gap-2 px-3 h-7 data-[state=active]:bg-white data-[state=active]:shadow-sm">
@@ -1388,6 +1425,16 @@ export default function RateioTabV2({
               {t("modules.adjustments", "Ajustes")}
             </Button>
           )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsFullscreen((v) => !v)}
+            className="text-xs gap-2 h-8"
+            title={isFullscreen ? "Sair da tela cheia (Esc)" : "Editar em tela cheia"}
+          >
+            {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+            {isFullscreen ? "Sair tela cheia" : "Tela cheia"}
+          </Button>
         </div>
       </div>
 
