@@ -377,7 +377,8 @@ export default function SendQtyRequoteDialog({
                   )}
                   {!loadingData && rows.map((row) => {
                     const checked = !!selected[row.key];
-                    const curr = liveQtyFor(row.key);
+                    const orig = origQtyFor(row.key);
+                    const live = liveQtyFor(row.key);
                     return (
                       <TableRow key={row.key}>
                         <TableCell>
@@ -396,7 +397,7 @@ export default function SendQtyRequoteDialog({
                           </div>
                         </TableCell>
                         <TableCell className="text-center text-muted-foreground tabular-nums">
-                          {curr}
+                          {orig}
                         </TableCell>
                         <TableCell>
                           <Input
