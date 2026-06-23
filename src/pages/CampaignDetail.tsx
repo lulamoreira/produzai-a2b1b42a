@@ -201,7 +201,7 @@ const CampaignDetail = () => {
   });
   const hasNegotiationRateio = (negRateioCount as number) > 0;
 
-  const { data: campaignNegCount } = useQuery({
+  const { data: campaignNegCount, isLoading: loadingCampaignNegCount } = useQuery({
     queryKey: ["has_campaign_neg_rateio", campaignId],
     enabled: !!campaignId,
     queryFn: async () => {
@@ -221,7 +221,7 @@ const CampaignDetail = () => {
     : (hasCampaignNegRateio || hasNegotiationRateio) ? "negotiation"
     : "original";
 
-  const rateioVersionsReady = !loadingActiveAdjustment && !loadingBudgetSuppliers && (!negotiationSupplierId || !loadingNegRateioCount);
+  const rateioVersionsReady = !loadingActiveAdjustment && !loadingBudgetSuppliers && (!negotiationSupplierId || !loadingNegRateioCount) && !loadingCampaignNegCount;
   const availableRateioSources = useMemo<RateioSource[]>(() => {
     const sources: RateioSource[] = ["original"];
     if (hasCampaignNegRateio || (hasNegotiationRateio && negotiationSupplierId)) sources.push("negotiation");
