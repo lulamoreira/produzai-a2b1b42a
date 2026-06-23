@@ -230,6 +230,7 @@ export default function RateioTabV2({
   const queryClient = useQueryClient();
   const { currentPhase } = useBudgetPhase(campaignId);
   const [isCreatingNegCopy, setIsCreatingNegCopy] = useState(false);
+  const [comparisonDialogOpen, setComparisonDialogOpen] = useState(false);
   const effectiveNegSupplierId = negotiationSupplierId ?? winnerSupplierId ?? null;
 
   const showStartNegotiationCallout =
