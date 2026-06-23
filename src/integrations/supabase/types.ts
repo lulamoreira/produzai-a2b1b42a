@@ -5617,6 +5617,7 @@ export type Database = {
         Returns: boolean
       }
       mark_requote_filling: { Args: { p_token: string }; Returns: boolean }
+      mark_stale_backup_runs: { Args: never; Returns: number }
       move_to_dlq: {
         Args: {
           dlq_name: string
