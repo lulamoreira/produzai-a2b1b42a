@@ -101,28 +101,32 @@ export async function applyRateioBulk(
       }
     }
   } else if (isNegotiationView && isCampaignNegView) {
-    // Campaign-level negotiation: supplier_id IS NULL, usa delete+insert
     for (const u of upserts) {
-      await supabase
-        .from("budget_negotiation_store_pieces" as never)
-        .delete()
+      const { count } = await (supabase as any)
+        .from("budget_negotiation_store_pieces")
+        .update({ quantity: u.quantity })
         .eq("campaign_id", u.campaignId)
         .eq("store_id", u.storeId)
         .eq("piece_id", u.pieceId)
-        .is("supplier_id", null);
-      await supabase
-        .from("budget_negotiation_store_pieces" as never)
-        .insert({
-          campaign_id: u.campaignId,
-          store_id: u.storeId,
-          piece_id: u.pieceId,
-          quantity: u.quantity,
-          supplier_id: null,
-        } as never);
+        .is("supplier_id", null)
+        .select("id", { count: "exact", head: true });
+
+      if ((count ?? 0) === 0) {
+        await (supabase as any)
+          .from("budget_negotiation_store_pieces")
+          .insert({
+            campaign_id: u.campaignId,
+            store_id: u.storeId,
+            piece_id: u.pieceId,
+            quantity: u.quantity,
+            original_quantity: u.quantity,
+            supplier_id: null,
+          });
+      }
     }
     for (const d of deletes) {
-      await supabase
-        .from("budget_negotiation_store_pieces" as never)
+      await (supabase as any)
+        .from("budget_negotiation_store_pieces")
         .delete()
         .eq("campaign_id", d.campaignId)
         .eq("store_id", d.storeId)
