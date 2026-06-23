@@ -306,33 +306,20 @@ export default function RateioTabV2({
       setIsGeneratingLink(true);
       const { supabasePaginate } = await import("@/lib/supabasePaginate");
       const negRows = await supabasePaginate<any>((from, to) =>
-        supabase
-          .from("budget_negotiation_store_pieces" as never)
-          .select("store_id, piece_id, quantity", { count: "exact" })
+        (supabase as any)
+          .from("budget_negotiation_store_pieces")
+          .select("store_id, piece_id, quantity, original_quantity", { count: "exact" })
           .eq("campaign_id", campaignId)
           .is("supplier_id", null)
-          .range(from, to) as any
+          .order("id")
+          .range(from, to)
       );
-      const origRows = await supabasePaginate<any>((from, to) =>
-        supabase
-          .from("campaign_store_pieces")
-          .select("store_id, piece_id, quantity", { count: "exact" })
-          .eq("campaign_id", campaignId)
-          .range(from, to) as any
-      );
-      const origMap = new Map<string, number>();
-      for (const r of origRows) origMap.set(`${r.store_id}:${r.piece_id}`, Number(r.quantity) || 0);
-      const negMap = new Map<string, number>();
-      for (const r of negRows) negMap.set(`${r.store_id}:${r.piece_id}`, Number(r.quantity) || 0);
       const origByPiece = new Map<string, number>();
       const negByPiece = new Map<string, number>();
-      for (const [k, qty] of origMap) {
-        const pieceId = k.split(":")[1];
-        origByPiece.set(pieceId, (origByPiece.get(pieceId) ?? 0) + qty);
-      }
-      for (const [k, qty] of negMap) {
-        const pieceId = k.split(":")[1];
-        negByPiece.set(pieceId, (negByPiece.get(pieceId) ?? 0) + qty);
+      for (const r of negRows) {
+        const pid = r.piece_id as string;
+        origByPiece.set(pid, (origByPiece.get(pid) ?? 0) + (Number(r.original_quantity) || 0));
+        negByPiece.set(pid,  (negByPiece.get(pid)  ?? 0) + (Number(r.quantity)          || 0));
       }
       const allPieceIds = new Set<string>([...origByPiece.keys(), ...negByPiece.keys()]);
       const qty_changes: Record<string, { old_qty: number; new_qty: number }> = {};
