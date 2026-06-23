@@ -5502,19 +5502,33 @@ export type Database = {
         }
         Returns: number
       }
+      compute_budget_qty_requote_changes: {
+        Args: { p_campaign_id: string; p_existing: Json }
+        Returns: Json
+      }
       count_active_suppliers: {
         Args: { p_campaign_id: string }
         Returns: number
       }
-      create_budget_qty_requote: {
-        Args: {
-          p_campaign_id: string
-          p_notes?: string
-          p_qty_changes: Json
-          p_supplier_id: string
-        }
-        Returns: Json
-      }
+      create_budget_qty_requote:
+        | {
+            Args: {
+              p_campaign_id: string
+              p_notes?: string
+              p_qty_changes: Json
+              p_supplier_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_campaign_id: string
+              p_expires_at: string
+              p_selected_keys: string[]
+              p_supplier_id: string
+            }
+            Returns: Json
+          }
       create_followup_supplier_invitation: {
         Args: { p_original_token: string; p_supplier_id: string }
         Returns: Json
