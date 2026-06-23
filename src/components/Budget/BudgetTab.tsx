@@ -309,6 +309,7 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   const [showLockConfirm, setShowLockConfirm] = useState(false);
   const [exportingBudget, setExportingBudget] = useState(false);
   const [downloadingSupplierId, setDownloadingSupplierId] = useState<string | null>(null);
+  const [downloadingRequoteId, setDownloadingRequoteId] = useState<string | null>(null);
   const [clientSendDialogOpen, setClientSendDialogOpen] = useState(false);
   const [historySupplierId, setHistorySupplierId] = useState<string | null>(null);
   const [reopeningSupplierId, setReopeningSupplierId] = useState<string | null>(null);
