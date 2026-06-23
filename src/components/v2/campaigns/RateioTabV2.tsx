@@ -1338,9 +1338,25 @@ export default function RateioTabV2({
   };
 
   return (
-    <div className="flex flex-col h-full bg-white overflow-hidden">
+    <div
+      className={cn(
+        "flex flex-col h-full bg-white overflow-hidden",
+        isFullscreen && "fixed inset-0 z-[100] h-screen w-screen"
+      )}
+    >
       {/* Top Navigation for Spreadsheet/Dashboard */}
       <div className="flex items-center justify-between px-6 py-1 border-b border-stone-200">
+        {isFullscreen && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsFullscreen(false)}
+            title="Fechar tela cheia (Esc)"
+            className="absolute right-3 top-2 h-9 w-9 rounded-full bg-white shadow-md border border-stone-200 hover:bg-stone-100 z-[110]"
+          >
+            <X className="w-5 h-5 text-stone-700" />
+          </Button>
+        )}
         <Tabs value={rateioView} onValueChange={setRateioView} className="w-auto">
           <TabsList className="bg-stone-100 h-9 p-1">
             <TabsTrigger value="planilha" className="text-xs gap-2 px-3 h-7 data-[state=active]:bg-white data-[state=active]:shadow-sm">
