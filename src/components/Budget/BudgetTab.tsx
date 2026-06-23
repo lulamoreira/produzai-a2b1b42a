@@ -232,6 +232,7 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   const [reviewingQtyRequote, setReviewingQtyRequote] = useState<any | null>(null);
   const [qtyRejectNotes, setQtyRejectNotes] = useState("");
   const [qtyReviewProcessing, setQtyReviewProcessing] = useState(false);
+  const [qtyExcludedKeys, setQtyExcludedKeys] = useState<Set<string>>(new Set());
   const { data: qtyRequotes = [] } = useQuery({
     queryKey: ["budget_qty_requotes", campaignId],
     queryFn: async () => {
@@ -3354,7 +3355,7 @@ ${msgLabels.winnerWaFooter}
       {/* Review qty requote */}
       <Dialog
         open={!!reviewingQtyRequote}
-        onOpenChange={(o) => { if (!o) { setReviewingQtyRequote(null); setQtyRejectNotes(""); } }}
+        onOpenChange={(o) => { if (!o) { setReviewingQtyRequote(null); setQtyRejectNotes(""); setQtyExcludedKeys(new Set()); } }}
       >
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -3388,18 +3389,44 @@ ${msgLabels.winnerWaFooter}
               const prev = previousPrices[itemKey] ?? 0;
               const next = Number(submitted[itemKey] ?? 0);
               const pct = prev > 0 ? ((next - prev) / prev) * 100 : 0;
+              const oldQty = qtyChanges[itemKey]?.old_qty ?? 0;
+              const newQty = qtyChanges[itemKey]?.new_qty ?? 0;
               return {
                 itemKey,
                 kind: isKit ? "KIT" : "Peça",
                 name: item?.name ?? (isKit ? "(kit)" : "(peça)"),
                 code: item?.code ?? 0,
-                oldQty: qtyChanges[itemKey]?.old_qty ?? 0,
-                newQty: qtyChanges[itemKey]?.new_qty ?? 0,
+                oldQty,
+                newQty,
                 prev,
                 next,
                 pct,
+                prevTotal: prev * oldQty,
+                newTotal: next * newQty,
               };
             }).sort((a, b) => a.code - b.code);
+
+            const ec = extraCosts.find((e) => e.supplier_id === reviewingQtyRequote.supplier_id) as any;
+            const prevInstallation = Number(ec?.adjusted_installation_value ?? ec?.installation_value ?? 0);
+            const prevFreight = Number(ec?.adjusted_freight_value ?? ec?.freight_value ?? 0);
+            const newInstallation = submitted.installation != null ? Number(submitted.installation) : prevInstallation;
+            const newFreight = submitted.freight != null ? Number(submitted.freight) : prevFreight;
+
+            const includedRows = pieceRows.filter((r) => !qtyExcludedKeys.has(r.itemKey));
+            const prevItemsTotal = includedRows.reduce((s, r) => s + r.prevTotal, 0);
+            const newItemsTotal = includedRows.reduce((s, r) => s + r.newTotal, 0);
+            const prevGrand = prevItemsTotal + prevInstallation + prevFreight;
+            const newGrand = newItemsTotal + newInstallation + newFreight;
+            const grandPct = prevGrand > 0 ? ((newGrand - prevGrand) / prevGrand) * 100 : 0;
+
+            const toggleExclude = (key: string) => {
+              setQtyExcludedKeys((s) => {
+                const n = new Set(s);
+                if (n.has(key)) n.delete(key); else n.add(key);
+                return n;
+              });
+            };
+
             return (
               <div className="space-y-3 max-h-[60vh] overflow-auto">
                 <Table>
@@ -3411,42 +3438,94 @@ ${msgLabels.winnerWaFooter}
                       <TableHead className="text-right">Preço anterior</TableHead>
                       <TableHead className="text-right">Novo preço</TableHead>
                       <TableHead className="text-right w-24">Variação</TableHead>
+                      <TableHead className="w-10"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pieceRows.map((r) => (
-                      <TableRow key={r.itemKey}>
-                        <TableCell className="text-sm">
-                          <div className="flex items-center gap-2">
-                            {r.kind === "KIT" && <Badge variant="secondary" className="text-[10px]">KIT</Badge>}
-                            <span>#{r.code} {r.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center tabular-nums text-muted-foreground">
-                          {r.oldQty}
-                        </TableCell>
-                        <TableCell className="text-center tabular-nums font-semibold">
-                          {r.newQty}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums text-muted-foreground">
-                          {r.prev.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums font-semibold">
-                          {r.next.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                        </TableCell>
-                        <TableCell className={cn("text-right tabular-nums text-xs", r.pct > 0 ? "text-destructive" : r.pct < 0 ? "text-emerald-600" : "text-muted-foreground")}>
-                          {r.pct > 0 ? "+" : ""}{r.pct.toFixed(1)}%
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {pieceRows.map((r) => {
+                      const excluded = qtyExcludedKeys.has(r.itemKey);
+                      return (
+                        <TableRow key={r.itemKey} className={cn(excluded && "opacity-40 line-through")}>
+                          <TableCell className="text-sm">
+                            <div className="flex items-center gap-2">
+                              {r.kind === "KIT" && <Badge variant="secondary" className="text-[10px]">KIT</Badge>}
+                              <span>#{r.code} {r.name}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-center tabular-nums text-muted-foreground">{r.oldQty}</TableCell>
+                          <TableCell className="text-center tabular-nums font-semibold">{r.newQty}</TableCell>
+                          <TableCell className="text-right tabular-nums text-muted-foreground">
+                            {r.prev.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums font-semibold">
+                            {r.next.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                          </TableCell>
+                          <TableCell className={cn("text-right tabular-nums text-xs", r.pct > 0 ? "text-destructive" : r.pct < 0 ? "text-emerald-600" : "text-muted-foreground")}>
+                            {r.pct > 0 ? "+" : ""}{r.pct.toFixed(1)}%
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 no-underline"
+                              onClick={() => toggleExclude(r.itemKey)}
+                              title={excluded ? "Restaurar item" : "Remover item da recotação"}
+                            >
+                              {excluded
+                                ? <RotateCcw className="w-3.5 h-3.5" />
+                                : <Trash2 className="w-3.5 h-3.5 text-destructive" />}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
-                {(submitted.installation != null || submitted.freight != null) && (
-                  <div className="text-xs text-muted-foreground border rounded p-2 bg-muted/30">
-                    Instalação: {Number(submitted.installation ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} ·
-                    Frete: {Number(submitted.freight ?? 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+
+                <div className="rounded-md border bg-muted/30 p-3 text-xs space-y-1.5">
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Instalação (anterior → nova)</span>
+                    <span className="tabular-nums">
+                      {prevInstallation.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      {" → "}
+                      <span className="font-semibold">{newInstallation.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                    </span>
                   </div>
-                )}
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Frete (anterior → novo)</span>
+                    <span className="tabular-nums">
+                      {prevFreight.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      {" → "}
+                      <span className="font-semibold">{newFreight.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                    </span>
+                  </div>
+                  <div className="flex justify-between gap-4 pt-1 border-t">
+                    <span className="text-muted-foreground">Subtotal peças (anterior)</span>
+                    <span className="tabular-nums">{prevItemsTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                  </div>
+                  <div className="flex justify-between gap-4">
+                    <span className="text-muted-foreground">Subtotal peças (novo)</span>
+                    <span className="tabular-nums font-semibold">{newItemsTotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                  </div>
+                  <div className="flex justify-between gap-4 pt-1 border-t text-sm">
+                    <span className="font-semibold">Total geral</span>
+                    <span className="tabular-nums">
+                      <span className="text-muted-foreground">{prevGrand.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                      {" → "}
+                      <span className="font-bold">{newGrand.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                      <span className={cn("ml-2 text-xs", grandPct > 0 ? "text-destructive" : grandPct < 0 ? "text-emerald-600" : "text-muted-foreground")}>
+                        ({grandPct > 0 ? "+" : ""}{grandPct.toFixed(1)}%)
+                      </span>
+                    </span>
+                  </div>
+                  {qtyExcludedKeys.size > 0 && (
+                    <p className="text-[11px] text-destructive pt-1">
+                      {qtyExcludedKeys.size} item(s) removido(s) — não serão aprovados.
+                    </p>
+                  )}
+                </div>
+
                 {reviewingQtyRequote.notes && (
                   <div className="text-xs border rounded p-2 bg-muted/30 whitespace-pre-wrap">
                     <span className="font-semibold">Observações: </span>{reviewingQtyRequote.notes}
@@ -3481,6 +3560,7 @@ ${msgLabels.winnerWaFooter}
                   toast.success("Recotação recusada");
                   setReviewingQtyRequote(null);
                   setQtyRejectNotes("");
+                  setQtyExcludedKeys(new Set());
                   queryClient.invalidateQueries({ queryKey: ["budget_qty_requotes", campaignId] });
                 } catch (e: any) {
                   toast.error(e?.message || "Erro");
@@ -3497,6 +3577,16 @@ ${msgLabels.winnerWaFooter}
                 if (!reviewingQtyRequote) return;
                 setQtyReviewProcessing(true);
                 try {
+                  if (qtyExcludedKeys.size > 0) {
+                    const submitted = { ...(reviewingQtyRequote.submitted_prices ?? {}) } as Record<string, any>;
+                    const qtyChanges = { ...(reviewingQtyRequote.qty_changes ?? {}) } as Record<string, any>;
+                    qtyExcludedKeys.forEach((k) => { delete submitted[k]; delete qtyChanges[k]; });
+                    const { error: upErr } = await supabase
+                      .from("budget_qty_requotes")
+                      .update({ submitted_prices: submitted, qty_changes: qtyChanges })
+                      .eq("id", reviewingQtyRequote.id);
+                    if (upErr) throw upErr;
+                  }
                   const { error } = await supabase.rpc(
                     "approve_budget_qty_requote" as any,
                     { p_id: reviewingQtyRequote.id } as any
@@ -3504,6 +3594,7 @@ ${msgLabels.winnerWaFooter}
                   if (error) throw error;
                   toast.success("Recotação aprovada! Preços atualizados.");
                   setReviewingQtyRequote(null);
+                  setQtyExcludedKeys(new Set());
                   queryClient.invalidateQueries({ queryKey: ["budget_qty_requotes", campaignId] });
                   queryClient.invalidateQueries({ queryKey: ["budget_prices", campaignId] });
                 } catch (e: any) {
