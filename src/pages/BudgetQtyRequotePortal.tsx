@@ -59,6 +59,12 @@ const parseNum = (v: string | number | null | undefined): number => {
   return Number.isFinite(n) ? n : 0;
 };
 
+const fmtInput = (n: number) =>
+  new Intl.NumberFormat("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number.isFinite(n) ? n : 0);
+
 const kitKey = (kitId: string) => `kit:${kitId}`;
 
 export default function BudgetQtyRequotePortal() {
@@ -98,8 +104,8 @@ export default function BudgetQtyRequotePortal() {
         else pre[key] = "";
       }
       setPrices(pre);
-      setInstallation(String((sub as any).installation ?? d.baseline_extras.installation ?? 0));
-      setFreight(String((sub as any).freight ?? d.baseline_extras.freight ?? 0));
+      setInstallation(fmtInput((sub as any).installation ?? d.baseline_extras.installation ?? 0));
+      setFreight(fmtInput((sub as any).freight ?? d.baseline_extras.freight ?? 0));
       setNotes(d.notes || "");
     } catch (e: any) {
       setError(e?.message || "Erro ao carregar");
@@ -430,13 +436,23 @@ export default function BudgetQtyRequotePortal() {
           <Card>
             <CardContent className="p-4 space-y-2">
               <label className="text-xs text-muted-foreground">Instalação (R$)</label>
-              <Input value={installation} onChange={(e) => setInstallation(e.target.value)} />
+              <Input
+                value={installation}
+                onChange={(e) => setInstallation(e.target.value)}
+                onBlur={() => setInstallation(fmtInput(parseNum(installation)))}
+                className="text-right"
+              />
             </CardContent>
           </Card>
           <Card>
             <CardContent className="p-4 space-y-2">
               <label className="text-xs text-muted-foreground">Frete (R$)</label>
-              <Input value={freight} onChange={(e) => setFreight(e.target.value)} />
+              <Input
+                value={freight}
+                onChange={(e) => setFreight(e.target.value)}
+                onBlur={() => setFreight(fmtInput(parseNum(freight)))}
+                className="text-right"
+              />
             </CardContent>
           </Card>
         </div>
