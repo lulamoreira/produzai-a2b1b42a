@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Loader2, Copy, Send, MessageCircle, Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -53,6 +54,7 @@ const kitKey = (id: string) => `kit:${id}`;
 export default function SendQtyRequoteDialog({
   open, onOpenChange, campaignId, campaignName, pieces,
 }: Props) {
+  const queryClient = useQueryClient();
   const [suppliers, setSuppliers] = useState<SupplierLite[]>([]);
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>("");
 
@@ -67,7 +69,6 @@ export default function SendQtyRequoteDialog({
   const [origQtyByKit, setOrigQtyByKit] = useState<Record<string, number>>({});
 
   const [selected, setSelected] = useState<Record<RowKey, boolean>>({});
-  const [newQtyInputs, setNewQtyInputs] = useState<Record<RowKey, string>>({});
 
   const [expiresInDays, setExpiresInDays] = useState<number>(3);
   const [generating, setGenerating] = useState(false);
@@ -138,21 +139,15 @@ export default function SendQtyRequoteDialog({
         const kitPieces: Array<{ kit_id: string; piece_id: string; quantity: number }> =
           kitPiecesRes.data ?? [];
 
-        // Per-piece totals
+        // Per-piece totals. A negociação is a sparse override by store×piece:
+        // rows not present in budget_negotiation_store_pieces must keep the
+        // original campaign_store_pieces quantity instead of being counted as 0.
         const origByPiece: Record<string, number> = {};
-        const negByPiece: Record<string, number> = {};
         for (const r of origRows as any[]) {
           origByPiece[r.piece_id] = (origByPiece[r.piece_id] || 0) + Number(r.quantity || 0);
         }
-        for (const r of negRows as any[]) {
-          negByPiece[r.piece_id] = (negByPiece[r.piece_id] || 0) + Number(r.quantity || 0);
-        }
         const hasNeg = (negRows as any[]).length > 0;
         setOrigQtyByPiece(origByPiece);
-        // Merge: negociação sobrescreve original apenas onde existe linha.
-        const livePieceMerged: Record<string, number> = { ...origByPiece };
-        for (const pid of Object.keys(negByPiece)) livePieceMerged[pid] = negByPiece[pid];
-        setLiveQtyByPiece(livePieceMerged);
 
         // Per-(store, piece) for kit derivation
         const origByStore = new Map<string, number>();
@@ -162,6 +157,14 @@ export default function SendQtyRequoteDialog({
         // Merge por (loja×peça): começa com original e sobrescreve com negociação.
         const liveByStore = new Map(origByStore);
         for (const [k, v] of negByStore) liveByStore.set(k, v);
+
+        const livePieceMerged: Record<string, number> = {};
+        for (const [storePieceKey, qty] of liveByStore) {
+          const pieceId = storePieceKey.slice(storePieceKey.indexOf(":") + 1);
+          livePieceMerged[pieceId] = (livePieceMerged[pieceId] || 0) + qty;
+        }
+        setLiveQtyByPiece(livePieceMerged);
+
         const allStoreIds = [...new Set<string>([
           ...(origRows as any[]).map((r) => r.store_id as string),
           ...(negRows as any[]).map((r) => r.store_id as string),
@@ -210,7 +213,6 @@ export default function SendQtyRequoteDialog({
     if (!open) {
       setSelectedSupplierId("");
       setSelected({});
-      setNewQtyInputs({});
       setGeneratedLink(null);
       setCopied(false);
       setExpiresInDays(3);
@@ -225,10 +227,6 @@ export default function SendQtyRequoteDialog({
 
   const toggle = (key: RowKey, checked: boolean) => {
     setSelected((s) => ({ ...s, [key]: checked }));
-  };
-
-  const updateNewQty = (key: RowKey, v: string) => {
-    setNewQtyInputs((s) => ({ ...s, [key]: v }));
   };
 
   // Rows interleaved by código (peças visíveis + kits).
@@ -250,31 +248,29 @@ export default function SendQtyRequoteDialog({
     if (!canGenerate) return;
     setGenerating(true);
     try {
-      const qty_changes: Record<string, { old_qty: number; new_qty: number }> = {};
-      for (const row of rows) {
-        if (!selected[row.key]) continue;
-        const newRaw = newQtyInputs[row.key];
-        const live = liveQtyFor(row.key);
-        const parsed = parseInt(newRaw ?? "", 10);
-        const newQ = Number.isFinite(parsed) ? parsed : live;
-        qty_changes[row.key] = { old_qty: origQtyFor(row.key), new_qty: newQ };
-      }
+      const selectedKeys = rows
+        .filter((row) => selected[row.key])
+        .map((row) => row.key);
 
       const expiresAt = new Date(Date.now() + expiresInDays * 24 * 3600 * 1000).toISOString();
-      const { data, error } = await supabase
-        .from("budget_qty_requotes" as any)
-        .insert({
-          campaign_id: campaignId,
-          supplier_id: selectedSupplierId,
-          qty_changes,
-          expires_at: expiresAt,
-        } as any)
-        .select("access_token")
-        .single();
+      const { data, error } = await supabase.rpc(
+        "create_budget_qty_requote" as any,
+        {
+          p_campaign_id: campaignId,
+          p_supplier_id: selectedSupplierId,
+          p_selected_keys: selectedKeys,
+          p_expires_at: expiresAt,
+        } as any,
+      );
       if (error) throw error;
-      const token = (data as any).access_token;
+      const payload = data as { access_token?: string; error?: string } | null;
+      if (!payload?.access_token || payload.error) {
+        throw new Error(payload?.error || "Erro ao gerar link");
+      }
+      const token = payload.access_token;
       const link = buildPublicAppUrl(`/recotacao-qtd/${token}`);
       setGeneratedLink(link);
+      queryClient.invalidateQueries({ queryKey: ["budget_qty_requotes", campaignId] });
       toast.success("Link gerado!");
     } catch (e: any) {
       toast.error(e?.message || "Erro ao gerar link");
@@ -372,7 +368,7 @@ export default function SendQtyRequoteDialog({
                     <TableHead className="w-10"></TableHead>
                     <TableHead>Peça / Kit</TableHead>
                     <TableHead className="text-center w-24">Qtd. atual</TableHead>
-                    <TableHead className="text-center w-32">Nova Qtd.</TableHead>
+                    <TableHead className="text-center w-32">Qtd. negociação</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -410,12 +406,10 @@ export default function SendQtyRequoteDialog({
                         </TableCell>
                         <TableCell>
                           <Input
-                            type="number"
-                            min={0}
-                            className="h-8 text-center"
-                            value={newQtyInputs[row.key] ?? String(live)}
-                            onChange={(e) => updateNewQty(row.key, e.target.value)}
-                            placeholder={String(live)}
+                            readOnly
+                            className="h-8 text-center bg-muted/30"
+                            value={String(live)}
+                            aria-label={`Quantidade de negociação de ${row.name}`}
                           />
                         </TableCell>
                       </TableRow>

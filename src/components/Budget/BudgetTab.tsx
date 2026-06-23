@@ -1158,9 +1158,12 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           const kit = item.data;
           const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
           if (kpList.length === 0) return;
-          const kitTotalQty = Math.min(
-            ...kpList.map((kp) => Math.floor(qtyFor(kp.piece_id) / (kp.quantity || 1)))
-          );
+          const rqKitKey = `kit:${kit.id}`;
+          const kitTotalQty = qtyChanges[rqKitKey]?.new_qty != null
+            ? Number(qtyChanges[rqKitKey].new_qty)
+            : Math.min(
+              ...kpList.map((kp) => Math.floor(qtyFor(kp.piece_id) / (kp.quantity || 1)))
+            );
           rows.push({
             type: "kit_header",
             name: kit.name,
@@ -3372,20 +3375,39 @@ ${msgLabels.winnerWaFooter}
               if (p.supplier_id === reviewingQtyRequote.supplier_id && p.piece_id) {
                 previousPrices[p.piece_id] = Number(p.adjusted_unit_price ?? p.unit_price ?? 0);
               }
+              if (p.supplier_id === reviewingQtyRequote.supplier_id && p.kit_id) {
+                previousPrices[`kit:${p.kit_id}`] = Number(p.adjusted_unit_price ?? p.unit_price ?? 0);
+              }
             });
-            const pieceRows = Object.keys(qtyChanges).map((pid) => {
-              const piece = pieces.find((p) => p.id === pid);
-              const prev = previousPrices[pid] ?? 0;
-              const next = Number(submitted[pid] ?? 0);
+            const pieceRows = Object.keys(qtyChanges).map((itemKey) => {
+              const isKit = itemKey.startsWith("kit:");
+              const rawId = isKit ? itemKey.slice(4) : itemKey;
+              const item = isKit
+                ? kits.find((k) => k.id === rawId)
+                : pieces.find((p) => p.id === rawId);
+              const prev = previousPrices[itemKey] ?? 0;
+              const next = Number(submitted[itemKey] ?? 0);
               const pct = prev > 0 ? ((next - prev) / prev) * 100 : 0;
-              return { pid, name: piece?.name ?? "(peça)", code: piece?.code ?? 0, prev, next, pct };
-            });
+              return {
+                itemKey,
+                kind: isKit ? "KIT" : "Peça",
+                name: item?.name ?? (isKit ? "(kit)" : "(peça)"),
+                code: item?.code ?? 0,
+                oldQty: qtyChanges[itemKey]?.old_qty ?? 0,
+                newQty: qtyChanges[itemKey]?.new_qty ?? 0,
+                prev,
+                next,
+                pct,
+              };
+            }).sort((a, b) => a.code - b.code);
             return (
               <div className="space-y-3 max-h-[60vh] overflow-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Peça</TableHead>
+                      <TableHead>Peça / Kit</TableHead>
+                      <TableHead className="text-center w-20">Qtd. ant.</TableHead>
+                      <TableHead className="text-center w-20">Qtd. nova</TableHead>
                       <TableHead className="text-right">Preço anterior</TableHead>
                       <TableHead className="text-right">Novo preço</TableHead>
                       <TableHead className="text-right w-24">Variação</TableHead>
@@ -3393,8 +3415,19 @@ ${msgLabels.winnerWaFooter}
                   </TableHeader>
                   <TableBody>
                     {pieceRows.map((r) => (
-                      <TableRow key={r.pid}>
-                        <TableCell className="text-sm">#{r.code} {r.name}</TableCell>
+                      <TableRow key={r.itemKey}>
+                        <TableCell className="text-sm">
+                          <div className="flex items-center gap-2">
+                            {r.kind === "KIT" && <Badge variant="secondary" className="text-[10px]">KIT</Badge>}
+                            <span>#{r.code} {r.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center tabular-nums text-muted-foreground">
+                          {r.oldQty}
+                        </TableCell>
+                        <TableCell className="text-center tabular-nums font-semibold">
+                          {r.newQty}
+                        </TableCell>
                         <TableCell className="text-right tabular-nums text-muted-foreground">
                           {r.prev.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                         </TableCell>
