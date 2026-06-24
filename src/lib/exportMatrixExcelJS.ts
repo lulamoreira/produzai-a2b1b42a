@@ -3,6 +3,7 @@ import { saveXlsxAs } from "./saveBlobAs";
 import type { ClientStore, CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
 import type { ColorPalette, StoreFieldDef } from "@/components/RateioExportColorDialog";
 import { DEFAULT_STORE_FIELDS } from "@/components/RateioExportColorDialog";
+import { getThumbnailUrl } from "./imageUrl";
 
 function getStoreFieldValue(store: ClientStore, key: string): string | number {
   const v = (store as any)[key];
