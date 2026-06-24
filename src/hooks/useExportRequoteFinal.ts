@@ -33,6 +33,7 @@ export async function buildRequoteFinalPackage(params: {
     baselineRows,
     extrasRes,
     negotiationStorePiecesRows,
+    campaignNegotiationStorePiecesRows,
   ] = await Promise.all([
 
     supabase.from("campaigns").select("name, client_id").eq("id", campaignId).maybeSingle(),
@@ -95,6 +96,14 @@ export async function buildRequoteFinalPackage(params: {
         .from("budget_negotiation_store_pieces" as any)
         .select("store_id, piece_id, quantity")
         .eq("supplier_id", supplierId)
+        .range(from, to) as any,
+    ),
+    supabasePaginate<any>((from, to) =>
+      supabase
+        .from("budget_negotiation_store_pieces" as any)
+        .select("store_id, piece_id, quantity")
+        .eq("campaign_id", campaignId)
+        .is("supplier_id", null)
         .range(from, to) as any,
     ),
   ]);
@@ -176,7 +185,9 @@ export async function buildRequoteFinalPackage(params: {
   for (const ap of adjPiecesList) {
     if (ap?.source_piece_id) adjPieceIdBySourceId.set(String(ap.source_piece_id), String(ap.id));
   }
-  const negRows = ((negotiationStorePiecesRows as any[]) || []);
+  const supplierNegRows = ((negotiationStorePiecesRows as any[]) || []);
+  const campaignNegRows = ((campaignNegotiationStorePiecesRows as any[]) || []);
+  const negRows = supplierNegRows.length > 0 ? supplierNegRows : campaignNegRows;
   const finalStorePieces = negRows.length > 0
     ? negRows
         .map((r: any) => {

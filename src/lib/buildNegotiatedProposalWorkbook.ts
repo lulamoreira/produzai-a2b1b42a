@@ -8,7 +8,11 @@ import type {
 } from "@/hooks/useMultiClientData";
 import { computeSupplierTotal } from "@/lib/computeSupplierTotal";
 import { validateNegotiationRateio } from "@/lib/validateNegotiationRateio";
-import { appendMatrixSheets } from "@/lib/exportMatrixExcelJS";
+import {
+  appendMatrixFinancialFooter,
+  appendMatrixSheets,
+  getMatrixStoreFieldsWithHidden,
+} from "@/lib/exportMatrixExcelJS";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -347,7 +351,7 @@ export async function buildNegotiatedProposalWorkbook(
   const kitComponentIds = new Set(params.kitPieces.map((kp) => kp.piece_id));
   const standalonePieces = params.pieces.filter((p) => !kitComponentIds.has(p.id));
 
-  await appendMatrixSheets(wb, {
+  const matrixSheetName = await appendMatrixSheets(wb, {
     stores: params.stores,
     pieces: standalonePieces,
     qtyMap: negQtyMap,
@@ -362,6 +366,49 @@ export async function buildNegotiatedProposalWorkbook(
     skipDashboard: true,
     skipKitTabs: true,
   });
+
+  const matrixWs = wb.getWorksheet(matrixSheetName);
+  if (matrixWs) {
+    const columnItems = [
+      ...standalonePieces.map((piece) => {
+        const pr = priceMap.get(piece.id);
+        return {
+          id: piece.id,
+          type: "piece" as const,
+          displayOrder: piece.display_order ?? 0,
+          unitPrice: Number(pr?.adjusted_unit_price ?? pr?.unit_price ?? 0),
+        };
+      }),
+      ...params.kits.map((kit) => {
+        const unitPrice = params.kitPieces
+          .filter((kp) => kp.kit_id === kit.id)
+          .reduce((sum, kp) => {
+            const pr = priceMap.get(kp.piece_id);
+            return sum + Number(pr?.adjusted_unit_price ?? pr?.unit_price ?? 0) * Number(kp.quantity || 0);
+          }, 0);
+        return {
+          id: kit.id,
+          type: "kit" as const,
+          displayOrder: kit.display_order ?? 0,
+          unitPrice,
+        };
+      }),
+    ].sort(
+      (a, b) =>
+        a.displayOrder - b.displayOrder ||
+        (a.type === b.type ? 0 : a.type === "piece" ? -1 : 1) ||
+        (a.id < b.id ? -1 : 1),
+    );
+    appendMatrixFinancialFooter({
+      ws: matrixWs,
+      storeCount: params.stores.length,
+      storeMetaColumnCount: getMatrixStoreFieldsWithHidden().length,
+      unitPricesByColumn: columnItems.map((item) => item.unitPrice),
+      moneyFormat: money,
+      installation: totals.installationNegotiated,
+      freight: totals.freightNegotiated,
+    });
+  }
 
   // ─────────────────────────────────────────────────────────
   // SHEET 3: Comparativo
