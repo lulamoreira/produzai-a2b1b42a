@@ -1215,6 +1215,30 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       const itemsTotal = rows.reduce((s, r) => s + (r.type === "kit_header" ? 0 : r.lineTotal), 0);
       const grandTotal = itemsTotal + (installation || 0) + (freight || 0);
 
+      // ─── Build Rateio (Matriz Lojas x Peças) using the negotiation rateio
+      //     for this supplier. Falls back to the original campaign qtyMap when
+      //     no negotiation rateio exists for the supplier. ───────────────────
+      let rateioQtyMap: Record<string, number> = { ...qtyMap };
+      try {
+        const negRows = await supabasePaginate<any>((from, to) =>
+          supabase
+            .from("budget_negotiation_store_pieces" as never)
+            .select("store_id, piece_id, quantity")
+            .eq("supplier_id", sup.id)
+            .range(from, to) as any
+        );
+        if (Array.isArray(negRows) && negRows.length > 0) {
+          // Use ONLY negotiation rateio as source of truth for this supplier.
+          const negMap: Record<string, number> = {};
+          for (const r of negRows) {
+            negMap[`${r.store_id}-${r.piece_id}`] = Number(r.quantity || 0);
+          }
+          rateioQtyMap = negMap;
+        }
+      } catch (err) {
+        console.warn("Falha ao carregar rateio de negociação — usando rateio original.", err);
+      }
+
       await exportSupplierBudget({
         campaignName: `${campaignName} — Recotação`,
         agencyName,
@@ -1225,6 +1249,13 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         installation,
         freight,
         grandTotal,
+        rateio: {
+          pieces,
+          kits,
+          kitPieces: kitPieces as any,
+          stores,
+          qtyMap: rateioQtyMap,
+        },
       });
       toast.dismiss(toastId);
       toast.success("Planilha da recotação gerada.");
