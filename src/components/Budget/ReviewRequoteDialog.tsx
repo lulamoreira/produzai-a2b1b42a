@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Loader2, AlertTriangle, MessageSquare } from "lucide-react";
+import { Loader2, AlertTriangle, MessageSquare, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import {
   type AdjustmentBudgetRequest,
   useApproveRequote,
@@ -26,10 +28,19 @@ function formatCurrency(v: number) {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
 }
 
+function parseNumber(v: string): number | null {
+  if (v === "" || v == null) return null;
+  const cleaned = String(v).replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : null;
+}
+
 export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits, baselinePrices }: Props) {
   const { t } = useTranslation();
   const [rejectionNotes, setRejectionNotes] = useState("");
   const [showRejectForm, setShowRejectForm] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [saving, setSaving] = useState(false);
   const approveRequote = useApproveRequote();
   const rejectRequote = useRejectRequote();
 
@@ -44,6 +55,32 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
     requote.adjusted_prices_jsonb?.freight ??
     null;
 
+  // Editable map: key = `piece:<id>` or `kit:<id>`, value = raw string input
+  const initialEdited = useMemo(() => {
+    const m: Record<string, string> = {};
+    submittedPrices.forEach((p: any) => {
+      if (p?.piece_id != null) {
+        const v = p.new_price;
+        m[`piece:${p.piece_id}`] = v == null ? "" : String(Number(v)).replace(".", ",");
+      }
+    });
+    submittedKitPrices.forEach((p: any) => {
+      if (p?.kit_id != null) {
+        const v = p.new_price;
+        m[`kit:${p.kit_id}`] = v == null ? "" : String(Number(v)).replace(".", ",");
+      }
+    });
+    return m;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requote.id]);
+
+  const [edited, setEdited] = useState<Record<string, string>>(initialEdited);
+
+  useEffect(() => {
+    setEdited(initialEdited);
+    setEditMode(false);
+  }, [initialEdited]);
+
   const getPreviousPrice = (pieceId?: string, kitId?: string) => {
     const row = baselinePrices?.find(
       (p) => (pieceId && p.piece_id === pieceId) || (kitId && p.kit_id === kitId)
@@ -52,6 +89,10 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
   };
 
   const getNewPrice = (pieceId?: string, kitId?: string): number | null => {
+    const key = pieceId ? `piece:${pieceId}` : kitId ? `kit:${kitId}` : null;
+    if (key && edited[key] !== undefined) {
+      return parseNumber(edited[key]);
+    }
     const row = [...submittedPrices, ...submittedKitPrices].find(
       (p) => (pieceId && p.piece_id === pieceId) || (kitId && p.kit_id === kitId)
     );
@@ -59,9 +100,62 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
     return v === undefined || v === null ? null : Number(v);
   };
 
+  const isDirty = useMemo(() => {
+    return Object.keys(edited).some((k) => edited[k] !== initialEdited[k]);
+  }, [edited, initialEdited]);
+
+  const persistEditedPrices = async () => {
+    // Rebuild prices/kits arrays preserving any extra fields
+    const newPrices = submittedPrices.map((p: any) => {
+      const key = `piece:${p.piece_id}`;
+      if (edited[key] === undefined) return p;
+      const parsed = parseNumber(edited[key]);
+      return { ...p, new_price: parsed };
+    });
+    const newKits = submittedKitPrices.map((p: any) => {
+      const key = `kit:${p.kit_id}`;
+      if (edited[key] === undefined) return p;
+      const parsed = parseNumber(edited[key]);
+      return { ...p, new_price: parsed };
+    });
+    const nextJson = {
+      ...(requote.adjusted_prices_jsonb ?? {}),
+      prices: newPrices,
+      kits: newKits,
+    };
+    const { error } = await supabase
+      .from("campaign_adjustment_budget_request")
+      .update({ adjusted_prices_jsonb: nextJson as any })
+      .eq("id", requote.id);
+    if (error) throw error;
+  };
+
+  const handleSaveEdits = async () => {
+    try {
+      setSaving(true);
+      await persistEditedPrices();
+      toast.success("Preços atualizados.");
+      setEditMode(false);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao salvar preços");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleApprove = async () => {
-    await approveRequote.mutateAsync(requote.id);
-    onOpenChange(false);
+    try {
+      if (isDirty) {
+        setSaving(true);
+        await persistEditedPrices();
+      }
+      await approveRequote.mutateAsync(requote.id);
+      onOpenChange(false);
+    } catch (e: any) {
+      toast.error(e.message ?? "Erro ao aprovar");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleReject = async () => {
@@ -74,6 +168,25 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
       rejectionNotes: rejectionNotes.trim(),
     });
     onOpenChange(false);
+  };
+
+  const renderPriceCell = (key: string, current: number | null) => {
+    if (!editMode) {
+      return (
+        <span className="font-semibold">
+          {current !== null ? formatCurrency(current) : "—"}
+        </span>
+      );
+    }
+    return (
+      <Input
+        value={edited[key] ?? ""}
+        onChange={(e) => setEdited((prev) => ({ ...prev, [key]: e.target.value }))}
+        inputMode="decimal"
+        placeholder="0,00"
+        className="h-8 w-28 text-right ml-auto"
+      />
+    );
   };
 
   return (
@@ -110,6 +223,38 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
             </div>
           )}
 
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-muted-foreground">
+              {editMode
+                ? "Edite apenas os valores unitários. Quantidades seguem a lógica atual."
+                : "Você pode editar os valores unitários antes de aprovar."}
+            </div>
+            {!editMode ? (
+              <Button size="sm" variant="outline" onClick={() => setEditMode(true)}>
+                <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                Editar preços
+              </Button>
+            ) : (
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    setEdited(initialEdited);
+                    setEditMode(false);
+                  }}
+                  disabled={saving}
+                >
+                  Cancelar
+                </Button>
+                <Button size="sm" onClick={handleSaveEdits} disabled={saving || !isDirty}>
+                  {saving && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />}
+                  Salvar preços
+                </Button>
+              </div>
+            )}
+          </div>
+
           <div className="rounded-md border border-border overflow-hidden">
             <table className="w-full text-sm">
               <thead className="bg-muted/50">
@@ -133,8 +278,8 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
                         <div className="text-xs text-muted-foreground">{piece.code}</div>
                       </td>
                       <td className="px-3 py-2 text-right">{formatCurrency(prev)}</td>
-                      <td className="px-3 py-2 text-right font-semibold">
-                        {next !== null ? formatCurrency(next) : "—"}
+                      <td className="px-3 py-2 text-right">
+                        {renderPriceCell(`piece:${piece.id}`, next)}
                       </td>
                       <td
                         className={`px-3 py-2 text-right font-medium ${
@@ -164,8 +309,8 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
                         <div className="text-xs text-muted-foreground">{kit.code} · Kit</div>
                       </td>
                       <td className="px-3 py-2 text-right">{formatCurrency(prev)}</td>
-                      <td className="px-3 py-2 text-right font-semibold">
-                        {next !== null ? formatCurrency(next) : "—"}
+                      <td className="px-3 py-2 text-right">
+                        {renderPriceCell(`kit:${kit.id}`, next)}
                       </td>
                       <td
                         className={`px-3 py-2 text-right font-medium ${
@@ -253,10 +398,12 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
             ) : (
               <Button
                 onClick={handleApprove}
-                disabled={approveRequote.isPending}
+                disabled={approveRequote.isPending || saving}
                 className="bg-green-600 hover:bg-green-700 text-white"
               >
-                {approveRequote.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                {(approveRequote.isPending || saving) && (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                )}
                 {t("budgets.approve")} recotação
               </Button>
             )}
