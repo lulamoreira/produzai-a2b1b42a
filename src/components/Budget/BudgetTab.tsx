@@ -3473,8 +3473,20 @@ ${msgLabels.winnerWaFooter}
             const ec = extraCosts.find((e) => e.supplier_id === reviewingQtyRequote.supplier_id) as any;
             const prevInstallation = Number(ec?.adjusted_installation_value ?? ec?.installation_value ?? 0);
             const prevFreight = Number(ec?.adjusted_freight_value ?? ec?.freight_value ?? 0);
-            const newInstallation = submitted.installation != null ? Number(submitted.installation) : prevInstallation;
-            const newFreight = submitted.freight != null ? Number(submitted.freight) : prevFreight;
+            const parseEdited = (raw: string | undefined): number | null => {
+              if (raw === undefined || raw === "") return null;
+              const cleaned = String(raw).replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+              const n = Number(cleaned);
+              return Number.isFinite(n) ? n : null;
+            };
+            const editedInstallation = parseEdited(qtyEditedPrices["installation"]);
+            const editedFreight = parseEdited(qtyEditedPrices["freight"]);
+            const newInstallation = editedInstallation !== null
+              ? editedInstallation
+              : (submitted.installation != null ? Number(submitted.installation) : prevInstallation);
+            const newFreight = editedFreight !== null
+              ? editedFreight
+              : (submitted.freight != null ? Number(submitted.freight) : prevFreight);
 
             // Totals: only top-level rows (kits + standalone pieces). Kit component pieces are already accounted for by the kit.
             const includedRows = topLevel.filter((r) => !qtyExcludedKeys.has(r.itemKey));
@@ -3574,20 +3586,40 @@ ${msgLabels.winnerWaFooter}
                 </Table>
 
                 <div className="rounded-md border bg-muted/30 p-3 text-xs space-y-1.5">
-                  <div className="flex justify-between gap-4">
+                  <div className="flex justify-between gap-4 items-center">
                     <span className="text-muted-foreground">Instalação (anterior → nova)</span>
-                    <span className="tabular-nums">
+                    <span className="tabular-nums flex items-center gap-2">
                       {prevInstallation.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                       {" → "}
-                      <span className="font-semibold">{newInstallation.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                      {qtyEditMode ? (
+                        <Input
+                          value={qtyEditedPrices["installation"] ?? String(newInstallation).replace(".", ",")}
+                          onChange={(e) => setQtyEditedPrices((p) => ({ ...p, installation: e.target.value }))}
+                          inputMode="decimal"
+                          placeholder="0,00"
+                          className="h-7 w-28 text-right"
+                        />
+                      ) : (
+                        <span className="font-semibold">{newInstallation.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                      )}
                     </span>
                   </div>
-                  <div className="flex justify-between gap-4">
+                  <div className="flex justify-between gap-4 items-center">
                     <span className="text-muted-foreground">Frete (anterior → novo)</span>
-                    <span className="tabular-nums">
+                    <span className="tabular-nums flex items-center gap-2">
                       {prevFreight.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                       {" → "}
-                      <span className="font-semibold">{newFreight.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                      {qtyEditMode ? (
+                        <Input
+                          value={qtyEditedPrices["freight"] ?? String(newFreight).replace(".", ",")}
+                          onChange={(e) => setQtyEditedPrices((p) => ({ ...p, freight: e.target.value }))}
+                          inputMode="decimal"
+                          placeholder="0,00"
+                          className="h-7 w-28 text-right"
+                        />
+                      ) : (
+                        <span className="font-semibold">{newFreight.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                      )}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4 pt-1 border-t">
