@@ -3693,6 +3693,8 @@ ${msgLabels.winnerWaFooter}
                   toast.success("Recotação aprovada! Preços atualizados.");
                   setReviewingQtyRequote(null);
                   setQtyExcludedKeys(new Set());
+                  setQtyEditMode(false);
+                  setQtyEditedPrices({});
                   queryClient.invalidateQueries({ queryKey: ["budget_qty_requotes", campaignId] });
                   queryClient.invalidateQueries({ queryKey: ["budget_prices", campaignId] });
                 } catch (e: any) {
