@@ -213,6 +213,18 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
           </DialogDescription>
         </DialogHeader>
 
+        <div className="px-6 pt-2 pb-2 border-b border-border bg-background z-10">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por código ou nome..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </div>
+        </div>
+
         <div className="flex-1 overflow-y-auto px-6 py-3 space-y-4">
           {requote.notes && (
             <div className="rounded-md border border-border bg-muted/40 p-3">
