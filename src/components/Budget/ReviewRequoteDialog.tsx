@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Loader2, AlertTriangle, MessageSquare, Pencil } from "lucide-react";
+import { Loader2, AlertTriangle, MessageSquare, Pencil, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
