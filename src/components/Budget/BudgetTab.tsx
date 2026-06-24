@@ -1222,15 +1222,28 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       //     no negotiation rateio exists for the supplier. ───────────────────
       let rateioQtyMap: Record<string, number> = { ...qtyMap };
       try {
-        const negRows = await supabasePaginate<any>((from, to) =>
+        const supplierNegRows = await supabasePaginate<any>((from, to) =>
           supabase
             .from("budget_negotiation_store_pieces" as never)
             .select("store_id, piece_id, quantity")
+            .eq("campaign_id", campaignId)
             .eq("supplier_id", sup.id)
             .range(from, to) as any
         );
+        const negRows = Array.isArray(supplierNegRows) && supplierNegRows.length > 0
+          ? supplierNegRows
+          : await supabasePaginate<any>((from, to) =>
+              supabase
+                .from("budget_negotiation_store_pieces" as never)
+                .select("store_id, piece_id, quantity")
+                .eq("campaign_id", campaignId)
+                .is("supplier_id", null)
+                .range(from, to) as any
+            );
         if (Array.isArray(negRows) && negRows.length > 0) {
-          // Use ONLY negotiation rateio as source of truth for this supplier.
+          // Use ONLY the negotiation rateio as source of truth for this export.
+          // Supplier-specific negotiation rows win; otherwise use the campaign
+          // negotiation matrix (the one edited in the negotiation spreadsheet).
           const negMap: Record<string, number> = {};
           for (const r of negRows) {
             negMap[`${r.store_id}-${r.piece_id}`] = Number(r.quantity || 0);
@@ -1240,6 +1253,12 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       } catch (err) {
         console.warn("Falha ao carregar rateio de negociação — usando rateio original.", err);
       }
+
+      const unitPriceByPieceId: Record<string, number> = {};
+      pieces.forEach((piece) => {
+        const unitPrice = priceFor(piece.id);
+        unitPriceByPieceId[piece.id] = unitPrice == null ? 0 : unitPrice;
+      });
 
       await exportSupplierBudget({
         campaignName: `${campaignName} — Recotação`,
@@ -1257,6 +1276,9 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           kitPieces: kitPieces as any,
           stores,
           qtyMap: rateioQtyMap,
+          unitPriceByPieceId,
+          installation,
+          freight,
         },
       });
       toast.dismiss(toastId);

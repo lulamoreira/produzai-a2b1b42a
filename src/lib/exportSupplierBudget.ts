@@ -1,7 +1,11 @@
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { buildExportFileName } from "@/lib/exportFileName";
 import { fetchImageBytes, type RateioImageCache } from "@/lib/rateioGridShared";
-import { appendMatrixSheets } from "@/lib/exportMatrixExcelJS";
+import {
+  appendMatrixFinancialFooter,
+  appendMatrixSheets,
+  getMatrixStoreFieldsWithHidden,
+} from "@/lib/exportMatrixExcelJS";
 import { getSupplierExcelLabels } from "@/utils/currencyLocale";
 import type {
   CampaignPiece,
@@ -52,6 +56,9 @@ type Params = {
     kitPieces: CampaignKitPiece[];
     stores: ClientStore[];
     qtyMap: Record<string, number>;
+    unitPriceByPieceId?: Record<string, number | null | undefined>;
+    installation?: number | null;
+    freight?: number | null;
     locations?: CampaignPieceLocation[];
     subLocations?: CampaignPieceSubLocation[];
   };
@@ -265,7 +272,7 @@ export async function buildSupplierBudgetWorkbook(
     // columns in the "Matriz Lojas x Peças" tab. The full piece pool is still
     // passed via `allPieces` so kit components can be resolved.
     const visiblePieces = params.rateio.pieces.filter((p: any) => p.kit_only !== true);
-    await appendMatrixSheets(wb, {
+    const matrixSheetName = await appendMatrixSheets(wb, {
       stores: params.rateio.stores,
       pieces: visiblePieces,
       qtyMap: params.rateio.qtyMap,
@@ -281,6 +288,45 @@ export async function buildSupplierBudgetWorkbook(
       skipDashboard: true,
       skipKitTabs: true,
     });
+    const matrixWs = wb.getWorksheet(matrixSheetName);
+    if (matrixWs && params.rateio.unitPriceByPieceId) {
+      const columnItems = [
+        ...visiblePieces.map((piece) => ({
+          id: piece.id,
+          type: "piece" as const,
+          displayOrder: piece.display_order ?? 0,
+          unitPrice: Number(params.rateio!.unitPriceByPieceId?.[piece.id] ?? 0),
+        })),
+        ...params.rateio.kits.map((kit) => {
+          const unitPrice = params.rateio!.kitPieces
+            .filter((kp) => kp.kit_id === kit.id)
+            .reduce(
+              (sum, kp) => sum + Number(params.rateio!.unitPriceByPieceId?.[kp.piece_id] ?? 0) * Number(kp.quantity || 0),
+              0,
+            );
+          return {
+            id: kit.id,
+            type: "kit" as const,
+            displayOrder: kit.display_order ?? 0,
+            unitPrice,
+          };
+        }),
+      ].sort(
+        (a, b) =>
+          a.displayOrder - b.displayOrder ||
+          (a.type === b.type ? 0 : a.type === "piece" ? -1 : 1) ||
+          (a.id < b.id ? -1 : 1),
+      );
+      appendMatrixFinancialFooter({
+        ws: matrixWs,
+        storeCount: params.rateio.stores.length,
+        storeMetaColumnCount: getMatrixStoreFieldsWithHidden().length,
+        unitPricesByColumn: columnItems.map((item) => item.unitPrice),
+        moneyFormat: money,
+        installation: params.rateio.installation ?? params.installation ?? 0,
+        freight: params.rateio.freight ?? params.freight ?? 0,
+      });
+    }
   }
 
   const buffer = await wb.xlsx.writeBuffer();

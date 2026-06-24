@@ -138,6 +138,121 @@ export function getMatrixStoreFieldsWithHidden(
   return out;
 }
 
+export function appendMatrixFinancialFooter(params: {
+  ws: ExcelJS.Worksheet;
+  storeCount: number;
+  storeMetaColumnCount: number;
+  unitPricesByColumn: number[];
+  moneyFormat: string;
+  installation?: number | null;
+  freight?: number | null;
+  primaryArgb?: string;
+  darkArgb?: string;
+  lightArgb?: string;
+}): void {
+  const {
+    ws,
+    storeCount,
+    storeMetaColumnCount,
+    unitPricesByColumn,
+    moneyFormat,
+    installation = 0,
+    freight = 0,
+    primaryArgb = "FF8C6F4E",
+    darkArgb = "FF1C1916",
+    lightArgb = "FFF7F3EC",
+  } = params;
+  if (!unitPricesByColumn.length) return;
+
+  const metaCols = Math.max(storeMetaColumnCount, 1);
+  const firstItemCol = metaCols + 1;
+  const lastItemCol = metaCols + unitPricesByColumn.length;
+  const totalQtyRowNum = META_ROW_COUNT + 3 + Math.max(storeCount, 0);
+  const unitRowNum = totalQtyRowNum + 1;
+  const totalPriceRowNum = unitRowNum + 1;
+  const summaryStartRowNum = totalPriceRowNum + 2;
+
+  const styleLabel = (cell: ExcelJS.Cell, fillArgb = primaryArgb, size = 11) => {
+    cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size };
+    cell.alignment = { horizontal: "right", vertical: "middle" };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: fillArgb } };
+  };
+
+  const styleMoney = (cell: ExcelJS.Cell, opts: { bold?: boolean; fillArgb?: string; fontArgb?: string; size?: number } = {}) => {
+    cell.numFmt = moneyFormat;
+    cell.font = {
+      bold: !!opts.bold,
+      color: { argb: opts.fontArgb || darkArgb },
+      size: opts.size || 10,
+    };
+    cell.alignment = { horizontal: "center", vertical: "middle" };
+    cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: opts.fillArgb || lightArgb } };
+  };
+
+  const mergeLabel = (rowNum: number, label: string, fillArgb = primaryArgb, size = 11) => {
+    ws.mergeCells(rowNum, 1, rowNum, metaCols);
+    const cell = ws.getCell(rowNum, 1);
+    cell.value = label;
+    styleLabel(cell, fillArgb, size);
+    return cell;
+  };
+
+  const unitRow = ws.getRow(unitRowNum);
+  mergeLabel(unitRowNum, "PREÇO UNITÁRIO");
+  unitPricesByColumn.forEach((unitPrice, index) => {
+    const cell = unitRow.getCell(firstItemCol + index);
+    cell.value = Number(unitPrice || 0);
+    styleMoney(cell);
+  });
+  unitRow.height = 22;
+
+  const totalPriceRow = ws.getRow(totalPriceRowNum);
+  mergeLabel(totalPriceRowNum, "PREÇO TOTAL");
+  for (let colNum = firstItemCol; colNum <= lastItemCol; colNum++) {
+    const colLetter = getExcelColumnLetter(colNum);
+    const cell = totalPriceRow.getCell(colNum);
+    cell.value = { formula: `${colLetter}${unitRowNum}*${colLetter}${totalQtyRowNum}` } as any;
+    styleMoney(cell, { bold: true, fillArgb: "FFEFE7D8" });
+  }
+  totalPriceRow.height = 22;
+
+  const labelEndCol = Math.min(2, metaCols);
+  const valueCol = Math.min(Math.max(3, labelEndCol + 1), metaCols);
+  const valueColLetter = getExcelColumnLetter(valueCol);
+  const firstItemColLetter = getExcelColumnLetter(firstItemCol);
+  const lastItemColLetter = getExcelColumnLetter(lastItemCol);
+
+  const writeSummaryRow = (rowNum: number, label: string, value: number | ExcelJS.CellValue, emphasized = false) => {
+    ws.mergeCells(rowNum, 1, rowNum, labelEndCol);
+    const labelCell = ws.getCell(rowNum, 1);
+    labelCell.value = label;
+    styleLabel(labelCell, emphasized ? darkArgb : primaryArgb, emphasized ? 13 : 11);
+    const valueCell = ws.getCell(rowNum, valueCol);
+    valueCell.value = value;
+    styleMoney(valueCell, {
+      bold: true,
+      fillArgb: emphasized ? primaryArgb : lightArgb,
+      fontArgb: emphasized ? "FFFFFFFF" : darkArgb,
+      size: emphasized ? 14 : 11,
+    });
+    ws.getRow(rowNum).height = emphasized ? 32 : 24;
+  };
+
+  const productionRowNum = summaryStartRowNum;
+  const installationRowNum = productionRowNum + 1;
+  const freightRowNum = installationRowNum + 1;
+  const grandTotalRowNum = freightRowNum + 1;
+
+  writeSummaryRow(productionRowNum, "VALOR DE PRODUÇÃO", {
+    formula: `SUM(${firstItemColLetter}${totalPriceRowNum}:${lastItemColLetter}${totalPriceRowNum})`,
+  } as any);
+  writeSummaryRow(installationRowNum, "VALOR DE INSTALAÇÃO", Number(installation || 0));
+  writeSummaryRow(freightRowNum, "FRETE", Number(freight || 0));
+  writeSummaryRow(grandTotalRowNum, "TOTAL GERAL", {
+    formula: `${valueColLetter}${productionRowNum}+${valueColLetter}${installationRowNum}+${valueColLetter}${freightRowNum}`,
+  } as any, true);
+}
+
 type LocationData = {
   locations: CampaignPieceLocation[];
   subLocations: CampaignPieceSubLocation[];
