@@ -297,7 +297,7 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
                 </tr>
               </thead>
               <tbody>
-                {pieces.map((piece) => {
+                {filteredPieces.map((piece) => {
                   const prev = Number(getPreviousPrice(piece.id) || 0);
                   const next = getNewPrice(piece.id);
                   const diff = next !== null ? next - prev : null;
@@ -306,7 +306,7 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
                     <tr key={piece.id} className="border-t border-border">
                       <td className="px-3 py-2">
                         <div className="font-medium">{piece.name}</div>
-                        <div className="text-xs text-muted-foreground">{piece.code}</div>
+                        <div className="text-sm font-bold text-[#8C6F4E]">#{piece.code}</div>
                       </td>
                       <td className="px-3 py-2 text-right">{formatCurrency(prev)}</td>
                       <td className="px-3 py-2 text-right">
@@ -328,7 +328,7 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
                     </tr>
                   );
                 })}
-                {kits.map((kit) => {
+                {filteredKits.map((kit) => {
                   const prev = Number(getPreviousPrice(undefined, kit.id) || 0);
                   const next = getNewPrice(undefined, kit.id);
                   const diff = next !== null ? next - prev : null;
@@ -337,7 +337,7 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
                     <tr key={kit.id} className="border-t border-border">
                       <td className="px-3 py-2">
                         <div className="font-medium">{kit.name}</div>
-                        <div className="text-xs text-muted-foreground">{kit.code} · Kit</div>
+                        <div className="text-sm font-bold text-[#8C6F4E]">#{kit.code} · Kit</div>
                       </td>
                       <td className="px-3 py-2 text-right">{formatCurrency(prev)}</td>
                       <td className="px-3 py-2 text-right">
