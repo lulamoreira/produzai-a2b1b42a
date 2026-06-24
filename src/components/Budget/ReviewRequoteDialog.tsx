@@ -75,6 +75,7 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
   }, [requote.id]);
 
   const [edited, setEdited] = useState<Record<string, string>>(initialEdited);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     setEdited(initialEdited);
