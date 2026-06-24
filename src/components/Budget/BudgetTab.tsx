@@ -233,6 +233,8 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   const [qtyRejectNotes, setQtyRejectNotes] = useState("");
   const [qtyReviewProcessing, setQtyReviewProcessing] = useState(false);
   const [qtyExcludedKeys, setQtyExcludedKeys] = useState<Set<string>>(new Set());
+  const [qtyEditMode, setQtyEditMode] = useState(false);
+  const [qtyEditedPrices, setQtyEditedPrices] = useState<Record<string, string>>({});
   const { data: qtyRequotes = [] } = useQuery({
     queryKey: ["budget_qty_requotes", campaignId],
     queryFn: async () => {
@@ -3386,7 +3388,7 @@ ${msgLabels.winnerWaFooter}
       {/* Review qty requote */}
       <Dialog
         open={!!reviewingQtyRequote}
-        onOpenChange={(o) => { if (!o) { setReviewingQtyRequote(null); setQtyRejectNotes(""); setQtyExcludedKeys(new Set()); } }}
+        onOpenChange={(o) => { if (!o) { setReviewingQtyRequote(null); setQtyRejectNotes(""); setQtyExcludedKeys(new Set()); setQtyEditMode(false); setQtyEditedPrices({}); } }}
       >
         <DialogContent className="max-w-3xl">
           <DialogHeader>
@@ -3418,7 +3420,14 @@ ${msgLabels.winnerWaFooter}
                 ? kits.find((k) => k.id === rawId)
                 : pieces.find((p) => p.id === rawId);
               const prev = previousPrices[itemKey] ?? 0;
-              const next = Number(submitted[itemKey] ?? 0);
+              const editedRaw = qtyEditedPrices[itemKey];
+              const parsedEdit = (() => {
+                if (editedRaw === undefined || editedRaw === "") return null;
+                const cleaned = String(editedRaw).replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+                const n = Number(cleaned);
+                return Number.isFinite(n) ? n : null;
+              })();
+              const next = parsedEdit !== null ? parsedEdit : Number(submitted[itemKey] ?? 0);
               const pct = prev > 0 ? ((next - prev) / prev) * 100 : 0;
               const oldQty = qtyChanges[itemKey]?.old_qty ?? 0;
               const newQty = qtyChanges[itemKey]?.new_qty ?? 0;
@@ -3485,6 +3494,18 @@ ${msgLabels.winnerWaFooter}
 
             return (
               <div className="space-y-3 max-h-[60vh] overflow-auto">
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={qtyEditMode ? "default" : "outline"}
+                    className="h-7 text-xs"
+                    onClick={() => setQtyEditMode((v) => !v)}
+                  >
+                    <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                    {qtyEditMode ? "Concluir edição" : "Editar preços"}
+                  </Button>
+                </div>
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -3517,7 +3538,17 @@ ${msgLabels.winnerWaFooter}
                             {r.prev.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                           </TableCell>
                           <TableCell className="text-right tabular-nums font-semibold">
-                            {r.next.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                            {qtyEditMode ? (
+                              <Input
+                                value={qtyEditedPrices[r.itemKey] ?? String(r.next).replace(".", ",")}
+                                onChange={(e) => setQtyEditedPrices((p) => ({ ...p, [r.itemKey]: e.target.value }))}
+                                inputMode="decimal"
+                                placeholder="0,00"
+                                className="h-7 w-24 text-right ml-auto"
+                              />
+                            ) : (
+                              r.next.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                            )}
                           </TableCell>
                           <TableCell className={cn("text-right tabular-nums text-xs", r.pct > 0 ? "text-destructive" : r.pct < 0 ? "text-emerald-600" : "text-muted-foreground")}>
                             {r.pct > 0 ? "+" : ""}{r.pct.toFixed(1)}%
@@ -3636,10 +3667,18 @@ ${msgLabels.winnerWaFooter}
                 if (!reviewingQtyRequote) return;
                 setQtyReviewProcessing(true);
                 try {
-                  if (qtyExcludedKeys.size > 0) {
+                 const hasEdits = Object.keys(qtyEditedPrices).length > 0;
+                 if (qtyExcludedKeys.size > 0 || hasEdits) {
                     const submitted = { ...(reviewingQtyRequote.submitted_prices ?? {}) } as Record<string, any>;
                     const qtyChanges = { ...(reviewingQtyRequote.qty_changes ?? {}) } as Record<string, any>;
                     qtyExcludedKeys.forEach((k) => { delete submitted[k]; delete qtyChanges[k]; });
+                    Object.entries(qtyEditedPrices).forEach(([k, raw]) => {
+                      if (qtyExcludedKeys.has(k)) return;
+                      if (raw === undefined || raw === "") return;
+                      const cleaned = String(raw).replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+                      const n = Number(cleaned);
+                      if (Number.isFinite(n)) submitted[k] = n;
+                    });
                     const { error: upErr } = await supabase
                       .from("budget_qty_requotes")
                       .update({ submitted_prices: submitted, qty_changes: qtyChanges })
@@ -3654,6 +3693,8 @@ ${msgLabels.winnerWaFooter}
                   toast.success("Recotação aprovada! Preços atualizados.");
                   setReviewingQtyRequote(null);
                   setQtyExcludedKeys(new Set());
+                  setQtyEditMode(false);
+                  setQtyEditedPrices({});
                   queryClient.invalidateQueries({ queryKey: ["budget_qty_requotes", campaignId] });
                   queryClient.invalidateQueries({ queryKey: ["budget_prices", campaignId] });
                 } catch (e: any) {
