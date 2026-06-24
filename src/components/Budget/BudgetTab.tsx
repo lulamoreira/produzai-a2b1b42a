@@ -3467,14 +3467,17 @@ ${msgLabels.winnerWaFooter}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pieceRows.map((r) => {
+                    {orderedRows.map((r) => {
                       const excluded = qtyExcludedKeys.has(r.itemKey);
+                      const isComponent = r.kind !== "KIT" && componentPieceIds.has(r.itemKey);
                       return (
-                        <TableRow key={r.itemKey} className={cn(excluded && "opacity-40 line-through")}>
+                        <TableRow key={r.itemKey} className={cn(excluded && "opacity-40 line-through", isComponent && "bg-muted/20")}>
                           <TableCell className="text-sm">
-                            <div className="flex items-center gap-2">
+                            <div className={cn("flex items-center gap-2", isComponent && "pl-6")}>
+                              {isComponent && <span className="text-xs text-muted-foreground">↳</span>}
                               {r.kind === "KIT" && <Badge variant="secondary" className="text-[10px]">KIT</Badge>}
                               <span>#{r.code} {r.name}</span>
+                              {isComponent && <span className="text-[10px] text-muted-foreground italic">(incluso no kit)</span>}
                             </div>
                           </TableCell>
                           <TableCell className="text-center tabular-nums text-muted-foreground">{r.oldQty}</TableCell>
