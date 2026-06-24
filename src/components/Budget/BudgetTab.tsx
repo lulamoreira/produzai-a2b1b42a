@@ -3493,7 +3493,6 @@ ${msgLabels.winnerWaFooter}
             };
 
             return (
-            return (
               <div className="space-y-3 max-h-[60vh] overflow-auto">
                 <div className="flex justify-end">
                   <Button
