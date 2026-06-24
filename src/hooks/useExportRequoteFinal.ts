@@ -32,7 +32,9 @@ export async function buildRequoteFinalPackage(params: {
     adjStoresRows,
     baselineRows,
     extrasRes,
+    negotiationStorePiecesRows,
   ] = await Promise.all([
+
     supabase.from("campaigns").select("name, client_id").eq("id", campaignId).maybeSingle(),
     supabase.from("campaign_adjustments").select("name").eq("id", adjustmentId).maybeSingle(),
     supabase.from("budget_suppliers").select("company_name").eq("id", supplierId).maybeSingle(),
