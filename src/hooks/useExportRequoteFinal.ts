@@ -88,7 +88,15 @@ export async function buildRequoteFinalPackage(params: {
       .select("installation_value, freight_value, adjusted_installation_value, adjusted_freight_value")
       .eq("supplier_id", supplierId)
       .maybeSingle(),
+    supabasePaginate<any>((from, to) =>
+      supabase
+        .from("budget_negotiation_store_pieces" as any)
+        .select("store_id, piece_id, quantity")
+        .eq("supplier_id", supplierId)
+        .range(from, to) as any,
+    ),
   ]);
+
 
   const clientId = (campaignRes.data as any)?.client_id || null;
   const storeRows = clientId
