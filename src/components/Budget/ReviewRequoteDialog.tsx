@@ -105,6 +105,24 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
     return Object.keys(edited).some((k) => edited[k] !== initialEdited[k]);
   }, [edited, initialEdited]);
 
+  const filteredPieces = useMemo(() => {
+    if (!search.trim()) return pieces;
+    const s = search.trim().toLowerCase();
+    return pieces.filter((p: any) =>
+      String(p.name).toLowerCase().includes(s) ||
+      String(p.code).toLowerCase().includes(s)
+    );
+  }, [pieces, search]);
+
+  const filteredKits = useMemo(() => {
+    if (!search.trim()) return kits;
+    const s = search.trim().toLowerCase();
+    return kits.filter((k: any) =>
+      String(k.name).toLowerCase().includes(s) ||
+      String(k.code).toLowerCase().includes(s)
+    );
+  }, [kits, search]);
+
   const persistEditedPrices = async () => {
     // Rebuild prices/kits arrays preserving any extra fields
     const newPrices = submittedPrices.map((p: any) => {
