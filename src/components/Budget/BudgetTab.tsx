@@ -3404,7 +3404,31 @@ ${msgLabels.winnerWaFooter}
                 prevTotal: prev * oldQty,
                 newTotal: next * newQty,
               };
-            }).sort((a, b) => a.code - b.code);
+            });
+
+            // Map: pieceId -> kitId (which kit owns it as component)
+            const pieceToKit = new Map<string, string>();
+            (kitPieces ?? []).forEach((kp) => {
+              if (!pieceToKit.has(kp.piece_id)) pieceToKit.set(kp.piece_id, kp.kit_id);
+            });
+            const componentPieceIds = new Set(pieceToKit.keys());
+
+            // Top-level rows (kits + standalone pieces) sorted by code; kit components nested below their kit.
+            const rowByKey = new Map(pieceRows.map((r) => [r.itemKey, r]));
+            const topLevel = pieceRows
+              .filter((r) => r.kind === "KIT" || !componentPieceIds.has(r.itemKey))
+              .sort((a, b) => a.code - b.code);
+            const orderedRows: typeof pieceRows = [];
+            for (const r of topLevel) {
+              orderedRows.push(r);
+              if (r.kind === "KIT") {
+                const kitId = r.itemKey.slice(4);
+                const comps = pieceRows
+                  .filter((p) => p.kind !== "KIT" && pieceToKit.get(p.itemKey) === kitId)
+                  .sort((a, b) => a.code - b.code);
+                orderedRows.push(...comps);
+              }
+            }
 
             const ec = extraCosts.find((e) => e.supplier_id === reviewingQtyRequote.supplier_id) as any;
             const prevInstallation = Number(ec?.adjusted_installation_value ?? ec?.installation_value ?? 0);
@@ -3412,7 +3436,8 @@ ${msgLabels.winnerWaFooter}
             const newInstallation = submitted.installation != null ? Number(submitted.installation) : prevInstallation;
             const newFreight = submitted.freight != null ? Number(submitted.freight) : prevFreight;
 
-            const includedRows = pieceRows.filter((r) => !qtyExcludedKeys.has(r.itemKey));
+            // Totals: only top-level rows (kits + standalone pieces). Kit component pieces are already accounted for by the kit.
+            const includedRows = topLevel.filter((r) => !qtyExcludedKeys.has(r.itemKey));
             const prevItemsTotal = includedRows.reduce((s, r) => s + r.prevTotal, 0);
             const newItemsTotal = includedRows.reduce((s, r) => s + r.newTotal, 0);
             const prevGrand = prevItemsTotal + prevInstallation + prevFreight;
@@ -3442,14 +3467,17 @@ ${msgLabels.winnerWaFooter}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {pieceRows.map((r) => {
+                    {orderedRows.map((r) => {
                       const excluded = qtyExcludedKeys.has(r.itemKey);
+                      const isComponent = r.kind !== "KIT" && componentPieceIds.has(r.itemKey);
                       return (
-                        <TableRow key={r.itemKey} className={cn(excluded && "opacity-40 line-through")}>
+                        <TableRow key={r.itemKey} className={cn(excluded && "opacity-40 line-through", isComponent && "bg-muted/20")}>
                           <TableCell className="text-sm">
-                            <div className="flex items-center gap-2">
+                            <div className={cn("flex items-center gap-2", isComponent && "pl-6")}>
+                              {isComponent && <span className="text-xs text-muted-foreground">↳</span>}
                               {r.kind === "KIT" && <Badge variant="secondary" className="text-[10px]">KIT</Badge>}
                               <span>#{r.code} {r.name}</span>
+                              {isComponent && <span className="text-[10px] text-muted-foreground italic">(incluso no kit)</span>}
                             </div>
                           </TableCell>
                           <TableCell className="text-center tabular-nums text-muted-foreground">{r.oldQty}</TableCell>
