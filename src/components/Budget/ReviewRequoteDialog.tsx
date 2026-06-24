@@ -61,13 +61,13 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
     submittedPrices.forEach((p: any) => {
       if (p?.piece_id != null) {
         const v = p.new_price;
-        m[`piece:${p.piece_id}`] = v == null ? "" : String(Number(v)).replace(".", ",");
+        m[`piece:${p.piece_id}`] = v == null ? "" : Number(v).toFixed(2).replace(".", ",");
       }
     });
     submittedKitPrices.forEach((p: any) => {
       if (p?.kit_id != null) {
         const v = p.new_price;
-        m[`kit:${p.kit_id}`] = v == null ? "" : String(Number(v)).replace(".", ",");
+        m[`kit:${p.kit_id}`] = v == null ? "" : Number(v).toFixed(2).replace(".", ",");
       }
     });
     return m;

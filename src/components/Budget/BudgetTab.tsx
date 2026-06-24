@@ -3552,7 +3552,7 @@ ${msgLabels.winnerWaFooter}
                           <TableCell className="text-right tabular-nums font-semibold">
                             {qtyEditMode ? (
                               <Input
-                                value={qtyEditedPrices[r.itemKey] ?? String(r.next).replace(".", ",")}
+                                value={qtyEditedPrices[r.itemKey] ?? r.next.toFixed(2).replace(".", ",")}
                                 onChange={(e) => setQtyEditedPrices((p) => ({ ...p, [r.itemKey]: e.target.value }))}
                                 inputMode="decimal"
                                 placeholder="0,00"
@@ -3593,7 +3593,7 @@ ${msgLabels.winnerWaFooter}
                       {" → "}
                       {qtyEditMode ? (
                         <Input
-                          value={qtyEditedPrices["installation"] ?? String(newInstallation).replace(".", ",")}
+                          value={qtyEditedPrices["installation"] ?? newInstallation.toFixed(2).replace(".", ",")}
                           onChange={(e) => setQtyEditedPrices((p) => ({ ...p, installation: e.target.value }))}
                           inputMode="decimal"
                           placeholder="0,00"
@@ -3611,7 +3611,7 @@ ${msgLabels.winnerWaFooter}
                       {" → "}
                       {qtyEditMode ? (
                         <Input
-                          value={qtyEditedPrices["freight"] ?? String(newFreight).replace(".", ",")}
+                          value={qtyEditedPrices["freight"] ?? newFreight.toFixed(2).replace(".", ",")}
                           onChange={(e) => setQtyEditedPrices((p) => ({ ...p, freight: e.target.value }))}
                           inputMode="decimal"
                           placeholder="0,00"
