@@ -3496,6 +3496,22 @@ ${msgLabels.winnerWaFooter}
               <div className="space-y-3 max-h-[60vh] overflow-auto">
                 <Table>
                   <TableHeader>
+            return (
+              <div className="space-y-3 max-h-[60vh] overflow-auto">
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant={qtyEditMode ? "default" : "outline"}
+                    className="h-7 text-xs"
+                    onClick={() => setQtyEditMode((v) => !v)}
+                  >
+                    <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                    {qtyEditMode ? "Concluir edição" : "Editar preços"}
+                  </Button>
+                </div>
+                <Table>
+                  <TableHeader>
                     <TableRow>
                       <TableHead>Peça / Kit</TableHead>
                       <TableHead className="text-center w-20">Qtd. ant.</TableHead>
