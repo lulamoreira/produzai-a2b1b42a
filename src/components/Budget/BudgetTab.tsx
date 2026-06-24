@@ -3538,7 +3538,17 @@ ${msgLabels.winnerWaFooter}
                             {r.prev.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                           </TableCell>
                           <TableCell className="text-right tabular-nums font-semibold">
-                            {r.next.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                            {qtyEditMode ? (
+                              <Input
+                                value={qtyEditedPrices[r.itemKey] ?? String(r.next).replace(".", ",")}
+                                onChange={(e) => setQtyEditedPrices((p) => ({ ...p, [r.itemKey]: e.target.value }))}
+                                inputMode="decimal"
+                                placeholder="0,00"
+                                className="h-7 w-24 text-right ml-auto"
+                              />
+                            ) : (
+                              r.next.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
+                            )}
                           </TableCell>
                           <TableCell className={cn("text-right tabular-nums text-xs", r.pct > 0 ? "text-destructive" : r.pct < 0 ? "text-emerald-600" : "text-muted-foreground")}>
                             {r.pct > 0 ? "+" : ""}{r.pct.toFixed(1)}%
