@@ -1252,7 +1252,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         rateio: {
           pieces,
           kits,
-          kitPieces,
+          kitPieces: kitPieces as any,
           stores,
           qtyMap: rateioQtyMap,
         },
