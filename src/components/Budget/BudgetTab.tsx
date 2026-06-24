@@ -3667,10 +3667,18 @@ ${msgLabels.winnerWaFooter}
                 if (!reviewingQtyRequote) return;
                 setQtyReviewProcessing(true);
                 try {
-                  if (qtyExcludedKeys.size > 0) {
+                 const hasEdits = Object.keys(qtyEditedPrices).length > 0;
+                 if (qtyExcludedKeys.size > 0 || hasEdits) {
                     const submitted = { ...(reviewingQtyRequote.submitted_prices ?? {}) } as Record<string, any>;
                     const qtyChanges = { ...(reviewingQtyRequote.qty_changes ?? {}) } as Record<string, any>;
                     qtyExcludedKeys.forEach((k) => { delete submitted[k]; delete qtyChanges[k]; });
+                    Object.entries(qtyEditedPrices).forEach(([k, raw]) => {
+                      if (qtyExcludedKeys.has(k)) return;
+                      if (raw === undefined || raw === "") return;
+                      const cleaned = String(raw).replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+                      const n = Number(cleaned);
+                      if (Number.isFinite(n)) submitted[k] = n;
+                    });
                     const { error: upErr } = await supabase
                       .from("budget_qty_requotes")
                       .update({ submitted_prices: submitted, qty_changes: qtyChanges })
