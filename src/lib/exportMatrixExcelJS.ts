@@ -3,6 +3,7 @@ import { saveXlsxAs } from "./saveBlobAs";
 import type { ClientStore, CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
 import type { ColorPalette, StoreFieldDef } from "@/components/RateioExportColorDialog";
 import { DEFAULT_STORE_FIELDS } from "@/components/RateioExportColorDialog";
+import { getThumbnailUrl } from "./imageUrl";
 
 function getStoreFieldValue(store: ClientStore, key: string): string | number {
   const v = (store as any)[key];
@@ -190,15 +191,20 @@ async function buildTransposedSheet(
   titleCell.border = allWhiteBorders;
   ws.getRow(1).height = 40;
 
-  // Pre-fetch images
+  // Pre-fetch images — usa thumbnail otimizado (Supabase image transform)
+  // para drasticamente reduzir bytes baixados e tempo de geração.
+  // Concorrência limitada para evitar congestionar a rede do navegador.
   const imageCache: Record<string, { base64: string; ext: "png" | "jpeg"; width: number; height: number } | null> = {};
-  await Promise.all(
-    items.map(async (p) => {
-      if (p.image_url) {
-        imageCache[p.id] = await fetchImageAsBase64(p.image_url);
-      }
-    })
-  );
+  const CONCURRENCY = 8;
+  const queue = items.filter((p) => p.image_url).slice();
+  const workers = Array.from({ length: Math.min(CONCURRENCY, queue.length) }, async () => {
+    while (queue.length) {
+      const p = queue.shift()!;
+      const url = getThumbnailUrl(p.image_url!, 240, 70);
+      imageCache[p.id] = await fetchImageAsBase64(url);
+    }
+  });
+  await Promise.all(workers);
 
   // Meta rows
   for (let mi = 0; mi < META_ROW_COUNT; mi++) {
