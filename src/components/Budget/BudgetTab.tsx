@@ -3552,7 +3552,7 @@ ${msgLabels.winnerWaFooter}
                           <TableCell className="text-right tabular-nums font-semibold">
                             {qtyEditMode ? (
                               <Input
-                                value={qtyEditedPrices[r.itemKey] ?? String(r.next).replace(".", ",")}
+                                value={qtyEditedPrices[r.itemKey] ?? r.next.toFixed(2).replace(".", ",")}
                                 onChange={(e) => setQtyEditedPrices((p) => ({ ...p, [r.itemKey]: e.target.value }))}
                                 inputMode="decimal"
                                 placeholder="0,00"
