@@ -32,7 +32,9 @@ export async function buildRequoteFinalPackage(params: {
     adjStoresRows,
     baselineRows,
     extrasRes,
+    negotiationStorePiecesRows,
   ] = await Promise.all([
+
     supabase.from("campaigns").select("name, client_id").eq("id", campaignId).maybeSingle(),
     supabase.from("campaign_adjustments").select("name").eq("id", adjustmentId).maybeSingle(),
     supabase.from("budget_suppliers").select("company_name").eq("id", supplierId).maybeSingle(),
@@ -88,7 +90,15 @@ export async function buildRequoteFinalPackage(params: {
       .select("installation_value, freight_value, adjusted_installation_value, adjusted_freight_value")
       .eq("supplier_id", supplierId)
       .maybeSingle(),
+    supabasePaginate<any>((from, to) =>
+      supabase
+        .from("budget_negotiation_store_pieces" as any)
+        .select("store_id, piece_id, quantity")
+        .eq("supplier_id", supplierId)
+        .range(from, to) as any,
+    ),
   ]);
+
 
   const clientId = (campaignRes.data as any)?.client_id || null;
   const storeRows = clientId
@@ -157,20 +167,67 @@ export async function buildRequoteFinalPackage(params: {
     };
   });
 
+  // ── Prefer NEGOTIATION rateio (recotação) over the original adjustment rateio.
+  // The negotiation table stores quantities keyed by the SOURCE piece_id
+  // (campaign_pieces.id). We map them back to adjustment piece IDs so the
+  // matrix sheet reflects the negotiated quantities, not the original ones.
+  const adjPiecesList = ((adjPiecesRes.data as any[]) || []);
+  const adjPieceIdBySourceId = new Map<string, string>();
+  for (const ap of adjPiecesList) {
+    if (ap?.source_piece_id) adjPieceIdBySourceId.set(String(ap.source_piece_id), String(ap.id));
+  }
+  const negRows = ((negotiationStorePiecesRows as any[]) || []);
+  const finalStorePieces = negRows.length > 0
+    ? negRows
+        .map((r: any) => {
+          const adjPieceId = adjPieceIdBySourceId.get(String(r.piece_id));
+          if (!adjPieceId) return null;
+          return {
+            store_id: String(r.store_id),
+            piece_id: adjPieceId,
+            quantity: Number(r.quantity || 0),
+          };
+        })
+        .filter((x): x is { store_id: string; piece_id: string; quantity: number } => !!x)
+    : ((adjStorePiecesRows as any[]) || []).map((r: any) => ({
+        store_id: String(r.store_id),
+        piece_id: String(r.piece_id),
+        quantity: Number(r.quantity || 0),
+      }));
+
+  // Recompute usedStores against finalStorePieces (negotiation may cover a
+  // different set of stores than the original adjustment rateio).
+  const finalStoreIds = new Set(finalStorePieces.map((r) => r.store_id));
+  const finalUsedStores = Array.from(finalStoreIds).map((id) => {
+    const current = currentStoreById.get(id);
+    if (current) return current;
+    const snap = snapshotStoreById.get(id) as any;
+    const original = snap?.original_snapshot && typeof snap.original_snapshot === "object"
+      ? snap.original_snapshot
+      : {};
+    return {
+      ...(original as any),
+      id,
+      name: snap?.name || "Loja removida",
+      nickname: snap?.nickname || null,
+      city: snap?.city || null,
+      state: snap?.state || null,
+      store_code: snap?.store_code || null,
+      showcase_count: Number(snap?.showcase_count || 0),
+    };
+  });
+
   return await buildRequoteFinalWorkbook({
     campaignName: (campaignRes.data as any)?.name ?? "",
     adjustmentName: (adjustmentRes.data as any)?.name ?? "Ajuste",
     supplierName: (supplierRes.data as any)?.company_name ?? "",
     currencyCode: "BRL",
-    adjPieces: ((adjPiecesRes.data as any[]) || []) as any,
+    adjPieces: adjPiecesList as any,
     adjKits: ((adjKitsRes.data as any[]) || []) as any,
     adjKitPieces: ((adjKitPiecesRows as any[]) || []) as any,
-    adjStorePieces: ((adjStorePiecesRows as any[]) || []).map((r: any) => ({
-      store_id: String(r.store_id),
-      piece_id: String(r.piece_id),
-      quantity: Number(r.quantity || 0),
-    })),
-    stores: usedStores.length > 0 ? (usedStores as any) : ((storeRows as any[]) || []),
+    adjStorePieces: finalStorePieces,
+    stores: finalUsedStores.length > 0 ? (finalUsedStores as any) : ((storeRows as any[]) || []),
+
     sourcePieces: ((srcPiecesRes.data as any[]) || []) as any,
     sourceKits: ((srcKitsRes.data as any[]) || []) as any,
     previousPriceBySourcePiece,
