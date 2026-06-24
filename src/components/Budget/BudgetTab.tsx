@@ -3593,7 +3593,7 @@ ${msgLabels.winnerWaFooter}
                       {" → "}
                       {qtyEditMode ? (
                         <Input
-                          value={qtyEditedPrices["installation"] ?? String(newInstallation).replace(".", ",")}
+                          value={qtyEditedPrices["installation"] ?? newInstallation.toFixed(2).replace(".", ",")}
                           onChange={(e) => setQtyEditedPrices((p) => ({ ...p, installation: e.target.value }))}
                           inputMode="decimal"
                           placeholder="0,00"
