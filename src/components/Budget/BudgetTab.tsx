@@ -3512,7 +3512,40 @@ ${msgLabels.winnerWaFooter}
                     size="sm"
                     variant={qtyEditMode ? "default" : "outline"}
                     className="h-7 text-xs"
-                    onClick={() => setQtyEditMode((v) => !v)}
+                    onClick={async () => {
+                      if (!qtyEditMode) {
+                        setQtyEditMode(true);
+                        return;
+                      }
+                      // Concluir edição → persistir os preços editados no banco
+                      const hasEdits = Object.keys(qtyEditedPrices).length > 0;
+                      if (!hasEdits) {
+                        setQtyEditMode(false);
+                        return;
+                      }
+                      try {
+                        const merged = { ...(reviewingQtyRequote!.submitted_prices ?? {}) } as Record<string, any>;
+                        Object.entries(qtyEditedPrices).forEach(([k, raw]) => {
+                          if (raw === undefined || raw === "") return;
+                          const cleaned = String(raw).replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+                          const n = Number(cleaned);
+                          if (Number.isFinite(n)) merged[k] = n;
+                        });
+                        const { error: upErr } = await supabase
+                          .from("budget_qty_requotes")
+                          .update({ submitted_prices: merged })
+                          .eq("id", reviewingQtyRequote!.id);
+                        if (upErr) throw upErr;
+                        // Atualiza estado local para refletir os novos preços como baseline
+                        setReviewingQtyRequote({ ...reviewingQtyRequote!, submitted_prices: merged } as any);
+                        setQtyEditedPrices({});
+                        setQtyEditMode(false);
+                        queryClient.invalidateQueries({ queryKey: ["budget_qty_requotes", campaignId] });
+                        toast.success("Preços salvos.");
+                      } catch (e: any) {
+                        toast.error(e?.message || "Erro ao salvar preços");
+                      }
+                    }}
                   >
                     <Pencil className="w-3.5 h-3.5 mr-1.5" />
                     {qtyEditMode ? "Concluir edição" : "Editar preços"}
