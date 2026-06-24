@@ -3388,7 +3388,7 @@ ${msgLabels.winnerWaFooter}
       {/* Review qty requote */}
       <Dialog
         open={!!reviewingQtyRequote}
-        onOpenChange={(o) => { if (!o) { setReviewingQtyRequote(null); setQtyRejectNotes(""); setQtyExcludedKeys(new Set()); } }}
+        onOpenChange={(o) => { if (!o) { setReviewingQtyRequote(null); setQtyRejectNotes(""); setQtyExcludedKeys(new Set()); setQtyEditMode(false); setQtyEditedPrices({}); } }}
       >
         <DialogContent className="max-w-3xl">
           <DialogHeader>
