@@ -139,9 +139,9 @@ export default function SendQtyRequoteDialog({
         const kitPieces: Array<{ kit_id: string; piece_id: string; quantity: number }> =
           kitPiecesRes.data ?? [];
 
-        // Per-piece totals. A negociação is a sparse override by store×piece:
-        // rows not present in budget_negotiation_store_pieces must keep the
-        // original campaign_store_pieces quantity instead of being counted as 0.
+        // Per-piece totals. Fonte única da recotação: se a peça existe no
+        // rateio de negociação, a quantidade vem SOMENTE dele. Só usamos o
+        // rateio original quando a peça não existe na negociação.
         const origByPiece: Record<string, number> = {};
         for (const r of origRows as any[]) {
           origByPiece[r.piece_id] = (origByPiece[r.piece_id] || 0) + Number(r.quantity || 0);
@@ -149,21 +149,30 @@ export default function SendQtyRequoteDialog({
         const hasNeg = (negRows as any[]).length > 0;
         setOrigQtyByPiece(origByPiece);
 
+        const negByPiece: Record<string, number> = {};
+        const piecesWithNegotiation = new Set<string>();
+        for (const r of negRows as any[]) {
+          piecesWithNegotiation.add(r.piece_id);
+          negByPiece[r.piece_id] = (negByPiece[r.piece_id] || 0) + Number(r.quantity || 0);
+        }
+
+        const allPieceIds = new Set<string>([
+          ...Object.keys(origByPiece),
+          ...Object.keys(negByPiece),
+        ]);
+        const liveByPiece: Record<string, number> = {};
+        for (const pieceId of allPieceIds) {
+          liveByPiece[pieceId] = piecesWithNegotiation.has(pieceId)
+            ? (negByPiece[pieceId] || 0)
+            : (origByPiece[pieceId] || 0);
+        }
+        setLiveQtyByPiece(liveByPiece);
+
         // Per-(store, piece) for kit derivation
         const origByStore = new Map<string, number>();
         const negByStore = new Map<string, number>();
         for (const r of origRows as any[]) origByStore.set(`${r.store_id}:${r.piece_id}`, Number(r.quantity) || 0);
         for (const r of negRows as any[]) negByStore.set(`${r.store_id}:${r.piece_id}`, Number(r.quantity) || 0);
-        // Merge por (loja×peça): começa com original e sobrescreve com negociação.
-        const liveByStore = new Map(origByStore);
-        for (const [k, v] of negByStore) liveByStore.set(k, v);
-
-        const livePieceMerged: Record<string, number> = {};
-        for (const [storePieceKey, qty] of liveByStore) {
-          const pieceId = storePieceKey.slice(storePieceKey.indexOf(":") + 1);
-          livePieceMerged[pieceId] = (livePieceMerged[pieceId] || 0) + qty;
-        }
-        setLiveQtyByPiece(livePieceMerged);
 
         const allStoreIds = [...new Set<string>([
           ...(origRows as any[]).map((r) => r.store_id as string),
@@ -190,7 +199,10 @@ export default function SendQtyRequoteDialog({
               const key = `${storeId}:${comp.piece_id}`;
               const mult = comp.quantity || 1;
               oldMin = Math.min(oldMin, Math.floor((origByStore.get(key) ?? 0) / mult));
-              liveMin = Math.min(liveMin, Math.floor((liveByStore.get(key) ?? 0) / mult));
+              const liveQty = piecesWithNegotiation.has(comp.piece_id)
+                ? (negByStore.get(key) ?? 0)
+                : (origByStore.get(key) ?? 0);
+              liveMin = Math.min(liveMin, Math.floor(liveQty / mult));
             }
             oldTotal += oldMin === Infinity ? 0 : oldMin;
             liveTotal += liveMin === Infinity ? 0 : liveMin;
