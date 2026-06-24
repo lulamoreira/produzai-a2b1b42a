@@ -3726,6 +3726,43 @@ ${msgLabels.winnerWaFooter}
             >
               Recusar
             </Button>
+            {qtyEditMode && (
+              <Button
+                variant="default"
+                disabled={qtyReviewProcessing}
+                onClick={async () => {
+                  if (!reviewingQtyRequote) return;
+                  const hasEdits = Object.keys(qtyEditedPrices).length > 0;
+                  if (!hasEdits) {
+                    setQtyEditMode(false);
+                    return;
+                  }
+                  try {
+                    const merged = { ...(reviewingQtyRequote!.submitted_prices ?? {}) } as Record<string, any>;
+                    Object.entries(qtyEditedPrices).forEach(([k, raw]) => {
+                      if (raw === undefined || raw === "") return;
+                      const cleaned = String(raw).replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+                      const n = Number(cleaned);
+                      if (Number.isFinite(n)) merged[k] = n;
+                    });
+                    const { error: upErr } = await supabase
+                      .from("budget_qty_requotes")
+                      .update({ submitted_prices: merged })
+                      .eq("id", reviewingQtyRequote!.id);
+                    if (upErr) throw upErr;
+                    setReviewingQtyRequote({ ...reviewingQtyRequote!, submitted_prices: merged } as any);
+                    setQtyEditedPrices({});
+                    setQtyEditMode(false);
+                    queryClient.invalidateQueries({ queryKey: ["budget_qty_requotes", campaignId] });
+                    toast.success("Preços salvos.");
+                  } catch (e: any) {
+                    toast.error(e?.message || "Erro ao salvar preços");
+                  }
+                }}
+              >
+                Concluir edição
+              </Button>
+            )}
             <Button
               disabled={qtyReviewProcessing}
               onClick={async () => {
