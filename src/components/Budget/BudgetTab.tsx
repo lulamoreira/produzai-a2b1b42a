@@ -3586,20 +3586,40 @@ ${msgLabels.winnerWaFooter}
                 </Table>
 
                 <div className="rounded-md border bg-muted/30 p-3 text-xs space-y-1.5">
-                  <div className="flex justify-between gap-4">
+                  <div className="flex justify-between gap-4 items-center">
                     <span className="text-muted-foreground">Instalação (anterior → nova)</span>
-                    <span className="tabular-nums">
+                    <span className="tabular-nums flex items-center gap-2">
                       {prevInstallation.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                       {" → "}
-                      <span className="font-semibold">{newInstallation.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                      {qtyEditMode ? (
+                        <Input
+                          value={qtyEditedPrices["installation"] ?? String(newInstallation).replace(".", ",")}
+                          onChange={(e) => setQtyEditedPrices((p) => ({ ...p, installation: e.target.value }))}
+                          inputMode="decimal"
+                          placeholder="0,00"
+                          className="h-7 w-28 text-right"
+                        />
+                      ) : (
+                        <span className="font-semibold">{newInstallation.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                      )}
                     </span>
                   </div>
-                  <div className="flex justify-between gap-4">
+                  <div className="flex justify-between gap-4 items-center">
                     <span className="text-muted-foreground">Frete (anterior → novo)</span>
-                    <span className="tabular-nums">
+                    <span className="tabular-nums flex items-center gap-2">
                       {prevFreight.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                       {" → "}
-                      <span className="font-semibold">{newFreight.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                      {qtyEditMode ? (
+                        <Input
+                          value={qtyEditedPrices["freight"] ?? String(newFreight).replace(".", ",")}
+                          onChange={(e) => setQtyEditedPrices((p) => ({ ...p, freight: e.target.value }))}
+                          inputMode="decimal"
+                          placeholder="0,00"
+                          className="h-7 w-28 text-right"
+                        />
+                      ) : (
+                        <span className="font-semibold">{newFreight.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>
+                      )}
                     </span>
                   </div>
                   <div className="flex justify-between gap-4 pt-1 border-t">
