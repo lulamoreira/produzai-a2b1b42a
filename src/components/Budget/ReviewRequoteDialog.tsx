@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { format } from "date-fns";
-import { Loader2, AlertTriangle, MessageSquare, Pencil } from "lucide-react";
+import { Loader2, AlertTriangle, MessageSquare, Pencil, Search } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,6 +75,7 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
   }, [requote.id]);
 
   const [edited, setEdited] = useState<Record<string, string>>(initialEdited);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     setEdited(initialEdited);
@@ -103,6 +104,24 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
   const isDirty = useMemo(() => {
     return Object.keys(edited).some((k) => edited[k] !== initialEdited[k]);
   }, [edited, initialEdited]);
+
+  const filteredPieces = useMemo(() => {
+    if (!search.trim()) return pieces;
+    const s = search.trim().toLowerCase();
+    return pieces.filter((p: any) =>
+      String(p.name).toLowerCase().includes(s) ||
+      String(p.code).toLowerCase().includes(s)
+    );
+  }, [pieces, search]);
+
+  const filteredKits = useMemo(() => {
+    if (!search.trim()) return kits;
+    const s = search.trim().toLowerCase();
+    return kits.filter((k: any) =>
+      String(k.name).toLowerCase().includes(s) ||
+      String(k.code).toLowerCase().includes(s)
+    );
+  }, [kits, search]);
 
   const persistEditedPrices = async () => {
     // Rebuild prices/kits arrays preserving any extra fields
@@ -212,6 +231,18 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
           </DialogDescription>
         </DialogHeader>
 
+        <div className="px-6 pt-2 pb-2 border-b border-border bg-background z-10">
+          <div className="relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por código ou nome..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 h-9"
+            />
+          </div>
+        </div>
+
         <div className="flex-1 overflow-y-auto px-6 py-3 space-y-4">
           {requote.notes && (
             <div className="rounded-md border border-border bg-muted/40 p-3">
@@ -266,7 +297,7 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
                 </tr>
               </thead>
               <tbody>
-                {pieces.map((piece) => {
+                {filteredPieces.map((piece) => {
                   const prev = Number(getPreviousPrice(piece.id) || 0);
                   const next = getNewPrice(piece.id);
                   const diff = next !== null ? next - prev : null;
@@ -275,7 +306,7 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
                     <tr key={piece.id} className="border-t border-border">
                       <td className="px-3 py-2">
                         <div className="font-medium">{piece.name}</div>
-                        <div className="text-xs text-muted-foreground">{piece.code}</div>
+                        <div className="text-sm font-bold text-[#8C6F4E]">#{piece.code}</div>
                       </td>
                       <td className="px-3 py-2 text-right">{formatCurrency(prev)}</td>
                       <td className="px-3 py-2 text-right">
@@ -297,7 +328,7 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
                     </tr>
                   );
                 })}
-                {kits.map((kit) => {
+                {filteredKits.map((kit) => {
                   const prev = Number(getPreviousPrice(undefined, kit.id) || 0);
                   const next = getNewPrice(undefined, kit.id);
                   const diff = next !== null ? next - prev : null;
@@ -306,7 +337,7 @@ export function ReviewRequoteDialog({ open, onOpenChange, requote, pieces, kits,
                     <tr key={kit.id} className="border-t border-border">
                       <td className="px-3 py-2">
                         <div className="font-medium">{kit.name}</div>
-                        <div className="text-xs text-muted-foreground">{kit.code} · Kit</div>
+                        <div className="text-sm font-bold text-[#8C6F4E]">#{kit.code} · Kit</div>
                       </td>
                       <td className="px-3 py-2 text-right">{formatCurrency(prev)}</td>
                       <td className="px-3 py-2 text-right">
