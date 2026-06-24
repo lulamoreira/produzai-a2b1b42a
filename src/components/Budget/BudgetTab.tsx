@@ -3420,7 +3420,14 @@ ${msgLabels.winnerWaFooter}
                 ? kits.find((k) => k.id === rawId)
                 : pieces.find((p) => p.id === rawId);
               const prev = previousPrices[itemKey] ?? 0;
-              const next = Number(submitted[itemKey] ?? 0);
+              const editedRaw = qtyEditedPrices[itemKey];
+              const parsedEdit = (() => {
+                if (editedRaw === undefined || editedRaw === "") return null;
+                const cleaned = String(editedRaw).replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+                const n = Number(cleaned);
+                return Number.isFinite(n) ? n : null;
+              })();
+              const next = parsedEdit !== null ? parsedEdit : Number(submitted[itemKey] ?? 0);
               const pct = prev > 0 ? ((next - prev) / prev) * 100 : 0;
               const oldQty = qtyChanges[itemKey]?.old_qty ?? 0;
               const newQty = qtyChanges[itemKey]?.new_qty ?? 0;
