@@ -233,6 +233,8 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   const [qtyRejectNotes, setQtyRejectNotes] = useState("");
   const [qtyReviewProcessing, setQtyReviewProcessing] = useState(false);
   const [qtyExcludedKeys, setQtyExcludedKeys] = useState<Set<string>>(new Set());
+  const [qtyEditMode, setQtyEditMode] = useState(false);
+  const [qtyEditedPrices, setQtyEditedPrices] = useState<Record<string, string>>({});
   const { data: qtyRequotes = [] } = useQuery({
     queryKey: ["budget_qty_requotes", campaignId],
     queryFn: async () => {
