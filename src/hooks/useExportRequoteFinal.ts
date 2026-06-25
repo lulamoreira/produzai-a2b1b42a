@@ -94,16 +94,20 @@ export async function buildRequoteFinalPackage(params: {
     supabasePaginate<any>((from, to) =>
       supabase
         .from("budget_negotiation_store_pieces" as any)
-        .select("store_id, piece_id, quantity")
+        .select("store_id, piece_id, quantity", { count: "exact" })
         .eq("supplier_id", supplierId)
+        .order("store_id")
+        .order("piece_id")
         .range(from, to) as any,
     ),
     supabasePaginate<any>((from, to) =>
       supabase
         .from("budget_negotiation_store_pieces" as any)
-        .select("store_id, piece_id, quantity")
+        .select("store_id, piece_id, quantity", { count: "exact" })
         .eq("campaign_id", campaignId)
         .is("supplier_id", null)
+        .order("store_id")
+        .order("piece_id")
         .range(from, to) as any,
     ),
   ]);
