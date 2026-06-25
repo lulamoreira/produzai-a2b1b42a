@@ -259,6 +259,14 @@ Qualquer dúvida, estamos à disposição!` : "";
           </div>
         </div>
 
+        {!isLoading && (
+          <div className="text-sm text-muted-foreground -mt-2">
+            {searchTerm
+              ? `${filteredSuppliers.length} de ${suppliers.length} fornecedores encontrados`
+              : `${suppliers.length} fornecedores cadastrados`}
+          </div>
+        )}
+
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
