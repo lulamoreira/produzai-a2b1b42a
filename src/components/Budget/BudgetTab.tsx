@@ -1222,12 +1222,17 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       //     no negotiation rateio exists for the supplier. ───────────────────
       let rateioQtyMap: Record<string, number> = { ...qtyMap };
       try {
+        // CRITICAL: include { count: "exact" } so supabasePaginate fetches ALL
+        // pages. Without count the helper silently stops after 1000 rows,
+        // leaving most stores showing 0 in the matrix.
         const supplierNegRows = await supabasePaginate<any>((from, to) =>
           supabase
             .from("budget_negotiation_store_pieces" as never)
-            .select("store_id, piece_id, quantity")
+            .select("store_id, piece_id, quantity", { count: "exact" })
             .eq("campaign_id", campaignId)
             .eq("supplier_id", sup.id)
+            .order("store_id")
+            .order("piece_id")
             .range(from, to) as any
         );
         const negRows = Array.isArray(supplierNegRows) && supplierNegRows.length > 0
@@ -1235,9 +1240,11 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           : await supabasePaginate<any>((from, to) =>
               supabase
                 .from("budget_negotiation_store_pieces" as never)
-                .select("store_id, piece_id, quantity")
+                .select("store_id, piece_id, quantity", { count: "exact" })
                 .eq("campaign_id", campaignId)
                 .is("supplier_id", null)
+                .order("store_id")
+                .order("piece_id")
                 .range(from, to) as any
             );
         if (Array.isArray(negRows) && negRows.length > 0) {
@@ -1249,6 +1256,9 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             negMap[`${r.store_id}-${r.piece_id}`] = Number(r.quantity || 0);
           }
           rateioQtyMap = negMap;
+          console.info(
+            `[RequoteSheet] negociação carregada: ${negRows.length} linhas para ${sup.company_name}`,
+          );
         }
       } catch (err) {
         console.warn("Falha ao carregar rateio de negociação — usando rateio original.", err);
