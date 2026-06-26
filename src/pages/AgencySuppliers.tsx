@@ -279,10 +279,19 @@ Qualquer dúvida, estamos à disposição!` : "";
         </div>
 
         {!isLoading && (
-          <div className="text-sm text-muted-foreground -mt-2">
-            {searchTerm
-              ? `${filteredSuppliers.length} de ${suppliers.length} fornecedores encontrados`
-              : `${suppliers.length} fornecedores cadastrados`}
+          <div className="text-sm text-muted-foreground -mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            <span>
+              {searchTerm
+                ? `${filteredSuppliers.length} de ${suppliers.length} fornecedores encontrados`
+                : `${suppliers.length} fornecedores cadastrados`}
+            </span>
+            {lastSupplier && (
+              <span>
+                Último cadastro: <span className="font-medium text-foreground">{lastSupplier.company_name}</span>
+                {" — "}
+                {format(new Date(lastSupplier.created_at), "dd/MM/yyyy 'às' HH:mm")}
+              </span>
+            )}
           </div>
         )}
 
