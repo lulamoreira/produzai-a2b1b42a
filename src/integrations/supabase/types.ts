@@ -5642,10 +5642,9 @@ export type Database = {
         }
         Returns: boolean
       }
-      has_valid_supplier_invitation_for_agency: {
-        Args: { _agency_id: string }
-        Returns: boolean
-      }
+      has_valid_supplier_invitation_for_agency:
+        | { Args: { _agency_id: string }; Returns: boolean }
+        | { Args: { _agency_id_text: string }; Returns: boolean }
       has_valid_supplier_invitation_for_supplier: {
         Args: { _supplier_id: string }
         Returns: boolean
