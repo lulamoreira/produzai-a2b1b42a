@@ -64,8 +64,12 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, init
           subtitle: c.clients?.name || c.client?.name,
           meta: c.created_at ? formatters.dateShort(new Date(c.created_at)) : null,
           onClick: () => {
-            const agencyId = c.agency_id || "default";
-            navigate(`/agency/${agencyId}/clients/${c.client_id}/campaigns/${c.id}`);
+            const resolvedAgencyId = c.clients?.agency_id || agencyId;
+            if (!resolvedAgencyId) {
+              console.warn("[KpiDetailDialog] Sem agency_id resolvido para a campanha", c.id);
+              return;
+            }
+            navigate(`/agency/${resolvedAgencyId}/clients/${c.client_id}/campaigns/${c.id}`);
             onClose();
           },
         };
