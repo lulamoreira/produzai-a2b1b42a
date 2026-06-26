@@ -270,7 +270,7 @@ export function HomeV2() {
           campaignName: item.campaigns?.name,
           actor: item.reporter_name,
           extra: item.status,
-          navigateTo: item.campaign_id ? `/agency/default/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}` : null,
+          navigateTo: item.campaign_id && userAgency ? `/agency/${userAgency}/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}` : null,
         });
       });
 
