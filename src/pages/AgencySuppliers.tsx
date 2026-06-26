@@ -137,6 +137,23 @@ const AgencySuppliers = () => {
     );
   }, [suppliers, searchTerm]);
 
+  const { sortedItems: sortedSuppliers, sortField, sortDir, handleSort } = useTableSort(filteredSuppliers, {
+    initialField: "created_at",
+    getValue: {
+      company_name: (s) => s.company_name?.toLowerCase() ?? "",
+      contact: (s) => (s.contacts?.[0]?.nome || s.contact_name || "").toLowerCase(),
+      services: (s) => (s.services as string[])?.length ?? 0,
+      created_at: (s) => s.created_at ? new Date(s.created_at).getTime() : 0,
+    },
+  });
+
+  const lastSupplier = useMemo(() => {
+    if (!suppliers.length) return null;
+    return [...suppliers].sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )[0];
+  }, [suppliers]);
+
   const handleOpenCreate = () => {
     setEditingSupplier(null);
     setDialogOpen(true);
