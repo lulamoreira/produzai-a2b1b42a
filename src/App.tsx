@@ -24,6 +24,7 @@ import { GlobalSearchMount } from "@/components/sidebar/GlobalSearch";
 import { PreviewUserProvider } from "@/hooks/usePreviewUser";
 import { PreviewUserBanner } from "@/components/PreviewUserBanner";
 import { UserActivityTracker } from "@/components/UserActivityTracker";
+import AgencyParamGuard from "@/components/AgencyParamGuard";
 
 
 // Lazy-loaded page components (one chunk per route)
