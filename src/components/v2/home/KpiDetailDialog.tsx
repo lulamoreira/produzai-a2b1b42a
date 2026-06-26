@@ -14,6 +14,7 @@ interface Props {
   formatters: any;
   t: (key: string, opts?: any) => string;
   initialData?: any[];
+  agencyId?: string;
 }
 
 const META: Record<string, { icon: any; titleKey: string; descKey: string }> = {
