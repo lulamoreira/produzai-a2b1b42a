@@ -5642,6 +5642,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_valid_supplier_invitation_for_agency: {
+        Args: { _agency_id: string }
+        Returns: boolean
+      }
+      has_valid_supplier_invitation_for_supplier: {
+        Args: { _supplier_id: string }
+        Returns: boolean
+      }
       is_admin_or_master: { Args: { _user_id: string }; Returns: boolean }
       is_supplier_unlocked: {
         Args: { p_supplier_id: string }
@@ -5743,6 +5751,15 @@ export type Database = {
       }
       update_supplier_invitation_status: {
         Args: { p_status: string; p_supplier_id?: string; p_token: string }
+        Returns: Json
+      }
+      upsert_agency_supplier_from_invitation: {
+        Args: {
+          p_complete?: boolean
+          p_payload?: Json
+          p_supplier_id?: string
+          p_token: string
+        }
         Returns: Json
       }
     }
