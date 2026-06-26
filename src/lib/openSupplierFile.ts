@@ -20,9 +20,7 @@ export async function openSupplierFile(file: SupplierFileReference): Promise<voi
 
   const { data, error } = await supabase.storage
     .from(SUPPLIER_FILES_BUCKET)
-    .createSignedUrl(path, SIGNED_URL_TTL_SECONDS, {
-      download: file.name || undefined,
-    });
+    .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
 
   if (error || !data?.signedUrl) {
     throw error || new Error("Não foi possível gerar o link seguro do arquivo.");
