@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "tmp_delete_test_file" ON storage.objects;
