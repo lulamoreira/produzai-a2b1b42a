@@ -111,11 +111,15 @@ const SupplierInvitePortal = () => {
       if (!supplierIdToLoad && draftId) supplierIdToLoad = draftId;
 
       if (supplierIdToLoad) {
-        const { data: sup } = await supabase
-          .from("agency_suppliers")
-          .select("*")
-          .eq("id", supplierIdToLoad)
-          .maybeSingle();
+        const supplierFromInvitation = (inv as any).supplier;
+        const { data: supplierFromTable } = supplierFromInvitation
+          ? { data: supplierFromInvitation }
+          : await supabase
+            .from("agency_suppliers")
+            .select("*")
+            .eq("id", supplierIdToLoad)
+            .maybeSingle();
+        const sup = supplierFromTable;
 
         if (sup) {
           setMySupplierDraftId(sup.id);
@@ -287,28 +291,24 @@ const SupplierInvitePortal = () => {
         estado: form.estado || null,
       };
 
-      let supplierId = mySupplierDraftId;
+      const { data: saveResult, error: saveError } = await (supabase.rpc as any)(
+        "upsert_agency_supplier_from_invitation",
+        {
+          p_token: token,
+          p_supplier_id: mySupplierDraftId,
+          p_payload: payload,
+          p_complete: isComplete,
+        }
+      );
 
-      if (supplierId) {
-        // Atualiza APENAS o rascunho criado nesta mesma sessão/aba.
-        // Nunca toca em cadastros pré-existentes de outros fornecedores.
-        const { error: updateError } = await supabase
-          .from("agency_suppliers")
-          .update(payload)
-          .eq("id", supplierId);
-        if (updateError) throw updateError;
-      } else {
-        // Novo fornecedor — sempre cria um registro novo e independente.
-        // Cadastros existentes JAMAIS são sobrescritos por este portal.
-        const newId = crypto.randomUUID();
-        const { error: insertError } = await supabase
-          .from("agency_suppliers")
-          .insert([{ id: newId, ...payload }]);
-        if (insertError) throw insertError;
-        supplierId = newId;
-        setMySupplierDraftId(newId);
-        sessionStorage.setItem(`supplier_draft_${token}`, newId);
+      if (saveError) throw saveError;
+      if (!(saveResult as any)?.success) {
+        throw new Error((saveResult as any)?.error || "Não foi possível salvar o fornecedor.");
       }
+
+      const supplierId = (saveResult as any).supplier_id as string;
+      setMySupplierDraftId(supplierId);
+      sessionStorage.setItem(`supplier_draft_${token}`, supplierId);
 
       if (isComplete) {
 
