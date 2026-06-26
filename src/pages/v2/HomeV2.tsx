@@ -369,6 +369,7 @@ export function HomeV2() {
         formatters={formatters}
         t={t}
         initialData={selectedKpi ? (dashboardData as any)?.[selectedKpi] : null}
+        agencyId={userAgency ?? undefined}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
