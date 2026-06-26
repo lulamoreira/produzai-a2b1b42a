@@ -96,8 +96,12 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, init
         subtitle: c.agencies?.name,
         meta: formatters.dateShort(new Date(c.created_at)),
         onClick: () => {
-          const agencyId = c.agency_id || "default";
-          navigate(`/agency/${agencyId}/clients/${c.id}`);
+          const resolvedAgencyId = c.agency_id || agencyId;
+          if (!resolvedAgencyId) {
+            console.warn("[KpiDetailDialog] Sem agency_id resolvido para o cliente", c.id);
+            return;
+          }
+          navigate(`/agency/${resolvedAgencyId}/clients/${c.id}`);
           onClose();
         },
       }));
