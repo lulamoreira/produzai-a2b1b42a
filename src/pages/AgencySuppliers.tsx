@@ -68,6 +68,8 @@ import {
 } from "lucide-react";
 import SupplierDetailsSheet from "@/components/SupplierDetailsSheet";
 import SupplierFormDialog from "@/components/SupplierFormDialog";
+import SortableHeader from "@/components/LojaALoja/SortableHeader";
+import { useTableSort } from "@/hooks/useTableSort";
 import { format, addDays } from "date-fns";
 import { toast } from "sonner";
 
@@ -134,6 +136,23 @@ const AgencySuppliers = () => {
       (s.services as string[]).some(service => service.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [suppliers, searchTerm]);
+
+  const { sortedItems: sortedSuppliers, sortField, sortDir, handleSort } = useTableSort(filteredSuppliers, {
+    initialField: "created_at",
+    getValue: {
+      company_name: (s) => s.company_name?.toLowerCase() ?? "",
+      contact: (s) => (s.contacts?.[0]?.nome || s.contact_name || "").toLowerCase(),
+      services: (s) => (s.services as string[])?.length ?? 0,
+      created_at: (s) => s.created_at ? new Date(s.created_at).getTime() : 0,
+    },
+  });
+
+  const lastSupplier = useMemo(() => {
+    if (!suppliers.length) return null;
+    return [...suppliers].sort((a, b) =>
+      new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    )[0];
+  }, [suppliers]);
 
   const handleOpenCreate = () => {
     setEditingSupplier(null);
@@ -260,10 +279,19 @@ Qualquer dúvida, estamos à disposição!` : "";
         </div>
 
         {!isLoading && (
-          <div className="text-sm text-muted-foreground -mt-2">
-            {searchTerm
-              ? `${filteredSuppliers.length} de ${suppliers.length} fornecedores encontrados`
-              : `${suppliers.length} fornecedores cadastrados`}
+          <div className="text-sm text-muted-foreground -mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            <span>
+              {searchTerm
+                ? `${filteredSuppliers.length} de ${suppliers.length} fornecedores encontrados`
+                : `${suppliers.length} fornecedores cadastrados`}
+            </span>
+            {lastSupplier && (
+              <span>
+                Último cadastro: <span className="font-medium text-foreground">{lastSupplier.company_name}</span>
+                {" — "}
+                {format(new Date(lastSupplier.created_at), "dd/MM/yyyy 'às' HH:mm")}
+              </span>
+            )}
           </div>
         )}
 
@@ -284,14 +312,15 @@ Qualquer dúvida, estamos à disposição!` : "";
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Empresa</TableHead>
-                  <TableHead>Contato</TableHead>
-                  <TableHead>Serviços</TableHead>
+                  <SortableHeader label="Empresa" field="company_name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  <SortableHeader label="Contato" field="contact" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  <SortableHeader label="Serviços" field="services" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  <SortableHeader label="Cadastrado em" field="created_at" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                   <TableHead className="w-[100px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSuppliers.map((s) => (
+                {sortedSuppliers.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell>
                       <div className="font-semibold">{s.company_name}</div>
@@ -318,6 +347,14 @@ Qualquer dúvida, estamos à disposição!` : "";
                         {(s.services as string[]).length > 3 && (
                           <span className="text-[10px] text-muted-foreground">+{(s.services as string[]).length - 3}</span>
                         )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {s.created_at ? format(new Date(s.created_at), "dd/MM/yyyy") : "—"}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {s.created_at ? format(new Date(s.created_at), "HH:mm") : ""}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -361,7 +398,7 @@ Qualquer dúvida, estamos à disposição!` : "";
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredSuppliers.map((s) => (
+            {sortedSuppliers.map((s) => (
               <div key={s.id} className="bg-card p-5 rounded-xl border shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-4">
                   <div>
