@@ -397,7 +397,7 @@ export function HomeV2() {
                 <Card 
                   key={camp.id}
                   className="bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition-shadow cursor-pointer group"
-                  onClick={() => navigate(`/agency/default/clients/${camp.client_id}/campaigns/${camp.id}`)}
+                  onClick={() => userAgency && navigate(`/agency/${userAgency}/clients/${camp.client_id}/campaigns/${camp.id}`)}
                 >
                   <div className="flex justify-between items-center mb-2">
                     <Badge 
