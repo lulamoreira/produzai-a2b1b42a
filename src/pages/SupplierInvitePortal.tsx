@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { formatPhoneByCountry } from "@/lib/countryConfig";
+import { buildSupplierFilePath, SUPPLIER_FILES_BUCKET } from "@/lib/supplierFiles";
 
 const formatCNPJ = (value: string) => {
   const d = value.replace(/\D/g, "").slice(0, 14);
@@ -59,7 +60,7 @@ const SupplierInvitePortal = () => {
     observations: "",
     services: [] as string[],
     custom_service: "",
-    file_urls: [] as { name: string; url: string }[],
+    file_urls: [] as { name: string; url?: string | null; path?: string | null }[],
     contacts: [{ nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }] as SupplierContact[],
     cep: "",
     logradouro: "",
@@ -234,9 +235,8 @@ const SupplierInvitePortal = () => {
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-      const filePath = `suppliers/${invitation.agency_id}/${Date.now()}-${safeName}`;
-      const { error } = await supabase.storage.from("supplier_files").upload(filePath, file);
+      const filePath = buildSupplierFilePath(invitation.agency_id, file.name);
+      const { error } = await supabase.storage.from(SUPPLIER_FILES_BUCKET).upload(filePath, file);
 
       if (error) {
         toast.error(`Erro ao enviar arquivo: ${file.name}`);
@@ -244,8 +244,7 @@ const SupplierInvitePortal = () => {
         continue;
       }
 
-      const { data: { publicUrl } } = supabase.storage.from("supplier_files").getPublicUrl(filePath);
-      setForm(f => ({ ...f, file_urls: [...f.file_urls, { name: file.name, url: publicUrl }] }));
+      setForm(f => ({ ...f, file_urls: [...f.file_urls, { name: file.name, path: filePath }] }));
       successCount++;
     }
 

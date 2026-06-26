@@ -26,6 +26,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
+import { buildSupplierFilePath, SUPPLIER_FILES_BUCKET } from "@/lib/supplierFiles";
 
 interface SupplierFormDialogProps {
   open: boolean;
@@ -47,7 +48,7 @@ const emptyForm = () => ({
   observations: "",
   services: [] as string[],
   custom_service: "",
-  file_urls: [] as { name: string; url: string }[],
+  file_urls: [] as { name: string; url?: string | null; path?: string | null }[],
   contacts: [{ nome: "", funcao: "", email: "", telefone: "", whatsapp: "" }] as SupplierContact[],
   cep: "",
   logradouro: "",
@@ -89,7 +90,7 @@ export default function SupplierFormDialog({
         observations: s.observations || "",
         services: (s.services as string[]) || [],
         custom_service: "",
-        file_urls: (s.file_urls as { name: string; url: string }[]) || [],
+        file_urls: (s.file_urls as { name: string; url?: string | null; path?: string | null }[]) || [],
         contacts:
           s.contacts && s.contacts.length > 0
             ? s.contacts
@@ -173,20 +174,27 @@ export default function SupplierFormDialog({
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || !files.length || !agencyId) return;
+    let successCount = 0;
+    let errorCount = 0;
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const filePath = `suppliers/${agencyId}/${Date.now()}-${file.name}`;
-      const { error } = await supabase.storage.from("supplier_files").upload(filePath, file);
+      const filePath = buildSupplierFilePath(agencyId, file.name);
+      const { error } = await supabase.storage.from(SUPPLIER_FILES_BUCKET).upload(filePath, file);
       if (error) {
         toast.error(`Erro ao enviar arquivo: ${file.name}`);
+        errorCount++;
         continue;
       }
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("supplier_files").getPublicUrl(filePath);
-      setForm((f) => ({ ...f, file_urls: [...f.file_urls, { name: file.name, url: publicUrl }] }));
+      setForm((f) => ({ ...f, file_urls: [...f.file_urls, { name: file.name, path: filePath }] }));
+      successCount++;
     }
-    toast.success("Arquivos enviados!");
+
+    if (successCount > 0 && errorCount === 0) {
+      toast.success("Arquivos enviados!");
+    } else if (successCount > 0 && errorCount > 0) {
+      toast.warning(`${successCount} arquivo(s) enviado(s), ${errorCount} com erro.`);
+    }
   };
 
   const removeFile = (index: number) =>

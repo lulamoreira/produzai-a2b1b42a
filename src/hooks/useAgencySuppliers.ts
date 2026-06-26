@@ -24,7 +24,7 @@ export type AgencySupplier = {
   observations: string | null;
   services: string[];
   contacts: SupplierContact[];
-  file_urls: { name: string; url: string }[];
+  file_urls: { name: string; url?: string | null; path?: string | null }[];
   cep: string | null;
   logradouro: string | null;
   numero: string | null;
@@ -73,7 +73,7 @@ export function useAgencySuppliers(agencyId: string | undefined) {
         ...s,
         services: Array.isArray(s.services) ? (s.services as string[]) : [],
         contacts: Array.isArray(s.contacts) ? (s.contacts as unknown as SupplierContact[]) : [],
-        file_urls: Array.isArray(s.file_urls) ? (s.file_urls as unknown as { name: string; url: string }[]) : []
+        file_urls: Array.isArray(s.file_urls) ? (s.file_urls as unknown as { name: string; url?: string | null; path?: string | null }[]) : []
       })) as unknown as AgencySupplier[];
     },
     enabled: !!agencyId,

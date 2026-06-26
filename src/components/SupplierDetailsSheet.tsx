@@ -34,6 +34,7 @@ import { toast } from "sonner";
 
 import SupplierComments from "./SupplierComments";
 import type { AgencySupplier } from "@/hooks/useAgencySuppliers";
+import { openSupplierFile } from "@/lib/openSupplierFile";
 
 interface Props {
   open: boolean;
@@ -58,6 +59,15 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
   const [sending, setSending] = useState(false);
   const [recipient, setRecipient] = useState("");
   const recipientInputRef = useRef<HTMLInputElement>(null);
+
+  const handleOpenSupplierFile = async (file: AgencySupplier["file_urls"][number]) => {
+    try {
+      await openSupplierFile(file);
+    } catch (error) {
+      console.error("Erro ao abrir arquivo do fornecedor:", error);
+      toast.error("Não foi possível abrir o arquivo. Tente novamente em instantes.");
+    }
+  };
 
   const { data: agency } = useQuery({
     queryKey: ["agency_name_for_email", supplier?.agency_id],
@@ -274,16 +284,15 @@ export default function SupplierDetailsSheet({ open, onOpenChange, supplier }: P
                 </h3>
                 <div className="space-y-1">
                   {supplier.file_urls.map((f, i) => (
-                    <a
+                    <button
                       key={i}
-                      href={f.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-sm text-primary hover:underline"
+                      type="button"
+                      onClick={() => handleOpenSupplierFile(f)}
+                      className="flex items-center gap-2 text-sm text-primary hover:underline text-left"
                     >
                       <FileText className="w-3.5 h-3.5" />
                       {f.name}
-                    </a>
+                    </button>
                   ))}
                 </div>
               </section>
