@@ -32,7 +32,7 @@ const META: Record<string, { icon: any; titleKey: string; descKey: string }> = {
 
 import { Building2, Users, UserCheck, ClipboardCheck } from "lucide-react";
 
-export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, initialData }: Props) {
+export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, initialData, agencyId }: Props) {
   const { data, isLoading } = useQuery({
     enabled: !!kpiKey && !initialData,
     queryKey: ["v2-kpi-detail", kpiKey],
