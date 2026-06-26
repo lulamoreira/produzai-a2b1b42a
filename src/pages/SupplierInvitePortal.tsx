@@ -229,20 +229,31 @@ const SupplierInvitePortal = () => {
     const files = e.target.files;
     if (!files || !files.length || !invitation) return;
 
+    let successCount = 0;
+    let errorCount = 0;
+
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
-      const filePath = `suppliers/${invitation.agency_id}/${Date.now()}-${file.name}`;
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const filePath = `suppliers/${invitation.agency_id}/${Date.now()}-${safeName}`;
       const { error } = await supabase.storage.from("supplier_files").upload(filePath, file);
 
       if (error) {
         toast.error(`Erro ao enviar arquivo: ${file.name}`);
+        errorCount++;
         continue;
       }
 
       const { data: { publicUrl } } = supabase.storage.from("supplier_files").getPublicUrl(filePath);
       setForm(f => ({ ...f, file_urls: [...f.file_urls, { name: file.name, url: publicUrl }] }));
+      successCount++;
     }
-    toast.success("Arquivos enviados!");
+
+    if (successCount > 0 && errorCount === 0) {
+      toast.success("Arquivos enviados!");
+    } else if (successCount > 0 && errorCount > 0) {
+      toast.warning(`${successCount} arquivo(s) enviado(s), ${errorCount} com erro.`);
+    }
   };
 
   const removeFile = (index: number) => {
