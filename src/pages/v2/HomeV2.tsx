@@ -252,7 +252,7 @@ export function HomeV2() {
           campaignName: item.campaigns?.name,
           actor: actorName,
           extra: item.action?.replace(/_/g, " "),
-          navigateTo: item.campaign_id ? `/agency/default/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}` : null,
+          navigateTo: item.campaign_id && userAgency ? `/agency/${userAgency}/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}` : null,
         });
       });
 
@@ -270,7 +270,7 @@ export function HomeV2() {
           campaignName: item.campaigns?.name,
           actor: item.reporter_name,
           extra: item.status,
-          navigateTo: item.campaign_id ? `/agency/default/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}` : null,
+          navigateTo: item.campaign_id && userAgency ? `/agency/${userAgency}/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}` : null,
         });
       });
 
@@ -286,7 +286,7 @@ export function HomeV2() {
           clientId: item.client_id,
           clientName: item.clients?.name,
           campaignName: item.name,
-          navigateTo: `/agency/default/clients/${item.client_id}/campaigns/${item.id}`,
+          navigateTo: userAgency ? `/agency/${userAgency}/clients/${item.client_id}/campaigns/${item.id}` : null,
         });
       });
 
@@ -369,6 +369,7 @@ export function HomeV2() {
         formatters={formatters}
         t={t}
         initialData={selectedKpi ? (dashboardData as any)?.[selectedKpi] : null}
+        agencyId={userAgency ?? undefined}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-8">
@@ -396,7 +397,7 @@ export function HomeV2() {
                 <Card 
                   key={camp.id}
                   className="bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition-shadow cursor-pointer group"
-                  onClick={() => navigate(`/agency/default/clients/${camp.client_id}/campaigns/${camp.id}`)}
+                  onClick={() => userAgency && navigate(`/agency/${userAgency}/clients/${camp.client_id}/campaigns/${camp.id}`)}
                 >
                   <div className="flex justify-between items-center mb-2">
                     <Badge 

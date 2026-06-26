@@ -14,6 +14,7 @@ interface Props {
   formatters: any;
   t: (key: string, opts?: any) => string;
   initialData?: any[];
+  agencyId?: string;
 }
 
 const META: Record<string, { icon: any; titleKey: string; descKey: string }> = {
@@ -31,7 +32,7 @@ const META: Record<string, { icon: any; titleKey: string; descKey: string }> = {
 
 import { Building2, Users, UserCheck, ClipboardCheck } from "lucide-react";
 
-export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, initialData }: Props) {
+export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, initialData, agencyId }: Props) {
   const { data, isLoading } = useQuery({
     enabled: !!kpiKey && !initialData,
     queryKey: ["v2-kpi-detail", kpiKey],
@@ -63,8 +64,12 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, init
           subtitle: c.clients?.name || c.client?.name,
           meta: c.created_at ? formatters.dateShort(new Date(c.created_at)) : null,
           onClick: () => {
-            const agencyId = c.agency_id || "default";
-            navigate(`/agency/${agencyId}/clients/${c.client_id}/campaigns/${c.id}`);
+            const resolvedAgencyId = c.clients?.agency_id || agencyId;
+            if (!resolvedAgencyId) {
+              console.warn("[KpiDetailDialog] Sem agency_id resolvido para a campanha", c.id);
+              return;
+            }
+            navigate(`/agency/${resolvedAgencyId}/clients/${c.client_id}/campaigns/${c.id}`);
             onClose();
           },
         };
@@ -91,8 +96,12 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, init
         subtitle: c.agencies?.name,
         meta: formatters.dateShort(new Date(c.created_at)),
         onClick: () => {
-          const agencyId = c.agency_id || "default";
-          navigate(`/agency/${agencyId}/clients/${c.id}`);
+          const resolvedAgencyId = c.agency_id || agencyId;
+          if (!resolvedAgencyId) {
+            console.warn("[KpiDetailDialog] Sem agency_id resolvido para o cliente", c.id);
+            return;
+          }
+          navigate(`/agency/${resolvedAgencyId}/clients/${c.id}`);
           onClose();
         },
       }));
@@ -129,8 +138,12 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, init
           : t("scheduling.notScheduled"),
         onClick: s.campaign_id
           ? () => {
-              const agencyId = s.campaigns?.agency_id || "default";
-              navigate(`/agency/${agencyId}/clients/${s.campaigns?.client_id}/campaigns/${s.campaign_id}/instalacoes`);
+              const resolvedAgencyId = s.campaigns?.clients?.agency_id || agencyId;
+              if (!resolvedAgencyId) {
+                console.warn("[KpiDetailDialog] Sem agency_id resolvido para a instalação", s.id);
+                return;
+              }
+              navigate(`/agency/${resolvedAgencyId}/clients/${s.campaigns?.client_id}/campaigns/${s.campaign_id}/instalacoes`);
               onClose();
             }
           : null,
