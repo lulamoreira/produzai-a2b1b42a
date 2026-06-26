@@ -111,15 +111,7 @@ const SupplierInvitePortal = () => {
       if (!supplierIdToLoad && draftId) supplierIdToLoad = draftId;
 
       if (supplierIdToLoad) {
-        const supplierFromInvitation = (inv as any).supplier;
-        const { data: supplierFromTable } = supplierFromInvitation
-          ? { data: supplierFromInvitation }
-          : await supabase
-            .from("agency_suppliers")
-            .select("*")
-            .eq("id", supplierIdToLoad)
-            .maybeSingle();
-        const sup = supplierFromTable;
+        const sup = (inv as any).supplier;
 
         if (sup) {
           setMySupplierDraftId(sup.id);
