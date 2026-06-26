@@ -24,6 +24,7 @@ import { GlobalSearchMount } from "@/components/sidebar/GlobalSearch";
 import { PreviewUserProvider } from "@/hooks/usePreviewUser";
 import { PreviewUserBanner } from "@/components/PreviewUserBanner";
 import { UserActivityTracker } from "@/components/UserActivityTracker";
+import AgencyParamGuard from "@/components/AgencyParamGuard";
 
 
 // Lazy-loaded page components (one chunk per route)
@@ -296,12 +297,13 @@ const App = () => (
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
                    <Route path="/agencies" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
-                   <Route path="/agency/:agencyId" element={<ProtectedRoute><AgencyDashboard /></ProtectedRoute>} />
-                   <Route path="/agency/:agencyId/clients" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-                  <Route path="/agency/:agencyId/clients/:clientId" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
-                  <Route path="/agency/:agencyId/clients/:clientId/campaigns" element={<ProtectedRoute><ClientDetail /></ProtectedRoute>} />
-                  <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId/*" element={<ProtectedRoute><ErrorBoundary><CampaignDetail /></ErrorBoundary></ProtectedRoute>} />
-                  <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId" element={<ProtectedRoute><ErrorBoundary><CampaignDetail /></ErrorBoundary></ProtectedRoute>} />
+                   <Route path="/agency/:agencyId" element={<ProtectedRoute><AgencyParamGuard><AgencyDashboard /></AgencyParamGuard></ProtectedRoute>} />
+                   <Route path="/agency/:agencyId/clients" element={<ProtectedRoute><AgencyParamGuard><Dashboard /></AgencyParamGuard></ProtectedRoute>} />
+                  <Route path="/agency/:agencyId/clients/:clientId" element={<ProtectedRoute><AgencyParamGuard><ClientDetail /></AgencyParamGuard></ProtectedRoute>} />
+                  <Route path="/agency/:agencyId/clients/:clientId/campaigns" element={<ProtectedRoute><AgencyParamGuard><ClientDetail /></AgencyParamGuard></ProtectedRoute>} />
+                  <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId/*" element={<ProtectedRoute><AgencyParamGuard><ErrorBoundary><CampaignDetail /></ErrorBoundary></AgencyParamGuard></ProtectedRoute>} />
+                  <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId" element={<ProtectedRoute><AgencyParamGuard><ErrorBoundary><CampaignDetail /></ErrorBoundary></AgencyParamGuard></ProtectedRoute>} />
+
                   <Route path="/checkin/:campaignId/:storeId" element={<ProtectedRoute><PhotoCheckin /></ProtectedRoute>} />
                   <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
                   <Route path="/admin/:tab" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
@@ -310,7 +312,7 @@ const App = () => (
 
                   <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
                   <Route path="/suppliers" element={<ProtectedRoute><AgencySuppliers /></ProtectedRoute>} />
-                  <Route path="/agency/:agencyId/suppliers" element={<ProtectedRoute><AgencySuppliers /></ProtectedRoute>} />
+                  <Route path="/agency/:agencyId/suppliers" element={<ProtectedRoute><AgencyParamGuard><AgencySuppliers /></AgencyParamGuard></ProtectedRoute>} />
                   <Route path="/favorites" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
                   <Route path="/installer" element={<InstallerPortal />} />
                   <Route path="/instalador" element={<InstallerPortal />} />
