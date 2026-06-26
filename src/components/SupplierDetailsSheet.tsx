@@ -34,7 +34,7 @@ import { toast } from "sonner";
 
 import SupplierComments from "./SupplierComments";
 import type { AgencySupplier } from "@/hooks/useAgencySuppliers";
-import { openSupplierFile } from "@/lib/supplierFiles";
+import { openSupplierFile } from "@/lib/openSupplierFile";
 
 interface Props {
   open: boolean;
