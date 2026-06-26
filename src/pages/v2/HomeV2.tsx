@@ -286,7 +286,7 @@ export function HomeV2() {
           clientId: item.client_id,
           clientName: item.clients?.name,
           campaignName: item.name,
-          navigateTo: `/agency/default/clients/${item.client_id}/campaigns/${item.id}`,
+          navigateTo: userAgency ? `/agency/${userAgency}/clients/${item.client_id}/campaigns/${item.id}` : null,
         });
       });
 
