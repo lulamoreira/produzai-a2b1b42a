@@ -312,14 +312,15 @@ Qualquer dúvida, estamos à disposição!` : "";
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Empresa</TableHead>
-                  <TableHead>Contato</TableHead>
-                  <TableHead>Serviços</TableHead>
+                  <SortableHeader label="Empresa" field="company_name" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  <SortableHeader label="Contato" field="contact" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  <SortableHeader label="Serviços" field="services" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  <SortableHeader label="Cadastrado em" field="created_at" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                   <TableHead className="w-[100px]">Ações</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSuppliers.map((s) => (
+                {sortedSuppliers.map((s) => (
                   <TableRow key={s.id}>
                     <TableCell>
                       <div className="font-semibold">{s.company_name}</div>
@@ -346,6 +347,14 @@ Qualquer dúvida, estamos à disposição!` : "";
                         {(s.services as string[]).length > 3 && (
                           <span className="text-[10px] text-muted-foreground">+{(s.services as string[]).length - 3}</span>
                         )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">
+                        {s.created_at ? format(new Date(s.created_at), "dd/MM/yyyy") : "—"}
+                      </div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {s.created_at ? format(new Date(s.created_at), "HH:mm") : ""}
                       </div>
                     </TableCell>
                     <TableCell>
