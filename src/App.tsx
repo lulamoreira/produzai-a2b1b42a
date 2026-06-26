@@ -312,7 +312,7 @@ const App = () => (
 
                   <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
                   <Route path="/suppliers" element={<ProtectedRoute><AgencySuppliers /></ProtectedRoute>} />
-                  <Route path="/agency/:agencyId/suppliers" element={<ProtectedRoute><AgencySuppliers /></ProtectedRoute>} />
+                  <Route path="/agency/:agencyId/suppliers" element={<ProtectedRoute><AgencyParamGuard><AgencySuppliers /></AgencyParamGuard></ProtectedRoute>} />
                   <Route path="/favorites" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
                   <Route path="/installer" element={<InstallerPortal />} />
                   <Route path="/instalador" element={<InstallerPortal />} />
