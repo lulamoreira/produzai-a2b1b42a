@@ -138,8 +138,12 @@ export function KpiDetailDialog({ kpiKey, onClose, navigate, formatters, t, init
           : t("scheduling.notScheduled"),
         onClick: s.campaign_id
           ? () => {
-              const agencyId = s.campaigns?.agency_id || "default";
-              navigate(`/agency/${agencyId}/clients/${s.campaigns?.client_id}/campaigns/${s.campaign_id}/instalacoes`);
+              const resolvedAgencyId = s.campaigns?.clients?.agency_id || agencyId;
+              if (!resolvedAgencyId) {
+                console.warn("[KpiDetailDialog] Sem agency_id resolvido para a instalação", s.id);
+                return;
+              }
+              navigate(`/agency/${resolvedAgencyId}/clients/${s.campaigns?.client_id}/campaigns/${s.campaign_id}/instalacoes`);
               onClose();
             }
           : null,
