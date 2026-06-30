@@ -102,6 +102,11 @@ const IMAGE_ROW_INDEX = 0;
 const NEW_ROW_INDEX = 7;
 const META_ROW_COUNT = META_LABELS.length;
 
+/** Row number (1-based) in the "Matriz Lojas x Peças" sheet that holds the TOTAL of quantities per item column. */
+export function getMatrixTotalQtyRowNum(storeCount: number): number {
+  return META_ROW_COUNT + 3 + Math.max(storeCount, 0);
+}
+
 type MatrixItem = {
   id: string;
   code: number;
