@@ -54,7 +54,7 @@ export function useInitializeMockups() {
     mutationFn: async (params: {
       campaignId: string;
       pieces: { id: string; is_mockup?: boolean; kit_only?: boolean }[];
-      kits: { id: string }[];
+      kits: { id: string; is_mockup?: boolean }[];
       kitPieces: { kit_id: string; piece_id: string }[];
     }) => {
       const existing = await supabasePaginate<{ piece_id: string | null; kit_id: string | null; parent_mockup_id: string | null }>(
@@ -84,6 +84,11 @@ export function useInitializeMockups() {
 
       const mockupPieceIds = new Set(params.pieces.filter(p => p.is_mockup).map(p => p.id));
       const kitsWithMockup = new Set<string>();
+      // Include kits flagged is_mockup directly
+      for (const kit of params.kits) {
+        if (kit.is_mockup) kitsWithMockup.add(kit.id);
+      }
+      // Also include kits that contain a piece with is_mockup=true (fallback)
       for (const kp of params.kitPieces) {
         if (mockupPieceIds.has(kp.piece_id)) kitsWithMockup.add(kp.kit_id);
       }

@@ -32,6 +32,7 @@ import {
   Search,
   X,
   RotateCcw,
+  RefreshCw,
   Pencil,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -195,7 +196,7 @@ export default function MockupTab({
     const piecesCount = pieces.filter((p) => p.is_mockup && !p.kit_only).length;
     const mockupPieceIds = new Set(pieces.filter((p) => p.is_mockup).map((p) => p.id));
     const kitsCount = kits.filter((k) =>
-      kitPieces.some((kp) => kp.kit_id === k.id && mockupPieceIds.has(kp.piece_id))
+      k.is_mockup || kitPieces.some((kp) => kp.kit_id === k.id && mockupPieceIds.has(kp.piece_id))
     ).length;
     return piecesCount + kitsCount;
   }, [pieces, kits, kitPieces]);
@@ -359,6 +360,31 @@ export default function MockupTab({
                 >
                   <FileSpreadsheet className="w-4 h-4" /> Excel
                 </Button>
+                {total > 0 && initPreview > 0 && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="min-h-[44px] gap-1.5 w-full md:w-auto justify-start md:justify-center"
+                    disabled={initialize.isPending}
+                    onClick={() =>
+                      initialize.mutate({
+                        campaignId,
+                        pieces: pieces.map((p) => ({
+                          id: p.id,
+                          is_mockup: p.is_mockup,
+                          kit_only: p.kit_only,
+                        })),
+                        kits: kits.map((k) => ({ id: k.id, is_mockup: k.is_mockup })),
+                        kitPieces: kitPieces.map((kp) => ({
+                          kit_id: kp.kit_id,
+                          piece_id: kp.piece_id,
+                        })),
+                      })
+                    }
+                  >
+                    <RefreshCw className="w-4 h-4" /> Sincronizar peças/kits
+                  </Button>
+                )}
                 {total > 0 && (
                   <Button
                     variant="outline"
@@ -468,7 +494,7 @@ export default function MockupTab({
                       is_mockup: p.is_mockup,
                       kit_only: p.kit_only,
                     })),
-                    kits: kits.map((k) => ({ id: k.id })),
+                    kits: kits.map((k) => ({ id: k.id, is_mockup: k.is_mockup })),
                     kitPieces: kitPieces.map((kp) => ({
                       kit_id: kp.kit_id,
                       piece_id: kp.piece_id,
