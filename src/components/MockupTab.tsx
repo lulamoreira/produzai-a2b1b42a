@@ -669,34 +669,34 @@ export default function MockupTab({
       <Dialog open={resetOpen} onOpenChange={(v) => { if (!resetting) { setResetOpen(v); if (!v) setResetTarget(null); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Zerar mockup</DialogTitle>
+            <DialogTitle>{t("mockupReview.reset.title")}</DialogTitle>
             <DialogDescription>
-              Esta ação apaga TODAS as observações, alterações propostas e toggles de TODAS as {total} peças/kits desta campanha, e define o status de todas para o que você escolher abaixo. Não pode ser desfeito.
+              {t("mockupReview.reset.description", { count: total })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-2">
-            <p className="text-sm font-medium">Definir todas como:</p>
+            <p className="text-sm font-medium">{t("mockupReview.reset.setAllAs")}</p>
             <div className="grid grid-cols-1 gap-2">
               <button
                 type="button"
                 onClick={() => setResetTarget("pending")}
                 className={`flex items-center gap-2 min-h-[48px] px-3 rounded-md border text-left transition-colors ${resetTarget === "pending" ? "border-primary bg-primary/5" : "border-border"}`}
               >
-                <Clock className="w-4 h-4 text-muted-foreground" /> ⏳ Pendentes
+                <Clock className="w-4 h-4 text-muted-foreground" /> {t("mockupReview.reset.optionPending")}
               </button>
               <button
                 type="button"
                 onClick={() => setResetTarget("approved")}
                 className={`flex items-center gap-2 min-h-[48px] px-3 rounded-md border text-left transition-colors ${resetTarget === "approved" ? "border-primary bg-primary/5" : "border-border"}`}
               >
-                <CheckCircle2 className="w-4 h-4 text-green-600" /> ✅ Aprovadas
+                <CheckCircle2 className="w-4 h-4 text-green-600" /> {t("mockupReview.reset.optionApproved")}
               </button>
               <button
                 type="button"
                 onClick={() => setResetTarget("rejected")}
                 className={`flex items-center gap-2 min-h-[48px] px-3 rounded-md border text-left transition-colors ${resetTarget === "rejected" ? "border-primary bg-primary/5" : "border-border"}`}
               >
-                <XCircle className="w-4 h-4 text-red-600" /> ❌ Reprovadas
+                <XCircle className="w-4 h-4 text-red-600" /> {t("mockupReview.reset.optionRejected")}
               </button>
             </div>
             <label className="flex items-start gap-2 pt-3 cursor-pointer">
@@ -707,16 +707,16 @@ export default function MockupTab({
                 className="mt-0.5"
               />
               <span className="text-sm">
-                Também remover imagens anotadas (voltar para as imagens originais)
+                {t("mockupReview.reset.clearAnnotations")}
               </span>
             </label>
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" disabled={resetting} onClick={() => { setResetOpen(false); setResetTarget(null); }}>
-              Cancelar
+              {t("common.cancel")}
             </Button>
             <Button variant="destructive" disabled={!resetTarget || resetting} onClick={handleResetAll}>
-              {resetting ? "Zerando..." : "Confirmar e zerar"}
+              {resetting ? t("mockupReview.reset.working") : t("mockupReview.reset.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
