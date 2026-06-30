@@ -476,11 +476,11 @@ export default function MockupTab({
         <div className="py-8">
           <EmptyState
             icon={LayoutGrid}
-            title="Nenhuma peça marcada como mockup nesta campanha."
+            title={t("mockupReview.empty.title")}
             subtitle={
               initPreview > 0
-                ? `Serão criados ${initPreview} mockups baseados nas peças marcadas como mockup e seus kits relacionados.`
-                : "Marque peças como mockup no módulo de Peças para iniciar."
+                ? t("mockupReview.empty.subtitleWillCreate", { count: initPreview })
+                : t("mockupReview.empty.subtitleMark")
             }
           />
           {initPreview > 0 && (
@@ -504,7 +504,7 @@ export default function MockupTab({
                   })
                 }
               >
-                Inicializar mockups
+                {t("mockupReview.empty.initialize")}
               </Button>
             </div>
           )}
