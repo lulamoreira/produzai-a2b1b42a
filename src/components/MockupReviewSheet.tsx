@@ -264,6 +264,47 @@ export default function MockupReviewSheet({
     }
   };
 
+  const handleAddMockupPhoto = async (file: File) => {
+    if (!activeMockup) return;
+    setUploadingPhoto(true);
+    const toastId = toast.loading("Enviando foto...");
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `mockup-photos/${activeMockup.id}/${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("piece-images")
+        .upload(path, file, { upsert: false, cacheControl: "31536000" });
+      if (upErr) throw upErr;
+      const { data } = supabase.storage.from("piece-images").getPublicUrl(path);
+      const newUrls = [...(activeMockup.photo_urls ?? []), data.publicUrl];
+      await update.mutateAsync({
+        mockupId: activeMockup.id,
+        campaignId,
+        changes: { photo_urls: newUrls },
+      });
+      toast.dismiss(toastId);
+      toast.success("Foto adicionada.");
+    } catch (e: any) {
+      toast.dismiss(toastId);
+      toast.error(e?.message || "Erro ao enviar foto.");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleRemoveMockupPhoto = async (url: string) => {
+    if (!activeMockup) return;
+    if (!confirm("Remover esta foto?")) return;
+    const newUrls = (activeMockup.photo_urls ?? []).filter((u) => u !== url);
+    await update.mutateAsync({
+      mockupId: activeMockup.id,
+      campaignId,
+      changes: { photo_urls: newUrls },
+    });
+  };
+
   if (!parentMockup || !activeMockup) return null;
 
   const renderField = (
