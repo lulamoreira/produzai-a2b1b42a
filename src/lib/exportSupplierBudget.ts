@@ -5,6 +5,8 @@ import {
   appendMatrixFinancialFooter,
   appendMatrixSheets,
   getMatrixStoreFieldsWithHidden,
+  getMatrixTotalQtyRowNum,
+  getExcelColumnLetter,
 } from "@/lib/exportMatrixExcelJS";
 import { getSupplierExcelLabels } from "@/utils/currencyLocale";
 import type {
