@@ -85,6 +85,10 @@ export default function MockupReviewSheet({
   const [annotationOpen, setAnnotationOpen] = useState(false);
   const [showAnnotated, setShowAnnotated] = useState(true);
   const debounceRefs = useRef<Record<string, any>>({});
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const piecesById = useMemo(() => {
     const m = new Map<string, any>();
