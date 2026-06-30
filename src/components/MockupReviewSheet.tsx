@@ -377,7 +377,7 @@ export default function MockupReviewSheet({
               }}
               rows={3}
               className="text-base"
-              placeholder="Valor proposto..."
+              placeholder={t("mockupReview.fields.proposedValue")}
             />
           ) : (
             <Input
