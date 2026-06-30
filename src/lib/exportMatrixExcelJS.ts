@@ -13,7 +13,7 @@ function getStoreFieldValue(store: ClientStore, key: string): string | number {
 
 // ─── Helpers ─────────────────────────────────────────────
 
-function getExcelColumnLetter(colNum: number): string {
+export function getExcelColumnLetter(colNum: number): string {
   let letter = "";
   while (colNum > 0) {
     const mod = (colNum - 1) % 26;
