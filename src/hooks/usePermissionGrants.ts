@@ -33,6 +33,19 @@ export function useCategoryGrants(categoryId: string | undefined) {
   });
 }
 
+export function useAllPermissionGrants() {
+  return useQuery({
+    queryKey: ["permission_grants", "all"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("permission_grants")
+        .select("*");
+      if (error) throw error;
+      return (data || []) as PermissionGrant[];
+    },
+  });
+}
+
 interface ToggleGrantVars {
   categoryId: string;
   moduleKey: string;
