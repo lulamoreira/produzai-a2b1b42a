@@ -912,7 +912,7 @@ export default function MockupReviewSheet({
                 className="min-h-[44px] flex-1"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />{" "}
-                {isKit && kitDrilldownIndex !== null ? "Anterior componente" : "Anterior"}
+                {isKit && kitDrilldownIndex !== null ? t("mockupReview.nav.previousComponent") : t("common.previous")}
               </Button>
               <Button
                 variant="outline"
@@ -920,7 +920,7 @@ export default function MockupReviewSheet({
                 disabled={!canNext}
                 className="min-h-[44px] flex-1"
               >
-                {isKit && kitDrilldownIndex !== null ? "Próximo componente" : "Próxima"}{" "}
+                {isKit && kitDrilldownIndex !== null ? t("mockupReview.nav.nextComponent") : t("mockupReview.nav.nextFeminine")}{" "}
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
