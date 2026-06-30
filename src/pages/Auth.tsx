@@ -36,7 +36,25 @@ const Auth = () => {
   const [forgotPassword, setForgotPassword] = useState(false);
   const [magicLink, setMagicLink] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [needsConfirm, setNeedsConfirm] = useState(false);
+  const [resending, setResending] = useState(false);
   const navigate = useNavigate();
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      toast.error(t("auth.enterEmailFirst", { defaultValue: "Informe o email primeiro." }));
+      return;
+    }
+    setResending(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    setResending(false);
+    if (error) toast.error(error.message);
+    else toast.success(t("auth.confirmationResent", { defaultValue: "Email de confirmação reenviado. Verifique sua caixa de entrada." }));
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -84,8 +102,19 @@ const Auth = () => {
     if (isLogin) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       setLoading(false);
-      if (error) toast.error(t("auth.incorrectCredentials"));
-      else navigate("/");
+      if (error) {
+        const msg = (error.message || "").toLowerCase();
+        const code = (error as any).code as string | undefined;
+        if (code === "email_not_confirmed" || msg.includes("not confirmed") || msg.includes("não confirmado")) {
+          setNeedsConfirm(true);
+        } else {
+          setNeedsConfirm(false);
+          toast.error(t("auth.incorrectCredentials"));
+        }
+      } else {
+        setNeedsConfirm(false);
+        navigate("/");
+      }
     } else {
       const { error } = await supabase.auth.signUp({
         email,
@@ -255,6 +284,31 @@ const Auth = () => {
                 : t("common.createAccount")}
               </Button>
             </form>
+
+            {needsConfirm && isLogin && !forgotPassword && !magicLink && (
+              <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-3 text-sm">
+                <p className="font-medium text-amber-900 dark:text-amber-200">
+                  {t("auth.emailNotConfirmedTitle", { defaultValue: "Email ainda não confirmado" })}
+                </p>
+                <p className="text-amber-800 dark:text-amber-300 mt-1">
+                  {t("auth.emailNotConfirmedDesc", { defaultValue: "Você precisa confirmar seu email antes de entrar. Verifique sua caixa de entrada (e o spam) ou reenvie o link abaixo." })}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  disabled={resending}
+                  onClick={handleResendConfirmation}
+                >
+                  {resending
+                    ? t("common.wait")
+                    : t("auth.resendConfirmation", { defaultValue: "Reenviar email de confirmação" })}
+                </Button>
+              </div>
+            )}
+
+
 
             {!forgotPassword && !magicLink &&
             <>
