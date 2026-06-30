@@ -97,8 +97,25 @@ export default function CategoryManager() {
   const [editing, setEditing] = useState<PermissionCategory | null>(null);
   const [form, setForm] = useState(defaultForm());
 
-  const openNew = () => { setEditing(null); setForm(defaultForm()); setDialogOpen(true); };
-  const openEdit = (cat: PermissionCategory) => {
+  // V2 editor (handles all modules incl. mockup/rateio/cotações/ajustes via permission_grants)
+  const [v2Open, setV2Open] = useState(false);
+  const [v2Category, setV2Category] = useState<Partial<PermissionCategory> | null>(null);
+
+  const { data: allGrants = [] } = useAllPermissionGrants();
+  const grantsByCategory = useMemo(() => {
+    const map = new Map<string, { module_key: string; action: string }[]>();
+    for (const g of allGrants) {
+      if (!g.granted) continue;
+      const arr = map.get(g.category_id) || [];
+      arr.push({ module_key: g.module_key, action: g.action });
+      map.set(g.category_id, arr);
+    }
+    return map;
+  }, [allGrants]);
+
+  const openNew = () => { setV2Category({ name: "" }); setV2Open(true); };
+  const openEdit = (cat: PermissionCategory) => { setV2Category(cat); setV2Open(true); };
+  const openLegacyEdit = (cat: PermissionCategory) => {
     setEditing(cat);
     const { id, created_at, ...rest } = cat;
     setForm(rest);
