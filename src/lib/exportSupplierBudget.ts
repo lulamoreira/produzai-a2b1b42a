@@ -247,7 +247,7 @@ export async function buildSupplierBudgetWorkbook(
   // Totals
   ws.addRow([]);
   const itemsTotal = params.rows.reduce((s, r) => s + (r.type === "kit_header" ? 0 : r.lineTotal), 0);
-  const addTotalRow = (label: string, value: number | null | ExcelJS.CellValue, emphasized = false) => {
+  const addTotalRow = (label: string, value: number | null | any, emphasized = false) => {
     const r = ws.addRow(["", "", "", "", "", label, value as any]);
     r.getCell(6).alignment = { horizontal: "right", vertical: "middle" };
     r.getCell(7).alignment = { horizontal: "right", vertical: "middle" };
