@@ -75,9 +75,18 @@ export default function MockupTab({
   kits,
   kitPieces,
 }: Props) {
+  const { t } = useTranslation();
   const { data: mockups = [], isLoading } = useCampaignMockups(campaignId);
   const initialize = useInitializeMockups();
   const addPiece = useAddPieceToMockup();
+
+  const FILTER_LABEL: Record<FilterKey, string> = {
+    all: t("mockupReview.filters.all"),
+    pending: t("mockupReview.filters.pending"),
+    approved: t("mockupReview.filters.approved"),
+    changes_requested: t("mockupReview.filters.changes"),
+    rejected: t("mockupReview.filters.rejected"),
+  };
 
   const [filter, setFilter] = useState<FilterKey>("all");
   const [reviewOpen, setReviewOpen] = useState(false);
