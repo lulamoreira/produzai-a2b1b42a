@@ -349,7 +349,7 @@ export default function MockupReviewSheet({
           <Label className="text-sm font-medium">{label}</Label>
           {showToggle && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Alterar</span>
+              <span className="text-xs text-muted-foreground">{t("mockupReview.fields.toggleChange")}</span>
               <Switch
                 checked={isActive}
                 onCheckedChange={(checked) =>
