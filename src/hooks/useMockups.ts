@@ -168,6 +168,7 @@ export function useUpdateMockup() {
         alt_installation_active: boolean;
         observations: string | null;
         annotated_image_url: string | null;
+        photo_urls: string[] | null;
       }>;
     }) => {
       const { data: userData } = await supabase.auth.getUser();
