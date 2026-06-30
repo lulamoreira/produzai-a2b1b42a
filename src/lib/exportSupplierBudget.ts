@@ -370,6 +370,46 @@ export async function buildSupplierBudgetWorkbook(
         freight: params.rateio.freight ?? params.freight ?? 0,
       });
     }
+
+    // ─── Mirror quantities: rewrite col E (Cantidad) on the Cotización tab to
+    // reference the TOTAL row of the matching column in "Matriz Lojas x Peças".
+    // This makes the Cotización tab a live mirror of the matrix totals — if the
+    // user edits a store qty in the matrix, the quotation qty updates too.
+    if (params.useFormulas && matrixWs) {
+      // Same column order as the matrix tab (display_order, piece-before-kit, id).
+      type ColEntry = { id: string; type: "piece" | "kit"; displayOrder: number };
+      const matrixColumns: ColEntry[] = [
+        ...visiblePieces.map((p) => ({ id: p.id, type: "piece" as const, displayOrder: (p as any).display_order ?? 0 })),
+        ...params.rateio.kits.map((k) => ({ id: k.id, type: "kit" as const, displayOrder: (k as any).display_order ?? 0 })),
+      ].sort(
+        (a, b) =>
+          a.displayOrder - b.displayOrder ||
+          (a.type === b.type ? 0 : a.type === "piece" ? -1 : 1) ||
+          (a.id < b.id ? -1 : 1),
+      );
+      const metaCols = getMatrixStoreFieldsWithHidden().length;
+      const totalQtyRow = getMatrixTotalQtyRowNum(params.rateio.stores.length);
+      const idToColLetter = new Map<string, string>();
+      matrixColumns.forEach((c, idx) => {
+        idToColLetter.set(c.id, getExcelColumnLetter(metaCols + 1 + idx));
+      });
+      // Quote sheet name for cross-sheet references (handles spaces/accents).
+      const matrixRef = `'${matrixSheetName.replace(/'/g, "''")}'`;
+
+      for (const { rowNumber, row: r } of bodyRowMeta) {
+        let formula: string | null = null;
+        if (r.type === "kit_piece" && r.kitId && r.kitPieceQuantity != null) {
+          const col = idToColLetter.get(r.kitId);
+          if (col) formula = `${matrixRef}!${col}${totalQtyRow}*${r.kitPieceQuantity}`;
+        } else if (r.id) {
+          const col = idToColLetter.get(r.id);
+          if (col) formula = `${matrixRef}!${col}${totalQtyRow}`;
+        }
+        if (formula) {
+          ws.getCell(rowNumber, 5).value = { formula } as any;
+        }
+      }
+    }
   }
 
   const buffer = await wb.xlsx.writeBuffer();
