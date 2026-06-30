@@ -219,11 +219,11 @@ export default function MockupTab({
   };
 
   const handleExportPDF = async () => {
-    const tId = toast.loading("Gerando PDF...");
+    const tId = toast.loading(t("mockupReview.exports.generatingPdf"));
     try {
       const exportSet = buildExportMockups();
       if (filter !== "all") {
-        toast.message(`Exportando ${filtered.length} mockups (filtro: ${FILTER_LABEL[filter]})`);
+        toast.message(t("mockupReview.exports.exporting", { count: filtered.length, filter: FILTER_LABEL[filter] }));
       }
       const { blob, fileName } = await exportMockupPDF({
         campaignName,
@@ -239,18 +239,18 @@ export default function MockupTab({
         description: "PDF",
         extension: ".pdf",
       });
-      toast.success("PDF gerado", { id: tId });
+      toast.success(t("mockupReview.exports.pdfReady"), { id: tId });
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao gerar PDF", { id: tId });
+      toast.error(e?.message || t("mockupReview.exports.pdfError"), { id: tId });
     }
   };
 
   const handleExportExcel = async () => {
-    const tId = toast.loading("Gerando Excel...");
+    const tId = toast.loading(t("mockupReview.exports.generatingExcel"));
     try {
       const exportSet = buildExportMockups();
       if (filter !== "all") {
-        toast.message(`Exportando ${filtered.length} mockups (filtro: ${FILTER_LABEL[filter]})`);
+        toast.message(t("mockupReview.exports.exporting", { count: filtered.length, filter: FILTER_LABEL[filter] }));
       }
       const { blob, fileName } = await exportMockupExcel({
         campaignName,
@@ -264,16 +264,16 @@ export default function MockupTab({
         description: "Excel",
         extension: ".xlsx",
       });
-      toast.success("Excel gerado", { id: tId });
+      toast.success(t("mockupReview.exports.excelReady"), { id: tId });
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao gerar Excel", { id: tId });
+      toast.error(e?.message || t("mockupReview.exports.excelError"), { id: tId });
     }
   };
 
   const handleResetAll = async () => {
     if (!resetTarget) return;
     setResetting(true);
-    const tId = toast.loading("Zerando mockup...");
+    const tId = toast.loading(t("mockupReview.reset.loading"));
     try {
       const { data: userData } = await supabase.auth.getUser();
       const updatePayload: any = {
@@ -299,11 +299,11 @@ export default function MockupTab({
         .eq("campaign_id", campaignId);
       if (error) throw error;
       await qc.invalidateQueries({ queryKey: ["campaign_mockups", campaignId] });
-      toast.success("Mockup zerado com sucesso", { id: tId });
+      toast.success(t("mockupReview.reset.success"), { id: tId });
       setResetOpen(false);
       setResetTarget(null);
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao zerar mockup", { id: tId });
+      toast.error(e?.message || t("mockupReview.reset.error"), { id: tId });
     } finally {
       setResetting(false);
     }
