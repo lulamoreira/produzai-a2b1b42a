@@ -640,33 +640,33 @@ export default function MockupReviewSheet({
                   </div>
 
                   <div className="mt-4 p-3 bg-muted/30 rounded-md text-sm">
-                    Aplicar ao kit inteiro:
+                    {t("mockupReview.kit.applyAll")}
                   </div>
                   <div className="grid grid-cols-4 gap-2 mt-2">
                     <Button
                       className="min-h-[48px] gap-1 bg-green-600 hover:bg-green-700 text-white text-xs"
                       onClick={() => setAllComponents("approved")}
                     >
-                      <CheckCircle2 className="w-4 h-4" /> Aprovar
+                      <CheckCircle2 className="w-4 h-4" /> {t("mockupReview.actions.approve")}
                     </Button>
                     <Button
                       className="min-h-[48px] gap-1 bg-amber-600 hover:bg-amber-700 text-white text-xs"
                       onClick={() => setAllComponents("changes_requested")}
                     >
-                      <Edit3 className="w-4 h-4" /> Alterações
+                      <Edit3 className="w-4 h-4" /> {t("mockupReview.actions.changes")}
                     </Button>
                     <Button
                       className="min-h-[48px] gap-1 bg-red-600 hover:bg-red-700 text-white text-xs"
                       onClick={() => setAllComponents("rejected")}
                     >
-                      <XCircle className="w-4 h-4" /> Reprovar
+                      <XCircle className="w-4 h-4" /> {t("mockupReview.actions.reject")}
                     </Button>
                     <Button
                       variant="outline"
                       className="min-h-[48px] gap-1 text-xs"
                       onClick={() => setAllComponents("pending")}
                     >
-                      ⏳ Pendente
+                      {t("mockupReview.actions.pending")}
                     </Button>
                   </div>
                 </>
