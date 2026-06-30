@@ -940,7 +940,7 @@ export default function MockupReviewSheet({
                 disabled={!canPrev}
                 className="min-h-[44px] flex-1"
               >
-                <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
+                <ChevronLeft className="w-4 h-4 mr-1" /> {t("common.previous")}
               </Button>
               <Button
                 variant="outline"
@@ -948,7 +948,7 @@ export default function MockupReviewSheet({
                 disabled={!canNext}
                 className="min-h-[44px] flex-1"
               >
-                Próxima <ChevronRight className="w-4 h-4 ml-1" />
+                {t("mockupReview.nav.nextFeminine")} <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           </div>
