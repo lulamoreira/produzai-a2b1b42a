@@ -36,7 +36,25 @@ const Auth = () => {
   const [forgotPassword, setForgotPassword] = useState(false);
   const [magicLink, setMagicLink] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [needsConfirm, setNeedsConfirm] = useState(false);
+  const [resending, setResending] = useState(false);
   const navigate = useNavigate();
+
+  const handleResendConfirmation = async () => {
+    if (!email) {
+      toast.error(t("auth.enterEmailFirst", { defaultValue: "Informe o email primeiro." }));
+      return;
+    }
+    setResending(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    setResending(false);
+    if (error) toast.error(error.message);
+    else toast.success(t("auth.confirmationResent", { defaultValue: "Email de confirmação reenviado. Verifique sua caixa de entrada." }));
+  };
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
