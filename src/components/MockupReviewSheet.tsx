@@ -715,7 +715,7 @@ export default function MockupReviewSheet({
           {/* Observations (only when reviewing a piece, not kit overview) */}
           {showFields && (
             <div className="p-4 space-y-2 border-b">
-              <Label>Observações</Label>
+              <Label>{t("mockupReview.fields.observations")}</Label>
               <Textarea
                 value={obsValue}
                 onChange={(e) => {
