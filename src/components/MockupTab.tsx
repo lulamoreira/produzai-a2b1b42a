@@ -59,14 +59,6 @@ interface Props {
 
 type FilterKey = "all" | MockupStatus;
 
-const FILTER_LABEL: Record<FilterKey, string> = {
-  all: "Todas",
-  pending: "Pendentes",
-  approved: "Aprovadas",
-  changes_requested: "Alterações",
-  rejected: "Reprovadas",
-};
-
 const STATUS_BADGE: Record<MockupStatus, { icon: string; cls: string }> = {
   approved: { icon: "✅", cls: "bg-green-600 text-white border-transparent" },
   rejected: { icon: "❌", cls: "bg-red-600 text-white border-transparent" },
