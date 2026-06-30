@@ -408,7 +408,6 @@
   "stores": {
     "totalStores": "Total stores",
     "title": "Stores",
-
     "tabs": {
       "info": "Information",
       "contacts": "Contacts",
@@ -548,7 +547,6 @@
     "customFields": "Custom Fields",
     "registered": "Registered pieces",
     "title": "Pieces",
-
     "new": "New Piece",
     "newPiece": "New Piece",
     "kit": "Kit",
@@ -567,8 +565,8 @@
     "availablePiecesForKit": "Available pieces to add",
     "includeInKit": "Include",
     "addToKit": "Add to Kit",
-    "kitLocation": "Store Location",
-    "kitLocationUpdated": "Location updated for all pieces in the kit",
+    "kitLocation": "Kit Location",
+    "kitLocationUpdated": "Kit location updated!",
     "addToKitTitle": "Add to Kit",
     "editPieceTitle": "Edit Piece",
     "pieceUpdated": "Piece updated successfully",
@@ -581,7 +579,6 @@
     "pieceCountInKit": "{{count}} piece(s) in this kit",
     "markKitMockupDesc": "Mark kit and its pieces as mockup",
     "markNewKitDesc": "Mark as new kit in the campaign",
-    "kitLocation": "Kit Location",
     "kitLocationDesc": "Changing the kit location updates all pieces automatically.",
     "selectLocation": "Select location",
     "subLocation": "Sub-location",
@@ -596,29 +593,23 @@
     "convertToNormalPieceSuccess": "Piece \"{{name}}\" is now a normal piece (outside kit).",
     "deletePiecePermanently": "Delete piece permanently",
     "deleteKitQuestionWithName": "Delete kit \"{{name}}\"?",
-    "pieceUpdated": "Piece updated!",
     "nameUpdated": "Name updated!",
     "kitMockupMarked": "Kit marked as mockup!",
     "kitMockupRemoved": "Mockup removed from kit!",
     "kitNewMarked": "Kit marked as new!",
     "kitNewRemoved": "New marking removed!",
-    "kitLocationUpdated": "Kit location updated!",
     "kitSubLocationUpdated": "Kit sub-location updated!",
-    "selectLocation": "Select location",
-    "subLocation": "Sub-location",
     "kitEmpty": "This kit has no pieces",
     "selectKit": "Select Kit",
     "selectKitPlaceholder": "Select a kit...",
     "piecesSelected": "{{count}} piece(s) selected",
     "addPieceTitle": "New Piece",
-    "editPieceTitle": "Edit Piece",
     "pieceNamePlaceholder": "Ex: Header, Banner, Sticker...",
     "pieceCategoryPlaceholder": "Ex: CUBES",
     "pieceSizePlaceholder": "Ex: 90×60cm",
     "piecePhoto": "Piece Photo",
     "videManual": "Describe the material, finish, printing...",
     "enterCustomFieldValue": "Enter {{label}} value",
-    "pieceUpdated": "Piece updated successfully",
     "groupInKit": "Group into Kit",
     "pieceDuplicated": "Piece duplicated successfully",
     "kitDuplicated": "Kit duplicated successfully",
@@ -848,7 +839,6 @@
     "markComplete": "Mark as complete",
     "photosSentShort": "Photos sent",
     "title": "Installations",
-
     "newInstallation": "New Installation",
     "empty": "No installations found",
     "installer": "Installer",
@@ -1371,5 +1361,138 @@
     "emptyTitle": "No clients found",
     "emptyDescription": "Add the first client of this agency to get started.",
     "campaigns": "campaigns"
+  },
+  "mockupReview": {
+    "title": "Mockup",
+    "progress": "{{reviewed}} of {{total}} reviewed ({{pct}}%)",
+    "reviewedLabel": "reviewed",
+    "counts": {
+      "approved": "{{count}} approved",
+      "rejected": "{{count}} rejected",
+      "changes": "{{count}} with changes",
+      "pending": "{{count}} pending"
+    },
+    "filters": {
+      "all": "All",
+      "pending": "Pending",
+      "approved": "Approved",
+      "changes": "Changes",
+      "rejected": "Rejected"
+    },
+    "search": {
+      "placeholder": "Search piece or kit by name...",
+      "clear": "Clear search"
+    },
+    "toolbar": {
+      "addPiece": "Add piece",
+      "addShort": "Add",
+      "sync": "Sync pieces/kits",
+      "reset": "Reset"
+    },
+    "empty": {
+      "title": "No pieces marked as mockup in this campaign.",
+      "subtitleWillCreate": "{{count}} mockups will be created based on the pieces marked as mockup and their related kits.",
+      "subtitleMark": "Mark pieces as mockup in the Pieces module to start.",
+      "initialize": "Initialize mockups",
+      "filteredTitle": "No pieces match this filter.",
+      "filteredSubtitle": "Adjust the filter to see more results."
+    },
+    "card": {
+      "kit": "Kit ({{count}})",
+      "altImage": "Image edited"
+    },
+    "addDialog": {
+      "title": "Add piece to mockup",
+      "empty": "All available pieces are already in the mockup."
+    },
+    "exports": {
+      "generatingPdf": "Generating PDF...",
+      "generatingExcel": "Generating Excel...",
+      "exporting": "Exporting {{count}} mockups (filter: {{filter}})",
+      "pdfReady": "PDF generated",
+      "excelReady": "Excel generated",
+      "pdfError": "Error generating PDF",
+      "excelError": "Error generating Excel"
+    },
+    "reset": {
+      "title": "Reset mockup",
+      "description": "This action erases ALL observations, proposed changes and toggles for ALL {{count}} pieces/kits in this campaign, and sets the status of all of them to whatever you choose below. It cannot be undone.",
+      "setAllAs": "Set all as:",
+      "optionPending": "⏳ Pending",
+      "optionApproved": "✅ Approved",
+      "optionRejected": "❌ Rejected",
+      "clearAnnotations": "Also remove annotated images (go back to original images)",
+      "confirm": "Confirm and reset",
+      "working": "Resetting...",
+      "loading": "Resetting mockup...",
+      "success": "Mockup successfully reset",
+      "error": "Error resetting mockup"
+    },
+    "status": {
+      "pending": "⏳ Pending",
+      "approved": "✅ Approved",
+      "changes": "✏️ Changes",
+      "rejected": "❌ Rejected"
+    },
+    "nav": {
+      "backToKit": "Back to kit",
+      "back": "Back",
+      "kitOverview": "Kit — Overview",
+      "componentXofY": "Component {{current}} of {{total}}",
+      "pieceXofY": "P{{current}} of {{total}}",
+      "previousComponent": "Previous component",
+      "nextComponent": "Next component",
+      "nextFeminine": "Next"
+    },
+    "savingIndicator": "Saving…",
+    "savedIndicator": "Saved",
+    "image": {
+      "original": "Original",
+      "annotated": "✏️ Annotated",
+      "enlarge": "Enlarge image",
+      "altered": "Image edited",
+      "removeAnnotation": "Remove annotation",
+      "editAnnotation": "Edit annotation",
+      "annotate": "Annotate image",
+      "confirmRemoveAnnotation": "Remove the annotation and go back to the original image?",
+      "close": "Close"
+    },
+    "kit": {
+      "empty": "This kit does not have any mockup components yet.",
+      "applyAll": "Apply to entire kit:",
+      "componentsCount": "({{count}} pieces)",
+      "fallbackName": "Kit"
+    },
+    "actions": {
+      "approve": "Approve",
+      "changes": "Changes",
+      "reject": "Reject",
+      "pending": "⏳ Pending"
+    },
+    "fields": {
+      "toggleChange": "Change",
+      "proposedValue": "Proposed value...",
+      "name": "Name",
+      "size": "Size",
+      "specification": "Specification",
+      "installation": "Installation",
+      "kitObservations": "Kit observations",
+      "kitObservationsPlaceholder": "General observations about this kit...",
+      "observations": "Observations",
+      "observationsPlaceholder": "Observations about this piece..."
+    },
+    "photos": {
+      "title": "Mockup photos",
+      "add": "Add photo",
+      "takePhoto": "Take photo",
+      "uploadFile": "Upload file",
+      "empty": "No photos added.",
+      "uploading": "Uploading photo...",
+      "added": "Photo added.",
+      "uploadError": "Error uploading photo.",
+      "remove": "Remove photo",
+      "confirmRemove": "Remove this photo?",
+      "alt": "Photo {{n}}"
+    }
   }
 }

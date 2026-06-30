@@ -420,7 +420,6 @@
   "stores": {
     "totalStores": "Total de lojas",
     "title": "Lojas",
-
     "tabs": {
       "info": "Informações",
       "contacts": "Contatos",
@@ -545,7 +544,6 @@
     "customFields": "Campos Personalizados",
     "registered": "Peças registradas",
     "title": "Peças",
-
     "new": "Nova Peça",
     "newPiece": "Nova Peça",
     "kit": "Kit",
@@ -564,8 +562,8 @@
     "availablePiecesForKit": "Peças disponíveis para adicionar",
     "includeInKit": "Incluir",
     "addToKit": "Adicionar ao Kit",
-    "kitLocation": "Localização na Loja",
-    "kitLocationUpdated": "Localização atualizada em todas as peças do kit",
+    "kitLocation": "Localização do Kit",
+    "kitLocationUpdated": "Localização do kit atualizada!",
     "addToKitTitle": "Adicionar ao Kit",
     "editPieceTitle": "Editar Peça",
     "pieceUpdated": "Peça atualizada com sucesso",
@@ -578,7 +576,6 @@
     "pieceCountInKit": "{{count}} peça(s) neste kit",
     "markKitMockupDesc": "Marcar kit e suas peças como mockup",
     "markNewKitDesc": "Marcar como kit novo na campanha",
-    "kitLocation": "Localização do Kit",
     "kitLocationDesc": "Alterar a localização do kit atualiza todas as peças automaticamente.",
     "selectLocation": "Selecione a localização",
     "subLocation": "Sub-localização",
@@ -593,29 +590,23 @@
     "convertToNormalPieceSuccess": "Peça \"{{name}}\" agora é uma peça normal (fora do kit).",
     "deletePiecePermanently": "Excluir peça permanentemente",
     "deleteKitQuestionWithName": "Excluir kit \"{{name}}\"?",
-    "pieceUpdated": "Peça atualizada!",
     "nameUpdated": "Nome atualizado!",
     "kitMockupMarked": "Kit marcado como mockup!",
     "kitMockupRemoved": "Mockup removido do kit!",
     "kitNewMarked": "Kit marcado como novo!",
     "kitNewRemoved": "Marcação de novo removida!",
-    "kitLocationUpdated": "Localização do kit atualizada!",
     "kitSubLocationUpdated": "Sub-localização do kit atualizada!",
-    "selectLocation": "Selecione a localização",
-    "subLocation": "Sub-localização",
     "kitEmpty": "Este kit não possui peças",
     "selectKit": "Selecionar Kit",
     "selectKitPlaceholder": "Escolha um kit...",
     "piecesSelected": "{{count}} peça(s) selecionada(s)",
     "addPieceTitle": "Nova Peça",
-    "editPieceTitle": "Editar Peça",
     "pieceNamePlaceholder": "Ex: Testeira, Banner, Adesivo...",
     "pieceCategoryPlaceholder": "Ex: CUBOS",
     "pieceSizePlaceholder": "Ex: 90×60cm",
     "piecePhoto": "Foto da Peça",
     "videManual": "Descreva o material, acabamento, impressão...",
     "enterCustomFieldValue": "Digite o valor de {{label}}",
-    "pieceUpdated": "Peça atualizada com sucesso",
     "groupInKit": "Agrupar em Kit",
     "pieceDuplicated": "Peça duplicada com sucesso",
     "kitDuplicated": "Kit duplicado com sucesso",
@@ -851,7 +842,6 @@
     "markComplete": "Marcar como concluída",
     "photosSentShort": "Fotos enviadas",
     "title": "Instalações",
-
     "newInstallation": "Nova Instalação",
     "empty": "Nenhuma instalação encontrada",
     "installer": "Instalador",
@@ -1378,5 +1368,138 @@
     "emptyTitle": "Nenhum cliente encontrado",
     "emptyDescription": "Adicione o primeiro cliente desta agência para começar.",
     "campaigns": "campanhas"
+  },
+  "mockupReview": {
+    "title": "Mockup",
+    "progress": "{{reviewed}} de {{total}} revisados ({{pct}}%)",
+    "reviewedLabel": "revisados",
+    "counts": {
+      "approved": "{{count}} aprovadas",
+      "rejected": "{{count}} reprovadas",
+      "changes": "{{count}} com alterações",
+      "pending": "{{count}} pendentes"
+    },
+    "filters": {
+      "all": "Todas",
+      "pending": "Pendentes",
+      "approved": "Aprovadas",
+      "changes": "Alterações",
+      "rejected": "Reprovadas"
+    },
+    "search": {
+      "placeholder": "Buscar peça ou kit pelo nome...",
+      "clear": "Limpar busca"
+    },
+    "toolbar": {
+      "addPiece": "Adicionar peça",
+      "addShort": "Adicionar",
+      "sync": "Sincronizar peças/kits",
+      "reset": "Zerar"
+    },
+    "empty": {
+      "title": "Nenhuma peça marcada como mockup nesta campanha.",
+      "subtitleWillCreate": "Serão criados {{count}} mockups baseados nas peças marcadas como mockup e seus kits relacionados.",
+      "subtitleMark": "Marque peças como mockup no módulo de Peças para iniciar.",
+      "initialize": "Inicializar mockups",
+      "filteredTitle": "Nenhuma peça neste filtro.",
+      "filteredSubtitle": "Ajuste o filtro para ver mais resultados."
+    },
+    "card": {
+      "kit": "Kit ({{count}})",
+      "altImage": "Imagem alterada"
+    },
+    "addDialog": {
+      "title": "Adicionar peça ao mockup",
+      "empty": "Todas as peças disponíveis já estão no mockup."
+    },
+    "exports": {
+      "generatingPdf": "Gerando PDF...",
+      "generatingExcel": "Gerando Excel...",
+      "exporting": "Exportando {{count}} mockups (filtro: {{filter}})",
+      "pdfReady": "PDF gerado",
+      "excelReady": "Excel gerado",
+      "pdfError": "Erro ao gerar PDF",
+      "excelError": "Erro ao gerar Excel"
+    },
+    "reset": {
+      "title": "Zerar mockup",
+      "description": "Esta ação apaga TODAS as observações, alterações propostas e toggles de TODAS as {{count}} peças/kits desta campanha, e define o status de todas para o que você escolher abaixo. Não pode ser desfeito.",
+      "setAllAs": "Definir todas como:",
+      "optionPending": "⏳ Pendentes",
+      "optionApproved": "✅ Aprovadas",
+      "optionRejected": "❌ Reprovadas",
+      "clearAnnotations": "Também remover imagens anotadas (voltar para as imagens originais)",
+      "confirm": "Confirmar e zerar",
+      "working": "Zerando...",
+      "loading": "Zerando mockup...",
+      "success": "Mockup zerado com sucesso",
+      "error": "Erro ao zerar mockup"
+    },
+    "status": {
+      "pending": "⏳ Pendente",
+      "approved": "✅ Aprovada",
+      "changes": "✏️ Alterações",
+      "rejected": "❌ Reprovada"
+    },
+    "nav": {
+      "backToKit": "Voltar ao kit",
+      "back": "Voltar",
+      "kitOverview": "Kit — Visão geral",
+      "componentXofY": "Componente {{current}} de {{total}}",
+      "pieceXofY": "P{{current}} de {{total}}",
+      "previousComponent": "Anterior componente",
+      "nextComponent": "Próximo componente",
+      "nextFeminine": "Próxima"
+    },
+    "savingIndicator": "Salvando…",
+    "savedIndicator": "Salvo",
+    "image": {
+      "original": "Original",
+      "annotated": "✏️ Anotada",
+      "enlarge": "Ampliar imagem",
+      "altered": "Imagem alterada",
+      "removeAnnotation": "Remover anotação",
+      "editAnnotation": "Editar anotação",
+      "annotate": "Anotar imagem",
+      "confirmRemoveAnnotation": "Remover a anotação e voltar para a imagem original?",
+      "close": "Fechar"
+    },
+    "kit": {
+      "empty": "Este kit ainda não possui componentes em mockup.",
+      "applyAll": "Aplicar ao kit inteiro:",
+      "componentsCount": "({{count}} peças)",
+      "fallbackName": "Kit"
+    },
+    "actions": {
+      "approve": "Aprovar",
+      "changes": "Alterações",
+      "reject": "Reprovar",
+      "pending": "⏳ Pendente"
+    },
+    "fields": {
+      "toggleChange": "Alterar",
+      "proposedValue": "Valor proposto...",
+      "name": "Nome",
+      "size": "Tamanho",
+      "specification": "Especificação",
+      "installation": "Instalação",
+      "kitObservations": "Observações do kit",
+      "kitObservationsPlaceholder": "Observações gerais sobre este kit...",
+      "observations": "Observações",
+      "observationsPlaceholder": "Observações sobre esta peça..."
+    },
+    "photos": {
+      "title": "Fotos do mockup",
+      "add": "Adicionar foto",
+      "takePhoto": "Tirar foto",
+      "uploadFile": "Enviar arquivo",
+      "empty": "Nenhuma foto adicionada.",
+      "uploading": "Enviando foto...",
+      "added": "Foto adicionada.",
+      "uploadError": "Erro ao enviar foto.",
+      "remove": "Remover foto",
+      "confirmRemove": "Remover esta foto?",
+      "alt": "Foto {{n}}"
+    }
   }
 }
