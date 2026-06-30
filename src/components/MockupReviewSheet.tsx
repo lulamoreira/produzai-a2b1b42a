@@ -457,12 +457,12 @@ export default function MockupReviewSheet({
               {savingField ? (
                 <span className="inline-flex items-center gap-1">
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  Salvando…
+                  {t("mockupReview.savingIndicator")}
                 </span>
               ) : savedFlash ? (
                 <span className="inline-flex items-center gap-1 text-green-600">
                   <Check className="w-3 h-3" />
-                  Salvo
+                  {t("mockupReview.savedIndicator")}
                 </span>
               ) : null}
             </div>
