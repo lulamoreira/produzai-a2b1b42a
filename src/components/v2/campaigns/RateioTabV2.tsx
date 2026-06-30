@@ -2011,8 +2011,9 @@ export default function RateioTabV2({
                     {/* Category Sub-Labels Row (store_category: PAREDE PRIMÁRIA, PICK&MIX, QUIOSQUE...) */}
                     <tr>
                       <th
-                        className="w-[300px] bg-white border-r border-stone-200"
+                        className="w-[160px] md:w-[300px] bg-white border-r border-stone-200"
                         style={{ position: 'sticky', left: 0, top: 0, zIndex: 50 }}
+
                       />
                       {(() => {
                         const CAT_COLORS = ['#C2410C','#B91C1C','#15803D','#1D4ED8','#6B21A8','#78350F'];
