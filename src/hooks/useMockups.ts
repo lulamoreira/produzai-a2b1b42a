@@ -54,7 +54,7 @@ export function useInitializeMockups() {
     mutationFn: async (params: {
       campaignId: string;
       pieces: { id: string; is_mockup?: boolean; kit_only?: boolean }[];
-      kits: { id: string }[];
+      kits: { id: string; is_mockup?: boolean }[];
       kitPieces: { kit_id: string; piece_id: string }[];
     }) => {
       const existing = await supabasePaginate<{ piece_id: string | null; kit_id: string | null; parent_mockup_id: string | null }>(
