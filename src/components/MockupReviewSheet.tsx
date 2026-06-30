@@ -745,7 +745,7 @@ export default function MockupReviewSheet({
           {/* Fotos do mockup físico */}
           <div className="p-4 space-y-2 border-b">
             <div className="flex items-center justify-between gap-2">
-              <Label className="m-0">Fotos do mockup</Label>
+              <Label className="m-0">{t("mockupReview.photos.title")}</Label>
               <div className="relative">
                 <Button
                   type="button"
