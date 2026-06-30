@@ -777,7 +777,7 @@ export default function MockupReviewSheet({
                           cameraInputRef.current?.click();
                         }}
                       >
-                        <Camera className="w-4 h-4" /> Tirar foto
+                        <Camera className="w-4 h-4" /> {t("mockupReview.photos.takePhoto")}
                       </button>
                       <button
                         type="button"
