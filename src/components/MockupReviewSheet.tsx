@@ -414,117 +414,119 @@ export default function MockupReviewSheet({
           )}
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto pb-4">
-          {/* Annotated/original toggle */}
-          {annotatedUrl && baseImageUrl && (
-            <div className="flex gap-2 text-xs px-3 pt-2">
-              <button
-                type="button"
-                onClick={() => setShowAnnotated(false)}
-                className={!showAnnotated ? "font-bold" : "text-muted-foreground"}
-              >
-                Original
-              </button>
-              <span className="text-muted-foreground">|</span>
-              <button
-                type="button"
-                onClick={() => setShowAnnotated(true)}
-                className={showAnnotated ? "font-bold text-amber-700" : "text-muted-foreground"}
-              >
-                ✏️ Anotada
-              </button>
-            </div>
-          )}
-          {/* Image */}
-          <div
-            className="relative w-full bg-muted"
-            style={{ height: "40vh", minHeight: 240 }}
-          >
-            {imageUrl ? (
-              <>
-                <img
-                  src={imageUrl}
-                  alt={displayName}
-                  className="w-full h-full object-contain"
-                />
+        {/* Content — split em 2 colunas no tablet/notebook */}
+        <div className="flex-1 flex flex-col md:flex-row min-h-0 overflow-hidden">
+          {/* Image pane */}
+          <div className="flex flex-col md:w-1/2 lg:w-[55%] xl:w-[60%] md:h-full md:border-r bg-background">
+            {/* Annotated/original toggle */}
+            {annotatedUrl && baseImageUrl && (
+              <div className="flex gap-2 text-xs px-3 pt-2">
                 <button
                   type="button"
-                  className="absolute inset-0"
-                  aria-label="Ampliar imagem"
-                  onClick={() => setFullscreen(true)}
-                />
-              </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                <ImageOff className="w-10 h-10" />
+                  onClick={() => setShowAnnotated(false)}
+                  className={!showAnnotated ? "font-bold" : "text-muted-foreground"}
+                >
+                  Original
+                </button>
+                <span className="text-muted-foreground">|</span>
+                <button
+                  type="button"
+                  onClick={() => setShowAnnotated(true)}
+                  className={showAnnotated ? "font-bold text-amber-700" : "text-muted-foreground"}
+                >
+                  ✏️ Anotada
+                </button>
               </div>
             )}
-            {annotatedUrl && (
-              <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-md bg-amber-500/95 text-white px-2 py-1 text-xs font-semibold shadow">
-                <Pencil className="w-3 h-3" />
-                Imagem alterada
-              </div>
-            )}
-            {baseImageUrl && activeMockup && (
-              <div className="absolute bottom-2 right-2 z-10 flex gap-2">
-                {annotatedUrl && (
+            {/* Image */}
+            <div className="relative w-full bg-muted h-[40vh] min-h-[240px] md:h-auto md:flex-1 md:min-h-0">
+              {imageUrl ? (
+                <>
+                  <img
+                    src={imageUrl}
+                    alt={displayName}
+                    className="w-full h-full object-contain"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-0"
+                    aria-label="Ampliar imagem"
+                    onClick={() => setFullscreen(true)}
+                  />
+                </>
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                  <ImageOff className="w-10 h-10" />
+                </div>
+              )}
+              {annotatedUrl && (
+                <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-md bg-amber-500/95 text-white px-2 py-1 text-xs font-semibold shadow">
+                  <Pencil className="w-3 h-3" />
+                  Imagem alterada
+                </div>
+              )}
+              {baseImageUrl && activeMockup && (
+                <div className="absolute bottom-2 right-2 z-10 flex gap-2">
+                  {annotatedUrl && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5 bg-background/90 text-destructive hover:text-destructive"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        if (!confirm("Remover a anotação e voltar para a imagem original?")) return;
+                        const m = activeMockup;
+                        const hasOtherChanges =
+                          !!m.alt_name_active ||
+                          !!m.alt_size_active ||
+                          !!m.alt_specification_active ||
+                          !!m.alt_installation_active ||
+                          !!(m.observations && m.observations.trim());
+                        const changes: any = { annotated_image_url: null };
+                        if (!hasOtherChanges && m.status === 'changes_requested') {
+                          changes.status = 'pending';
+                        }
+                        await update.mutateAsync({
+                          mockupId: m.id,
+                          campaignId,
+                          changes,
+                        });
+                        setShowAnnotated(false);
+                      }}
+                    >
+                      <X className="w-4 h-4" />
+                      Remover anotação
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
-                    className="gap-1.5 bg-background/90 text-destructive hover:text-destructive"
-                    onClick={async (e) => {
+                    className="gap-1.5 bg-background/90"
+                    onClick={(e) => {
                       e.stopPropagation();
-                      if (!confirm("Remover a anotação e voltar para a imagem original?")) return;
-                      const m = activeMockup;
-                      const hasOtherChanges =
-                        !!m.alt_name_active ||
-                        !!m.alt_size_active ||
-                        !!m.alt_specification_active ||
-                        !!m.alt_installation_active ||
-                        !!(m.observations && m.observations.trim());
-                      const changes: any = { annotated_image_url: null };
-                      if (!hasOtherChanges && m.status === 'changes_requested') {
-                        changes.status = 'pending';
-                      }
-                      await update.mutateAsync({
-                        mockupId: m.id,
-                        campaignId,
-                        changes,
-                      });
-                      setShowAnnotated(false);
+                      setAnnotationOpen(true);
                     }}
                   >
-                    <X className="w-4 h-4" />
-                    Remover anotação
+                    <Pencil className="w-4 h-4" />
+                    {annotatedUrl ? "Editar anotação" : "Anotar imagem"}
                   </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 bg-background/90"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setAnnotationOpen(true);
-                  }}
-                >
-                  <Pencil className="w-4 h-4" />
-                  {annotatedUrl ? "Editar anotação" : "Anotar imagem"}
-                </Button>
-              </div>
-            )}
+                </div>
+              )}
+            </div>
           </div>
 
+          {/* Fields pane */}
+          <div className="flex-1 md:h-full overflow-y-auto pb-4 min-w-0">
+            <div className="p-3 text-base font-semibold flex items-center gap-2">
+              {isKit && kitDrilldownIndex === null && <Layers className="w-4 h-4" />}
+              {displayName}
+              {isKit && kitDrilldownIndex === null && (
+                <span className="text-xs font-normal text-muted-foreground">
+                  ({kitComponents.length} peças)
+                </span>
+              )}
+            </div>
 
-          <div className="p-3 text-base font-semibold flex items-center gap-2">
-            {isKit && kitDrilldownIndex === null && <Layers className="w-4 h-4" />}
-            {displayName}
-            {isKit && kitDrilldownIndex === null && (
-              <span className="text-xs font-normal text-muted-foreground">
-                ({kitComponents.length} peças)
-              </span>
-            )}
-          </div>
 
           {/* Kit overview: components grid + bulk actions */}
           {isKit && kitDrilldownIndex === null && (
@@ -663,7 +665,9 @@ export default function MockupReviewSheet({
               />
             </div>
           )}
+          </div>
         </div>
+
 
         {/* Bottom action bar — only in piece review (not kit overview, which has its own bulk actions) */}
         {showFields && (
