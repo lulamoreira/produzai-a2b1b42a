@@ -328,7 +328,7 @@ export default function MockupTab({
       <div className="sticky top-0 z-10 bg-background pb-3 -mx-4 px-4 border-b">
         <div className="flex items-start justify-between gap-3 flex-wrap pt-2">
           <div>
-            <h2 className="text-xl font-semibold">Mockup</h2>
+            <h2 className="text-xl font-semibold">{t("mockupReview.title")}</h2>
             <p className="text-sm text-muted-foreground">{campaignName}</p>
           </div>
           <ResponsiveToolbar
@@ -340,7 +340,7 @@ export default function MockupTab({
                   className="min-h-[44px] gap-1.5"
                   onClick={() => setAddOpen(true)}
                 >
-                  <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Adicionar peça</span><span className="sm:hidden">Adicionar</span>
+                  <Plus className="w-4 h-4" /> <span className="hidden sm:inline">{t("mockupReview.toolbar.addPiece")}</span><span className="sm:hidden">{t("mockupReview.toolbar.addShort")}</span>
                 </Button>
               ) : null
             }
@@ -384,7 +384,7 @@ export default function MockupTab({
                       })
                     }
                   >
-                    <RefreshCw className="w-4 h-4" /> Sincronizar peças/kits
+                    <RefreshCw className="w-4 h-4" /> {t("mockupReview.toolbar.sync")}
                   </Button>
                 )}
                 {total > 0 && (
@@ -397,7 +397,7 @@ export default function MockupTab({
                       setResetOpen(true);
                     }}
                   >
-                    <RotateCcw className="w-4 h-4" /> Zerar
+                    <RotateCcw className="w-4 h-4" /> {t("mockupReview.toolbar.reset")}
                   </Button>
                 )}
               </>
@@ -408,8 +408,7 @@ export default function MockupTab({
         {total > 0 && (
           <div className="mt-3 space-y-2">
             <div className="text-sm">
-              <span className="font-medium">{reviewed}</span> de{" "}
-              <span className="font-medium">{total}</span> revisados ({pct}%)
+              {t("mockupReview.progress", { reviewed, total, pct })}
             </div>
             <div className="h-2 bg-muted rounded-full overflow-hidden">
               <div
@@ -420,19 +419,19 @@ export default function MockupTab({
             <div className="flex flex-wrap gap-3 text-xs">
               <span className="inline-flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                {counts.approved} aprovadas
+                {t("mockupReview.counts.approved", { count: counts.approved })}
               </span>
               <span className="inline-flex items-center gap-1">
                 <XCircle className="w-3.5 h-3.5 text-red-600" />
-                {counts.rejected} reprovadas
+                {t("mockupReview.counts.rejected", { count: counts.rejected })}
               </span>
               <span className="inline-flex items-center gap-1">
                 <Edit3 className="w-3.5 h-3.5 text-amber-600" />
-                {counts.changes_requested} com alterações
+                {t("mockupReview.counts.changes", { count: counts.changes_requested })}
               </span>
               <span className="inline-flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                {counts.pending} pendentes
+                {t("mockupReview.counts.pending", { count: counts.pending })}
               </span>
             </div>
           </div>
@@ -440,11 +439,11 @@ export default function MockupTab({
 
         {total > 0 && (
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-            <FilterChip k="all" label="Todas" />
-            <FilterChip k="pending" label="Pendentes" />
-            <FilterChip k="approved" label="Aprovadas" />
-            <FilterChip k="changes_requested" label="Alterações" />
-            <FilterChip k="rejected" label="Reprovadas" />
+            <FilterChip k="all" label={t("mockupReview.filters.all")} />
+            <FilterChip k="pending" label={t("mockupReview.filters.pending")} />
+            <FilterChip k="approved" label={t("mockupReview.filters.approved")} />
+            <FilterChip k="changes_requested" label={t("mockupReview.filters.changes")} />
+            <FilterChip k="rejected" label={t("mockupReview.filters.rejected")} />
           </div>
         )}
 
@@ -454,7 +453,7 @@ export default function MockupTab({
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar peça ou kit pelo nome..."
+              placeholder={t("mockupReview.search.placeholder")}
               className="pl-9 pr-9 h-10"
             />
             {search && (
@@ -462,7 +461,7 @@ export default function MockupTab({
                 type="button"
                 onClick={() => setSearch("")}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
-                aria-label="Limpar busca"
+                aria-label={t("mockupReview.search.clear")}
               >
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
@@ -470,6 +469,7 @@ export default function MockupTab({
           </div>
         )}
       </div>
+
 
       {/* Empty state */}
       {!isLoading && total === 0 && (
