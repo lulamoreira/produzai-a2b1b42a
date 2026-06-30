@@ -196,7 +196,7 @@ export default function MockupTab({
     const piecesCount = pieces.filter((p) => p.is_mockup && !p.kit_only).length;
     const mockupPieceIds = new Set(pieces.filter((p) => p.is_mockup).map((p) => p.id));
     const kitsCount = kits.filter((k) =>
-      kitPieces.some((kp) => kp.kit_id === k.id && mockupPieceIds.has(kp.piece_id))
+      k.is_mockup || kitPieces.some((kp) => kp.kit_id === k.id && mockupPieceIds.has(kp.piece_id))
     ).length;
     return piecesCount + kitsCount;
   }, [pieces, kits, kitPieces]);
