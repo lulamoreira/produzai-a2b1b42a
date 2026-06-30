@@ -543,7 +543,7 @@ export default function MockupReviewSheet({
                       className="gap-1.5 bg-background/90 text-destructive hover:text-destructive"
                       onClick={async (e) => {
                         e.stopPropagation();
-                        if (!confirm("Remover a anotação e voltar para a imagem original?")) return;
+                        if (!confirm(t("mockupReview.image.confirmRemoveAnnotation"))) return;
                         const m = activeMockup;
                         const hasOtherChanges =
                           !!m.alt_name_active ||
