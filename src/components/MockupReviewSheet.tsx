@@ -564,7 +564,7 @@ export default function MockupReviewSheet({
                       }}
                     >
                       <X className="w-4 h-4" />
-                      Remover anotação
+                      {t("mockupReview.image.removeAnnotation")}
                     </Button>
                   )}
                   <Button
