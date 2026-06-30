@@ -175,7 +175,7 @@ export default function MockupReviewSheet({
 
   const displayName =
     isKit && kitDrilldownIndex === null
-      ? kit?.name || "Kit"
+      ? kit?.name || t("mockupReview.kit.fallbackName")
       : piece?.name || kit?.name || "—";
   const baseImageUrl =
     isKit && kitDrilldownIndex === null ? kitImage : piece?.image_url || kit?.image_url || null;
