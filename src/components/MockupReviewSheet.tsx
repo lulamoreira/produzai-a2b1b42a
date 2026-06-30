@@ -823,7 +823,7 @@ export default function MockupReviewSheet({
               </div>
             ) : (
               <p className="text-xs text-muted-foreground pt-1">
-                Nenhuma foto adicionada.
+                {t("mockupReview.photos.empty")}
               </p>
             )}
           </div>
