@@ -451,7 +451,7 @@ export default function MockupReviewSheet({
             )}
             <div className="flex items-center gap-2 text-sm font-medium">
               <span>{topTitle}</span>
-              <Badge className={headerMeta.cls}>{headerMeta.label}</Badge>
+              <Badge className={STATUS_CLS[headerStatus]}>{STATUS_LABEL[headerStatus]}</Badge>
             </div>
             <div className="min-w-[60px] text-right text-xs text-muted-foreground">
               {savingField ? (
