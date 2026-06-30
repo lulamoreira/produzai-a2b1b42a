@@ -19,7 +19,13 @@ import {
   ImageOff,
   Layers,
   Pencil,
+  Camera,
+  Upload,
+  ImagePlus,
+  Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import MockupAnnotationEditor from "./MockupAnnotationEditor";
 import {
   useUpdateMockup,
@@ -79,6 +85,10 @@ export default function MockupReviewSheet({
   const [annotationOpen, setAnnotationOpen] = useState(false);
   const [showAnnotated, setShowAnnotated] = useState(true);
   const debounceRefs = useRef<Record<string, any>>({});
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoMenuOpen, setPhotoMenuOpen] = useState(false);
+  const cameraInputRef = useRef<HTMLInputElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const piecesById = useMemo(() => {
     const m = new Map<string, any>();
@@ -252,6 +262,47 @@ export default function MockupReviewSheet({
     } finally {
       setSavingField(null);
     }
+  };
+
+  const handleAddMockupPhoto = async (file: File) => {
+    if (!activeMockup) return;
+    setUploadingPhoto(true);
+    const toastId = toast.loading("Enviando foto...");
+    try {
+      const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `mockup-photos/${activeMockup.id}/${Date.now()}-${Math.random()
+        .toString(36)
+        .slice(2)}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("piece-images")
+        .upload(path, file, { upsert: false, cacheControl: "31536000" });
+      if (upErr) throw upErr;
+      const { data } = supabase.storage.from("piece-images").getPublicUrl(path);
+      const newUrls = [...(activeMockup.photo_urls ?? []), data.publicUrl];
+      await update.mutateAsync({
+        mockupId: activeMockup.id,
+        campaignId,
+        changes: { photo_urls: newUrls },
+      });
+      toast.dismiss(toastId);
+      toast.success("Foto adicionada.");
+    } catch (e: any) {
+      toast.dismiss(toastId);
+      toast.error(e?.message || "Erro ao enviar foto.");
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleRemoveMockupPhoto = async (url: string) => {
+    if (!activeMockup) return;
+    if (!confirm("Remover esta foto?")) return;
+    const newUrls = (activeMockup.photo_urls ?? []).filter((u) => u !== url);
+    await update.mutateAsync({
+      mockupId: activeMockup.id,
+      campaignId,
+      changes: { photo_urls: newUrls },
+    });
   };
 
   if (!parentMockup || !activeMockup) return null;
@@ -665,6 +716,117 @@ export default function MockupReviewSheet({
               />
             </div>
           )}
+
+          {/* Fotos do mockup físico */}
+          <div className="p-4 space-y-2 border-b">
+            <div className="flex items-center justify-between gap-2">
+              <Label className="m-0">Fotos do mockup</Label>
+              <div className="relative">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="gap-1.5"
+                  disabled={uploadingPhoto}
+                  onClick={() => setPhotoMenuOpen((o) => !o)}
+                >
+                  {uploadingPhoto ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ImagePlus className="w-4 h-4" />
+                  )}
+                  Adicionar foto
+                </Button>
+                {photoMenuOpen && (
+                  <>
+                    <div
+                      className="fixed inset-0 z-10"
+                      onClick={() => setPhotoMenuOpen(false)}
+                    />
+                    <div className="absolute right-0 top-full mt-1 z-20 bg-popover border rounded-md shadow-md min-w-[180px] overflow-hidden">
+                      <button
+                        type="button"
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left hover:bg-accent"
+                        onClick={() => {
+                          setPhotoMenuOpen(false);
+                          cameraInputRef.current?.click();
+                        }}
+                      >
+                        <Camera className="w-4 h-4" /> Tirar foto
+                      </button>
+                      <button
+                        type="button"
+                        className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left hover:bg-accent"
+                        onClick={() => {
+                          setPhotoMenuOpen(false);
+                          fileInputRef.current?.click();
+                        }}
+                      >
+                        <Upload className="w-4 h-4" /> Enviar arquivo
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {(activeMockup?.photo_urls ?? []).length > 0 ? (
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-1">
+                {(activeMockup?.photo_urls ?? []).map((url, i) => (
+                  <div
+                    key={url + i}
+                    className="relative group aspect-square rounded-md overflow-hidden border bg-muted"
+                  >
+                    <a href={url} target="_blank" rel="noopener noreferrer">
+                      <img
+                        src={url}
+                        alt={`Foto ${i + 1}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </a>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveMockupPhoto(url)}
+                      className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label="Remover foto"
+                    >
+                      <Trash2 className="w-3.5 h-3.5 text-white" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground pt-1">
+                Nenhuma foto adicionada.
+              </p>
+            )}
+          </div>
+
+          {/* Hidden file inputs for camera capture and file upload */}
+          <input
+            ref={cameraInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleAddMockupPhoto(f);
+              e.target.value = "";
+            }}
+          />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) handleAddMockupPhoto(f);
+              e.target.value = "";
+            }}
+          />
           </div>
         </div>
 
