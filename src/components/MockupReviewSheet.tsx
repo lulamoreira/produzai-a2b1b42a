@@ -242,7 +242,9 @@ export default function MockupReviewSheet({
 
   const updateStatus = (status: MockupStatus) => {
     if (!activeMockup) return;
-    saveChanges(activeMockup.id, { status }, "status");
+    // Toggle off: clicking the currently-active status reverts to pending
+    const next: MockupStatus = activeMockup.status === status ? "pending" : status;
+    saveChanges(activeMockup.id, { status: next }, "status");
   };
 
   const setAllComponents = async (status: MockupStatus) => {
@@ -624,12 +626,12 @@ export default function MockupReviewSheet({
                   <div className="mt-4 p-3 bg-muted/30 rounded-md text-sm">
                     Aplicar ao kit inteiro:
                   </div>
-                  <div className="grid grid-cols-3 gap-2 mt-2">
+                  <div className="grid grid-cols-4 gap-2 mt-2">
                     <Button
                       className="min-h-[48px] gap-1 bg-green-600 hover:bg-green-700 text-white text-xs"
                       onClick={() => setAllComponents("approved")}
                     >
-                      <CheckCircle2 className="w-4 h-4" /> Aprovar todos
+                      <CheckCircle2 className="w-4 h-4" /> Aprovar
                     </Button>
                     <Button
                       className="min-h-[48px] gap-1 bg-amber-600 hover:bg-amber-700 text-white text-xs"
@@ -641,7 +643,14 @@ export default function MockupReviewSheet({
                       className="min-h-[48px] gap-1 bg-red-600 hover:bg-red-700 text-white text-xs"
                       onClick={() => setAllComponents("rejected")}
                     >
-                      <XCircle className="w-4 h-4" /> Reprovar todos
+                      <XCircle className="w-4 h-4" /> Reprovar
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="min-h-[48px] gap-1 text-xs"
+                      onClick={() => setAllComponents("pending")}
+                    >
+                      ⏳ Pendente
                     </Button>
                   </div>
                 </>
