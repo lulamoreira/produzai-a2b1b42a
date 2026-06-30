@@ -242,7 +242,9 @@ export default function MockupReviewSheet({
 
   const updateStatus = (status: MockupStatus) => {
     if (!activeMockup) return;
-    saveChanges(activeMockup.id, { status }, "status");
+    // Toggle off: clicking the currently-active status reverts to pending
+    const next: MockupStatus = activeMockup.status === status ? "pending" : status;
+    saveChanges(activeMockup.id, { status: next }, "status");
   };
 
   const setAllComponents = async (status: MockupStatus) => {
