@@ -2552,6 +2552,27 @@ ${msgLabels.winnerWaFooter}
                       </div>
                     )}
 
+                    {/* Botão exclusivo do vencedor: baixar planilha matriz com fórmulas */}
+                    {(sup as any).is_winner && (
+                      <div className="pt-2 mt-1 border-t border-border/60">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full gap-2 min-h-[36px] text-xs"
+                          disabled={downloadingSupplierId === sup.id}
+                          onClick={() => handleDownloadWinnerMatrix(sup)}
+                        >
+                          {downloadingSupplierId === sup.id ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <FileSpreadsheet className="w-3.5 h-3.5" />
+                          )}
+                          Baixar Planilha Vencedor
+                        </Button>
+                      </div>
+                    )}
+
+
                     {/* ─── Recotação por Quantidade para este fornecedor ─── */}
                     {(() => {
                       const supRequotes = (qtyRequotes as any[]).filter((r) => r.supplier_id === sup.id);
