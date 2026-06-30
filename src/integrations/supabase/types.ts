@@ -1405,6 +1405,7 @@ export type Database = {
           kit_id: string | null
           observations: string | null
           parent_mockup_id: string | null
+          photo_urls: string[] | null
           piece_id: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -1427,6 +1428,7 @@ export type Database = {
           kit_id?: string | null
           observations?: string | null
           parent_mockup_id?: string | null
+          photo_urls?: string[] | null
           piece_id?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -1449,6 +1451,7 @@ export type Database = {
           kit_id?: string | null
           observations?: string | null
           parent_mockup_id?: string | null
+          photo_urls?: string[] | null
           piece_id?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
