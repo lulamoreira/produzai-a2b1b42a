@@ -1129,9 +1129,53 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     if (downloadingSupplierId) return;
     setDownloadingSupplierId(sup.id);
     const toastId = toast.loading(`Gerando planilha matriz do vencedor...`, {
-      description: "Montando matriz lojas × peças com preços e fórmulas.",
+      description: "Carregando rateio vigente e montando matriz com fórmulas.",
     });
     try {
+      // ─── 1) Carregar rateio vigente (negociação) deste fornecedor ─────────
+      let rateioQtyMap: Record<string, number> = { ...qtyMap };
+      try {
+        const supplierNegRows = await supabasePaginate<any>((from, to) =>
+          supabase
+            .from("budget_negotiation_store_pieces" as never)
+            .select("store_id, piece_id, quantity", { count: "exact" })
+            .eq("campaign_id", campaignId)
+            .eq("supplier_id", sup.id)
+            .order("store_id")
+            .order("piece_id")
+            .range(from, to) as any
+        );
+        const negRows = Array.isArray(supplierNegRows) && supplierNegRows.length > 0
+          ? supplierNegRows
+          : await supabasePaginate<any>((from, to) =>
+              supabase
+                .from("budget_negotiation_store_pieces" as never)
+                .select("store_id, piece_id, quantity", { count: "exact" })
+                .eq("campaign_id", campaignId)
+                .is("supplier_id", null)
+                .order("store_id")
+                .order("piece_id")
+                .range(from, to) as any
+            );
+        if (Array.isArray(negRows) && negRows.length > 0) {
+          const negMap: Record<string, number> = {};
+          for (const r of negRows) {
+            negMap[`${r.store_id}-${r.piece_id}`] = Number(r.quantity || 0);
+          }
+          rateioQtyMap = negMap;
+        }
+      } catch (err) {
+        console.warn("Falha ao carregar rateio de negociação — usando rateio original.", err);
+      }
+
+      // Totals por peça vindos do rateio vigente
+      const winnerPieceTotals: Record<string, number> = {};
+      pieces.forEach((p) => {
+        let total = 0;
+        for (const s of stores) total += rateioQtyMap[`${s.id}-${p.id}`] || 0;
+        winnerPieceTotals[p.id] = total;
+      });
+
       type Merged =
         | { type: "piece"; data: typeof pieces[number] }
         | { type: "kit"; data: typeof kits[number] };
@@ -1159,7 +1203,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           const kpList = kitPieces.filter((kp) => kp.kit_id === kit.id);
           if (kpList.length === 0) return;
           const kitTotalQty = Math.min(
-            ...kpList.map((kp) => Math.floor((pieceTotals[kp.piece_id] || 0) / (kp.quantity || 1)))
+            ...kpList.map((kp) => Math.floor((winnerPieceTotals[kp.piece_id] || 0) / (kp.quantity || 1)))
           );
           rows.push({
             type: "kit_header",
@@ -1189,7 +1233,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           });
         } else {
           const p = item.data;
-          const qty = pieceTotals[p.id] || 0;
+          const qty = winnerPieceTotals[p.id] || 0;
           const up = priceFor(p.id);
           rows.push({
             type: "standalone_piece",
@@ -1239,12 +1283,13 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         installation,
         freight,
         grandTotal,
+        useFormulas: true,
         rateio: {
           pieces,
           kits,
           kitPieces: kitPieces as any,
           stores: orderedStores as any,
-          qtyMap,
+          qtyMap: rateioQtyMap,
           unitPriceByPieceId,
           installation,
           freight,
@@ -1260,6 +1305,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       setDownloadingSupplierId(null);
     }
   };
+
 
   // ─── Download per-supplier requote sheet (same layout as supplier sheet, but with requote prices/qtys) ───
   const handleDownloadRequoteSheet = async (sup: typeof suppliers[0], rq: any) => {

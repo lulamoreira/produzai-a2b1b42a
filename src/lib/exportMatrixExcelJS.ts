@@ -222,6 +222,12 @@ export function appendMatrixFinancialFooter(params: {
   const firstItemColLetter = getExcelColumnLetter(firstItemCol);
   const lastItemColLetter = getExcelColumnLetter(lastItemCol);
 
+  // Ensure the summary value column is wide enough to display formatted totals
+  // (avoids ###### overflow when the meta column happens to be narrow, e.g. UF).
+  const valueColRef = ws.getColumn(valueCol);
+  if (!valueColRef.width || valueColRef.width < 22) valueColRef.width = 22;
+
+
   const writeSummaryRow = (rowNum: number, label: string, value: number | ExcelJS.CellValue, emphasized = false) => {
     ws.mergeCells(rowNum, 1, rowNum, labelEndCol);
     const labelCell = ws.getCell(rowNum, 1);
