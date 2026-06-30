@@ -2117,9 +2117,6 @@ ${msgLabels.winnerWaFooter}
                         <RefreshCw className="w-3.5 h-3.5" /> Recotação por Qtd.
                       </Button>
                     )}
-                    <Button size="sm" variant="outline" className="gap-1 min-h-[44px] md:min-h-0 w-full md:w-auto justify-start md:justify-center" onClick={handleExportBudget} disabled={exportingBudget || suppliers.length === 0}>
-                      <Download className="w-3.5 h-3.5" /> {exportingBudget ? "Exportando..." : "Exportar Excel"}
-                    </Button>
                   </>
                 }
               />
