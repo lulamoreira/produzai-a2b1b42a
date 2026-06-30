@@ -967,7 +967,7 @@ export default function MockupReviewSheet({
                 e.stopPropagation();
                 setFullscreen(false);
               }}
-              aria-label="Fechar"
+              aria-label={t("mockupReview.image.close")}
             >
               <X className="w-6 h-6" />
             </button>
