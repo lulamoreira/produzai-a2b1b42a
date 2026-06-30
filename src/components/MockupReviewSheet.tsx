@@ -805,7 +805,7 @@ export default function MockupReviewSheet({
                     <a href={url} target="_blank" rel="noopener noreferrer">
                       <img
                         src={url}
-                        alt={`Foto ${i + 1}`}
+                        alt={t("mockupReview.photos.alt", { n: i + 1 })}
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />
