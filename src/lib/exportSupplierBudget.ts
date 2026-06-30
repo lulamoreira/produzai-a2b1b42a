@@ -5,6 +5,8 @@ import {
   appendMatrixFinancialFooter,
   appendMatrixSheets,
   getMatrixStoreFieldsWithHidden,
+  getMatrixTotalQtyRowNum,
+  getExcelColumnLetter,
 } from "@/lib/exportMatrixExcelJS";
 import { getSupplierExcelLabels } from "@/utils/currencyLocale";
 import type {
@@ -36,6 +38,12 @@ export type SupplierExportRow = {
   unitPrice: number | null;
   lineTotal: number;
   image_url?: string | null;
+  /** Optional: id of the piece or kit. Required to mirror qty from the matrix sheet. */
+  id?: string;
+  /** Optional (kit_piece rows): parent kit id, used to reference the kit qty in the matrix. */
+  kitId?: string;
+  /** Optional (kit_piece rows): how many of this piece compose one kit. */
+  kitPieceQuantity?: number;
 };
 
 type Params = {
@@ -170,6 +178,9 @@ export async function buildSupplierBudgetWorkbook(
   // Body rows — sequential because we await image fetches
   let bodyEvenIdx = 0;
   const bodyRowNumbers: number[] = []; // rows that contribute to Total de los Ítems
+  // Track each body row so we can later overwrite col E (Cantidad) with a
+  // formula that mirrors the "Matriz Lojas x Peças" tab.
+  const bodyRowMeta: { rowNumber: number; row: SupplierExportRow }[] = [];
   for (let i = 0; i < params.rows.length; i++) {
     const r = params.rows[i];
     const row = ws.addRow([
@@ -181,6 +192,7 @@ export async function buildSupplierBudgetWorkbook(
       r.type === "kit_header" ? null : r.unitPrice,
       r.type === "kit_header" ? null : r.lineTotal,
     ]);
+    bodyRowMeta.push({ rowNumber: row.number, row: r });
 
     // When using formulas, replace col G with =E*F so it recalcs on edit
     if (params.useFormulas && r.type !== "kit_header") {
@@ -357,6 +369,46 @@ export async function buildSupplierBudgetWorkbook(
         installation: params.rateio.installation ?? params.installation ?? 0,
         freight: params.rateio.freight ?? params.freight ?? 0,
       });
+    }
+
+    // ─── Mirror quantities: rewrite col E (Cantidad) on the Cotización tab to
+    // reference the TOTAL row of the matching column in "Matriz Lojas x Peças".
+    // This makes the Cotización tab a live mirror of the matrix totals — if the
+    // user edits a store qty in the matrix, the quotation qty updates too.
+    if (params.useFormulas && matrixWs) {
+      // Same column order as the matrix tab (display_order, piece-before-kit, id).
+      type ColEntry = { id: string; type: "piece" | "kit"; displayOrder: number };
+      const matrixColumns: ColEntry[] = [
+        ...visiblePieces.map((p) => ({ id: p.id, type: "piece" as const, displayOrder: (p as any).display_order ?? 0 })),
+        ...params.rateio.kits.map((k) => ({ id: k.id, type: "kit" as const, displayOrder: (k as any).display_order ?? 0 })),
+      ].sort(
+        (a, b) =>
+          a.displayOrder - b.displayOrder ||
+          (a.type === b.type ? 0 : a.type === "piece" ? -1 : 1) ||
+          (a.id < b.id ? -1 : 1),
+      );
+      const metaCols = getMatrixStoreFieldsWithHidden().length;
+      const totalQtyRow = getMatrixTotalQtyRowNum(params.rateio.stores.length);
+      const idToColLetter = new Map<string, string>();
+      matrixColumns.forEach((c, idx) => {
+        idToColLetter.set(c.id, getExcelColumnLetter(metaCols + 1 + idx));
+      });
+      // Quote sheet name for cross-sheet references (handles spaces/accents).
+      const matrixRef = `'${matrixSheetName.replace(/'/g, "''")}'`;
+
+      for (const { rowNumber, row: r } of bodyRowMeta) {
+        let formula: string | null = null;
+        if (r.type === "kit_piece" && r.kitId && r.kitPieceQuantity != null) {
+          const col = idToColLetter.get(r.kitId);
+          if (col) formula = `${matrixRef}!${col}${totalQtyRow}*${r.kitPieceQuantity}`;
+        } else if (r.id) {
+          const col = idToColLetter.get(r.id);
+          if (col) formula = `${matrixRef}!${col}${totalQtyRow}`;
+        }
+        if (formula) {
+          ws.getCell(rowNumber, 5).value = { formula } as any;
+        }
+      }
     }
   }
 

@@ -1207,6 +1207,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           );
           rows.push({
             type: "kit_header",
+            id: kit.id,
             name: kit.name,
             code: kit.code,
             totalQty: kitTotalQty,
@@ -1221,6 +1222,9 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             const up = priceFor(kp.piece_id);
             rows.push({
               type: "kit_piece",
+              id: piece.id,
+              kitId: kit.id,
+              kitPieceQuantity: kp.quantity,
               name: piece.name,
               code: piece.code,
               specification: (piece as any).specification ?? "",
@@ -1237,6 +1241,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           const up = priceFor(p.id);
           rows.push({
             type: "standalone_piece",
+            id: p.id,
             name: p.name,
             code: p.code,
             specification: (p as any).specification ?? "",
