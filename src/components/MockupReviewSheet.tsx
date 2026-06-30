@@ -392,7 +392,7 @@ export default function MockupReviewSheet({
                 saveChanges(m.id, { [altKey]: value || null } as any, key);
               }}
               className="text-base h-12"
-              placeholder="Valor proposto..."
+              placeholder={t("mockupReview.fields.proposedValue")}
             />
           ))}
       </div>
