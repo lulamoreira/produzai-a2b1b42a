@@ -169,6 +169,7 @@ export async function buildSupplierBudgetWorkbook(
 
   // Body rows — sequential because we await image fetches
   let bodyEvenIdx = 0;
+  const bodyRowNumbers: number[] = []; // rows that contribute to Total de los Ítems
   for (let i = 0; i < params.rows.length; i++) {
     const r = params.rows[i];
     const row = ws.addRow([
@@ -180,6 +181,13 @@ export async function buildSupplierBudgetWorkbook(
       r.type === "kit_header" ? null : r.unitPrice,
       r.type === "kit_header" ? null : r.lineTotal,
     ]);
+
+    // When using formulas, replace col G with =E*F so it recalcs on edit
+    if (params.useFormulas && r.type !== "kit_header") {
+      const rn = row.number;
+      row.getCell(7).value = { formula: `E${rn}*F${rn}` } as any;
+      bodyRowNumbers.push(rn);
+    }
 
     const isKitHeader = r.type === "kit_header";
     const bg = isKitHeader ? KIT_BG : bodyEvenIdx % 2 === 0 ? WHITE : BEIGE;
@@ -239,8 +247,8 @@ export async function buildSupplierBudgetWorkbook(
   // Totals
   ws.addRow([]);
   const itemsTotal = params.rows.reduce((s, r) => s + (r.type === "kit_header" ? 0 : r.lineTotal), 0);
-  const addTotalRow = (label: string, value: number | null, emphasized = false) => {
-    const r = ws.addRow(["", "", "", "", "", label, value]);
+  const addTotalRow = (label: string, value: number | null | ExcelJS.CellValue, emphasized = false) => {
+    const r = ws.addRow(["", "", "", "", "", label, value as any]);
     r.getCell(6).alignment = { horizontal: "right", vertical: "middle" };
     r.getCell(7).alignment = { horizontal: "right", vertical: "middle" };
     r.getCell(7).numFmt = money;
@@ -252,11 +260,31 @@ export async function buildSupplierBudgetWorkbook(
     } else {
       r.getCell(6).font = { bold: true };
     }
+    return r;
   };
-  addTotalRow(labels.rowItemsTotal, itemsTotal);
-  addTotalRow(labels.rowInstallation, params.installation ?? 0);
-  addTotalRow(labels.rowFreight, params.freight ?? 0);
-  addTotalRow(labels.rowGrandTotal, params.grandTotal, true);
+
+  if (params.useFormulas && bodyRowNumbers.length > 0) {
+    const first = bodyRowNumbers[0];
+    const last = bodyRowNumbers[bodyRowNumbers.length - 1];
+    // Use SUM over the full range (kit_header rows are blank in col G so they sum to 0)
+    const itemsRow = addTotalRow(labels.rowItemsTotal, { formula: `SUM(G${first}:G${last})` } as any);
+    const itemsRowNum = itemsRow.number;
+    const instRow = addTotalRow(labels.rowInstallation, params.installation ?? 0);
+    const instRowNum = instRow.number;
+    const frRow = addTotalRow(labels.rowFreight, params.freight ?? 0);
+    const frRowNum = frRow.number;
+    addTotalRow(
+      labels.rowGrandTotal,
+      { formula: `G${itemsRowNum}+G${instRowNum}+G${frRowNum}` } as any,
+      true,
+    );
+  } else {
+    addTotalRow(labels.rowItemsTotal, itemsTotal);
+    addTotalRow(labels.rowInstallation, params.installation ?? 0);
+    addTotalRow(labels.rowFreight, params.freight ?? 0);
+    addTotalRow(labels.rowGrandTotal, params.grandTotal, true);
+  }
+
 
   ws.columns = [
     { width: 12 }, // Foto
