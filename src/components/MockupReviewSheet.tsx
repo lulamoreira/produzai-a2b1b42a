@@ -814,7 +814,7 @@ export default function MockupReviewSheet({
                       type="button"
                       onClick={() => handleRemoveMockupPhoto(url)}
                       className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      aria-label="Remover foto"
+                      aria-label={t("mockupReview.photos.remove")}
                     >
                       <Trash2 className="w-3.5 h-3.5 text-white" />
                     </button>
