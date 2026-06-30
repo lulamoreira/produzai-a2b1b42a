@@ -577,7 +577,7 @@ export default function MockupReviewSheet({
                     }}
                   >
                     <Pencil className="w-4 h-4" />
-                    {annotatedUrl ? "Editar anotação" : "Anotar imagem"}
+                    {annotatedUrl ? t("mockupReview.image.editAnnotation") : t("mockupReview.image.annotate")}
                   </Button>
                 </div>
               )}
