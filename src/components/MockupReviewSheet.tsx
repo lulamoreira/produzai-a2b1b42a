@@ -519,7 +519,7 @@ export default function MockupReviewSheet({
                   <button
                     type="button"
                     className="absolute inset-0"
-                    aria-label="Ampliar imagem"
+                    aria-label={t("mockupReview.image.enlarge")}
                     onClick={() => setFullscreen(true)}
                   />
                 </>
