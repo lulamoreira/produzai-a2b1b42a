@@ -38,6 +38,12 @@ export type SupplierExportRow = {
   unitPrice: number | null;
   lineTotal: number;
   image_url?: string | null;
+  /** Optional: id of the piece or kit. Required to mirror qty from the matrix sheet. */
+  id?: string;
+  /** Optional (kit_piece rows): parent kit id, used to reference the kit qty in the matrix. */
+  kitId?: string;
+  /** Optional (kit_piece rows): how many of this piece compose one kit. */
+  kitPieceQuantity?: number;
 };
 
 type Params = {
