@@ -102,8 +102,19 @@ const Auth = () => {
     if (isLogin) {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       setLoading(false);
-      if (error) toast.error(t("auth.incorrectCredentials"));
-      else navigate("/");
+      if (error) {
+        const msg = (error.message || "").toLowerCase();
+        const code = (error as any).code as string | undefined;
+        if (code === "email_not_confirmed" || msg.includes("not confirmed") || msg.includes("não confirmado")) {
+          setNeedsConfirm(true);
+        } else {
+          setNeedsConfirm(false);
+          toast.error(t("auth.incorrectCredentials"));
+        }
+      } else {
+        setNeedsConfirm(false);
+        navigate("/");
+      }
     } else {
       const { error } = await supabase.auth.signUp({
         email,
