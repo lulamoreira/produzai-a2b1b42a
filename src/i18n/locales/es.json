@@ -419,7 +419,6 @@
   "stores": {
     "totalStores": "Total de tiendas",
     "title": "Tiendas",
-
     "tabs": {
       "info": "Información",
       "contacts": "Contactos",
@@ -563,7 +562,6 @@
     "customFields": "Campos Personalizados",
     "registered": "Piezas registradas",
     "title": "Piezas",
-
     "new": "Nueva Pieza",
     "newPiece": "Nueva Pieza",
     "kit": "Kit",
@@ -582,8 +580,8 @@
     "availablePiecesForKit": "Piezas disponibles para agregar",
     "includeInKit": "Incluir",
     "addToKit": "Agregar al Kit",
-    "kitLocation": "Ubicación en Tienda",
-    "kitLocationUpdated": "Ubicación actualizada en todas las piezas del kit",
+    "kitLocation": "Ubicación del Kit",
+    "kitLocationUpdated": "¡Ubicación del kit actualizada!",
     "addToKitTitle": "Agregar al Kit",
     "editPieceTitle": "Editar Pieza",
     "pieceUpdated": "Pieza actualizada con éxito",
@@ -596,7 +594,6 @@
     "pieceCountInKit": "{{count}} pieza(s) en este kit",
     "markKitMockupDesc": "Marcar kit y sus piezas como mockup",
     "markNewKitDesc": "Marcar como kit nuevo en la campaña",
-    "kitLocation": "Ubicación del Kit",
     "kitLocationDesc": "Cambiar la ubicación del kit actualiza todas las piezas automáticamente.",
     "selectLocation": "Seleccionar ubicación",
     "subLocation": "Sububicación",
@@ -611,29 +608,23 @@
     "convertToNormalPieceSuccess": "La pieza \"{{name}}\" ahora es una pieza normal (fuera del kit).",
     "deletePiecePermanently": "Eliminar pieza permanentemente",
     "deleteKitQuestionWithName": "¿Eliminar kit \"{{name}}\"?",
-    "pieceUpdated": "¡Pieza actualizada!",
     "nameUpdated": "¡Nombre actualizado!",
     "kitMockupMarked": "¡Kit marcado como mockup!",
     "kitMockupRemoved": "¡Mockup eliminado del kit!",
     "kitNewMarked": "¡Kit marcado como nuevo!",
     "kitNewRemoved": "¡Marcación de nuevo eliminada!",
-    "kitLocationUpdated": "¡Ubicación del kit actualizada!",
     "kitSubLocationUpdated": "¡Sububicación del kit actualizada!",
-    "selectLocation": "Seleccionar ubicación",
-    "subLocation": "Sububicación",
     "kitEmpty": "Este kit no tiene piezas",
     "selectKit": "Selecionar Kit",
     "selectKitPlaceholder": "Seleccionar kit...",
     "piecesSelected": "{{count}} pieza(s) seleccionada(s)",
     "addPieceTitle": "Nueva Pieza",
-    "editPieceTitle": "Editar Pieza",
     "pieceNamePlaceholder": "Ej: Cabecera, Banner, Adhesivo...",
     "pieceCategoryPlaceholder": "Ej: CUBOS",
     "pieceSizePlaceholder": "Ej: 90×60cm",
     "piecePhoto": "Foto de la Pieza",
     "videManual": "Describa el material, acabado, impresión...",
     "enterCustomFieldValue": "Ingrese el valor de {{label}}",
-    "pieceUpdated": "Pieza actualizada con éxito",
     "groupInKit": "Agrupar en Kit",
     "pieceDuplicated": "Pieza duplicada con éxito",
     "kitDuplicated": "Kit duplicado con éxito",
@@ -857,7 +848,6 @@
     "markComplete": "Marcar como completada",
     "photosSentShort": "Fotos enviadas",
     "title": "Instalaciones",
-
     "newInstallation": "Nueva Instalación",
     "empty": "No se encontraron instalaciones",
     "installer": "Instalador",
@@ -1383,5 +1373,138 @@
     "emptyTitle": "No se encontraron clientes",
     "emptyDescription": "Agrega el primer cliente de esta agencia para comenzar.",
     "campaigns": "campañas"
+  },
+  "mockupReview": {
+    "title": "Mockup",
+    "progress": "{{reviewed}} de {{total}} revisados ({{pct}}%)",
+    "reviewedLabel": "revisados",
+    "counts": {
+      "approved": "{{count}} aprobadas",
+      "rejected": "{{count}} rechazadas",
+      "changes": "{{count}} con cambios",
+      "pending": "{{count}} pendientes"
+    },
+    "filters": {
+      "all": "Todas",
+      "pending": "Pendientes",
+      "approved": "Aprobadas",
+      "changes": "Cambios",
+      "rejected": "Rechazadas"
+    },
+    "search": {
+      "placeholder": "Buscar pieza o kit por nombre...",
+      "clear": "Limpiar búsqueda"
+    },
+    "toolbar": {
+      "addPiece": "Agregar pieza",
+      "addShort": "Agregar",
+      "sync": "Sincronizar piezas/kits",
+      "reset": "Restablecer"
+    },
+    "empty": {
+      "title": "Ninguna pieza marcada como mockup en esta campaña.",
+      "subtitleWillCreate": "Se crearán {{count}} mockups basados en las piezas marcadas como mockup y sus kits relacionados.",
+      "subtitleMark": "Marca piezas como mockup en el módulo de Piezas para empezar.",
+      "initialize": "Inicializar mockups",
+      "filteredTitle": "Ninguna pieza en este filtro.",
+      "filteredSubtitle": "Ajusta el filtro para ver más resultados."
+    },
+    "card": {
+      "kit": "Kit ({{count}})",
+      "altImage": "Imagen modificada"
+    },
+    "addDialog": {
+      "title": "Agregar pieza al mockup",
+      "empty": "Todas las piezas disponibles ya están en el mockup."
+    },
+    "exports": {
+      "generatingPdf": "Generando PDF...",
+      "generatingExcel": "Generando Excel...",
+      "exporting": "Exportando {{count}} mockups (filtro: {{filter}})",
+      "pdfReady": "PDF generado",
+      "excelReady": "Excel generado",
+      "pdfError": "Error al generar PDF",
+      "excelError": "Error al generar Excel"
+    },
+    "reset": {
+      "title": "Restablecer mockup",
+      "description": "Esta acción borra TODAS las observaciones, cambios propuestos y toggles de TODAS las {{count}} piezas/kits de esta campaña, y define el estado de todas a lo que elijas abajo. No se puede deshacer.",
+      "setAllAs": "Definir todas como:",
+      "optionPending": "⏳ Pendientes",
+      "optionApproved": "✅ Aprobadas",
+      "optionRejected": "❌ Rechazadas",
+      "clearAnnotations": "También quitar imágenes anotadas (volver a las imágenes originales)",
+      "confirm": "Confirmar y restablecer",
+      "working": "Restableciendo...",
+      "loading": "Restableciendo mockup...",
+      "success": "Mockup restablecido con éxito",
+      "error": "Error al restablecer mockup"
+    },
+    "status": {
+      "pending": "⏳ Pendiente",
+      "approved": "✅ Aprobada",
+      "changes": "✏️ Cambios",
+      "rejected": "❌ Rechazada"
+    },
+    "nav": {
+      "backToKit": "Volver al kit",
+      "back": "Volver",
+      "kitOverview": "Kit — Vista general",
+      "componentXofY": "Componente {{current}} de {{total}}",
+      "pieceXofY": "P{{current}} de {{total}}",
+      "previousComponent": "Componente anterior",
+      "nextComponent": "Componente siguiente",
+      "nextFeminine": "Siguiente"
+    },
+    "savingIndicator": "Guardando…",
+    "savedIndicator": "Guardado",
+    "image": {
+      "original": "Original",
+      "annotated": "✏️ Anotada",
+      "enlarge": "Ampliar imagen",
+      "altered": "Imagen modificada",
+      "removeAnnotation": "Quitar anotación",
+      "editAnnotation": "Editar anotación",
+      "annotate": "Anotar imagen",
+      "confirmRemoveAnnotation": "¿Quitar la anotación y volver a la imagen original?",
+      "close": "Cerrar"
+    },
+    "kit": {
+      "empty": "Este kit aún no tiene componentes en mockup.",
+      "applyAll": "Aplicar al kit completo:",
+      "componentsCount": "({{count}} piezas)",
+      "fallbackName": "Kit"
+    },
+    "actions": {
+      "approve": "Aprobar",
+      "changes": "Cambios",
+      "reject": "Rechazar",
+      "pending": "⏳ Pendiente"
+    },
+    "fields": {
+      "toggleChange": "Cambiar",
+      "proposedValue": "Valor propuesto...",
+      "name": "Nombre",
+      "size": "Tamaño",
+      "specification": "Especificación",
+      "installation": "Instalación",
+      "kitObservations": "Observaciones del kit",
+      "kitObservationsPlaceholder": "Observaciones generales sobre este kit...",
+      "observations": "Observaciones",
+      "observationsPlaceholder": "Observaciones sobre esta pieza..."
+    },
+    "photos": {
+      "title": "Fotos del mockup",
+      "add": "Agregar foto",
+      "takePhoto": "Tomar foto",
+      "uploadFile": "Subir archivo",
+      "empty": "Ninguna foto agregada.",
+      "uploading": "Subiendo foto...",
+      "added": "Foto agregada.",
+      "uploadError": "Error al subir foto.",
+      "remove": "Quitar foto",
+      "confirmRemove": "¿Quitar esta foto?",
+      "alt": "Foto {{n}}"
+    }
   }
 }

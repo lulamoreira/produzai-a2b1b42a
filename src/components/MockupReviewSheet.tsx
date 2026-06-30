@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,16 +54,22 @@ interface Draft {
   observations?: string | null;
 }
 
-const STATUS_META: Record<MockupStatus, { label: string; cls: string }> = {
-  pending: { label: "⏳ Pendente", cls: "bg-muted text-foreground" },
-  approved: { label: "✅ Aprovada", cls: "bg-green-600 text-white" },
-  changes_requested: { label: "✏️ Alterações", cls: "bg-amber-600 text-white" },
-  rejected: { label: "❌ Reprovada", cls: "bg-red-600 text-white" },
+const STATUS_CLS: Record<MockupStatus, string> = {
+  pending: "bg-muted text-foreground",
+  approved: "bg-green-600 text-white",
+  changes_requested: "bg-amber-600 text-white",
+  rejected: "bg-red-600 text-white",
 };
 
 function StatusBadge({ status }: { status: MockupStatus }) {
-  const meta = STATUS_META[status];
-  return <Badge className={meta.cls}>{meta.label}</Badge>;
+  const { t } = useTranslation();
+  const labels: Record<MockupStatus, string> = {
+    pending: t("mockupReview.status.pending"),
+    approved: t("mockupReview.status.approved"),
+    changes_requested: t("mockupReview.status.changes"),
+    rejected: t("mockupReview.status.rejected"),
+  };
+  return <Badge className={STATUS_CLS[status]}>{labels[status]}</Badge>;
 }
 
 export default function MockupReviewSheet({
@@ -75,6 +82,13 @@ export default function MockupReviewSheet({
   kits,
   campaignId,
 }: Props) {
+  const { t } = useTranslation();
+  const STATUS_LABEL: Record<MockupStatus, string> = {
+    pending: t("mockupReview.status.pending"),
+    approved: t("mockupReview.status.approved"),
+    changes_requested: t("mockupReview.status.changes"),
+    rejected: t("mockupReview.status.rejected"),
+  };
   const update = useUpdateMockup();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [kitDrilldownIndex, setKitDrilldownIndex] = useState<number | null>(null);
@@ -161,7 +175,7 @@ export default function MockupReviewSheet({
 
   const displayName =
     isKit && kitDrilldownIndex === null
-      ? kit?.name || "Kit"
+      ? kit?.name || t("mockupReview.kit.fallbackName")
       : piece?.name || kit?.name || "—";
   const baseImageUrl =
     isKit && kitDrilldownIndex === null ? kitImage : piece?.image_url || kit?.image_url || null;
@@ -269,7 +283,7 @@ export default function MockupReviewSheet({
   const handleAddMockupPhoto = async (file: File) => {
     if (!activeMockup) return;
     setUploadingPhoto(true);
-    const toastId = toast.loading("Enviando foto...");
+    const toastId = toast.loading(t("mockupReview.photos.uploading"));
     try {
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
       const path = `mockup-photos/${activeMockup.id}/${Date.now()}-${Math.random()
@@ -290,10 +304,10 @@ export default function MockupReviewSheet({
         },
       });
       toast.dismiss(toastId);
-      toast.success("Foto adicionada.");
+      toast.success(t("mockupReview.photos.added"));
     } catch (e: any) {
       toast.dismiss(toastId);
-      toast.error(e?.message || "Erro ao enviar foto.");
+      toast.error(e?.message || t("mockupReview.photos.uploadError"));
     } finally {
       setUploadingPhoto(false);
     }
@@ -301,7 +315,7 @@ export default function MockupReviewSheet({
 
   const handleRemoveMockupPhoto = async (url: string) => {
     if (!activeMockup) return;
-    if (!confirm("Remover esta foto?")) return;
+    if (!confirm(t("mockupReview.photos.confirmRemove"))) return;
     const newUrls = (activeMockup.photo_urls ?? []).filter((u) => u !== url);
     await update.mutateAsync({
       mockupId: activeMockup.id,
@@ -335,7 +349,7 @@ export default function MockupReviewSheet({
           <Label className="text-sm font-medium">{label}</Label>
           {showToggle && (
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Alterar</span>
+              <span className="text-xs text-muted-foreground">{t("mockupReview.fields.toggleChange")}</span>
               <Switch
                 checked={isActive}
                 onCheckedChange={(checked) =>
@@ -363,7 +377,7 @@ export default function MockupReviewSheet({
               }}
               rows={3}
               className="text-base"
-              placeholder="Valor proposto..."
+              placeholder={t("mockupReview.fields.proposedValue")}
             />
           ) : (
             <Input
@@ -378,7 +392,7 @@ export default function MockupReviewSheet({
                 saveChanges(m.id, { [altKey]: value || null } as any, key);
               }}
               className="text-base h-12"
-              placeholder="Valor proposto..."
+              placeholder={t("mockupReview.fields.proposedValue")}
             />
           ))}
       </div>
@@ -390,18 +404,17 @@ export default function MockupReviewSheet({
     isKit && kitDrilldownIndex === null && kitComponents.length > 0
       ? computeKitRolledUpStatus(kitComponents)
       : activeMockup.status;
-  const headerMeta = STATUS_META[headerStatus];
 
   const obsValue = draft.observations ?? activeMockup.observations ?? "";
 
   // Top bar title
   let topTitle: string;
   if (isKit && kitDrilldownIndex === null) {
-    topTitle = `Kit — Visão geral`;
+    topTitle = t("mockupReview.nav.kitOverview");
   } else if (isKit && kitDrilldownIndex !== null) {
-    topTitle = `Componente ${kitDrilldownIndex + 1} de ${kitComponents.length}`;
+    topTitle = t("mockupReview.nav.componentXofY", { current: kitDrilldownIndex + 1, total: kitComponents.length });
   } else {
-    topTitle = `P${currentIndex + 1} de ${mockups.length}`;
+    topTitle = t("mockupReview.nav.pieceXofY", { current: currentIndex + 1, total: mockups.length });
   }
 
   const showFields = !(isKit && kitDrilldownIndex === null);
@@ -424,7 +437,7 @@ export default function MockupReviewSheet({
                 className="min-h-[44px] gap-1 -ml-2"
                 onClick={() => setKitDrilldownIndex(null)}
               >
-                <ArrowLeft className="w-5 h-5" /> Voltar ao kit
+                <ArrowLeft className="w-5 h-5" /> {t("mockupReview.nav.backToKit")}
               </Button>
             ) : (
               <Button
@@ -433,23 +446,23 @@ export default function MockupReviewSheet({
                 className="min-h-[44px] gap-1 -ml-2"
                 onClick={() => onOpenChange(false)}
               >
-                <ArrowLeft className="w-5 h-5" /> Voltar
+                <ArrowLeft className="w-5 h-5" /> {t("mockupReview.nav.back")}
               </Button>
             )}
             <div className="flex items-center gap-2 text-sm font-medium">
               <span>{topTitle}</span>
-              <Badge className={headerMeta.cls}>{headerMeta.label}</Badge>
+              <Badge className={STATUS_CLS[headerStatus]}>{STATUS_LABEL[headerStatus]}</Badge>
             </div>
             <div className="min-w-[60px] text-right text-xs text-muted-foreground">
               {savingField ? (
                 <span className="inline-flex items-center gap-1">
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  Salvando…
+                  {t("mockupReview.savingIndicator")}
                 </span>
               ) : savedFlash ? (
                 <span className="inline-flex items-center gap-1 text-green-600">
                   <Check className="w-3 h-3" />
-                  Salvo
+                  {t("mockupReview.savedIndicator")}
                 </span>
               ) : null}
             </div>
@@ -482,7 +495,7 @@ export default function MockupReviewSheet({
                   onClick={() => setShowAnnotated(false)}
                   className={!showAnnotated ? "font-bold" : "text-muted-foreground"}
                 >
-                  Original
+                  {t("mockupReview.image.original")}
                 </button>
                 <span className="text-muted-foreground">|</span>
                 <button
@@ -490,7 +503,7 @@ export default function MockupReviewSheet({
                   onClick={() => setShowAnnotated(true)}
                   className={showAnnotated ? "font-bold text-amber-700" : "text-muted-foreground"}
                 >
-                  ✏️ Anotada
+                  {t("mockupReview.image.annotated")}
                 </button>
               </div>
             )}
@@ -506,7 +519,7 @@ export default function MockupReviewSheet({
                   <button
                     type="button"
                     className="absolute inset-0"
-                    aria-label="Ampliar imagem"
+                    aria-label={t("mockupReview.image.enlarge")}
                     onClick={() => setFullscreen(true)}
                   />
                 </>
@@ -518,7 +531,7 @@ export default function MockupReviewSheet({
               {annotatedUrl && (
                 <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-md bg-amber-500/95 text-white px-2 py-1 text-xs font-semibold shadow">
                   <Pencil className="w-3 h-3" />
-                  Imagem alterada
+                  {t("mockupReview.image.altered")}
                 </div>
               )}
               {baseImageUrl && activeMockup && (
@@ -530,7 +543,7 @@ export default function MockupReviewSheet({
                       className="gap-1.5 bg-background/90 text-destructive hover:text-destructive"
                       onClick={async (e) => {
                         e.stopPropagation();
-                        if (!confirm("Remover a anotação e voltar para a imagem original?")) return;
+                        if (!confirm(t("mockupReview.image.confirmRemoveAnnotation"))) return;
                         const m = activeMockup;
                         const hasOtherChanges =
                           !!m.alt_name_active ||
@@ -551,7 +564,7 @@ export default function MockupReviewSheet({
                       }}
                     >
                       <X className="w-4 h-4" />
-                      Remover anotação
+                      {t("mockupReview.image.removeAnnotation")}
                     </Button>
                   )}
                   <Button
@@ -564,7 +577,7 @@ export default function MockupReviewSheet({
                     }}
                   >
                     <Pencil className="w-4 h-4" />
-                    {annotatedUrl ? "Editar anotação" : "Anotar imagem"}
+                    {annotatedUrl ? t("mockupReview.image.editAnnotation") : t("mockupReview.image.annotate")}
                   </Button>
                 </div>
               )}
@@ -578,7 +591,7 @@ export default function MockupReviewSheet({
               {displayName}
               {isKit && kitDrilldownIndex === null && (
                 <span className="text-xs font-normal text-muted-foreground">
-                  ({kitComponents.length} peças)
+                  {t("mockupReview.kit.componentsCount", { count: kitComponents.length })}
                 </span>
               )}
             </div>
@@ -589,7 +602,7 @@ export default function MockupReviewSheet({
             <div className="px-3 pb-4">
               {kitComponents.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">
-                  Este kit ainda não possui componentes em mockup.
+                  {t("mockupReview.kit.empty")}
                 </p>
               ) : (
                 <>
@@ -627,33 +640,33 @@ export default function MockupReviewSheet({
                   </div>
 
                   <div className="mt-4 p-3 bg-muted/30 rounded-md text-sm">
-                    Aplicar ao kit inteiro:
+                    {t("mockupReview.kit.applyAll")}
                   </div>
                   <div className="grid grid-cols-4 gap-2 mt-2">
                     <Button
                       className="min-h-[48px] gap-1 bg-green-600 hover:bg-green-700 text-white text-xs"
                       onClick={() => setAllComponents("approved")}
                     >
-                      <CheckCircle2 className="w-4 h-4" /> Aprovar
+                      <CheckCircle2 className="w-4 h-4" /> {t("mockupReview.actions.approve")}
                     </Button>
                     <Button
                       className="min-h-[48px] gap-1 bg-amber-600 hover:bg-amber-700 text-white text-xs"
                       onClick={() => setAllComponents("changes_requested")}
                     >
-                      <Edit3 className="w-4 h-4" /> Alterações
+                      <Edit3 className="w-4 h-4" /> {t("mockupReview.actions.changes")}
                     </Button>
                     <Button
                       className="min-h-[48px] gap-1 bg-red-600 hover:bg-red-700 text-white text-xs"
                       onClick={() => setAllComponents("rejected")}
                     >
-                      <XCircle className="w-4 h-4" /> Reprovar
+                      <XCircle className="w-4 h-4" /> {t("mockupReview.actions.reject")}
                     </Button>
                     <Button
                       variant="outline"
                       className="min-h-[48px] gap-1 text-xs"
                       onClick={() => setAllComponents("pending")}
                     >
-                      ⏳ Pendente
+                      {t("mockupReview.actions.pending")}
                     </Button>
                   </div>
                 </>
@@ -661,7 +674,7 @@ export default function MockupReviewSheet({
 
               {/* Observações do kit inteiro (salva no mockup pai) */}
               <div className="mt-4 space-y-2">
-                <Label>Observações do kit</Label>
+                <Label>{t("mockupReview.fields.kitObservations")}</Label>
                 <Textarea
                   value={obsValue}
                   onChange={(e) => {
@@ -683,7 +696,7 @@ export default function MockupReviewSheet({
                   }}
                   rows={4}
                   className="text-base"
-                  placeholder="Observações gerais sobre este kit..."
+                  placeholder={t("mockupReview.fields.kitObservationsPlaceholder")}
                 />
               </div>
             </div>
@@ -692,17 +705,17 @@ export default function MockupReviewSheet({
           {/* Piece review fields */}
           {showFields && piece && (
             <>
-              {renderField("name", "Nome", piece.name)}
-              {renderField("size", "Tamanho", piece.size)}
-              {renderField("specification", "Especificação", piece.specification, true)}
-              {renderField("installation", "Instalação", piece.installation_instructions, true)}
+              {renderField("name", t("mockupReview.fields.name"), piece.name)}
+              {renderField("size", t("mockupReview.fields.size"), piece.size)}
+              {renderField("specification", t("mockupReview.fields.specification"), piece.specification, true)}
+              {renderField("installation", t("mockupReview.fields.installation"), piece.installation_instructions, true)}
             </>
           )}
 
           {/* Observations (only when reviewing a piece, not kit overview) */}
           {showFields && (
             <div className="p-4 space-y-2 border-b">
-              <Label>Observações</Label>
+              <Label>{t("mockupReview.fields.observations")}</Label>
               <Textarea
                 value={obsValue}
                 onChange={(e) => {
@@ -724,7 +737,7 @@ export default function MockupReviewSheet({
                 }}
                 rows={4}
                 className="text-base"
-                placeholder="Observações sobre esta peça..."
+                placeholder={t("mockupReview.fields.observationsPlaceholder")}
               />
             </div>
           )}
@@ -732,7 +745,7 @@ export default function MockupReviewSheet({
           {/* Fotos do mockup físico */}
           <div className="p-4 space-y-2 border-b">
             <div className="flex items-center justify-between gap-2">
-              <Label className="m-0">Fotos do mockup</Label>
+              <Label className="m-0">{t("mockupReview.photos.title")}</Label>
               <div className="relative">
                 <Button
                   type="button"
@@ -747,7 +760,7 @@ export default function MockupReviewSheet({
                   ) : (
                     <ImagePlus className="w-4 h-4" />
                   )}
-                  Adicionar foto
+                  {t("mockupReview.photos.add")}
                 </Button>
                 {photoMenuOpen && (
                   <>
@@ -764,7 +777,7 @@ export default function MockupReviewSheet({
                           cameraInputRef.current?.click();
                         }}
                       >
-                        <Camera className="w-4 h-4" /> Tirar foto
+                        <Camera className="w-4 h-4" /> {t("mockupReview.photos.takePhoto")}
                       </button>
                       <button
                         type="button"
@@ -774,7 +787,7 @@ export default function MockupReviewSheet({
                           fileInputRef.current?.click();
                         }}
                       >
-                        <Upload className="w-4 h-4" /> Enviar arquivo
+                        <Upload className="w-4 h-4" /> {t("mockupReview.photos.uploadFile")}
                       </button>
                     </div>
                   </>
@@ -792,7 +805,7 @@ export default function MockupReviewSheet({
                     <a href={url} target="_blank" rel="noopener noreferrer">
                       <img
                         src={url}
-                        alt={`Foto ${i + 1}`}
+                        alt={t("mockupReview.photos.alt", { n: i + 1 })}
                         className="w-full h-full object-cover"
                         loading="lazy"
                       />
@@ -801,7 +814,7 @@ export default function MockupReviewSheet({
                       type="button"
                       onClick={() => handleRemoveMockupPhoto(url)}
                       className="absolute top-1 right-1 bg-black/60 hover:bg-black/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                      aria-label="Remover foto"
+                      aria-label={t("mockupReview.photos.remove")}
                     >
                       <Trash2 className="w-3.5 h-3.5 text-white" />
                     </button>
@@ -810,7 +823,7 @@ export default function MockupReviewSheet({
               </div>
             ) : (
               <p className="text-xs text-muted-foreground pt-1">
-                Nenhuma foto adicionada.
+                {t("mockupReview.photos.empty")}
               </p>
             )}
           </div>
@@ -859,7 +872,7 @@ export default function MockupReviewSheet({
                 onClick={() => updateStatus("approved")}
               >
                 <CheckCircle2 className="w-5 h-5" />
-                Aprovar
+                {t("mockupReview.actions.approve")}
               </Button>
               <Button
                 className={`min-h-[56px] gap-1.5 text-white ${
@@ -870,7 +883,7 @@ export default function MockupReviewSheet({
                 onClick={() => updateStatus("changes_requested")}
               >
                 <Edit3 className="w-5 h-5" />
-                Alterações
+                {t("mockupReview.actions.changes")}
               </Button>
               <Button
                 className={`min-h-[56px] gap-1.5 text-white ${
@@ -881,14 +894,14 @@ export default function MockupReviewSheet({
                 onClick={() => updateStatus("rejected")}
               >
                 <XCircle className="w-5 h-5" />
-                Reprovar
+                {t("mockupReview.actions.reject")}
               </Button>
               <Button
                 variant="outline"
                 className="min-h-[56px] gap-1 text-xs"
                 onClick={() => updateStatus("pending")}
               >
-                ⏳ Pendente
+                {t("mockupReview.actions.pending")}
               </Button>
             </div>
             <div className="flex justify-between gap-2">
@@ -899,7 +912,7 @@ export default function MockupReviewSheet({
                 className="min-h-[44px] flex-1"
               >
                 <ChevronLeft className="w-4 h-4 mr-1" />{" "}
-                {isKit && kitDrilldownIndex !== null ? "Anterior componente" : "Anterior"}
+                {isKit && kitDrilldownIndex !== null ? t("mockupReview.nav.previousComponent") : t("common.previous")}
               </Button>
               <Button
                 variant="outline"
@@ -907,7 +920,7 @@ export default function MockupReviewSheet({
                 disabled={!canNext}
                 className="min-h-[44px] flex-1"
               >
-                {isKit && kitDrilldownIndex !== null ? "Próximo componente" : "Próxima"}{" "}
+                {isKit && kitDrilldownIndex !== null ? t("mockupReview.nav.nextComponent") : t("mockupReview.nav.nextFeminine")}{" "}
                 <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
@@ -927,7 +940,7 @@ export default function MockupReviewSheet({
                 disabled={!canPrev}
                 className="min-h-[44px] flex-1"
               >
-                <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
+                <ChevronLeft className="w-4 h-4 mr-1" /> {t("common.previous")}
               </Button>
               <Button
                 variant="outline"
@@ -935,7 +948,7 @@ export default function MockupReviewSheet({
                 disabled={!canNext}
                 className="min-h-[44px] flex-1"
               >
-                Próxima <ChevronRight className="w-4 h-4 ml-1" />
+                {t("mockupReview.nav.nextFeminine")} <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           </div>
@@ -954,7 +967,7 @@ export default function MockupReviewSheet({
                 e.stopPropagation();
                 setFullscreen(false);
               }}
-              aria-label="Fechar"
+              aria-label={t("mockupReview.image.close")}
             >
               <X className="w-6 h-6" />
             </button>

@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   useCampaignMockups,
   useInitializeMockups,
@@ -58,14 +59,6 @@ interface Props {
 
 type FilterKey = "all" | MockupStatus;
 
-const FILTER_LABEL: Record<FilterKey, string> = {
-  all: "Todas",
-  pending: "Pendentes",
-  approved: "Aprovadas",
-  changes_requested: "Alterações",
-  rejected: "Reprovadas",
-};
-
 const STATUS_BADGE: Record<MockupStatus, { icon: string; cls: string }> = {
   approved: { icon: "✅", cls: "bg-green-600 text-white border-transparent" },
   rejected: { icon: "❌", cls: "bg-red-600 text-white border-transparent" },
@@ -82,9 +75,18 @@ export default function MockupTab({
   kits,
   kitPieces,
 }: Props) {
+  const { t } = useTranslation();
   const { data: mockups = [], isLoading } = useCampaignMockups(campaignId);
   const initialize = useInitializeMockups();
   const addPiece = useAddPieceToMockup();
+
+  const FILTER_LABEL: Record<FilterKey, string> = {
+    all: t("mockupReview.filters.all"),
+    pending: t("mockupReview.filters.pending"),
+    approved: t("mockupReview.filters.approved"),
+    changes_requested: t("mockupReview.filters.changes"),
+    rejected: t("mockupReview.filters.rejected"),
+  };
 
   const [filter, setFilter] = useState<FilterKey>("all");
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -217,11 +219,11 @@ export default function MockupTab({
   };
 
   const handleExportPDF = async () => {
-    const tId = toast.loading("Gerando PDF...");
+    const tId = toast.loading(t("mockupReview.exports.generatingPdf"));
     try {
       const exportSet = buildExportMockups();
       if (filter !== "all") {
-        toast.message(`Exportando ${filtered.length} mockups (filtro: ${FILTER_LABEL[filter]})`);
+        toast.message(t("mockupReview.exports.exporting", { count: filtered.length, filter: FILTER_LABEL[filter] }));
       }
       const { blob, fileName } = await exportMockupPDF({
         campaignName,
@@ -237,18 +239,18 @@ export default function MockupTab({
         description: "PDF",
         extension: ".pdf",
       });
-      toast.success("PDF gerado", { id: tId });
+      toast.success(t("mockupReview.exports.pdfReady"), { id: tId });
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao gerar PDF", { id: tId });
+      toast.error(e?.message || t("mockupReview.exports.pdfError"), { id: tId });
     }
   };
 
   const handleExportExcel = async () => {
-    const tId = toast.loading("Gerando Excel...");
+    const tId = toast.loading(t("mockupReview.exports.generatingExcel"));
     try {
       const exportSet = buildExportMockups();
       if (filter !== "all") {
-        toast.message(`Exportando ${filtered.length} mockups (filtro: ${FILTER_LABEL[filter]})`);
+        toast.message(t("mockupReview.exports.exporting", { count: filtered.length, filter: FILTER_LABEL[filter] }));
       }
       const { blob, fileName } = await exportMockupExcel({
         campaignName,
@@ -262,16 +264,16 @@ export default function MockupTab({
         description: "Excel",
         extension: ".xlsx",
       });
-      toast.success("Excel gerado", { id: tId });
+      toast.success(t("mockupReview.exports.excelReady"), { id: tId });
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao gerar Excel", { id: tId });
+      toast.error(e?.message || t("mockupReview.exports.excelError"), { id: tId });
     }
   };
 
   const handleResetAll = async () => {
     if (!resetTarget) return;
     setResetting(true);
-    const tId = toast.loading("Zerando mockup...");
+    const tId = toast.loading(t("mockupReview.reset.loading"));
     try {
       const { data: userData } = await supabase.auth.getUser();
       const updatePayload: any = {
@@ -297,11 +299,11 @@ export default function MockupTab({
         .eq("campaign_id", campaignId);
       if (error) throw error;
       await qc.invalidateQueries({ queryKey: ["campaign_mockups", campaignId] });
-      toast.success("Mockup zerado com sucesso", { id: tId });
+      toast.success(t("mockupReview.reset.success"), { id: tId });
       setResetOpen(false);
       setResetTarget(null);
     } catch (e: any) {
-      toast.error(e?.message || "Erro ao zerar mockup", { id: tId });
+      toast.error(e?.message || t("mockupReview.reset.error"), { id: tId });
     } finally {
       setResetting(false);
     }
@@ -326,7 +328,7 @@ export default function MockupTab({
       <div className="sticky top-0 z-10 bg-background pb-3 -mx-4 px-4 border-b">
         <div className="flex items-start justify-between gap-3 flex-wrap pt-2">
           <div>
-            <h2 className="text-xl font-semibold">Mockup</h2>
+            <h2 className="text-xl font-semibold">{t("mockupReview.title")}</h2>
             <p className="text-sm text-muted-foreground">{campaignName}</p>
           </div>
           <ResponsiveToolbar
@@ -338,7 +340,7 @@ export default function MockupTab({
                   className="min-h-[44px] gap-1.5"
                   onClick={() => setAddOpen(true)}
                 >
-                  <Plus className="w-4 h-4" /> <span className="hidden sm:inline">Adicionar peça</span><span className="sm:hidden">Adicionar</span>
+                  <Plus className="w-4 h-4" /> <span className="hidden sm:inline">{t("mockupReview.toolbar.addPiece")}</span><span className="sm:hidden">{t("mockupReview.toolbar.addShort")}</span>
                 </Button>
               ) : null
             }
@@ -382,7 +384,7 @@ export default function MockupTab({
                       })
                     }
                   >
-                    <RefreshCw className="w-4 h-4" /> Sincronizar peças/kits
+                    <RefreshCw className="w-4 h-4" /> {t("mockupReview.toolbar.sync")}
                   </Button>
                 )}
                 {total > 0 && (
@@ -395,7 +397,7 @@ export default function MockupTab({
                       setResetOpen(true);
                     }}
                   >
-                    <RotateCcw className="w-4 h-4" /> Zerar
+                    <RotateCcw className="w-4 h-4" /> {t("mockupReview.toolbar.reset")}
                   </Button>
                 )}
               </>
@@ -406,8 +408,7 @@ export default function MockupTab({
         {total > 0 && (
           <div className="mt-3 space-y-2">
             <div className="text-sm">
-              <span className="font-medium">{reviewed}</span> de{" "}
-              <span className="font-medium">{total}</span> revisados ({pct}%)
+              {t("mockupReview.progress", { reviewed, total, pct })}
             </div>
             <div className="h-2 bg-muted rounded-full overflow-hidden">
               <div
@@ -418,19 +419,19 @@ export default function MockupTab({
             <div className="flex flex-wrap gap-3 text-xs">
               <span className="inline-flex items-center gap-1">
                 <CheckCircle2 className="w-3.5 h-3.5 text-green-600" />
-                {counts.approved} aprovadas
+                {t("mockupReview.counts.approved", { count: counts.approved })}
               </span>
               <span className="inline-flex items-center gap-1">
                 <XCircle className="w-3.5 h-3.5 text-red-600" />
-                {counts.rejected} reprovadas
+                {t("mockupReview.counts.rejected", { count: counts.rejected })}
               </span>
               <span className="inline-flex items-center gap-1">
                 <Edit3 className="w-3.5 h-3.5 text-amber-600" />
-                {counts.changes_requested} com alterações
+                {t("mockupReview.counts.changes", { count: counts.changes_requested })}
               </span>
               <span className="inline-flex items-center gap-1">
                 <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                {counts.pending} pendentes
+                {t("mockupReview.counts.pending", { count: counts.pending })}
               </span>
             </div>
           </div>
@@ -438,11 +439,11 @@ export default function MockupTab({
 
         {total > 0 && (
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-            <FilterChip k="all" label="Todas" />
-            <FilterChip k="pending" label="Pendentes" />
-            <FilterChip k="approved" label="Aprovadas" />
-            <FilterChip k="changes_requested" label="Alterações" />
-            <FilterChip k="rejected" label="Reprovadas" />
+            <FilterChip k="all" label={t("mockupReview.filters.all")} />
+            <FilterChip k="pending" label={t("mockupReview.filters.pending")} />
+            <FilterChip k="approved" label={t("mockupReview.filters.approved")} />
+            <FilterChip k="changes_requested" label={t("mockupReview.filters.changes")} />
+            <FilterChip k="rejected" label={t("mockupReview.filters.rejected")} />
           </div>
         )}
 
@@ -452,7 +453,7 @@ export default function MockupTab({
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar peça ou kit pelo nome..."
+              placeholder={t("mockupReview.search.placeholder")}
               className="pl-9 pr-9 h-10"
             />
             {search && (
@@ -460,7 +461,7 @@ export default function MockupTab({
                 type="button"
                 onClick={() => setSearch("")}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded hover:bg-muted"
-                aria-label="Limpar busca"
+                aria-label={t("mockupReview.search.clear")}
               >
                 <X className="w-4 h-4 text-muted-foreground" />
               </button>
@@ -469,16 +470,17 @@ export default function MockupTab({
         )}
       </div>
 
+
       {/* Empty state */}
       {!isLoading && total === 0 && (
         <div className="py-8">
           <EmptyState
             icon={LayoutGrid}
-            title="Nenhuma peça marcada como mockup nesta campanha."
+            title={t("mockupReview.empty.title")}
             subtitle={
               initPreview > 0
-                ? `Serão criados ${initPreview} mockups baseados nas peças marcadas como mockup e seus kits relacionados.`
-                : "Marque peças como mockup no módulo de Peças para iniciar."
+                ? t("mockupReview.empty.subtitleWillCreate", { count: initPreview })
+                : t("mockupReview.empty.subtitleMark")
             }
           />
           {initPreview > 0 && (
@@ -502,7 +504,7 @@ export default function MockupTab({
                   })
                 }
               >
-                Inicializar mockups
+                {t("mockupReview.empty.initialize")}
               </Button>
             </div>
           )}
@@ -566,7 +568,7 @@ export default function MockupTab({
                 {kit && (
                   <div className="absolute top-2 left-2">
                     <Badge variant="secondary" className="gap-1 text-[11px]">
-                      <Layers className="w-3 h-3" /> Kit ({kitComponentCount})
+                      <Layers className="w-3 h-3" /> {t("mockupReview.card.kit", { count: kitComponentCount })}
                     </Badge>
                   </div>
                 )}
@@ -574,7 +576,7 @@ export default function MockupTab({
                 {annotated && (
                   <div className={`absolute ${kit ? 'top-10' : 'top-2'} left-2`}>
                     <Badge className="gap-1 text-[11px] bg-amber-500 text-white hover:bg-amber-500">
-                      <Pencil className="w-3 h-3" /> Imagem alterada
+                      <Pencil className="w-3 h-3" /> {t("mockupReview.card.altImage")}
                     </Badge>
                   </div>
                 )}
@@ -594,8 +596,8 @@ export default function MockupTab({
       {filtered.length === 0 && total > 0 && (
         <EmptyState
           icon={LayoutGrid}
-          title="Nenhuma peça neste filtro."
-          subtitle="Ajuste o filtro para ver mais resultados."
+          title={t("mockupReview.empty.filteredTitle")}
+          subtitle={t("mockupReview.empty.filteredSubtitle")}
         />
       )}
 
@@ -620,11 +622,11 @@ export default function MockupTab({
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Adicionar peça ao mockup</DialogTitle>
+            <DialogTitle>{t("mockupReview.addDialog.title")}</DialogTitle>
           </DialogHeader>
           {availablePieces.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">
-              Todas as peças disponíveis já estão no mockup.
+              {t("mockupReview.addDialog.empty")}
             </p>
           ) : (
             <div className="space-y-2">
@@ -667,34 +669,34 @@ export default function MockupTab({
       <Dialog open={resetOpen} onOpenChange={(v) => { if (!resetting) { setResetOpen(v); if (!v) setResetTarget(null); } }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Zerar mockup</DialogTitle>
+            <DialogTitle>{t("mockupReview.reset.title")}</DialogTitle>
             <DialogDescription>
-              Esta ação apaga TODAS as observações, alterações propostas e toggles de TODAS as {total} peças/kits desta campanha, e define o status de todas para o que você escolher abaixo. Não pode ser desfeito.
+              {t("mockupReview.reset.description", { count: total })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-2">
-            <p className="text-sm font-medium">Definir todas como:</p>
+            <p className="text-sm font-medium">{t("mockupReview.reset.setAllAs")}</p>
             <div className="grid grid-cols-1 gap-2">
               <button
                 type="button"
                 onClick={() => setResetTarget("pending")}
                 className={`flex items-center gap-2 min-h-[48px] px-3 rounded-md border text-left transition-colors ${resetTarget === "pending" ? "border-primary bg-primary/5" : "border-border"}`}
               >
-                <Clock className="w-4 h-4 text-muted-foreground" /> ⏳ Pendentes
+                <Clock className="w-4 h-4 text-muted-foreground" /> {t("mockupReview.reset.optionPending")}
               </button>
               <button
                 type="button"
                 onClick={() => setResetTarget("approved")}
                 className={`flex items-center gap-2 min-h-[48px] px-3 rounded-md border text-left transition-colors ${resetTarget === "approved" ? "border-primary bg-primary/5" : "border-border"}`}
               >
-                <CheckCircle2 className="w-4 h-4 text-green-600" /> ✅ Aprovadas
+                <CheckCircle2 className="w-4 h-4 text-green-600" /> {t("mockupReview.reset.optionApproved")}
               </button>
               <button
                 type="button"
                 onClick={() => setResetTarget("rejected")}
                 className={`flex items-center gap-2 min-h-[48px] px-3 rounded-md border text-left transition-colors ${resetTarget === "rejected" ? "border-primary bg-primary/5" : "border-border"}`}
               >
-                <XCircle className="w-4 h-4 text-red-600" /> ❌ Reprovadas
+                <XCircle className="w-4 h-4 text-red-600" /> {t("mockupReview.reset.optionRejected")}
               </button>
             </div>
             <label className="flex items-start gap-2 pt-3 cursor-pointer">
@@ -705,16 +707,16 @@ export default function MockupTab({
                 className="mt-0.5"
               />
               <span className="text-sm">
-                Também remover imagens anotadas (voltar para as imagens originais)
+                {t("mockupReview.reset.clearAnnotations")}
               </span>
             </label>
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" disabled={resetting} onClick={() => { setResetOpen(false); setResetTarget(null); }}>
-              Cancelar
+              {t("common.cancel")}
             </Button>
             <Button variant="destructive" disabled={!resetTarget || resetting} onClick={handleResetAll}>
-              {resetting ? "Zerando..." : "Confirmar e zerar"}
+              {resetting ? t("mockupReview.reset.working") : t("mockupReview.reset.confirm")}
             </Button>
           </DialogFooter>
         </DialogContent>
