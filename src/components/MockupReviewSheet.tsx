@@ -284,7 +284,10 @@ export default function MockupReviewSheet({
       await update.mutateAsync({
         mockupId: activeMockup.id,
         campaignId,
-        changes: { photo_urls: newUrls },
+        changes: {
+          photo_urls: newUrls,
+          ...(activeMockup.status === "pending" ? { status: "changes_requested" as const } : {}),
+        },
       });
       toast.dismiss(toastId);
       toast.success("Foto adicionada.");
@@ -846,7 +849,7 @@ export default function MockupReviewSheet({
             className="sticky bottom-0 bg-background border-t p-3"
             style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
           >
-            <div className="grid grid-cols-3 gap-2 mb-2">
+            <div className="grid grid-cols-4 gap-2 mb-2">
               <Button
                 className={`min-h-[56px] gap-1.5 text-white ${
                   activeMockup.status === "approved"
@@ -879,6 +882,13 @@ export default function MockupReviewSheet({
               >
                 <XCircle className="w-5 h-5" />
                 Reprovar
+              </Button>
+              <Button
+                variant="outline"
+                className="min-h-[56px] gap-1 text-xs"
+                onClick={() => updateStatus("pending")}
+              >
+                ⏳ Pendente
               </Button>
             </div>
             <div className="flex justify-between gap-2">
