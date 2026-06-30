@@ -312,9 +312,53 @@ export default function CategoryManager() {
                     </div>
                   );
                 })()}
+
+                {/* Permissions from permission_grants (mockup, rateio, cotações, ajustes, etc.) */}
+                {(() => {
+                  const grants = grantsByCategory.get(cat.id) || [];
+                  if (grants.length === 0) return null;
+                  // Group by module_key, skip modules already shown via legacy columns above
+                  const legacyModuleKeys = new Set<string>([
+                    "clients", "campaigns", "stores", "campaign_stores", "pieces",
+                    "occurrences", "scheduling", "schedules", "installations",
+                    "loja_a_loja",
+                    "loja_a_loja.estrutura", "loja_a_loja.classificacao",
+                    "loja_a_loja.acessos", "loja_a_loja.config", "loja_a_loja.ocorrencias",
+                  ]);
+                  const byModule = new Map<string, Set<string>>();
+                  for (const g of grants) {
+                    if (legacyModuleKeys.has(g.module_key)) continue;
+                    const set = byModule.get(g.module_key) || new Set<string>();
+                    set.add(g.action);
+                    byModule.set(g.module_key, set);
+                  }
+                  if (byModule.size === 0) return null;
+                  const moduleLookup = new Map(PERMISSION_MODULES.map(m => [m.key, m]));
+                  return Array.from(byModule.entries()).map(([modKey, actions]) => {
+                    const mod = moduleLookup.get(modKey);
+                    const label = mod?.label || modKey;
+                    return (
+                      <div key={modKey} className="flex items-center gap-2">
+                        <span className="text-xs w-28 truncate text-muted-foreground">✨ {label}</span>
+                        <div className="flex gap-1 flex-wrap">
+                          {actions.has("view") && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Ver</span>}
+                          {actions.has("edit") && <span className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">Editar</span>}
+                          {actions.has("delete") && <span className="text-[10px] px-1.5 py-0.5 rounded bg-destructive/10 text-destructive">Apagar</span>}
+                          {Array.from(actions).filter(a => a.startsWith("special:")).map(a => (
+                            <span key={a} className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-700 border border-indigo-500/20">
+                              {a.replace("special:", "")}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
 
-              <p className="text-[10px] text-muted-foreground mt-3">{countPerms(cat)} permissão(ões) ativas</p>
+              <p className="text-[10px] text-muted-foreground mt-3">
+                {countPerms(cat) + ((grantsByCategory.get(cat.id) || []).length)} permissão(ões) ativas
+              </p>
             </div>
           ))}
         </div>
