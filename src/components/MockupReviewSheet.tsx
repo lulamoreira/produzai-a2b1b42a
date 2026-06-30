@@ -54,16 +54,22 @@ interface Draft {
   observations?: string | null;
 }
 
-const STATUS_META: Record<MockupStatus, { label: string; cls: string }> = {
-  pending: { label: "⏳ Pendente", cls: "bg-muted text-foreground" },
-  approved: { label: "✅ Aprovada", cls: "bg-green-600 text-white" },
-  changes_requested: { label: "✏️ Alterações", cls: "bg-amber-600 text-white" },
-  rejected: { label: "❌ Reprovada", cls: "bg-red-600 text-white" },
+const STATUS_CLS: Record<MockupStatus, string> = {
+  pending: "bg-muted text-foreground",
+  approved: "bg-green-600 text-white",
+  changes_requested: "bg-amber-600 text-white",
+  rejected: "bg-red-600 text-white",
 };
 
 function StatusBadge({ status }: { status: MockupStatus }) {
-  const meta = STATUS_META[status];
-  return <Badge className={meta.cls}>{meta.label}</Badge>;
+  const { t } = useTranslation();
+  const labels: Record<MockupStatus, string> = {
+    pending: t("mockupReview.status.pending"),
+    approved: t("mockupReview.status.approved"),
+    changes_requested: t("mockupReview.status.changes"),
+    rejected: t("mockupReview.status.rejected"),
+  };
+  return <Badge className={STATUS_CLS[status]}>{labels[status]}</Badge>;
 }
 
 export default function MockupReviewSheet({
