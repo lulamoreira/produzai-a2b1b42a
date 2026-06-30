@@ -404,18 +404,17 @@ export default function MockupReviewSheet({
     isKit && kitDrilldownIndex === null && kitComponents.length > 0
       ? computeKitRolledUpStatus(kitComponents)
       : activeMockup.status;
-  const headerMeta = STATUS_META[headerStatus];
 
   const obsValue = draft.observations ?? activeMockup.observations ?? "";
 
   // Top bar title
   let topTitle: string;
   if (isKit && kitDrilldownIndex === null) {
-    topTitle = `Kit — Visão geral`;
+    topTitle = t("mockupReview.nav.kitOverview");
   } else if (isKit && kitDrilldownIndex !== null) {
-    topTitle = `Componente ${kitDrilldownIndex + 1} de ${kitComponents.length}`;
+    topTitle = t("mockupReview.nav.componentXofY", { current: kitDrilldownIndex + 1, total: kitComponents.length });
   } else {
-    topTitle = `P${currentIndex + 1} de ${mockups.length}`;
+    topTitle = t("mockupReview.nav.pieceXofY", { current: currentIndex + 1, total: mockups.length });
   }
 
   const showFields = !(isKit && kitDrilldownIndex === null);
