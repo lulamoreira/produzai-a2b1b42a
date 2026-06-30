@@ -622,11 +622,11 @@ export default function MockupTab({
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
         <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Adicionar peça ao mockup</DialogTitle>
+            <DialogTitle>{t("mockupReview.addDialog.title")}</DialogTitle>
           </DialogHeader>
           {availablePieces.length === 0 ? (
             <p className="text-sm text-muted-foreground py-6 text-center">
-              Todas as peças disponíveis já estão no mockup.
+              {t("mockupReview.addDialog.empty")}
             </p>
           ) : (
             <div className="space-y-2">
