@@ -591,7 +591,7 @@ export default function MockupReviewSheet({
               {displayName}
               {isKit && kitDrilldownIndex === null && (
                 <span className="text-xs font-normal text-muted-foreground">
-                  ({kitComponents.length} peças)
+                  {t("mockupReview.kit.componentsCount", { count: kitComponents.length })}
                 </span>
               )}
             </div>
