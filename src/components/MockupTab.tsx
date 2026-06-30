@@ -596,8 +596,8 @@ export default function MockupTab({
       {filtered.length === 0 && total > 0 && (
         <EmptyState
           icon={LayoutGrid}
-          title="Nenhuma peça neste filtro."
-          subtitle="Ajuste o filtro para ver mais resultados."
+          title={t("mockupReview.empty.filteredTitle")}
+          subtitle={t("mockupReview.empty.filteredSubtitle")}
         />
       )}
 
