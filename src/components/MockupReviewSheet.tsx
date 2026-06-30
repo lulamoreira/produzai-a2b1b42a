@@ -495,7 +495,7 @@ export default function MockupReviewSheet({
                   onClick={() => setShowAnnotated(false)}
                   className={!showAnnotated ? "font-bold" : "text-muted-foreground"}
                 >
-                  Original
+                  {t("mockupReview.image.original")}
                 </button>
                 <span className="text-muted-foreground">|</span>
                 <button
@@ -503,7 +503,7 @@ export default function MockupReviewSheet({
                   onClick={() => setShowAnnotated(true)}
                   className={showAnnotated ? "font-bold text-amber-700" : "text-muted-foreground"}
                 >
-                  ✏️ Anotada
+                  {t("mockupReview.image.annotated")}
                 </button>
               </div>
             )}
