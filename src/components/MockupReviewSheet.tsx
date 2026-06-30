@@ -602,7 +602,7 @@ export default function MockupReviewSheet({
             <div className="px-3 pb-4">
               {kitComponents.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">
-                  Este kit ainda não possui componentes em mockup.
+                  {t("mockupReview.kit.empty")}
                 </p>
               ) : (
                 <>
