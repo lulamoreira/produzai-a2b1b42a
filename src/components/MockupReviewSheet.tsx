@@ -19,7 +19,13 @@ import {
   ImageOff,
   Layers,
   Pencil,
+  Camera,
+  Upload,
+  ImagePlus,
+  Trash2,
 } from "lucide-react";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import MockupAnnotationEditor from "./MockupAnnotationEditor";
 import {
   useUpdateMockup,
