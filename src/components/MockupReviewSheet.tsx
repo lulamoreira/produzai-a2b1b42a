@@ -696,7 +696,7 @@ export default function MockupReviewSheet({
                   }}
                   rows={4}
                   className="text-base"
-                  placeholder="Observações gerais sobre este kit..."
+                  placeholder={t("mockupReview.fields.kitObservationsPlaceholder")}
                 />
               </div>
             </div>
