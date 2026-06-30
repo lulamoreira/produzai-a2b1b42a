@@ -285,6 +285,31 @@ const Auth = () => {
               </Button>
             </form>
 
+            {needsConfirm && isLogin && !forgotPassword && !magicLink && (
+              <div className="mt-4 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-3 text-sm">
+                <p className="font-medium text-amber-900 dark:text-amber-200">
+                  {t("auth.emailNotConfirmedTitle", { defaultValue: "Email ainda não confirmado" })}
+                </p>
+                <p className="text-amber-800 dark:text-amber-300 mt-1">
+                  {t("auth.emailNotConfirmedDesc", { defaultValue: "Você precisa confirmar seu email antes de entrar. Verifique sua caixa de entrada (e o spam) ou reenvie o link abaixo." })}
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-3"
+                  disabled={resending}
+                  onClick={handleResendConfirmation}
+                >
+                  {resending
+                    ? t("common.wait")
+                    : t("auth.resendConfirmation", { defaultValue: "Reenviar email de confirmação" })}
+                </Button>
+              </div>
+            )}
+
+
+
             {!forgotPassword && !magicLink &&
             <>
                 <div className="relative my-4">
