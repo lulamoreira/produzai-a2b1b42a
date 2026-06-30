@@ -1562,7 +1562,7 @@ export default function RateioTabV2({
 
               {/* Rateio Header Banner */}
               <div className={cn(
-                "px-6 py-1.5 border-b flex flex-col md:flex-row md:items-center justify-between gap-2",
+                "px-3 md:px-6 py-1.5 border-b flex flex-col md:flex-row md:items-center justify-between gap-2",
                 isTabEditable 
                   ? "bg-emerald-50/60 border-emerald-100" 
                   : "bg-amber-50/50 border-amber-100"
@@ -1590,7 +1590,8 @@ export default function RateioTabV2({
 
 
                 {/* Action Buttons */}
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar flex-nowrap md:flex-wrap -mx-3 px-3 md:mx-0 md:px-0 [&>*]:shrink-0">
+
                   {isTabEditable && (
                     <>
                       <div className="flex items-center bg-stone-100 rounded-lg p-0.5">
@@ -1818,7 +1819,7 @@ export default function RateioTabV2({
               </div>
 
               {/* Filters Row */}
-              <div className="px-6 py-1 border-b border-stone-100 bg-white flex items-center gap-3">
+              <div className="px-3 md:px-6 py-1 border-b border-stone-100 bg-white flex items-center gap-3 overflow-x-auto no-scrollbar flex-nowrap [&>*]:shrink-0">
                 <div className="relative flex-1 max-w-xs">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
                   <Input 
@@ -2010,8 +2011,9 @@ export default function RateioTabV2({
                     {/* Category Sub-Labels Row (store_category: PAREDE PRIMÁRIA, PICK&MIX, QUIOSQUE...) */}
                     <tr>
                       <th
-                        className="w-[300px] bg-white border-r border-stone-200"
+                        className="w-[160px] md:w-[300px] bg-white border-r border-stone-200"
                         style={{ position: 'sticky', left: 0, top: 0, zIndex: 50 }}
+
                       />
                       {(() => {
                         const CAT_COLORS = ['#C2410C','#B91C1C','#15803D','#1D4ED8','#6B21A8','#78350F'];
@@ -2050,8 +2052,9 @@ export default function RateioTabV2({
                     {/* Piece Headers Row */}
                     <tr>
                       <th 
-                        className="w-[300px] bg-white px-3 py-2 border-r border-b border-stone-200 text-left align-top" 
+                        className="w-[160px] md:w-[300px] bg-white px-3 py-2 border-r border-b border-stone-200 text-left align-top" 
                         style={{ position: 'sticky', left: 0, top: 22, zIndex: 50 }}
+
                       >
 
                         <div className="flex items-center justify-between">
