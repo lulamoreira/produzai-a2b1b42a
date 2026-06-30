@@ -665,7 +665,9 @@ export default function MockupReviewSheet({
               />
             </div>
           )}
+          </div>
         </div>
+
 
         {/* Bottom action bar — only in piece review (not kit overview, which has its own bulk actions) */}
         {showFields && (
