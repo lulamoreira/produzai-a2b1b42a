@@ -82,6 +82,13 @@ export default function MockupReviewSheet({
   kits,
   campaignId,
 }: Props) {
+  const { t } = useTranslation();
+  const STATUS_LABEL: Record<MockupStatus, string> = {
+    pending: t("mockupReview.status.pending"),
+    approved: t("mockupReview.status.approved"),
+    changes_requested: t("mockupReview.status.changes"),
+    rejected: t("mockupReview.status.rejected"),
+  };
   const update = useUpdateMockup();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [kitDrilldownIndex, setKitDrilldownIndex] = useState<number | null>(null);
