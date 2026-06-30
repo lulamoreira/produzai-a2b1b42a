@@ -178,6 +178,9 @@ export async function buildSupplierBudgetWorkbook(
   // Body rows — sequential because we await image fetches
   let bodyEvenIdx = 0;
   const bodyRowNumbers: number[] = []; // rows that contribute to Total de los Ítems
+  // Track each body row so we can later overwrite col E (Cantidad) with a
+  // formula that mirrors the "Matriz Lojas x Peças" tab.
+  const bodyRowMeta: { rowNumber: number; row: SupplierExportRow }[] = [];
   for (let i = 0; i < params.rows.length; i++) {
     const r = params.rows[i];
     const row = ws.addRow([
@@ -189,6 +192,7 @@ export async function buildSupplierBudgetWorkbook(
       r.type === "kit_header" ? null : r.unitPrice,
       r.type === "kit_header" ? null : r.lineTotal,
     ]);
+    bodyRowMeta.push({ rowNumber: row.number, row: r });
 
     // When using formulas, replace col G with =E*F so it recalcs on edit
     if (params.useFormulas && r.type !== "kit_header") {
