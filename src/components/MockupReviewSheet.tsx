@@ -760,7 +760,7 @@ export default function MockupReviewSheet({
                   ) : (
                     <ImagePlus className="w-4 h-4" />
                   )}
-                  Adicionar foto
+                  {t("mockupReview.photos.add")}
                 </Button>
                 {photoMenuOpen && (
                   <>
