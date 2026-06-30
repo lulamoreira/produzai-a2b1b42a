@@ -2052,8 +2052,9 @@ export default function RateioTabV2({
                     {/* Piece Headers Row */}
                     <tr>
                       <th 
-                        className="w-[300px] bg-white px-3 py-2 border-r border-b border-stone-200 text-left align-top" 
+                        className="w-[160px] md:w-[300px] bg-white px-3 py-2 border-r border-b border-stone-200 text-left align-top" 
                         style={{ position: 'sticky', left: 0, top: 22, zIndex: 50 }}
+
                       >
 
                         <div className="flex items-center justify-between">
