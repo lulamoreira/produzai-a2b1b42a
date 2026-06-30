@@ -787,7 +787,7 @@ export default function MockupReviewSheet({
                           fileInputRef.current?.click();
                         }}
                       >
-                        <Upload className="w-4 h-4" /> Enviar arquivo
+                        <Upload className="w-4 h-4" /> {t("mockupReview.photos.uploadFile")}
                       </button>
                     </div>
                   </>
