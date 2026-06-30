@@ -872,7 +872,7 @@ export default function MockupReviewSheet({
                 onClick={() => updateStatus("approved")}
               >
                 <CheckCircle2 className="w-5 h-5" />
-                Aprovar
+                {t("mockupReview.actions.approve")}
               </Button>
               <Button
                 className={`min-h-[56px] gap-1.5 text-white ${
@@ -883,7 +883,7 @@ export default function MockupReviewSheet({
                 onClick={() => updateStatus("changes_requested")}
               >
                 <Edit3 className="w-5 h-5" />
-                Alterações
+                {t("mockupReview.actions.changes")}
               </Button>
               <Button
                 className={`min-h-[56px] gap-1.5 text-white ${
@@ -894,14 +894,14 @@ export default function MockupReviewSheet({
                 onClick={() => updateStatus("rejected")}
               >
                 <XCircle className="w-5 h-5" />
-                Reprovar
+                {t("mockupReview.actions.reject")}
               </Button>
               <Button
                 variant="outline"
                 className="min-h-[56px] gap-1 text-xs"
                 onClick={() => updateStatus("pending")}
               >
-                ⏳ Pendente
+                {t("mockupReview.actions.pending")}
               </Button>
             </div>
             <div className="flex justify-between gap-2">
