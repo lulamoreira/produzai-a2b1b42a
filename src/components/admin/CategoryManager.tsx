@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   usePermissionCategories, useAddPermissionCategory,
   useUpdatePermissionCategory, useDeletePermissionCategory,
   type PermissionCategory,
 } from "@/hooks/usePermissionCategories";
+import { useAllPermissionGrants } from "@/hooks/usePermissionGrants";
+import { PERMISSION_MODULES } from "@/lib/permissionRegistry";
 import { Plus, Edit3, Trash2, Eye, Pencil, X, CheckSquare, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +23,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import CategoryEditorV2 from "@/components/admin/CategoryEditorV2";
 
 const MODULES = [
   { key: "clients", label: "Clientes", icon: "🏢" },
