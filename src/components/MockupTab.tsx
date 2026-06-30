@@ -568,7 +568,7 @@ export default function MockupTab({
                 {kit && (
                   <div className="absolute top-2 left-2">
                     <Badge variant="secondary" className="gap-1 text-[11px]">
-                      <Layers className="w-3 h-3" /> Kit ({kitComponentCount})
+                      <Layers className="w-3 h-3" /> {t("mockupReview.card.kit", { count: kitComponentCount })}
                     </Badge>
                   </div>
                 )}
@@ -576,7 +576,7 @@ export default function MockupTab({
                 {annotated && (
                   <div className={`absolute ${kit ? 'top-10' : 'top-2'} left-2`}>
                     <Badge className="gap-1 text-[11px] bg-amber-500 text-white hover:bg-amber-500">
-                      <Pencil className="w-3 h-3" /> Imagem alterada
+                      <Pencil className="w-3 h-3" /> {t("mockupReview.card.altImage")}
                     </Badge>
                   </div>
                 )}
