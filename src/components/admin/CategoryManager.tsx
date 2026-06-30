@@ -623,6 +623,13 @@ export default function CategoryManager() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* V2 Editor — supports all modules via permission_grants */}
+      <CategoryEditorV2
+        open={v2Open}
+        onOpenChange={setV2Open}
+        category={v2Category}
+      />
     </div>
   );
 }
