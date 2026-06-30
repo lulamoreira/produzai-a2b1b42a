@@ -283,7 +283,7 @@ export default function MockupReviewSheet({
   const handleAddMockupPhoto = async (file: File) => {
     if (!activeMockup) return;
     setUploadingPhoto(true);
-    const toastId = toast.loading("Enviando foto...");
+    const toastId = toast.loading(t("mockupReview.photos.uploading"));
     try {
       const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
       const path = `mockup-photos/${activeMockup.id}/${Date.now()}-${Math.random()
@@ -304,10 +304,10 @@ export default function MockupReviewSheet({
         },
       });
       toast.dismiss(toastId);
-      toast.success("Foto adicionada.");
+      toast.success(t("mockupReview.photos.added"));
     } catch (e: any) {
       toast.dismiss(toastId);
-      toast.error(e?.message || "Erro ao enviar foto.");
+      toast.error(e?.message || t("mockupReview.photos.uploadError"));
     } finally {
       setUploadingPhoto(false);
     }
@@ -315,7 +315,7 @@ export default function MockupReviewSheet({
 
   const handleRemoveMockupPhoto = async (url: string) => {
     if (!activeMockup) return;
-    if (!confirm("Remover esta foto?")) return;
+    if (!confirm(t("mockupReview.photos.confirmRemove"))) return;
     const newUrls = (activeMockup.photo_urls ?? []).filter((u) => u !== url);
     await update.mutateAsync({
       mockupId: activeMockup.id,
