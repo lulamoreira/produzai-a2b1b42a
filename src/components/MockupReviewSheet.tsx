@@ -437,7 +437,7 @@ export default function MockupReviewSheet({
                 className="min-h-[44px] gap-1 -ml-2"
                 onClick={() => setKitDrilldownIndex(null)}
               >
-                <ArrowLeft className="w-5 h-5" /> Voltar ao kit
+                <ArrowLeft className="w-5 h-5" /> {t("mockupReview.nav.backToKit")}
               </Button>
             ) : (
               <Button
@@ -446,7 +446,7 @@ export default function MockupReviewSheet({
                 className="min-h-[44px] gap-1 -ml-2"
                 onClick={() => onOpenChange(false)}
               >
-                <ArrowLeft className="w-5 h-5" /> Voltar
+                <ArrowLeft className="w-5 h-5" /> {t("mockupReview.nav.back")}
               </Button>
             )}
             <div className="flex items-center gap-2 text-sm font-medium">
