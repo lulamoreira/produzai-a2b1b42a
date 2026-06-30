@@ -674,7 +674,7 @@ export default function MockupReviewSheet({
 
               {/* Observações do kit inteiro (salva no mockup pai) */}
               <div className="mt-4 space-y-2">
-                <Label>Observações do kit</Label>
+                <Label>{t("mockupReview.fields.kitObservations")}</Label>
                 <Textarea
                   value={obsValue}
                   onChange={(e) => {
