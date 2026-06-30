@@ -469,7 +469,7 @@ export default function MockupTab({
                       is_mockup: p.is_mockup,
                       kit_only: p.kit_only,
                     })),
-                    kits: kits.map((k) => ({ id: k.id })),
+                    kits: kits.map((k) => ({ id: k.id, is_mockup: k.is_mockup })),
                     kitPieces: kitPieces.map((kp) => ({
                       kit_id: kp.kit_id,
                       piece_id: kp.piece_id,
