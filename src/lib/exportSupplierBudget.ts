@@ -49,6 +49,8 @@ type Params = {
   freight: number | null;
   grandTotal: number;
   labels?: ReturnType<typeof getSupplierExcelLabels>;
+  /** When true: write Total del Ítem (col G) as formula =E*F and items total as =SUM(G_body). */
+  useFormulas?: boolean;
   /** Optional: include the full Rateio module export (Matriz Lojas x Peças + Kit tabs) as additional sheets. */
   rateio?: {
     pieces: CampaignPiece[];
@@ -63,6 +65,7 @@ type Params = {
     subLocations?: CampaignPieceSubLocation[];
   };
 };
+
 
 function moneyFormat(currencyCode: string) {
   if (currencyCode === "USD") return '"US$" #,##0.00;[Red]-"US$" #,##0.00;-';
