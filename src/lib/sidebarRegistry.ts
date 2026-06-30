@@ -88,7 +88,7 @@ export const CAMPAIGN_MODULES: ModuleEntry[] = [
   { key: "budgets",       labelKey: "modules.budgets",       label: "Cotações",   icon: "DollarSign",     color: "#4A5568", requires: "admin_or_master", hideForLimited: true },
   { key: "pieces",        labelKey: "modules.pieces",        label: "Peças",        icon: "LayoutList",     color: "#A07850", requires: "campaign_access" },
   { key: "matrix",        labelKey: "modules.matrix",        label: "Rateio",       icon: "Grid3X3",        color: "#8C6F4E", requires: "campaign_access" },
-  { key: "mockup",        labelKey: "modules.mockup",        label: "Mockup",       icon: "Palette",        color: "#7A6A8C", requires: "campaign_access", requiresCampaignModule: "pieces" },
+  { key: "mockup",        labelKey: "modules.mockup",        label: "Mockup",       icon: "Palette",        color: "#7A6A8C", requires: "campaign_access" },
   { key: "adjustments",   labelKey: "modules.adjustments",   label: "Ajustes",      icon: "Layers",         color: "#6E5A7A", requires: "admin_or_master", hideForLimited: true },
 ];
 
