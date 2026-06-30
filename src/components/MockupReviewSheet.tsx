@@ -705,10 +705,10 @@ export default function MockupReviewSheet({
           {/* Piece review fields */}
           {showFields && piece && (
             <>
-              {renderField("name", "Nome", piece.name)}
-              {renderField("size", "Tamanho", piece.size)}
-              {renderField("specification", "Especificação", piece.specification, true)}
-              {renderField("installation", "Instalação", piece.installation_instructions, true)}
+              {renderField("name", t("mockupReview.fields.name"), piece.name)}
+              {renderField("size", t("mockupReview.fields.size"), piece.size)}
+              {renderField("specification", t("mockupReview.fields.specification"), piece.specification, true)}
+              {renderField("installation", t("mockupReview.fields.installation"), piece.installation_instructions, true)}
             </>
           )}
 
