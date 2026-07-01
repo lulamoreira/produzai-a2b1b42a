@@ -272,7 +272,7 @@ const ImportPiecesFromCampaignDialog = ({
 
   const totalSelected = selectedPieceIds.size + selectedKitIds.size;
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (totalSelected === 0) return;
 
     // Calculate next available codes for pieces
