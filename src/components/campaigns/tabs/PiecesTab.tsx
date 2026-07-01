@@ -899,7 +899,43 @@ export default function PiecesTab({
         clientId={clientId}
         currentCampaignId={campaignId}
         existingPieces={pieces}
-        onImport={() => {}}
+        existingKitCodes={kits.map((k: any) => k.code)}
+        onImport={async (data) => {
+          // 1. Insert pieces e montar mapa originalId → novo piece_id
+          const idMap = new Map<string, string>();
+          for (const p of data.pieces) {
+            const { _originalId, ...pieceData } = p as any;
+            const inserted = await addPiece?.mutateAsync?.({
+              ...pieceData,
+              display_order: (Math.max(...pieces.map((x: any) => x.display_order ?? 0), 0)) + 1,
+              is_deleted: false,
+              is_mockup: false,
+              is_new: false,
+            });
+            if (inserted?.id && _originalId) idMap.set(_originalId, inserted.id);
+          }
+          // 2. Insert kits e suas peças
+          for (const k of data.kits) {
+            const newKit = await addKit?.mutateAsync?.({
+              campaign_id: campaignId,
+              name: k.name,
+              code: k.code,
+              ...(k.image_url ? { image_url: k.image_url } : {}),
+            });
+            if (newKit?.id) {
+              for (const kp of k.pieces) {
+                const newPieceId = idMap.get(kp.originalPieceId);
+                if (newPieceId) {
+                  await addKitPiece?.mutateAsync?.({
+                    kit_id: newKit.id,
+                    piece_id: newPieceId,
+                    quantity: kp.quantity ?? 1,
+                  });
+                }
+              }
+            }
+          }
+        }}
       />
       <BulkDeletePiecesDialog
         open={bulkDeleteOpen}
