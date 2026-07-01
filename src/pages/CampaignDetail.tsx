@@ -401,21 +401,11 @@ const CampaignDetail = () => {
                   
                   const toastId = toast.loading("Recodificando...");
                   try {
-                    const topLevelPieces = pieces.filter((p: any) => !p.kit_only);
-                    const kitOnlyPieces = pieces.filter((p: any) => p.kit_only);
-                    const topLevelItems = [
-                      ...topLevelPieces.map((p: any) => ({ id: p.id, type: 'piece' as const, display_order: p.display_order ?? 0 })),
-                      ...kits.map((k: any) => ({ id: k.id, type: 'kit' as const, display_order: k.display_order ?? 0 })),
-                    ].sort((a, b) => a.display_order - b.display_order);
-                    const kitOnlyItems = kitOnlyPieces
-                      .map((p: any) => ({ id: p.id, type: 'piece' as const, display_order: p.display_order ?? 0 }))
-                      .sort((a, b) => a.display_order - b.display_order);
-                    const allOrdered = [...topLevelItems, ...kitOnlyItems];
-
-                    for (let i = 0; i < allOrdered.length; i++) {
-                      const item = allOrdered[i];
+                    const ordered = buildInterleavedOrder(pieces, kits, kitPieces);
+                    for (let i = 0; i < ordered.length; i++) {
+                      const { type, item } = ordered[i];
                       const newCode = i + 1;
-                      if (item.type === 'piece') {
+                      if (type === 'piece') {
                         await updatePiece.mutateAsync({ id: item.id, code: newCode });
                       } else {
                         await updateKit.mutateAsync({ id: item.id, code: newCode });
