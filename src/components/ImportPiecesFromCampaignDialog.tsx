@@ -46,7 +46,7 @@ interface ImportPiecesFromCampaignDialogProps {
       storeId: string;
       quantity: number;
     }>;
-  }) => void;
+  }) => void | Promise<void>;
 }
 
 type RemotePiece = {
