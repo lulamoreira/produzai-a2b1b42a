@@ -906,8 +906,16 @@ export default function PiecesTab({
             `Importando ${data.pieces.length} peça(s) e ${data.kits.length} kit(s)...`
           );
           try {
-            const maxPieceOrder = pieces.reduce((m: number, x: any) => Math.max(m, x.display_order ?? 0), 0);
-            let nextOrder = maxPieceOrder + 1;
+            const { data: maxPieceRow } = await supabase
+              .from("campaign_pieces")
+              .select("display_order")
+              .eq("campaign_id", campaignId)
+              .eq("is_deleted", false)
+              .lt("display_order", 10000)
+              .order("display_order", { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            let nextOrder = (maxPieceRow?.display_order ?? -1) + 1;
             const idMap = new Map<string, string>();
             for (const p of data.pieces) {
               const { _originalId, ...pieceData } = p as any;
