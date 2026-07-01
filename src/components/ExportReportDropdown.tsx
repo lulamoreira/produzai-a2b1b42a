@@ -39,6 +39,34 @@ interface Props {
   trigger?: React.ReactNode;
 }
 
+function buildInterleavedOrder(
+  pieces: any[],
+  kits: any[],
+  kitPieces: any[]
+): Array<{ type: 'piece' | 'kit'; item: any }> {
+  const standalone = pieces.filter(p => !p.kit_only);
+  const kitOnly = pieces.filter(p => p.kit_only);
+  const topLevel = [
+    ...standalone.map(p => ({ type: 'piece' as const, item: p, order: p.display_order ?? 0 })),
+    ...kits.map(k => ({ type: 'kit' as const, item: k, order: k.display_order ?? 0 })),
+  ].sort((a, b) => a.order - b.order);
+
+  const result: Array<{ type: 'piece' | 'kit'; item: any }> = [];
+
+  for (const entry of topLevel) {
+    result.push({ type: entry.type, item: entry.item });
+    if (entry.type === 'kit') {
+      const kpIds = new Set(kitPieces.filter((kp: any) => kp.kit_id === entry.item.id).map((kp: any) => kp.piece_id));
+      const children = kitOnly
+        .filter(p => kpIds.has(p.id))
+        .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+      for (const p of children) result.push({ type: 'piece' as const, item: p });
+    }
+  }
+
+  return result;
+}
+
 async function fetchReportData(campaignId: string, clientId: string, campaignName: string, clientName: string): Promise<ReportData> {
   const [stores, schedules, occurrences, photos] = await Promise.all([
     supabasePaginate<{ id: string; name: string; city: string | null; state: string | null; store_model: string | null }>(
@@ -200,22 +228,25 @@ export default function ExportReportDropdown({
     setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Apresentacao PPT", minimized: false });
     const toastId = toast.loading("Gerando apresentação PPT...");
     try {
-      const piecesData = pieces.map(p => {
-        const sizeParts = (p.size || "").split(" x ");
-        return {
-          id: p.id,
-          name: p.name,
-          description: p.specification,
-          width: sizeParts[0] ? Number(sizeParts[0]) || undefined : undefined,
-          height: sizeParts[1] ? Number(sizeParts[1]) || undefined : undefined,
-          material: undefined,
-          quantity: undefined,
-          code: String(p.code ?? ""),
-          observations: p.installation_instructions || undefined,
-          status: undefined,
-          photo_url: p.image_url || undefined,
-        };
-      });
+      const ordered = buildInterleavedOrder(pieces, kits, kitPieces);
+      const piecesData = ordered
+        .filter(entry => entry.type === 'piece')
+        .map(({ item: p }) => {
+          const sizeParts = (p.size || "").split(" x ");
+          return {
+            id: p.id,
+            name: p.name,
+            description: p.specification,
+            width: sizeParts[0] ? Number(sizeParts[0]) || undefined : undefined,
+            height: sizeParts[1] ? Number(sizeParts[1]) || undefined : undefined,
+            material: undefined,
+            quantity: undefined,
+            code: String(p.code ?? ""),
+            observations: p.installation_instructions || undefined,
+            status: undefined,
+            photo_url: p.image_url || undefined,
+          };
+        });
 
       const kitsData = kits.map(k => {
         const kpForKit = kitPieces.filter((kp: any) => kp.kit_id === k.id);
