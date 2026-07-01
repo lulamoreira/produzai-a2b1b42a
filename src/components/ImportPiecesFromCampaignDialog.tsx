@@ -369,7 +369,7 @@ const ImportPiecesFromCampaignDialog = ({
           }))
       : undefined;
 
-    onImport({
+    await onImport({
       pieces: allPieces,
       kits: kitsToImport,
       storeQuantities,
