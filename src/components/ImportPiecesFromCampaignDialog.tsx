@@ -46,7 +46,7 @@ interface ImportPiecesFromCampaignDialogProps {
       storeId: string;
       quantity: number;
     }>;
-  }) => void;
+  }) => void | Promise<void>;
 }
 
 type RemotePiece = {
@@ -272,7 +272,7 @@ const ImportPiecesFromCampaignDialog = ({
 
   const totalSelected = selectedPieceIds.size + selectedKitIds.size;
 
-  const handleImport = () => {
+  const handleImport = async () => {
     if (totalSelected === 0) return;
 
     // Calculate next available codes for pieces
@@ -369,7 +369,7 @@ const ImportPiecesFromCampaignDialog = ({
           }))
       : undefined;
 
-    onImport({
+    await onImport({
       pieces: allPieces,
       kits: kitsToImport,
       storeQuantities,

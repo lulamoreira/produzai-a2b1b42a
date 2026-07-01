@@ -901,39 +901,61 @@ export default function PiecesTab({
         existingPieces={pieces}
         existingKitCodes={kits.map((k: any) => k.code)}
         onImport={async (data) => {
-          // 1. Insert pieces e montar mapa originalId → novo piece_id
-          const idMap = new Map<string, string>();
-          for (const p of data.pieces) {
-            const { _originalId, ...pieceData } = p as any;
-            const inserted = await addPiece?.mutateAsync?.({
-              ...pieceData,
-              display_order: (Math.max(...pieces.map((x: any) => x.display_order ?? 0), 0)) + 1,
-              is_deleted: false,
-              is_mockup: false,
-              is_new: false,
-            });
-            if (inserted?.id && _originalId) idMap.set(_originalId, inserted.id);
-          }
-          // 2. Insert kits e suas peças
-          for (const k of data.kits) {
-            const newKit = await addKit?.mutateAsync?.({
-              campaign_id: campaignId,
-              name: k.name,
-              code: k.code,
-              ...(k.image_url ? { image_url: k.image_url } : {}),
-            });
-            if (newKit?.id) {
-              for (const kp of k.pieces) {
-                const newPieceId = idMap.get(kp.originalPieceId);
-                if (newPieceId) {
-                  await addKitPiece?.mutateAsync?.({
-                    kit_id: newKit.id,
-                    piece_id: newPieceId,
-                    quantity: kp.quantity ?? 1,
-                  });
+          if (data.pieces.length === 0 && data.kits.length === 0) return;
+          const toastId = toast.loading(
+            `Importando ${data.pieces.length} peça(s) e ${data.kits.length} kit(s)...`
+          );
+          try {
+            const maxPieceOrder = pieces.reduce((m: number, x: any) => Math.max(m, x.display_order ?? 0), 0);
+            let nextOrder = maxPieceOrder + 1;
+            const idMap = new Map<string, string>();
+            for (const p of data.pieces) {
+              const { _originalId, ...pieceData } = p as any;
+              const { data: inserted, error } = await supabase
+                .from("campaign_pieces")
+                .insert({ ...pieceData, display_order: nextOrder++, is_deleted: false })
+                .select("id")
+                .single();
+              if (error) throw new Error(`Erro ao inserir peça "${pieceData.name}": ${error.message}`);
+              if (inserted?.id && _originalId) idMap.set(_originalId, inserted.id);
+            }
+            const maxKitOrder = (await supabase
+              .from("campaign_kits")
+              .select("display_order")
+              .eq("campaign_id", campaignId)
+              .order("display_order", { ascending: false })
+              .limit(1)
+              .maybeSingle()).data?.display_order ?? 9999;
+            let nextKitOrder = maxKitOrder + 1;
+            for (const k of data.kits) {
+              const { data: newKit, error: kitErr } = await supabase
+                .from("campaign_kits")
+                .insert({ campaign_id: campaignId, name: k.name, code: k.code, image_url: k.image_url ?? null, display_order: nextKitOrder++ })
+                .select("id")
+                .single();
+              if (kitErr) throw new Error(`Erro ao inserir kit "${k.name}": ${kitErr.message}`);
+              if (newKit?.id) {
+                let kitPieceOrder = 0;
+                for (const kp of k.pieces) {
+                  const newPieceId = idMap.get(kp.originalPieceId);
+                  if (newPieceId) {
+                    const { error: kpErr } = await supabase
+                      .from("campaign_kit_pieces")
+                      .insert({ kit_id: newKit.id, piece_id: newPieceId, quantity: kp.quantity ?? 1, display_order: kitPieceOrder++ });
+                    if (kpErr) throw new Error(`Erro ao vincular peça ao kit: ${kpErr.message}`);
+                  }
                 }
               }
             }
+            await qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
+            await qc.invalidateQueries({ queryKey: ["campaign_kits", campaignId] });
+            await qc.invalidateQueries({ queryKey: ["campaign_kit_pieces", campaignId] });
+            toast.success(
+              `${data.pieces.length} peça(s) e ${data.kits.length} kit(s) importados com sucesso!`,
+              { id: toastId }
+            );
+          } catch (err: any) {
+            toast.error(err?.message || "Erro ao importar", { id: toastId });
           }
         }}
       />
