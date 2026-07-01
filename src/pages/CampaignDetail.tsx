@@ -374,13 +374,19 @@ const CampaignDetail = () => {
                   
                   const toastId = toast.loading("Recodificando...");
                   try {
-                    const allItems = [
-                      ...pieces.map(p => ({ id: p.id, type: 'piece', display_order: p.display_order })),
-                      ...kits.map(k => ({ id: k.id, type: 'kit', display_order: k.display_order }))
-                    ].sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+                    const topLevelPieces = pieces.filter((p: any) => !p.kit_only);
+                    const kitOnlyPieces = pieces.filter((p: any) => p.kit_only);
+                    const topLevelItems = [
+                      ...topLevelPieces.map((p: any) => ({ id: p.id, type: 'piece' as const, display_order: p.display_order ?? 0 })),
+                      ...kits.map((k: any) => ({ id: k.id, type: 'kit' as const, display_order: k.display_order ?? 0 })),
+                    ].sort((a, b) => a.display_order - b.display_order);
+                    const kitOnlyItems = kitOnlyPieces
+                      .map((p: any) => ({ id: p.id, type: 'piece' as const, display_order: p.display_order ?? 0 }))
+                      .sort((a, b) => a.display_order - b.display_order);
+                    const allOrdered = [...topLevelItems, ...kitOnlyItems];
 
-                    for (let i = 0; i < allItems.length; i++) {
-                      const item = allItems[i];
+                    for (let i = 0; i < allOrdered.length; i++) {
+                      const item = allOrdered[i];
                       const newCode = i + 1;
                       if (item.type === 'piece') {
                         await updatePiece.mutateAsync({ id: item.id, code: newCode });
