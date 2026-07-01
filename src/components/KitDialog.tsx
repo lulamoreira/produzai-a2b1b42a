@@ -177,10 +177,9 @@ export function CreateKitDialog({
     return maxCode + 1;
   }, [existingKits]);
 
-  // Exclude pieces already selected in this new kit OR already assigned to any existing kit
-  const alreadyInAnyKit = new Set((allKitPieces ?? []).map(kp => kp.piece_id));
+  // Exclude only pieces already selected in THIS new kit (allow shared across kits)
   const availablePieces = kitOnlyPieces.filter(
-    p => !selectedPieceIds.includes(p.id) && !alreadyInAnyKit.has(p.id)
+    p => !selectedPieceIds.includes(p.id)
   );
 
   const filteredAvailablePieces = useMemo(() => {
@@ -466,9 +465,10 @@ export function KitDetailDialog({
     .map(kp => ({ ...kp, piece: allPieces.find(p => p.id === kp.piece_id) }))
     .filter(kp => kp.piece) : [];
 
-  // Exclude pieces already in ANY kit (not just the current one) — each piece can only be in one kit
+  // Exclude only pieces already in THIS kit (allow same piece in multiple kits)
+  const piecesAlreadyInThisKit = new Set(kitPieces.filter(kp => kp.kit_id === kit?.id).map(kp => kp.piece_id));
   const kitOnlyPiecesNotInKit = kit ? allPieces.filter(
-    p => p.kit_only && p.campaign_id === kit.campaign_id && !kitPieces.some(kp => kp.piece_id === p.id)
+    p => p.kit_only && p.campaign_id === kit.campaign_id && !piecesAlreadyInThisKit.has(p.id)
   ) : [];
 
   const filteredAddPieces = useMemo(() => {

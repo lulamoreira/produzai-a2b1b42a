@@ -402,13 +402,18 @@ const CampaignDetail = () => {
                   const toastId = toast.loading("Recodificando...");
                   try {
                     const ordered = buildInterleavedOrder(pieces, kits, kitPieces);
-                    for (let i = 0; i < ordered.length; i++) {
-                      const { type, item } = ordered[i];
-                      const newCode = i + 1;
+                    const codedPieceIds = new Set<string>();
+                    let nextCode = 1;
+                    for (const { type, item } of ordered) {
                       if (type === 'piece') {
-                        await updatePiece.mutateAsync({ id: item.id, code: newCode });
+                        if (!codedPieceIds.has(item.id)) {
+                          await updatePiece.mutateAsync({ id: item.id, code: nextCode });
+                          codedPieceIds.add(item.id);
+                          nextCode++;
+                        }
                       } else {
-                        await updateKit.mutateAsync({ id: item.id, code: newCode });
+                        await updateKit.mutateAsync({ id: item.id, code: nextCode });
+                        nextCode++;
                       }
                     }
 
