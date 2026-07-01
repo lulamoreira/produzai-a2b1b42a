@@ -119,7 +119,7 @@ function SortableRow({
               {kit.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">{t("common.mockup")}</span>}
               {(kit as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold">{t("common.new")}</span>}
             </span>
-            <span className="text-[11px] text-muted-foreground block">
+            <span className="text-[11px] text-muted-foreground block truncate max-w-[40ch]">
               {kitPieceDetails.length} {t("pieces.pieceCountShort")}: {kitPieceDetails.map(p => p!.name).join(", ") || t("common.none")}
             </span>
           </button>
