@@ -177,10 +177,9 @@ export function CreateKitDialog({
     return maxCode + 1;
   }, [existingKits]);
 
-  // Exclude pieces already selected in this new kit OR already assigned to any existing kit
-  const alreadyInAnyKit = new Set((allKitPieces ?? []).map(kp => kp.piece_id));
+  // Exclude only pieces already selected in THIS new kit (allow shared across kits)
   const availablePieces = kitOnlyPieces.filter(
-    p => !selectedPieceIds.includes(p.id) && !alreadyInAnyKit.has(p.id)
+    p => !selectedPieceIds.includes(p.id)
   );
 
   const filteredAvailablePieces = useMemo(() => {
