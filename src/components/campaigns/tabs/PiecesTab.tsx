@@ -709,6 +709,7 @@ export default function PiecesTab({
                 open={pieceDialogOpen}
                 onOpenChange={setPieceDialogOpen}
                 existingPieces={pieces} 
+                existingKits={kits}
                 customFieldLabels={customFieldLabels} 
                 campaignId={campaignId} 
                 clientId={clientId} 
@@ -778,6 +779,7 @@ export default function PiecesTab({
         onOpenChange={(open) => { if (!open) { setEditingPiece(null); restoreScroll(); } }}
         initialPiece={editingPiece}
         existingPieces={pieces}
+        existingKits={kits}
         customFieldLabels={customFieldLabels}
         campaignId={campaignId}
         clientId={clientId}

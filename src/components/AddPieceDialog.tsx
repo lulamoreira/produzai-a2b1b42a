@@ -31,6 +31,7 @@ interface AddPieceDialogProps {
   preserveScrollOnClose?: boolean;
   onBeforeSave?: () => void;
   hideTrigger?: boolean;
+  existingKits?: any[];
 
 }
 
@@ -46,7 +47,8 @@ const AddPieceDialog = ({
   updatePieceMutation,
   preserveScrollOnClose = false,
   onBeforeSave,
-  hideTrigger = false
+  hideTrigger = false,
+  existingKits
 }: AddPieceDialogProps) => {
   const { t } = useTranslation();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -181,9 +183,14 @@ const AddPieceDialog = ({
   }, [open, clientId, campaignId]);
 
 
-  const maxCode = Array.isArray(existingPieces) 
-    ? existingPieces.reduce((max, p) => Math.max(max, Number(p.code) || 0), 0) 
-    : 0;
+  const maxCode = Math.max(
+    Array.isArray(existingPieces)
+      ? existingPieces.reduce((max, p) => Math.max(max, Number(p.code) || 0), 0)
+      : 0,
+    Array.isArray(existingKits)
+      ? existingKits.reduce((max, k) => Math.max(max, Number(k.code) || 0), 0)
+      : 0
+  );
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
