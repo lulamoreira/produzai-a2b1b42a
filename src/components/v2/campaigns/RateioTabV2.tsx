@@ -1610,6 +1610,28 @@ export default function RateioTabV2({
                     </button>
                   );
                 })}
+                <div className="ml-auto flex items-center gap-1 pb-1">
+                  {!activeAdjustment ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1"
+                      onClick={openStartAdjust}
+                    >
+                      <FileEdit className="w-3.5 h-3.5" /> Iniciar Ajuste
+                    </Button>
+                  ) : activeVersionTab === "adjustment" ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                      title={`Excluir ajuste '${activeAdjustment.name}'`}
+                      onClick={handleDeleteActiveAdjustment}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  ) : null}
+                </div>
               </div>
 
 
