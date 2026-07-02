@@ -368,16 +368,13 @@ export default function AdjustmentsTab({
         <Button
           size="sm"
           className="gap-1.5"
-          onClick={() => {
-            setName(defaultName);
-            setNotes("");
-            setCreateOpen(true);
-          }}
-          disabled={hasDraft}
-          title={hasDraft ? "Já existe um rascunho. Edite ou exclua antes de criar outro." : ""}
+          onClick={() => setStartAdjustOpen(true)}
+          disabled={!!activeAdjustment}
+          title={activeAdjustment ? "Já existe um ajuste ativo. Exclua-o ou marque como substituído antes de criar outro." : ""}
         >
           <Plus className="w-4 h-4" /> {t("adjustments.new")}
         </Button>
+
       </div>
 
       {activeAdjustment && (
