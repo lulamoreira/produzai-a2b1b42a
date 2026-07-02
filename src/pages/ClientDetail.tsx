@@ -62,7 +62,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import StoreContactsSection from "@/components/StoreContactsSection";
 import ClientEmailMemoryManager from "@/components/Email/ClientEmailMemoryManager";
 import { getCountryConfig, SUPPORTED_COUNTRIES, type CountryConfig } from "@/lib/countryConfig";
-import { getStoreIdentityKey } from "@/lib/storeHelpers";
+import { getStoreIdentityKey, normalizeStoreIdentityCnpj, normalizeStoreIdentityName } from "@/lib/storeHelpers";
 import { useLanguage } from "@/hooks/useLanguage";
 
 // Helper to parse "Label|type" format from custom field labels
@@ -157,6 +157,13 @@ function generateStoreCode(clientName: string, country: string, existingStores: 
   while (usedNumbers.has(seq)) seq++;
   return `${prefix}${String(seq).padStart(4, "0")}`;
 }
+
+function getStrictNameCnpjIdentityKey(store: { name?: string | null; cnpj?: string | null }): string {
+  const name = normalizeStoreIdentityName(store.name);
+  const cnpj = normalizeStoreIdentityCnpj(store.cnpj);
+  return name && cnpj ? `name_cnpj:${name}:${cnpj}` : "";
+}
+
 const CAMPAIGN_COLORS = [
   "#6366f1", "#8b5cf6", "#a855f7", "#d946ef",
   "#ec4899", "#f43f5e", "#ef4444", "#f97316",
@@ -794,7 +801,7 @@ const ClientDetail = () => {
     // and deactivate any duplicate siblings — the imported row always wins.
     const existingGroups = new Map<string, ClientStore[]>();
     stores.forEach((store) => {
-      const key = getStoreIdentityKey(store);
+      const key = getStrictNameCnpjIdentityKey(store);
       if (!key) return;
       const arr = existingGroups.get(key) ?? [];
       arr.push(store);
@@ -816,12 +823,16 @@ const ClientDetail = () => {
     // Prevents the import itself from creating duplicate stores when the same
     // company appears more than once in the spreadsheet.
     const rowByIdentity = new Map<string, Record<string, string>>();
+    const rowsWithoutStrictIdentity: Record<string, string>[] = [];
     for (const r of rows) {
-      const k = getStoreIdentityKey({ name: r.name, cnpj: r.cnpj });
-      if (!k) continue;
+      const k = getStrictNameCnpjIdentityKey({ name: r.name, cnpj: r.cnpj });
+      if (!k) {
+        rowsWithoutStrictIdentity.push(r);
+        continue;
+      }
       rowByIdentity.set(k, r);
     }
-    const dedupedRows = Array.from(rowByIdentity.values());
+    const dedupedRows = [...Array.from(rowByIdentity.values()), ...rowsWithoutStrictIdentity];
     let added = 0;
     let updated = 0;
     for (let i = 0; i < dedupedRows.length; i++) {
@@ -860,7 +871,7 @@ const ClientDetail = () => {
         }
       }
 
-      const existing = existingByIdentity.get(getStoreIdentityKey(item));
+      const existing = existingByIdentity.get(getStrictNameCnpjIdentityKey(item));
       
       // Update progress before potentially long await
       if (onProgress) onProgress(i + 1, dedupedRows.length, item.name);
