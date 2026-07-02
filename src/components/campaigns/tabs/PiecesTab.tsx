@@ -1040,6 +1040,15 @@ export default function PiecesTab({
         campaignName={campaign?.name || "Campanha"}
         clientId={clientId}
       />
+
+      <ChangeCaseDialog
+        open={changeCaseOpen}
+        onOpenChange={setChangeCaseOpen}
+        pieces={pieces}
+        kits={kits}
+        customFieldLabels={customFieldLabels}
+        campaignId={campaignId}
+      />
     </div>
   );
 }
