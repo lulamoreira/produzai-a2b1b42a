@@ -650,6 +650,44 @@ export default function MatrixTab({
           </Tabs>
         </div>
       </div>
+
+      <Dialog open={startAdjOpen} onOpenChange={(o) => !startAdjBusy && setStartAdjOpen(o)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Iniciar Ajuste</DialogTitle>
+            <DialogDescription>
+              O rateio atual (lojas, peças, kits e quantidades) será congelado como está, e o ajuste passará a ser a versão vigente do rateio.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="adj-name" className="text-xs">Nome do ajuste</Label>
+              <Input
+                id="adj-name"
+                value={startAdjName}
+                onChange={(e) => setStartAdjName(e.target.value)}
+                disabled={startAdjBusy}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="adj-notes" className="text-xs">Observações (opcional)</Label>
+              <Textarea
+                id="adj-notes"
+                value={startAdjNotes}
+                onChange={(e) => setStartAdjNotes(e.target.value)}
+                rows={3}
+                disabled={startAdjBusy}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStartAdjOpen(false)} disabled={startAdjBusy}>Cancelar</Button>
+            <Button onClick={confirmStartAdjust} disabled={startAdjBusy}>
+              {startAdjBusy ? "Criando..." : "Criar ajuste"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
