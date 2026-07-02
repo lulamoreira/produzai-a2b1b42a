@@ -793,7 +793,7 @@ const ClientDetail = () => {
     const existingByIdentity = new Map<string, ClientStore>();
     stores.forEach((store) => {
       const key = getStoreIdentityKey(store);
-      if (key) existingByIdentity.set(key, store);
+      if (key && !existingByIdentity.has(key)) existingByIdentity.set(key, store);
     });
     // Dedupe incoming rows by name + CNPJ — the last occurrence wins only when
     // both records represent the same legal store identity.
