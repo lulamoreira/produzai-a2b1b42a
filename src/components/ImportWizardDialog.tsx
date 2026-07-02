@@ -472,6 +472,16 @@ export default function ImportWizardDialog({
     existingItems.forEach((s) => {
       const nLow = s.name.trim().toLowerCase();
       const incoming = incomingByName.get(nLow);
+      if (duplicateExtraIds.has(s.id)) {
+        // Duplicated in DB — auto-disable the extra, keep the first as canonical
+        rows.push({
+          action: "desativar",
+          name: `${s.name} (duplicada)`,
+          data: { name: s.name },
+          key: `e-${s.id}`,
+        });
+        return;
+      }
       if (incoming) {
         rows.push({
           action: updateExisting ? "atualizar" : "manter",
