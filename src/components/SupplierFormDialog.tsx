@@ -81,10 +81,31 @@ export default function SupplierFormDialog({
   const [form, setForm] = useState(emptyForm());
   const [isSearchingCep, setIsSearchingCep] = useState(false);
   const [cepError, setCepError] = useState("");
+  const [socialErrors, setSocialErrors] = useState<Record<SocialNetwork, string>>({
+    instagram: "",
+    linkedin: "",
+    facebook: "",
+  });
+
+  const handleSocialBlur = (network: SocialNetwork) => {
+    const raw = form[network];
+    if (!raw.trim()) {
+      setSocialErrors((e) => ({ ...e, [network]: "" }));
+      return;
+    }
+    const normalized = normalizeSocialUrl(network, raw);
+    if (normalized === null || !isValidSocialUrl(network, normalized)) {
+      setSocialErrors((e) => ({ ...e, [network]: SOCIAL_ERROR_MESSAGE[network] }));
+      return;
+    }
+    setSocialErrors((e) => ({ ...e, [network]: "" }));
+    if (normalized !== raw) setForm((f) => ({ ...f, [network]: normalized }));
+  };
 
   useEffect(() => {
     if (!open) return;
     setCepError("");
+    setSocialErrors({ instagram: "", linkedin: "", facebook: "" });
     if (editingSupplier) {
       const s = editingSupplier;
       setForm({
