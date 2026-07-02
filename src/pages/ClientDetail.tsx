@@ -790,11 +790,27 @@ const ClientDetail = () => {
     { updateExisting, disableMissingIds, onProgress }: { updateExisting: boolean; disableMissingIds?: string[]; onProgress?: (current: number, total: number, name?: string) => void },
   ) => {
     if (!clientId) return;
-    const existingByIdentity = new Map<string, ClientStore>();
+    // Group ALL existing stores by identity so we can pick a canonical one
+    // and deactivate any duplicate siblings — the imported row always wins.
+    const existingGroups = new Map<string, ClientStore[]>();
     stores.forEach((store) => {
       const key = getStoreIdentityKey(store);
-      if (key && !existingByIdentity.has(key)) existingByIdentity.set(key, store);
+      if (!key) return;
+      const arr = existingGroups.get(key) ?? [];
+      arr.push(store);
+      existingGroups.set(key, arr);
     });
+    const existingByIdentity = new Map<string, ClientStore>();
+    const duplicateSiblingIds: string[] = [];
+    existingGroups.forEach((group, key) => {
+      // Prefer an active store as the canonical target; fall back to first.
+      const canonical = group.find((s) => (s as any).active !== false) ?? group[0];
+      existingByIdentity.set(key, canonical);
+      group.forEach((s) => {
+        if (s.id !== canonical.id) duplicateSiblingIds.push(s.id);
+      });
+    });
+
     // Dedupe incoming rows by name + CNPJ — the last occurrence wins only when
     // both records represent the same legal store identity.
     // Prevents the import itself from creating duplicate stores when the same
