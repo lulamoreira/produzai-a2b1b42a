@@ -46,6 +46,7 @@ export interface ImportWizardDialogProps {
     rows: Record<string, string>[],
     options: { 
       updateExisting: boolean;
+      disableMissingIds?: string[];
       onProgress?: (current: number, total: number, name?: string) => void;
     },
   ) => Promise<void>;
