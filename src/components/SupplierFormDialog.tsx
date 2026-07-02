@@ -270,6 +270,7 @@ export default function SupplierFormDialog({
     const payload = {
       agency_id: agencyId,
       company_name: form.company_name,
+      trade_name: form.trade_name || null,
       cnpj: form.cnpj || null,
       contact_name: form.contact_name || null,
       address: form.address || null,
