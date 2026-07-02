@@ -98,10 +98,55 @@ export default function SummaryTab({
   };
 
 
+  const [ownerEmail, setOwnerEmail] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setOwnerEmail(data.user?.email ?? null);
+    });
+  }, []);
+  const isOwner = ownerEmail === "lula1973@gmail.com";
+  const [exportingPlan, setExportingPlan] = useState(false);
+
+  const handleExportPlan = async () => {
+    if (!campaign) {
+      toast.error("Dados da campanha indisponíveis");
+      return;
+    }
+    setExportingPlan(true);
+    const tId = toast.loading("Preparando exportação PLAN...");
+    try {
+      await exportCampaignPlan({
+        campaign: { id: campaignId, name: campaign?.name || "campanha" },
+        client: client ? { id: client.id, name: client.name } : null,
+        agency: agency ? { name: agency.name } : null,
+        pieces: visiblePieces || [],
+        kits: kits || [],
+        kitPieces: kitPieces || [],
+        stores: stores || [],
+        onProgress: (msg) => toast.loading(msg, { id: tId }),
+      });
+      toast.success("PLAN exportado com sucesso!", { id: tId });
+    } catch (e: any) {
+      console.error("[exportCampaignPlan]", e);
+      toast.error(`Falha na exportação: ${e?.message || e}`, { id: tId });
+    } finally {
+      setExportingPlan(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {isOwner && (
+        <div className="flex justify-end">
+          <Button variant="outline" size="sm" onClick={handleExportPlan} disabled={exportingPlan}>
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            {exportingPlan ? "Exportando..." : "Exportar PLAN (beta)"}
+          </Button>
+        </div>
+      )}
       {/* Campaign KPI Row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+
         {[
           { label: t("campaign.kpi.stores"), value: campaignKpis?.stores, icon: Store },
           { label: t("campaign.kpi.pieces"), value: campaignKpis?.pieces, icon: Package },
