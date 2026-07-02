@@ -382,19 +382,26 @@ export default function ImportWizardDialog({
 
   const stats = useMemo(() => {
     const existingNames = new Set(existingItems.map((i) => i.name.trim().toLowerCase()));
-    let toCreate = 0;
-    let toUpdate = 0;
-    let ignored = 0;
-    for (const r of transformedRows) {
-      const hasRequired = requiredKeys.every((k) => (r[k] ?? "").trim() !== "");
-      if (!hasRequired) {
-        ignored++;
-        continue;
+    const toCreateRows: Record<string, string>[] = [];
+    const toUpdateRows: Record<string, string>[] = [];
+    const ignoredRows: { row: Record<string, string>; missing: string[]; index: number }[] = [];
+    transformedRows.forEach((r, idx) => {
+      const missing = requiredKeys.filter((k) => (r[k] ?? "").trim() === "");
+      if (missing.length > 0) {
+        ignoredRows.push({ row: r, missing, index: idx + 2 });
+        return;
       }
-      if (updateExisting && existingNames.has(r.name.trim().toLowerCase())) toUpdate++;
-      else toCreate++;
-    }
-    return { toCreate, toUpdate, ignored };
+      if (updateExisting && existingNames.has(r.name.trim().toLowerCase())) toUpdateRows.push(r);
+      else toCreateRows.push(r);
+    });
+    return {
+      toCreate: toCreateRows.length,
+      toUpdate: toUpdateRows.length,
+      ignored: ignoredRows.length,
+      toCreateRows,
+      toUpdateRows,
+      ignoredRows,
+    };
   }, [transformedRows, existingItems, updateExisting, requiredKeys]);
 
   // Existing items whose name is NOT present in the incoming file (stores mode only)
