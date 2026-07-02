@@ -386,12 +386,30 @@ export default function ImportWizardDialog({
     });
   }, [rawRows, mapping, systemFields]);
 
+  const importRows = useMemo(() => {
+    if (mode !== "stores") return transformedRows;
+
+    const rowsByIdentity = new Map<string, Record<string, string>>();
+    const rowsWithoutIdentity: Record<string, string>[] = [];
+
+    transformedRows.forEach((row) => {
+      const identityKey = getStoreIdentityKey({ name: row.name, cnpj: row.cnpj });
+      if (!identityKey) {
+        rowsWithoutIdentity.push(row);
+        return;
+      }
+      rowsByIdentity.set(identityKey, row);
+    });
+
+    return [...rowsByIdentity.values(), ...rowsWithoutIdentity];
+  }, [mode, transformedRows]);
+
   const stats = useMemo(() => {
     const existingKeys = new Set(existingItems.map((i) => getStoreIdentityKey(i)).filter(Boolean));
     const toCreateRows: Record<string, string>[] = [];
     const toUpdateRows: Record<string, string>[] = [];
     const ignoredRows: { row: Record<string, string>; missing: string[]; index: number }[] = [];
-    transformedRows.forEach((r, idx) => {
+    importRows.forEach((r, idx) => {
       const missing = requiredKeys.filter((k) => (r[k] ?? "").trim() === "");
       if (missing.length > 0) {
         ignoredRows.push({ row: r, missing, index: idx + 2 });
@@ -409,18 +427,18 @@ export default function ImportWizardDialog({
       toUpdateRows,
       ignoredRows,
     };
-  }, [transformedRows, existingItems, updateExisting, requiredKeys]);
+  }, [importRows, existingItems, updateExisting, requiredKeys]);
 
   // Existing items whose name + CNPJ identity is NOT present in the incoming file (stores mode only)
   const missingStores = useMemo(() => {
     if (mode !== "stores") return [] as { id: string; name: string; cnpj?: string | null }[];
     const incomingKeys = new Set(
-      transformedRows
+      importRows
         .map((r) => getStoreIdentityKey({ name: r.name, cnpj: r.cnpj }))
         .filter((key) => key !== "")
     );
     return existingItems.filter((s) => !incomingKeys.has(getStoreIdentityKey(s)));
-  }, [mode, existingItems, transformedRows]);
+  }, [mode, existingItems, importRows]);
 
   // Pre-existing duplicates in DB: same name + CNPJ identity appears more than once.
   // Keep the first as canonical, mark the extras to be auto-disabled — otherwise
@@ -464,7 +482,7 @@ export default function ImportWizardDialog({
     if (mode !== "stores") return [];
     const rows: StatusRow[] = [];
     const incomingByIdentity = new Map<string, Record<string, string>>();
-    transformedRows.forEach((r) => {
+    importRows.forEach((r) => {
       const key = getStoreIdentityKey({ name: r.name, cnpj: r.cnpj });
       if (key) incomingByIdentity.set(key, r);
     });
@@ -522,7 +540,7 @@ export default function ImportWizardDialog({
       });
     });
     return rows;
-  }, [mode, existingItems, transformedRows, stats.toCreateRows, stats.ignoredRows, updateExisting, disableMissing, duplicateExtraIds]);
+  }, [mode, existingItems, importRows, stats.toCreateRows, stats.ignoredRows, updateExisting, disableMissing, duplicateExtraIds]);
 
   const filteredStatusRows = useMemo(() => {
     const filtered = statusActionFilter === "all"
@@ -554,7 +572,7 @@ export default function ImportWizardDialog({
 
   // ─── Confirm import ───────────────────────────────────────────────────────
   const handleConfirm = async () => {
-    const valid = transformedRows.filter((r) =>
+    const valid = importRows.filter((r) =>
       requiredKeys.every((k) => (r[k] ?? "").trim() !== ""),
     );
     if (valid.length === 0) {
