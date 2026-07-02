@@ -146,6 +146,7 @@ export default function AdjustmentsTab({
   });
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [startAdjustOpen, setStartAdjustOpen] = useState(false);
   const [editingAdjustment, setEditingAdjustment] = useState<CampaignAdjustment | null>(null);
   const [requestDialogAdjustment, setRequestDialogAdjustment] = useState<CampaignAdjustment | null>(null);
   const [registerResponseAdjustment, setRegisterResponseAdjustment] = useState<CampaignAdjustment | null>(null);
