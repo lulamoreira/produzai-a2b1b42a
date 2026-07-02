@@ -44,6 +44,7 @@ interface SupplierFormDialogProps {
 
 const emptyForm = () => ({
   company_name: "",
+  trade_name: "",
   cnpj: "",
   contact_name: "",
   address: "",
@@ -110,6 +111,7 @@ export default function SupplierFormDialog({
       const s = editingSupplier;
       setForm({
         company_name: s.company_name,
+        trade_name: s.trade_name || "",
         cnpj: s.cnpj || "",
         contact_name: s.contact_name || "",
         address: s.address || "",
@@ -268,6 +270,7 @@ export default function SupplierFormDialog({
     const payload = {
       agency_id: agencyId,
       company_name: form.company_name,
+      trade_name: form.trade_name || null,
       cnpj: form.cnpj || null,
       contact_name: form.contact_name || null,
       address: form.address || null,
@@ -316,12 +319,20 @@ export default function SupplierFormDialog({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="company_name">Nome da Empresa *</Label>
+                <Label htmlFor="company_name">Razão Social *</Label>
                 <Input
                   id="company_name"
                   required
                   value={form.company_name}
                   onChange={(e) => setForm((f) => ({ ...f, company_name: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="trade_name">Nome Fantasia</Label>
+                <Input
+                  id="trade_name"
+                  value={form.trade_name}
+                  onChange={(e) => setForm((f) => ({ ...f, trade_name: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">

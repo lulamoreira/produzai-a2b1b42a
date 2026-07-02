@@ -31,6 +31,7 @@ function buildAddress(s: AgencySupplier): string {
 function buildSupplierBlock(s: AgencySupplier): string {
   const lines: string[] = [];
   lines.push(`*${s.company_name}*`);
+  if (s.trade_name) lines.push(`Nome Fantasia: ${s.trade_name}`);
   if (s.cnpj) lines.push(`CNPJ: ${s.cnpj}`);
 
   const services = (s.services || []).filter(Boolean);
