@@ -533,6 +533,49 @@ export default function ImportWizardDialog({
                 </div>
               </div>
             )}
+
+            {history.length > 0 && (
+              <div className="space-y-2 pt-2 border-t">
+                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <History className="w-3.5 h-3.5" />
+                  Mapeamentos anteriores desta {campaignId ? "campanha" : "cliente"}
+                </div>
+                <div className="border rounded-md divide-y max-h-56 overflow-y-auto">
+                  {history.map((h) => (
+                    <div key={h.id} className="flex items-center gap-2 p-2 text-xs hover:bg-muted/30">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{h.file_name}</div>
+                        <div className="text-muted-foreground flex items-center gap-2 mt-0.5">
+                          <span>{new Date(h.created_at).toLocaleString("pt-BR")}</span>
+                          <Badge variant="outline" className="h-4 px-1 text-[9px]">{h.source}</Badge>
+                          <span>{Object.keys(h.mapping || {}).length} col.</span>
+                          <span>{h.rows_count} linhas</span>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm" variant="outline" className="h-7 text-xs"
+                        disabled={columns.length === 0}
+                        onClick={() => applyHistoryEntry(h)}
+                      >
+                        Reaplicar
+                      </Button>
+                      <Button
+                        size="icon" variant="ghost" className="h-7 w-7"
+                        onClick={() => deleteHistoryEntry(h.id)}
+                        title="Excluir"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                {columns.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Selecione um arquivo para poder reaplicar um mapeamento.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         )}
 
