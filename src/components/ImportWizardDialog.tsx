@@ -509,12 +509,22 @@ export default function ImportWizardDialog({
   // How many stores will be active after import (stores mode)
   const activeAfterImport = useMemo(() => {
     if (mode !== "stores") return 0;
-    const keptExisting =
-      existingItems.length -
-      (disableMissing ? missingStores.length : 0) -
-      duplicateExtras.length;
-    return keptExisting + stats.toCreate;
-  }, [mode, existingItems.length, disableMissing, missingStores.length, duplicateExtras.length, stats.toCreate]);
+    const activeExisting = existingItems.filter((s) => s.active !== false).length;
+    const activeMissing = missingStores.filter((s) => s.active !== false).length;
+    const activeDuplicateExtras = duplicateExtras.filter((s) => s.active !== false).length;
+    const inactiveExistingKeys = new Set(
+      existingItems
+        .filter((s) => s.active === false)
+        .map((s) => getStrictNameCnpjIdentityKey(s))
+        .filter(Boolean),
+    );
+    const reactivatedRows = stats.toUpdateRows.filter((r) => {
+      const key = getStrictNameCnpjIdentityKey({ name: r.name, cnpj: r.cnpj });
+      return key && inactiveExistingKeys.has(key);
+    }).length;
+    const keptExisting = activeExisting - (disableMissing ? activeMissing : 0) - activeDuplicateExtras;
+    return keptExisting + stats.toCreate + reactivatedRows;
+  }, [mode, existingItems, disableMissing, missingStores, duplicateExtras, stats.toCreate, stats.toUpdateRows]);
 
   // Unified status list — every store classified with its action
   type StatusRow = {
