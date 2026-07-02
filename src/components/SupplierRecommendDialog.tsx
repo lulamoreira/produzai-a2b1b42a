@@ -224,9 +224,29 @@ export default function SupplierRecommendDialog({ open, onOpenChange, suppliers 
                 value={generatedText}
                 readOnly
                 placeholder="Selecione fornecedores à esquerda para gerar o texto de indicação."
-                className="flex-1 min-h-[300px] max-h-[50dvh] text-xs font-mono"
+                className="flex-1 min-h-[180px] max-h-[30dvh] text-xs font-mono"
               />
+              {generatedText && (
+                <div className="border rounded-md p-2 text-xs max-h-[25dvh] overflow-y-auto bg-muted/30 whitespace-pre-wrap break-words">
+                  {generatedText.split(/(\bhttps?:\/\/[^\s]+)/g).map((chunk, i) =>
+                    /^https?:\/\//.test(chunk) ? (
+                      <a
+                        key={i}
+                        href={chunk}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline break-all"
+                      >
+                        {chunk}
+                      </a>
+                    ) : (
+                      <span key={i}>{chunk}</span>
+                    ),
+                  )}
+                </div>
+              )}
             </div>
+
             <div className="flex gap-2">
               <Button
                 variant="outline"
