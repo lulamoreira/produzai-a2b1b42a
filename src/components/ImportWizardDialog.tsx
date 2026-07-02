@@ -420,6 +420,96 @@ export default function ImportWizardDialog({
     return existingItems.filter((s) => !incomingNames.has(s.name.trim().toLowerCase()));
   }, [mode, existingItems, transformedRows]);
 
+  // How many stores will be active after import (stores mode)
+  const activeAfterImport = useMemo(() => {
+    if (mode !== "stores") return 0;
+    const keptExisting = existingItems.length - (disableMissing ? missingStores.length : 0);
+    return keptExisting + stats.toCreate;
+  }, [mode, existingItems.length, disableMissing, missingStores.length, stats.toCreate]);
+
+  // Unified status list — every store classified with its action
+  type StatusRow = {
+    action: "criar" | "atualizar" | "manter" | "desativar" | "ignorar";
+    name: string;
+    data: Record<string, string>;
+    key: string;
+  };
+  const statusRows = useMemo<StatusRow[]>(() => {
+    if (mode !== "stores") return [];
+    const rows: StatusRow[] = [];
+    const incomingByName = new Map<string, Record<string, string>>();
+    transformedRows.forEach((r) => {
+      const n = (r.name ?? "").trim().toLowerCase();
+      if (n) incomingByName.set(n, r);
+    });
+    const existingNamesLower = new Set(existingItems.map((i) => i.name.trim().toLowerCase()));
+
+    // Existing stores
+    existingItems.forEach((s) => {
+      const nLow = s.name.trim().toLowerCase();
+      const incoming = incomingByName.get(nLow);
+      if (incoming) {
+        rows.push({
+          action: updateExisting ? "atualizar" : "manter",
+          name: s.name,
+          data: incoming,
+          key: `e-${s.id}`,
+        });
+      } else {
+        rows.push({
+          action: disableMissing ? "desativar" : "manter",
+          name: s.name,
+          data: { name: s.name },
+          key: `e-${s.id}`,
+        });
+      }
+    });
+
+    // New/ignored from file
+    stats.toCreateRows.forEach((r, i) => {
+      const nLow = (r.name ?? "").trim().toLowerCase();
+      if (existingNamesLower.has(nLow)) return; // already accounted (update)
+      rows.push({ action: "criar", name: r.name || `(sem nome) #${i + 1}`, data: r, key: `c-${i}` });
+    });
+    stats.ignoredRows.forEach((r, i) => {
+      rows.push({
+        action: "ignorar",
+        name: r.row.name || `(linha ${r.index})`,
+        data: r.row,
+        key: `i-${i}`,
+      });
+    });
+    return rows;
+  }, [mode, existingItems, transformedRows, stats.toCreateRows, stats.ignoredRows, updateExisting, disableMissing]);
+
+  const filteredStatusRows = useMemo(() => {
+    const filtered = statusActionFilter === "all"
+      ? statusRows
+      : statusRows.filter((r) => r.action === statusActionFilter);
+    const dir = statusSort.dir === "asc" ? 1 : -1;
+    const f = statusSort.field;
+    return [...filtered].sort((a, b) => {
+      const av = f === "action" ? a.action : f === "name" ? a.name : (a.data[f] ?? "");
+      const bv = f === "action" ? b.action : f === "name" ? b.name : (b.data[f] ?? "");
+      return String(av).localeCompare(String(bv), "pt-BR", { numeric: true }) * dir;
+    });
+  }, [statusRows, statusActionFilter, statusSort]);
+
+  const toggleStatusSort = (field: string) => {
+    setStatusSort((s) => s.field === field ? { field, dir: s.dir === "asc" ? "desc" : "asc" } : { field, dir: "asc" });
+  };
+
+  const actionBadgeClass = (action: StatusRow["action"]) => {
+    switch (action) {
+      case "criar": return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400";
+      case "atualizar": return "bg-primary/15 text-primary";
+      case "manter": return "bg-muted text-muted-foreground";
+      case "desativar": return "bg-amber-500/15 text-amber-700 dark:text-amber-400";
+      case "ignorar": return "bg-destructive/15 text-destructive";
+    }
+  };
+
+
   // ─── Confirm import ───────────────────────────────────────────────────────
   const handleConfirm = async () => {
     const valid = transformedRows.filter((r) =>
