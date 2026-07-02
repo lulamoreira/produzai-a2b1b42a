@@ -790,7 +790,11 @@ const ClientDetail = () => {
     { updateExisting, disableMissingIds, onProgress }: { updateExisting: boolean; disableMissingIds?: string[]; onProgress?: (current: number, total: number, name?: string) => void },
   ) => {
     if (!clientId) return;
-    const existingByIdentity = new Map(stores.map(s => [getStoreIdentityKey(s), s]).filter(([key]) => key !== ""));
+    const existingByIdentity = new Map<string, ClientStore>();
+    stores.forEach((store) => {
+      const key = getStoreIdentityKey(store);
+      if (key) existingByIdentity.set(key, store);
+    });
     // Dedupe incoming rows by name + CNPJ — the last occurrence wins only when
     // both records represent the same legal store identity.
     // Prevents the import itself from creating duplicate stores when the same
