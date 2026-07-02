@@ -38,23 +38,15 @@ interface SummaryTabProps {
     pendingApprovals: number;
   };
 }
-  isAdmin: boolean;
-  isAdminOrMaster: boolean;
-  canViewPieces: boolean;
-  onNavigate: (section: string, filter?: any) => void;
-  campaignKpis?: {
-    stores: number;
-    pieces: number;
-    pendingInstallations: number;
-    pendingApprovals: number;
-  };
-}
-
 export default function SummaryTab({
   campaignId,
   stores,
   visiblePieces,
   kits,
+  kitPieces = [],
+  campaign,
+  client,
+  agency,
   canEditCampaign,
   canViewSchedules,
   canViewInstallations,
