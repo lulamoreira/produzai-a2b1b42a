@@ -415,6 +415,36 @@ export default function ImportWizardDialog({
           if (name) setCurrentStoreName(name);
         }
       });
+
+      // Save mapping history (fire-and-forget)
+      try {
+        const { data: userRes } = await supabase.auth.getUser();
+        const uid = userRes?.user?.id;
+        if (uid && (campaignId || clientId)) {
+          const cleanMapping: Record<string, string> = {};
+          for (const [c, v] of Object.entries(mapping)) if (v !== IGNORE) cleanMapping[c] = v;
+          const aiCols = Array.from(aiMapped);
+          const source = aiCols.length === 0
+            ? "manual"
+            : aiCols.length === Object.keys(cleanMapping).length ? "ai" : "mixed";
+          await (supabase.from("import_mapping_history" as any) as any).insert({
+            campaign_id: campaignId ?? null,
+            client_id: clientId ?? null,
+            mode,
+            file_name: fileName,
+            columns,
+            mapping: cleanMapping,
+            ai_mapped_columns: aiCols,
+            source,
+            rows_count: valid.length,
+            created_by: uid,
+          });
+          queryClient.invalidateQueries({ queryKey: historyKey });
+        }
+      } catch (err) {
+        console.warn("Falha ao salvar histórico de mapeamento:", err);
+      }
+
       toast.success(t("common.import") + " concluída: " + valid.length + " registro(s).");
       onOpenChange(false);
     } catch (e: any) {
