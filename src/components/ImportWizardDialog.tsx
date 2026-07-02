@@ -21,7 +21,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { getStoreIdentityKey } from "@/lib/storeHelpers";
+import { getStoreIdentityKey, normalizeStoreIdentityCnpj, normalizeStoreIdentityName } from "@/lib/storeHelpers";
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Types
@@ -90,6 +90,12 @@ const PIECE_FIELDS: SystemField[] = [
 ];
 
 const IGNORE = "__ignore__";
+
+const getStrictNameCnpjIdentityKey = (store: { name?: string | null; cnpj?: string | null }): string => {
+  const name = normalizeStoreIdentityName(store.name);
+  const cnpj = normalizeStoreIdentityCnpj(store.cnpj);
+  return name && cnpj ? `name_cnpj:${name}:${cnpj}` : "";
+};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Component
@@ -415,7 +421,7 @@ export default function ImportWizardDialog({
     const seen = new Set<string>();
     const dups: Record<string, string>[] = [];
     transformedRows.forEach((row) => {
-      const identityKey = getStoreIdentityKey({ name: row.name, cnpj: row.cnpj });
+      const identityKey = getStrictNameCnpjIdentityKey({ name: row.name, cnpj: row.cnpj });
       if (!identityKey) return;
       if (seen.has(identityKey)) dups.push(row);
       else seen.add(identityKey);
@@ -430,7 +436,7 @@ export default function ImportWizardDialog({
     const rowsWithoutIdentity: Record<string, string>[] = [];
 
     transformedRows.forEach((row) => {
-      const identityKey = getStoreIdentityKey({ name: row.name, cnpj: row.cnpj });
+      const identityKey = getStrictNameCnpjIdentityKey({ name: row.name, cnpj: row.cnpj });
       if (!identityKey) {
         rowsWithoutIdentity.push(row);
         return;
@@ -486,7 +492,7 @@ export default function ImportWizardDialog({
     const seen = new Set<string>();
     const extras: Array<{ name: string; id: string; cnpj?: string | null } & Record<string, string | null | undefined>> = [];
     for (const s of existingItems) {
-      const k = getStoreIdentityKey(s);
+      const k = getStrictNameCnpjIdentityKey(s);
       if (!k) continue;
       if (seen.has(k)) extras.push(s);
       else seen.add(k);
@@ -530,7 +536,7 @@ export default function ImportWizardDialog({
     const seenExistingIdentityKeys = new Set<string>();
 
     existingItems.forEach((s) => {
-      const identityKey = getStoreIdentityKey(s);
+      const identityKey = getStrictNameCnpjIdentityKey(s) || getStoreIdentityKey(s);
       const isDuplicate = identityKey !== "" && seenExistingIdentityKeys.has(identityKey);
       if (identityKey) seenExistingIdentityKeys.add(identityKey);
 
