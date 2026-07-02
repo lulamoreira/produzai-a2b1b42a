@@ -237,6 +237,31 @@ export default function SupplierFormDialog({
     e.preventDefault();
     if (!agencyId) return;
 
+    // Normalize + validate social fields before saving
+    const socials: Record<SocialNetwork, string | null> = {
+      instagram: null,
+      linkedin: null,
+      facebook: null,
+    };
+    const nextErrors: Record<SocialNetwork, string> = { instagram: "", linkedin: "", facebook: "" };
+    let hasError = false;
+    (["instagram", "linkedin", "facebook"] as SocialNetwork[]).forEach((net) => {
+      const raw = form[net];
+      if (!raw.trim()) return;
+      const normalized = normalizeSocialUrl(net, raw);
+      if (normalized === null || !isValidSocialUrl(net, normalized)) {
+        nextErrors[net] = SOCIAL_ERROR_MESSAGE[net];
+        hasError = true;
+        return;
+      }
+      socials[net] = normalized;
+    });
+    setSocialErrors(nextErrors);
+    if (hasError) {
+      toast.error("Corrija os campos de redes sociais antes de salvar.");
+      return;
+    }
+
     const finalServices = [...form.services];
     if (form.custom_service.trim()) finalServices.push(form.custom_service.trim());
 
@@ -250,9 +275,9 @@ export default function SupplierFormDialog({
       whatsapp: form.whatsapp || null,
       email: form.email || null,
       website: form.website || null,
-      instagram: form.instagram || null,
-      linkedin: form.linkedin || null,
-      facebook: form.facebook || null,
+      instagram: socials.instagram,
+      linkedin: socials.linkedin,
+      facebook: socials.facebook,
       observations: form.observations || null,
       services: finalServices,
       file_urls: form.file_urls,
