@@ -2684,6 +2684,66 @@ export type Database = {
         }
         Relationships: []
       }
+      import_mapping_history: {
+        Row: {
+          ai_mapped_columns: Json
+          campaign_id: string | null
+          client_id: string | null
+          columns: Json
+          created_at: string
+          created_by: string | null
+          file_name: string
+          id: string
+          mapping: Json
+          mode: string
+          rows_count: number
+          source: string
+        }
+        Insert: {
+          ai_mapped_columns?: Json
+          campaign_id?: string | null
+          client_id?: string | null
+          columns?: Json
+          created_at?: string
+          created_by?: string | null
+          file_name: string
+          id?: string
+          mapping?: Json
+          mode: string
+          rows_count?: number
+          source?: string
+        }
+        Update: {
+          ai_mapped_columns?: Json
+          campaign_id?: string | null
+          client_id?: string | null
+          columns?: Json
+          created_at?: string
+          created_by?: string | null
+          file_name?: string
+          id?: string
+          mapping?: Json
+          mode?: string
+          rows_count?: number
+          source?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_mapping_history_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "import_mapping_history_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       install_access_log: {
         Row: {
           accessed_at: string | null
