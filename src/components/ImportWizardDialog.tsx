@@ -41,7 +41,7 @@ export interface ImportWizardDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode: ImportWizardMode;
-  existingItems: Array<{ name: string; id: string; cnpj?: string | null } & Record<string, string | null | undefined>>;
+  existingItems: Array<{ name: string; id: string; cnpj?: string | null; active?: boolean | null } & Record<string, string | boolean | null | undefined>>;
   clientId?: string;
   campaignId?: string;
   onImport: (
@@ -448,7 +448,7 @@ export default function ImportWizardDialog({
   }, [mode, transformedRows]);
 
   const stats = useMemo(() => {
-    const existingKeys = new Set(existingItems.map((i) => getStoreIdentityKey(i)).filter(Boolean));
+    const existingKeys = new Set(existingItems.map((i) => getStrictNameCnpjIdentityKey(i)).filter(Boolean));
     const toCreateRows: Record<string, string>[] = [];
     const toUpdateRows: Record<string, string>[] = [];
     const ignoredRows: { row: Record<string, string>; missing: string[]; index: number }[] = [];
@@ -458,7 +458,7 @@ export default function ImportWizardDialog({
         ignoredRows.push({ row: r, missing, index: idx + 2 });
         return;
       }
-      const identityKey = getStoreIdentityKey({ name: r.name, cnpj: r.cnpj });
+      const identityKey = getStrictNameCnpjIdentityKey({ name: r.name, cnpj: r.cnpj });
       if (updateExisting && identityKey && existingKeys.has(identityKey)) toUpdateRows.push(r);
       else toCreateRows.push(r);
     });
@@ -477,10 +477,10 @@ export default function ImportWizardDialog({
     if (mode !== "stores") return [] as { id: string; name: string; cnpj?: string | null }[];
     const incomingKeys = new Set(
       importRows
-        .map((r) => getStoreIdentityKey({ name: r.name, cnpj: r.cnpj }))
+        .map((r) => getStrictNameCnpjIdentityKey({ name: r.name, cnpj: r.cnpj }) || getStoreIdentityKey({ name: r.name, cnpj: r.cnpj }))
         .filter((key) => key !== "")
     );
-    return existingItems.filter((s) => !incomingKeys.has(getStoreIdentityKey(s)));
+    return existingItems.filter((s) => !incomingKeys.has(getStrictNameCnpjIdentityKey(s) || getStoreIdentityKey(s)));
   }, [mode, existingItems, importRows]);
 
   // Pre-existing duplicates in DB: same name + CNPJ identity appears more than once.
@@ -529,7 +529,7 @@ export default function ImportWizardDialog({
       const key = getStoreIdentityKey({ name: r.name, cnpj: r.cnpj });
       if (key) incomingByIdentity.set(key, r);
     });
-    const existingIdentityKeys = new Set(existingItems.map((i) => getStoreIdentityKey(i)).filter(Boolean));
+    const existingIdentityKeys = new Set(existingItems.map((i) => getStrictNameCnpjIdentityKey(i)).filter(Boolean));
 
     // Enforce dedup here directly: first occurrence of each normalized name +
     // CNPJ identity is canonical; only later records with the same identity are disabled.
