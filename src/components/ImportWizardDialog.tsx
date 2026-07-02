@@ -560,7 +560,12 @@ export default function ImportWizardDialog({
     try {
       await onImport(valid, { 
         updateExisting,
-        disableMissingIds: mode === "stores" && disableMissing ? missingStores.map((s) => s.id) : [],
+        disableMissingIds: mode === "stores"
+          ? [
+              ...(disableMissing ? missingStores.map((s) => s.id) : []),
+              ...duplicateExtras.map((s) => s.id),
+            ]
+          : [],
         onProgress: (current, total, name) => {
           setImportProgress({ current, total });
           if (name) setCurrentStoreName(name);
