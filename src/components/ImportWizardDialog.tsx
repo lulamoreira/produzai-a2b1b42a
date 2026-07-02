@@ -178,6 +178,56 @@ export default function ImportWizardDialog({
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const [currentStoreName, setCurrentStoreName] = useState('');
 
+  const queryClient = useQueryClient();
+
+  // ─── Mapping history ──────────────────────────────────────────────────────
+  const historyKey = ["import_mapping_history", mode, campaignId ?? null, clientId ?? null];
+  const { data: history = [] } = useQuery({
+    queryKey: historyKey,
+    enabled: open,
+    queryFn: async () => {
+      let q = (supabase.from("import_mapping_history" as any) as any)
+        .select("id, file_name, columns, mapping, ai_mapped_columns, source, rows_count, created_at, created_by")
+        .eq("mode", mode)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (campaignId) q = q.eq("campaign_id", campaignId);
+      else if (clientId) q = q.eq("client_id", clientId);
+      else return [];
+      const { data, error } = await q;
+      if (error) { console.error(error); return []; }
+      return (data ?? []) as Array<{
+        id: string; file_name: string; columns: string[]; mapping: Record<string, string>;
+        ai_mapped_columns: string[]; source: string; rows_count: number; created_at: string; created_by: string | null;
+      }>;
+    },
+  });
+
+  const applyHistoryEntry = useCallback((entry: {
+    mapping: Record<string, string>; ai_mapped_columns: string[];
+  }) => {
+    if (columns.length === 0) {
+      toast.error("Carregue um arquivo antes de aplicar um mapeamento.");
+      return;
+    }
+    const next: Record<string, string> = {};
+    for (const c of columns) {
+      const v = entry.mapping?.[c];
+      next[c] = v && systemFields.some((f) => f.key === v) ? v : IGNORE;
+    }
+    setMapping(next);
+    setAiMapped(new Set((entry.ai_mapped_columns ?? []).filter((c) => columns.includes(c))));
+    toast.success("Mapeamento anterior aplicado.");
+  }, [columns, systemFields]);
+
+  const deleteHistoryEntry = useCallback(async (id: string) => {
+    const { error } = await (supabase.from("import_mapping_history" as any) as any).delete().eq("id", id);
+    if (error) { toast.error("Não foi possível excluir."); return; }
+    queryClient.invalidateQueries({ queryKey: historyKey });
+    toast.success("Registro removido.");
+  }, [queryClient, historyKey]);
+
+
 
   // Reset on close
   useEffect(() => {
