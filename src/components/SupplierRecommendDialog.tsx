@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Copy, Search, MessageSquare, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 import type { AgencySupplier } from "@/hooks/useAgencySuppliers";
+import { normalizeSocialUrl } from "@/lib/socialUrls";
 
 interface Props {
   open: boolean;
@@ -39,9 +40,12 @@ function buildSupplierBlock(s: AgencySupplier): string {
   if (addr) lines.push(`Endereço: ${addr}`);
 
   if (s.website) lines.push(`Site: ${s.website}`);
-  if (s.instagram) lines.push(`Instagram: ${s.instagram}`);
-  if (s.linkedin) lines.push(`LinkedIn: ${s.linkedin}`);
-  if (s.facebook) lines.push(`Facebook: ${s.facebook}`);
+  const ig = s.instagram ? normalizeSocialUrl("instagram", s.instagram) : "";
+  const li = s.linkedin ? normalizeSocialUrl("linkedin", s.linkedin) : "";
+  const fb = s.facebook ? normalizeSocialUrl("facebook", s.facebook) : "";
+  if (ig) lines.push(`Instagram: ${ig}`);
+  if (li) lines.push(`LinkedIn: ${li}`);
+  if (fb) lines.push(`Facebook: ${fb}`);
 
   // Contato principal (legado) — só se não houver contatos estruturados
   if ((!s.contacts || s.contacts.length === 0)) {
@@ -220,9 +224,29 @@ export default function SupplierRecommendDialog({ open, onOpenChange, suppliers 
                 value={generatedText}
                 readOnly
                 placeholder="Selecione fornecedores à esquerda para gerar o texto de indicação."
-                className="flex-1 min-h-[300px] max-h-[50dvh] text-xs font-mono"
+                className="flex-1 min-h-[180px] max-h-[30dvh] text-xs font-mono"
               />
+              {generatedText && (
+                <div className="border rounded-md p-2 text-xs max-h-[25dvh] overflow-y-auto bg-muted/30 whitespace-pre-wrap break-words">
+                  {generatedText.split(/(\bhttps?:\/\/[^\s]+)/g).map((chunk, i) =>
+                    /^https?:\/\//.test(chunk) ? (
+                      <a
+                        key={i}
+                        href={chunk}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary underline break-all"
+                      >
+                        {chunk}
+                      </a>
+                    ) : (
+                      <span key={i}>{chunk}</span>
+                    ),
+                  )}
+                </div>
+              )}
             </div>
+
             <div className="flex gap-2">
               <Button
                 variant="outline"

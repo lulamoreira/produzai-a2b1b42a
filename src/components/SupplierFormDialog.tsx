@@ -27,6 +27,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { buildSupplierFilePath, SUPPLIER_FILES_BUCKET } from "@/lib/supplierFiles";
+import {
+  normalizeSocialUrl,
+  isValidSocialUrl,
+  SOCIAL_ERROR_MESSAGE,
+  type SocialNetwork,
+} from "@/lib/socialUrls";
 
 interface SupplierFormDialogProps {
   open: boolean;
@@ -75,10 +81,31 @@ export default function SupplierFormDialog({
   const [form, setForm] = useState(emptyForm());
   const [isSearchingCep, setIsSearchingCep] = useState(false);
   const [cepError, setCepError] = useState("");
+  const [socialErrors, setSocialErrors] = useState<Record<SocialNetwork, string>>({
+    instagram: "",
+    linkedin: "",
+    facebook: "",
+  });
+
+  const handleSocialBlur = (network: SocialNetwork) => {
+    const raw = form[network];
+    if (!raw.trim()) {
+      setSocialErrors((e) => ({ ...e, [network]: "" }));
+      return;
+    }
+    const normalized = normalizeSocialUrl(network, raw);
+    if (normalized === null || !isValidSocialUrl(network, normalized)) {
+      setSocialErrors((e) => ({ ...e, [network]: SOCIAL_ERROR_MESSAGE[network] }));
+      return;
+    }
+    setSocialErrors((e) => ({ ...e, [network]: "" }));
+    if (normalized !== raw) setForm((f) => ({ ...f, [network]: normalized }));
+  };
 
   useEffect(() => {
     if (!open) return;
     setCepError("");
+    setSocialErrors({ instagram: "", linkedin: "", facebook: "" });
     if (editingSupplier) {
       const s = editingSupplier;
       setForm({
@@ -210,6 +237,31 @@ export default function SupplierFormDialog({
     e.preventDefault();
     if (!agencyId) return;
 
+    // Normalize + validate social fields before saving
+    const socials: Record<SocialNetwork, string | null> = {
+      instagram: null,
+      linkedin: null,
+      facebook: null,
+    };
+    const nextErrors: Record<SocialNetwork, string> = { instagram: "", linkedin: "", facebook: "" };
+    let hasError = false;
+    (["instagram", "linkedin", "facebook"] as SocialNetwork[]).forEach((net) => {
+      const raw = form[net];
+      if (!raw.trim()) return;
+      const normalized = normalizeSocialUrl(net, raw);
+      if (normalized === null || !isValidSocialUrl(net, normalized)) {
+        nextErrors[net] = SOCIAL_ERROR_MESSAGE[net];
+        hasError = true;
+        return;
+      }
+      socials[net] = normalized;
+    });
+    setSocialErrors(nextErrors);
+    if (hasError) {
+      toast.error("Corrija os campos de redes sociais antes de salvar.");
+      return;
+    }
+
     const finalServices = [...form.services];
     if (form.custom_service.trim()) finalServices.push(form.custom_service.trim());
 
@@ -223,9 +275,9 @@ export default function SupplierFormDialog({
       whatsapp: form.whatsapp || null,
       email: form.email || null,
       website: form.website || null,
-      instagram: form.instagram || null,
-      linkedin: form.linkedin || null,
-      facebook: form.facebook || null,
+      instagram: socials.instagram,
+      linkedin: socials.linkedin,
+      facebook: socials.facebook,
       observations: form.observations || null,
       services: finalServices,
       file_urls: form.file_urls,
@@ -283,34 +335,53 @@ export default function SupplierFormDialog({
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="instagram">Instagram</Label>
                   <Input
                     id="instagram"
                     placeholder="@usuario ou URL"
                     value={form.instagram}
                     onChange={(e) => setForm((f) => ({ ...f, instagram: e.target.value }))}
+                    onBlur={() => handleSocialBlur("instagram")}
+                    aria-invalid={!!socialErrors.instagram}
+                    className={socialErrors.instagram ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
+                  {socialErrors.instagram && (
+                    <p className="text-[11px] text-destructive">{socialErrors.instagram}</p>
+                  )}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="linkedin">LinkedIn</Label>
                   <Input
                     id="linkedin"
                     placeholder="URL ou usuário"
                     value={form.linkedin}
                     onChange={(e) => setForm((f) => ({ ...f, linkedin: e.target.value }))}
+                    onBlur={() => handleSocialBlur("linkedin")}
+                    aria-invalid={!!socialErrors.linkedin}
+                    className={socialErrors.linkedin ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
+                  {socialErrors.linkedin && (
+                    <p className="text-[11px] text-destructive">{socialErrors.linkedin}</p>
+                  )}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="facebook">Facebook</Label>
                   <Input
                     id="facebook"
                     placeholder="URL ou usuário"
                     value={form.facebook}
                     onChange={(e) => setForm((f) => ({ ...f, facebook: e.target.value }))}
+                    onBlur={() => handleSocialBlur("facebook")}
+                    aria-invalid={!!socialErrors.facebook}
+                    className={socialErrors.facebook ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
+                  {socialErrors.facebook && (
+                    <p className="text-[11px] text-destructive">{socialErrors.facebook}</p>
+                  )}
                 </div>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="cnpj">CNPJ</Label>
                 <Input
