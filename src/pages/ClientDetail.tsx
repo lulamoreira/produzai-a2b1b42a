@@ -786,7 +786,7 @@ const ClientDetail = () => {
 
   const handleStoresImport = async (
     rows: Record<string, string>[],
-    { updateExisting, onProgress }: { updateExisting: boolean; onProgress?: (current: number, total: number, name?: string) => void },
+    { updateExisting, disableMissingIds, onProgress }: { updateExisting: boolean; disableMissingIds?: string[]; onProgress?: (current: number, total: number, name?: string) => void },
   ) => {
     if (!clientId) return;
     const existingByName = new Map(stores.map(s => [s.name.trim().toLowerCase(), s]));
@@ -817,6 +817,7 @@ const ClientDetail = () => {
         observations: row.observations || null,
         tipo_entrega: (row.tipo_entrega as any) || 'frete_instalacao',
         showcase_count: parseInt(showcaseRaw, 10) || 0,
+        active: true,
       });
 
       // Add custom fields to the item if they exist in the row
@@ -840,12 +841,29 @@ const ClientDetail = () => {
         added++;
       }
     }
+
+    // Deactivate stores that are missing from the imported file (do NOT delete,
+    // to preserve historical campaigns that reference them)
+    let disabled = 0;
+    if (disableMissingIds && disableMissingIds.length > 0) {
+      const { error } = await supabase
+        .from("client_stores")
+        .update({ active: false } as any)
+        .in("id", disableMissingIds);
+      if (error) {
+        console.error("Falha ao desativar lojas ausentes:", error);
+        toast.error("Falha ao desativar lojas ausentes.");
+      } else {
+        disabled = disableMissingIds.length;
+      }
+    }
     
     await refetchStores();
     
     const parts: string[] = [];
     if (added > 0) parts.push(`${added} adicionada(s)`);
     if (updated > 0) parts.push(`${updated} atualizada(s)`);
+    if (disabled > 0) parts.push(`${disabled} desativada(s)`);
     if (parts.length > 0) toast.success(parts.join(", ") + "!");
   };
 
