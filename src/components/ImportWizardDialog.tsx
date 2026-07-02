@@ -866,7 +866,7 @@ export default function ImportWizardDialog({
                 </p>
                 {updateExisting && (
                   <p>
-                    <strong>{stats.toUpdate}</strong> serão atualizados (por nome)
+                    <strong>{stats.toUpdate}</strong> serão atualizados (por nome + CNPJ)
                   </p>
                 )}
                 {stats.ignored > 0 && (
@@ -906,7 +906,7 @@ export default function ImportWizardDialog({
                     onCheckedChange={setUpdateExisting}
                   />
                   <Label htmlFor="update-existing" className="text-xs cursor-pointer">
-                    Atualizar duplicados por nome
+                    Atualizar duplicados por nome + CNPJ
                   </Label>
                 </div>
                 {mode === "stores" && missingStores.length > 0 && (
@@ -970,7 +970,7 @@ export default function ImportWizardDialog({
             {updateExisting && stats.toUpdate > 0 && (
               <details className="border rounded-md p-2 text-xs">
                 <summary className="cursor-pointer text-primary font-medium">
-                  Ver {stats.toUpdate} registro(s) que serão atualizados (por nome)
+                  Ver {stats.toUpdate} registro(s) que serão atualizados (por nome + CNPJ)
                 </summary>
                 <div className="mt-2 max-h-40 overflow-y-auto flex flex-wrap gap-1">
                   {stats.toUpdateRows.map((r, i) => (
