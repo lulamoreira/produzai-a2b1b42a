@@ -442,6 +442,16 @@ export default function MatrixTab({
                   );
                })()}
 
+               {/* Fallback: banner is hidden when there's no adjustment and no negotiation */}
+               {!activeAdjustment && !(hasNegotiationRateio && winnerSupplierId) && (
+                 <div className="border-b border-border bg-muted/10 px-3 py-1.5 flex items-center justify-end">
+                   <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={openStartAdjust}>
+                     <FileEdit className="w-3.5 h-3.5" /> Iniciar Ajuste
+                   </Button>
+                 </div>
+               )}
+
+
                <div className="border-b border-border bg-muted/30">
                   <div className="flex items-center justify-between px-3 py-1">
                     <span className="text-[11px] uppercase tracking-wider text-muted-foreground font-medium">{matrixToolbarCollapsed ? t("common.filtersAndActionsHidden") : t("common.filtersAndActions")}</span>
