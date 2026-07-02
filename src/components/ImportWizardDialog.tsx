@@ -37,11 +37,13 @@ interface SystemField {
   index?: number;
 }
 
+type ExistingImportItem = { name: string; id: string; cnpj?: string | null; active?: boolean | null } & Record<string, string | boolean | null | undefined>;
+
 export interface ImportWizardDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode: ImportWizardMode;
-  existingItems: Array<{ name: string; id: string; cnpj?: string | null; active?: boolean | null } & Record<string, string | boolean | null | undefined>>;
+  existingItems: ExistingImportItem[];
   clientId?: string;
   campaignId?: string;
   onImport: (
@@ -474,7 +476,7 @@ export default function ImportWizardDialog({
 
   // Existing items whose name + CNPJ identity is NOT present in the incoming file (stores mode only)
   const missingStores = useMemo(() => {
-    if (mode !== "stores") return [] as { id: string; name: string; cnpj?: string | null }[];
+    if (mode !== "stores") return [] as ExistingImportItem[];
     const incomingKeys = new Set(
       importRows
         .map((r) => getStrictNameCnpjIdentityKey({ name: r.name, cnpj: r.cnpj }) || getStoreIdentityKey({ name: r.name, cnpj: r.cnpj }))
@@ -488,9 +490,9 @@ export default function ImportWizardDialog({
   // they surface as ghost "Atualizar" rows in the status view and every future
   // import keeps propagating the dedup problem forward.
   const duplicateExtras = useMemo(() => {
-    if (mode !== "stores") return [] as Array<{ name: string; id: string; cnpj?: string | null } & Record<string, string | null | undefined>>;
+    if (mode !== "stores") return [] as ExistingImportItem[];
     const seen = new Set<string>();
-    const extras: Array<{ name: string; id: string; cnpj?: string | null } & Record<string, string | null | undefined>> = [];
+    const extras: ExistingImportItem[] = [];
     for (const s of existingItems) {
       const k = getStrictNameCnpjIdentityKey(s);
       if (!k) continue;
