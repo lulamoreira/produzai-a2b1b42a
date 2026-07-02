@@ -69,9 +69,10 @@ export default function SummaryTab({
       const { data: campaign } = await supabase.from("campaigns").select("client_id").eq("id", campaignId).single();
       const clientId = campaign?.client_id;
 
-      const storesRes = await supabase.from("client_stores").select("id, tipo_entrega").eq("client_id", clientId);
+      const storesRes = await supabase.from("client_stores").select("id, tipo_entrega, active").eq("client_id", clientId);
       const allStores = storesRes.data ?? [];
       const totalStores = allStores.length;
+      const activeStores = allStores.filter((s: any) => s.active !== false).length;
 
       const piecesRes = await supabase.from("campaign_pieces").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).eq("is_deleted", false);
       const kitsRes = await supabase.from("campaign_kits").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
@@ -81,6 +82,7 @@ export default function SummaryTab({
       
       return {
         stores: totalStores,
+        activeStores,
         pieces: (piecesRes.count || 0) + (kitsRes.count || 0),
         pendingInstallations: pendingInstCount,
         pendingApprovals: 0
@@ -92,6 +94,7 @@ export default function SummaryTab({
   const baseKpis = externalKpis || internalKpis;
   const campaignKpis = {
     stores: stores?.length || baseKpis?.stores || 0,
+    activeStores: (internalKpis as any)?.activeStores ?? (Array.isArray(stores) ? stores.filter((s: any) => s?.active !== false).length : 0),
     pieces: baseKpis?.pieces || (visiblePieces?.length || 0) + (kits?.length || 0) || 0,
     pendingInstallations: baseKpis?.pendingInstallations || 0,
     pendingApprovals: baseKpis?.pendingApprovals || 0,
@@ -145,10 +148,11 @@ export default function SummaryTab({
         </div>
       )}
       {/* Campaign KPI Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
 
         {[
           { label: t("campaign.kpi.stores"), value: campaignKpis?.stores, icon: Store },
+          { label: t("campaign.kpi.activeStores", { defaultValue: "Lojas ativas" }), value: campaignKpis?.activeStores, icon: Store },
           { label: t("campaign.kpi.pieces"), value: campaignKpis?.pieces, icon: Package },
           { label: t("campaign.kpi.pendingInstallations"), value: campaignKpis?.pendingInstallations, icon: MapPin },
           { label: t("campaign.kpi.pendingApprovals"), value: campaignKpis?.pendingApprovals, icon: ClipboardCheck },
