@@ -514,7 +514,7 @@ export default function ImportWizardDialog({
       });
     });
     return rows;
-  }, [mode, existingItems, transformedRows, stats.toCreateRows, stats.ignoredRows, updateExisting, disableMissing]);
+  }, [mode, existingItems, transformedRows, stats.toCreateRows, stats.ignoredRows, updateExisting, disableMissing, duplicateExtraIds]);
 
   const filteredStatusRows = useMemo(() => {
     const filtered = statusActionFilter === "all"
