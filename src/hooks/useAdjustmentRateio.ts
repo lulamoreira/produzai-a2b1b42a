@@ -28,7 +28,7 @@ export function useAdjustmentRateio(adjustmentId: string | null | undefined) {
               .from("campaign_adjustment_store_pieces" as never)
               .select("store_id, piece_id, quantity", { count: "exact" })
               .eq("adjustment_id", adjustmentId!)
-              .range(from, to) as any
+              .order("id").range(from, to) as any
         ),
         supabase
           .from("campaign_adjustment_kit_pieces" as never)

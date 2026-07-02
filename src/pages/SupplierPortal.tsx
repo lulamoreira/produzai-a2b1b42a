@@ -405,7 +405,7 @@ const SupplierPortal = () => {
               .from("campaign_store_pieces")
               .select("piece_id, quantity, store_id", { count: "exact" })
               .eq("campaign_id", sup.campaign_id)
-              .range(from, to) as any
+              .order("id").range(from, to) as any
         );
 
         const spQtyMap: Record<string, number> = {};

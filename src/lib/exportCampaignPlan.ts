@@ -103,7 +103,7 @@ async function fetchActiveAdjustmentRateio(
         .from("campaign_adjustment_store_pieces" as never)
         .select("store_id, piece_id, quantity", { count: "exact" })
         .eq("adjustment_id", adj.id)
-        .range(from, to) as any,
+        .order("id").range(from, to) as any,
     ),
   ]);
 

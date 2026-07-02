@@ -30,7 +30,7 @@ export function useNegotiationStorePieces(
           .from("budget_negotiation_store_pieces" as never)
           .select("id, supplier_id, campaign_id, store_id, piece_id, quantity", { count: "exact" })
           .eq("supplier_id", supplierId as string)
-          .range(from, to) as any
+          .order("id").range(from, to) as any
       );
     },
   });
@@ -220,7 +220,7 @@ export function useCampaignNegotiationStorePieces(
           .select("id, supplier_id, campaign_id, store_id, piece_id, quantity", { count: "exact" })
           .eq("campaign_id", campaignId as string)
           .is("supplier_id", null)
-          .range(from, to) as any
+          .order("id").range(from, to) as any
       );
     },
   });

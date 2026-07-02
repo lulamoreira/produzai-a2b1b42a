@@ -1204,7 +1204,7 @@ export function useCampaignStoreStatus(campaignId: string | undefined) {
           .from("campaign_store_status")
           .select("*", { count: "exact" })
           .eq("campaign_id", campaignId)
-          .range(from, to) as any
+          .order("id").range(from, to) as any
       );
     },
     enabled: !!campaignId,
