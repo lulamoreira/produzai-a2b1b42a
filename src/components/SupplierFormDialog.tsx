@@ -27,6 +27,12 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { buildSupplierFilePath, SUPPLIER_FILES_BUCKET } from "@/lib/supplierFiles";
+import {
+  normalizeSocialUrl,
+  isValidSocialUrl,
+  SOCIAL_ERROR_MESSAGE,
+  type SocialNetwork,
+} from "@/lib/socialUrls";
 
 interface SupplierFormDialogProps {
   open: boolean;
