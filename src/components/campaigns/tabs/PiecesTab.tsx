@@ -36,6 +36,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import AddPieceDialog from "@/components/AddPieceDialog";
 import FindReplaceSpecDialog from "@/components/FindReplaceSpecDialog";
 import KitOnlyPiecesDialog from "@/components/KitOnlyPiecesDialog";
+import CustomExportDialog from "@/components/CustomExportDialog";
 
 interface PiecesTabProps {
   campaignId: string;
