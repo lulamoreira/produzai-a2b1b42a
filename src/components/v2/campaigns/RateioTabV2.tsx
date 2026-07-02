@@ -258,6 +258,75 @@ export default function RateioTabV2({
     }
   }, [campaignId, queryClient, setRateioSource]);
 
+  // ─── Start / delete adjustment (mirrors MatrixTab v1) ───
+  const createAdjustment = useCreateAdjustment();
+  const deleteAdjustment = useDeleteAdjustment();
+  const todayLabel = useMemo(() => {
+    const d = new Date();
+    return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  }, []);
+  const [startAdjOpen, setStartAdjOpen] = useState(false);
+  const [startAdjName, setStartAdjName] = useState("");
+  const [startAdjNotes, setStartAdjNotes] = useState("");
+  const [startAdjBusy, setStartAdjBusy] = useState(false);
+
+  const openStartAdjust = () => {
+    setStartAdjName(`Ajuste - ${todayLabel}`);
+    setStartAdjNotes("");
+    setStartAdjOpen(true);
+  };
+
+  const confirmStartAdjust = async () => {
+    if (!startAdjName.trim()) {
+      toast.error("Informe um nome para o ajuste.");
+      return;
+    }
+    setStartAdjBusy(true);
+    const tId = "start-adjustment-v2";
+    toast.loading("Congelando rateio vigente e criando ajuste...", { id: tId });
+    try {
+      const vigente = await fetchVigenteRateio(campaignId, winnerSupplierId ?? null);
+      await createAdjustment.mutateAsync({
+        campaignId,
+        name: startAdjName.trim(),
+        notes: startAdjNotes.trim() || undefined,
+        pieces,
+        kits,
+        kitPieces,
+        storePieces: [],
+        frozenStorePieces: vigente.rows,
+        syncedWith: vigente.source,
+        activateImmediately: true,
+      });
+      const sourceLabel = vigente.source === "negotiation" ? "rateio da negociação" : "rateio original";
+      toast.success(`Ajuste "${startAdjName.trim()}" criado e ativado — congelado a partir do ${sourceLabel}.`, { id: tId });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["active_adjustment", campaignId] }),
+        queryClient.invalidateQueries({ queryKey: ["campaign_adjustments", campaignId] }),
+      ]);
+      setRateioSource("adjustment");
+      setStartAdjOpen(false);
+    } catch (e: any) {
+      toast.error("Falha ao criar ajuste: " + (e?.message || "erro desconhecido"), { id: tId });
+    } finally {
+      setStartAdjBusy(false);
+    }
+  };
+
+  const handleDeleteActiveAdjustment = async () => {
+    if (!activeAdjustment) return;
+    const ok = window.confirm(
+      `Excluir o ajuste '${activeAdjustment.name}'? O rateio anterior voltará a ser a versão vigente. Esta ação não pode ser desfeita.`,
+    );
+    if (!ok) return;
+    try {
+      await deleteAdjustment.mutateAsync({ adjustmentId: activeAdjustment.id, campaignId });
+      setRateioSource(null as any);
+    } catch {
+      /* toast handled by hook */
+    }
+  };
+
   // ─── Recotação por quantidade (campaign-level negotiation rateio) ───
   const [requoteDialogOpen, setRequoteDialogOpen] = useState(false);
   const [requoteSuppliers, setRequoteSuppliers] = useState<any[]>([]);
