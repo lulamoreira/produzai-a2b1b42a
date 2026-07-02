@@ -415,8 +415,11 @@ Qualquer dúvida, estamos à disposição!` : "";
             {sortedSuppliers.map((s) => (
               <div key={s.id} className="bg-card p-5 rounded-xl border shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-4">
-                  <div>
+                <div>
                     <h3 className="font-bold text-lg leading-tight">{s.company_name}</h3>
+                    {s.trade_name && (
+                      <p className="text-sm text-muted-foreground mt-0.5">{s.trade_name}</p>
+                    )}
                     <p className="text-xs text-muted-foreground mt-1">{s.cnpj}</p>
                   </div>
                   <div className="flex items-center gap-1">
