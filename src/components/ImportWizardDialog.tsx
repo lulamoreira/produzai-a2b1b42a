@@ -382,19 +382,26 @@ export default function ImportWizardDialog({
 
   const stats = useMemo(() => {
     const existingNames = new Set(existingItems.map((i) => i.name.trim().toLowerCase()));
-    let toCreate = 0;
-    let toUpdate = 0;
-    let ignored = 0;
-    for (const r of transformedRows) {
-      const hasRequired = requiredKeys.every((k) => (r[k] ?? "").trim() !== "");
-      if (!hasRequired) {
-        ignored++;
-        continue;
+    const toCreateRows: Record<string, string>[] = [];
+    const toUpdateRows: Record<string, string>[] = [];
+    const ignoredRows: { row: Record<string, string>; missing: string[]; index: number }[] = [];
+    transformedRows.forEach((r, idx) => {
+      const missing = requiredKeys.filter((k) => (r[k] ?? "").trim() === "");
+      if (missing.length > 0) {
+        ignoredRows.push({ row: r, missing, index: idx + 2 });
+        return;
       }
-      if (updateExisting && existingNames.has(r.name.trim().toLowerCase())) toUpdate++;
-      else toCreate++;
-    }
-    return { toCreate, toUpdate, ignored };
+      if (updateExisting && existingNames.has(r.name.trim().toLowerCase())) toUpdateRows.push(r);
+      else toCreateRows.push(r);
+    });
+    return {
+      toCreate: toCreateRows.length,
+      toUpdate: toUpdateRows.length,
+      ignored: ignoredRows.length,
+      toCreateRows,
+      toUpdateRows,
+      ignoredRows,
+    };
   }, [transformedRows, existingItems, updateExisting, requiredKeys]);
 
   // Existing items whose name is NOT present in the incoming file (stores mode only)
@@ -771,7 +778,7 @@ export default function ImportWizardDialog({
 
             {mode === "stores" && missingStores.length > 0 && (
               <details className="border rounded-md p-2 text-xs">
-                <summary className="cursor-pointer text-muted-foreground">
+                <summary className="cursor-pointer text-amber-600 dark:text-amber-500 font-medium">
                   Ver {missingStores.length} loja(s) que {disableMissing ? "serão desativadas" : "estão fora do arquivo"}
                 </summary>
                 <div className="mt-2 max-h-40 overflow-y-auto flex flex-wrap gap-1">
@@ -779,6 +786,58 @@ export default function ImportWizardDialog({
                     <Badge key={s.id} variant="secondary" className="text-[10px]">
                       {s.name}
                     </Badge>
+                  ))}
+                </div>
+              </details>
+            )}
+
+            {stats.toCreate > 0 && (
+              <details className="border rounded-md p-2 text-xs">
+                <summary className="cursor-pointer text-emerald-600 dark:text-emerald-500 font-medium">
+                  Ver {stats.toCreate} registro(s) que serão criados
+                </summary>
+                <div className="mt-2 max-h-40 overflow-y-auto flex flex-wrap gap-1">
+                  {stats.toCreateRows.map((r, i) => (
+                    <Badge key={i} variant="secondary" className="text-[10px]">
+                      {r.name || `(sem nome) #${i + 1}`}
+                    </Badge>
+                  ))}
+                </div>
+              </details>
+            )}
+
+            {updateExisting && stats.toUpdate > 0 && (
+              <details className="border rounded-md p-2 text-xs">
+                <summary className="cursor-pointer text-primary font-medium">
+                  Ver {stats.toUpdate} registro(s) que serão atualizados (por nome)
+                </summary>
+                <div className="mt-2 max-h-40 overflow-y-auto flex flex-wrap gap-1">
+                  {stats.toUpdateRows.map((r, i) => (
+                    <Badge key={i} variant="secondary" className="text-[10px]">
+                      {r.name}
+                    </Badge>
+                  ))}
+                </div>
+              </details>
+            )}
+
+            {stats.ignored > 0 && (
+              <details className="border rounded-md p-2 text-xs">
+                <summary className="cursor-pointer text-destructive font-medium">
+                  Ver {stats.ignored} registro(s) ignorado(s) — campos obrigatórios ausentes
+                </summary>
+                <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
+                  {stats.ignoredRows.map((r, i) => (
+                    <div key={i} className="flex items-start gap-2 border-b border-border/50 pb-1 last:border-0">
+                      <span className="text-muted-foreground shrink-0">Linha {r.index}:</span>
+                      <span className="truncate">{r.row.name || "(sem nome)"}</span>
+                      <span className="ml-auto text-destructive text-[10px] shrink-0">
+                        faltando:{" "}
+                        {r.missing
+                          .map((k) => systemFields.find((f) => f.key === k)?.label ?? k)
+                          .join(", ")}
+                      </span>
+                    </div>
                   ))}
                 </div>
               </details>
