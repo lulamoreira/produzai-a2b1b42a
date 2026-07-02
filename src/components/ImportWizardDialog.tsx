@@ -180,6 +180,10 @@ export default function ImportWizardDialog({
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const [currentStoreName, setCurrentStoreName] = useState('');
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [statusSelectedFields, setStatusSelectedFields] = useState<Set<string>>(new Set(["name"]));
+  const [statusSort, setStatusSort] = useState<{ field: string; dir: "asc" | "desc" }>({ field: "action", dir: "asc" });
+  const [statusActionFilter, setStatusActionFilter] = useState<string>("all");
 
   const queryClient = useQueryClient();
 
