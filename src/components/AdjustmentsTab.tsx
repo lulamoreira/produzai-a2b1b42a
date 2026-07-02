@@ -1010,6 +1010,16 @@ export default function AdjustmentsTab({
         onOpenChange={setFinalExportOpen}
         onExport={(extraFields) => exportFinal(extraFields)}
       />
+      <StartAdjustmentDialog
+        open={startAdjustOpen}
+        onOpenChange={setStartAdjustOpen}
+        campaignId={campaignId}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        winnerSupplierId={winnerSupplierId ?? null}
+      />
     </div>
+
   );
 }
