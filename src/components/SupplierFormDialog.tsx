@@ -319,12 +319,20 @@ export default function SupplierFormDialog({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="company_name">Nome da Empresa *</Label>
+                <Label htmlFor="company_name">Razão Social *</Label>
                 <Input
                   id="company_name"
                   required
                   value={form.company_name}
                   onChange={(e) => setForm((f) => ({ ...f, company_name: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="trade_name">Nome Fantasia</Label>
+                <Input
+                  id="trade_name"
+                  value={form.trade_name}
+                  onChange={(e) => setForm((f) => ({ ...f, trade_name: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
