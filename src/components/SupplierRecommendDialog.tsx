@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Copy, Search, MessageSquare, ThumbsUp } from "lucide-react";
 import { toast } from "sonner";
 import type { AgencySupplier } from "@/hooks/useAgencySuppliers";
+import { normalizeSocialUrl } from "@/lib/socialUrls";
 
 interface Props {
   open: boolean;
@@ -39,9 +40,12 @@ function buildSupplierBlock(s: AgencySupplier): string {
   if (addr) lines.push(`Endereço: ${addr}`);
 
   if (s.website) lines.push(`Site: ${s.website}`);
-  if (s.instagram) lines.push(`Instagram: ${s.instagram}`);
-  if (s.linkedin) lines.push(`LinkedIn: ${s.linkedin}`);
-  if (s.facebook) lines.push(`Facebook: ${s.facebook}`);
+  const ig = s.instagram ? normalizeSocialUrl("instagram", s.instagram) : "";
+  const li = s.linkedin ? normalizeSocialUrl("linkedin", s.linkedin) : "";
+  const fb = s.facebook ? normalizeSocialUrl("facebook", s.facebook) : "";
+  if (ig) lines.push(`Instagram: ${ig}`);
+  if (li) lines.push(`LinkedIn: ${li}`);
+  if (fb) lines.push(`Facebook: ${fb}`);
 
   // Contato principal (legado) — só se não houver contatos estruturados
   if ((!s.contacts || s.contacts.length === 0)) {
