@@ -475,14 +475,12 @@ export async function exportCampaignPlan(params: ExportCampaignPlanParams): Prom
       row.height = IMAGE_ROW_HEIGHT;
       row.eachCell({ includeEmpty: true }, styleBodyCell);
 
-      if (unitPrice != null && qty > 0) {
-        const totalCell = row.getCell(10);
-        totalCell.value = { formula: `H${currentRowNum}*I${currentRowNum}` } as any;
-        totalCell.numFmt = '"R$"#,##0.00';
-        row.getCell(9).numFmt = '"R$"#,##0.00';
-      } else if (unitPrice != null) {
-        row.getCell(9).numFmt = '"R$"#,##0.00';
-      }
+      // Total = Quant * Valor Unit — formula in EVERY piece row so it recalculates
+      // automatically when the user fills the price/quantity manually.
+      const totalCell = row.getCell(10);
+      totalCell.value = { formula: `H${currentRowNum}*I${currentRowNum}` } as any;
+      totalCell.numFmt = '"R$"#,##0.00';
+      row.getCell(9).numFmt = '"R$"#,##0.00';
 
       if (showGroup) {
         row.getCell(1).font = { bold: true };
