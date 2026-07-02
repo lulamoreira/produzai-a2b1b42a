@@ -145,7 +145,8 @@ export default function MatrixTab({
         syncedWith: vigente.source,
         activateImmediately: true,
       });
-      toast.success("Ajuste criado e ativado — o rateio anterior foi congelado.", { id: tId });
+      const sourceLabel = vigente.source === "negotiation" ? "rateio da negociação" : "rateio original";
+      toast.success(`Ajuste "${startAdjName.trim()}" criado e ativado — congelado a partir do ${sourceLabel}.`, { id: tId });
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["active_adjustment", campaignId] }),
         qc.invalidateQueries({ queryKey: ["campaign_adjustments", campaignId] }),
@@ -421,7 +422,16 @@ export default function MatrixTab({
                           <DropdownMenuContent align="end" className="w-64">
                             {vigenteSource !== "original" && <DropdownMenuItem onClick={() => setRateioSource("original")}><div className="flex flex-col"><span className="text-xs font-medium">Rateio Original</span><span className="text-[10px] text-muted-foreground">Congelado · somente leitura</span></div></DropdownMenuItem>}
                             {vigenteSource !== "negotiation" && hasNegotiationRateio && winnerSupplierId && <DropdownMenuItem onClick={() => setRateioSource("negotiation")}><div className="flex flex-col"><span className="text-xs font-medium">Rateio da Negociação</span><span className="text-[10px] text-muted-foreground">{winnerSupplierName} · somente leitura</span></div></DropdownMenuItem>}
-                            {vigenteSource !== "adjustment" && activeAdjustment && <DropdownMenuItem onClick={() => setRateioSource("adjustment")}><div className="flex flex-col"><span className="text-xs font-medium">Rateio do Ajuste</span><span className="text-[10px] text-muted-foreground">{activeAdjustment.name}</span></div></DropdownMenuItem>}
+                            {vigenteSource !== "adjustment" && activeAdjustment && (
+                              <DropdownMenuItem onClick={() => setRateioSource("adjustment")}>
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-medium">Rateio do Ajuste · {activeAdjustment.name}</span>
+                                  <span className="text-[10px] text-muted-foreground">
+                                    Congelado a partir do {activeAdjustment.synced_with === "negotiation" ? "rateio da negociação" : "rateio original"}
+                                  </span>
+                                </div>
+                              </DropdownMenuItem>
+                            )}
                             {activeAdjustment && rateioSource === "adjustment" && (
                               <>
                                 <DropdownMenuSeparator />
