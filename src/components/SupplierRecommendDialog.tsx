@@ -39,6 +39,9 @@ function buildSupplierBlock(s: AgencySupplier): string {
   if (addr) lines.push(`Endereço: ${addr}`);
 
   if (s.website) lines.push(`Site: ${s.website}`);
+  if (s.instagram) lines.push(`Instagram: ${s.instagram}`);
+  if (s.linkedin) lines.push(`LinkedIn: ${s.linkedin}`);
+  if (s.facebook) lines.push(`Facebook: ${s.facebook}`);
 
   // Contato principal (legado) — só se não houver contatos estruturados
   if ((!s.contacts || s.contacts.length === 0)) {

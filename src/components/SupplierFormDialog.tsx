@@ -45,6 +45,9 @@ const emptyForm = () => ({
   whatsapp: "",
   email: "",
   website: "",
+  instagram: "",
+  linkedin: "",
+  facebook: "",
   observations: "",
   services: [] as string[],
   custom_service: "",
@@ -87,6 +90,9 @@ export default function SupplierFormDialog({
         whatsapp: s.whatsapp || "",
         email: s.email || "",
         website: s.website || "",
+        instagram: s.instagram || "",
+        linkedin: s.linkedin || "",
+        facebook: s.facebook || "",
         observations: s.observations || "",
         services: (s.services as string[]) || [],
         custom_service: "",
@@ -217,6 +223,9 @@ export default function SupplierFormDialog({
       whatsapp: form.whatsapp || null,
       email: form.email || null,
       website: form.website || null,
+      instagram: form.instagram || null,
+      linkedin: form.linkedin || null,
+      facebook: form.facebook || null,
       observations: form.observations || null,
       services: finalServices,
       file_urls: form.file_urls,
@@ -262,6 +271,45 @@ export default function SupplierFormDialog({
                   value={form.company_name}
                   onChange={(e) => setForm((f) => ({ ...f, company_name: e.target.value }))}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="website">Site</Label>
+                <Input
+                  id="website"
+                  type="url"
+                  placeholder="https://..."
+                  value={form.website}
+                  onChange={(e) => setForm((f) => ({ ...f, website: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="instagram">Instagram</Label>
+                  <Input
+                    id="instagram"
+                    placeholder="@usuario ou URL"
+                    value={form.instagram}
+                    onChange={(e) => setForm((f) => ({ ...f, instagram: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="linkedin">LinkedIn</Label>
+                  <Input
+                    id="linkedin"
+                    placeholder="URL ou usuário"
+                    value={form.linkedin}
+                    onChange={(e) => setForm((f) => ({ ...f, linkedin: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="facebook">Facebook</Label>
+                  <Input
+                    id="facebook"
+                    placeholder="URL ou usuário"
+                    value={form.facebook}
+                    onChange={(e) => setForm((f) => ({ ...f, facebook: e.target.value }))}
+                  />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="cnpj">CNPJ</Label>

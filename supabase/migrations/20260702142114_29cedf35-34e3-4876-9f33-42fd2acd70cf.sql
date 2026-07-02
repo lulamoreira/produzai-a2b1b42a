@@ -1,0 +1,4 @@
+ALTER TABLE public.agency_suppliers
+  ADD COLUMN IF NOT EXISTS instagram TEXT,
+  ADD COLUMN IF NOT EXISTS linkedin TEXT,
+  ADD COLUMN IF NOT EXISTS facebook TEXT;

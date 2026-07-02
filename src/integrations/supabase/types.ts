@@ -155,8 +155,11 @@ export type Database = {
           created_at: string
           email: string | null
           estado: string | null
+          facebook: string | null
           file_urls: Json | null
           id: string
+          instagram: string | null
+          linkedin: string | null
           logradouro: string | null
           numero: string | null
           observations: string | null
@@ -180,8 +183,11 @@ export type Database = {
           created_at?: string
           email?: string | null
           estado?: string | null
+          facebook?: string | null
           file_urls?: Json | null
           id?: string
+          instagram?: string | null
+          linkedin?: string | null
           logradouro?: string | null
           numero?: string | null
           observations?: string | null
@@ -205,8 +211,11 @@ export type Database = {
           created_at?: string
           email?: string | null
           estado?: string | null
+          facebook?: string | null
           file_urls?: Json | null
           id?: string
+          instagram?: string | null
+          linkedin?: string | null
           logradouro?: string | null
           numero?: string | null
           observations?: string | null

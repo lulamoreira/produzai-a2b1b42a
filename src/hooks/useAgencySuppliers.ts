@@ -21,6 +21,9 @@ export type AgencySupplier = {
   whatsapp: string | null;
   email: string | null;
   website: string | null;
+  instagram: string | null;
+  linkedin: string | null;
+  facebook: string | null;
   observations: string | null;
   services: string[];
   contacts: SupplierContact[];
