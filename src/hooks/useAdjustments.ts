@@ -20,6 +20,56 @@ export interface CampaignAdjustment {
   synced_with?: AdjustmentSyncedWith;
 }
 
+/**
+ * Returns the rateio currently "vigente" for the campaign.
+ * Preference: campaign-level negotiation rateio (supplier_id IS NULL) →
+ * winner supplier negotiation rateio → original campaign_store_pieces.
+ */
+export async function fetchVigenteRateio(
+  campaignId: string,
+  winnerSupplierId?: string | null,
+): Promise<{
+  rows: { store_id: string; piece_id: string; quantity: number }[];
+  source: "negotiation" | "original";
+}> {
+  // 1) Campaign-level negotiation rateio (supplier_id IS NULL)
+  const campaignLevel = await supabasePaginate<any>((from, to) =>
+    supabase
+      .from("budget_negotiation_store_pieces" as never)
+      .select("store_id, piece_id, quantity")
+      .eq("campaign_id", campaignId)
+      .is("supplier_id", null)
+      .range(from, to) as any,
+  );
+  if (campaignLevel.length > 0) {
+    return { rows: campaignLevel as any, source: "negotiation" };
+  }
+
+  // 2) Winner supplier negotiation rateio
+  if (winnerSupplierId) {
+    const supplierRows = await supabasePaginate<any>((from, to) =>
+      supabase
+        .from("budget_negotiation_store_pieces" as never)
+        .select("store_id, piece_id, quantity")
+        .eq("supplier_id", winnerSupplierId)
+        .range(from, to) as any,
+    );
+    if (supplierRows.length > 0) {
+      return { rows: supplierRows as any, source: "negotiation" };
+    }
+  }
+
+  // 3) Original campaign rateio
+  const original = await supabasePaginate<any>((from, to) =>
+    supabase
+      .from("campaign_store_pieces")
+      .select("store_id, piece_id, quantity")
+      .eq("campaign_id", campaignId)
+      .range(from, to) as any,
+  );
+  return { rows: original as any, source: "original" };
+}
+
 export function useCampaignAdjustments(campaignId: string | undefined) {
   return useQuery({
     queryKey: ["campaign_adjustments", campaignId],
@@ -146,19 +196,24 @@ export function useCreateAdjustment() {
       kitPieces: any[];
       storePieces: any[];
       syncedWith?: AdjustmentSyncedWith;
+      activateImmediately?: boolean;
+      frozenStorePieces?: { store_id: string; piece_id: string; quantity: number }[];
     }) => {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData?.user?.id;
 
+      const nowIso = new Date().toISOString();
       const { data: adj, error: adjErr } = await supabase
         .from("campaign_adjustments")
         .insert({
           campaign_id: params.campaignId,
           name: params.name,
           notes: params.notes || null,
-          status: "draft",
+          status: params.activateImmediately ? "active" : "draft",
           created_by: userId,
           synced_with: params.syncedWith || "original",
+          approved_at: params.activateImmediately ? nowIso : null,
+          approved_by: params.activateImmediately ? userId : null,
         } as any)
         .select()
         .single();
@@ -238,8 +293,9 @@ export function useCreateAdjustment() {
         if (error) throw error;
       }
 
-      // Store pieces (4800+)
-      const spPayload = params.storePieces
+      // Store pieces (4800+) - use frozen snapshot when provided
+      const spSource = params.frozenStorePieces ?? params.storePieces;
+      const spPayload = spSource
         .filter((sp) => Number(sp.quantity || 0) > 0)
         .map((sp) => {
           const newPieceId = pieceIdMap.get(sp.piece_id);

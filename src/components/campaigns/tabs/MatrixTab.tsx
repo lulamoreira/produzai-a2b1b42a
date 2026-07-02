@@ -3,12 +3,19 @@ import { useTranslation } from "react-i18next";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
   Search, Filter, X, Grid3X3, ArrowDownAZ, MapPin, Copy, 
-  Trash2, Package, MoreHorizontal, Presentation, Download, Upload, Sparkles, RefreshCw, AlertTriangle, List
+  Trash2, Package, MoreHorizontal, Presentation, Download, Upload, Sparkles, RefreshCw, AlertTriangle, List, FileEdit
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { useUpdateClientStore } from "@/hooks/useMultiClientData";
+import { useQueryClient } from "@tanstack/react-query";
+import { useCreateAdjustment, useDeleteAdjustment, fetchVigenteRateio } from "@/hooks/useAdjustments";
 import { 
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
@@ -96,6 +103,75 @@ export default function MatrixTab({
   const updateStorePiece = useUpdateCampaignStorePiece();
   const bulkUpdateStorePieces = useBulkUpdateCampaignStorePieces();
   const updateClientStore = useUpdateClientStore();
+  const createAdjustment = useCreateAdjustment();
+  const deleteAdjustment = useDeleteAdjustment();
+  const qc = useQueryClient();
+
+  // Start-adjustment dialog state
+  const todayLabel = useMemo(() => {
+    const d = new Date();
+    return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  }, []);
+  const [startAdjOpen, setStartAdjOpen] = useState(false);
+  const [startAdjName, setStartAdjName] = useState("");
+  const [startAdjNotes, setStartAdjNotes] = useState("");
+  const [startAdjBusy, setStartAdjBusy] = useState(false);
+
+  const openStartAdjust = () => {
+    setStartAdjName(`Ajuste - ${todayLabel}`);
+    setStartAdjNotes("");
+    setStartAdjOpen(true);
+  };
+
+  const confirmStartAdjust = async () => {
+    if (!startAdjName.trim()) {
+      toast.error("Informe um nome para o ajuste.");
+      return;
+    }
+    setStartAdjBusy(true);
+    const tId = "start-adjustment";
+    toast.loading("Congelando rateio vigente e criando ajuste...", { id: tId });
+    try {
+      const vigente = await fetchVigenteRateio(campaignId, winnerSupplierId ?? null);
+      await createAdjustment.mutateAsync({
+        campaignId,
+        name: startAdjName.trim(),
+        notes: startAdjNotes.trim() || undefined,
+        pieces,
+        kits,
+        kitPieces,
+        storePieces: [],
+        frozenStorePieces: vigente.rows,
+        syncedWith: vigente.source,
+        activateImmediately: true,
+      });
+      toast.success("Ajuste criado e ativado — o rateio anterior foi congelado.", { id: tId });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["active_adjustment", campaignId] }),
+        qc.invalidateQueries({ queryKey: ["campaign_adjustments", campaignId] }),
+      ]);
+      setRateioSource("adjustment");
+      setStartAdjOpen(false);
+    } catch (e: any) {
+      toast.error("Falha ao criar ajuste: " + (e?.message || "erro desconhecido"), { id: tId });
+    } finally {
+      setStartAdjBusy(false);
+    }
+  };
+
+  const handleDeleteActiveAdjustment = async () => {
+    if (!activeAdjustment) return;
+    const ok = window.confirm(
+      `Excluir o ajuste '${activeAdjustment.name}'? O rateio anterior (negociação ou original) voltará a ser a versão vigente. Esta ação não pode ser desfeita.`,
+    );
+    if (!ok) return;
+    try {
+      await deleteAdjustment.mutateAsync({ adjustmentId: activeAdjustment.id, campaignId });
+      setRateioSource(null as any);
+    } catch {
+      /* toast handled by hook */
+    }
+  };
 
   const handleUpdateStorePiece = async (data: { id: string } & Partial<any>) => {
     try {
@@ -331,12 +407,33 @@ export default function MatrixTab({
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         {!isViewingVigente && <Button size="sm" className="h-7 text-xs" onClick={() => setRateioSource(vigenteSource)}>← {t("common.backToVigente")}</Button>}
+                        {activeAdjustment ? (
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setActiveSection("adjustments")}>
+                            <FileEdit className="w-3.5 h-3.5" /> Abrir Ajustes
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={openStartAdjust}>
+                            <FileEdit className="w-3.5 h-3.5" /> Iniciar Ajuste
+                          </Button>
+                        )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild><Button size="sm" variant="outline" className="h-7 text-xs">Ver rateios anteriores ▾</Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-64">
                             {vigenteSource !== "original" && <DropdownMenuItem onClick={() => setRateioSource("original")}><div className="flex flex-col"><span className="text-xs font-medium">Rateio Original</span><span className="text-[10px] text-muted-foreground">Congelado · somente leitura</span></div></DropdownMenuItem>}
                             {vigenteSource !== "negotiation" && hasNegotiationRateio && winnerSupplierId && <DropdownMenuItem onClick={() => setRateioSource("negotiation")}><div className="flex flex-col"><span className="text-xs font-medium">Rateio da Negociação</span><span className="text-[10px] text-muted-foreground">{winnerSupplierName} · somente leitura</span></div></DropdownMenuItem>}
                             {vigenteSource !== "adjustment" && activeAdjustment && <DropdownMenuItem onClick={() => setRateioSource("adjustment")}><div className="flex flex-col"><span className="text-xs font-medium">Rateio do Ajuste</span><span className="text-[10px] text-muted-foreground">{activeAdjustment.name}</span></div></DropdownMenuItem>}
+                            {activeAdjustment && rateioSource === "adjustment" && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={handleDeleteActiveAdjustment}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 mr-2" />
+                                  <span className="text-xs">Excluir ajuste ativo</span>
+                                </DropdownMenuItem>
+                              </>
+                            )}
                             {isNegotiationView && (<><DropdownMenuSeparator /><DropdownMenuItem onClick={() => setActiveSection("budgets")}><span className="text-xs">← Voltar à Negociação</span></DropdownMenuItem></>)}
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -344,6 +441,16 @@ export default function MatrixTab({
                     </div>
                   );
                })()}
+
+               {/* Fallback: banner is hidden when there's no adjustment and no negotiation */}
+               {!activeAdjustment && !(hasNegotiationRateio && winnerSupplierId) && (
+                 <div className="border-b border-border bg-muted/10 px-3 py-1.5 flex items-center justify-end">
+                   <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={openStartAdjust}>
+                     <FileEdit className="w-3.5 h-3.5" /> Iniciar Ajuste
+                   </Button>
+                 </div>
+               )}
+
 
                <div className="border-b border-border bg-muted/30">
                   <div className="flex items-center justify-between px-3 py-1">
@@ -543,6 +650,44 @@ export default function MatrixTab({
           </Tabs>
         </div>
       </div>
+
+      <Dialog open={startAdjOpen} onOpenChange={(o) => !startAdjBusy && setStartAdjOpen(o)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Iniciar Ajuste</DialogTitle>
+            <DialogDescription>
+              O rateio atual (lojas, peças, kits e quantidades) será congelado como está, e o ajuste passará a ser a versão vigente do rateio.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="adj-name" className="text-xs">Nome do ajuste</Label>
+              <Input
+                id="adj-name"
+                value={startAdjName}
+                onChange={(e) => setStartAdjName(e.target.value)}
+                disabled={startAdjBusy}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="adj-notes" className="text-xs">Observações (opcional)</Label>
+              <Textarea
+                id="adj-notes"
+                value={startAdjNotes}
+                onChange={(e) => setStartAdjNotes(e.target.value)}
+                rows={3}
+                disabled={startAdjBusy}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStartAdjOpen(false)} disabled={startAdjBusy}>Cancelar</Button>
+            <Button onClick={confirmStartAdjust} disabled={startAdjBusy}>
+              {startAdjBusy ? "Criando..." : "Criar ajuste"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
