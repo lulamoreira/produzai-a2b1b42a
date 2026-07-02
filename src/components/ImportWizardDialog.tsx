@@ -877,6 +877,19 @@ export default function ImportWizardDialog({
               </div>
             </div>
 
+            {mode === "stores" && statusRows.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-center"
+                onClick={() => setStatusDialogOpen(true)}
+              >
+                <Eye className="w-3.5 h-3.5 mr-1.5" />
+                Ver status detalhado das {statusRows.length} loja(s)
+              </Button>
+            )}
+
+
             {mode === "stores" && missingStores.length > 0 && (
               <details className="border rounded-md p-2 text-xs">
                 <summary className="cursor-pointer text-amber-600 dark:text-amber-500 font-medium">
