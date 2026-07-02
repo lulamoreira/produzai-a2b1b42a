@@ -111,6 +111,7 @@ export default function SupplierFormDialog({
       const s = editingSupplier;
       setForm({
         company_name: s.company_name,
+        trade_name: s.trade_name || "",
         cnpj: s.cnpj || "",
         contact_name: s.contact_name || "",
         address: s.address || "",
