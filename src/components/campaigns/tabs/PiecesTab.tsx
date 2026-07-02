@@ -36,6 +36,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import AddPieceDialog from "@/components/AddPieceDialog";
 import FindReplaceSpecDialog from "@/components/FindReplaceSpecDialog";
 import KitOnlyPiecesDialog from "@/components/KitOnlyPiecesDialog";
+import CustomExportDialog from "@/components/CustomExportDialog";
 
 interface PiecesTabProps {
   campaignId: string;
@@ -116,6 +117,7 @@ export default function PiecesTab({
   const [findReplaceOpen, setFindReplaceOpen] = useState(false);
   const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
   const [kitOnlyDialogOpen, setKitOnlyDialogOpen] = useState(false);
+  const [customExportOpen, setCustomExportOpen] = useState(false);
   const [selectedPieceIds, setSelectedPieceIds] = useState<string[]>([]);
   const [convertSelectionDialogOpen, setConvertSelectionDialogOpen] = useState(false);
   const [preSelectedForKit, setPreSelectedForKit] = useState<string[]>([]);
@@ -674,6 +676,9 @@ export default function PiecesTab({
                   }}>
                     <Download className="w-4 h-4 mr-2" /> {t("common.export")}
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setCustomExportOpen(true)}>
+                    <Settings2 className="w-4 h-4 mr-2" /> Exportar Personalizado
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setPieceImportOpen(true)}>
                     <Upload className="w-4 h-4 mr-2" /> {t("common.import")}
                   </DropdownMenuItem>
@@ -1018,6 +1023,17 @@ export default function PiecesTab({
         campaignId={campaignId}
         existingItems={pieces.map(p => ({ id: p.id, name: p.name || p.code }))}
         onImport={handlePiecesImport}
+      />
+
+      <CustomExportDialog
+        open={customExportOpen}
+        onOpenChange={setCustomExportOpen}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        customFieldLabels={customFieldLabels}
+        campaignName={campaign?.name || "Campanha"}
+        clientId={clientId}
       />
     </div>
   );
