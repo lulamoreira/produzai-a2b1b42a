@@ -50,35 +50,12 @@ Deno.serve(async (req: Request) => {
       .map((c) => `- "${c}" (sample: ${JSON.stringify(body.samples[c] ?? "")})`)
       .join("\n");
 
-    const systemPrompt = `You are a field mapping assistant. Given spreadsheet columns and sample values, map each column to the closest matching system field. If no field matches, use null. Consider Portuguese, English and Spanish synonyms (e.g. "nome"/"name", "cidade"/"city", "código"/"code"). Use sample values to disambiguate.`;
+    const systemPrompt = `You are a field mapping assistant. Given spreadsheet columns and sample values, map each column to the closest matching system field. If no field matches, use null. Consider Portuguese, English and Spanish synonyms (e.g. "nome"/"name", "cidade"/"city", "código"/"code"). Use sample values to disambiguate.
 
-    const userPrompt = `Available system fields:\n${fieldsDescription}\n\nSpreadsheet columns:\n${samplesText}\n\nReturn the best mapping using the provided tool.`;
+Return ONLY a valid JSON object. Do not wrap it in markdown. Do not add explanations.
+The JSON object must use each spreadsheet column name as a key and either a valid system field key or null as the value.`;
 
-    // Build tool schema dynamically: every spreadsheet column becomes a property
-    // whose value is one of the system field keys or null.
-    const properties: Record<string, unknown> = {};
-    for (const col of body.columns) {
-      properties[col] = {
-        type: ["string", "null"],
-        description: `System field key for column "${col}". Must be exactly one of: ${fieldKeys.join(", ")}. Use null to ignore.`,
-      };
-    }
-
-    const tools = [
-      {
-        type: "function",
-        function: {
-          name: "submit_mapping",
-          description: "Submit the column-to-system-field mapping.",
-          parameters: {
-            type: "object",
-            properties,
-            required: body.columns,
-            additionalProperties: false,
-          },
-        },
-      },
-    ];
+    const userPrompt = `Available system fields:\n${fieldsDescription}\n\nSpreadsheet columns:\n${samplesText}\n\nValid output values are only these system field keys or null:\n${fieldKeys.join(", ")}\n\nReturn the best mapping as raw JSON, for example:\n{"RAZÃO SOCIAL":"name","CNPJ":"cnpj","UNKNOWN":null}`;
 
     const aiResponse = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",
@@ -94,8 +71,8 @@ Deno.serve(async (req: Request) => {
             { role: "system", content: systemPrompt },
             { role: "user", content: userPrompt },
           ],
-          tools,
-          tool_choice: { type: "function", function: { name: "submit_mapping" } },
+          temperature: 0,
+          max_tokens: 4096,
         }),
       },
     );
@@ -122,15 +99,29 @@ Deno.serve(async (req: Request) => {
     }
 
     const data = await aiResponse.json();
-    const toolCall = data?.choices?.[0]?.message?.tool_calls?.[0];
-    const argsRaw = toolCall?.function?.arguments;
-    if (!argsRaw) {
+    const choice = data?.choices?.[0];
+    const finishReason = choice?.finish_reason;
+    if (finishReason === "length") {
+      return new Response(
+        JSON.stringify({ error: "AI response was truncated. Please reduce columns or try again." }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      );
+    }
+
+    const content = choice?.message?.content;
+    if (!content || typeof content !== "string") {
       return new Response(
         JSON.stringify({ mapping: {} }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
-    const mapping = typeof argsRaw === "string" ? JSON.parse(argsRaw) : argsRaw;
+
+    const cleaned = content
+      .trim()
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim();
+    const mapping = JSON.parse(cleaned) as Record<string, unknown>;
 
     // Sanitize: ensure only known column keys, values are valid keys or null.
     const safe: Record<string, string | null> = {};
