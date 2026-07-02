@@ -335,6 +335,9 @@ Qualquer dúvida, estamos à disposição!` : "";
                   <TableRow key={s.id}>
                     <TableCell>
                       <div className="font-semibold">{s.company_name}</div>
+                      {s.trade_name && (
+                        <div className="text-xs text-muted-foreground">{s.trade_name}</div>
+                      )}
                       <div className="text-[10px] text-muted-foreground">{s.cnpj}</div>
                     </TableCell>
                     <TableCell>
