@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import * as XLSX from "xlsx";
-import { Sparkles, Upload, ArrowRight, ArrowLeft, AlertCircle, Loader2, Tag, History, Trash2 } from "lucide-react";
+import { Sparkles, Upload, ArrowRight, ArrowLeft, AlertCircle, Loader2, Tag, History, Trash2, Eye, ArrowUp, ArrowDown, ArrowUpDown, CheckCircle2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
