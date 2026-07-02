@@ -538,7 +538,7 @@ export default function ImportWizardDialog({
     const rows: StatusRow[] = [];
     const incomingByIdentity = new Map<string, Record<string, string>>();
     importRows.forEach((r) => {
-      const key = getStoreIdentityKey({ name: r.name, cnpj: r.cnpj });
+      const key = getStrictNameCnpjIdentityKey({ name: r.name, cnpj: r.cnpj });
       if (key) incomingByIdentity.set(key, r);
     });
     const existingIdentityKeys = new Set(existingItems.map((i) => getStrictNameCnpjIdentityKey(i)).filter(Boolean));
@@ -586,7 +586,7 @@ export default function ImportWizardDialog({
 
     // New/ignored from file
     stats.toCreateRows.forEach((r, i) => {
-      const identityKey = getStoreIdentityKey({ name: r.name, cnpj: r.cnpj });
+      const identityKey = getStrictNameCnpjIdentityKey({ name: r.name, cnpj: r.cnpj });
       if (identityKey && existingIdentityKeys.has(identityKey)) return; // already accounted (update)
       rows.push({ action: "criar", name: r.name || `(sem nome) #${i + 1}`, data: r, key: `c-${i}` });
     });
