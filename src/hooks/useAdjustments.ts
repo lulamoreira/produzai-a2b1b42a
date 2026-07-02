@@ -146,19 +146,24 @@ export function useCreateAdjustment() {
       kitPieces: any[];
       storePieces: any[];
       syncedWith?: AdjustmentSyncedWith;
+      activateImmediately?: boolean;
+      frozenStorePieces?: { store_id: string; piece_id: string; quantity: number }[];
     }) => {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData?.user?.id;
 
+      const nowIso = new Date().toISOString();
       const { data: adj, error: adjErr } = await supabase
         .from("campaign_adjustments")
         .insert({
           campaign_id: params.campaignId,
           name: params.name,
           notes: params.notes || null,
-          status: "draft",
+          status: params.activateImmediately ? "active" : "draft",
           created_by: userId,
           synced_with: params.syncedWith || "original",
+          approved_at: params.activateImmediately ? nowIso : null,
+          approved_by: params.activateImmediately ? userId : null,
         } as any)
         .select()
         .single();
