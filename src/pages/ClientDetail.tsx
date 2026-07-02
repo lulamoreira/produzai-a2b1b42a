@@ -790,10 +790,20 @@ const ClientDetail = () => {
   ) => {
     if (!clientId) return;
     const existingByName = new Map(stores.map(s => [s.name.trim().toLowerCase(), s]));
+    // Dedupe incoming rows by name (case-insensitive) — the last occurrence wins.
+    // Prevents the import itself from creating duplicate stores when the same
+    // name appears more than once in the spreadsheet.
+    const rowByName = new Map<string, Record<string, string>>();
+    for (const r of rows) {
+      const k = (r.name ?? "").trim().toLowerCase();
+      if (!k) continue;
+      rowByName.set(k, r);
+    }
+    const dedupedRows = Array.from(rowByName.values());
     let added = 0;
     let updated = 0;
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
+    for (let i = 0; i < dedupedRows.length; i++) {
+      const row = dedupedRows[i];
       const showcaseRaw = row.showcase_count ?? "";
       const item: any = capitalizeStoreFields({
         client_id: clientId,
