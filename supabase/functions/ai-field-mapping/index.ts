@@ -60,8 +60,7 @@ Deno.serve(async (req: Request) => {
     for (const col of body.columns) {
       properties[col] = {
         type: ["string", "null"],
-        enum: [...fieldKeys, null],
-        description: `System field key for column "${col}", or null to ignore.`,
+        description: `System field key for column "${col}". Must be exactly one of: ${fieldKeys.join(", ")}. Use null to ignore.`,
       };
     }
 
