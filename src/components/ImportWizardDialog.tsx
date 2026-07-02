@@ -46,6 +46,7 @@ export interface ImportWizardDialogProps {
     rows: Record<string, string>[],
     options: { 
       updateExisting: boolean;
+      disableMissingIds?: string[];
       onProgress?: (current: number, total: number, name?: string) => void;
     },
   ) => Promise<void>;
@@ -174,6 +175,7 @@ export default function ImportWizardDialog({
   const [aiMapped, setAiMapped] = useState<Set<string>>(new Set());
   const [loadingAI, setLoadingAI] = useState(false);
   const [updateExisting, setUpdateExisting] = useState(true);
+  const [disableMissing, setDisableMissing] = useState(true);
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const [currentStoreName, setCurrentStoreName] = useState('');
@@ -241,6 +243,7 @@ export default function ImportWizardDialog({
       setAiMapped(new Set());
       setLoadingAI(false);
       setUpdateExisting(true);
+      setDisableMissing(true);
       setImporting(false);
       setImportProgress({ current: 0, total: 0 });
       setCurrentStoreName('');
@@ -394,6 +397,17 @@ export default function ImportWizardDialog({
     return { toCreate, toUpdate, ignored };
   }, [transformedRows, existingItems, updateExisting, requiredKeys]);
 
+  // Existing items whose name is NOT present in the incoming file (stores mode only)
+  const missingStores = useMemo(() => {
+    if (mode !== "stores") return [] as { id: string; name: string }[];
+    const incomingNames = new Set(
+      transformedRows
+        .map((r) => (r.name ?? "").trim().toLowerCase())
+        .filter((n) => n !== "")
+    );
+    return existingItems.filter((s) => !incomingNames.has(s.name.trim().toLowerCase()));
+  }, [mode, existingItems, transformedRows]);
+
   // ─── Confirm import ───────────────────────────────────────────────────────
   const handleConfirm = async () => {
     const valid = transformedRows.filter((r) =>
@@ -410,6 +424,7 @@ export default function ImportWizardDialog({
     try {
       await onImport(valid, { 
         updateExisting,
+        disableMissingIds: mode === "stores" && disableMissing ? missingStores.map((s) => s.id) : [],
         onProgress: (current, total, name) => {
           setImportProgress({ current, total });
           if (name) setCurrentStoreName(name);
@@ -710,6 +725,14 @@ export default function ImportWizardDialog({
                     <strong>{stats.ignored}</strong> ignorado(s) (campos obrigatórios ausentes)
                   </p>
                 )}
+                {mode === "stores" && missingStores.length > 0 && (
+                  <p className={disableMissing ? "text-amber-600 dark:text-amber-500 font-medium" : "text-muted-foreground"}>
+                    <strong>{missingStores.length}</strong>{" "}
+                    {disableMissing
+                      ? "loja(s) serão desativadas (ausentes no arquivo — preservadas em campanhas passadas)"
+                      : "loja(s) ausentes no arquivo permanecerão ativas"}
+                  </p>
+                )}
                 {mode === "stores" && customFields.length > 0 && mappedSystemKeys.size > 0 && (
                   <p className="text-primary font-medium">
                     {(() => {
@@ -720,17 +743,46 @@ export default function ImportWizardDialog({
                   </p>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="update-existing"
-                  checked={updateExisting}
-                  onCheckedChange={setUpdateExisting}
-                />
-                <Label htmlFor="update-existing" className="text-xs cursor-pointer">
-                  Atualizar duplicados por nome
-                </Label>
+              <div className="flex flex-col gap-2 items-end">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="update-existing"
+                    checked={updateExisting}
+                    onCheckedChange={setUpdateExisting}
+                  />
+                  <Label htmlFor="update-existing" className="text-xs cursor-pointer">
+                    Atualizar duplicados por nome
+                  </Label>
+                </div>
+                {mode === "stores" && missingStores.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="disable-missing"
+                      checked={disableMissing}
+                      onCheckedChange={setDisableMissing}
+                    />
+                    <Label htmlFor="disable-missing" className="text-xs cursor-pointer">
+                      Desativar lojas ausentes
+                    </Label>
+                  </div>
+                )}
               </div>
             </div>
+
+            {mode === "stores" && missingStores.length > 0 && (
+              <details className="border rounded-md p-2 text-xs">
+                <summary className="cursor-pointer text-muted-foreground">
+                  Ver {missingStores.length} loja(s) que {disableMissing ? "serão desativadas" : "estão fora do arquivo"}
+                </summary>
+                <div className="mt-2 max-h-40 overflow-y-auto flex flex-wrap gap-1">
+                  {missingStores.map((s) => (
+                    <Badge key={s.id} variant="secondary" className="text-[10px]">
+                      {s.name}
+                    </Badge>
+                  ))}
+                </div>
+              </details>
+            )}
 
             <div className="border rounded-md overflow-x-auto max-h-64">
               <Table>
