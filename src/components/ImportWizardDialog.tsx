@@ -725,6 +725,14 @@ export default function ImportWizardDialog({
                     <strong>{stats.ignored}</strong> ignorado(s) (campos obrigatórios ausentes)
                   </p>
                 )}
+                {mode === "stores" && missingStores.length > 0 && (
+                  <p className={disableMissing ? "text-amber-600 dark:text-amber-500 font-medium" : "text-muted-foreground"}>
+                    <strong>{missingStores.length}</strong>{" "}
+                    {disableMissing
+                      ? "loja(s) serão desativadas (ausentes no arquivo — preservadas em campanhas passadas)"
+                      : "loja(s) ausentes no arquivo permanecerão ativas"}
+                  </p>
+                )}
                 {mode === "stores" && customFields.length > 0 && mappedSystemKeys.size > 0 && (
                   <p className="text-primary font-medium">
                     {(() => {
@@ -735,17 +743,46 @@ export default function ImportWizardDialog({
                   </p>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  id="update-existing"
-                  checked={updateExisting}
-                  onCheckedChange={setUpdateExisting}
-                />
-                <Label htmlFor="update-existing" className="text-xs cursor-pointer">
-                  Atualizar duplicados por nome
-                </Label>
+              <div className="flex flex-col gap-2 items-end">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="update-existing"
+                    checked={updateExisting}
+                    onCheckedChange={setUpdateExisting}
+                  />
+                  <Label htmlFor="update-existing" className="text-xs cursor-pointer">
+                    Atualizar duplicados por nome
+                  </Label>
+                </div>
+                {mode === "stores" && missingStores.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      id="disable-missing"
+                      checked={disableMissing}
+                      onCheckedChange={setDisableMissing}
+                    />
+                    <Label htmlFor="disable-missing" className="text-xs cursor-pointer">
+                      Desativar lojas ausentes
+                    </Label>
+                  </div>
+                )}
               </div>
             </div>
+
+            {mode === "stores" && missingStores.length > 0 && (
+              <details className="border rounded-md p-2 text-xs">
+                <summary className="cursor-pointer text-muted-foreground">
+                  Ver {missingStores.length} loja(s) que {disableMissing ? "serão desativadas" : "estão fora do arquivo"}
+                </summary>
+                <div className="mt-2 max-h-40 overflow-y-auto flex flex-wrap gap-1">
+                  {missingStores.map((s) => (
+                    <Badge key={s.id} variant="secondary" className="text-[10px]">
+                      {s.name}
+                    </Badge>
+                  ))}
+                </div>
+              </details>
+            )}
 
             <div className="border rounded-md overflow-x-auto max-h-64">
               <Table>
