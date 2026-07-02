@@ -335,34 +335,53 @@ export default function SupplierFormDialog({
                 />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="instagram">Instagram</Label>
                   <Input
                     id="instagram"
                     placeholder="@usuario ou URL"
                     value={form.instagram}
                     onChange={(e) => setForm((f) => ({ ...f, instagram: e.target.value }))}
+                    onBlur={() => handleSocialBlur("instagram")}
+                    aria-invalid={!!socialErrors.instagram}
+                    className={socialErrors.instagram ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
+                  {socialErrors.instagram && (
+                    <p className="text-[11px] text-destructive">{socialErrors.instagram}</p>
+                  )}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="linkedin">LinkedIn</Label>
                   <Input
                     id="linkedin"
                     placeholder="URL ou usuário"
                     value={form.linkedin}
                     onChange={(e) => setForm((f) => ({ ...f, linkedin: e.target.value }))}
+                    onBlur={() => handleSocialBlur("linkedin")}
+                    aria-invalid={!!socialErrors.linkedin}
+                    className={socialErrors.linkedin ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
+                  {socialErrors.linkedin && (
+                    <p className="text-[11px] text-destructive">{socialErrors.linkedin}</p>
+                  )}
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="facebook">Facebook</Label>
                   <Input
                     id="facebook"
                     placeholder="URL ou usuário"
                     value={form.facebook}
                     onChange={(e) => setForm((f) => ({ ...f, facebook: e.target.value }))}
+                    onBlur={() => handleSocialBlur("facebook")}
+                    aria-invalid={!!socialErrors.facebook}
+                    className={socialErrors.facebook ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
+                  {socialErrors.facebook && (
+                    <p className="text-[11px] text-destructive">{socialErrors.facebook}</p>
+                  )}
                 </div>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="cnpj">CNPJ</Label>
                 <Input
