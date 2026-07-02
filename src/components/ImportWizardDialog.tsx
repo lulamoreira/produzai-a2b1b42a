@@ -900,6 +900,10 @@ export default function ImportWizardDialog({
                   <p>
                     <strong>{stats.toUpdate}</strong> serão atualizados (por nome + CNPJ)
                   </p>
+                {mode === "stores" && fileDuplicates.length > 0 && (
+                  <p className="text-amber-600 dark:text-amber-500 font-medium">
+                    <strong>{fileDuplicates.length}</strong> linha(s) duplicada(s) no arquivo (mesmo nome + CNPJ) — apenas a última ocorrência será usada
+                  </p>
                 )}
                 {stats.ignored > 0 && (
                   <p className="text-muted-foreground">
