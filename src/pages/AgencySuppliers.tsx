@@ -128,6 +128,7 @@ const AgencySuppliers = () => {
   const [inviteDays, setInviteDays] = useState(7);
   const [generatingInvite, setGeneratingInvite] = useState(false);
   const [generatedInvite, setGeneratedInvite] = useState<{ url: string; expiresAt: Date } | null>(null);
+  const [recommendDialogOpen, setRecommendDialogOpen] = useState(false);
 
 
   const filteredSuppliers = useMemo(() => {
