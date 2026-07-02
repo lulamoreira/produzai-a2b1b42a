@@ -844,6 +844,12 @@ export default function ImportWizardDialog({
                     })()}
                   </p>
                 )}
+                {mode === "stores" && (
+                  <p className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-500 font-semibold pt-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span><strong>{activeAfterImport}</strong> loja(s) ativas para a próxima campanha</span>
+                  </p>
+                )}
               </div>
               <div className="flex flex-col gap-2 items-end">
                 <div className="flex items-center gap-2">
