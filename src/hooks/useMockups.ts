@@ -39,11 +39,13 @@ export function useCampaignMockups(campaignId: string | undefined) {
       return supabasePaginate<CampaignMockup>((from, to) =>
         supabase
           .from('campaign_mockups')
-          .select('*')
+          .select('*', { count: 'exact' })
           .eq('campaign_id', campaignId!)
           .order('created_at', { ascending: true })
+          .order('id')
           .range(from, to) as any
       );
+
     },
   });
 }
