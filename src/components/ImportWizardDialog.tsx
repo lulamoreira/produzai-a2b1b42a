@@ -1043,6 +1043,123 @@ export default function ImportWizardDialog({
           )}
         </DialogFooter>
       </DialogContent>
+
+      {/* ─── Status detalhado ─── */}
+      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+        <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-3">
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Status detalhado das lojas
+            </DialogTitle>
+            <DialogDescription>
+              O que vai acontecer com cada loja quando você confirmar a importação.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-6 pb-3 space-y-3 border-b">
+            <div>
+              <p className="text-xs font-medium mb-1.5">Campos a exibir:</p>
+              <div className="flex flex-wrap gap-2">
+                {[{ key: "name", label: "Nome" }, ...Array.from(mappedSystemKeys).filter((k) => k !== "name").map((k) => ({ key: k, label: systemFields.find((f) => f.key === k)?.label ?? k }))].map((f) => (
+                  <label key={f.key} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                    <Checkbox
+                      checked={statusSelectedFields.has(f.key)}
+                      disabled={f.key === "name"}
+                      onCheckedChange={(v) => {
+                        setStatusSelectedFields((prev) => {
+                          const next = new Set(prev);
+                          if (v) next.add(f.key); else next.delete(f.key);
+                          return next;
+                        });
+                      }}
+                    />
+                    {f.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="font-medium">Filtrar:</span>
+              {[
+                { v: "all", l: `Todas (${statusRows.length})` },
+                { v: "criar", l: `Criar (${statusRows.filter(r => r.action === "criar").length})` },
+                { v: "atualizar", l: `Atualizar (${statusRows.filter(r => r.action === "atualizar").length})` },
+                { v: "manter", l: `Manter (${statusRows.filter(r => r.action === "manter").length})` },
+                { v: "desativar", l: `Desativar (${statusRows.filter(r => r.action === "desativar").length})` },
+                { v: "ignorar", l: `Ignorar (${statusRows.filter(r => r.action === "ignorar").length})` },
+              ].map((o) => (
+                <Button
+                  key={o.v}
+                  variant={statusActionFilter === o.v ? "default" : "outline"}
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setStatusActionFilter(o.v)}
+                >
+                  {o.l}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-auto px-6 py-3">
+            <Table>
+              <TableHeader className="sticky top-0 bg-background z-10">
+                <TableRow>
+                  <TableHead className="text-xs whitespace-nowrap cursor-pointer" onClick={() => toggleStatusSort("action")}>
+                    <span className="inline-flex items-center gap-1">
+                      Ação
+                      {statusSort.field === "action" ? (statusSort.dir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-40" />}
+                    </span>
+                  </TableHead>
+                  {Array.from(statusSelectedFields).map((k) => {
+                    const label = k === "name" ? "Nome" : (systemFields.find((f) => f.key === k)?.label ?? k);
+                    return (
+                      <TableHead key={k} className="text-xs whitespace-nowrap cursor-pointer" onClick={() => toggleStatusSort(k)}>
+                        <span className="inline-flex items-center gap-1">
+                          {label}
+                          {statusSort.field === k ? (statusSort.dir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-40" />}
+                        </span>
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredStatusRows.map((r) => (
+                  <TableRow key={r.key}>
+                    <TableCell className="whitespace-nowrap">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium uppercase ${actionBadgeClass(r.action)}`}>
+                        {r.action}
+                      </span>
+                    </TableCell>
+                    {Array.from(statusSelectedFields).map((k) => (
+                      <TableCell key={k} className="text-xs whitespace-nowrap">
+                        {k === "name" ? r.name : (r.data[k] || <span className="text-muted-foreground italic">—</span>)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+                {filteredStatusRows.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={statusSelectedFields.size + 1} className="text-center text-xs text-muted-foreground py-6">
+                      Nenhum registro nesta categoria.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <DialogFooter className="p-6 pt-3 border-t">
+            <div className="text-xs text-muted-foreground mr-auto">
+              Exibindo {filteredStatusRows.length} de {statusRows.length} loja(s).
+            </div>
+            <Button size="sm" onClick={() => setStatusDialogOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
+
   );
 }
