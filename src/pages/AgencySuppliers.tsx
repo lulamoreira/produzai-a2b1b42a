@@ -132,8 +132,9 @@ const AgencySuppliers = () => {
 
 
   const filteredSuppliers = useMemo(() => {
-    return suppliers.filter(s => 
+    return suppliers.filter(s =>
       s.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (s.trade_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (s.contact_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (s.email?.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (s.services as string[]).some(service => service.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -334,6 +335,9 @@ Qualquer dúvida, estamos à disposição!` : "";
                   <TableRow key={s.id}>
                     <TableCell>
                       <div className="font-semibold">{s.company_name}</div>
+                      {s.trade_name && (
+                        <div className="text-xs text-muted-foreground">{s.trade_name}</div>
+                      )}
                       <div className="text-[10px] text-muted-foreground">{s.cnpj}</div>
                     </TableCell>
                     <TableCell>
@@ -411,8 +415,11 @@ Qualquer dúvida, estamos à disposição!` : "";
             {sortedSuppliers.map((s) => (
               <div key={s.id} className="bg-card p-5 rounded-xl border shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-4">
-                  <div>
+                <div>
                     <h3 className="font-bold text-lg leading-tight">{s.company_name}</h3>
+                    {s.trade_name && (
+                      <p className="text-sm text-muted-foreground mt-0.5">{s.trade_name}</p>
+                    )}
                     <p className="text-xs text-muted-foreground mt-1">{s.cnpj}</p>
                   </div>
                   <div className="flex items-center gap-1">
