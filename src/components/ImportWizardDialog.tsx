@@ -387,6 +387,19 @@ export default function ImportWizardDialog({
     });
   }, [rawRows, mapping, systemFields]);
 
+  const fileDuplicates = useMemo(() => {
+    if (mode !== "stores") return [] as Record<string, string>[];
+    const seen = new Set<string>();
+    const dups: Record<string, string>[] = [];
+    transformedRows.forEach((row) => {
+      const identityKey = getStoreIdentityKey({ name: row.name, cnpj: row.cnpj });
+      if (!identityKey) return;
+      if (seen.has(identityKey)) dups.push(row);
+      else seen.add(identityKey);
+    });
+    return dups;
+  }, [mode, transformedRows]);
+
   const importRows = useMemo(() => {
     if (mode !== "stores") return transformedRows;
 
@@ -886,6 +899,11 @@ export default function ImportWizardDialog({
                 {updateExisting && (
                   <p>
                     <strong>{stats.toUpdate}</strong> serão atualizados (por nome + CNPJ)
+                  </p>
+                )}
+                {mode === "stores" && fileDuplicates.length > 0 && (
+                  <p className="text-amber-600 dark:text-amber-500 font-medium">
+                    <strong>{fileDuplicates.length}</strong> linha(s) duplicada(s) no arquivo (mesmo nome + CNPJ) — apenas a última ocorrência será usada
                   </p>
                 )}
                 {stats.ignored > 0 && (
