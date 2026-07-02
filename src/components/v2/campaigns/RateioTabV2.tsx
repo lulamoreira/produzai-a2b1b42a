@@ -5,8 +5,12 @@ import {
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp,
   Search, Filter, Download, Sparkles, Copy, MoreHorizontal, Lock, CheckCircle2,
   Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw, X,
-  ArrowUpDown, Check, Loader2, Upload, FileDown, Maximize2, Minimize2, Mail
+  ArrowUpDown, Check, Loader2, Upload, FileDown, Maximize2, Minimize2, Mail,
+  FileEdit, Trash2
 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useCreateAdjustment, useDeleteAdjustment, fetchVigenteRateio } from "@/hooks/useAdjustments";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -253,6 +257,75 @@ export default function RateioTabV2({
       setIsCreatingNegCopy(false);
     }
   }, [campaignId, queryClient, setRateioSource]);
+
+  // ─── Start / delete adjustment (mirrors MatrixTab v1) ───
+  const createAdjustment = useCreateAdjustment();
+  const deleteAdjustment = useDeleteAdjustment();
+  const todayLabel = useMemo(() => {
+    const d = new Date();
+    return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  }, []);
+  const [startAdjOpen, setStartAdjOpen] = useState(false);
+  const [startAdjName, setStartAdjName] = useState("");
+  const [startAdjNotes, setStartAdjNotes] = useState("");
+  const [startAdjBusy, setStartAdjBusy] = useState(false);
+
+  const openStartAdjust = () => {
+    setStartAdjName(`Ajuste - ${todayLabel}`);
+    setStartAdjNotes("");
+    setStartAdjOpen(true);
+  };
+
+  const confirmStartAdjust = async () => {
+    if (!startAdjName.trim()) {
+      toast.error("Informe um nome para o ajuste.");
+      return;
+    }
+    setStartAdjBusy(true);
+    const tId = "start-adjustment-v2";
+    toast.loading("Congelando rateio vigente e criando ajuste...", { id: tId });
+    try {
+      const vigente = await fetchVigenteRateio(campaignId, winnerSupplierId ?? null);
+      await createAdjustment.mutateAsync({
+        campaignId,
+        name: startAdjName.trim(),
+        notes: startAdjNotes.trim() || undefined,
+        pieces,
+        kits,
+        kitPieces,
+        storePieces: [],
+        frozenStorePieces: vigente.rows,
+        syncedWith: vigente.source,
+        activateImmediately: true,
+      });
+      const sourceLabel = vigente.source === "negotiation" ? "rateio da negociação" : "rateio original";
+      toast.success(`Ajuste "${startAdjName.trim()}" criado e ativado — congelado a partir do ${sourceLabel}.`, { id: tId });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["active_adjustment", campaignId] }),
+        queryClient.invalidateQueries({ queryKey: ["campaign_adjustments", campaignId] }),
+      ]);
+      setRateioSource("adjustment");
+      setStartAdjOpen(false);
+    } catch (e: any) {
+      toast.error("Falha ao criar ajuste: " + (e?.message || "erro desconhecido"), { id: tId });
+    } finally {
+      setStartAdjBusy(false);
+    }
+  };
+
+  const handleDeleteActiveAdjustment = async () => {
+    if (!activeAdjustment) return;
+    const ok = window.confirm(
+      `Excluir o ajuste '${activeAdjustment.name}'? O rateio anterior voltará a ser a versão vigente. Esta ação não pode ser desfeita.`,
+    );
+    if (!ok) return;
+    try {
+      await deleteAdjustment.mutateAsync({ adjustmentId: activeAdjustment.id, campaignId });
+      setRateioSource(null as any);
+    } catch {
+      /* toast handled by hook */
+    }
+  };
 
   // ─── Recotação por quantidade (campaign-level negotiation rateio) ───
   const [requoteDialogOpen, setRequoteDialogOpen] = useState(false);
@@ -1537,6 +1610,28 @@ export default function RateioTabV2({
                     </button>
                   );
                 })}
+                <div className="ml-auto flex items-center gap-1 pb-1">
+                  {!activeAdjustment ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-xs gap-1"
+                      onClick={openStartAdjust}
+                    >
+                      <FileEdit className="w-3.5 h-3.5" /> Iniciar Ajuste
+                    </Button>
+                  ) : activeVersionTab === "adjustment" ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                      title={`Excluir ajuste '${activeAdjustment.name}'`}
+                      onClick={handleDeleteActiveAdjustment}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
+                  ) : null}
+                </div>
               </div>
 
 
@@ -2494,6 +2589,44 @@ export default function RateioTabV2({
         hasCampaignNegRateio={hasCampaignNegRateio}
         negotiationSupplierId={effectiveNegSupplierId}
       />
+
+      <Dialog open={startAdjOpen} onOpenChange={(o) => !startAdjBusy && setStartAdjOpen(o)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Iniciar Ajuste</DialogTitle>
+            <DialogDescription>
+              O rateio atual (lojas, peças, kits e quantidades) será congelado como está, e o ajuste passará a ser a versão vigente do rateio.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="adj-name-v2" className="text-xs">Nome do ajuste</Label>
+              <Input
+                id="adj-name-v2"
+                value={startAdjName}
+                onChange={(e) => setStartAdjName(e.target.value)}
+                disabled={startAdjBusy}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="adj-notes-v2" className="text-xs">Observações (opcional)</Label>
+              <Textarea
+                id="adj-notes-v2"
+                value={startAdjNotes}
+                onChange={(e) => setStartAdjNotes(e.target.value)}
+                rows={3}
+                disabled={startAdjBusy}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setStartAdjOpen(false)} disabled={startAdjBusy}>Cancelar</Button>
+            <Button onClick={confirmStartAdjust} disabled={startAdjBusy}>
+              {startAdjBusy ? "Criando..." : "Criar ajuste"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
