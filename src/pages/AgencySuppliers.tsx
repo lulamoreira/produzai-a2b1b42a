@@ -265,6 +265,13 @@ Qualquer dúvida, estamos à disposição!` : "";
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setRecommendDialogOpen(true)}
+              className="h-10 px-4"
+            >
+              <ThumbsUp className="w-4 h-4 mr-2" /> Indicar Fornecedores
+            </Button>
             <Button 
               variant="outline" 
               onClick={() => {
