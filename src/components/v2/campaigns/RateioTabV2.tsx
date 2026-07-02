@@ -11,6 +11,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateAdjustment, useDeleteAdjustment, fetchVigenteRateio } from "@/hooks/useAdjustments";
+import StartAdjustmentDialog from "@/components/Adjustments/StartAdjustmentDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
