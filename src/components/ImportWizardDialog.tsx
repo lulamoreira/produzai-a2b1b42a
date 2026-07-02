@@ -420,12 +420,36 @@ export default function ImportWizardDialog({
     return existingItems.filter((s) => !incomingNames.has(s.name.trim().toLowerCase()));
   }, [mode, existingItems, transformedRows]);
 
+  // Pre-existing duplicates in DB: same name appears more than once.
+  // Keep the first as canonical, mark the extras to be auto-disabled — otherwise
+  // they surface as ghost "Atualizar" rows in the status view and every future
+  // import keeps propagating the dedup problem forward.
+  const duplicateExtras = useMemo(() => {
+    if (mode !== "stores") return [] as { id: string; name: string }[];
+    const seen = new Set<string>();
+    const extras: { id: string; name: string }[] = [];
+    for (const s of existingItems) {
+      const k = s.name.trim().toLowerCase();
+      if (!k) continue;
+      if (seen.has(k)) extras.push(s);
+      else seen.add(k);
+    }
+    return extras;
+  }, [mode, existingItems]);
+  const duplicateExtraIds = useMemo(
+    () => new Set(duplicateExtras.map((s) => s.id)),
+    [duplicateExtras]
+  );
+
   // How many stores will be active after import (stores mode)
   const activeAfterImport = useMemo(() => {
     if (mode !== "stores") return 0;
-    const keptExisting = existingItems.length - (disableMissing ? missingStores.length : 0);
+    const keptExisting =
+      existingItems.length -
+      (disableMissing ? missingStores.length : 0) -
+      duplicateExtras.length;
     return keptExisting + stats.toCreate;
-  }, [mode, existingItems.length, disableMissing, missingStores.length, stats.toCreate]);
+  }, [mode, existingItems.length, disableMissing, missingStores.length, duplicateExtras.length, stats.toCreate]);
 
   // Unified status list — every store classified with its action
   type StatusRow = {
@@ -448,6 +472,16 @@ export default function ImportWizardDialog({
     existingItems.forEach((s) => {
       const nLow = s.name.trim().toLowerCase();
       const incoming = incomingByName.get(nLow);
+      if (duplicateExtraIds.has(s.id)) {
+        // Duplicated in DB — auto-disable the extra, keep the first as canonical
+        rows.push({
+          action: "desativar",
+          name: `${s.name} (duplicada)`,
+          data: { name: s.name },
+          key: `e-${s.id}`,
+        });
+        return;
+      }
       if (incoming) {
         rows.push({
           action: updateExisting ? "atualizar" : "manter",
@@ -480,7 +514,7 @@ export default function ImportWizardDialog({
       });
     });
     return rows;
-  }, [mode, existingItems, transformedRows, stats.toCreateRows, stats.ignoredRows, updateExisting, disableMissing]);
+  }, [mode, existingItems, transformedRows, stats.toCreateRows, stats.ignoredRows, updateExisting, disableMissing, duplicateExtraIds]);
 
   const filteredStatusRows = useMemo(() => {
     const filtered = statusActionFilter === "all"
@@ -526,7 +560,12 @@ export default function ImportWizardDialog({
     try {
       await onImport(valid, { 
         updateExisting,
-        disableMissingIds: mode === "stores" && disableMissing ? missingStores.map((s) => s.id) : [],
+        disableMissingIds: mode === "stores"
+          ? [
+              ...(disableMissing ? missingStores.map((s) => s.id) : []),
+              ...duplicateExtras.map((s) => s.id),
+            ]
+          : [],
         onProgress: (current, total, name) => {
           setImportProgress({ current, total });
           if (name) setCurrentStoreName(name);
