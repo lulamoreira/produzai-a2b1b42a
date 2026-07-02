@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import * as XLSX from "xlsx";
-import { Sparkles, Upload, ArrowRight, ArrowLeft, AlertCircle, Loader2, Tag, History, Trash2 } from "lucide-react";
+import { Sparkles, Upload, ArrowRight, ArrowLeft, AlertCircle, Loader2, Tag, History, Trash2, Eye, ArrowUp, ArrowDown, ArrowUpDown, CheckCircle2 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -179,6 +180,10 @@ export default function ImportWizardDialog({
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const [currentStoreName, setCurrentStoreName] = useState('');
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [statusSelectedFields, setStatusSelectedFields] = useState<Set<string>>(new Set(["name"]));
+  const [statusSort, setStatusSort] = useState<{ field: string; dir: "asc" | "desc" }>({ field: "action", dir: "asc" });
+  const [statusActionFilter, setStatusActionFilter] = useState<string>("all");
 
   const queryClient = useQueryClient();
 
@@ -414,6 +419,96 @@ export default function ImportWizardDialog({
     );
     return existingItems.filter((s) => !incomingNames.has(s.name.trim().toLowerCase()));
   }, [mode, existingItems, transformedRows]);
+
+  // How many stores will be active after import (stores mode)
+  const activeAfterImport = useMemo(() => {
+    if (mode !== "stores") return 0;
+    const keptExisting = existingItems.length - (disableMissing ? missingStores.length : 0);
+    return keptExisting + stats.toCreate;
+  }, [mode, existingItems.length, disableMissing, missingStores.length, stats.toCreate]);
+
+  // Unified status list — every store classified with its action
+  type StatusRow = {
+    action: "criar" | "atualizar" | "manter" | "desativar" | "ignorar";
+    name: string;
+    data: Record<string, string>;
+    key: string;
+  };
+  const statusRows = useMemo<StatusRow[]>(() => {
+    if (mode !== "stores") return [];
+    const rows: StatusRow[] = [];
+    const incomingByName = new Map<string, Record<string, string>>();
+    transformedRows.forEach((r) => {
+      const n = (r.name ?? "").trim().toLowerCase();
+      if (n) incomingByName.set(n, r);
+    });
+    const existingNamesLower = new Set(existingItems.map((i) => i.name.trim().toLowerCase()));
+
+    // Existing stores
+    existingItems.forEach((s) => {
+      const nLow = s.name.trim().toLowerCase();
+      const incoming = incomingByName.get(nLow);
+      if (incoming) {
+        rows.push({
+          action: updateExisting ? "atualizar" : "manter",
+          name: s.name,
+          data: incoming,
+          key: `e-${s.id}`,
+        });
+      } else {
+        rows.push({
+          action: disableMissing ? "desativar" : "manter",
+          name: s.name,
+          data: { name: s.name },
+          key: `e-${s.id}`,
+        });
+      }
+    });
+
+    // New/ignored from file
+    stats.toCreateRows.forEach((r, i) => {
+      const nLow = (r.name ?? "").trim().toLowerCase();
+      if (existingNamesLower.has(nLow)) return; // already accounted (update)
+      rows.push({ action: "criar", name: r.name || `(sem nome) #${i + 1}`, data: r, key: `c-${i}` });
+    });
+    stats.ignoredRows.forEach((r, i) => {
+      rows.push({
+        action: "ignorar",
+        name: r.row.name || `(linha ${r.index})`,
+        data: r.row,
+        key: `i-${i}`,
+      });
+    });
+    return rows;
+  }, [mode, existingItems, transformedRows, stats.toCreateRows, stats.ignoredRows, updateExisting, disableMissing]);
+
+  const filteredStatusRows = useMemo(() => {
+    const filtered = statusActionFilter === "all"
+      ? statusRows
+      : statusRows.filter((r) => r.action === statusActionFilter);
+    const dir = statusSort.dir === "asc" ? 1 : -1;
+    const f = statusSort.field;
+    return [...filtered].sort((a, b) => {
+      const av = f === "action" ? a.action : f === "name" ? a.name : (a.data[f] ?? "");
+      const bv = f === "action" ? b.action : f === "name" ? b.name : (b.data[f] ?? "");
+      return String(av).localeCompare(String(bv), "pt-BR", { numeric: true }) * dir;
+    });
+  }, [statusRows, statusActionFilter, statusSort]);
+
+  const toggleStatusSort = (field: string) => {
+    setStatusSort((s) => s.field === field ? { field, dir: s.dir === "asc" ? "desc" : "asc" } : { field, dir: "asc" });
+  };
+
+  const actionBadgeClass = (action: StatusRow["action"]) => {
+    switch (action) {
+      case "criar": return "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400";
+      case "atualizar": return "bg-primary/15 text-primary";
+      case "manter": return "bg-muted text-muted-foreground";
+      case "desativar": return "bg-amber-500/15 text-amber-700 dark:text-amber-400";
+      case "ignorar": return "bg-destructive/15 text-destructive";
+    }
+  };
+
 
   // ─── Confirm import ───────────────────────────────────────────────────────
   const handleConfirm = async () => {
@@ -749,6 +844,12 @@ export default function ImportWizardDialog({
                     })()}
                   </p>
                 )}
+                {mode === "stores" && (
+                  <p className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-500 font-semibold pt-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span><strong>{activeAfterImport}</strong> loja(s) ativas para a próxima campanha</span>
+                  </p>
+                )}
               </div>
               <div className="flex flex-col gap-2 items-end">
                 <div className="flex items-center gap-2">
@@ -775,6 +876,19 @@ export default function ImportWizardDialog({
                 )}
               </div>
             </div>
+
+            {mode === "stores" && statusRows.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-center"
+                onClick={() => setStatusDialogOpen(true)}
+              >
+                <Eye className="w-3.5 h-3.5 mr-1.5" />
+                Ver status detalhado das {statusRows.length} loja(s)
+              </Button>
+            )}
+
 
             {mode === "stores" && missingStores.length > 0 && (
               <details className="border rounded-md p-2 text-xs">
@@ -929,6 +1043,123 @@ export default function ImportWizardDialog({
           )}
         </DialogFooter>
       </DialogContent>
+
+      {/* ─── Status detalhado ─── */}
+      <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
+        <DialogContent className="max-w-5xl h-[85vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="p-6 pb-3">
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5" />
+              Status detalhado das lojas
+            </DialogTitle>
+            <DialogDescription>
+              O que vai acontecer com cada loja quando você confirmar a importação.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="px-6 pb-3 space-y-3 border-b">
+            <div>
+              <p className="text-xs font-medium mb-1.5">Campos a exibir:</p>
+              <div className="flex flex-wrap gap-2">
+                {[{ key: "name", label: "Nome" }, ...Array.from(mappedSystemKeys).filter((k) => k !== "name").map((k) => ({ key: k, label: systemFields.find((f) => f.key === k)?.label ?? k }))].map((f) => (
+                  <label key={f.key} className="flex items-center gap-1.5 text-xs cursor-pointer">
+                    <Checkbox
+                      checked={statusSelectedFields.has(f.key)}
+                      disabled={f.key === "name"}
+                      onCheckedChange={(v) => {
+                        setStatusSelectedFields((prev) => {
+                          const next = new Set(prev);
+                          if (v) next.add(f.key); else next.delete(f.key);
+                          return next;
+                        });
+                      }}
+                    />
+                    {f.label}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 text-xs">
+              <span className="font-medium">Filtrar:</span>
+              {[
+                { v: "all", l: `Todas (${statusRows.length})` },
+                { v: "criar", l: `Criar (${statusRows.filter(r => r.action === "criar").length})` },
+                { v: "atualizar", l: `Atualizar (${statusRows.filter(r => r.action === "atualizar").length})` },
+                { v: "manter", l: `Manter (${statusRows.filter(r => r.action === "manter").length})` },
+                { v: "desativar", l: `Desativar (${statusRows.filter(r => r.action === "desativar").length})` },
+                { v: "ignorar", l: `Ignorar (${statusRows.filter(r => r.action === "ignorar").length})` },
+              ].map((o) => (
+                <Button
+                  key={o.v}
+                  variant={statusActionFilter === o.v ? "default" : "outline"}
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setStatusActionFilter(o.v)}
+                >
+                  {o.l}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex-1 overflow-auto px-6 py-3">
+            <Table>
+              <TableHeader className="sticky top-0 bg-background z-10">
+                <TableRow>
+                  <TableHead className="text-xs whitespace-nowrap cursor-pointer" onClick={() => toggleStatusSort("action")}>
+                    <span className="inline-flex items-center gap-1">
+                      Ação
+                      {statusSort.field === "action" ? (statusSort.dir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-40" />}
+                    </span>
+                  </TableHead>
+                  {Array.from(statusSelectedFields).map((k) => {
+                    const label = k === "name" ? "Nome" : (systemFields.find((f) => f.key === k)?.label ?? k);
+                    return (
+                      <TableHead key={k} className="text-xs whitespace-nowrap cursor-pointer" onClick={() => toggleStatusSort(k)}>
+                        <span className="inline-flex items-center gap-1">
+                          {label}
+                          {statusSort.field === k ? (statusSort.dir === "asc" ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />) : <ArrowUpDown className="w-3 h-3 opacity-40" />}
+                        </span>
+                      </TableHead>
+                    );
+                  })}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredStatusRows.map((r) => (
+                  <TableRow key={r.key}>
+                    <TableCell className="whitespace-nowrap">
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium uppercase ${actionBadgeClass(r.action)}`}>
+                        {r.action}
+                      </span>
+                    </TableCell>
+                    {Array.from(statusSelectedFields).map((k) => (
+                      <TableCell key={k} className="text-xs whitespace-nowrap">
+                        {k === "name" ? r.name : (r.data[k] || <span className="text-muted-foreground italic">—</span>)}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))}
+                {filteredStatusRows.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={statusSelectedFields.size + 1} className="text-center text-xs text-muted-foreground py-6">
+                      Nenhum registro nesta categoria.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          <DialogFooter className="p-6 pt-3 border-t">
+            <div className="text-xs text-muted-foreground mr-auto">
+              Exibindo {filteredStatusRows.length} de {statusRows.length} loja(s).
+            </div>
+            <Button size="sm" onClick={() => setStatusDialogOpen(false)}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Dialog>
+
   );
 }
