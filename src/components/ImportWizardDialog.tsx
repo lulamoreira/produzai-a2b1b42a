@@ -41,7 +41,7 @@ export interface ImportWizardDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   mode: ImportWizardMode;
-  existingItems: { name: string; id: string; cnpj?: string | null }[];
+  existingItems: Array<{ name: string; id: string; cnpj?: string | null } & Record<string, string | null | undefined>>;
   clientId?: string;
   campaignId?: string;
   onImport: (
@@ -168,6 +168,19 @@ export default function ImportWizardDialog({
     return [...base, ...customFields];
   }, [mode, customFields]);
 
+  const priorityFieldKey = useMemo(() => {
+    if (mode !== "stores") return null;
+    const normalizeLabel = (value: string) => value
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "");
+    return customFields.find((field) => {
+      const normalized = normalizeLabel(field.label);
+      return normalized.includes("prioridade") && normalized.includes("envio");
+    })?.key ?? null;
+  }, [customFields, mode]);
+
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [fileName, setFileName] = useState<string>("");
   const [rawRows, setRawRows] = useState<Record<string, string>[]>([]);
@@ -256,6 +269,16 @@ export default function ImportWizardDialog({
       setStatusSelectedFields(new Set(["name", "cnpj"]));
     }
   }, [open]);
+
+  useEffect(() => {
+    if (!open || mode !== "stores" || !priorityFieldKey) return;
+    setStatusSelectedFields((prev) => {
+      if (prev.has(priorityFieldKey)) return prev;
+      const next = new Set(prev);
+      next.add(priorityFieldKey);
+      return next;
+    });
+  }, [open, mode, priorityFieldKey]);
 
   // ─── Step 1 — file parse ──────────────────────────────────────────────────
   const handleFile = useCallback((file: File) => {
@@ -459,9 +482,9 @@ export default function ImportWizardDialog({
   // they surface as ghost "Atualizar" rows in the status view and every future
   // import keeps propagating the dedup problem forward.
   const duplicateExtras = useMemo(() => {
-    if (mode !== "stores") return [] as { id: string; name: string; cnpj?: string | null }[];
+    if (mode !== "stores") return [] as Array<{ name: string; id: string; cnpj?: string | null } & Record<string, string | null | undefined>>;
     const seen = new Set<string>();
-    const extras: { id: string; name: string; cnpj?: string | null }[] = [];
+    const extras: Array<{ name: string; id: string; cnpj?: string | null } & Record<string, string | null | undefined>> = [];
     for (const s of existingItems) {
       const k = getStoreIdentityKey(s);
       if (!k) continue;
@@ -515,7 +538,9 @@ export default function ImportWizardDialog({
         rows.push({
           action: "desativar",
           name: `${s.name} (duplicada)`,
-          data: { name: s.name, cnpj: s.cnpj ?? "" },
+          data: Object.fromEntries(
+            Object.entries(s).map(([key, value]) => [key, value == null ? "" : String(value)]),
+          ),
           key: `e-${s.id}`,
         });
         return;
@@ -533,7 +558,9 @@ export default function ImportWizardDialog({
         rows.push({
           action: disableMissing ? "desativar" : "manter",
           name: s.name,
-          data: { name: s.name, cnpj: s.cnpj ?? "" },
+          data: Object.fromEntries(
+            Object.entries(s).map(([key, value]) => [key, value == null ? "" : String(value)]),
+          ),
           key: `e-${s.id}`,
         });
       }
@@ -906,6 +933,11 @@ export default function ImportWizardDialog({
                     <strong>{fileDuplicates.length}</strong> linha(s) duplicada(s) no arquivo (mesmo nome + CNPJ) — apenas a última ocorrência será usada
                   </p>
                 )}
+                {mode === "stores" && duplicateExtras.length > 0 && (
+                  <p className="text-amber-600 dark:text-amber-500 font-medium">
+                    <strong>{duplicateExtras.length}</strong> loja(s) duplicada(s) já ativas no cliente serão desativadas (mesmo nome + CNPJ)
+                  </p>
+                )}
                 {stats.ignored > 0 && (
                   <p className="text-muted-foreground">
                     <strong>{stats.ignored}</strong> ignorado(s) (campos obrigatórios ausentes)
@@ -984,6 +1016,25 @@ export default function ImportWizardDialog({
                     <Badge key={s.id} variant="secondary" className="text-[10px]">
                       {s.name}
                     </Badge>
+                  ))}
+                </div>
+              </details>
+            )}
+
+            {mode === "stores" && duplicateExtras.length > 0 && (
+              <details className="border rounded-md p-2 text-xs">
+                <summary className="cursor-pointer text-amber-600 dark:text-amber-500 font-medium">
+                  Ver {duplicateExtras.length} loja(s) duplicada(s) já ativas
+                </summary>
+                <div className="mt-2 max-h-48 overflow-y-auto space-y-1">
+                  {duplicateExtras.map((s) => (
+                    <div key={s.id} className="grid grid-cols-1 gap-1 border-b border-border/50 pb-1 last:border-0 sm:grid-cols-[1fr_150px_120px]">
+                      <span className="truncate font-medium">{s.name}</span>
+                      <span className="text-muted-foreground">{s.cnpj || "CNPJ —"}</span>
+                      <span className="text-muted-foreground">
+                        {priorityFieldKey ? `Prioridade ${s[priorityFieldKey] || "—"}` : "Prioridade —"}
+                      </span>
+                    </div>
                   ))}
                 </div>
               </details>
@@ -1145,7 +1196,7 @@ export default function ImportWizardDialog({
             <div>
               <p className="text-xs font-medium mb-1.5">Campos a exibir:</p>
               <div className="flex flex-wrap gap-2">
-                {[{ key: "name", label: "Nome" }, { key: "cnpj", label: "CNPJ" }, ...Array.from(mappedSystemKeys).filter((k) => k !== "name" && k !== "cnpj").map((k) => ({ key: k, label: systemFields.find((f) => f.key === k)?.label ?? k }))].map((f) => (
+                {[{ key: "name", label: "Nome" }, { key: "cnpj", label: "CNPJ" }, ...Array.from(new Set([...Array.from(mappedSystemKeys), ...(priorityFieldKey ? [priorityFieldKey] : [])])).filter((k) => k !== "name" && k !== "cnpj").map((k) => ({ key: k, label: systemFields.find((f) => f.key === k)?.label ?? k }))].map((f) => (
                   <label key={f.key} className="flex items-center gap-1.5 text-xs cursor-pointer">
                     <Checkbox
                       checked={statusSelectedFields.has(f.key)}
