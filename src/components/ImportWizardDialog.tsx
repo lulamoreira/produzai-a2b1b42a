@@ -182,7 +182,7 @@ export default function ImportWizardDialog({
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const [currentStoreName, setCurrentStoreName] = useState('');
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-  const [statusSelectedFields, setStatusSelectedFields] = useState<Set<string>>(new Set(["name"]));
+  const [statusSelectedFields, setStatusSelectedFields] = useState<Set<string>>(new Set(["name", "cnpj"]));
   const [statusSort, setStatusSort] = useState<{ field: string; dir: "asc" | "desc" }>({ field: "action", dir: "asc" });
   const [statusActionFilter, setStatusActionFilter] = useState<string>("all");
 
@@ -253,6 +253,7 @@ export default function ImportWizardDialog({
       setImporting(false);
       setImportProgress({ current: 0, total: 0 });
       setCurrentStoreName('');
+      setStatusSelectedFields(new Set(["name", "cnpj"]));
     }
   }, [open]);
 
@@ -1126,7 +1127,7 @@ export default function ImportWizardDialog({
             <div>
               <p className="text-xs font-medium mb-1.5">Campos a exibir:</p>
               <div className="flex flex-wrap gap-2">
-                {[{ key: "name", label: "Nome" }, ...Array.from(mappedSystemKeys).filter((k) => k !== "name").map((k) => ({ key: k, label: systemFields.find((f) => f.key === k)?.label ?? k }))].map((f) => (
+                {[{ key: "name", label: "Nome" }, { key: "cnpj", label: "CNPJ" }, ...Array.from(mappedSystemKeys).filter((k) => k !== "name" && k !== "cnpj").map((k) => ({ key: k, label: systemFields.find((f) => f.key === k)?.label ?? k }))].map((f) => (
                   <label key={f.key} className="flex items-center gap-1.5 text-xs cursor-pointer">
                     <Checkbox
                       checked={statusSelectedFields.has(f.key)}
