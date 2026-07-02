@@ -538,6 +538,12 @@ Qualquer dúvida, estamos à disposição!` : "";
           onOpenChange={(o) => !o && setDetailsSupplier(null)}
           supplier={detailsSupplier}
         />
+
+        <SupplierRecommendDialog
+          open={recommendDialogOpen}
+          onOpenChange={setRecommendDialogOpen}
+          suppliers={suppliers}
+        />
       </div>
 
   );
