@@ -11,6 +11,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateAdjustment, useDeleteAdjustment, fetchVigenteRateio } from "@/hooks/useAdjustments";
+import StartAdjustmentDialog from "@/components/Adjustments/StartAdjustmentDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -258,60 +259,11 @@ export default function RateioTabV2({
     }
   }, [campaignId, queryClient, setRateioSource]);
 
-  // ─── Start / delete adjustment (mirrors MatrixTab v1) ───
-  const createAdjustment = useCreateAdjustment();
+  // ─── Start / delete adjustment (shared StartAdjustmentDialog) ───
   const deleteAdjustment = useDeleteAdjustment();
-  const todayLabel = useMemo(() => {
-    const d = new Date();
-    return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
-  }, []);
   const [startAdjOpen, setStartAdjOpen] = useState(false);
-  const [startAdjName, setStartAdjName] = useState("");
-  const [startAdjNotes, setStartAdjNotes] = useState("");
-  const [startAdjBusy, setStartAdjBusy] = useState(false);
+  const openStartAdjust = () => setStartAdjOpen(true);
 
-  const openStartAdjust = () => {
-    setStartAdjName(`Ajuste - ${todayLabel}`);
-    setStartAdjNotes("");
-    setStartAdjOpen(true);
-  };
-
-  const confirmStartAdjust = async () => {
-    if (!startAdjName.trim()) {
-      toast.error("Informe um nome para o ajuste.");
-      return;
-    }
-    setStartAdjBusy(true);
-    const tId = "start-adjustment-v2";
-    toast.loading("Congelando rateio vigente e criando ajuste...", { id: tId });
-    try {
-      const vigente = await fetchVigenteRateio(campaignId, winnerSupplierId ?? null);
-      await createAdjustment.mutateAsync({
-        campaignId,
-        name: startAdjName.trim(),
-        notes: startAdjNotes.trim() || undefined,
-        pieces,
-        kits,
-        kitPieces,
-        storePieces: [],
-        frozenStorePieces: vigente.rows,
-        syncedWith: vigente.source,
-        activateImmediately: true,
-      });
-      const sourceLabel = vigente.source === "negotiation" ? "rateio da negociação" : "rateio original";
-      toast.success(`Ajuste "${startAdjName.trim()}" criado e ativado — congelado a partir do ${sourceLabel}.`, { id: tId });
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["active_adjustment", campaignId] }),
-        queryClient.invalidateQueries({ queryKey: ["campaign_adjustments", campaignId] }),
-      ]);
-      setRateioSource("adjustment");
-      setStartAdjOpen(false);
-    } catch (e: any) {
-      toast.error("Falha ao criar ajuste: " + (e?.message || "erro desconhecido"), { id: tId });
-    } finally {
-      setStartAdjBusy(false);
-    }
-  };
 
   const handleDeleteActiveAdjustment = async () => {
     if (!activeAdjustment) return;
@@ -2590,43 +2542,17 @@ export default function RateioTabV2({
         negotiationSupplierId={effectiveNegSupplierId}
       />
 
-      <Dialog open={startAdjOpen} onOpenChange={(o) => !startAdjBusy && setStartAdjOpen(o)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Iniciar Ajuste</DialogTitle>
-            <DialogDescription>
-              O rateio atual (lojas, peças, kits e quantidades) será congelado como está, e o ajuste passará a ser a versão vigente do rateio.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="space-y-1.5">
-              <Label htmlFor="adj-name-v2" className="text-xs">Nome do ajuste</Label>
-              <Input
-                id="adj-name-v2"
-                value={startAdjName}
-                onChange={(e) => setStartAdjName(e.target.value)}
-                disabled={startAdjBusy}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="adj-notes-v2" className="text-xs">Observações (opcional)</Label>
-              <Textarea
-                id="adj-notes-v2"
-                value={startAdjNotes}
-                onChange={(e) => setStartAdjNotes(e.target.value)}
-                rows={3}
-                disabled={startAdjBusy}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setStartAdjOpen(false)} disabled={startAdjBusy}>Cancelar</Button>
-            <Button onClick={confirmStartAdjust} disabled={startAdjBusy}>
-              {startAdjBusy ? "Criando..." : "Criar ajuste"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <StartAdjustmentDialog
+        open={startAdjOpen}
+        onOpenChange={setStartAdjOpen}
+        campaignId={campaignId}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        winnerSupplierId={winnerSupplierId}
+        onCreated={() => setRateioSource("adjustment")}
+      />
+
     </div>
   );
 }

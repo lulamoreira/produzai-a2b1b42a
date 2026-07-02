@@ -27,6 +27,7 @@ import {
   type AdjustmentStatus,
 } from "@/hooks/useAdjustments";
 import AdjustmentDetailSheet from "./AdjustmentDetailSheet";
+import StartAdjustmentDialog from "./Adjustments/StartAdjustmentDialog";
 import AdjustmentBudgetRequestDialog from "./AdjustmentBudgetRequestDialog";
 import {
   REQUOTE_STATUS_META,
@@ -146,6 +147,7 @@ export default function AdjustmentsTab({
   });
 
   const [createOpen, setCreateOpen] = useState(false);
+  const [startAdjustOpen, setStartAdjustOpen] = useState(false);
   const [editingAdjustment, setEditingAdjustment] = useState<CampaignAdjustment | null>(null);
   const [requestDialogAdjustment, setRequestDialogAdjustment] = useState<CampaignAdjustment | null>(null);
   const [registerResponseAdjustment, setRegisterResponseAdjustment] = useState<CampaignAdjustment | null>(null);
@@ -368,16 +370,13 @@ export default function AdjustmentsTab({
         <Button
           size="sm"
           className="gap-1.5"
-          onClick={() => {
-            setName(defaultName);
-            setNotes("");
-            setCreateOpen(true);
-          }}
-          disabled={hasDraft}
-          title={hasDraft ? "Já existe um rascunho. Edite ou exclua antes de criar outro." : ""}
+          onClick={() => setStartAdjustOpen(true)}
+          disabled={!!activeAdjustment}
+          title={activeAdjustment ? "Já existe um ajuste ativo. Exclua-o ou marque como substituído antes de criar outro." : ""}
         >
           <Plus className="w-4 h-4" /> {t("adjustments.new")}
         </Button>
+
       </div>
 
       {activeAdjustment && (
@@ -1011,6 +1010,16 @@ export default function AdjustmentsTab({
         onOpenChange={setFinalExportOpen}
         onExport={(extraFields) => exportFinal(extraFields)}
       />
+      <StartAdjustmentDialog
+        open={startAdjustOpen}
+        onOpenChange={setStartAdjustOpen}
+        campaignId={campaignId}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        winnerSupplierId={winnerSupplierId ?? null}
+      />
     </div>
+
   );
 }

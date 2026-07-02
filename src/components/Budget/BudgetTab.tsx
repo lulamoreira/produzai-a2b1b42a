@@ -78,6 +78,7 @@ import BudgetSendNegotiatedDialog from "@/components/Budget/BudgetSendNegotiated
 import BudgetWinnerDialog from "@/components/Budget/BudgetWinnerDialog";
 import BudgetNegotiationDialog from "@/components/Budget/BudgetNegotiationDialog";
 import SendQtyRequoteDialog from "@/components/Budget/SendQtyRequoteDialog";
+import StartAdjustmentDialog from "@/components/Adjustments/StartAdjustmentDialog";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
@@ -651,6 +652,7 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
     isUnlocking,
   } = useBudgetPhase(campaignId);
   const [unlockTarget, setUnlockTarget] = useState<BudgetPhase | null>(null);
+  const [startAdjustOpen, setStartAdjustOpen] = useState(false);
   const { data: currentTotal } = useCurrentTotal(
     winnerSupplier?.id,
     campaignId,
@@ -3557,19 +3559,21 @@ ${msgLabels.winnerWaFooter}
         />
       )}
 
-      {(currentPhase === "ajuste" || currentPhase === "negociacao") && (
-        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-          <div className="flex items-start justify-between gap-3 flex-wrap">
-            <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-foreground">
-                Fase 4 — Ajuste pós-mockup
-              </h3>
+      <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-foreground">Ajuste</h3>
+            {activeAdjustment ? (
               <p className="text-xs text-muted-foreground mt-0.5">
-                {currentPhase === "ajuste"
-                  ? "Fase ativa — ajustes sendo aplicados"
-                  : "Disponível após aprovação da negociação"}
+                Ajuste ativo: <strong className="text-foreground">{activeAdjustment.name}</strong>
               </p>
-            </div>
+            ) : (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Congele o rateio vigente e inicie um ajuste a qualquer momento.
+              </p>
+            )}
+          </div>
+          {activeAdjustment ? (
             <Button
               size="sm"
               variant="outline"
@@ -3580,12 +3584,34 @@ ${msgLabels.winnerWaFooter}
               Abrir Ajustes
               <ArrowRight className="w-3.5 h-3.5" />
             </Button>
-          </div>
-          {currentPhase === "ajuste" && (
-            <AdjustmentSummaryCard campaignId={campaignId} onNavigateToSection={onNavigateToSection} />
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setStartAdjustOpen(true)}
+              className="gap-2 shrink-0"
+            >
+              <FileEdit className="w-3.5 h-3.5" />
+              Iniciar Ajuste
+            </Button>
           )}
         </div>
-      )}
+        {activeAdjustment && (
+          <AdjustmentSummaryCard campaignId={campaignId} onNavigateToSection={onNavigateToSection} />
+        )}
+      </div>
+
+      <StartAdjustmentDialog
+        open={startAdjustOpen}
+        onOpenChange={setStartAdjustOpen}
+        campaignId={campaignId}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        winnerSupplierId={winnerSupplier?.id ?? null}
+        onCreated={() => onNavigateToSection?.("adjustments")}
+      />
+
 
       <UnlockPhaseDialog
         open={unlockTarget !== null}
