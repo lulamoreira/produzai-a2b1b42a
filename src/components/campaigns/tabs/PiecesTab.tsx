@@ -37,6 +37,7 @@ import AddPieceDialog from "@/components/AddPieceDialog";
 import FindReplaceSpecDialog from "@/components/FindReplaceSpecDialog";
 import KitOnlyPiecesDialog from "@/components/KitOnlyPiecesDialog";
 import CustomExportDialog from "@/components/CustomExportDialog";
+import ChangeCaseDialog from "@/components/ChangeCaseDialog";
 
 interface PiecesTabProps {
   campaignId: string;
