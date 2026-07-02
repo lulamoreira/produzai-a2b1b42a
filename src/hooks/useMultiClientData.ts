@@ -82,6 +82,7 @@ export type ClientStore = {
   auto_distribute: boolean;
   show_in_scheduling: boolean;
   tipo_entrega: 'frete_instalacao' | 'frete_apenas' | 'sem_logistica';
+  active: boolean | null;
   created_at: string;
 };
 
