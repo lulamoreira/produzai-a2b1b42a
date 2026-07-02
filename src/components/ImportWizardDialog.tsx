@@ -175,6 +175,7 @@ export default function ImportWizardDialog({
   const [aiMapped, setAiMapped] = useState<Set<string>>(new Set());
   const [loadingAI, setLoadingAI] = useState(false);
   const [updateExisting, setUpdateExisting] = useState(true);
+  const [disableMissing, setDisableMissing] = useState(true);
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const [currentStoreName, setCurrentStoreName] = useState('');
