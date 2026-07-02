@@ -103,10 +103,84 @@ export default function MatrixTab({
   const updateStorePiece = useUpdateCampaignStorePiece();
   const bulkUpdateStorePieces = useBulkUpdateCampaignStorePieces();
   const updateClientStore = useUpdateClientStore();
+  const createAdjustment = useCreateAdjustment();
+  const deleteAdjustment = useDeleteAdjustment();
+  const qc = useQueryClient();
+
+  // Start-adjustment dialog state
+  const todayLabel = useMemo(() => {
+    const d = new Date();
+    return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+  }, []);
+  const [startAdjOpen, setStartAdjOpen] = useState(false);
+  const [startAdjName, setStartAdjName] = useState("");
+  const [startAdjNotes, setStartAdjNotes] = useState("");
+  const [startAdjBusy, setStartAdjBusy] = useState(false);
+
+  const openStartAdjust = () => {
+    setStartAdjName(`Ajuste - ${todayLabel}`);
+    setStartAdjNotes("");
+    setStartAdjOpen(true);
+  };
+
+  const confirmStartAdjust = async () => {
+    if (!startAdjName.trim()) {
+      toast.error("Informe um nome para o ajuste.");
+      return;
+    }
+    setStartAdjBusy(true);
+    const tId = "start-adjustment";
+    toast.loading("Congelando rateio vigente e criando ajuste...", { id: tId });
+    try {
+      const vigente = await fetchVigenteRateio(campaignId, winnerSupplierId ?? null);
+      await createAdjustment.mutateAsync({
+        campaignId,
+        name: startAdjName.trim(),
+        notes: startAdjNotes.trim() || undefined,
+        pieces,
+        kits,
+        kitPieces,
+        storePieces: [],
+        frozenStorePieces: vigente.rows,
+        syncedWith: vigente.source,
+        activateImmediately: true,
+      });
+      toast.success("Ajuste criado e ativado — o rateio anterior foi congelado.", { id: tId });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["active_adjustment", campaignId] }),
+        qc.invalidateQueries({ queryKey: ["campaign_adjustments", campaignId] }),
+      ]);
+      setRateioSource("adjustment");
+      setStartAdjOpen(false);
+    } catch (e: any) {
+      toast.error("Falha ao criar ajuste: " + (e?.message || "erro desconhecido"), { id: tId });
+    } finally {
+      setStartAdjBusy(false);
+    }
+  };
+
+  const handleDeleteActiveAdjustment = async () => {
+    if (!activeAdjustment) return;
+    const ok = window.confirm(
+      `Excluir o ajuste '${activeAdjustment.name}'? O rateio anterior (negociação ou original) voltará a ser a versão vigente. Esta ação não pode ser desfeita.`,
+    );
+    if (!ok) return;
+    try {
+      await deleteAdjustment.mutateAsync({ adjustmentId: activeAdjustment.id, campaignId });
+      setRateioSource(null as any);
+    } catch {
+      /* toast handled by hook */
+    }
+  };
 
   const handleUpdateStorePiece = async (data: { id: string } & Partial<any>) => {
     try {
       await updateClientStore.mutateAsync(data);
+      // toast already handled by hook or we can add success here if needed
+    } catch (e: any) {
+      toast.error("Erro ao atualizar loja: " + e.message);
+    }
+  };
       // toast already handled by hook or we can add success here if needed
     } catch (e: any) {
       toast.error("Erro ao atualizar loja: " + e.message);
