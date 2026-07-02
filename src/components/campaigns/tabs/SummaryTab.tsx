@@ -16,6 +16,10 @@ interface SummaryTabProps {
   stores: any[];
   visiblePieces: any[];
   kits: any[];
+  kitPieces?: any[];
+  campaign?: any;
+  client?: any;
+  agency?: any;
   canEditCampaign: boolean;
   canViewSchedules: boolean;
   canViewInstallations: boolean;
@@ -23,6 +27,17 @@ interface SummaryTabProps {
   lalPerms: any;
   canViewStores: boolean;
   canViewCampaignStores: boolean;
+  isAdmin: boolean;
+  isAdminOrMaster: boolean;
+  canViewPieces: boolean;
+  onNavigate: (section: string, filter?: any) => void;
+  campaignKpis?: {
+    stores: number;
+    pieces: number;
+    pendingInstallations: number;
+    pendingApprovals: number;
+  };
+}
   isAdmin: boolean;
   isAdminOrMaster: boolean;
   canViewPieces: boolean;
