@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import * as XLSX from "xlsx";
-import { Sparkles, Upload, ArrowRight, ArrowLeft, AlertCircle, Loader2, Tag } from "lucide-react";
+import { Sparkles, Upload, ArrowRight, ArrowLeft, AlertCircle, Loader2, Tag, History, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -177,6 +177,56 @@ export default function ImportWizardDialog({
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const [currentStoreName, setCurrentStoreName] = useState('');
+
+  const queryClient = useQueryClient();
+
+  // ─── Mapping history ──────────────────────────────────────────────────────
+  const historyKey = ["import_mapping_history", mode, campaignId ?? null, clientId ?? null];
+  const { data: history = [] } = useQuery({
+    queryKey: historyKey,
+    enabled: open,
+    queryFn: async () => {
+      let q = (supabase.from("import_mapping_history" as any) as any)
+        .select("id, file_name, columns, mapping, ai_mapped_columns, source, rows_count, created_at, created_by")
+        .eq("mode", mode)
+        .order("created_at", { ascending: false })
+        .limit(20);
+      if (campaignId) q = q.eq("campaign_id", campaignId);
+      else if (clientId) q = q.eq("client_id", clientId);
+      else return [];
+      const { data, error } = await q;
+      if (error) { console.error(error); return []; }
+      return (data ?? []) as Array<{
+        id: string; file_name: string; columns: string[]; mapping: Record<string, string>;
+        ai_mapped_columns: string[]; source: string; rows_count: number; created_at: string; created_by: string | null;
+      }>;
+    },
+  });
+
+  const applyHistoryEntry = useCallback((entry: {
+    mapping: Record<string, string>; ai_mapped_columns: string[];
+  }) => {
+    if (columns.length === 0) {
+      toast.error("Carregue um arquivo antes de aplicar um mapeamento.");
+      return;
+    }
+    const next: Record<string, string> = {};
+    for (const c of columns) {
+      const v = entry.mapping?.[c];
+      next[c] = v && systemFields.some((f) => f.key === v) ? v : IGNORE;
+    }
+    setMapping(next);
+    setAiMapped(new Set((entry.ai_mapped_columns ?? []).filter((c) => columns.includes(c))));
+    toast.success("Mapeamento anterior aplicado.");
+  }, [columns, systemFields]);
+
+  const deleteHistoryEntry = useCallback(async (id: string) => {
+    const { error } = await (supabase.from("import_mapping_history" as any) as any).delete().eq("id", id);
+    if (error) { toast.error("Não foi possível excluir."); return; }
+    queryClient.invalidateQueries({ queryKey: historyKey });
+    toast.success("Registro removido.");
+  }, [queryClient, historyKey]);
+
 
 
   // Reset on close
@@ -365,6 +415,36 @@ export default function ImportWizardDialog({
           if (name) setCurrentStoreName(name);
         }
       });
+
+      // Save mapping history (fire-and-forget)
+      try {
+        const { data: userRes } = await supabase.auth.getUser();
+        const uid = userRes?.user?.id;
+        if (uid && (campaignId || clientId)) {
+          const cleanMapping: Record<string, string> = {};
+          for (const [c, v] of Object.entries(mapping)) if (v !== IGNORE) cleanMapping[c] = v;
+          const aiCols = Array.from(aiMapped);
+          const source = aiCols.length === 0
+            ? "manual"
+            : aiCols.length === Object.keys(cleanMapping).length ? "ai" : "mixed";
+          await (supabase.from("import_mapping_history" as any) as any).insert({
+            campaign_id: campaignId ?? null,
+            client_id: clientId ?? null,
+            mode,
+            file_name: fileName,
+            columns,
+            mapping: cleanMapping,
+            ai_mapped_columns: aiCols,
+            source,
+            rows_count: valid.length,
+            created_by: uid,
+          });
+          queryClient.invalidateQueries({ queryKey: historyKey });
+        }
+      } catch (err) {
+        console.warn("Falha ao salvar histórico de mapeamento:", err);
+      }
+
       toast.success(t("common.import") + " concluída: " + valid.length + " registro(s).");
       onOpenChange(false);
     } catch (e: any) {
@@ -451,6 +531,49 @@ export default function ImportWizardDialog({
                     </TableBody>
                   </Table>
                 </div>
+              </div>
+            )}
+
+            {history.length > 0 && (
+              <div className="space-y-2 pt-2 border-t">
+                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <History className="w-3.5 h-3.5" />
+                  Mapeamentos anteriores desta {campaignId ? "campanha" : "cliente"}
+                </div>
+                <div className="border rounded-md divide-y max-h-56 overflow-y-auto">
+                  {history.map((h) => (
+                    <div key={h.id} className="flex items-center gap-2 p-2 text-xs hover:bg-muted/30">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">{h.file_name}</div>
+                        <div className="text-muted-foreground flex items-center gap-2 mt-0.5">
+                          <span>{new Date(h.created_at).toLocaleString("pt-BR")}</span>
+                          <Badge variant="outline" className="h-4 px-1 text-[9px]">{h.source}</Badge>
+                          <span>{Object.keys(h.mapping || {}).length} col.</span>
+                          <span>{h.rows_count} linhas</span>
+                        </div>
+                      </div>
+                      <Button
+                        size="sm" variant="outline" className="h-7 text-xs"
+                        disabled={columns.length === 0}
+                        onClick={() => applyHistoryEntry(h)}
+                      >
+                        Reaplicar
+                      </Button>
+                      <Button
+                        size="icon" variant="ghost" className="h-7 w-7"
+                        onClick={() => deleteHistoryEntry(h.id)}
+                        title="Excluir"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                {columns.length === 0 && (
+                  <p className="text-[11px] text-muted-foreground">
+                    Selecione um arquivo para poder reaplicar um mapeamento.
+                  </p>
+                )}
               </div>
             )}
           </div>
