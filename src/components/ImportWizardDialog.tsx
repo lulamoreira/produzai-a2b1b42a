@@ -1,10 +1,10 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import * as XLSX from "xlsx";
-import { Sparkles, Upload, ArrowRight, ArrowLeft, AlertCircle, Loader2, Tag } from "lucide-react";
+import { Sparkles, Upload, ArrowRight, ArrowLeft, AlertCircle, Loader2, Tag, History, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
