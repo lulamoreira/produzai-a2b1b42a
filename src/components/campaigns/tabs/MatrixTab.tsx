@@ -181,11 +181,6 @@ export default function MatrixTab({
       toast.error("Erro ao atualizar loja: " + e.message);
     }
   };
-      // toast already handled by hook or we can add success here if needed
-    } catch (e: any) {
-      toast.error("Erro ao atualizar loja: " + e.message);
-    }
-  };
 
   const { isAdminOrMaster } = useUserRole();
 
