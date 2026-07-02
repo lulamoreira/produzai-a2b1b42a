@@ -78,6 +78,7 @@ import BudgetSendNegotiatedDialog from "@/components/Budget/BudgetSendNegotiated
 import BudgetWinnerDialog from "@/components/Budget/BudgetWinnerDialog";
 import BudgetNegotiationDialog from "@/components/Budget/BudgetNegotiationDialog";
 import SendQtyRequoteDialog from "@/components/Budget/SendQtyRequoteDialog";
+import StartAdjustmentDialog from "@/components/Adjustments/StartAdjustmentDialog";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
