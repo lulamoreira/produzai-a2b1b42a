@@ -59,22 +59,25 @@ export async function buildAdjustmentClientPackage(
     supabasePaginate<any>((from, to) =>
       supabase
         .from("campaign_adjustment_kit_pieces" as any)
-        .select("id, kit_id, piece_id, quantity")
+        .select("id, kit_id, piece_id, quantity", { count: "exact" })
         .eq("adjustment_id", adjustmentId)
+        .order("id")
         .range(from, to) as any,
     ),
     supabasePaginate<any>((from, to) =>
       supabase
         .from("campaign_adjustment_store_pieces" as any)
-        .select("store_id, piece_id, quantity")
+        .select("store_id, piece_id, quantity", { count: "exact" })
         .eq("adjustment_id", adjustmentId)
+        .order("id")
         .range(from, to) as any,
     ),
     supabasePaginate<any>((from, to) =>
       supabase
         .from("campaign_adjustment_stores" as any)
-        .select("source_store_id, name, nickname, city, state, store_code, showcase_count")
+        .select("source_store_id, name, nickname, city, state, store_code, showcase_count", { count: "exact" })
         .eq("adjustment_id", adjustmentId)
+        .order("id")
         .range(from, to) as any,
     ),
     supabase

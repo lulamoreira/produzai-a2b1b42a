@@ -107,7 +107,7 @@ const ImportPiecesFromCampaignDialog = ({
       return supabasePaginate<RemotePiece>((from, to) =>
         supabase
           .from("campaign_pieces")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("campaign_id", selectedCampaignId)
           .eq("is_deleted", false)
           .order("code")
@@ -157,9 +157,10 @@ const ImportPiecesFromCampaignDialog = ({
         (from, to) =>
           supabase
             .from("campaign_store_pieces")
-            .select("piece_id, store_id, quantity")
+            .select("piece_id, store_id, quantity", { count: "exact" })
             .eq("campaign_id", selectedCampaignId)
             .gt("quantity", 0)
+            .order("id")
             .range(from, to) as any
       );
     },

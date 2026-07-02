@@ -106,8 +106,9 @@ export function useStoreContactsByClient(clientId: string | undefined) {
       const stores = await supabasePaginate<{ id: string }>((from, to) =>
         supabase
           .from("client_stores")
-          .select("id")
+          .select("id", { count: "exact" })
           .eq("client_id", clientId)
+          .order("id")
           .range(from, to) as any
       );
       if (!stores?.length) return [];

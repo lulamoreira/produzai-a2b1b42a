@@ -95,7 +95,8 @@ export function useCampaignSnapshotContext(campaignId?: string, enabled = true) 
       const kitsRes = await sb.from("campaign_kits").select("*").eq("campaign_id", campaignId!);
       if (kitsRes.error) throw kitsRes.error;
       const storePiecesAll = await supabasePaginate<any>((from, to) =>
-        sb.from("campaign_store_pieces").select("*").eq("campaign_id", campaignId!).range(from, to)
+        .order("id")
+        sb.from("campaign_store_pieces").select("*", { count: "exact" }).eq("campaign_id", campaignId!).range(from, to)
       );
       const storePiecesRes = { data: storePiecesAll, error: null as any };
 
@@ -146,7 +147,8 @@ export function useCreateSnapshot() {
         supabase.from("campaign_kits").select("*").eq("campaign_id", campaign_id),
       ]);
       const storePiecesAll = await supabasePaginate<any>((from, to) =>
-        supabase.from("campaign_store_pieces").select("*").eq("campaign_id", campaign_id).range(from, to) as any
+        .order("id")
+        supabase.from("campaign_store_pieces").select("*", { count: "exact" }).eq("campaign_id", campaign_id).range(from, to) as any
       );
       const storePiecesRes = { data: storePiecesAll, error: null as any };
       if (piecesRes.error) throw piecesRes.error;

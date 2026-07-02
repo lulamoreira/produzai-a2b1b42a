@@ -235,7 +235,7 @@ export function useOccurrences(campaignId?: string) {
       const data = await supabasePaginate<Occurrence>((from, to) =>
         supabase
           .from("occurrences")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("campaign_id", campaignId!)
           .order("created_at", { ascending: false })
           .range(from, to) as any

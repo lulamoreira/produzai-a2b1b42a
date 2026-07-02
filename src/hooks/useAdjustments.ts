@@ -116,7 +116,7 @@ export function useAdjustmentPieces(adjustmentId: string | undefined) {
       return supabasePaginate<any>((from, to) =>
         supabase
           .from("campaign_adjustment_pieces")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("adjustment_id", adjustmentId!)
           .order("code", { ascending: true })
           .range(from, to) as any
@@ -133,8 +133,9 @@ export function useAdjustmentStorePieces(adjustmentId: string | undefined) {
       return supabasePaginate<any>((from, to) =>
         supabase
           .from("campaign_adjustment_store_pieces")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("adjustment_id", adjustmentId!)
+          .order("id")
           .range(from, to) as any
       );
     },
@@ -149,8 +150,9 @@ export function useAdjustmentKits(adjustmentId: string | undefined) {
       return supabasePaginate<any>((from, to) =>
         supabase
           .from("campaign_adjustment_kits")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("adjustment_id", adjustmentId!)
+          .order("id")
           .range(from, to) as any
       );
     },
@@ -165,8 +167,9 @@ export function useAdjustmentKitPieces(adjustmentId: string | undefined) {
       return supabasePaginate<any>((from, to) =>
         supabase
           .from("campaign_adjustment_kit_pieces")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("adjustment_id", adjustmentId!)
+          .order("id")
           .range(from, to) as any
       );
     },
@@ -181,8 +184,9 @@ export function useAdjustmentStores(adjustmentId: string | undefined) {
       return supabasePaginate<any>((from, to) =>
         supabase
           .from("campaign_adjustment_stores" as any)
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("adjustment_id", adjustmentId!)
+          .order("id")
           .range(from, to) as any
       );
     },

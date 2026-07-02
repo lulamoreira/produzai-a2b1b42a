@@ -75,7 +75,7 @@ const ImportMatrixFromCampaignDialog = ({
       return supabasePaginate<CampaignPiece>((from, to) =>
         supabase
           .from("campaign_pieces")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("campaign_id", selectedCampaignId)
           .eq("is_deleted", false)
           .order("display_order")
@@ -120,8 +120,9 @@ const ImportMatrixFromCampaignDialog = ({
         (from, to) =>
           supabase
             .from("campaign_store_pieces")
-            .select("store_id, piece_id, quantity")
+            .select("store_id, piece_id, quantity", { count: "exact" })
             .eq("campaign_id", selectedCampaignId)
+            .order("id")
             .range(from, to) as any
       );
     },

@@ -364,7 +364,7 @@ const SupplierPortal = () => {
         const piecesRaw = await supabasePaginate<PieceData>((from, to) =>
           supabase
             .from("campaign_pieces")
-            .select("id, name, code, kit_only, image_url, specification, size, installation_instructions, display_order, category, store_category, sub_location")
+            .select("id, name, code, kit_only, image_url, specification, size, installation_instructions, display_order, category, store_category, sub_location", { count: "exact" })
             .eq("campaign_id", sup.campaign_id)
             .eq("is_deleted", false)
             .order("display_order")

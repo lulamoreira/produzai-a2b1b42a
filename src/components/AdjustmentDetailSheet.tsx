@@ -80,8 +80,9 @@ export default function AdjustmentDetailSheet({
       return supabasePaginate<any>((from, to) =>
         supabase
           .from("client_stores")
-          .select("id, name, nickname, city, state, store_code, showcase_count")
+          .select("id, name, nickname, city, state, store_code, showcase_count", { count: "exact" })
           .eq("client_id", clientId)
+          .order("id")
           .range(from, to) as any
       );
     },
@@ -93,7 +94,8 @@ export default function AdjustmentDetailSheet({
     enabled: open && !!campaignId,
     queryFn: async () =>
       supabasePaginate<any>((from, to) =>
-        supabase.from("campaign_kits").select("id, code, name").eq("campaign_id", campaignId).range(from, to) as any
+        .order("id")
+        supabase.from("campaign_kits").select("id, code, name", { count: "exact" }).eq("campaign_id", campaignId).range(from, to) as any
       ),
   });
   const kitCodeBySourceId = useMemo(() => {
@@ -114,7 +116,8 @@ export default function AdjustmentDetailSheet({
     enabled: open && !!campaignId,
     queryFn: async () =>
       supabasePaginate<any>((from, to) =>
-        supabase.from("campaign_pieces").select("id, code, name").eq("campaign_id", campaignId).range(from, to) as any
+        .order("id")
+        supabase.from("campaign_pieces").select("id, code, name", { count: "exact" }).eq("campaign_id", campaignId).range(from, to) as any
       ),
   });
   const pieceMetaBySourceId = useMemo(() => {
@@ -135,7 +138,8 @@ export default function AdjustmentDetailSheet({
     enabled: open && !!campaignId && sourceKitIds.length > 0,
     queryFn: async () =>
       supabasePaginate<any>((from, to) =>
-        supabase.from("campaign_kit_pieces").select("kit_id, piece_id, quantity").in("kit_id", sourceKitIds).range(from, to) as any
+        .order("id")
+        supabase.from("campaign_kit_pieces").select("kit_id, piece_id, quantity", { count: "exact" }).in("kit_id", sourceKitIds).range(from, to) as any
       ),
   });
 
@@ -145,7 +149,8 @@ export default function AdjustmentDetailSheet({
     enabled: open && !!adjustment.id,
     queryFn: async () =>
       supabasePaginate<any>((from, to) =>
-        supabase.from("campaign_adjustment_kit_pieces").select("kit_id, piece_id, quantity").eq("adjustment_id", adjustment.id).range(from, to) as any
+        .order("id")
+        supabase.from("campaign_adjustment_kit_pieces").select("kit_id, piece_id, quantity", { count: "exact" }).eq("adjustment_id", adjustment.id).range(from, to) as any
       ),
   });
 
@@ -160,13 +165,15 @@ export default function AdjustmentDetailSheet({
       if (hasNegotiationRateio && winnerSupplierId) {
         return supabasePaginate<any>((from, to) =>
           (supabase.from("budget_negotiation_store_pieces" as any) as any)
-            .select("piece_id, store_id, quantity")
+            .select("piece_id, store_id, quantity", { count: "exact" })
             .eq("supplier_id", winnerSupplierId)
+            .order("id")
             .range(from, to)
         );
       }
       return supabasePaginate<any>((from, to) =>
-        (supabase.from("campaign_store_pieces") as any).select("piece_id, store_id, quantity").eq("campaign_id", campaignId).range(from, to)
+        .order("id")
+        (supabase.from("campaign_store_pieces") as any).select("piece_id, store_id, quantity", { count: "exact" }).eq("campaign_id", campaignId).range(from, to)
       );
     },
   });

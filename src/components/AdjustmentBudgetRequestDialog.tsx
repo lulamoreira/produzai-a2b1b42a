@@ -156,27 +156,31 @@ export default function AdjustmentBudgetRequestDialog({
           useNegotiationBaseline
             ? supabasePaginate<any>((from, to) =>
                 (supabase.from("budget_negotiation_store_pieces" as any) as any)
-                  .select("store_id, piece_id, quantity")
+                  .select("store_id, piece_id, quantity", { count: "exact" })
                   .eq("supplier_id", winnerSupplierId as string)
+                  .order("id")
                   .range(from, to)
               )
             : supabasePaginate<any>((from, to) =>
                 supabase.from("campaign_store_pieces" as any)
-                  .select("store_id, piece_id, quantity")
+                  .select("store_id, piece_id, quantity", { count: "exact" })
                   .eq("campaign_id", campaignId)
+                  .order("id")
                   .range(from, to) as any
               ),
           supabase.from("campaign_kits").select("id, code, name, image_url").eq("campaign_id", campaignId).eq("is_deleted", false),
           supabase.from("campaign_pieces").select("id, code, name, image_url, image_thumb_url, image_report_url, image_full_url").eq("campaign_id", campaignId).eq("is_deleted", false),
           supabasePaginate<any>((from, to) =>
             supabase.from("campaign_kit_pieces" as any)
-              .select("kit_id, piece_id, quantity")
+              .select("kit_id, piece_id, quantity", { count: "exact" })
+              .order("id")
               .range(from, to) as any
           ),
           supabasePaginate<any>((from, to) =>
             supabase.from("campaign_adjustment_stores" as any)
-              .select("source_store_id, name, nickname, city, state, store_code, showcase_count")
+              .select("source_store_id, name, nickname, city, state, store_code, showcase_count", { count: "exact" })
               .eq("adjustment_id", adjustment.id)
+              .order("id")
               .range(from, to) as any
           ),
         ]);

@@ -577,8 +577,9 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
         return await supabasePaginate<any>((from, to) =>
           supabase
             .from("budget_negotiation_store_pieces" as never)
-            .select("supplier_id, piece_id, quantity")
+            .select("supplier_id, piece_id, quantity", { count: "exact" })
             .in("supplier_id", negotiatingSupplierIds)
+            .order("id")
             .range(from, to) as any
         );
       } catch {
