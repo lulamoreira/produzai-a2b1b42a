@@ -64,10 +64,12 @@ import {
   User as UserIcon,
   Loader2,
   Share2,
-  Eye
+  Eye,
+  ThumbsUp
 } from "lucide-react";
 import SupplierDetailsSheet from "@/components/SupplierDetailsSheet";
 import SupplierFormDialog from "@/components/SupplierFormDialog";
+import SupplierRecommendDialog from "@/components/SupplierRecommendDialog";
 import SortableHeader from "@/components/LojaALoja/SortableHeader";
 import { useTableSort } from "@/hooks/useTableSort";
 import { format, addDays } from "date-fns";
