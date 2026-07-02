@@ -64,10 +64,12 @@ import {
   User as UserIcon,
   Loader2,
   Share2,
-  Eye
+  Eye,
+  ThumbsUp
 } from "lucide-react";
 import SupplierDetailsSheet from "@/components/SupplierDetailsSheet";
 import SupplierFormDialog from "@/components/SupplierFormDialog";
+import SupplierRecommendDialog from "@/components/SupplierRecommendDialog";
 import SortableHeader from "@/components/LojaALoja/SortableHeader";
 import { useTableSort } from "@/hooks/useTableSort";
 import { format, addDays } from "date-fns";
@@ -126,6 +128,7 @@ const AgencySuppliers = () => {
   const [inviteDays, setInviteDays] = useState(7);
   const [generatingInvite, setGeneratingInvite] = useState(false);
   const [generatedInvite, setGeneratedInvite] = useState<{ url: string; expiresAt: Date } | null>(null);
+  const [recommendDialogOpen, setRecommendDialogOpen] = useState(false);
 
 
   const filteredSuppliers = useMemo(() => {
@@ -262,6 +265,13 @@ Qualquer dúvida, estamos à disposição!` : "";
             </div>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setRecommendDialogOpen(true)}
+              className="h-10 px-4"
+            >
+              <ThumbsUp className="w-4 h-4 mr-2" /> Indicar Fornecedores
+            </Button>
             <Button 
               variant="outline" 
               onClick={() => {
@@ -527,6 +537,12 @@ Qualquer dúvida, estamos à disposição!` : "";
           open={!!detailsSupplier}
           onOpenChange={(o) => !o && setDetailsSupplier(null)}
           supplier={detailsSupplier}
+        />
+
+        <SupplierRecommendDialog
+          open={recommendDialogOpen}
+          onOpenChange={setRecommendDialogOpen}
+          suppliers={suppliers}
         />
       </div>
 
