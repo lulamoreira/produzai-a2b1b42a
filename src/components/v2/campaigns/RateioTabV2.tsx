@@ -5,8 +5,12 @@ import {
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp,
   Search, Filter, Download, Sparkles, Copy, MoreHorizontal, Lock, CheckCircle2,
   Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw, X,
-  ArrowUpDown, Check, Loader2, Upload, FileDown, Maximize2, Minimize2, Mail
+  ArrowUpDown, Check, Loader2, Upload, FileDown, Maximize2, Minimize2, Mail,
+  FileEdit, Trash2
 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { useCreateAdjustment, useDeleteAdjustment, fetchVigenteRateio } from "@/hooks/useAdjustments";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
