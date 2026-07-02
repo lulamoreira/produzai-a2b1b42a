@@ -165,6 +165,7 @@ export type Database = {
           observations: string | null
           phone: string | null
           services: Json | null
+          trade_name: string | null
           updated_at: string
           website: string | null
           whatsapp: string | null
@@ -193,6 +194,7 @@ export type Database = {
           observations?: string | null
           phone?: string | null
           services?: Json | null
+          trade_name?: string | null
           updated_at?: string
           website?: string | null
           whatsapp?: string | null
@@ -221,6 +223,7 @@ export type Database = {
           observations?: string | null
           phone?: string | null
           services?: Json | null
+          trade_name?: string | null
           updated_at?: string
           website?: string | null
           whatsapp?: string | null
