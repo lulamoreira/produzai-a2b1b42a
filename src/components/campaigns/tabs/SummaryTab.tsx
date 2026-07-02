@@ -148,10 +148,11 @@ export default function SummaryTab({
         </div>
       )}
       {/* Campaign KPI Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
 
         {[
           { label: t("campaign.kpi.stores"), value: campaignKpis?.stores, icon: Store },
+          { label: t("campaign.kpi.activeStores", { defaultValue: "Lojas ativas" }), value: campaignKpis?.activeStores, icon: Store },
           { label: t("campaign.kpi.pieces"), value: campaignKpis?.pieces, icon: Package },
           { label: t("campaign.kpi.pendingInstallations"), value: campaignKpis?.pendingInstallations, icon: MapPin },
           { label: t("campaign.kpi.pendingApprovals"), value: campaignKpis?.pendingApprovals, icon: ClipboardCheck },
