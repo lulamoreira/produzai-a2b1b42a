@@ -353,14 +353,68 @@ export async function exportCampaignPlan(params: ExportCampaignPlanParams): Prom
       if (kit && !pieceToKitName.has(kp.piece_id)) pieceToKitName.set(kp.piece_id, kit.name);
     }
 
-    // Group by store_category / category
+    // Order: follow display_order of top-level items (pieces not kit_only + kits),
+    // with each kit's child pieces emitted immediately after the kit.
+    // Group "TODAS AS LOJAS" always comes first when present.
     const groupOf = (p: any) => p.store_category || p.category || "SEM LOCAL";
-    const sorted = [...pieces].sort((a: any, b: any) => {
-      const ga = groupOf(a) || "";
-      const gb = groupOf(b) || "";
-      if (ga !== gb) return ga.localeCompare(gb);
-      return (Number(a.code) || 0) - (Number(b.code) || 0);
-    });
+
+    const pieceById = new Map<string, any>();
+    for (const p of pieces) pieceById.set(String(p.id), p);
+    const kitPiecesByKit = new Map<string, any[]>();
+    for (const kp of kitPieces) {
+      const arr = kitPiecesByKit.get(kp.kit_id) || [];
+      arr.push(kp);
+      kitPiecesByKit.set(kp.kit_id, arr);
+    }
+    for (const [, arr] of kitPiecesByKit) {
+      arr.sort((a: any, b: any) =>
+        (a.display_order ?? 0) - (b.display_order ?? 0) ||
+        (Number(pieceById.get(String(a.piece_id))?.code) || 0) - (Number(pieceById.get(String(b.piece_id))?.code) || 0),
+      );
+    }
+
+    type TopEntry = { kind: "piece" | "kit"; id: string; order: number };
+    const topEntries: TopEntry[] = [
+      ...pieces
+        .filter((p: any) => !p.kit_only)
+        .map((p: any) => ({ kind: "piece" as const, id: String(p.id), order: Number(p.display_order ?? 0) })),
+      ...kits.map((k: any) => ({ kind: "kit" as const, id: String(k.id), order: Number(k.display_order ?? 0) })),
+    ].sort((a, b) => a.order - b.order);
+
+    const emitted = new Set<string>();
+    const sorted: any[] = [];
+    for (const entry of topEntries) {
+      if (entry.kind === "piece") {
+        const p = pieceById.get(entry.id);
+        if (p && !emitted.has(entry.id)) {
+          sorted.push(p);
+          emitted.add(entry.id);
+        }
+      } else {
+        for (const kp of kitPiecesByKit.get(entry.id) || []) {
+          const p = pieceById.get(String(kp.piece_id));
+          if (p && !emitted.has(String(p.id))) {
+            sorted.push(p);
+            emitted.add(String(p.id));
+          }
+        }
+      }
+    }
+    // Append any remaining pieces not covered above (safety), preserving code order
+    const remaining = pieces
+      .filter((p: any) => !emitted.has(String(p.id)))
+      .sort((a: any, b: any) => (Number(a.code) || 0) - (Number(b.code) || 0));
+    sorted.push(...remaining);
+
+    // Reorder so that "TODAS AS LOJAS" group (case-insensitive) appears first,
+    // preserving relative order of pieces within that group.
+    const isTodasLojas = (g: string) => (g || "").trim().toUpperCase() === "TODAS AS LOJAS";
+    const todas = sorted.filter((p) => isTodasLojas(groupOf(p)));
+    if (todas.length > 0) {
+      const rest = sorted.filter((p) => !isTodasLojas(groupOf(p)));
+      sorted.length = 0;
+      sorted.push(...todas, ...rest);
+    }
 
     // Total quantity per piece (across all stores) from qtyMap
     const totalQtyByPiece: Record<string, number> = {};
