@@ -204,9 +204,10 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
       const data = await supabasePaginate<{ team_id: string | null }>((from, to) =>
         supabase
           .from("campaign_schedules")
-          .select("team_id")
+          .select("team_id", { count: "exact" })
           .eq("campaign_id", campaignId)
           .not("team_id", "is", null)
+          .order("id")
           .range(from, to) as any
       );
       const counts: Record<string, number> = {};

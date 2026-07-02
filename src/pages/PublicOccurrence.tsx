@@ -75,7 +75,7 @@ const PublicOccurrence = () => {
       return supabasePaginate<any>((from, to) =>
         supabase
           .from("client_stores")
-          .select("id, name, nickname, phone, email")
+          .select("id, name, nickname, phone, email", { count: "exact" })
           .eq("client_id", campaign!.client_id)
           .order("nickname")
           .range(from, to) as any
@@ -90,7 +90,7 @@ const PublicOccurrence = () => {
       return supabasePaginate<any>((from, to) =>
         supabase
           .from("campaign_pieces")
-          .select("id, name, code, image_url, kit_only, category")
+          .select("id, name, code, image_url, kit_only, category", { count: "exact" })
           .eq("campaign_id", campaignId!)
           .eq("is_deleted", false)
           .order("code")

@@ -25,8 +25,9 @@ export function useCampaignSchedules(campaignId?: string) {
       return await supabasePaginate<Schedule>((from, to) =>
         supabase
           .from("campaign_schedules")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("campaign_id", campaignId!)
+          .order("id")
           .range(from, to) as any
       );
     },

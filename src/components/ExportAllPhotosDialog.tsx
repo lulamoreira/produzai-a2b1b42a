@@ -110,16 +110,18 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
     const r1 = await supabasePaginate<{ store_id: string | null }>((from, to) =>
       supabase
         .from("installation_photos")
-        .select("store_id")
+        .select("store_id", { count: "exact" })
         .eq("campaign_id", campaignId)
+        .order("id")
         .range(from, to) as any,
     );
     r1.forEach((x: any) => x.store_id && ids.add(x.store_id));
     const r2 = await supabasePaginate<{ store_id: string | null }>((from, to) =>
       supabase
         .from("occurrences")
-        .select("store_id")
+        .select("store_id", { count: "exact" })
         .eq("campaign_id", campaignId)
+        .order("id")
         .range(from, to) as any,
     );
     r2.forEach((x: any) => x.store_id && ids.add(x.store_id));
@@ -143,8 +145,9 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
       }>((from, to) =>
         supabase
           .from("installation_photos")
-          .select("id, photo_url, category, store_id")
+          .select("id, photo_url, category, store_id", { count: "exact" })
           .eq("campaign_id", campaignId)
+          .order("id")
           .range(from, to) as any,
       );
       data.forEach((p: any) => {
@@ -171,8 +174,9 @@ export default function ExportAllPhotosDialog({ campaignId, campaignName, trigge
         (from, to) =>
           supabase
             .from("occurrences")
-            .select("id, store_id")
+            .select("id, store_id", { count: "exact" })
             .eq("campaign_id", campaignId)
+            .order("id")
             .range(from, to) as any,
       );
       const occIds = occs.map((o: any) => o.id);

@@ -103,8 +103,9 @@ export default function BudgetSendNegotiatedDialog({
               const rows = await supabasePaginate<any>((from, to) =>
                 supabase
                   .from("campaign_store_pieces" as any)
-                  .select("store_id, piece_id, quantity")
+                  .select("store_id, piece_id, quantity", { count: "exact" })
                   .eq("campaign_id", campaignId)
+                  .order("id")
                   .range(from, to) as any
               );
               return { data: rows, error: null } as any;
@@ -117,8 +118,9 @@ export default function BudgetSendNegotiatedDialog({
               const rows = await supabasePaginate<any>((from, to) =>
                 supabase
                   .from("budget_negotiation_store_pieces" as any)
-                  .select("store_id, piece_id, quantity")
+                  .select("store_id, piece_id, quantity", { count: "exact" })
                   .eq("supplier_id", supplier.id)
+                  .order("id")
                   .range(from, to) as any
               );
               return { data: rows, error: null } as any;

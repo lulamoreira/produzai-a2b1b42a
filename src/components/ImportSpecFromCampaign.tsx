@@ -42,7 +42,7 @@ export default function ImportSpecFromCampaign({ clientId, currentCampaignId, on
       return supabasePaginate<PieceOption>((from, to) =>
         supabase
           .from("campaign_pieces")
-          .select("id, name, code, size, specification, kit_only")
+          .select("id, name, code, size, specification, kit_only", { count: "exact" })
           .eq("campaign_id", selectedCampaign!.id)
           .eq("is_deleted", false)
           .order("code")

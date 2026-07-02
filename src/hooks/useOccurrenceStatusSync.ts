@@ -29,9 +29,10 @@ export function useOccurrenceStatusSync(campaignId?: string) {
       }>((from, to) =>
         supabase
           .from("store_occurrence_reports")
-          .select("id, store_id, resolved_at")
+          .select("id, store_id, resolved_at", { count: "exact" })
           .eq("campaign_id", campaignId!)
           .is("resolved_at", null)
+          .order("id")
           .range(from, to) as any
       );
       // Map to the shape expected by computeStoreOccurrenceStatus.

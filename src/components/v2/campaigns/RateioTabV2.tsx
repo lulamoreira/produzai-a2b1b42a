@@ -571,7 +571,7 @@ export default function RateioTabV2({
         id: "adjustment", 
         label: `Ajuste · ${activeAdjustment.name}`,
         type: "adjustment",
-        parent: hasNegotiationRateio ? "Negociação" : "Original"
+        parent: activeAdjustment.synced_with === "negotiation" ? "Negociação" : "Original"
       });
     }
 

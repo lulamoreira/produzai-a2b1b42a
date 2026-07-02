@@ -119,7 +119,7 @@ export default function RateioComparisonDialog({
               .from("campaign_store_pieces")
               .select("store_id, piece_id, quantity", { count: "exact" })
               .eq("campaign_id", campaignId)
-              .range(from, to) as any
+              .order("id").range(from, to) as any
         );
         const map: Record<string, number> = {};
         for (const r of rows) {
@@ -141,7 +141,7 @@ export default function RateioComparisonDialog({
       }>(
         (from, to) =>
           (negotiationSupplierId
-            ? query.eq("supplier_id", negotiationSupplierId).range(from, to)
+            ? query.eq("supplier_id", negotiationSupplierId).order("id").range(from, to)
             : query.is("supplier_id", null).range(from, to)) as any
       );
       const map: Record<string, number> = {};

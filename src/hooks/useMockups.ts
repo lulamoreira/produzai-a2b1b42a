@@ -39,11 +39,13 @@ export function useCampaignMockups(campaignId: string | undefined) {
       return supabasePaginate<CampaignMockup>((from, to) =>
         supabase
           .from('campaign_mockups')
-          .select('*')
+          .select('*', { count: 'exact' })
           .eq('campaign_id', campaignId!)
           .order('created_at', { ascending: true })
+          .order('id')
           .range(from, to) as any
       );
+
     },
   });
 }
@@ -62,10 +64,12 @@ export function useInitializeMockups() {
         (from, to) =>
           supabase
             .from('campaign_mockups')
-            .select('piece_id, kit_id, parent_mockup_id')
+            .select('piece_id, kit_id, parent_mockup_id', { count: 'exact' })
             .eq('campaign_id', params.campaignId)
+            .order('id')
             .range(from, to) as any
       );
+
       const existingPieceIds = new Set(existing.filter(e => !e.parent_mockup_id && e.piece_id).map(e => e.piece_id));
       const existingKitIds = new Set(existing.filter(e => e.kit_id).map(e => e.kit_id));
 

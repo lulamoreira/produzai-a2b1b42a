@@ -64,22 +64,25 @@ export async function buildRequoteFinalPackage(params: {
     supabasePaginate<any>((from, to) =>
       supabase
         .from("campaign_adjustment_kit_pieces" as any)
-        .select("id, kit_id, piece_id, quantity")
+        .select("id, kit_id, piece_id, quantity", { count: "exact" })
         .eq("adjustment_id", adjustmentId)
+        .order("id")
         .range(from, to) as any,
     ),
     supabasePaginate<any>((from, to) =>
       supabase
         .from("campaign_adjustment_store_pieces" as any)
-        .select("store_id, piece_id, quantity")
+        .select("store_id, piece_id, quantity", { count: "exact" })
         .eq("adjustment_id", adjustmentId)
+        .order("id")
         .range(from, to) as any,
     ),
     supabasePaginate<any>((from, to) =>
       supabase
         .from("campaign_adjustment_stores" as any)
-        .select("*")
+        .select("*", { count: "exact" })
         .eq("adjustment_id", adjustmentId)
+        .order("id")
         .range(from, to) as any,
     ),
     supabase
@@ -118,8 +121,9 @@ export async function buildRequoteFinalPackage(params: {
     ? await supabasePaginate<any>((from, to) =>
         supabase
           .from("client_stores")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("client_id", clientId)
+          .order("id")
           .range(from, to) as any,
       )
     : [];

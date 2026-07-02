@@ -195,16 +195,18 @@ export default function AdjustmentRegisterResponseDialog({
         // for campaigns that never went through negotiation.
         let qtyRows = await supabasePaginate<any>((from, to) =>
           supabase.from("budget_negotiation_store_pieces" as any)
-            .select("piece_id, quantity")
+            .select("piece_id, quantity", { count: "exact" })
             .eq("supplier_id", (w as any).id)
             .eq("campaign_id", campaignId)
+            .order("id")
             .range(from, to) as any
         );
         if (qtyRows.length === 0) {
           qtyRows = await supabasePaginate<any>((from, to) =>
             supabase.from("campaign_store_pieces" as any)
-              .select("piece_id, quantity")
+              .select("piece_id, quantity", { count: "exact" })
               .eq("campaign_id", campaignId)
+              .order("id")
               .range(from, to) as any
           );
         }

@@ -36,9 +36,10 @@ export async function fetchVigenteRateio(
   const campaignLevel = await supabasePaginate<any>((from, to) =>
     supabase
       .from("budget_negotiation_store_pieces" as never)
-      .select("store_id, piece_id, quantity")
+      .select("store_id, piece_id, quantity", { count: "exact" })
       .eq("campaign_id", campaignId)
       .is("supplier_id", null)
+      .order("id")
       .range(from, to) as any,
   );
   if (campaignLevel.length > 0) {
@@ -50,8 +51,10 @@ export async function fetchVigenteRateio(
     const supplierRows = await supabasePaginate<any>((from, to) =>
       supabase
         .from("budget_negotiation_store_pieces" as never)
-        .select("store_id, piece_id, quantity")
+        .select("store_id, piece_id, quantity", { count: "exact" })
         .eq("supplier_id", winnerSupplierId)
+        .eq("campaign_id", campaignId)
+        .order("id")
         .range(from, to) as any,
     );
     if (supplierRows.length > 0) {
@@ -63,12 +66,14 @@ export async function fetchVigenteRateio(
   const original = await supabasePaginate<any>((from, to) =>
     supabase
       .from("campaign_store_pieces")
-      .select("store_id, piece_id, quantity")
+      .select("store_id, piece_id, quantity", { count: "exact" })
       .eq("campaign_id", campaignId)
+      .order("id")
       .range(from, to) as any,
   );
   return { rows: original as any, source: "original" };
 }
+
 
 export function useCampaignAdjustments(campaignId: string | undefined) {
   return useQuery({
@@ -111,7 +116,7 @@ export function useAdjustmentPieces(adjustmentId: string | undefined) {
       return supabasePaginate<any>((from, to) =>
         supabase
           .from("campaign_adjustment_pieces")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("adjustment_id", adjustmentId!)
           .order("code", { ascending: true })
           .range(from, to) as any
@@ -128,8 +133,9 @@ export function useAdjustmentStorePieces(adjustmentId: string | undefined) {
       return supabasePaginate<any>((from, to) =>
         supabase
           .from("campaign_adjustment_store_pieces")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("adjustment_id", adjustmentId!)
+          .order("id")
           .range(from, to) as any
       );
     },
@@ -144,8 +150,9 @@ export function useAdjustmentKits(adjustmentId: string | undefined) {
       return supabasePaginate<any>((from, to) =>
         supabase
           .from("campaign_adjustment_kits")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("adjustment_id", adjustmentId!)
+          .order("id")
           .range(from, to) as any
       );
     },
@@ -160,8 +167,9 @@ export function useAdjustmentKitPieces(adjustmentId: string | undefined) {
       return supabasePaginate<any>((from, to) =>
         supabase
           .from("campaign_adjustment_kit_pieces")
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("adjustment_id", adjustmentId!)
+          .order("id")
           .range(from, to) as any
       );
     },
@@ -176,8 +184,9 @@ export function useAdjustmentStores(adjustmentId: string | undefined) {
       return supabasePaginate<any>((from, to) =>
         supabase
           .from("campaign_adjustment_stores" as any)
-          .select("*")
+          .select("*", { count: "exact" })
           .eq("adjustment_id", adjustmentId!)
+          .order("id")
           .range(from, to) as any
       );
     },
@@ -619,8 +628,9 @@ export function useResyncAdjustmentRateio() {
       const adjPieces = await supabasePaginate<any>((from, to) =>
         supabase
           .from("campaign_adjustment_pieces")
-          .select("id, source_piece_id, is_deleted")
+          .select("id, source_piece_id, is_deleted", { count: "exact" })
           .eq("adjustment_id", adjustmentId)
+          .order("id")
           .range(from, to) as any,
       );
       const srcToAdj = new Map<string, string>();
@@ -642,8 +652,9 @@ export function useResyncAdjustmentRateio() {
           sourceRows = await supabasePaginate<any>((from, to) =>
             supabase
               .from("budget_negotiation_store_pieces" as never)
-              .select("store_id, piece_id, quantity")
+              .select("store_id, piece_id, quantity", { count: "exact" })
               .eq("supplier_id", winnerSupplierId)
+              .order("id")
               .range(from, to) as any,
           );
         }
@@ -652,11 +663,13 @@ export function useResyncAdjustmentRateio() {
         sourceRows = await supabasePaginate<any>((from, to) =>
           supabase
             .from("campaign_store_pieces")
-            .select("store_id, piece_id, quantity")
+            .select("store_id, piece_id, quantity", { count: "exact" })
             .eq("campaign_id", campaignId)
+            .order("id")
             .range(from, to) as any,
         );
       }
+
 
       // 3) Build payload, translating piece_ids and skipping removed pieces.
       const payload = sourceRows

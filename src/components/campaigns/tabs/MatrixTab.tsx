@@ -381,7 +381,7 @@ export default function MatrixTab({
                {(activeAdjustment || (hasNegotiationRateio && winnerSupplierId)) && (() => {
                   const vigenteLabel = vigenteSource === "adjustment" ? `Rateio do Ajuste · ${activeAdjustment?.name ?? ""}` : vigenteSource === "negotiation" ? `Rateio da Negociação · ${winnerSupplierName}` : "Rateio Original";
                   const currentLabel = rateioSource === "adjustment" ? `Rateio do Ajuste · ${activeAdjustment?.name ?? ""}` : rateioSource === "negotiation" ? `Rateio da Negociação · ${winnerSupplierName}` : "Rateio Original";
-                  const adjSyncedLabel = (hasNegotiationRateio && winnerSupplierId) ? "Negociação" : "Original";
+                  const adjSyncedLabel = activeAdjustment?.synced_with === "negotiation" ? "Negociação" : "Original";
 
                   return (
                     <div className={`border-b px-3 py-2 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${isViewingVigente ? "border-emerald-200 dark:border-emerald-900/40 bg-emerald-50/60 dark:bg-emerald-900/10" : "border-amber-200 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-900/10"}`}>

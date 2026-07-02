@@ -73,32 +73,36 @@ async function fetchReportData(campaignId: string, clientId: string, campaignNam
       (from, to) =>
         supabase
           .from("client_stores")
-          .select("id, name, city, state, store_model")
+          .select("id, name, city, state, store_model", { count: "exact" })
           .eq("client_id", clientId)
+          .order("id")
           .range(from, to) as any
     ),
     supabasePaginate<{ store_id: string; scheduled_date: string | null; completed_at: string | null; checkin_timestamp: string | null; photo_checkin: boolean | null }>(
       (from, to) =>
         supabase
           .from("campaign_schedules")
-          .select("store_id, scheduled_date, completed_at, checkin_timestamp, photo_checkin")
+          .select("store_id, scheduled_date, completed_at, checkin_timestamp, photo_checkin", { count: "exact" })
           .eq("campaign_id", campaignId)
+          .order("id")
           .range(from, to) as any
     ),
     supabasePaginate<{ store_id: string | null; status: string | null; priority: string | null; description: string | null; created_at: string | null; resolved_date: string | null; motive_id: string | null }>(
       (from, to) =>
         supabase
           .from("occurrences")
-          .select("store_id, status, priority, description, created_at, resolved_date, motive_id")
+          .select("store_id, status, priority, description, created_at, resolved_date, motive_id", { count: "exact" })
           .eq("campaign_id", campaignId)
+          .order("id")
           .range(from, to) as any
     ),
     supabasePaginate<{ store_id: string | null; category: string | null }>(
       (from, to) =>
         supabase
           .from("installation_photos")
-          .select("store_id, category")
+          .select("store_id, category", { count: "exact" })
           .eq("campaign_id", campaignId)
+          .order("id")
           .range(from, to) as any
     ),
   ]);
