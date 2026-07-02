@@ -397,6 +397,17 @@ export default function ImportWizardDialog({
     return { toCreate, toUpdate, ignored };
   }, [transformedRows, existingItems, updateExisting, requiredKeys]);
 
+  // Existing items whose name is NOT present in the incoming file (stores mode only)
+  const missingStores = useMemo(() => {
+    if (mode !== "stores") return [] as { id: string; name: string }[];
+    const incomingNames = new Set(
+      transformedRows
+        .map((r) => (r.name ?? "").trim().toLowerCase())
+        .filter((n) => n !== "")
+    );
+    return existingItems.filter((s) => !incomingNames.has(s.name.trim().toLowerCase()));
+  }, [mode, existingItems, transformedRows]);
+
   // ─── Confirm import ───────────────────────────────────────────────────────
   const handleConfirm = async () => {
     const valid = transformedRows.filter((r) =>
