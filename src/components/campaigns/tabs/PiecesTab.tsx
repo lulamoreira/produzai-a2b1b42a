@@ -1024,6 +1024,17 @@ export default function PiecesTab({
         existingItems={pieces.map(p => ({ id: p.id, name: p.name || p.code }))}
         onImport={handlePiecesImport}
       />
+
+      <CustomExportDialog
+        open={customExportOpen}
+        onOpenChange={setCustomExportOpen}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        customFieldLabels={customFieldLabels}
+        campaignName={campaign?.name || "Campanha"}
+        clientId={clientId}
+      />
     </div>
   );
 }
