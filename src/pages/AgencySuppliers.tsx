@@ -132,8 +132,9 @@ const AgencySuppliers = () => {
 
 
   const filteredSuppliers = useMemo(() => {
-    return suppliers.filter(s => 
+    return suppliers.filter(s =>
       s.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (s.trade_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (s.contact_name?.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (s.email?.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (s.services as string[]).some(service => service.toLowerCase().includes(searchTerm.toLowerCase()))
