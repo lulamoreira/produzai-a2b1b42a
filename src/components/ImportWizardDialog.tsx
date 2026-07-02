@@ -243,6 +243,7 @@ export default function ImportWizardDialog({
       setAiMapped(new Set());
       setLoadingAI(false);
       setUpdateExisting(true);
+      setDisableMissing(true);
       setImporting(false);
       setImportProgress({ current: 0, total: 0 });
       setCurrentStoreName('');
