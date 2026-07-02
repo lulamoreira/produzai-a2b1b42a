@@ -145,7 +145,8 @@ export default function MatrixTab({
         syncedWith: vigente.source,
         activateImmediately: true,
       });
-      toast.success("Ajuste criado e ativado — o rateio anterior foi congelado.", { id: tId });
+      const sourceLabel = vigente.source === "negotiation" ? "rateio da negociação" : "rateio original";
+      toast.success(`Ajuste "${startAdjName.trim()}" criado e ativado — congelado a partir do ${sourceLabel}.`, { id: tId });
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["active_adjustment", campaignId] }),
         qc.invalidateQueries({ queryKey: ["campaign_adjustments", campaignId] }),
