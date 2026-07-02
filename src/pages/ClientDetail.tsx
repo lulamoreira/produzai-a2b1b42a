@@ -890,14 +890,31 @@ const ClientDetail = () => {
       }
     }
     
+    // Also deactivate duplicate siblings of any store touched by the import,
+    // so only the imported/canonical record remains active.
+    let deduped = 0;
+    if (duplicateSiblingIds.length > 0) {
+      const { error } = await supabase
+        .from("client_stores")
+        .update({ active: false } as any)
+        .in("id", duplicateSiblingIds);
+      if (error) {
+        console.error("Falha ao desativar duplicatas existentes:", error);
+      } else {
+        deduped = duplicateSiblingIds.length;
+      }
+    }
+
     await refetchStores();
-    
+
     const parts: string[] = [];
     if (added > 0) parts.push(`${added} adicionada(s)`);
     if (updated > 0) parts.push(`${updated} atualizada(s)`);
     if (disabled > 0) parts.push(`${disabled} desativada(s)`);
+    if (deduped > 0) parts.push(`${deduped} duplicata(s) desativada(s)`);
     if (parts.length > 0) toast.success(parts.join(", ") + "!");
   };
+
 
   const handleSaveSettings = async () => {
     if (!clientId) return;
