@@ -407,12 +407,33 @@ export default function MatrixTab({
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         {!isViewingVigente && <Button size="sm" className="h-7 text-xs" onClick={() => setRateioSource(vigenteSource)}>← {t("common.backToVigente")}</Button>}
+                        {activeAdjustment ? (
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={() => setActiveSection("adjustments")}>
+                            <FileEdit className="w-3.5 h-3.5" /> Abrir Ajustes
+                          </Button>
+                        ) : (
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1" onClick={openStartAdjust}>
+                            <FileEdit className="w-3.5 h-3.5" /> Iniciar Ajuste
+                          </Button>
+                        )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild><Button size="sm" variant="outline" className="h-7 text-xs">Ver rateios anteriores ▾</Button></DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-64">
                             {vigenteSource !== "original" && <DropdownMenuItem onClick={() => setRateioSource("original")}><div className="flex flex-col"><span className="text-xs font-medium">Rateio Original</span><span className="text-[10px] text-muted-foreground">Congelado · somente leitura</span></div></DropdownMenuItem>}
                             {vigenteSource !== "negotiation" && hasNegotiationRateio && winnerSupplierId && <DropdownMenuItem onClick={() => setRateioSource("negotiation")}><div className="flex flex-col"><span className="text-xs font-medium">Rateio da Negociação</span><span className="text-[10px] text-muted-foreground">{winnerSupplierName} · somente leitura</span></div></DropdownMenuItem>}
                             {vigenteSource !== "adjustment" && activeAdjustment && <DropdownMenuItem onClick={() => setRateioSource("adjustment")}><div className="flex flex-col"><span className="text-xs font-medium">Rateio do Ajuste</span><span className="text-[10px] text-muted-foreground">{activeAdjustment.name}</span></div></DropdownMenuItem>}
+                            {activeAdjustment && rateioSource === "adjustment" && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  onClick={handleDeleteActiveAdjustment}
+                                  className="text-destructive focus:text-destructive"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5 mr-2" />
+                                  <span className="text-xs">Excluir ajuste ativo</span>
+                                </DropdownMenuItem>
+                              </>
+                            )}
                             {isNegotiationView && (<><DropdownMenuSeparator /><DropdownMenuItem onClick={() => setActiveSection("budgets")}><span className="text-xs">← Voltar à Negociação</span></DropdownMenuItem></>)}
                           </DropdownMenuContent>
                         </DropdownMenu>
