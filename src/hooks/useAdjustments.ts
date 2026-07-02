@@ -243,8 +243,9 @@ export function useCreateAdjustment() {
         if (error) throw error;
       }
 
-      // Store pieces (4800+)
-      const spPayload = params.storePieces
+      // Store pieces (4800+) - use frozen snapshot when provided
+      const spSource = params.frozenStorePieces ?? params.storePieces;
+      const spPayload = spSource
         .filter((sp) => Number(sp.quantity || 0) > 0)
         .map((sp) => {
           const newPieceId = pieceIdMap.get(sp.piece_id);
