@@ -375,6 +375,7 @@ const CampaignDetail = () => {
             <TabsContent value="summary">
               <SummaryTab 
                 campaignId={campaignId!} stores={stores} visiblePieces={pieces} kits={kits}
+                kitPieces={kitPieces} campaign={campaign} client={client} agency={agency}
                 canEditCampaign={true} 
                 canViewSchedules={hasModule("scheduling")} 
                 canViewInstallations={hasModule("installations")}
