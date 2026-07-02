@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect, useRef, useCallback, useLayoutEffe
 import { useTranslation } from "react-i18next";
 import { 
   Plus, Download, Upload, Sparkles, RefreshCw, ArrowDownAZ, MapPin, Copy, 
-  Trash2, Search, X, Package, MoreHorizontal, Presentation, Settings2, Columns
+  Trash2, Search, X, Package, MoreHorizontal, Presentation, Settings2, Columns, CaseSensitive
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +37,7 @@ import AddPieceDialog from "@/components/AddPieceDialog";
 import FindReplaceSpecDialog from "@/components/FindReplaceSpecDialog";
 import KitOnlyPiecesDialog from "@/components/KitOnlyPiecesDialog";
 import CustomExportDialog from "@/components/CustomExportDialog";
+import ChangeCaseDialog from "@/components/ChangeCaseDialog";
 
 interface PiecesTabProps {
   campaignId: string;
@@ -118,6 +119,7 @@ export default function PiecesTab({
   const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
   const [kitOnlyDialogOpen, setKitOnlyDialogOpen] = useState(false);
   const [customExportOpen, setCustomExportOpen] = useState(false);
+  const [changeCaseOpen, setChangeCaseOpen] = useState(false);
   const [selectedPieceIds, setSelectedPieceIds] = useState<string[]>([]);
   const [convertSelectionDialogOpen, setConvertSelectionDialogOpen] = useState(false);
   const [preSelectedForKit, setPreSelectedForKit] = useState<string[]>([]);
@@ -679,6 +681,9 @@ export default function PiecesTab({
                   <DropdownMenuItem onClick={() => setCustomExportOpen(true)}>
                     <Settings2 className="w-4 h-4 mr-2" /> Exportar Personalizado
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setChangeCaseOpen(true)}>
+                    <CaseSensitive className="w-4 h-4 mr-2" /> Maiúsculas e Minúsculas
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setPieceImportOpen(true)}>
                     <Upload className="w-4 h-4 mr-2" /> {t("common.import")}
                   </DropdownMenuItem>
@@ -1034,6 +1039,15 @@ export default function PiecesTab({
         customFieldLabels={customFieldLabels}
         campaignName={campaign?.name || "Campanha"}
         clientId={clientId}
+      />
+
+      <ChangeCaseDialog
+        open={changeCaseOpen}
+        onOpenChange={setChangeCaseOpen}
+        pieces={pieces}
+        kits={kits}
+        customFieldLabels={customFieldLabels}
+        campaignId={campaignId}
       />
     </div>
   );
