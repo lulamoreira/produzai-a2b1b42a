@@ -681,6 +681,9 @@ export default function PiecesTab({
                   <DropdownMenuItem onClick={() => setCustomExportOpen(true)}>
                     <Settings2 className="w-4 h-4 mr-2" /> Exportar Personalizado
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setChangeCaseOpen(true)}>
+                    <CaseSensitive className="w-4 h-4 mr-2" /> Maiúsculas e Minúsculas
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setPieceImportOpen(true)}>
                     <Upload className="w-4 h-4 mr-2" /> {t("common.import")}
                   </DropdownMenuItem>
