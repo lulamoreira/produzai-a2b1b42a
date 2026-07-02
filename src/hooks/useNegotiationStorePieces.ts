@@ -128,9 +128,11 @@ export async function snapshotNegotiationRateio(
     (from, to) =>
       supabase
         .from("campaign_store_pieces")
-        .select("store_id, piece_id, quantity")
+        .select("store_id, piece_id, quantity", { count: "exact" })
         .eq("campaign_id", campaignId)
+        .order("id")
         .range(from, to) as any
+
   );
   if (rows.length === 0) return 0;
 
