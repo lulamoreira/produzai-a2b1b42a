@@ -62,6 +62,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import StoreContactsSection from "@/components/StoreContactsSection";
 import ClientEmailMemoryManager from "@/components/Email/ClientEmailMemoryManager";
 import { getCountryConfig, SUPPORTED_COUNTRIES, type CountryConfig } from "@/lib/countryConfig";
+import { getStoreIdentityKey } from "@/lib/storeHelpers";
 import { useLanguage } from "@/hooks/useLanguage";
 
 // Helper to parse "Label|type" format from custom field labels
@@ -789,17 +790,18 @@ const ClientDetail = () => {
     { updateExisting, disableMissingIds, onProgress }: { updateExisting: boolean; disableMissingIds?: string[]; onProgress?: (current: number, total: number, name?: string) => void },
   ) => {
     if (!clientId) return;
-    const existingByName = new Map(stores.map(s => [s.name.trim().toLowerCase(), s]));
-    // Dedupe incoming rows by name (case-insensitive) — the last occurrence wins.
+    const existingByIdentity = new Map(stores.map(s => [getStoreIdentityKey(s), s]).filter(([key]) => key !== ""));
+    // Dedupe incoming rows by name + CNPJ — the last occurrence wins only when
+    // both records represent the same legal store identity.
     // Prevents the import itself from creating duplicate stores when the same
-    // name appears more than once in the spreadsheet.
-    const rowByName = new Map<string, Record<string, string>>();
+    // company appears more than once in the spreadsheet.
+    const rowByIdentity = new Map<string, Record<string, string>>();
     for (const r of rows) {
-      const k = (r.name ?? "").trim().toLowerCase();
+      const k = getStoreIdentityKey({ name: r.name, cnpj: r.cnpj });
       if (!k) continue;
-      rowByName.set(k, r);
+      rowByIdentity.set(k, r);
     }
-    const dedupedRows = Array.from(rowByName.values());
+    const dedupedRows = Array.from(rowByIdentity.values());
     let added = 0;
     let updated = 0;
     for (let i = 0; i < dedupedRows.length; i++) {
@@ -838,7 +840,7 @@ const ClientDetail = () => {
         }
       }
 
-      const existing = existingByName.get(item.name.trim().toLowerCase());
+      const existing = existingByIdentity.get(getStoreIdentityKey(item));
       
       // Update progress before potentially long await
       if (onProgress) onProgress(i + 1, dedupedRows.length, item.name);
@@ -1942,7 +1944,7 @@ const ClientDetail = () => {
         open={storeImportOpen}
         onOpenChange={setStoreImportOpen}
         mode="stores"
-        existingItems={stores.map(s => ({ name: s.name, id: s.id }))}
+        existingItems={stores.map(s => ({ name: s.name, id: s.id, cnpj: s.cnpj }))}
         clientId={clientId}
         onImport={handleStoresImport}
       />
