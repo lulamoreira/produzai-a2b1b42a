@@ -420,12 +420,36 @@ export default function ImportWizardDialog({
     return existingItems.filter((s) => !incomingNames.has(s.name.trim().toLowerCase()));
   }, [mode, existingItems, transformedRows]);
 
+  // Pre-existing duplicates in DB: same name appears more than once.
+  // Keep the first as canonical, mark the extras to be auto-disabled — otherwise
+  // they surface as ghost "Atualizar" rows in the status view and every future
+  // import keeps propagating the dedup problem forward.
+  const duplicateExtras = useMemo(() => {
+    if (mode !== "stores") return [] as { id: string; name: string }[];
+    const seen = new Set<string>();
+    const extras: { id: string; name: string }[] = [];
+    for (const s of existingItems) {
+      const k = s.name.trim().toLowerCase();
+      if (!k) continue;
+      if (seen.has(k)) extras.push(s);
+      else seen.add(k);
+    }
+    return extras;
+  }, [mode, existingItems]);
+  const duplicateExtraIds = useMemo(
+    () => new Set(duplicateExtras.map((s) => s.id)),
+    [duplicateExtras]
+  );
+
   // How many stores will be active after import (stores mode)
   const activeAfterImport = useMemo(() => {
     if (mode !== "stores") return 0;
-    const keptExisting = existingItems.length - (disableMissing ? missingStores.length : 0);
+    const keptExisting =
+      existingItems.length -
+      (disableMissing ? missingStores.length : 0) -
+      duplicateExtras.length;
     return keptExisting + stats.toCreate;
-  }, [mode, existingItems.length, disableMissing, missingStores.length, stats.toCreate]);
+  }, [mode, existingItems.length, disableMissing, missingStores.length, duplicateExtras.length, stats.toCreate]);
 
   // Unified status list — every store classified with its action
   type StatusRow = {
