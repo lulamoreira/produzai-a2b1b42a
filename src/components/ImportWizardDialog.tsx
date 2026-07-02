@@ -468,12 +468,16 @@ export default function ImportWizardDialog({
     });
     const existingNamesLower = new Set(existingItems.map((i) => i.name.trim().toLowerCase()));
 
-    // Existing stores
+    // Enforce dedup here directly: first occurrence of each normalized name is
+    // canonical; ANY later existing store with the same name is auto-disabled.
+    const seenExistingNames = new Set<string>();
+
     existingItems.forEach((s) => {
       const nLow = s.name.trim().toLowerCase();
-      const incoming = incomingByName.get(nLow);
-      if (duplicateExtraIds.has(s.id)) {
-        // Duplicated in DB — auto-disable the extra, keep the first as canonical
+      const isDuplicate = nLow !== "" && seenExistingNames.has(nLow);
+      if (nLow) seenExistingNames.add(nLow);
+
+      if (isDuplicate || duplicateExtraIds.has(s.id)) {
         rows.push({
           action: "desativar",
           name: `${s.name} (duplicada)`,
@@ -482,6 +486,8 @@ export default function ImportWizardDialog({
         });
         return;
       }
+
+      const incoming = incomingByName.get(nLow);
       if (incoming) {
         rows.push({
           action: updateExisting ? "atualizar" : "manter",
