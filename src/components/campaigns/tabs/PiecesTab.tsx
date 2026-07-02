@@ -119,6 +119,7 @@ export default function PiecesTab({
   const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
   const [kitOnlyDialogOpen, setKitOnlyDialogOpen] = useState(false);
   const [customExportOpen, setCustomExportOpen] = useState(false);
+  const [changeCaseOpen, setChangeCaseOpen] = useState(false);
   const [selectedPieceIds, setSelectedPieceIds] = useState<string[]>([]);
   const [convertSelectionDialogOpen, setConvertSelectionDialogOpen] = useState(false);
   const [preSelectedForKit, setPreSelectedForKit] = useState<string[]>([]);
