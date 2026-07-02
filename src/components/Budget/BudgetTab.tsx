@@ -652,6 +652,7 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
     isUnlocking,
   } = useBudgetPhase(campaignId);
   const [unlockTarget, setUnlockTarget] = useState<BudgetPhase | null>(null);
+  const [startAdjustOpen, setStartAdjustOpen] = useState(false);
   const { data: currentTotal } = useCurrentTotal(
     winnerSupplier?.id,
     campaignId,
