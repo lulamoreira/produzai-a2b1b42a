@@ -28,7 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CampaignHeader } from "@/components/campaigns/CampaignHeader";
 import {
   SummaryTab, PiecesTab, OccurrencesTab, SchedulingTab, InstallationsTab,
-  BudgetTab, ApprovalsTab, MatrixTab, StoresTab, HistoryTab, MockupTab, LojaALojaTab
+  BudgetTab, ApprovalsTab, MatrixTab, StoresTab, HistoryTab, MockupTab, LojaALojaTab, BriefingTab
 } from "@/components/campaigns/tabs";
 import TabErrorBoundary from "@/components/campaigns/TabErrorBoundary";
 import { useUIVersion } from "@/hooks/useUIVersion";
