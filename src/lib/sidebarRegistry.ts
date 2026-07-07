@@ -20,7 +20,7 @@ export type Permission =
 
 export const MODULE_ICONS = {
   CalendarDays, Camera, MapPin, Store, AlertTriangle, DollarSign,
-  LayoutList, Grid3X3, Palette, Layers,
+  LayoutList, Grid3X3, Palette, Layers, FileText,
 } satisfies Record<string, LucideIcon>;
 
 export const NAV_ICONS = {
