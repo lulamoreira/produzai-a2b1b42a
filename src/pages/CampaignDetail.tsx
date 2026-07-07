@@ -369,6 +369,7 @@ const CampaignDetail = () => {
             <TabsTrigger value="history" className="hidden">Histórico</TabsTrigger>
             {hasModule("mockup") && <TabsTrigger value="mockup" className="hidden">Mockup</TabsTrigger>}
             {hasModule("loja_a_loja") && <TabsTrigger value="loja_a_loja" className="hidden">Loja a Loja</TabsTrigger>}
+            {hasModule("briefing") && <TabsTrigger value="briefing" className="hidden">Briefing</TabsTrigger>}
           </TabsList>
 
           <TabErrorBoundary>
