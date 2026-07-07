@@ -651,6 +651,11 @@ const CampaignDetail = () => {
                   <LojaALojaTab campaignId={campaignId!} clientId={clientId!} lalPerms={lalPerms} />
                 </TabsContent>
               )}
+              {hasModule("briefing") && (
+                <TabsContent value="briefing">
+                  <BriefingTab campaignId={campaignId!} />
+                </TabsContent>
+              )}
             </Suspense>
           </TabErrorBoundary>
 
