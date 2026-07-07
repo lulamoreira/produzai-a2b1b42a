@@ -59,7 +59,7 @@ const BriefingTab = ({ campaignId }: Props) => {
     let fileName = file.name;
     if (kind === "image") {
       try {
-        const compressed = await compressImage(file, { maxWidth: 1920, maxHeight: 1920, quality: 0.82 });
+        const compressed = await compressImage(file, 1920, 0.82);
         if (compressed) { toUpload = compressed; fileName = file.name.replace(/\.\w+$/, "") + ".jpg"; }
       } catch { /* keep original */ }
     }
