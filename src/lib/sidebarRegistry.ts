@@ -80,6 +80,7 @@ export interface UserMenuItem {
 // Canonical campaign module list — order is render order.
 // hideForLimited / requiresCampaignModule encode the legacy filters.
 export const CAMPAIGN_MODULES: ModuleEntry[] = [
+  { key: "briefing",      labelKey: "modules.briefing",      label: "Briefing",     icon: "FileText",       color: "#5A6B7A", requires: "campaign_access" },
   { key: "scheduling",    labelKey: "modules.scheduling",    label: "Cronograma",   icon: "CalendarDays",   color: "#5C6B3F", requires: "campaign_access" },
   { key: "installations", labelKey: "modules.installations", label: "Instalações",  icon: "Camera",         color: "#7B5E3A", requires: "campaign_access" },
   { key: "loja_a_loja",   labelKey: "modules.loja_a_loja",   label: "Loja a Loja",  icon: "MapPin",         color: "#5B7B5E", requires: "campaign_access" },
