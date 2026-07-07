@@ -17,4 +17,5 @@ export const StoresTab = lazy(() => import("./StoresTab"));
 export const HistoryTab = lazy(() => import("./HistoryTab"));
 export const MockupTab = lazy(() => import("./MockupTab"));
 export const LojaALojaTab = lazy(() => import("./LojaALojaTab"));
+export const BriefingTab = lazy(() => import("./BriefingTab"));
 
