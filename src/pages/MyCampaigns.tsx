@@ -22,6 +22,7 @@ const MyCampaigns = () => {
   // Modules exposed in the limited "Minhas Campanhas" grid.
   // - `budgets` is Admin-only and never shown to limited users.
   const MODULE_META: Record<string, { label: string; icon: React.ElementType }> = {
+    briefing: { label: t("modules.briefing", "Briefing"), icon: FileText },
     stores: { label: t("modules.stores"), icon: Store },
     matrix: { label: t("modules.matrix"), icon: Grid3X3 },
     pieces: { label: t("modules.pieces"), icon: LayoutList },
