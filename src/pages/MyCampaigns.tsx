@@ -3,7 +3,7 @@ import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Store, Grid3X3, LayoutList, CalendarDays, LogOut, Package, Camera, Building2, Star, ArrowRight, Palette, GitMerge, AlertTriangle } from "lucide-react";
+import { Store, Grid3X3, LayoutList, CalendarDays, LogOut, Package, Camera, Building2, Star, ArrowRight, Palette, GitMerge, AlertTriangle, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import AppLayout from "@/components/AppLayout";
@@ -22,6 +22,7 @@ const MyCampaigns = () => {
   // Modules exposed in the limited "Minhas Campanhas" grid.
   // - `budgets` is Admin-only and never shown to limited users.
   const MODULE_META: Record<string, { label: string; icon: React.ElementType }> = {
+    briefing: { label: t("modules.briefing", "Briefing"), icon: FileText },
     stores: { label: t("modules.stores"), icon: Store },
     matrix: { label: t("modules.matrix"), icon: Grid3X3 },
     pieces: { label: t("modules.pieces"), icon: LayoutList },

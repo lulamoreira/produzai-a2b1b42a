@@ -335,7 +335,8 @@
     "chat": "Chat",
     "history": "History",
     "loja_a_loja": "Store by Store",
-    "adjustments": "Adjustments"
+    "adjustments": "Adjustments",
+    "briefing": "Briefing"
   },
   "dashboard": {
     "title": "Dashboard",

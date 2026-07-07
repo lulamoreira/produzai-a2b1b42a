@@ -28,7 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CampaignHeader } from "@/components/campaigns/CampaignHeader";
 import {
   SummaryTab, PiecesTab, OccurrencesTab, SchedulingTab, InstallationsTab,
-  BudgetTab, ApprovalsTab, MatrixTab, StoresTab, HistoryTab, MockupTab, LojaALojaTab
+  BudgetTab, ApprovalsTab, MatrixTab, StoresTab, HistoryTab, MockupTab, LojaALojaTab, BriefingTab
 } from "@/components/campaigns/tabs";
 import TabErrorBoundary from "@/components/campaigns/TabErrorBoundary";
 import { useUIVersion } from "@/hooks/useUIVersion";
@@ -369,6 +369,7 @@ const CampaignDetail = () => {
             <TabsTrigger value="history" className="hidden">Histórico</TabsTrigger>
             {hasModule("mockup") && <TabsTrigger value="mockup" className="hidden">Mockup</TabsTrigger>}
             {hasModule("loja_a_loja") && <TabsTrigger value="loja_a_loja" className="hidden">Loja a Loja</TabsTrigger>}
+            {hasModule("briefing") && <TabsTrigger value="briefing" className="hidden">Briefing</TabsTrigger>}
           </TabsList>
 
           <TabErrorBoundary>
@@ -648,6 +649,11 @@ const CampaignDetail = () => {
               {hasModule("loja_a_loja") && (
                 <TabsContent value="loja_a_loja">
                   <LojaALojaTab campaignId={campaignId!} clientId={clientId!} lalPerms={lalPerms} />
+                </TabsContent>
+              )}
+              {hasModule("briefing") && (
+                <TabsContent value="briefing">
+                  <BriefingTab campaignId={campaignId!} />
                 </TabsContent>
               )}
             </Suspense>
