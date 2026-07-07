@@ -1238,6 +1238,189 @@ export type Database = {
           },
         ]
       }
+      campaign_briefing_media: {
+        Row: {
+          briefing_id: string
+          created_at: string
+          duration_sec: number | null
+          external_url: string | null
+          id: string
+          kind: Database["public"]["Enums"]["briefing_media_kind"]
+          mime_type: string | null
+          order_index: number
+          section_key: Database["public"]["Enums"]["briefing_section_key"]
+          size_bytes: number | null
+          storage_path: string | null
+          thumbnail_url: string | null
+          title: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          briefing_id: string
+          created_at?: string
+          duration_sec?: number | null
+          external_url?: string | null
+          id?: string
+          kind: Database["public"]["Enums"]["briefing_media_kind"]
+          mime_type?: string | null
+          order_index?: number
+          section_key: Database["public"]["Enums"]["briefing_section_key"]
+          size_bytes?: number | null
+          storage_path?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          briefing_id?: string
+          created_at?: string
+          duration_sec?: number | null
+          external_url?: string | null
+          id?: string
+          kind?: Database["public"]["Enums"]["briefing_media_kind"]
+          mime_type?: string | null
+          order_index?: number
+          section_key?: Database["public"]["Enums"]["briefing_section_key"]
+          size_bytes?: number | null
+          storage_path?: string | null
+          thumbnail_url?: string | null
+          title?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_briefing_media_briefing_id_fkey"
+            columns: ["briefing_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_briefings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_briefing_sections: {
+        Row: {
+          body: string
+          briefing_id: string
+          created_at: string
+          id: string
+          section_key: Database["public"]["Enums"]["briefing_section_key"]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          body?: string
+          briefing_id: string
+          created_at?: string
+          id?: string
+          section_key: Database["public"]["Enums"]["briefing_section_key"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          body?: string
+          briefing_id?: string
+          created_at?: string
+          id?: string
+          section_key?: Database["public"]["Enums"]["briefing_section_key"]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_briefing_sections_briefing_id_fkey"
+            columns: ["briefing_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_briefings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_briefing_video_comments: {
+        Row: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          media_id: string
+          parent_id: string | null
+          timestamp_sec: number
+          updated_at: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          media_id: string
+          parent_id?: string | null
+          timestamp_sec?: number
+          updated_at?: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          media_id?: string
+          parent_id?: string | null
+          timestamp_sec?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_briefing_video_comments_media_id_fkey"
+            columns: ["media_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_briefing_media"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_briefing_video_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_briefing_video_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campaign_briefings: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          created_by: string | null
+          deadline: string | null
+          id: string
+          status: Database["public"]["Enums"]["briefing_status"]
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["briefing_status"]
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          created_by?: string | null
+          deadline?: string | null
+          id?: string
+          status?: Database["public"]["Enums"]["briefing_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_briefings_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: true
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_kit_pieces: {
         Row: {
           created_at: string
@@ -5844,6 +6027,15 @@ export type Database = {
     Enums: {
       app_role: "admin" | "viewer" | "master"
       approval_status: "pending" | "approved" | "rejected"
+      briefing_media_kind: "image" | "video" | "file" | "embed"
+      briefing_section_key:
+        | "objective"
+        | "audience"
+        | "refs"
+        | "video_brief"
+        | "video_notes"
+        | "attachments"
+      briefing_status: "draft" | "in_review" | "approved"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -5973,6 +6165,16 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "viewer", "master"],
       approval_status: ["pending", "approved", "rejected"],
+      briefing_media_kind: ["image", "video", "file", "embed"],
+      briefing_section_key: [
+        "objective",
+        "audience",
+        "refs",
+        "video_brief",
+        "video_notes",
+        "attachments",
+      ],
+      briefing_status: ["draft", "in_review", "approved"],
     },
   },
 } as const
