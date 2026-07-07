@@ -6,7 +6,7 @@
 import {
   Home, Building2, Star, Users, CheckSquare, Database,
   CalendarDays, Camera, MapPin, Store, AlertTriangle, DollarSign,
-  LayoutList, Grid3X3, Palette, Layers,
+  LayoutList, Grid3X3, Palette, Layers, FileText,
   User, UserPlus, LogOut, Settings, Search, Globe, Sun,
   type LucideIcon,
 } from "lucide-react";
