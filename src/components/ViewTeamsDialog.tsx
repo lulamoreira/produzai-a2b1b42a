@@ -2,7 +2,8 @@ import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Users, Car, Crown, Phone, AlertTriangle, ChevronUp, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Users, Car, Crown, Phone, AlertTriangle, ChevronUp, ChevronDown, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   useInstallationTeams,
@@ -13,6 +14,7 @@ import {
   type TeamMember,
   type TeamVehicle,
 } from "@/components/InstallationTeamDialog";
+import ImportTeamsDialog from "@/components/ImportTeamsDialog";
 
 interface ViewTeamsDialogProps {
   open: boolean;
