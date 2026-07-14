@@ -30,6 +30,7 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, onEdit
 
   const [search, setSearch] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
+  const [importOpen, setImportOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
 
