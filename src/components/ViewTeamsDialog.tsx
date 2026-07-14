@@ -2,7 +2,8 @@ import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Users, Car, Crown, Phone, AlertTriangle, ChevronUp, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Search, Users, Car, Crown, Phone, AlertTriangle, ChevronUp, ChevronDown, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   useInstallationTeams,
@@ -13,6 +14,7 @@ import {
   type TeamMember,
   type TeamVehicle,
 } from "@/components/InstallationTeamDialog";
+import ImportTeamsDialog from "@/components/ImportTeamsDialog";
 
 interface ViewTeamsDialogProps {
   open: boolean;
@@ -28,6 +30,7 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, onEdit
 
   const [search, setSearch] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
+  const [importOpen, setImportOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
 
@@ -101,13 +104,28 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, onEdit
         onKeyDown={handleKeyDown}
       >
         <DialogHeader className="px-4 sm:px-6 pt-5 pb-3 border-b">
-          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
-            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-            Consultar Equipes
-          </DialogTitle>
-          <DialogDescription className="text-xs sm:text-sm">
-            {teams.length} equipe(s) · {totalMembers} instalador(es) cadastrado(s)
-          </DialogDescription>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
+                Consultar Equipes
+              </DialogTitle>
+              <DialogDescription className="text-xs sm:text-sm">
+                {teams.length} equipe(s) · {totalMembers} instalador(es) cadastrado(s)
+              </DialogDescription>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setImportOpen(true)}
+              className="shrink-0 h-8 text-xs gap-1.5"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Importar de outra campanha</span>
+              <span className="sm:hidden">Importar</span>
+            </Button>
+          </div>
         </DialogHeader>
 
         {/* Search */}
@@ -163,6 +181,12 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, onEdit
           ))}
         </div>
       </DialogContent>
+
+      <ImportTeamsDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        campaignId={campaignId}
+      />
     </Dialog>
   );
 }
