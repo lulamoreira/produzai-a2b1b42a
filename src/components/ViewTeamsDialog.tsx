@@ -181,6 +181,12 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, onEdit
           ))}
         </div>
       </DialogContent>
+
+      <ImportTeamsDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        campaignId={campaignId}
+      />
     </Dialog>
   );
 }
