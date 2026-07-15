@@ -5826,11 +5826,22 @@ export type Database = {
       }
       get_adjustment_requote: { Args: { p_token: string }; Returns: Json }
       get_budget_qty_requote: { Args: { p_token: string }; Returns: Json }
+      get_campaign_data_for_import: {
+        Args: { p_campaign_id: string }
+        Returns: Json
+      }
       get_campaign_store_links: {
         Args: { _campaign_id: string }
         Returns: {
           store_id: string
           token: string
+        }[]
+      }
+      get_client_campaigns_for_import: {
+        Args: { p_client_id: string }
+        Returns: {
+          id: string
+          name: string
         }[]
       }
       get_invite_by_token: { Args: { p_token: string }; Returns: Json }
