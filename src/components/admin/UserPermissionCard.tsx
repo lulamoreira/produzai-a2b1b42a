@@ -354,7 +354,7 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex flex-wrap items-center gap-2 shrink-0 ml-auto w-full sm:w-auto justify-end">
           {roleBadge()}
           {isCurrentUser && <span className="text-xs text-muted-foreground italic">(Você)</span>}
           {!isAdminOrMasterUser && totalAccesses > 0 && (
