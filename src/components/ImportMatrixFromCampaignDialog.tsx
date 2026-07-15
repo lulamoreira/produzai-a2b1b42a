@@ -55,78 +55,51 @@ const ImportMatrixFromCampaignDialog = ({
   const [importing, setImporting] = useState(false);
 
   const { data: campaigns = [] } = useQuery<RemoteCampaign[]>({
-    queryKey: ["import-matrix-campaigns", clientId],
+    queryKey: ["import-matrix-campaigns-rpc", clientId, currentCampaignId],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("campaigns")
-        .select("id, name")
-        .eq("client_id", clientId)
-        .neq("id", currentCampaignId)
-        .order("created_at", { ascending: false });
-      return (data || []) as RemoteCampaign[];
+      const { data, error } = await supabase.rpc("get_client_campaigns_for_import", {
+        p_client_id: clientId,
+      });
+      if (error) throw error;
+      return ((data as RemoteCampaign[]) || []).filter((c) => c.id !== currentCampaignId);
     },
     enabled: open && !!clientId,
   });
 
-  const { data: remotePieces = [] } = useQuery<CampaignPiece[]>({
-    queryKey: ["import-matrix-pieces", selectedCampaignId],
+  const { data: campaignData } = useQuery({
+    queryKey: ["import-matrix-data-rpc", selectedCampaignId],
     queryFn: async () => {
-      return supabasePaginate<CampaignPiece>((from, to) =>
-        supabase
-          .from("campaign_pieces")
-          .select("*", { count: "exact" })
-          .eq("campaign_id", selectedCampaignId)
-          .eq("is_deleted", false)
-          .order("display_order")
-          .range(from, to) as any
-      );
+      const { data, error } = await supabase.rpc("get_campaign_data_for_import", {
+        p_campaign_id: selectedCampaignId,
+      });
+      if (error) throw error;
+      return (data as {
+        pieces: CampaignPiece[];
+        kits: CampaignKit[];
+        kit_pieces: { kit_id: string; piece_id: string; quantity: number }[];
+        store_pieces: { store_id: string; piece_id: string; quantity: number }[];
+      } | null);
     },
     enabled: !!selectedCampaignId,
   });
 
-  const { data: remoteKits = [] } = useQuery({
-    queryKey: ["import-matrix-kits", selectedCampaignId],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("campaign_kits")
-        .select("*")
-        .eq("campaign_id", selectedCampaignId)
-        .eq("is_deleted", false)
-        .order("display_order");
-      return (data || []) as CampaignKit[];
-    },
-    enabled: !!selectedCampaignId,
-  });
+  const remotePieces: CampaignPiece[] = useMemo(
+    () => (campaignData?.pieces || []).slice().sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0)),
+    [campaignData],
+  );
+  const remoteKits: CampaignKit[] = useMemo(
+    () => (campaignData?.kits || []).slice().sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0)),
+    [campaignData],
+  );
+  const remoteKitPieceLinks = useMemo(
+    () => campaignData?.kit_pieces || [],
+    [campaignData],
+  );
+  const remoteStorePieces = useMemo(
+    () => campaignData?.store_pieces || [],
+    [campaignData],
+  );
 
-  const { data: remoteKitPieceLinks = [] } = useQuery({
-    queryKey: ["import-matrix-kit-piece-links", selectedCampaignId],
-    queryFn: async () => {
-      const kitIds = remoteKits.map((k) => k.id);
-      if (kitIds.length === 0) return [];
-      const { data } = await supabase
-        .from("campaign_kit_pieces")
-        .select("kit_id, piece_id, quantity")
-        .in("kit_id", kitIds);
-      return (data || []) as { kit_id: string; piece_id: string; quantity: number }[];
-    },
-    enabled: remoteKits.length > 0,
-  });
-
-  const { data: remoteStorePieces = [] } = useQuery({
-    queryKey: ["import-matrix-store-pieces", selectedCampaignId],
-    queryFn: async () => {
-      return supabasePaginate<{ store_id: string; piece_id: string; quantity: number }>(
-        (from, to) =>
-          supabase
-            .from("campaign_store_pieces")
-            .select("store_id, piece_id, quantity", { count: "exact" })
-            .eq("campaign_id", selectedCampaignId)
-            .order("id")
-            .range(from, to) as any
-      );
-    },
-    enabled: !!selectedCampaignId,
-  });
 
   // Build unified list of remote items (standalone pieces + kit pieces + kits)
   const remoteItemsWithStats = useMemo(() => {
