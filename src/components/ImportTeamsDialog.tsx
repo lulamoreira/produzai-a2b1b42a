@@ -56,6 +56,7 @@ type MergedCampaign = {
   name: string;
   client_id: string;
   client_name: string | null;
+  winner_supplier_name: string | null;
 };
 
 type RpcCampaign = {
@@ -63,6 +64,7 @@ type RpcCampaign = {
   campaign_name: string;
   client_id: string;
   client_name: string | null;
+  winner_supplier_name: string | null;
   teams: {
     id: string;
     name: string;
