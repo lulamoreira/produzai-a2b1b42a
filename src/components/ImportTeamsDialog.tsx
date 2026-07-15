@@ -293,13 +293,34 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
       // Load full source data for directIds via direct queries.
       const [membersRes, vehiclesRes, teamsRes] = await Promise.all([
         directIds.length
-          ? supabase.from("installation_team_members").select("*").in("team_id", directIds)
+          ? supabasePaginate<any>((from, to) =>
+              supabase
+                .from("installation_team_members")
+                .select("*", { count: "exact" })
+                .in("team_id", directIds)
+                .order("id")
+                .range(from, to),
+            ).then((data) => ({ data }))
           : Promise.resolve({ data: [] as any[] }),
         directIds.length
-          ? supabase.from("installation_team_vehicles").select("*").in("team_id", directIds)
+          ? supabasePaginate<any>((from, to) =>
+              supabase
+                .from("installation_team_vehicles")
+                .select("*", { count: "exact" })
+                .in("team_id", directIds)
+                .order("id")
+                .range(from, to),
+            ).then((data) => ({ data }))
           : Promise.resolve({ data: [] as any[] }),
         directIds.length
-          ? supabase.from("installation_teams").select("*").in("id", directIds)
+          ? supabasePaginate<any>((from, to) =>
+              supabase
+                .from("installation_teams")
+                .select("*", { count: "exact" })
+                .in("id", directIds)
+                .order("id")
+                .range(from, to),
+            ).then((data) => ({ data }))
           : Promise.resolve({ data: [] as any[] }),
       ]);
 
