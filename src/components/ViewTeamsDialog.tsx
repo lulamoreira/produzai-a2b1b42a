@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Users, Car, Crown, Phone, AlertTriangle, ChevronUp, ChevronDown, Download, Pencil, Trash2, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -48,6 +49,8 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
   const [activeIdx, setActiveIdx] = useState(0);
   const [importOpen, setImportOpen] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<InstallationTeam | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
 
@@ -64,6 +67,46 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
       setTeamToDelete(null);
     },
     onError: (e: any) => toast.error(e?.message || "Falha ao remover equipe"),
+  });
+
+  const bulkDeleteTeams = useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (ids.length === 0) return 0;
+      // 1) Unlink schedules to avoid FK violations
+      const { error: schedErr } = await supabase
+        .from("campaign_schedules")
+        .update({ team_id: null })
+        .in("team_id", ids);
+      if (schedErr) throw schedErr;
+      // 2) Delete members and vehicles (safe even with ON DELETE CASCADE)
+      const { error: memErr } = await supabase
+        .from("installation_team_members")
+        .delete()
+        .in("team_id", ids);
+      if (memErr) throw memErr;
+      const { error: vehErr } = await supabase
+        .from("installation_team_vehicles")
+        .delete()
+        .in("team_id", ids);
+      if (vehErr) throw vehErr;
+      // 3) Delete teams
+      const { error: teamErr } = await supabase
+        .from("installation_teams")
+        .delete()
+        .in("id", ids);
+      if (teamErr) throw teamErr;
+      return ids.length;
+    },
+    onSuccess: (count) => {
+      toast.success(`${count} equipe(s) excluída(s)`);
+      queryClient.invalidateQueries({ queryKey: ["installation_teams", campaignId] });
+      queryClient.invalidateQueries({ queryKey: ["all_team_members", campaignId] });
+      queryClient.invalidateQueries({ queryKey: ["all_team_vehicles", campaignId] });
+      queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+      setSelectedIds({});
+      setBulkConfirmOpen(false);
+    },
+    onError: (e: any) => toast.error(e?.message || "Falha ao excluir equipes"),
   });
 
   const isLoading = loadingTeams || loadingMembers || loadingVehicles;
@@ -86,6 +129,7 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
     if (open) {
       setSearch("");
       setActiveIdx(0);
+      setSelectedIds({});
     }
   }, [open]);
 
@@ -128,6 +172,35 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
     () => teams.reduce((acc, t) => acc + (membersMap[t.id]?.length || 0), 0),
     [teams, membersMap],
   );
+
+  const selectedCount = useMemo(
+    () => Object.values(selectedIds).filter(Boolean).length,
+    [selectedIds],
+  );
+
+  const visibleIds = useMemo(() => filteredTeams.map((t) => t.id), [filteredTeams]);
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selectedIds[id]);
+
+  const toggleAllVisible = () => {
+    setSelectedIds((prev) => {
+      const next = { ...prev };
+      if (allVisibleSelected) {
+        visibleIds.forEach((id) => delete next[id]);
+      } else {
+        visibleIds.forEach((id) => (next[id] = true));
+      }
+      return next;
+    });
+  };
+
+  const toggleOne = (id: string) =>
+    setSelectedIds((prev) => {
+      const next = { ...prev };
+      if (next[id]) delete next[id];
+      else next[id] = true;
+      return next;
+    });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -182,6 +255,39 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
           </p>
         </div>
 
+        {/* Bulk actions toolbar */}
+        {canEdit && !isLoading && filteredTeams.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-2 border-b bg-muted/20">
+            <span className="text-[11px] text-muted-foreground">
+              {selectedCount > 0
+                ? `${selectedCount} equipe(s) selecionada(s)`
+                : `${filteredTeams.length} equipe(s) visível(is)`}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-[11px] px-2"
+                onClick={toggleAllVisible}
+              >
+                {allVisibleSelected ? "Desmarcar todas" : "Selecionar todas"}
+              </Button>
+              {selectedCount > 0 && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="h-7 text-[11px] px-2 gap-1.5"
+                  onClick={() => setBulkConfirmOpen(true)}
+                >
+                  <Trash2 className="w-3 h-3" /> Excluir selecionadas ({selectedCount})
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* List */}
         <div
           ref={listRef}
@@ -207,6 +313,8 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
               vehicles={vehiclesMap[team.id] || []}
               active={idx === activeIdx}
               canEdit={canEdit}
+              selected={!!selectedIds[team.id]}
+              onToggleSelected={canEdit ? () => toggleOne(team.id) : undefined}
               onFocus={() => setActiveIdx(idx)}
               onSelect={onEditTeam ? () => onEditTeam(team.id) : undefined}
               onDelete={canEdit ? () => setTeamToDelete(team) : undefined}
@@ -214,6 +322,8 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
             />
           ))}
         </div>
+
+        
       </DialogContent>
 
       <ImportTeamsDialog
@@ -248,6 +358,35 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={bulkConfirmOpen} onOpenChange={(o) => !o && setBulkConfirmOpen(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir {selectedCount} equipe(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Os instaladores e veículos dessas equipes serão removidos. Lojas que estiverem
+              agendadas com essas equipes ficarão sem equipe atribuída. Esta ação não pode ser
+              desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleteTeams.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkDeleteTeams.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                const ids = Object.keys(selectedIds).filter((id) => selectedIds[id]);
+                if (ids.length > 0) bulkDeleteTeams.mutate(ids);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {bulkDeleteTeams.isPending
+                ? "Excluindo..."
+                : `Excluir ${selectedCount} equipe(s)`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
@@ -258,13 +397,15 @@ interface TeamViewCardProps {
   vehicles: TeamVehicle[];
   active: boolean;
   canEdit?: boolean;
+  selected?: boolean;
+  onToggleSelected?: () => void;
   onFocus: () => void;
   onSelect?: () => void;
   onDelete?: () => void;
 }
 
 const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function TeamViewCard(
-  { team, members, vehicles, active, canEdit, onFocus, onSelect, onDelete },
+  { team, members, vehicles, active, canEdit, selected, onToggleSelected, onFocus, onSelect, onDelete },
   ref,
 ) {
   const incomplete = isTeamIncomplete(members);
@@ -284,11 +425,21 @@ const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function Team
         active
           ? "border-primary ring-2 ring-primary/30 shadow-sm"
           : "border-border hover:border-primary/40",
+        selected && "ring-2 ring-primary/50 bg-primary/5",
       )}
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 border-b bg-muted/40 rounded-t-lg flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
+          {onToggleSelected && (
+            <Checkbox
+              checked={!!selected}
+              onCheckedChange={onToggleSelected}
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Selecionar equipe ${team.name}`}
+              className="shrink-0"
+            />
+          )}
           <Users className="w-4 h-4 text-primary shrink-0" />
           <h3 className="font-semibold text-sm sm:text-base truncate">{team.name}</h3>
           {incomplete && (
