@@ -275,8 +275,9 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
   }, [teamsByCampaign]);
 
   const importMutation = useMutation({
-    mutationFn: async () => {
-      if (selectedIds.length === 0) return { imported: 0, skipped: 0 };
+    mutationFn: async (overrideIds?: string[]) => {
+      const idsToImport = overrideIds && overrideIds.length > 0 ? overrideIds : selectedIds;
+      if (idsToImport.length === 0) return { imported: 0, skipped: 0, failures: [] as { id: string; teamName: string; errorMessage: string }[] };
 
       // Existing team names in destination (to avoid duplicates)
       const { data: existing } = await supabase
