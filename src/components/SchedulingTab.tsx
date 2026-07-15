@@ -1645,6 +1645,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         onOpenChange={setViewTeamsOpen}
         campaignId={campaignId}
         clientId={clientId}
+        canEdit={canEdit}
         onEditTeam={(teamId) => {
           setViewTeamsOpen(false);
           setTeamDialogInitialId(teamId);

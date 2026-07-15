@@ -1,9 +1,22 @@
 import { forwardRef, useEffect, useMemo, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, Users, Car, Crown, Phone, AlertTriangle, ChevronUp, ChevronDown, Download } from "lucide-react";
+import { Search, Users, Car, Crown, Phone, AlertTriangle, ChevronUp, ChevronDown, Download, Pencil, Trash2, UserPlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   useInstallationTeams,
@@ -21,10 +34,12 @@ interface ViewTeamsDialogProps {
   onOpenChange: (open: boolean) => void;
   campaignId: string;
   clientId?: string;
+  canEdit?: boolean;
   onEditTeam?: (teamId: string) => void;
 }
 
-export default function ViewTeamsDialog({ open, onOpenChange, campaignId, clientId, onEditTeam }: ViewTeamsDialogProps) {
+export default function ViewTeamsDialog({ open, onOpenChange, campaignId, clientId, canEdit = false, onEditTeam }: ViewTeamsDialogProps) {
+  const queryClient = useQueryClient();
   const { data: teams = [], isLoading: loadingTeams } = useInstallationTeams(campaignId);
   const { data: membersMap = {}, isLoading: loadingMembers } = useAllTeamMembers(campaignId);
   const { data: vehiclesMap = {}, isLoading: loadingVehicles } = useAllTeamVehicles(campaignId);
@@ -32,8 +47,24 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
   const [search, setSearch] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
   const [importOpen, setImportOpen] = useState(false);
+  const [teamToDelete, setTeamToDelete] = useState<InstallationTeam | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  const deleteTeam = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("installation_teams").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Equipe removida");
+      queryClient.invalidateQueries({ queryKey: ["installation_teams", campaignId] });
+      queryClient.invalidateQueries({ queryKey: ["all_team_members", campaignId] });
+      queryClient.invalidateQueries({ queryKey: ["all_team_vehicles", campaignId] });
+      setTeamToDelete(null);
+    },
+    onError: (e: any) => toast.error(e?.message || "Falha ao remover equipe"),
+  });
 
   const isLoading = loadingTeams || loadingMembers || loadingVehicles;
 
@@ -175,8 +206,10 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
               members={membersMap[team.id] || []}
               vehicles={vehiclesMap[team.id] || []}
               active={idx === activeIdx}
+              canEdit={canEdit}
               onFocus={() => setActiveIdx(idx)}
               onSelect={onEditTeam ? () => onEditTeam(team.id) : undefined}
+              onDelete={canEdit ? () => setTeamToDelete(team) : undefined}
               ref={(el) => (itemRefs.current[idx] = el)}
             />
           ))}
@@ -189,6 +222,32 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
         campaignId={campaignId}
         clientId={clientId}
       />
+
+      <AlertDialog open={!!teamToDelete} onOpenChange={(o) => !o && setTeamToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover equipe?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover a equipe <strong>{teamToDelete?.name}</strong>? Todos os
+              instaladores e veículos vinculados a ela também serão removidos desta campanha. Esta
+              ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteTeam.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteTeam.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (teamToDelete) deleteTeam.mutate(teamToDelete.id);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteTeam.isPending ? "Removendo..." : "Remover"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
@@ -198,12 +257,14 @@ interface TeamViewCardProps {
   members: TeamMember[];
   vehicles: TeamVehicle[];
   active: boolean;
+  canEdit?: boolean;
   onFocus: () => void;
   onSelect?: () => void;
+  onDelete?: () => void;
 }
 
 const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function TeamViewCard(
-  { team, members, vehicles, active, onFocus, onSelect },
+  { team, members, vehicles, active, canEdit, onFocus, onSelect, onDelete },
   ref,
 ) {
   const incomplete = isTeamIncomplete(members);
@@ -243,6 +304,45 @@ const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function Team
           )}
         </div>
       </div>
+
+      {canEdit && (onSelect || onDelete) && (
+        <div className="flex flex-wrap items-center gap-1.5 px-3 sm:px-4 py-2 border-b bg-background">
+          {onSelect && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1.5"
+              onClick={(e) => { e.stopPropagation(); onSelect(); }}
+            >
+              <Pencil className="w-3 h-3" /> Editar
+            </Button>
+          )}
+          {onSelect && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1.5"
+              onClick={(e) => { e.stopPropagation(); onSelect(); }}
+              title="Abrir editor para adicionar instaladores"
+            >
+              <UserPlus className="w-3 h-3" /> Adicionar instalador
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 ml-auto"
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            >
+              <Trash2 className="w-3 h-3" /> Remover
+            </Button>
+          )}
+        </div>
+      )}
 
       <div className="px-3 sm:px-4 py-3 grid gap-3 sm:grid-cols-2">
         {/* Members */}
