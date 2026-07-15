@@ -20,10 +20,11 @@ interface ViewTeamsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   campaignId: string;
+  clientId?: string;
   onEditTeam?: (teamId: string) => void;
 }
 
-export default function ViewTeamsDialog({ open, onOpenChange, campaignId, onEditTeam }: ViewTeamsDialogProps) {
+export default function ViewTeamsDialog({ open, onOpenChange, campaignId, clientId, onEditTeam }: ViewTeamsDialogProps) {
   const { data: teams = [], isLoading: loadingTeams } = useInstallationTeams(campaignId);
   const { data: membersMap = {}, isLoading: loadingMembers } = useAllTeamMembers(campaignId);
   const { data: vehiclesMap = {}, isLoading: loadingVehicles } = useAllTeamVehicles(campaignId);
