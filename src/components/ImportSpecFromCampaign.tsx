@@ -23,61 +23,46 @@ export default function ImportSpecFromCampaign({ clientId, currentCampaignId, on
   const [search, setSearch] = useState("");
 
   const { data: campaigns = [] } = useQuery({
-    queryKey: ["import-spec-campaigns", clientId],
+    queryKey: ["import-spec-campaigns-rpc", clientId],
     queryFn: async () => {
-      const { data } = await supabase
-        .from("campaigns")
-        .select("id, name")
-        .eq("client_id", clientId)
-        .order("created_at", { ascending: false });
-      return (data || []) as CampaignOption[];
+      const { data, error } = await supabase.rpc("get_client_campaigns_for_import", {
+        p_client_id: clientId,
+      });
+      if (error) throw error;
+      return ((data as CampaignOption[]) || []);
     },
     enabled: open && !!clientId,
   });
 
-  const { data: pieces = [] } = useQuery({
-    queryKey: ["import-spec-pieces", selectedCampaign?.id],
+  const { data: campaignData } = useQuery({
+    queryKey: ["import-spec-data-rpc", selectedCampaign?.id],
     queryFn: async () => {
-      return supabasePaginate<PieceOption>((from, to) =>
-        supabase
-          .from("campaign_pieces")
-          .select("id, name, code, size, specification, kit_only", { count: "exact" })
-          .eq("campaign_id", selectedCampaign!.id)
-          .eq("is_deleted", false)
-          .order("code")
-          .range(from, to) as any
-      );
+      const { data, error } = await supabase.rpc("get_campaign_data_for_import", {
+        p_campaign_id: selectedCampaign!.id,
+      });
+      if (error) throw error;
+      return (data as {
+        pieces: PieceOption[];
+        kits: KitOption[];
+        kit_pieces: { kit_id: string; piece_id: string }[];
+      } | null);
     },
     enabled: !!selectedCampaign,
   });
 
-  const { data: kits = [] } = useQuery({
-    queryKey: ["import-spec-kits", selectedCampaign?.id],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("campaign_kits")
-        .select("id, name, code")
-        .eq("campaign_id", selectedCampaign!.id)
-        .eq("is_deleted", false)
-        .order("code");
-      return (data || []) as KitOption[];
-    },
-    enabled: !!selectedCampaign,
-  });
+  const pieces: PieceOption[] = useMemo(
+    () => (campaignData?.pieces || []).slice().sort((a, b) => a.code - b.code),
+    [campaignData],
+  );
+  const kits: KitOption[] = useMemo(
+    () => (campaignData?.kits || []).slice().sort((a, b) => a.code - b.code),
+    [campaignData],
+  );
+  const kitPieceLinks = useMemo(
+    () => campaignData?.kit_pieces || [],
+    [campaignData],
+  );
 
-  const { data: kitPieceLinks = [] } = useQuery({
-    queryKey: ["import-spec-kit-pieces", selectedCampaign?.id],
-    queryFn: async () => {
-      const kitIds = kits.map((k) => k.id);
-      if (kitIds.length === 0) return [];
-      const { data } = await supabase
-        .from("campaign_kit_pieces")
-        .select("kit_id, piece_id")
-        .in("kit_id", kitIds);
-      return (data || []) as { kit_id: string; piece_id: string }[];
-    },
-    enabled: kits.length > 0,
-  });
 
   // Build grouped list: standalone pieces + kits with their pieces
   const { standalonePieces, kitGroups } = useMemo(() => {
