@@ -5848,6 +5848,10 @@ export type Database = {
           name: string
         }[]
       }
+      get_client_teams_for_import: {
+        Args: { p_client_id: string }
+        Returns: Json
+      }
       get_invite_by_token: { Args: { p_token: string }; Returns: Json }
       get_public_occurrence_context: {
         Args: { _campaign_id: string }

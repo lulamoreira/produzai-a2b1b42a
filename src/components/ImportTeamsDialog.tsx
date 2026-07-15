@@ -26,6 +26,8 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   campaignId: string;
+  /** Client id of the current campaign — used to include same-client campaigns via RPC for limited users. */
+  clientId?: string;
 }
 
 type CampaignRow = {
@@ -35,22 +37,49 @@ type CampaignRow = {
   clients: { name: string } | null;
 };
 
+type CachedMember = Record<string, any>;
+type CachedVehicle = Record<string, any>;
+
 type TeamRow = {
   id: string;
   name: string;
   campaign_id: string;
   members: number;
   vehicles: number;
+  /** Cached full rows returned by the RPC — present when the team came from RPC only. */
+  _cachedMembers?: CachedMember[];
+  _cachedVehicles?: CachedVehicle[];
 };
 
-export default function ImportTeamsDialog({ open, onOpenChange, campaignId }: Props) {
+type MergedCampaign = {
+  id: string;
+  name: string;
+  client_id: string;
+  client_name: string | null;
+};
+
+type RpcCampaign = {
+  campaign_id: string;
+  campaign_name: string;
+  client_id: string;
+  client_name: string | null;
+  teams: {
+    id: string;
+    name: string;
+    campaign_id: string;
+    members: CachedMember[];
+    vehicles: CachedVehicle[];
+  }[];
+};
+
+export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clientId }: Props) {
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Record<string, boolean>>({});
 
-  // All accessible campaigns except current — RLS filters visibility
-  const { data: campaigns = [], isLoading: loadingCampaigns } = useQuery({
+  // Direct campaigns query (works for admins / users with RLS-visible campaigns).
+  const { data: directCampaigns = [], isLoading: loadingDirectCampaigns } = useQuery({
     queryKey: ["import-teams-campaigns", campaignId],
     enabled: open,
     queryFn: async () => {
@@ -64,17 +93,16 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId }: Pr
     },
   });
 
-  // Fetch teams for all visible campaigns in one shot (counts included)
-  const campaignIds = useMemo(() => campaigns.map((c) => c.id), [campaigns]);
+  const directCampaignIds = useMemo(() => directCampaigns.map((c) => c.id), [directCampaigns]);
 
-  const { data: teamsByCampaign = {}, isLoading: loadingTeams } = useQuery({
-    queryKey: ["import-teams-list", campaignIds.join(",")],
-    enabled: open && campaignIds.length > 0,
+  const { data: directTeamsByCampaign = {}, isLoading: loadingDirectTeams } = useQuery({
+    queryKey: ["import-teams-list", directCampaignIds.join(",")],
+    enabled: open && directCampaignIds.length > 0,
     queryFn: async () => {
       const { data: teams, error } = await supabase
         .from("installation_teams")
         .select("id,name,campaign_id")
-        .in("campaign_id", campaignIds)
+        .in("campaign_id", directCampaignIds)
         .order("name");
       if (error) throw error;
       const teamIds = (teams || []).map((t) => t.id);
@@ -112,18 +140,77 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId }: Pr
     },
   });
 
-  // Filter: only campaigns that have teams and match search
+  // RPC fallback: same-client campaigns/teams (works for limited users too).
+  const { data: rpcCampaigns = [], isLoading: loadingRpc } = useQuery({
+    queryKey: ["import-teams-rpc", clientId, campaignId],
+    enabled: open && !!clientId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_client_teams_for_import", {
+        p_client_id: clientId!,
+      });
+      if (error) throw error;
+      return ((data as RpcCampaign[]) || []).filter((c) => c.campaign_id !== campaignId);
+    },
+  });
+
+  // Merge direct + rpc, deduping by campaign_id (direct wins for metadata,
+  // RPC contributes full members/vehicles cache when direct has none).
+  const { mergedCampaigns, teamsByCampaign } = useMemo(() => {
+    const campMap = new Map<string, MergedCampaign>();
+    const teamMap: Record<string, TeamRow[]> = {};
+
+    directCampaigns.forEach((c) => {
+      campMap.set(c.id, {
+        id: c.id,
+        name: c.name,
+        client_id: c.client_id,
+        client_name: c.clients?.name ?? null,
+      });
+      teamMap[c.id] = directTeamsByCampaign[c.id] || [];
+    });
+
+    rpcCampaigns.forEach((rc) => {
+      if (!campMap.has(rc.campaign_id)) {
+        campMap.set(rc.campaign_id, {
+          id: rc.campaign_id,
+          name: rc.campaign_name,
+          client_id: rc.client_id,
+          client_name: rc.client_name,
+        });
+      }
+      // If this campaign has no teams from direct query, seed from RPC (with cached members/vehicles).
+      const existing = teamMap[rc.campaign_id];
+      if (!existing || existing.length === 0) {
+        teamMap[rc.campaign_id] = rc.teams.map((t) => ({
+          id: t.id,
+          name: t.name,
+          campaign_id: t.campaign_id,
+          members: t.members?.length || 0,
+          vehicles: t.vehicles?.length || 0,
+          _cachedMembers: t.members || [],
+          _cachedVehicles: t.vehicles || [],
+        }));
+      }
+    });
+
+    return {
+      mergedCampaigns: Array.from(campMap.values()),
+      teamsByCampaign: teamMap,
+    };
+  }, [directCampaigns, directTeamsByCampaign, rpcCampaigns]);
+
+  // Filter: only campaigns that have teams and match search.
   const visibleCampaigns = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return campaigns
+    return mergedCampaigns
       .filter((c) => (teamsByCampaign[c.id] || []).length > 0)
       .filter((c) => {
         if (!q) return true;
-        const clientName = c.clients?.name?.toLowerCase() || "";
+        const clientName = c.client_name?.toLowerCase() || "";
         if (c.name.toLowerCase().includes(q) || clientName.includes(q)) return true;
         return (teamsByCampaign[c.id] || []).some((t) => t.name.toLowerCase().includes(q));
       });
-  }, [campaigns, teamsByCampaign, search]);
+  }, [mergedCampaigns, teamsByCampaign, search]);
 
   const selectedIds = useMemo(() => Object.keys(selected).filter((k) => selected[k]), [selected]);
 
@@ -141,6 +228,17 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId }: Pr
     });
   };
 
+  // Lookup for cached team data from RPC (used when we can't read directly).
+  const cachedTeamById = useMemo(() => {
+    const map = new Map<string, TeamRow>();
+    Object.values(teamsByCampaign).forEach((teams) => {
+      teams.forEach((t) => {
+        if (t._cachedMembers || t._cachedVehicles) map.set(t.id, t);
+      });
+    });
+    return map;
+  }, [teamsByCampaign]);
+
   const importMutation = useMutation({
     mutationFn: async () => {
       if (selectedIds.length === 0) return { imported: 0, skipped: 0 };
@@ -154,22 +252,44 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId }: Pr
         (existing || []).map((t: any) => normalizeTeamName(t.name)),
       );
 
-      // Load full source data
+      // Split selected ids: those with cached RPC data vs those we'll read directly.
+      const cachedIds = selectedIds.filter((id) => cachedTeamById.has(id));
+      const directIds = selectedIds.filter((id) => !cachedTeamById.has(id));
+
+      // Load full source data for directIds via direct queries.
       const [membersRes, vehiclesRes, teamsRes] = await Promise.all([
-        supabase
-          .from("installation_team_members")
-          .select("*")
-          .in("team_id", selectedIds),
-        supabase
-          .from("installation_team_vehicles")
-          .select("*")
-          .in("team_id", selectedIds),
-        supabase.from("installation_teams").select("*").in("id", selectedIds),
+        directIds.length
+          ? supabase.from("installation_team_members").select("*").in("team_id", directIds)
+          : Promise.resolve({ data: [] as any[] }),
+        directIds.length
+          ? supabase.from("installation_team_vehicles").select("*").in("team_id", directIds)
+          : Promise.resolve({ data: [] as any[] }),
+        directIds.length
+          ? supabase.from("installation_teams").select("*").in("id", directIds)
+          : Promise.resolve({ data: [] as any[] }),
       ]);
 
-      const sourceTeams = teamsRes.data || [];
-      const sourceMembers = membersRes.data || [];
-      const sourceVehicles = vehiclesRes.data || [];
+      type SourceTeam = { id: string; name: string; members: any[]; vehicles: any[] };
+      const sourceTeams: SourceTeam[] = [];
+
+      (teamsRes.data || []).forEach((t: any) => {
+        sourceTeams.push({
+          id: t.id,
+          name: t.name,
+          members: (membersRes.data || []).filter((m: any) => m.team_id === t.id),
+          vehicles: (vehiclesRes.data || []).filter((v: any) => v.team_id === t.id),
+        });
+      });
+
+      cachedIds.forEach((id) => {
+        const cached = cachedTeamById.get(id)!;
+        sourceTeams.push({
+          id: cached.id,
+          name: cached.name,
+          members: cached._cachedMembers || [],
+          vehicles: cached._cachedVehicles || [],
+        });
+      });
 
       let imported = 0;
       let skipped = 0;
@@ -188,31 +308,27 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId }: Pr
 
         existingNames.add(normalizeTeamName(t.name));
 
-        const members = sourceMembers
-          .filter((m: any) => m.team_id === t.id)
-          .map((m: any) => ({
-            team_id: newTeam.id,
-            name: m.name,
-            cpf: m.cpf,
-            rg: m.rg,
-            phone: m.phone,
-            is_leader: m.is_leader,
-            is_unified_doc: m.is_unified_doc,
-          }));
+        const members = t.members.map((m: any) => ({
+          team_id: newTeam.id,
+          name: m.name,
+          cpf: m.cpf,
+          rg: m.rg,
+          phone: m.phone,
+          is_leader: m.is_leader,
+          is_unified_doc: m.is_unified_doc,
+        }));
         if (members.length) {
           const { error } = await supabase.from("installation_team_members").insert(members);
           if (error) throw error;
         }
 
-        const vehicles = sourceVehicles
-          .filter((v: any) => v.team_id === t.id)
-          .map((v: any) => ({
-            team_id: newTeam.id,
-            name: v.name,
-            brand: v.brand,
-            color: v.color,
-            plate: v.plate,
-          }));
+        const vehicles = t.vehicles.map((v: any) => ({
+          team_id: newTeam.id,
+          name: v.name,
+          brand: v.brand,
+          color: v.color,
+          plate: v.plate,
+        }));
         if (vehicles.length) {
           const { error } = await supabase.from("installation_team_vehicles").insert(vehicles);
           if (error) throw error;
@@ -235,7 +351,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId }: Pr
     onError: (e: any) => toast.error(e?.message || "Erro ao importar equipes"),
   });
 
-  const isLoading = loadingCampaigns || loadingTeams;
+  const isLoading = loadingDirectCampaigns || loadingDirectTeams || loadingRpc;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -303,7 +419,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId }: Pr
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold text-sm truncate">{c.name}</div>
                           <div className="text-[11px] text-muted-foreground truncate">
-                            {c.clients?.name || "—"}
+                            {c.client_name || "—"}
                           </div>
                         </div>
                         <Badge variant="secondary" className="text-[10px] shrink-0">
