@@ -187,6 +187,7 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
         open={importOpen}
         onOpenChange={setImportOpen}
         campaignId={campaignId}
+        clientId={clientId}
       />
     </Dialog>
   );
