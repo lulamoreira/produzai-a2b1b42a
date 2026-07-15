@@ -413,7 +413,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
               // best-effort rollback; still record the failure
             }
           }
-          failures.push({ teamName: t.name, errorMessage: msg });
+          failures.push({ id: t.id, teamName: t.name, errorMessage: msg });
           // Continue with next team — never abort the batch.
         }
       }
