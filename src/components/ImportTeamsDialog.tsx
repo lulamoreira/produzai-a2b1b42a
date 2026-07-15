@@ -97,6 +97,24 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
 
   const directCampaignIds = useMemo(() => directCampaigns.map((c) => c.id), [directCampaigns]);
 
+  const { data: directWinnersMap = {} } = useQuery({
+    queryKey: ["import-teams-winners", directCampaignIds.join(",")],
+    enabled: open && directCampaignIds.length > 0,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("budget_suppliers")
+        .select("campaign_id, company_name")
+        .in("campaign_id", directCampaignIds)
+        .eq("is_winner", true);
+      if (error) throw error;
+      const map: Record<string, string> = {};
+      (data || []).forEach((r: any) => {
+        if (r.campaign_id && r.company_name) map[r.campaign_id] = r.company_name;
+      });
+      return map;
+    },
+  });
+
   const { data: directTeamsByCampaign = {}, isLoading: loadingDirectTeams } = useQuery({
     queryKey: ["import-teams-list", directCampaignIds.join(",")],
     enabled: open && directCampaignIds.length > 0,
