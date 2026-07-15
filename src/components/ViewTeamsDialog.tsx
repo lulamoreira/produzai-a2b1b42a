@@ -305,6 +305,45 @@ const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function Team
         </div>
       </div>
 
+      {canEdit && (onSelect || onDelete) && (
+        <div className="flex flex-wrap items-center gap-1.5 px-3 sm:px-4 py-2 border-b bg-background">
+          {onSelect && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1.5"
+              onClick={(e) => { e.stopPropagation(); onSelect(); }}
+            >
+              <Pencil className="w-3 h-3" /> Editar
+            </Button>
+          )}
+          {onSelect && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-7 text-xs gap-1.5"
+              onClick={(e) => { e.stopPropagation(); onSelect(); }}
+              title="Abrir editor para adicionar instaladores"
+            >
+              <UserPlus className="w-3 h-3" /> Adicionar instalador
+            </Button>
+          )}
+          {onDelete && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-7 text-xs gap-1.5 text-destructive hover:text-destructive hover:bg-destructive/10 ml-auto"
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            >
+              <Trash2 className="w-3 h-3" /> Remover
+            </Button>
+          )}
+        </div>
+      )}
+
       <div className="px-3 sm:px-4 py-3 grid gap-3 sm:grid-cols-2">
         {/* Members */}
         <div>
