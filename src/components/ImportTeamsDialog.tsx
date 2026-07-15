@@ -80,6 +80,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [lastFailures, setLastFailures] = useState<{ id: string; name: string; error: string }[]>([]);
 
   // Direct campaigns query (works for admins / users with RLS-visible campaigns).
   const { data: directCampaigns = [], isLoading: loadingDirectCampaigns } = useQuery({
