@@ -323,7 +323,7 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
           ))}
         </div>
 
-        {/* Duplicate list block removed above — keep original placement below */}
+        
       </DialogContent>
 
       <ImportTeamsDialog
