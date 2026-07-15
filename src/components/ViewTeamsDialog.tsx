@@ -397,13 +397,15 @@ interface TeamViewCardProps {
   vehicles: TeamVehicle[];
   active: boolean;
   canEdit?: boolean;
+  selected?: boolean;
+  onToggleSelected?: () => void;
   onFocus: () => void;
   onSelect?: () => void;
   onDelete?: () => void;
 }
 
 const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function TeamViewCard(
-  { team, members, vehicles, active, canEdit, onFocus, onSelect, onDelete },
+  { team, members, vehicles, active, canEdit, selected, onToggleSelected, onFocus, onSelect, onDelete },
   ref,
 ) {
   const incomplete = isTeamIncomplete(members);
@@ -423,11 +425,21 @@ const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function Team
         active
           ? "border-primary ring-2 ring-primary/30 shadow-sm"
           : "border-border hover:border-primary/40",
+        selected && "ring-2 ring-primary/50 bg-primary/5",
       )}
     >
       {/* Header */}
       <div className="flex items-center justify-between gap-2 px-3 sm:px-4 py-2.5 border-b bg-muted/40 rounded-t-lg flex-wrap">
         <div className="flex items-center gap-2 min-w-0">
+          {onToggleSelected && (
+            <Checkbox
+              checked={!!selected}
+              onCheckedChange={onToggleSelected}
+              onClick={(e) => e.stopPropagation()}
+              aria-label={`Selecionar equipe ${team.name}`}
+              className="shrink-0"
+            />
+          )}
           <Users className="w-4 h-4 text-primary shrink-0" />
           <h3 className="font-semibold text-sm sm:text-base truncate">{team.name}</h3>
           {incomplete && (
