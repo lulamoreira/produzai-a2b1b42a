@@ -185,6 +185,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
         name: c.name,
         client_id: c.client_id,
         client_name: c.clients?.name ?? null,
+        winner_supplier_name: directWinnersMap[c.id] ?? null,
       });
       teamMap[c.id] = directTeamsByCampaign[c.id] || [];
     });
@@ -196,9 +197,15 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
           name: rc.campaign_name,
           client_id: rc.client_id,
           client_name: rc.client_name,
+          winner_supplier_name: rc.winner_supplier_name ?? null,
         });
+      } else {
+        // Backfill winner from RPC if direct query didn't have it.
+        const existing = campMap.get(rc.campaign_id)!;
+        if (!existing.winner_supplier_name && rc.winner_supplier_name) {
+          campMap.set(rc.campaign_id, { ...existing, winner_supplier_name: rc.winner_supplier_name });
+        }
       }
-      // If this campaign has no teams from direct query, seed from RPC (with cached members/vehicles).
       const existing = teamMap[rc.campaign_id];
       if (!existing || existing.length === 0) {
         teamMap[rc.campaign_id] = rc.teams.map((t) => ({
@@ -217,9 +224,9 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
       mergedCampaigns: Array.from(campMap.values()),
       teamsByCampaign: teamMap,
     };
-  }, [directCampaigns, directTeamsByCampaign, rpcCampaigns]);
+  }, [directCampaigns, directWinnersMap, directTeamsByCampaign, rpcCampaigns]);
 
-  // Filter: only campaigns that have teams and match search.
+  // Filter: only campaigns that have teams and match search (name/client/supplier/team).
   const visibleCampaigns = useMemo(() => {
     const q = search.trim().toLowerCase();
     return mergedCampaigns
@@ -227,7 +234,13 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
       .filter((c) => {
         if (!q) return true;
         const clientName = c.client_name?.toLowerCase() || "";
-        if (c.name.toLowerCase().includes(q) || clientName.includes(q)) return true;
+        const winnerName = c.winner_supplier_name?.toLowerCase() || "";
+        if (
+          c.name.toLowerCase().includes(q) ||
+          clientName.includes(q) ||
+          winnerName.includes(q)
+        )
+          return true;
         return (teamsByCampaign[c.id] || []).some((t) => t.name.toLowerCase().includes(q));
       });
   }, [mergedCampaigns, teamsByCampaign, search]);
