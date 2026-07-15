@@ -438,7 +438,19 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
         console.error("[ImportTeamsDialog] Falhas na importação:", failures);
       }
 
-      setSelected({});
+      // Track failures so the user can retry only what failed.
+      setLastFailures(failures.map((f) => ({ id: f.id, name: f.teamName, error: f.errorMessage })));
+
+      // Clear only successfully-imported ids from selection; keep failed ones checked for retry visibility.
+      const failedSet = new Set(failures.map((f) => f.id));
+      setSelected((prev) => {
+        const next: Record<string, boolean> = {};
+        Object.entries(prev).forEach(([id, v]) => {
+          if (v && failedSet.has(id)) next[id] = true;
+        });
+        return next;
+      });
+
       if (failures.length === 0) onOpenChange(false);
     },
     onError: (e: any) => toast.error(e?.message || "Erro ao importar equipes"),
