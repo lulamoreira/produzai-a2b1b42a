@@ -326,51 +326,75 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
 
       let imported = 0;
       let skipped = 0;
+      const failures: { teamName: string; errorMessage: string }[] = [];
+
+      // Sanitize NOT NULL text columns (members.name, vehicles.name) — never send null/undefined.
+      const s = (v: any) => (v === null || v === undefined ? "" : v);
+      const b = (v: any) => (v === true);
 
       for (const t of sourceTeams) {
         if (existingNames.has(normalizeTeamName(t.name))) {
           skipped++;
           continue;
         }
-        const { data: newTeam, error: teamErr } = await supabase
-          .from("installation_teams")
-          .insert({ campaign_id: campaignId, name: t.name })
-          .select()
-          .single();
-        if (teamErr || !newTeam) throw teamErr || new Error("Falha ao criar equipe");
 
-        existingNames.add(normalizeTeamName(t.name));
+        let newTeamId: string | null = null;
+        try {
+          const { data: newTeam, error: teamErr } = await supabase
+            .from("installation_teams")
+            .insert({ campaign_id: campaignId, name: t.name })
+            .select()
+            .single();
+          if (teamErr || !newTeam) throw teamErr || new Error("Falha ao criar equipe");
+          newTeamId = newTeam.id;
+          existingNames.add(normalizeTeamName(t.name));
 
-        const members = t.members.map((m: any) => ({
-          team_id: newTeam.id,
-          name: m.name,
-          cpf: m.cpf,
-          rg: m.rg,
-          phone: m.phone,
-          is_leader: m.is_leader,
-          is_unified_doc: m.is_unified_doc,
-        }));
-        if (members.length) {
-          const { error } = await supabase.from("installation_team_members").insert(members);
-          if (error) throw error;
+          const members = t.members
+            .filter((m: any) => s(m?.name).trim() !== "")
+            .map((m: any) => ({
+              team_id: newTeam.id,
+              name: s(m.name),
+              cpf: s(m.cpf),
+              rg: s(m.rg),
+              phone: s(m.phone),
+              is_leader: b(m.is_leader),
+              is_unified_doc: b(m.is_unified_doc),
+            }));
+          if (members.length) {
+            const { error } = await supabase.from("installation_team_members").insert(members);
+            if (error) throw error;
+          }
+
+          const vehicles = t.vehicles.map((v: any) => ({
+            team_id: newTeam.id,
+            name: s(v.name),
+            brand: s(v.brand),
+            color: s(v.color),
+            plate: s(v.plate),
+          }));
+          if (vehicles.length) {
+            const { error } = await supabase.from("installation_team_vehicles").insert(vehicles);
+            if (error) throw error;
+          }
+
+          imported++;
+        } catch (err: any) {
+          const msg = err?.message || err?.hint || "Erro desconhecido";
+          // Rollback the partially-created team so we never leave orphans.
+          if (newTeamId) {
+            try {
+              await supabase.from("installation_teams").delete().eq("id", newTeamId);
+              existingNames.delete(normalizeTeamName(t.name));
+            } catch {
+              // best-effort rollback; still record the failure
+            }
+          }
+          failures.push({ teamName: t.name, errorMessage: msg });
+          // Continue with next team — never abort the batch.
         }
-
-        const vehicles = t.vehicles.map((v: any) => ({
-          team_id: newTeam.id,
-          name: v.name,
-          brand: v.brand,
-          color: v.color,
-          plate: v.plate,
-        }));
-        if (vehicles.length) {
-          const { error } = await supabase.from("installation_team_vehicles").insert(vehicles);
-          if (error) throw error;
-        }
-
-        imported++;
       }
 
-      return { imported, skipped };
+      return { imported, skipped, failures };
     },
     onSuccess: ({ imported, skipped }) => {
       qc.invalidateQueries({ queryKey: ["installation_teams", campaignId] });
