@@ -49,6 +49,8 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
   const [activeIdx, setActiveIdx] = useState(0);
   const [importOpen, setImportOpen] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<InstallationTeam | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
+  const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
 
@@ -65,6 +67,46 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
       setTeamToDelete(null);
     },
     onError: (e: any) => toast.error(e?.message || "Falha ao remover equipe"),
+  });
+
+  const bulkDeleteTeams = useMutation({
+    mutationFn: async (ids: string[]) => {
+      if (ids.length === 0) return 0;
+      // 1) Unlink schedules to avoid FK violations
+      const { error: schedErr } = await supabase
+        .from("campaign_schedules")
+        .update({ team_id: null })
+        .in("team_id", ids);
+      if (schedErr) throw schedErr;
+      // 2) Delete members and vehicles (safe even with ON DELETE CASCADE)
+      const { error: memErr } = await supabase
+        .from("installation_team_members")
+        .delete()
+        .in("team_id", ids);
+      if (memErr) throw memErr;
+      const { error: vehErr } = await supabase
+        .from("installation_team_vehicles")
+        .delete()
+        .in("team_id", ids);
+      if (vehErr) throw vehErr;
+      // 3) Delete teams
+      const { error: teamErr } = await supabase
+        .from("installation_teams")
+        .delete()
+        .in("id", ids);
+      if (teamErr) throw teamErr;
+      return ids.length;
+    },
+    onSuccess: (count) => {
+      toast.success(`${count} equipe(s) excluída(s)`);
+      queryClient.invalidateQueries({ queryKey: ["installation_teams", campaignId] });
+      queryClient.invalidateQueries({ queryKey: ["all_team_members", campaignId] });
+      queryClient.invalidateQueries({ queryKey: ["all_team_vehicles", campaignId] });
+      queryClient.invalidateQueries({ queryKey: ["campaign_schedules", campaignId] });
+      setSelectedIds({});
+      setBulkConfirmOpen(false);
+    },
+    onError: (e: any) => toast.error(e?.message || "Falha ao excluir equipes"),
   });
 
   const isLoading = loadingTeams || loadingMembers || loadingVehicles;
