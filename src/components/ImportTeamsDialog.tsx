@@ -21,6 +21,7 @@ import {
 import { toast } from "sonner";
 import { ChevronRight, Search, Users, Download, Car } from "lucide-react";
 import { cn, normalizeTeamName } from "@/lib/utils";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 
 interface Props {
   open: boolean;
