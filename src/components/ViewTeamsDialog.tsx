@@ -206,8 +206,10 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
               members={membersMap[team.id] || []}
               vehicles={vehiclesMap[team.id] || []}
               active={idx === activeIdx}
+              canEdit={canEdit}
               onFocus={() => setActiveIdx(idx)}
               onSelect={onEditTeam ? () => onEditTeam(team.id) : undefined}
+              onDelete={canEdit ? () => setTeamToDelete(team) : undefined}
               ref={(el) => (itemRefs.current[idx] = el)}
             />
           ))}
@@ -220,6 +222,32 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
         campaignId={campaignId}
         clientId={clientId}
       />
+
+      <AlertDialog open={!!teamToDelete} onOpenChange={(o) => !o && setTeamToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover equipe?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover a equipe <strong>{teamToDelete?.name}</strong>? Todos os
+              instaladores e veículos vinculados a ela também serão removidos desta campanha. Esta
+              ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteTeam.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteTeam.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                if (teamToDelete) deleteTeam.mutate(teamToDelete.id);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteTeam.isPending ? "Removendo..." : "Remover"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
@@ -229,12 +257,14 @@ interface TeamViewCardProps {
   members: TeamMember[];
   vehicles: TeamVehicle[];
   active: boolean;
+  canEdit?: boolean;
   onFocus: () => void;
   onSelect?: () => void;
+  onDelete?: () => void;
 }
 
 const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function TeamViewCard(
-  { team, members, vehicles, active, onFocus, onSelect },
+  { team, members, vehicles, active, canEdit, onFocus, onSelect, onDelete },
   ref,
 ) {
   const incomplete = isTeamIncomplete(members);
