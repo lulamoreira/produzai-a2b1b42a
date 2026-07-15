@@ -173,6 +173,35 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
     [teams, membersMap],
   );
 
+  const selectedCount = useMemo(
+    () => Object.values(selectedIds).filter(Boolean).length,
+    [selectedIds],
+  );
+
+  const visibleIds = useMemo(() => filteredTeams.map((t) => t.id), [filteredTeams]);
+  const allVisibleSelected =
+    visibleIds.length > 0 && visibleIds.every((id) => selectedIds[id]);
+
+  const toggleAllVisible = () => {
+    setSelectedIds((prev) => {
+      const next = { ...prev };
+      if (allVisibleSelected) {
+        visibleIds.forEach((id) => delete next[id]);
+      } else {
+        visibleIds.forEach((id) => (next[id] = true));
+      }
+      return next;
+    });
+  };
+
+  const toggleOne = (id: string) =>
+    setSelectedIds((prev) => {
+      const next = { ...prev };
+      if (next[id]) delete next[id];
+      else next[id] = true;
+      return next;
+    });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
