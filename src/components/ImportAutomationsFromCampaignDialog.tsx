@@ -59,72 +59,62 @@ const ImportAutomationsFromCampaignDialog = ({
   }, [open]);
 
   const { data: campaigns = [] } = useQuery<RemoteCampaign[]>({
-    queryKey: ["import-autom-campaigns", clientId, currentCampaignId],
+    queryKey: ["import-autom-campaigns-rpc", clientId, currentCampaignId],
     queryFn: async () => {
-      const { data } = await supabase.from("campaigns").select("id, name")
-        .eq("client_id", clientId).neq("id", currentCampaignId)
-        .order("created_at", { ascending: false });
-      return (data || []) as RemoteCampaign[];
+      const { data, error } = await supabase.rpc("get_client_campaigns_for_import", {
+        p_client_id: clientId,
+      });
+      if (error) throw error;
+      return ((data as RemoteCampaign[]) || []).filter((c) => c.id !== currentCampaignId);
     },
     enabled: open && !!clientId,
   });
 
-  const { data: remoteTemplates = [] } = useQuery<RemoteTemplate[]>({
-    queryKey: ["import-autom-templates", selectedCampaignId],
+  const { data: automationsData } = useQuery({
+    queryKey: ["import-autom-data-rpc", selectedCampaignId],
     queryFn: async () => {
-      const { data } = await supabase.from("automation_templates")
-        .select("*").eq("campaign_id", selectedCampaignId)
-        .order("created_at", { ascending: false });
-      return (data || []).map((t: any) => ({
-        ...t,
-        items: (typeof t.items === "string" ? JSON.parse(t.items) : t.items) as AutomationTemplateItem[],
-      })) as RemoteTemplate[];
+      const { data, error } = await supabase.rpc("get_campaign_automations_for_import", {
+        p_campaign_id: selectedCampaignId,
+      });
+      if (error) throw error;
+      return (data as {
+        templates: any[];
+        groups: RemoteGroup[];
+        group_items: RemoteGroupItem[];
+        pieces: CampaignPiece[];
+        kits: CampaignKit[];
+      } | null);
     },
     enabled: !!selectedCampaignId,
   });
 
-  const { data: remoteGroups = [] } = useQuery<RemoteGroup[]>({
-    queryKey: ["import-autom-groups", selectedCampaignId],
-    queryFn: async () => {
-      const { data } = await supabase.from("automation_groups")
-        .select("*").eq("campaign_id", selectedCampaignId)
-        .order("created_at", { ascending: false });
-      return (data || []) as RemoteGroup[];
-    },
-    enabled: !!selectedCampaignId && mode === "groups",
-  });
+  const remoteTemplates: RemoteTemplate[] = useMemo(() => {
+    return (automationsData?.templates || []).map((t: any) => ({
+      ...t,
+      items: (typeof t.items === "string" ? JSON.parse(t.items) : t.items) as AutomationTemplateItem[],
+    })) as RemoteTemplate[];
+  }, [automationsData]);
 
-  const { data: remoteGroupItems = [] } = useQuery<RemoteGroupItem[]>({
-    queryKey: ["import-autom-group-items", selectedCampaignId, remoteGroups.map(g => g.id).join(",")],
-    queryFn: async () => {
-      if (remoteGroups.length === 0) return [];
-      const { data } = await supabase.from("automation_group_items")
-        .select("*").in("group_id", remoteGroups.map(g => g.id))
-        .order("display_order");
-      return (data || []) as RemoteGroupItem[];
-    },
-    enabled: !!selectedCampaignId && mode === "groups" && remoteGroups.length > 0,
-  });
+  const remoteGroups: RemoteGroup[] = useMemo(
+    () => (mode === "groups" ? (automationsData?.groups || []) : []),
+    [automationsData, mode],
+  );
 
-  const { data: remotePieces = [] } = useQuery<CampaignPiece[]>({
-    queryKey: ["import-autom-pieces", selectedCampaignId],
-    queryFn: async () => {
-      const { data } = await supabase.from("campaign_pieces")
-        .select("id, code, name, image_url, size").eq("campaign_id", selectedCampaignId);
-      return (data || []) as any;
-    },
-    enabled: !!selectedCampaignId,
-  });
+  const remoteGroupItems: RemoteGroupItem[] = useMemo(
+    () => (mode === "groups" ? (automationsData?.group_items || []) : []),
+    [automationsData, mode],
+  );
 
-  const { data: remoteKits = [] } = useQuery<CampaignKit[]>({
-    queryKey: ["import-autom-kits", selectedCampaignId],
-    queryFn: async () => {
-      const { data } = await supabase.from("campaign_kits")
-        .select("id, code, name, image_url").eq("campaign_id", selectedCampaignId);
-      return (data || []) as any;
-    },
-    enabled: !!selectedCampaignId,
-  });
+  const remotePieces: CampaignPiece[] = useMemo(
+    () => (automationsData?.pieces || []) as any,
+    [automationsData],
+  );
+
+  const remoteKits: CampaignKit[] = useMemo(
+    () => (automationsData?.kits || []) as any,
+    [automationsData],
+  );
+
 
   // Effective templates to import (resolved from selection)
   const effectiveTemplates = useMemo(() => {
