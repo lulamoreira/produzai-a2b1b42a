@@ -288,9 +288,9 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
         (existing || []).map((t: any) => normalizeTeamName(t.name)),
       );
 
-      // Split selected ids: those with cached RPC data vs those we'll read directly.
-      const cachedIds = selectedIds.filter((id) => cachedTeamById.has(id));
-      const directIds = selectedIds.filter((id) => !cachedTeamById.has(id));
+      // Split ids: those with cached RPC data vs those we'll read directly.
+      const cachedIds = idsToImport.filter((id) => cachedTeamById.has(id));
+      const directIds = idsToImport.filter((id) => !cachedTeamById.has(id));
 
       // Load full source data for directIds via direct queries.
       const [membersRes, vehiclesRes, teamsRes] = await Promise.all([
