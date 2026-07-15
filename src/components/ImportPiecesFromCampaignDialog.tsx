@@ -84,88 +84,54 @@ const ImportPiecesFromCampaignDialog = ({
   const [keepKitPhotoMap, setKeepKitPhotoMap] = useState<Record<string, boolean>>({});
   const [importQuantities, setImportQuantities] = useState(false);
 
-  // Fetch campaigns from same client (excluding current)
+  // Fetch campaigns via SECURITY DEFINER RPC (bypasses RLS gaps for restricted users)
   const { data: campaigns = [] } = useQuery({
-    queryKey: ["client_campaigns_for_import", clientId],
+    queryKey: ["client_campaigns_for_import_rpc", clientId, currentCampaignId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("campaigns")
-        .select("id, name")
-        .eq("client_id", clientId)
-        .neq("id", currentCampaignId)
-        .order("name");
+      const { data, error } = await supabase.rpc("get_client_campaigns_for_import", {
+        p_client_id: clientId,
+      });
       if (error) throw error;
-      return data as RemoteCampaign[];
+      return ((data as RemoteCampaign[]) || []).filter((c) => c.id !== currentCampaignId);
     },
     enabled: open && !!clientId,
   });
 
-  // Fetch pieces from selected campaign
-  const { data: remotePieces = [], isLoading: loadingPieces } = useQuery({
-    queryKey: ["campaign_pieces_for_import", selectedCampaignId],
+  // Fetch campaign data (pieces, kits, kit_pieces, store_pieces) via one RPC
+  const { data: campaignData, isLoading: loadingPieces } = useQuery({
+    queryKey: ["campaign_data_for_import_rpc", selectedCampaignId],
     queryFn: async () => {
-      return supabasePaginate<RemotePiece>((from, to) =>
-        supabase
-          .from("campaign_pieces")
-          .select("*", { count: "exact" })
-          .eq("campaign_id", selectedCampaignId)
-          .eq("is_deleted", false)
-          .order("code")
-          .range(from, to) as any
-      );
+      const { data, error } = await supabase.rpc("get_campaign_data_for_import", {
+        p_campaign_id: selectedCampaignId,
+      });
+      if (error) throw error;
+      return (data as {
+        pieces: RemotePiece[];
+        kits: RemoteKit[];
+        kit_pieces: RemoteKitPiece[];
+        store_pieces: Array<{ piece_id: string; store_id: string; quantity: number }>;
+      } | null);
     },
     enabled: !!selectedCampaignId,
   });
 
-  // Fetch kits from selected campaign
-  const { data: remoteKits = [] } = useQuery({
-    queryKey: ["campaign_kits_for_import", selectedCampaignId],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("campaign_kits")
-        .select("*")
-        .eq("campaign_id", selectedCampaignId)
-        .eq("is_deleted", false)
-        .order("code");
-      if (error) throw error;
-      return data as RemoteKit[];
-    },
-    enabled: !!selectedCampaignId,
-  });
+  const remotePieces: RemotePiece[] = useMemo(
+    () => (campaignData?.pieces || []).slice().sort((a, b) => a.code - b.code),
+    [campaignData],
+  );
+  const remoteKits: RemoteKit[] = useMemo(
+    () => (campaignData?.kits || []).slice().sort((a, b) => a.code - b.code),
+    [campaignData],
+  );
+  const remoteKitPieces: RemoteKitPiece[] = useMemo(
+    () => campaignData?.kit_pieces || [],
+    [campaignData],
+  );
+  const remoteStoreQuantities = useMemo(
+    () => (importQuantities ? campaignData?.store_pieces || [] : []),
+    [campaignData, importQuantities],
+  );
 
-  // Fetch kit pieces for selected campaign kits
-  const { data: remoteKitPieces = [] } = useQuery({
-    queryKey: ["campaign_kit_pieces_for_import", selectedCampaignId, remoteKits.map(k => k.id).join(",")],
-    queryFn: async () => {
-      if (remoteKits.length === 0) return [];
-      const kitIds = remoteKits.map(k => k.id);
-      const { data, error } = await supabase
-        .from("campaign_kit_pieces")
-        .select("*")
-        .in("kit_id", kitIds);
-      if (error) throw error;
-      return data as RemoteKitPiece[];
-    },
-    enabled: remoteKits.length > 0,
-  });
-
-  // Fetch store quantities from selected campaign
-  const { data: remoteStoreQuantities = [] } = useQuery({
-    queryKey: ["campaign_store_pieces_for_import", selectedCampaignId],
-    queryFn: async () => {
-      return supabasePaginate<{ piece_id: string; store_id: string; quantity: number }>(
-        (from, to) =>
-          supabase
-            .from("campaign_store_pieces")
-            .select("piece_id, store_id, quantity", { count: "exact" })
-            .eq("campaign_id", selectedCampaignId)
-            .gt("quantity", 0)
-            .order("id")
-            .range(from, to) as any
-      );
-    },
-    enabled: !!selectedCampaignId && importQuantities,
-  });
 
   // Non-kit pieces for individual selection
   const nonKitPieces = useMemo(() => remotePieces.filter(p => {
