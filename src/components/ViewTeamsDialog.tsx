@@ -129,6 +129,7 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
     if (open) {
       setSearch("");
       setActiveIdx(0);
+      setSelectedIds({});
     }
   }, [open]);
 
