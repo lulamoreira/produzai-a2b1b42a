@@ -396,14 +396,26 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
 
       return { imported, skipped, failures };
     },
-    onSuccess: ({ imported, skipped }) => {
+    onSuccess: ({ imported, skipped, failures }) => {
       qc.invalidateQueries({ queryKey: ["installation_teams", campaignId] });
       qc.invalidateQueries({ queryKey: ["all_team_members", campaignId] });
       qc.invalidateQueries({ queryKey: ["all_team_vehicles", campaignId] });
       if (imported > 0) toast.success(`${imported} equipe(s) importada(s)${skipped ? ` · ${skipped} ignorada(s) (nome duplicado)` : ""}`);
-      else if (skipped > 0) toast.info(`Todas as ${skipped} equipe(s) já existem nesta campanha.`);
+      else if (skipped > 0 && failures.length === 0) toast.info(`Todas as ${skipped} equipe(s) já existem nesta campanha.`);
+
+      if (failures.length > 0) {
+        const names = failures.map((f) => f.teamName).slice(0, 5).join(", ");
+        const more = failures.length > 5 ? ` (+${failures.length - 5})` : "";
+        toast.error(
+          `${failures.length} equipe(s) falharam: ${names}${more}. Motivo: ${failures[0].errorMessage}`,
+          { duration: 15000 },
+        );
+        // eslint-disable-next-line no-console
+        console.error("[ImportTeamsDialog] Falhas na importação:", failures);
+      }
+
       setSelected({});
-      onOpenChange(false);
+      if (failures.length === 0) onOpenChange(false);
     },
     onError: (e: any) => toast.error(e?.message || "Erro ao importar equipes"),
   });
