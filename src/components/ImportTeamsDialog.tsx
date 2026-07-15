@@ -452,7 +452,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
                         <div className="min-w-0 flex-1">
                           <div className="font-semibold text-sm truncate">{c.name}</div>
                           <div className="text-[11px] text-muted-foreground truncate">
-                            {c.client_name || "—"}
+                            {c.client_name || "—"}{c.winner_supplier_name ? ` · ${c.winner_supplier_name}` : ""}
                           </div>
                         </div>
                         <Badge variant="secondary" className="text-[10px] shrink-0">
