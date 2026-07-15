@@ -255,6 +255,39 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
           </p>
         </div>
 
+        {/* Bulk actions toolbar */}
+        {canEdit && !isLoading && filteredTeams.length > 0 && (
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 sm:px-6 py-2 border-b bg-muted/20">
+            <span className="text-[11px] text-muted-foreground">
+              {selectedCount > 0
+                ? `${selectedCount} equipe(s) selecionada(s)`
+                : `${filteredTeams.length} equipe(s) visível(is)`}
+            </span>
+            <div className="flex items-center gap-1.5">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-7 text-[11px] px-2"
+                onClick={toggleAllVisible}
+              >
+                {allVisibleSelected ? "Desmarcar todas" : "Selecionar todas"}
+              </Button>
+              {selectedCount > 0 && (
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  className="h-7 text-[11px] px-2 gap-1.5"
+                  onClick={() => setBulkConfirmOpen(true)}
+                >
+                  <Trash2 className="w-3 h-3" /> Excluir selecionadas ({selectedCount})
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* List */}
         <div
           ref={listRef}
@@ -280,6 +313,8 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
               vehicles={vehiclesMap[team.id] || []}
               active={idx === activeIdx}
               canEdit={canEdit}
+              selected={!!selectedIds[team.id]}
+              onToggleSelected={canEdit ? () => toggleOne(team.id) : undefined}
               onFocus={() => setActiveIdx(idx)}
               onSelect={onEditTeam ? () => onEditTeam(team.id) : undefined}
               onDelete={canEdit ? () => setTeamToDelete(team) : undefined}
@@ -287,6 +322,8 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
             />
           ))}
         </div>
+
+        {/* Duplicate list block removed above — keep original placement below */}
       </DialogContent>
 
       <ImportTeamsDialog
