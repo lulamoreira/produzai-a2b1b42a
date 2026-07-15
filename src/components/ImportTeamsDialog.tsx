@@ -583,18 +583,36 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
             })}
         </div>
 
-        <DialogFooter className="px-4 sm:px-6 py-3 border-t bg-muted/20 flex-row items-center justify-between gap-2 sm:justify-between">
+        <DialogFooter className="px-4 sm:px-6 py-3 border-t bg-muted/20 flex-row items-center justify-between gap-2 sm:justify-between flex-wrap">
           <span className="text-xs text-muted-foreground">
             {selectedIds.length} equipe(s) selecionada(s)
+            {lastFailures.length > 0 && (
+              <span className="ml-2 text-destructive">
+                · {lastFailures.length} falha(s) na última tentativa
+              </span>
+            )}
           </span>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            {lastFailures.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={importMutation.isPending}
+                onClick={() => importMutation.mutate(lastFailures.map((f) => f.id))}
+                className="border-destructive/40 text-destructive hover:bg-destructive/10"
+              >
+                {importMutation.isPending
+                  ? "Reprocessando..."
+                  : `Tentar novamente falhas (${lastFailures.length})`}
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
             <Button
               size="sm"
               disabled={selectedIds.length === 0 || importMutation.isPending}
-              onClick={() => importMutation.mutate()}
+              onClick={() => importMutation.mutate(undefined)}
             >
               {importMutation.isPending ? "Importando..." : `Importar ${selectedIds.length || ""}`}
             </Button>
