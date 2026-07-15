@@ -358,6 +358,35 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={bulkConfirmOpen} onOpenChange={(o) => !o && setBulkConfirmOpen(false)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir {selectedCount} equipe(s)?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Os instaladores e veículos dessas equipes serão removidos. Lojas que estiverem
+              agendadas com essas equipes ficarão sem equipe atribuída. Esta ação não pode ser
+              desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={bulkDeleteTeams.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={bulkDeleteTeams.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                const ids = Object.keys(selectedIds).filter((id) => selectedIds[id]);
+                if (ids.length > 0) bulkDeleteTeams.mutate(ids);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {bulkDeleteTeams.isPending
+                ? "Excluindo..."
+                : `Excluir ${selectedCount} equipe(s)`}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
