@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Search, Copy, ImageIcon, Package } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
-import { toast } from "sonner";
+
 import type { CampaignPiece } from "@/hooks/useMultiClientData";
 
 interface ImportPiecesFromCampaignDialogProps {
