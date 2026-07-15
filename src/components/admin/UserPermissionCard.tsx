@@ -307,10 +307,10 @@ export default function UserPermissionCard({ userInfo, allClientAccess, allAgenc
             setExpanded(!expanded);
           }
         }}
-        className="w-full flex items-center gap-3 px-5 py-4 hover:bg-muted/30 transition-colors text-left"
+        className="w-full flex flex-wrap items-center gap-x-3 gap-y-2 px-4 sm:px-5 py-3 sm:py-4 hover:bg-muted/30 transition-colors text-left"
       >
         {expanded ? <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" /> : <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />}
-        <div className="flex-1 min-w-0">
+        <div className="flex-1 min-w-[180px]">
           {editingName ? (
             <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
               <Input className="h-7 text-sm w-44" value={nameValue} onChange={e => setNameValue(e.target.value)}
