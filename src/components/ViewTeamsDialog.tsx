@@ -34,10 +34,12 @@ interface ViewTeamsDialogProps {
   onOpenChange: (open: boolean) => void;
   campaignId: string;
   clientId?: string;
+  canEdit?: boolean;
   onEditTeam?: (teamId: string) => void;
 }
 
-export default function ViewTeamsDialog({ open, onOpenChange, campaignId, clientId, onEditTeam }: ViewTeamsDialogProps) {
+export default function ViewTeamsDialog({ open, onOpenChange, campaignId, clientId, canEdit = false, onEditTeam }: ViewTeamsDialogProps) {
+  const queryClient = useQueryClient();
   const { data: teams = [], isLoading: loadingTeams } = useInstallationTeams(campaignId);
   const { data: membersMap = {}, isLoading: loadingMembers } = useAllTeamMembers(campaignId);
   const { data: vehiclesMap = {}, isLoading: loadingVehicles } = useAllTeamVehicles(campaignId);
@@ -45,8 +47,24 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
   const [search, setSearch] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
   const [importOpen, setImportOpen] = useState(false);
+  const [teamToDelete, setTeamToDelete] = useState<InstallationTeam | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<Array<HTMLDivElement | null>>([]);
+
+  const deleteTeam = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("installation_teams").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      toast.success("Equipe removida");
+      queryClient.invalidateQueries({ queryKey: ["installation_teams", campaignId] });
+      queryClient.invalidateQueries({ queryKey: ["all_team_members", campaignId] });
+      queryClient.invalidateQueries({ queryKey: ["all_team_vehicles", campaignId] });
+      setTeamToDelete(null);
+    },
+    onError: (e: any) => toast.error(e?.message || "Falha ao remover equipe"),
+  });
 
   const isLoading = loadingTeams || loadingMembers || loadingVehicles;
 
