@@ -80,6 +80,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [lastFailures, setLastFailures] = useState<{ id: string; name: string; error: string }[]>([]);
 
   // Direct campaigns query (works for admins / users with RLS-visible campaigns).
   const { data: directCampaigns = [], isLoading: loadingDirectCampaigns } = useQuery({
@@ -274,8 +275,9 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
   }, [teamsByCampaign]);
 
   const importMutation = useMutation({
-    mutationFn: async () => {
-      if (selectedIds.length === 0) return { imported: 0, skipped: 0 };
+    mutationFn: async (overrideIds?: string[]) => {
+      const idsToImport = overrideIds && overrideIds.length > 0 ? overrideIds : selectedIds;
+      if (idsToImport.length === 0) return { imported: 0, skipped: 0, failures: [] as { id: string; teamName: string; errorMessage: string }[] };
 
       // Existing team names in destination (to avoid duplicates)
       const { data: existing } = await supabase
@@ -286,9 +288,9 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
         (existing || []).map((t: any) => normalizeTeamName(t.name)),
       );
 
-      // Split selected ids: those with cached RPC data vs those we'll read directly.
-      const cachedIds = selectedIds.filter((id) => cachedTeamById.has(id));
-      const directIds = selectedIds.filter((id) => !cachedTeamById.has(id));
+      // Split ids: those with cached RPC data vs those we'll read directly.
+      const cachedIds = idsToImport.filter((id) => cachedTeamById.has(id));
+      const directIds = idsToImport.filter((id) => !cachedTeamById.has(id));
 
       // Load full source data for directIds via direct queries.
       const [membersRes, vehiclesRes, teamsRes] = await Promise.all([
@@ -348,7 +350,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
 
       let imported = 0;
       let skipped = 0;
-      const failures: { teamName: string; errorMessage: string }[] = [];
+      const failures: { id: string; teamName: string; errorMessage: string }[] = [];
 
       // Sanitize NOT NULL text columns (members.name, vehicles.name) — never send null/undefined.
       const s = (v: any) => (v === null || v === undefined ? "" : v);
@@ -411,7 +413,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
               // best-effort rollback; still record the failure
             }
           }
-          failures.push({ teamName: t.name, errorMessage: msg });
+          failures.push({ id: t.id, teamName: t.name, errorMessage: msg });
           // Continue with next team — never abort the batch.
         }
       }
@@ -436,7 +438,19 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
         console.error("[ImportTeamsDialog] Falhas na importação:", failures);
       }
 
-      setSelected({});
+      // Track failures so the user can retry only what failed.
+      setLastFailures(failures.map((f) => ({ id: f.id, name: f.teamName, error: f.errorMessage })));
+
+      // Clear only successfully-imported ids from selection; keep failed ones checked for retry visibility.
+      const failedSet = new Set(failures.map((f) => f.id));
+      setSelected((prev) => {
+        const next: Record<string, boolean> = {};
+        Object.entries(prev).forEach(([id, v]) => {
+          if (v && failedSet.has(id)) next[id] = true;
+        });
+        return next;
+      });
+
       if (failures.length === 0) onOpenChange(false);
     },
     onError: (e: any) => toast.error(e?.message || "Erro ao importar equipes"),
@@ -569,18 +583,36 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
             })}
         </div>
 
-        <DialogFooter className="px-4 sm:px-6 py-3 border-t bg-muted/20 flex-row items-center justify-between gap-2 sm:justify-between">
+        <DialogFooter className="px-4 sm:px-6 py-3 border-t bg-muted/20 flex-row items-center justify-between gap-2 sm:justify-between flex-wrap">
           <span className="text-xs text-muted-foreground">
             {selectedIds.length} equipe(s) selecionada(s)
+            {lastFailures.length > 0 && (
+              <span className="ml-2 text-destructive">
+                · {lastFailures.length} falha(s) na última tentativa
+              </span>
+            )}
           </span>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
+            {lastFailures.length > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={importMutation.isPending}
+                onClick={() => importMutation.mutate(lastFailures.map((f) => f.id))}
+                className="border-destructive/40 text-destructive hover:bg-destructive/10"
+              >
+                {importMutation.isPending
+                  ? "Reprocessando..."
+                  : `Tentar novamente falhas (${lastFailures.length})`}
+              </Button>
+            )}
             <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
             <Button
               size="sm"
               disabled={selectedIds.length === 0 || importMutation.isPending}
-              onClick={() => importMutation.mutate()}
+              onClick={() => importMutation.mutate(undefined)}
             >
               {importMutation.isPending ? "Importando..." : `Importar ${selectedIds.length || ""}`}
             </Button>
