@@ -350,7 +350,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
 
       let imported = 0;
       let skipped = 0;
-      const failures: { teamName: string; errorMessage: string }[] = [];
+      const failures: { id: string; teamName: string; errorMessage: string }[] = [];
 
       // Sanitize NOT NULL text columns (members.name, vehicles.name) — never send null/undefined.
       const s = (v: any) => (v === null || v === undefined ? "" : v);
