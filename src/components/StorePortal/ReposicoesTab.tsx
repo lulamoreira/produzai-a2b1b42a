@@ -70,21 +70,7 @@ export default function ReposicoesTab({ data, agencyId }: Props) {
       console.error(error);
     } else {
       toast.success("Solicitação de reposição enviada!");
-      try {
-        const repId = (inserted as any)?.id;
-        await criarNotificacao({
-          agency_id: agencyId,
-          campaign_id: data.campaign.id,
-          store_id: data.store.id,
-          client_id: data.campaign.client_id,
-          type: "store_replacement_request",
-          title: "Nova solicitação de reposição",
-          body: `${data.store.name} solicitou reposição de ${quantity}x "${peca.nome}".`,
-          action_url: repId
-            ? `/agency/${agencyId}/clients/${data.campaign.client_id}/campaigns/${data.campaign.id}?section=occurrences&tab=portal-dashboard&rep=${repId}`
-            : `/agency/${agencyId}/clients/${data.campaign.client_id}/campaigns/${data.campaign.id}?section=occurrences&tab=portal-dashboard`,
-        });
-      } catch {}
+      // Notification dispatched by DB trigger `trg_notify_store_replacement_request`.
       setSelectedPeca(null);
       setReason("");
       setQuantity(1);
