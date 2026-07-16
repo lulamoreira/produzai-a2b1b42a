@@ -1712,50 +1712,15 @@ export function useDeleteCampaignKitPiece() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      // 1. Look up the kit_piece row so we know which piece + kit + campaign we're touching.
-      const { data: kp, error: kpErr } = await supabase
-        .from("campaign_kit_pieces")
-        .select("piece_id, kit_id")
-        .eq("id", id)
-        .maybeSingle();
-      if (kpErr) throw kpErr;
-
-      let campaignId: string | null = null;
-      let pieceId: string | null = null;
-
-      if (kp) {
-        pieceId = kp.piece_id as string;
-        const { data: kit } = await supabase
-          .from("campaign_kits")
-          .select("campaign_id")
-          .eq("id", kp.kit_id as string)
-          .maybeSingle();
-        campaignId = (kit?.campaign_id as string) ?? null;
-      }
-
-      // 2. Delete the kit_piece link.
-      const { error } = await supabase.from("campaign_kit_pieces").delete().eq("id", id);
+      const { data: cleanedRows, error } = await supabase.rpc(
+        "delete_kit_piece_with_cleanup" as any,
+        { p_kit_piece_id: id } as any
+      );
       if (error) throw error;
-
-      // 3. Ask the database to apply the same cleanup rule used by triggers:
-      //    only pieces marked as kit-only and no longer linked to any active kit
-      //    have their leftover store/negotiation quantities removed.
-      if (campaignId && pieceId) {
-        const { data: cleanedRows, error: cleanupErr } = await supabase.rpc(
-          "cleanup_kit_only_piece_allocations" as any,
-          {
-            p_campaign_id: campaignId,
-            p_piece_id: pieceId,
-            p_excluding_kit_id: null,
-          } as any
+      if (Number(cleanedRows ?? 0) > 0) {
+        toast.success(
+          "Peça removida do kit. Como ela é somente de kit e não pertence a nenhum outro kit ativo, as quantidades dela em lojas e na recotação também foram zeradas."
         );
-        if (cleanupErr) throw cleanupErr;
-
-        if (Number(cleanedRows ?? 0) > 0) {
-          toast.success(
-            "Peça removida do kit. Como ela é somente de kit e não pertence a nenhum outro kit ativo, as quantidades dela em lojas e na recotação também foram zeradas."
-          );
-        }
       }
     },
     onSuccess: () => {

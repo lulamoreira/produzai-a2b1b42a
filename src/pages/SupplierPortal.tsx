@@ -586,26 +586,7 @@ const SupplierPortal = () => {
     if (updErr) return;
 
     setSupplier((s) => s ? { ...s, status: "preenchendo" } : s);
-
-    // Enviar notificação de início de preenchimento
-    try {
-      const agencyId = headerIds.agency_id;
-      const clientId = headerIds.client_id;
-
-      if (agencyId) {
-        await supabase.rpc("criar_notificacao", {
-          _agency_id: agencyId,
-          _campaign_id: supplier.campaign_id,
-          _client_id: clientId,
-          _type: "orcamento_em_preenchimento",
-          _title: "Fornecedor iniciou preenchimento",
-          _body: `${supplier.company_name} começou a preencher a cotação da campanha ${campaignName}.`,
-          _action_url: `/agency/${agencyId}/clients/${clientId}/campaigns/${supplier.campaign_id}?section=budgets`,
-        });
-      }
-    } catch (e) {
-      console.warn("[SupplierPortal] Failed to send 'filling' notification:", e);
-    }
+    // Notification dispatched by DB trigger trg_budget_supplier_notify.
   }, [supplier, campaignName, headerIds]);
 
   // ─── Save price on blur (always piece_id) ──────────────
@@ -753,28 +734,8 @@ const SupplierPortal = () => {
       setSupplier((s) => (s ? { ...s, status: "declinado" } : s));
       setDeclineOpen(false);
 
-      // Enviar notificação de desistência
-      try {
-        const agencyId = headerIds.agency_id;
-        const clientId = headerIds.client_id;
+      // Notification dispatched by DB trigger trg_budget_supplier_notify.
 
-        if (agencyId) {
-          const reason = declineReason.trim();
-          const body = `${supplier.company_name} não participará da cotação da campanha ${campaignName}.${reason ? ` Motivo: "${reason}".` : ""}`;
-
-          await supabase.rpc("criar_notificacao", {
-            _agency_id: agencyId,
-            _campaign_id: supplier.campaign_id,
-            _client_id: clientId,
-            _type: "orcamento_declinado",
-            _title: "Fornecedor desistiu da cotação",
-            _body: body,
-            _action_url: `/agency/${agencyId}/clients/${clientId}/campaigns/${supplier.campaign_id}?section=budgets`,
-          });
-        }
-      } catch (e) {
-        console.warn("[SupplierPortal] Failed to send 'decline' notification:", e);
-      }
 
       toast.success(isCLP ? "Registrado. Gracias por avisar." : "Registrado. Obrigado por avisar.");
     } catch {
@@ -812,22 +773,8 @@ const SupplierPortal = () => {
         console.warn("Snapshot history failed (non-blocking):", snapErr);
       }
 
-      const agencyId = headerIds.agency_id;
-      const clientId = headerIds.client_id;
+      // Notification dispatched by DB trigger trg_budget_supplier_notify.
 
-      if (agencyId) {
-        await supabase.rpc("criar_notificacao", {
-          _agency_id: agencyId,
-          _campaign_id: supplier.campaign_id,
-          _client_id: clientId,
-          _type: "orcamento_enviado",
-          _title: isNeg ? portal.negotiationSubmittedTitle : portal.quoteSubmittedTitle,
-          _body: isNeg
-            ? portal.negotiationSubmittedBody(supplier.company_name, campaignName)
-            : portal.quoteSubmittedBody(supplier.company_name, campaignName),
-          _action_url: `/agency/${agencyId}/clients/${clientId}/campaigns/${supplier.campaign_id}?section=budgets`,
-        });
-      }
 
       setSupplier((s) => s ? {
         ...s,
