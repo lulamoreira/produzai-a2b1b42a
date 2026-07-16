@@ -5956,6 +5956,7 @@ export type Database = {
       mark_invite_used: { Args: { p_token: string }; Returns: Json }
       mark_requote_filling: { Args: { p_token: string }; Returns: boolean }
       mark_stale_backup_runs: { Args: never; Returns: number }
+      mark_stale_backup_runs_admin: { Args: never; Returns: number }
       move_to_dlq: {
         Args: {
           dlq_name: string
