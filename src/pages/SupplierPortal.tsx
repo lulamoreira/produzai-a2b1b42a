@@ -734,28 +734,8 @@ const SupplierPortal = () => {
       setSupplier((s) => (s ? { ...s, status: "declinado" } : s));
       setDeclineOpen(false);
 
-      // Enviar notificação de desistência
-      try {
-        const agencyId = headerIds.agency_id;
-        const clientId = headerIds.client_id;
+      // Notification dispatched by DB trigger trg_budget_supplier_notify.
 
-        if (agencyId) {
-          const reason = declineReason.trim();
-          const body = `${supplier.company_name} não participará da cotação da campanha ${campaignName}.${reason ? ` Motivo: "${reason}".` : ""}`;
-
-          await supabase.rpc("criar_notificacao", {
-            _agency_id: agencyId,
-            _campaign_id: supplier.campaign_id,
-            _client_id: clientId,
-            _type: "orcamento_declinado",
-            _title: "Fornecedor desistiu da cotação",
-            _body: body,
-            _action_url: `/agency/${agencyId}/clients/${clientId}/campaigns/${supplier.campaign_id}?section=budgets`,
-          });
-        }
-      } catch (e) {
-        console.warn("[SupplierPortal] Failed to send 'decline' notification:", e);
-      }
 
       toast.success(isCLP ? "Registrado. Gracias por avisar." : "Registrado. Obrigado por avisar.");
     } catch {
