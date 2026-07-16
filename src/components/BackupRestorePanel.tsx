@@ -58,10 +58,9 @@ export const BackupRestorePanel = () => {
   const loadRuns = async () => {
     setLoadingRuns(true);
     // Sweep stale "running" rows (>10 min abandoned) so the history doesn't lie.
-    try {
-      await supabase.rpc("mark_stale_backup_runs" as any);
-    } catch {
-      // non-blocking
+    const { error: sweepError } = await supabase.rpc("mark_stale_backup_runs_admin");
+    if (sweepError) {
+      toast.error(`Erro ao limpar execuções travadas: ${sweepError.message}`);
     }
     const { data } = await supabase
       .from("system_backup_runs")
@@ -71,6 +70,7 @@ export const BackupRestorePanel = () => {
     setRuns((data ?? []) as BackupRun[]);
     setLoadingRuns(false);
   };
+
 
   useEffect(() => { loadRuns(); }, []);
 
