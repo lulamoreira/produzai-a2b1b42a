@@ -645,8 +645,9 @@ export function useAddCampaignPiece() {
     onMutate: async (newPiece) => {
       await qc.cancelQueries({ queryKey: ["campaign_pieces", newPiece.campaign_id] });
       const prev = qc.getQueryData<CampaignPiece[]>(["campaign_pieces", newPiece.campaign_id]);
+      const optimisticId = `optimistic-${Date.now()}`;
       const optimistic: CampaignPiece = {
-        id: `optimistic-${Date.now()}`,
+        id: optimisticId,
         campaign_id: newPiece.campaign_id,
         code: newPiece.code,
         category: newPiece.category,
@@ -663,14 +664,21 @@ export function useAddCampaignPiece() {
         created_at: new Date().toISOString(),
       };
       qc.setQueryData<CampaignPiece[]>(["campaign_pieces", newPiece.campaign_id], (old) => [...(old || []), optimistic]);
-      return { prev, campaignId: newPiece.campaign_id };
+      return { prev, campaignId: newPiece.campaign_id, optimisticId };
     },
     onError: (e, _, ctx) => {
       if (ctx) qc.setQueryData(["campaign_pieces", ctx.campaignId], ctx.prev);
       toast.error("Erro: " + e.message);
     },
     onSettled: (_, __, vars) => { qc.invalidateQueries({ queryKey: ["campaign_pieces", vars.campaign_id] }); },
-    onSuccess: () => toast.success("Peça adicionada!"),
+    onSuccess: (data, vars, ctx) => {
+      if (data && ctx?.optimisticId) {
+        qc.setQueryData<CampaignPiece[]>(["campaign_pieces", vars.campaign_id], (old) =>
+          (old || []).map((row) => (row.id === ctx.optimisticId ? data : row))
+        );
+      }
+      toast.success("Peça adicionada!");
+    },
   });
 }
 
@@ -678,6 +686,7 @@ export function useUpdateCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<CampaignPiece> & { id: string }) => {
+      if (!isPersistedId(id)) throw new Error("Este registro ainda está sendo salvo. Aguarde 1 segundo e tente novamente.");
       const { client_id, ...updateData } = data as any;
       const { error } = await supabase.from("campaign_pieces").update(updateData).eq("id", id);
       if (error) throw error;
