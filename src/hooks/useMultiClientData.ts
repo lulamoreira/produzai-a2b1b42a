@@ -220,8 +220,9 @@ export function useAddClient() {
     onMutate: async (newClient) => {
       await qc.cancelQueries({ queryKey: ["clients", newClient.agency_id] });
       const prev = qc.getQueryData<Client[]>(["clients", newClient.agency_id]);
+      const optimisticId = `optimistic-${Date.now()}`;
       const optimistic: Client = {
-        id: `optimistic-${Date.now()}`,
+        id: optimisticId,
         name: newClient.name,
         agency_id: newClient.agency_id,
         color: null,
@@ -246,14 +247,21 @@ export function useAddClient() {
         created_at: new Date().toISOString(),
       };
       qc.setQueryData<Client[]>(["clients", newClient.agency_id], (old) => [...(old || []), optimistic]);
-      return { prev, agencyId: newClient.agency_id };
+      return { prev, agencyId: newClient.agency_id, optimisticId };
     },
     onError: (e, _, ctx) => {
       if (ctx) qc.setQueryData(["clients", ctx.agencyId], ctx.prev);
       toast.error("Erro: " + e.message);
     },
     onSettled: (_, __, vars) => { qc.invalidateQueries({ queryKey: ["clients", vars.agency_id] }); },
-    onSuccess: () => toast.success("Cliente criado!"),
+    onSuccess: (data, vars, ctx) => {
+      if (data && ctx?.optimisticId) {
+        qc.setQueryData<Client[]>(["clients", vars.agency_id], (old) =>
+          (old || []).map((row) => (row.id === ctx.optimisticId ? data : row))
+        );
+      }
+      toast.success("Cliente criado!");
+    },
   });
 }
 
