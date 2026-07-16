@@ -804,7 +804,11 @@ function UserProfileDetails({ userId, agencies, clients, isAdmin }: {
   const { data: email } = useQuery({
     queryKey: ["user_email", userId],
     queryFn: async () => {
-      const { data } = await supabase.rpc("get_user_email", { _user_id: userId });
+      const { data, error } = await supabase.rpc("get_user_email_admin" as any, { _user_id: userId } as any);
+      if (error) {
+        toast.error("Não foi possível carregar o e-mail: " + error.message);
+        return null;
+      }
       return (data as string) ?? null;
     },
     staleTime: 5 * 60_000,
