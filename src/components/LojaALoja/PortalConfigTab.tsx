@@ -139,6 +139,23 @@ function SortableCard({ id, collapsed, onToggleCollapsed, isAdmin, children, tit
 export default function PortalConfigTab({ campaignId, clientId, permissions }: Props) {
   const isAdmin = permissions.canEdit;
   const { data: config, isLoading: configLoading } = useStorePortalConfig(campaignId);
+
+  const { data: portalToken } = useQuery({
+    queryKey: ["campaign-portal-token", campaignId],
+    enabled: !!campaignId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaign_portal_tokens")
+        .select("token")
+        .eq("campaign_id", campaignId)
+        .maybeSingle();
+      if (error) {
+        console.error("Supabase Error [campaign-portal-token]:", error);
+        return null;
+      }
+      return data?.token ?? null;
+    },
+  });
   const upsertConfig = useUpsertPortalConfig();
   const { data: overrides = [] } = useStorePortalOverrides(campaignId);
   const upsertOverride = useUpsertStoreOverride();
