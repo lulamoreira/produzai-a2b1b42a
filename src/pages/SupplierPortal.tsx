@@ -773,22 +773,8 @@ const SupplierPortal = () => {
         console.warn("Snapshot history failed (non-blocking):", snapErr);
       }
 
-      const agencyId = headerIds.agency_id;
-      const clientId = headerIds.client_id;
+      // Notification dispatched by DB trigger trg_budget_supplier_notify.
 
-      if (agencyId) {
-        await supabase.rpc("criar_notificacao", {
-          _agency_id: agencyId,
-          _campaign_id: supplier.campaign_id,
-          _client_id: clientId,
-          _type: "orcamento_enviado",
-          _title: isNeg ? portal.negotiationSubmittedTitle : portal.quoteSubmittedTitle,
-          _body: isNeg
-            ? portal.negotiationSubmittedBody(supplier.company_name, campaignName)
-            : portal.quoteSubmittedBody(supplier.company_name, campaignName),
-          _action_url: `/agency/${agencyId}/clients/${clientId}/campaigns/${supplier.campaign_id}?section=budgets`,
-        });
-      }
 
       setSupplier((s) => s ? {
         ...s,
