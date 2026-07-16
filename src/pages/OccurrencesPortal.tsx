@@ -25,21 +25,38 @@ interface StoreToken {
 }
 
 export default function OccurrencesPortal() {
-  const { campaignId } = useParams<{ campaignId: string }>();
+  const { campaignId: routeCampaignId, token: routeToken } = useParams<{ campaignId?: string; token?: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [selectedState, setSelectedState] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
+  const isTokenMode = !!routeToken;
 
-  const { data: config, isLoading: loadingConfig } = useQuery({
-    queryKey: ["occ-portal-config", campaignId],
-    enabled: !!campaignId,
+  // Token mode: single RPC returns everything (works anonymously)
+  const { data: tokenData, isLoading: loadingToken, isError: tokenError } = useQuery({
+    queryKey: ["occ-portal-by-token", routeToken],
+    enabled: isTokenMode,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_portal_directory_by_token", { p_token: routeToken! });
+      if (error) {
+        console.error("Supabase Error [get_portal_directory_by_token]:", error);
+        throw error;
+      }
+      return data as any;
+    },
+  });
+
+  const resolvedCampaignId = isTokenMode ? tokenData?.campaign?.id : routeCampaignId;
+
+  const { data: legacyConfig, isLoading: loadingLegacyConfig } = useQuery({
+    queryKey: ["occ-portal-config", routeCampaignId],
+    enabled: !isTokenMode && !!routeCampaignId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("store_portal_config")
         .select("occurrences_portal_title, occurrences_portal_subtitle, module_ocorrencias, deadline_ocorrencias")
-        .eq("campaign_id", campaignId!)
+        .eq("campaign_id", routeCampaignId!)
         .maybeSingle();
       if (error) {
         console.error("Supabase Error [occ-portal-config]:", error);
@@ -49,54 +66,90 @@ export default function OccurrencesPortal() {
     },
   });
 
-  const { data: tokensData, isLoading: loadingTokens } = useQuery({
-    queryKey: ["occ-portal-stores-v1-logic", campaignId],
-    enabled: !!campaignId,
+  const { data: legacyTokensData, isLoading: loadingLegacyTokens } = useQuery({
+    queryKey: ["occ-portal-stores-v1-logic", routeCampaignId],
+    enabled: !isTokenMode && !!routeCampaignId,
     queryFn: async () => {
-      // Fetch all active stores in the campaign from loja_a_loja_lojas
       const { data: lojas, error: lojasErr } = await supabase
         .from("loja_a_loja_lojas")
         .select("store_id, client_stores(id, name, city, state, store_code)")
-        .eq("campaign_id", campaignId!)
+        .eq("campaign_id", routeCampaignId!)
         .eq("ativo", true);
-      
       if (lojasErr) {
         console.error("Supabase Error [occ-portal-lojas]:", lojasErr);
         throw lojasErr;
       }
-
-      // Fetch existing tokens via scoped RPC (anon-safe, returns only this campaign's links)
       const { data: existingTokens, error: tokensErr } = await supabase
-        .rpc("get_campaign_store_links", { _campaign_id: campaignId! });
-
+        .rpc("get_campaign_store_links", { _campaign_id: routeCampaignId! });
       if (tokensErr) {
         console.error("Supabase Error [occ-portal-tokens]:", tokensErr);
         throw tokensErr;
       }
-
       const tokenMap = new Map((existingTokens ?? []).map((t: any) => [t.store_id, t.token]));
-
-      // Dedup stores
       const uniqueStoresMap = new Map<string, any>();
       (lojas || []).forEach((l: any) => {
         if (l.client_stores && !uniqueStoresMap.has(l.store_id)) {
           uniqueStoresMap.set(l.store_id, l.client_stores);
         }
       });
-
       const uniqueStoresList = Array.from(uniqueStoresMap.values());
       const tokensList = uniqueStoresList.map(store => ({
         token: tokenMap.get(store.id) || null,
         client_stores: store
       })) as StoreToken[];
-
       return {
         tokens: tokensList,
         hasStores: uniqueStoresList.length > 0,
-        hasTokens: tokensList.some(t => t.token !== null)
+        hasTokens: tokensList.some(t => t.token !== null),
       };
     },
   });
+
+  // Normalized data (works for both modes)
+  const config = isTokenMode ? (tokenData?.config ?? null) : legacyConfig;
+
+  const tokensData = useMemo(() => {
+    if (isTokenMode) {
+      if (!tokenData) return undefined;
+      const stores = (tokenData.stores ?? []) as Array<{
+        store_id: string; name: string; store_code: string | null;
+        city: string | null; state: string | null; token: string | null;
+      }>;
+      const tokensList: StoreToken[] = stores.map((s) => ({
+        token: s.token,
+        client_stores: {
+          id: s.store_id,
+          name: s.name,
+          city: s.city,
+          state: s.state,
+          store_code: s.store_code,
+        },
+      }));
+      return {
+        tokens: tokensList,
+        hasStores: tokensList.length > 0,
+        hasTokens: tokensList.some((t) => t.token !== null),
+      };
+    }
+    return legacyTokensData;
+  }, [isTokenMode, tokenData, legacyTokensData]);
+
+  const isLoading = isTokenMode ? loadingToken : (loadingLegacyConfig || loadingLegacyTokens);
+
+  // Token invalid / expired
+  if (isTokenMode && !loadingToken && (tokenError || tokenData === null)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-6">
+        <div className="max-w-md text-center space-y-3">
+          <AlertTriangle className="h-10 w-10 text-destructive mx-auto" />
+          <h1 className="text-xl font-semibold text-foreground">Link inválido ou expirado</h1>
+          <p className="text-sm text-muted-foreground">
+            Solicite um novo link ao responsável pela campanha.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
 
   const isLoading = loadingConfig || loadingTokens;
