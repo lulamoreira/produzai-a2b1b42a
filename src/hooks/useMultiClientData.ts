@@ -744,6 +744,7 @@ export function useDeleteCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      if (!isPersistedId(id)) throw new Error("Este registro ainda está sendo salvo. Aguarde 1 segundo e tente novamente.");
       // Check if any approved budget references this piece
       const { data: approvedRef } = await supabase
         .from("budget_prices")
