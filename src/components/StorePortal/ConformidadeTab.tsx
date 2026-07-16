@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { supabase } from "@/integrations/supabase/client";
-import { criarNotificacao } from "@/lib/criarNotificacao";
+
 import { toast } from "sonner";
 import type { PortalData } from "@/pages/StorePortal";
 import { Button } from "@/components/ui/button";
