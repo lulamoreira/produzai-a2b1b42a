@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { supabase } from "@/integrations/supabase/client";
-import { criarNotificacao } from "@/lib/criarNotificacao";
+
 import { toast } from "sonner";
 import type { PortalData } from "@/pages/StorePortal";
 import { Button } from "@/components/ui/button";
@@ -130,19 +130,7 @@ export default function ConformidadeTab({ data, agencyId }: Props) {
       } catch {}
     }
 
-    // 4. Notify
-    try {
-      await criarNotificacao({
-        agency_id: agencyId,
-        campaign_id: data.campaign.id,
-        store_id: data.store.id,
-        client_id: data.campaign.client_id,
-        type: "store_compliance_check",
-        title: "Checklist de conformidade finalizado",
-        body: `${data.store.name}: ${overallStatus === "conforme" ? "Tudo conforme ✓" : `${naoOkCount} peça(s) não conforme(s)`}.`,
-        action_url: `/agency/${agencyId}/clients/${data.campaign.client_id}/campaigns/${data.campaign.id}?section=occurrences&tab=portal-dashboard`,
-      });
-    } catch {}
+    // 4. Notification dispatched by DB trigger `trg_notify_store_compliance_check`.
 
     toast.success("Checklist finalizado com sucesso!");
     setStatusMap({});

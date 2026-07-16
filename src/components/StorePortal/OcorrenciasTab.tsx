@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { supabase } from "@/integrations/supabase/client";
-import { criarNotificacao } from "@/lib/criarNotificacao";
+
 import { toast } from "sonner";
 import type { PortalData } from "@/pages/StorePortal";
 import StorePortalPieceGrid from "./StorePortalPieceGrid";
@@ -312,21 +312,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
       console.error(error);
     } else {
       toast.success("Ocorrência registrada com sucesso!");
-      try {
-        const occId = (inserted as any)?.id;
-        await criarNotificacao({
-          agency_id: agencyId,
-          campaign_id: data.campaign.id,
-          store_id: data.store.id,
-          client_id: data.campaign.client_id,
-          type: "store_occurrence_report",
-          title: "Nova ocorrência da loja",
-          body: `${data.store.name} reportou uma ocorrência na peça "${peca.nome}".`,
-          action_url: occId
-            ? `/agency/${agencyId}/clients/${data.campaign.client_id}/campaigns/${data.campaign.id}?section=occurrences&tab=portal-dashboard&occ=${occId}`
-            : `/agency/${agencyId}/clients/${data.campaign.client_id}/campaigns/${data.campaign.id}?section=occurrences&tab=portal-dashboard`,
-        });
-      } catch {}
+      // Notification dispatched by DB trigger `trg_notify_store_occurrence_report`.
       resetForm();
       loadReports();
     }

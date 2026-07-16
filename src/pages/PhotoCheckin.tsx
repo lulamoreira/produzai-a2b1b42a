@@ -17,7 +17,7 @@ import { ptBR } from "date-fns/locale";
 import { ArrowLeft, Camera, Upload, Trash2, Edit3, X, ChevronLeft, ChevronRight, Image, Download, Video } from "lucide-react";
 import { downloadPhotosAsZip } from "@/lib/downloadPhotosZip";
 import PhasePickerDialog, { type PhotoPhase } from "@/components/PhasePickerDialog";
-import { criarNotificacao } from "@/lib/criarNotificacao";
+
 
 const CATEGORIES = [
   { value: "before", label: "Antes" },
@@ -125,18 +125,7 @@ export default function PhotoCheckin() {
         toast.error("Erro ao enviar: " + err.message);
       }
     }
-    if (uploadedCount > 0 && campaign?.agency_id) {
-      criarNotificacao({
-        agency_id: campaign.agency_id,
-        campaign_id: campaignId,
-        store_id: storeId,
-        client_id: campaign.client_id ?? undefined,
-        type: "installation_photo",
-        title: "Novas fotos de instalação",
-        body: `${store?.name ?? "Uma loja"} enviou ${uploadedCount} foto${uploadedCount > 1 ? "s" : ""} de instalação (${CATEGORIES.find(c => c.value === category)?.label ?? category}).`,
-        action_url: `/agency/${campaign.agency_id}/clients/${campaign.client_id}/campaigns/${campaignId}?section=mockup`,
-      }).catch(() => {});
-    }
+    // Notification dispatched by DB trigger `trg_notify_installation_photo` (one per photo).
   };
 
   const handleDelete = async (photo: InstallationPhoto) => {

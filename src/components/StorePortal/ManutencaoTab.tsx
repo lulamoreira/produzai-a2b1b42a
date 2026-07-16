@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { supabase } from "@/integrations/supabase/client";
-import { criarNotificacao } from "@/lib/criarNotificacao";
+
 import { toast } from "sonner";
 import type { PortalData } from "@/pages/StorePortal";
 import StorePortalPieceGrid from "./StorePortalPieceGrid";
@@ -68,21 +68,7 @@ export default function ManutencaoTab({ data, agencyId }: Props) {
       console.error(error);
     } else {
       toast.success("Solicitação de manutenção enviada!");
-      try {
-        const manId = (inserted as any)?.id;
-        await criarNotificacao({
-          agency_id: agencyId,
-          campaign_id: data.campaign.id,
-          store_id: data.store.id,
-          client_id: data.campaign.client_id,
-          type: "store_maintenance_request",
-          title: "Nova solicitação de manutenção",
-          body: `${data.store.name} solicitou manutenção na peça "${peca.nome}".`,
-          action_url: manId
-            ? `/agency/${agencyId}/clients/${data.campaign.client_id}/campaigns/${data.campaign.id}?section=occurrences&tab=portal-dashboard&man=${manId}`
-            : `/agency/${agencyId}/clients/${data.campaign.client_id}/campaigns/${data.campaign.id}?section=occurrences&tab=portal-dashboard`,
-        });
-      } catch {}
+      // Notification dispatched by DB trigger `trg_notify_store_maintenance_request`.
       setSelectedPeca(null);
       setDescription("");
       setPriority("media");
