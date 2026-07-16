@@ -337,27 +337,37 @@ export default function PortalConfigTab({ campaignId, clientId, permissions }: P
             <div>
               <Label className="text-sm">URL pública</Label>
               <div className="flex items-center gap-2 mt-1">
-                <Input value={portalUrl} readOnly className="font-mono text-xs" />
+                <Input
+                  value={portalUrl || "Gerando link seguro..."}
+                  readOnly
+                  className="font-mono text-xs"
+                />
                 <Button
                   variant="outline"
                   size="icon"
+                  disabled={!portalUrl}
                   onClick={() => {
+                    if (!portalUrl) return;
                     navigator.clipboard.writeText(portalUrl);
-                    toast.success("Link copiado");
+                    toast.success("Link copiado! Envie para os lojistas.");
                   }}
-                  title="Copiar"
+                  title="Copiar link do portal das lojas"
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => window.open(portalUrl, "_blank")}
+                  disabled={!portalUrl}
+                  onClick={() => portalUrl && window.open(portalUrl, "_blank")}
                   title="Abrir"
                 >
                   <ExternalLink className="h-4 w-4" />
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Este link substitui o antigo. Quem tiver o link acessa o portal de todas as lojas desta campanha.
+              </p>
             </div>
           </CardContent>
         );
