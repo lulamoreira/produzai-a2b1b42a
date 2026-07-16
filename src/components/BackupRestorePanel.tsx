@@ -78,7 +78,12 @@ export const BackupRestorePanel = () => {
     setDownloading(true);
     try {
       // Clear any zombie "running" rows before starting (also unblocks rate limit).
-      try { await supabase.rpc("mark_stale_backup_runs" as any); } catch { /* noop */ }
+      // Clear any zombie "running" rows before starting (also unblocks rate limit).
+      const { error: sweepError } = await supabase.rpc("mark_stale_backup_runs_admin");
+      if (sweepError) {
+        toast.error(`Erro ao limpar execuções travadas: ${sweepError.message}`);
+      }
+
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Sessão expirada");
 
