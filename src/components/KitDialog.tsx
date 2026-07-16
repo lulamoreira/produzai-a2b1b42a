@@ -491,7 +491,9 @@ export function KitDetailDialog({
     if (piecesInKit.length === 0) return;
     const currentCategory = localCategory !== undefined ? localCategory : kit.category;
     const currentSub = localSubLocation !== undefined ? localSubLocation : kit.sub_location;
-    if (currentCategory && currentCategory.trim() !== "") return;
+    // Note: previously bailed out when currentCategory was non-empty, which
+    // prevented re-sync after piece locations were edited. Removed so kits keep
+    // in sync with their pieces whenever all pieces share the same category.
 
     const categories = piecesInKit.map(kp => kp.piece?.category).filter(Boolean) as string[];
     if (categories.length === 0) return;
