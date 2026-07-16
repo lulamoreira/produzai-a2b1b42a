@@ -277,13 +277,15 @@ function SortableRow({
       {(canEditPieces || canDeletePieces) && (
         <TableCell>
           <div className="flex items-center gap-1">
+            {(() => { const isOptimistic = piece.id.startsWith("optimistic-"); return <>
             {canEditPieces && (
-              <CampaignPieceImageUpload piece={piece} canEdit={canEditPieces} />
+              <CampaignPieceImageUpload piece={piece} canEdit={canEditPieces && !isOptimistic} />
             )}
             {canEditPieces && (
               <Button variant="ghost" size="icon" className="h-7 w-7"
                 title={isDistributed ? t("pieces.removeFromAllStores") : t("pieces.distributeToCompatible")}
                 onClick={() => onDistribute(piece)}
+                disabled={isOptimistic}
               >
                 <CheckSquare className={`w-3.5 h-3.5 ${isDistributed ? "text-primary" : "text-muted-foreground"}`} />
               </Button>
@@ -291,6 +293,7 @@ function SortableRow({
             {canEditPieces && (
               <Button variant="ghost" size="icon" className="h-7 w-7" title={t("pieces.markKitOnly")}
                 onClick={() => onMarkKitOnly(piece)}
+                disabled={isOptimistic}
               >
                 <Package className="w-3.5 h-3.5 text-muted-foreground" />
               </Button>
@@ -299,24 +302,25 @@ function SortableRow({
               <Button variant="ghost" size="icon" className="h-7 w-7"
                 title={piece.is_mockup ? t("pieces.removeMockup") : t("pieces.markMockup")}
                 onClick={() => onToggleMockup(piece)}
+                disabled={isOptimistic}
               >
                 <Palette className={`w-3.5 h-3.5 ${piece.is_mockup ? "text-amber-600" : "text-muted-foreground"}`} />
               </Button>
             )}
             {canEditPieces && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" title={t("pieces.duplicatePiece")} onClick={() => onDuplicate(piece)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7" title={t("pieces.duplicatePiece")} onClick={() => onDuplicate(piece)} disabled={isOptimistic}>
                 <Copy className="w-3.5 h-3.5" />
               </Button>
             )}
             {canEditPieces && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(piece)}>
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(piece)} disabled={isOptimistic}>
                 <Edit3 className="w-3.5 h-3.5" />
               </Button>
             )}
             {canDeletePieces && (
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <Button variant="ghost" size="icon" className="h-7 w-7" disabled={isOptimistic}>
                     <Trash2 className="w-3.5 h-3.5 text-destructive" />
                   </Button>
                 </AlertDialogTrigger>
@@ -332,6 +336,7 @@ function SortableRow({
                 </AlertDialogContent>
               </AlertDialog>
             )}
+            </>; })()}
           </div>
         </TableCell>
       )}
