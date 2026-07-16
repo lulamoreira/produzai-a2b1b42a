@@ -137,7 +137,8 @@ export default function CustomStoresExportDialog({
     XLSX.utils.book_append_sheet(wb, ws, "Lojas");
 
     const filename = buildExportFileName("Lojas — Personalizada", { agencyName, clientName });
-    saveXlsxAs(wb, filename);
+    const buffer = XLSX.write(wb, { bookType: "xlsx", type: "array" }) as ArrayBuffer;
+    void saveXlsxAs(buffer, filename);
 
     try {
       const cfg: SavedConfig = {
