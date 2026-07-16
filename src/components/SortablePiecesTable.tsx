@@ -238,8 +238,9 @@ function SortableRow({
       )}
       <TableCell>
         <button
-          className="font-medium text-left hover:text-primary hover:underline transition-colors w-full"
+          className="font-medium text-left hover:text-primary hover:underline transition-colors w-full disabled:opacity-60 disabled:cursor-not-allowed"
           onClick={() => onEdit(piece)}
+          disabled={piece.id.startsWith("optimistic-")}
         >
           <span className="flex items-center gap-1.5 flex-wrap">
             {piece.name}
