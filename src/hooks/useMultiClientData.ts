@@ -306,6 +306,7 @@ export function useDeleteClient() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      if (!isPersistedId(id)) throw new Error("Este registro ainda está sendo salvo. Aguarde 1 segundo e tente novamente.");
       const { error } = await supabase.from("clients").delete().eq("id", id);
       if (error) throw error;
       return id;
