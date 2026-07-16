@@ -5811,9 +5811,26 @@ export type Database = {
         }
         Returns: undefined
       }
+      criar_notificacao_segura: {
+        Args: {
+          _action_url: string
+          _agency_id: string
+          _body: string
+          _campaign_id: string
+          _client_id: string
+          _store_id: string
+          _title: string
+          _type: string
+        }
+        Returns: undefined
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
+      }
+      delete_kit_piece_with_cleanup: {
+        Args: { p_kit_piece_id: string }
+        Returns: number
       }
       email_queue_dispatch: { Args: never; Returns: undefined }
       enqueue_email: {
@@ -5883,6 +5900,7 @@ export type Database = {
         }[]
       }
       get_user_email: { Args: { _user_id: string }; Returns: string }
+      get_user_email_admin: { Args: { _user_id: string }; Returns: string }
       has_campaign_access: {
         Args: { _campaign_id: string; _user_id: string }
         Returns: boolean
