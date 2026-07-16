@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { toast } from "sonner";
+import { isPersistedId } from "@/lib/utils";
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -220,8 +221,9 @@ export function useAddClient() {
     onMutate: async (newClient) => {
       await qc.cancelQueries({ queryKey: ["clients", newClient.agency_id] });
       const prev = qc.getQueryData<Client[]>(["clients", newClient.agency_id]);
+      const optimisticId = `optimistic-${Date.now()}`;
       const optimistic: Client = {
-        id: `optimistic-${Date.now()}`,
+        id: optimisticId,
         name: newClient.name,
         agency_id: newClient.agency_id,
         color: null,
@@ -246,14 +248,21 @@ export function useAddClient() {
         created_at: new Date().toISOString(),
       };
       qc.setQueryData<Client[]>(["clients", newClient.agency_id], (old) => [...(old || []), optimistic]);
-      return { prev, agencyId: newClient.agency_id };
+      return { prev, agencyId: newClient.agency_id, optimisticId };
     },
     onError: (e, _, ctx) => {
       if (ctx) qc.setQueryData(["clients", ctx.agencyId], ctx.prev);
       toast.error("Erro: " + e.message);
     },
     onSettled: (_, __, vars) => { qc.invalidateQueries({ queryKey: ["clients", vars.agency_id] }); },
-    onSuccess: () => toast.success("Cliente criado!"),
+    onSuccess: (data, vars, ctx) => {
+      if (data && ctx?.optimisticId) {
+        qc.setQueryData<Client[]>(["clients", vars.agency_id], (old) =>
+          (old || []).map((row) => (row.id === ctx.optimisticId ? data : row))
+        );
+      }
+      toast.success("Cliente criado!");
+    },
   });
 }
 
@@ -261,6 +270,7 @@ export function useUpdateClient() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Client> & { id: string }) => {
+      if (!isPersistedId(id)) throw new Error("Este registro ainda está sendo salvo. Aguarde 1 segundo e tente novamente.");
       const { error } = await supabase.from("clients").update(data).eq("id", id);
       if (error) throw error;
     },
@@ -296,6 +306,7 @@ export function useDeleteClient() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      if (!isPersistedId(id)) throw new Error("Este registro ainda está sendo salvo. Aguarde 1 segundo e tente novamente.");
       const { error } = await supabase.from("clients").delete().eq("id", id);
       if (error) throw error;
       return id;
@@ -359,8 +370,9 @@ export function useAddCampaign() {
     onMutate: async (newCampaign) => {
       await qc.cancelQueries({ queryKey: ["campaigns", newCampaign.client_id] });
       const prev = qc.getQueryData<Campaign[]>(["campaigns", newCampaign.client_id]);
+      const optimisticId = `optimistic-${Date.now()}`;
       const optimistic: Campaign = {
-        id: `optimistic-${Date.now()}`,
+        id: optimisticId,
         client_id: newCampaign.client_id,
         name: newCampaign.name,
         color: null,
@@ -369,14 +381,21 @@ export function useAddCampaign() {
         created_at: new Date().toISOString(),
       };
       qc.setQueryData<Campaign[]>(["campaigns", newCampaign.client_id], (old) => [...(old || []), optimistic]);
-      return { prev, clientId: newCampaign.client_id };
+      return { prev, clientId: newCampaign.client_id, optimisticId };
     },
     onError: (e, _, ctx) => {
       if (ctx) qc.setQueryData(["campaigns", ctx.clientId], ctx.prev);
       toast.error("Erro: " + e.message);
     },
     onSettled: (_, __, vars) => { qc.invalidateQueries({ queryKey: ["campaigns", vars.client_id] }); },
-    onSuccess: () => toast.success("Campanha criada!"),
+    onSuccess: (data, vars, ctx) => {
+      if (data && ctx?.optimisticId) {
+        qc.setQueryData<Campaign[]>(["campaigns", vars.client_id], (old) =>
+          (old || []).map((row) => (row.id === ctx.optimisticId ? data : row))
+        );
+      }
+      toast.success("Campanha criada!");
+    },
   });
 }
 
@@ -384,6 +403,7 @@ export function useUpdateCampaign() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string } & Record<string, any>) => {
+      if (!isPersistedId(id)) throw new Error("Este registro ainda está sendo salvo. Aguarde 1 segundo e tente novamente.");
       const { error } = await supabase.from("campaigns").update(data).eq("id", id);
       if (error) throw error;
     },
@@ -427,6 +447,7 @@ export function useDeleteCampaign() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      if (!isPersistedId(id)) throw new Error("Este registro ainda está sendo salvo. Aguarde 1 segundo e tente novamente.");
       const { error } = await supabase.from("campaigns").delete().eq("id", id);
       if (error) throw error;
     },
@@ -624,8 +645,9 @@ export function useAddCampaignPiece() {
     onMutate: async (newPiece) => {
       await qc.cancelQueries({ queryKey: ["campaign_pieces", newPiece.campaign_id] });
       const prev = qc.getQueryData<CampaignPiece[]>(["campaign_pieces", newPiece.campaign_id]);
+      const optimisticId = `optimistic-${Date.now()}`;
       const optimistic: CampaignPiece = {
-        id: `optimistic-${Date.now()}`,
+        id: optimisticId,
         campaign_id: newPiece.campaign_id,
         code: newPiece.code,
         category: newPiece.category,
@@ -642,14 +664,21 @@ export function useAddCampaignPiece() {
         created_at: new Date().toISOString(),
       };
       qc.setQueryData<CampaignPiece[]>(["campaign_pieces", newPiece.campaign_id], (old) => [...(old || []), optimistic]);
-      return { prev, campaignId: newPiece.campaign_id };
+      return { prev, campaignId: newPiece.campaign_id, optimisticId };
     },
     onError: (e, _, ctx) => {
       if (ctx) qc.setQueryData(["campaign_pieces", ctx.campaignId], ctx.prev);
       toast.error("Erro: " + e.message);
     },
     onSettled: (_, __, vars) => { qc.invalidateQueries({ queryKey: ["campaign_pieces", vars.campaign_id] }); },
-    onSuccess: () => toast.success("Peça adicionada!"),
+    onSuccess: (data, vars, ctx) => {
+      if (data && ctx?.optimisticId) {
+        qc.setQueryData<CampaignPiece[]>(["campaign_pieces", vars.campaign_id], (old) =>
+          (old || []).map((row) => (row.id === ctx.optimisticId ? data : row))
+        );
+      }
+      toast.success("Peça adicionada!");
+    },
   });
 }
 
@@ -657,6 +686,7 @@ export function useUpdateCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<CampaignPiece> & { id: string }) => {
+      if (!isPersistedId(id)) throw new Error("Este registro ainda está sendo salvo. Aguarde 1 segundo e tente novamente.");
       const { client_id, ...updateData } = data as any;
       const { error } = await supabase.from("campaign_pieces").update(updateData).eq("id", id);
       if (error) throw error;
@@ -714,6 +744,7 @@ export function useDeleteCampaignPiece() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
+      if (!isPersistedId(id)) throw new Error("Este registro ainda está sendo salvo. Aguarde 1 segundo e tente novamente.");
       // Check if any approved budget references this piece
       const { data: approvedRef } = await supabase
         .from("budget_prices")
