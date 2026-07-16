@@ -1754,7 +1754,15 @@ const ClientDetail = () => {
                 onDisplayOrderChange={setDisplayOrderStores}
                />
             )}
-            {/* CustomExportDialog removed — see project policy */}
+            <CustomStoresExportDialog
+              open={customExportOpen}
+              onOpenChange={setCustomExportOpen}
+              stores={stores}
+              clientId={client.id}
+              clientName={client.name}
+              agencyName={agencyInfo?.name}
+              customFieldLabels={stableCustomFieldLabels}
+            />
           </>
         )}
       </>
