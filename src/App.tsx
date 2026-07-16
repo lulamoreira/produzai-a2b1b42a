@@ -125,7 +125,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     "/recotacao-qtd/",
     "/convite/fornecedor/",
     "/loja/",
-    "/ocorrencias-portal/",
+    "/ocorrencias-portal/t/",
     "/ocorrencias/",
     "/ocorrencia/",
     "/unsubscribe",
@@ -321,7 +321,8 @@ const App = () => (
                   <Route path="/recotacao-qtd/:token" element={<BudgetQtyRequotePortal />} />
                   <Route path="/convite/fornecedor/:token" element={<SupplierInvitePortal />} />
                   <Route path="/loja/:token" element={<StorePortal />} />
-                  <Route path="/ocorrencias-portal/:campaignId" element={<OccurrencesPortal />} />
+                  <Route path="/ocorrencias-portal/t/:token" element={<OccurrencesPortal />} />
+                  <Route path="/ocorrencias-portal/:campaignId" element={<ProtectedRoute><OccurrencesPortal /></ProtectedRoute>} />
                   <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
                   <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
                   <Route path="/unsubscribe" element={<Unsubscribe />} />

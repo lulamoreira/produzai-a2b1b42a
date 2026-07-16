@@ -139,6 +139,23 @@ function SortableCard({ id, collapsed, onToggleCollapsed, isAdmin, children, tit
 export default function PortalConfigTab({ campaignId, clientId, permissions }: Props) {
   const isAdmin = permissions.canEdit;
   const { data: config, isLoading: configLoading } = useStorePortalConfig(campaignId);
+
+  const { data: portalToken } = useQuery({
+    queryKey: ["campaign-portal-token", campaignId],
+    enabled: !!campaignId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("campaign_portal_tokens")
+        .select("token")
+        .eq("campaign_id", campaignId)
+        .maybeSingle();
+      if (error) {
+        console.error("Supabase Error [campaign-portal-token]:", error);
+        return null;
+      }
+      return data?.token ?? null;
+    },
+  });
   const upsertConfig = useUpsertPortalConfig();
   const { data: overrides = [] } = useStorePortalOverrides(campaignId);
   const upsertOverride = useUpsertStoreOverride();
@@ -284,7 +301,9 @@ export default function PortalConfigTab({ campaignId, clientId, permissions }: P
     return <div className="flex items-center justify-center py-12"><div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" /></div>;
   }
 
-  const portalUrl = `${window.location.origin}/ocorrencias-portal/${campaignId}`;
+  const portalUrl = portalToken
+    ? `${window.location.origin}/ocorrencias-portal/t/${portalToken}`
+    : "";
 
   // Render functions for each card body
   const renderCardBody = (key: string) => {
@@ -318,27 +337,37 @@ export default function PortalConfigTab({ campaignId, clientId, permissions }: P
             <div>
               <Label className="text-sm">URL pública</Label>
               <div className="flex items-center gap-2 mt-1">
-                <Input value={portalUrl} readOnly className="font-mono text-xs" />
+                <Input
+                  value={portalUrl || "Gerando link seguro..."}
+                  readOnly
+                  className="font-mono text-xs"
+                />
                 <Button
                   variant="outline"
                   size="icon"
+                  disabled={!portalUrl}
                   onClick={() => {
+                    if (!portalUrl) return;
                     navigator.clipboard.writeText(portalUrl);
-                    toast.success("Link copiado");
+                    toast.success("Link copiado! Envie para os lojistas.");
                   }}
-                  title="Copiar"
+                  title="Copiar link do portal das lojas"
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={() => window.open(portalUrl, "_blank")}
+                  disabled={!portalUrl}
+                  onClick={() => portalUrl && window.open(portalUrl, "_blank")}
                   title="Abrir"
                 >
                   <ExternalLink className="h-4 w-4" />
                 </Button>
               </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Este link substitui o antigo. Quem tiver o link acessa o portal de todas as lojas desta campanha.
+              </p>
             </div>
           </CardContent>
         );
