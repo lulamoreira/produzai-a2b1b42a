@@ -284,7 +284,9 @@ export default function PortalConfigTab({ campaignId, clientId, permissions }: P
     return <div className="flex items-center justify-center py-12"><div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" /></div>;
   }
 
-  const portalUrl = `${window.location.origin}/ocorrencias-portal/${campaignId}`;
+  const portalUrl = portalToken
+    ? `${window.location.origin}/ocorrencias-portal/t/${portalToken}`
+    : "";
 
   // Render functions for each card body
   const renderCardBody = (key: string) => {
