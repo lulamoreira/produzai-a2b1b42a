@@ -1879,6 +1879,35 @@ export type Database = {
           },
         ]
       }
+      campaign_portal_tokens: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          id: string
+          token: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          id?: string
+          token?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_portal_tokens_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: true
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_quotations: {
         Row: {
           campaign_id: string
@@ -5870,6 +5899,10 @@ export type Database = {
         Returns: Json
       }
       get_invite_by_token: { Args: { p_token: string }; Returns: Json }
+      get_portal_directory_by_token: {
+        Args: { p_token: string }
+        Returns: Json
+      }
       get_public_occurrence_context: {
         Args: { _campaign_id: string }
         Returns: Json
