@@ -370,8 +370,9 @@ export function useAddCampaign() {
     onMutate: async (newCampaign) => {
       await qc.cancelQueries({ queryKey: ["campaigns", newCampaign.client_id] });
       const prev = qc.getQueryData<Campaign[]>(["campaigns", newCampaign.client_id]);
+      const optimisticId = `optimistic-${Date.now()}`;
       const optimistic: Campaign = {
-        id: `optimistic-${Date.now()}`,
+        id: optimisticId,
         client_id: newCampaign.client_id,
         name: newCampaign.name,
         color: null,
@@ -380,14 +381,21 @@ export function useAddCampaign() {
         created_at: new Date().toISOString(),
       };
       qc.setQueryData<Campaign[]>(["campaigns", newCampaign.client_id], (old) => [...(old || []), optimistic]);
-      return { prev, clientId: newCampaign.client_id };
+      return { prev, clientId: newCampaign.client_id, optimisticId };
     },
     onError: (e, _, ctx) => {
       if (ctx) qc.setQueryData(["campaigns", ctx.clientId], ctx.prev);
       toast.error("Erro: " + e.message);
     },
     onSettled: (_, __, vars) => { qc.invalidateQueries({ queryKey: ["campaigns", vars.client_id] }); },
-    onSuccess: () => toast.success("Campanha criada!"),
+    onSuccess: (data, vars, ctx) => {
+      if (data && ctx?.optimisticId) {
+        qc.setQueryData<Campaign[]>(["campaigns", vars.client_id], (old) =>
+          (old || []).map((row) => (row.id === ctx.optimisticId ? data : row))
+        );
+      }
+      toast.success("Campanha criada!");
+    },
   });
 }
 
@@ -395,6 +403,7 @@ export function useUpdateCampaign() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: { id: string } & Record<string, any>) => {
+      if (!isPersistedId(id)) throw new Error("Este registro ainda está sendo salvo. Aguarde 1 segundo e tente novamente.");
       const { error } = await supabase.from("campaigns").update(data).eq("id", id);
       if (error) throw error;
     },
