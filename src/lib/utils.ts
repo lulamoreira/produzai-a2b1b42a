@@ -5,6 +5,11 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+/** True when id is a real persisted UUID (not an optimistic placeholder from onMutate). */
+export function isPersistedId(id: string | null | undefined): boolean {
+  return !!id && !id.startsWith("optimistic-");
+}
+
 const LOWERCASE_WORDS = new Set([
   "a", "o", "as", "os", "um", "uma", "uns", "umas",
   "de", "da", "do", "das", "dos",
