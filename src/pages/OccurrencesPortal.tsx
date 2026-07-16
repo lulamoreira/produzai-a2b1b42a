@@ -152,10 +152,9 @@ export default function OccurrencesPortal() {
   }
 
 
-  const isLoading = loadingConfig || loadingTokens;
   const title = config?.occurrences_portal_title || t("occurrences.portal.title");
   const subtitle = config?.occurrences_portal_subtitle || t("occurrences.portal.subtitle");
-  
+
   const isModuleDisabled = config && config.module_ocorrencias === false;
   const deadline = config?.deadline_ocorrencias ? new Date(config.deadline_ocorrencias) : null;
   const isDeadlinePassed = deadline && isAfter(new Date(), deadline);
@@ -164,11 +163,11 @@ export default function OccurrencesPortal() {
   const isPublic = !user;
 
   const handleGoToStores = () => {
-    if (isPublic) return;
+    if (isPublic || !resolvedCampaignId) return;
     const pathParts = window.location.pathname.split("/");
     const agencyId = pathParts[2];
     const clientId = pathParts[4];
-    navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}?section=loja_a_loja&tab=lojas`);
+    navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${resolvedCampaignId}?section=loja_a_loja&tab=lojas`);
   };
 
   const tokens = tokensData?.tokens || [];
