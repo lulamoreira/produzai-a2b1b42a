@@ -269,6 +269,7 @@ export function useUpdateClient() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...data }: Partial<Client> & { id: string }) => {
+      if (!isPersistedId(id)) throw new Error("Este registro ainda está sendo salvo. Aguarde 1 segundo e tente novamente.");
       const { error } = await supabase.from("clients").update(data).eq("id", id);
       if (error) throw error;
     },
