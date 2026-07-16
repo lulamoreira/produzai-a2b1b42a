@@ -478,6 +478,8 @@ export default function PiecesTab({
       is_new: kit.is_new,
       is_deleted: false,
       display_order: (kit.display_order ?? 0) + 1,
+      category: kit.category ?? null,
+      sub_location: kit.sub_location ?? null,
     });
 
     if (!novoKit) return;
