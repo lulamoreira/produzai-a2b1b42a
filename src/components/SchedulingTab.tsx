@@ -471,8 +471,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
               title: titleMap[actionType!] || actionType!,
               body: bodyMap[actionType!] || storeName,
               action_url: `/campanhas/${campaignId}/agendamento`,
-            }).catch(() => {});
-          }).catch(() => {});
+            }).catch((e) => console.error("[notificacao]", e));
+          }).catch((e) => console.error("[notificacao]", e));
         }
       }
     } else if (field === "scheduled_date" || field === "reschedule_date") {
