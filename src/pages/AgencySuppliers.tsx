@@ -71,6 +71,7 @@ import SupplierDetailsSheet from "@/components/SupplierDetailsSheet";
 import SupplierFormDialog from "@/components/SupplierFormDialog";
 import SupplierRecommendDialog from "@/components/SupplierRecommendDialog";
 import SortableHeader from "@/components/LojaALoja/SortableHeader";
+import { getCountryConfig } from "@/lib/countryConfig";
 import { useTableSort } from "@/hooks/useTableSort";
 import { format, addDays } from "date-fns";
 import { toast } from "sonner";
@@ -338,7 +339,10 @@ Qualquer dúvida, estamos à disposição!` : "";
                       {s.trade_name && (
                         <div className="text-xs text-muted-foreground">{s.trade_name}</div>
                       )}
-                      <div className="text-[10px] text-muted-foreground">{s.cnpj}</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {s.cnpj ? `${getCountryConfig(s.country).taxIdLabel}: ${s.cnpj}` : null}
+                        {s.country && s.country !== "BR" ? ` · ${getCountryConfig(s.country).name}` : ""}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm font-medium">
@@ -420,7 +424,10 @@ Qualquer dúvida, estamos à disposição!` : "";
                     {s.trade_name && (
                       <p className="text-sm text-muted-foreground mt-0.5">{s.trade_name}</p>
                     )}
-                    <p className="text-xs text-muted-foreground mt-1">{s.cnpj}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {s.cnpj ? `${getCountryConfig(s.country).taxIdLabel}: ${s.cnpj}` : null}
+                      {s.country && s.country !== "BR" ? ` · ${getCountryConfig(s.country).name}` : ""}
+                    </p>
                   </div>
                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailsSupplier(s)} title="Ver detalhes / enviar e-mail">

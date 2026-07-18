@@ -33,6 +33,20 @@ import {
   SOCIAL_ERROR_MESSAGE,
   type SocialNetwork,
 } from "@/lib/socialUrls";
+import {
+  getCountryConfig,
+  SUPPLIER_COUNTRIES,
+  formatTaxId,
+  validateTaxId,
+  getTaxIdPlaceholder,
+} from "@/lib/countryConfig";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface SupplierFormDialogProps {
   open: boolean;
@@ -45,6 +59,7 @@ interface SupplierFormDialogProps {
 const emptyForm = () => ({
   company_name: "",
   trade_name: "",
+  country: "BR",
   cnpj: "",
   contact_name: "",
   address: "",
@@ -112,6 +127,7 @@ export default function SupplierFormDialog({
       setForm({
         company_name: s.company_name,
         trade_name: s.trade_name || "",
+        country: s.country || "BR",
         cnpj: s.cnpj || "",
         contact_name: s.contact_name || "",
         address: s.address || "",
@@ -264,6 +280,14 @@ export default function SupplierFormDialog({
       return;
     }
 
+    if (form.cnpj) {
+      const docErr = validateTaxId(form.cnpj, form.country);
+      if (docErr) {
+        toast.error(docErr);
+        return;
+      }
+    }
+
     const finalServices = [...form.services];
     if (form.custom_service.trim()) finalServices.push(form.custom_service.trim());
 
@@ -271,6 +295,7 @@ export default function SupplierFormDialog({
       agency_id: agencyId,
       company_name: form.company_name,
       trade_name: form.trade_name || null,
+      country: form.country || "BR",
       cnpj: form.cnpj || null,
       contact_name: form.contact_name || null,
       address: form.address || null,
@@ -393,13 +418,32 @@ export default function SupplierFormDialog({
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="cnpj">CNPJ</Label>
-                <Input
-                  id="cnpj"
-                  value={form.cnpj}
-                  onChange={(e) => setForm((f) => ({ ...f, cnpj: e.target.value }))}
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="country">País</Label>
+                  <Select
+                    value={form.country}
+                    onValueChange={(value) => setForm((f) => ({ ...f, country: value, cnpj: "" }))}
+                  >
+                    <SelectTrigger id="country">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPLIER_COUNTRIES.map((c) => (
+                        <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cnpj">{getCountryConfig(form.country).taxIdLabel}</Label>
+                  <Input
+                    id="cnpj"
+                    value={form.cnpj}
+                    placeholder={getTaxIdPlaceholder(form.country)}
+                    onChange={(e) => setForm((f) => ({ ...f, cnpj: formatTaxId(e.target.value, f.country) }))}
+                  />
+                </div>
               </div>
               <div className="space-y-4 pt-2">
                 <div className="flex items-center justify-between">

@@ -15,6 +15,7 @@ export type AgencySupplier = {
   agency_id: string;
   company_name: string;
   trade_name: string | null;
+  country: string | null;
   cnpj: string | null;
   contact_name: string | null;
   address: string | null;

@@ -21,18 +21,23 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { formatPhoneByCountry } from "@/lib/countryConfig";
+import {
+  formatPhoneByCountry,
+  getCountryConfig,
+  SUPPLIER_COUNTRIES,
+  formatTaxId,
+  validateTaxId,
+  getTaxIdPlaceholder,
+  getPhonePlaceholder,
+} from "@/lib/countryConfig";
 import { buildSupplierFilePath, SUPPLIER_FILES_BUCKET } from "@/lib/supplierFiles";
-
-const formatCNPJ = (value: string) => {
-  const d = value.replace(/\D/g, "").slice(0, 14);
-  if (d.length <= 2) return d;
-  if (d.length <= 5) return `${d.slice(0, 2)}.${d.slice(2)}`;
-  if (d.length <= 8) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5)}`;
-  if (d.length <= 12) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`;
-  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
-};
-const formatPhoneBR = (v: string) => formatPhoneByCountry(v, "BR");
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 
 
@@ -50,6 +55,7 @@ const SupplierInvitePortal = () => {
 
   const [form, setForm] = useState({
     company_name: "",
+    country: "BR",
     cnpj: "",
     contact_name: "",
     address: "",
@@ -70,6 +76,8 @@ const SupplierInvitePortal = () => {
     cidade: "",
     estado: "",
   });
+
+  const countryCfg = getCountryConfig(form.country);
 
   const [isSearchingCep, setIsSearchingCep] = useState(false);
   const [cepError, setCepError] = useState("");
@@ -126,6 +134,7 @@ const SupplierInvitePortal = () => {
           setForm(f => ({
             ...f,
             company_name: sup.company_name || "",
+            country: sup.country || "BR",
             cnpj: sup.cnpj || "",
             contact_name: sup.contact_name || "",
             address: sup.address || "",
@@ -187,12 +196,17 @@ const SupplierInvitePortal = () => {
   };
 
   const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "");
-    if (value.length > 8) value = value.slice(0, 8);
-    let formatted = value;
-    if (value.length > 5) formatted = `${value.slice(0, 5)}-${value.slice(5)}`;
-    setForm(f => ({ ...f, cep: formatted }));
-    if (value.length === 8) handleCepSearch(value);
+    const raw = e.target.value;
+    if (countryCfg.hasAutoCepLookup) {
+      let value = raw.replace(/\D/g, "");
+      if (value.length > 8) value = value.slice(0, 8);
+      let formatted = value;
+      if (value.length > 5) formatted = `${value.slice(0, 5)}-${value.slice(5)}`;
+      setForm(f => ({ ...f, cep: formatted }));
+      if (value.length === 8) handleCepSearch(value);
+    } else {
+      setForm(f => ({ ...f, cep: raw.slice(0, countryCfg.zipMaxLength) }));
+    }
   };
 
   const toggleService = (service: string) => {
@@ -261,8 +275,16 @@ const SupplierInvitePortal = () => {
 
   const handleSave = async (isComplete: boolean) => {
     if (isComplete && !form.cnpj) {
-      toast.error("O CNPJ é obrigatório para finalizar o cadastro.");
+      toast.error(`O ${countryCfg.taxIdLabel} é obrigatório para finalizar o cadastro.`);
       return;
+    }
+
+    if (isComplete && form.cnpj) {
+      const docErr = validateTaxId(form.cnpj, form.country);
+      if (docErr) {
+        toast.error(docErr);
+        return;
+      }
     }
 
     setSaving(true);
@@ -273,6 +295,7 @@ const SupplierInvitePortal = () => {
       const payload: any = {
         agency_id: invitation.agency_id,
         company_name: form.company_name,
+        country: form.country,
         cnpj: form.cnpj || null,
         contact_name: form.contact_name || null,
         address: form.address || null,
@@ -449,6 +472,22 @@ const SupplierInvitePortal = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="country">País *</Label>
+                <Select
+                  value={form.country}
+                  onValueChange={(value) => setForm(f => ({ ...f, country: value, cnpj: "" }))}
+                >
+                  <SelectTrigger id="country">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPLIER_COUNTRIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="company_name">Nome da Empresa *</Label>
                 <Input
                   id="company_name"
@@ -457,13 +496,13 @@ const SupplierInvitePortal = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cnpj">CNPJ</Label>
+                <Label htmlFor="cnpj">{countryCfg.taxIdLabel}</Label>
                 <Input
                   id="cnpj"
                   value={form.cnpj}
-                  placeholder="XX.XXX.XXX/XXXX-XX"
-                  inputMode="numeric"
-                  onChange={e => setForm(f => ({ ...f, cnpj: formatCNPJ(e.target.value) }))}
+                  placeholder={getTaxIdPlaceholder(form.country)}
+                  inputMode={form.country === "CL" ? "text" : "numeric"}
+                  onChange={e => setForm(f => ({ ...f, cnpj: formatTaxId(e.target.value, f.country) }))}
                 />
               </div>
               <div className="space-y-2">
@@ -511,8 +550,8 @@ const SupplierInvitePortal = () => {
                     </div>
                     <Input value={contact.email} placeholder="E-mail" onChange={e => updateContact(index, "email", e.target.value)} className="h-8 text-xs" />
                     <div className="grid grid-cols-2 gap-3">
-                      <Input value={contact.telefone} placeholder="(XX) XXXXX-XXXX" inputMode="numeric" onChange={e => updateContact(index, "telefone", formatPhoneBR(e.target.value))} className="h-8 text-xs" />
-                      <Input value={contact.whatsapp} placeholder="(XX) XXXXX-XXXX" inputMode="numeric" onChange={e => updateContact(index, "whatsapp", formatPhoneBR(e.target.value))} className="h-8 text-xs" />
+                      <Input value={contact.telefone} placeholder={getPhonePlaceholder(form.country)} inputMode="numeric" onChange={e => updateContact(index, "telefone", formatPhoneByCountry(e.target.value, form.country))} className="h-8 text-xs" />
+                      <Input value={contact.whatsapp} placeholder={getPhonePlaceholder(form.country)} inputMode="numeric" onChange={e => updateContact(index, "whatsapp", formatPhoneByCountry(e.target.value, form.country))} className="h-8 text-xs" />
                     </div>
                   </div>
                 ))}
@@ -524,9 +563,15 @@ const SupplierInvitePortal = () => {
             <Label className="text-sm font-bold">Endereço</Label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2 relative">
-                <Label htmlFor="cep">CEP</Label>
+                <Label htmlFor="cep">{countryCfg.zipLabel}</Label>
                 <div className="relative">
-                  <Input id="cep" value={form.cep} onChange={handleCepChange} placeholder="00000-000" />
+                  <Input
+                    id="cep"
+                    value={form.cep}
+                    onChange={handleCepChange}
+                    placeholder={countryCfg.zipPlaceholder}
+                    maxLength={countryCfg.zipMaxLength}
+                  />
                   {isSearchingCep && <Loader2 className="w-4 h-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />}
                 </div>
                 {cepError && <p className="text-[10px] text-destructive absolute -bottom-4">{cepError}</p>}
@@ -543,7 +588,7 @@ const SupplierInvitePortal = () => {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <Input className="col-span-2" placeholder="Cidade" value={form.cidade} onChange={e => setForm(f => ({ ...f, cidade: e.target.value }))} />
-              <Input placeholder="UF" maxLength={2} value={form.estado} onChange={e => setForm(f => ({ ...f, estado: e.target.value }))} />
+              <Input placeholder={countryCfg.stateLabel} value={form.estado} onChange={e => setForm(f => ({ ...f, estado: e.target.value }))} />
             </div>
           </div>
 
