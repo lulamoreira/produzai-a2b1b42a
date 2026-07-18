@@ -472,6 +472,22 @@ const SupplierInvitePortal = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="country">País *</Label>
+                <Select
+                  value={form.country}
+                  onValueChange={(value) => setForm(f => ({ ...f, country: value, cnpj: "" }))}
+                >
+                  <SelectTrigger id="country">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {SUPPLIER_COUNTRIES.map((c) => (
+                      <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="company_name">Nome da Empresa *</Label>
                 <Input
                   id="company_name"
@@ -480,13 +496,13 @@ const SupplierInvitePortal = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="cnpj">CNPJ</Label>
+                <Label htmlFor="cnpj">{countryCfg.taxIdLabel}</Label>
                 <Input
                   id="cnpj"
                   value={form.cnpj}
-                  placeholder="XX.XXX.XXX/XXXX-XX"
-                  inputMode="numeric"
-                  onChange={e => setForm(f => ({ ...f, cnpj: formatCNPJ(e.target.value) }))}
+                  placeholder={getTaxIdPlaceholder(form.country)}
+                  inputMode={form.country === "CL" ? "text" : "numeric"}
+                  onChange={e => setForm(f => ({ ...f, cnpj: formatTaxId(e.target.value, f.country) }))}
                 />
               </div>
               <div className="space-y-2">
