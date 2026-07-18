@@ -195,7 +195,7 @@ const SupplierPortal = () => {
   const [downloadingStores, setDownloadingStores] = useState(false);
   const [fullQtyMap, setFullQtyMap] = useState<Record<string, number>>({});
 
-  const currencyDefaultLocale: CurrencyLocale = isES ? "es-CL" : "pt-BR";
+  const currencyDefaultLocale: CurrencyLocale = currencyCode === "CLP" ? "es-CL" : "pt-BR";
   const [localeOverride, setLocaleOverride] = useState<CurrencyLocale | null>(() => {
     if (typeof window === "undefined" || !token) return null;
     const stored = window.localStorage.getItem(`supplier_portal_lang_${token}`);
