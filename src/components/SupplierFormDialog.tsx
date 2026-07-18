@@ -59,6 +59,7 @@ interface SupplierFormDialogProps {
 const emptyForm = () => ({
   company_name: "",
   trade_name: "",
+  country: "BR",
   cnpj: "",
   contact_name: "",
   address: "",
