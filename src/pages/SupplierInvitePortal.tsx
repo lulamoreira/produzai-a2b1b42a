@@ -55,6 +55,7 @@ const SupplierInvitePortal = () => {
 
   const [form, setForm] = useState({
     company_name: "",
+    country: "BR",
     cnpj: "",
     contact_name: "",
     address: "",
@@ -75,6 +76,8 @@ const SupplierInvitePortal = () => {
     cidade: "",
     estado: "",
   });
+
+  const countryCfg = getCountryConfig(form.country);
 
   const [isSearchingCep, setIsSearchingCep] = useState(false);
   const [cepError, setCepError] = useState("");
