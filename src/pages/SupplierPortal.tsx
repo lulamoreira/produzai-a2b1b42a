@@ -952,6 +952,28 @@ const SupplierPortal = () => {
               <p className="text-sm opacity-80 mt-0.5">{supplier.company_name}</p>
             </div>
             <div className="flex items-center gap-3 flex-wrap">
+              <div
+                role="group"
+                aria-label="Language / Idioma"
+                className="inline-flex items-center rounded-full bg-white/15 p-0.5 text-[11px] font-medium"
+              >
+                <button
+                  type="button"
+                  onClick={() => handleChangeLocale("pt-BR")}
+                  className={`px-2 py-0.5 rounded-full transition-colors ${activeLocale === "pt-BR" ? "bg-white text-[#8C6F4E]" : "text-white/80 hover:text-white"}`}
+                  aria-pressed={activeLocale === "pt-BR"}
+                >
+                  🇧🇷 PT
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleChangeLocale("es-CL")}
+                  className={`px-2 py-0.5 rounded-full transition-colors ${activeLocale === "es-CL" ? "bg-white text-[#8C6F4E]" : "text-white/80 hover:text-white"}`}
+                  aria-pressed={activeLocale === "es-CL"}
+                >
+                  🇨🇱 ES
+                </button>
+              </div>
               {currencyCode !== "BRL" && (
                 <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full font-medium">
                   {portal.valuesIn} {currencyCode}
