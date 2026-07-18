@@ -134,6 +134,7 @@ const SupplierInvitePortal = () => {
           setForm(f => ({
             ...f,
             company_name: sup.company_name || "",
+            country: sup.country || "BR",
             cnpj: sup.cnpj || "",
             contact_name: sup.contact_name || "",
             address: sup.address || "",
