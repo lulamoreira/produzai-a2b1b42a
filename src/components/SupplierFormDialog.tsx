@@ -280,6 +280,14 @@ export default function SupplierFormDialog({
       return;
     }
 
+    if (form.cnpj) {
+      const docErr = validateTaxId(form.cnpj, form.country);
+      if (docErr) {
+        toast.error(docErr);
+        return;
+      }
+    }
+
     const finalServices = [...form.services];
     if (form.custom_service.trim()) finalServices.push(form.custom_service.trim());
 
