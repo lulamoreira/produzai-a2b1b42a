@@ -383,12 +383,12 @@ export const supplierExcelLabels = {
   },
 } as const;
 
-export function getSupplierPortalLabels(currency?: string) {
-  const locale = getLocaleFromCurrency(currency);
+export function getSupplierPortalLabels(currency?: string, localeOverride?: CurrencyLocale) {
+  const locale = localeOverride ?? getLocaleFromCurrency(currency);
   return supplierPortalLabels[locale];
 }
 
-export function getSupplierExcelLabels(currency?: string) {
-  const locale = getLocaleFromCurrency(currency);
+export function getSupplierExcelLabels(currency?: string, localeOverride?: CurrencyLocale) {
+  const locale = localeOverride ?? getLocaleFromCurrency(currency);
   return supplierExcelLabels[locale];
 }
