@@ -152,6 +152,7 @@ export type Database = {
           complemento: string | null
           contact_name: string | null
           contacts: Json | null
+          country: string
           created_at: string
           email: string | null
           estado: string | null
@@ -181,6 +182,7 @@ export type Database = {
           complemento?: string | null
           contact_name?: string | null
           contacts?: Json | null
+          country?: string
           created_at?: string
           email?: string | null
           estado?: string | null
@@ -210,6 +212,7 @@ export type Database = {
           complemento?: string | null
           contact_name?: string | null
           contacts?: Json | null
+          country?: string
           created_at?: string
           email?: string | null
           estado?: string | null
