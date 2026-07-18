@@ -196,12 +196,17 @@ const SupplierInvitePortal = () => {
   };
 
   const handleCepChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "");
-    if (value.length > 8) value = value.slice(0, 8);
-    let formatted = value;
-    if (value.length > 5) formatted = `${value.slice(0, 5)}-${value.slice(5)}`;
-    setForm(f => ({ ...f, cep: formatted }));
-    if (value.length === 8) handleCepSearch(value);
+    const raw = e.target.value;
+    if (countryCfg.hasAutoCepLookup) {
+      let value = raw.replace(/\D/g, "");
+      if (value.length > 8) value = value.slice(0, 8);
+      let formatted = value;
+      if (value.length > 5) formatted = `${value.slice(0, 5)}-${value.slice(5)}`;
+      setForm(f => ({ ...f, cep: formatted }));
+      if (value.length === 8) handleCepSearch(value);
+    } else {
+      setForm(f => ({ ...f, cep: raw.slice(0, countryCfg.zipMaxLength) }));
+    }
   };
 
   const toggleService = (service: string) => {
