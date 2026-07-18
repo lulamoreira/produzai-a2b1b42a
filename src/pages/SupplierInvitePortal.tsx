@@ -563,9 +563,15 @@ const SupplierInvitePortal = () => {
             <Label className="text-sm font-bold">Endereço</Label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2 relative">
-                <Label htmlFor="cep">CEP</Label>
+                <Label htmlFor="cep">{countryCfg.zipLabel}</Label>
                 <div className="relative">
-                  <Input id="cep" value={form.cep} onChange={handleCepChange} placeholder="00000-000" />
+                  <Input
+                    id="cep"
+                    value={form.cep}
+                    onChange={handleCepChange}
+                    placeholder={countryCfg.zipPlaceholder}
+                    maxLength={countryCfg.zipMaxLength}
+                  />
                   {isSearchingCep && <Loader2 className="w-4 h-4 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />}
                 </div>
                 {cepError && <p className="text-[10px] text-destructive absolute -bottom-4">{cepError}</p>}
@@ -582,7 +588,7 @@ const SupplierInvitePortal = () => {
             </div>
             <div className="grid grid-cols-3 gap-4">
               <Input className="col-span-2" placeholder="Cidade" value={form.cidade} onChange={e => setForm(f => ({ ...f, cidade: e.target.value }))} />
-              <Input placeholder="UF" maxLength={2} value={form.estado} onChange={e => setForm(f => ({ ...f, estado: e.target.value }))} />
+              <Input placeholder={countryCfg.stateLabel} value={form.estado} onChange={e => setForm(f => ({ ...f, estado: e.target.value }))} />
             </div>
           </div>
 
