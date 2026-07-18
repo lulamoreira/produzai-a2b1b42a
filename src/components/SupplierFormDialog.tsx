@@ -127,6 +127,7 @@ export default function SupplierFormDialog({
       setForm({
         company_name: s.company_name,
         trade_name: s.trade_name || "",
+        country: s.country || "BR",
         cnpj: s.cnpj || "",
         contact_name: s.contact_name || "",
         address: s.address || "",
