@@ -275,8 +275,16 @@ const SupplierInvitePortal = () => {
 
   const handleSave = async (isComplete: boolean) => {
     if (isComplete && !form.cnpj) {
-      toast.error("O CNPJ é obrigatório para finalizar o cadastro.");
+      toast.error(`O ${countryCfg.taxIdLabel} é obrigatório para finalizar o cadastro.`);
       return;
+    }
+
+    if (isComplete && form.cnpj) {
+      const docErr = validateTaxId(form.cnpj, form.country);
+      if (docErr) {
+        toast.error(docErr);
+        return;
+      }
     }
 
     setSaving(true);
@@ -287,6 +295,7 @@ const SupplierInvitePortal = () => {
       const payload: any = {
         agency_id: invitation.agency_id,
         company_name: form.company_name,
+        country: form.country,
         cnpj: form.cnpj || null,
         contact_name: form.contact_name || null,
         address: form.address || null,
