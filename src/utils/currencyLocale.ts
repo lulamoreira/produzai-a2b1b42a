@@ -116,8 +116,8 @@ export const supplierMessageLabels = {
   }
 } as const;
 
-export function getMessageLabels(currency?: string) {
-  const locale = getLocaleFromCurrency(currency);
+export function getMessageLabels(currency?: string, localeOverride?: CurrencyLocale) {
+  const locale = localeOverride ?? getLocaleFromCurrency(currency);
   return supplierMessageLabels[locale];
 }
 
