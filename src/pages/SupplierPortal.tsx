@@ -302,7 +302,10 @@ const SupplierPortal = () => {
 
         const dl = settings?.deadline ?? null;
         setDeadline(dl);
-        setCurrencyCode((settings as { currency_code?: string } | null | undefined)?.currency_code || "BRL");
+        // NOTE: moeda vem do header RPC (anon-safe). budget_settings pode falhar por RLS
+        // para o fornecedor anônimo — só usamos como fallback se o header não trouxer.
+        const settingsCurrency = (settings as { currency_code?: string } | null | undefined)?.currency_code;
+        if (settingsCurrency) setCurrencyCode(settingsCurrency);
         setNegotiationTarget((settings as any)?.negotiation_target ?? null);
 
         // 2b) Timeline entries (não-crítico)
