@@ -195,10 +195,25 @@ const SupplierPortal = () => {
   const [downloadingStores, setDownloadingStores] = useState(false);
   const [fullQtyMap, setFullQtyMap] = useState<Record<string, number>>({});
 
-  const labels = useMemo(() => getSupplierLabels(currencyCode), [currencyCode]);
-  const portal = useMemo(() => getSupplierPortalLabels(currencyCode), [currencyCode]);
-  const excelLabels = useMemo(() => getSupplierExcelLabels(currencyCode), [currencyCode]);
-  const dateLocale = currencyCode === "CLP" ? "es-CL" : "pt-BR";
+  const currencyDefaultLocale: CurrencyLocale = currencyCode === "CLP" ? "es-CL" : "pt-BR";
+  const [localeOverride, setLocaleOverride] = useState<CurrencyLocale | null>(() => {
+    if (typeof window === "undefined" || !token) return null;
+    const stored = window.localStorage.getItem(`supplier_portal_lang_${token}`);
+    return stored === "pt-BR" || stored === "es-CL" ? stored : null;
+  });
+  const activeLocale: CurrencyLocale = localeOverride ?? currencyDefaultLocale;
+  const isES = activeLocale === "es-CL";
+  const handleChangeLocale = useCallback((next: CurrencyLocale) => {
+    setLocaleOverride(next);
+    if (typeof window !== "undefined" && token) {
+      window.localStorage.setItem(`supplier_portal_lang_${token}`, next);
+    }
+  }, [token]);
+
+  const labels = useMemo(() => getSupplierLabels(currencyCode, activeLocale), [currencyCode, activeLocale]);
+  const portal = useMemo(() => getSupplierPortalLabels(currencyCode, activeLocale), [currencyCode, activeLocale]);
+  const excelLabels = useMemo(() => getSupplierExcelLabels(currencyCode, activeLocale), [currencyCode, activeLocale]);
+  const dateLocale = activeLocale;
 
   // ─── Excel download for stores ─────────────────────────
   const handleDownloadStoresExcel = useCallback(async () => {
