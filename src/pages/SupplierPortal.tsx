@@ -195,7 +195,7 @@ const SupplierPortal = () => {
   const [downloadingStores, setDownloadingStores] = useState(false);
   const [fullQtyMap, setFullQtyMap] = useState<Record<string, number>>({});
 
-  const currencyDefaultLocale: CurrencyLocale = currencyCode === "CLP" ? "es-CL" : "pt-BR";
+  const currencyDefaultLocale: CurrencyLocale = isES ? "es-CL" : "pt-BR";
   const [localeOverride, setLocaleOverride] = useState<CurrencyLocale | null>(() => {
     if (typeof window === "undefined" || !token) return null;
     const stored = window.localStorage.getItem(`supplier_portal_lang_${token}`);
@@ -228,7 +228,7 @@ const SupplierPortal = () => {
     }, [] as typeof storeData);
 
     if (!uniqueStores.length) {
-      toast.error(currencyCode === "CLP" ? "No hay datos de tiendas para exportar." : "Não há dados de lojas para exportar.");
+      toast.error(isES ? "No hay datos de tiendas para exportar." : "Não há dados de lojas para exportar.");
       return;
     }
 
@@ -241,7 +241,7 @@ const SupplierPortal = () => {
       });
     } catch (e) {
       console.error("Store Excel export error:", e);
-      toast.error(currencyCode === "CLP" ? "Error al gerar planilha de tiendas." : "Erro ao gerar planilha de lojas.");
+      toast.error(isES ? "Error al gerar planilha de tiendas." : "Erro ao gerar planilha de lojas.");
     }
   }, [storeData, campaignName, currencyCode, supplier]);
 
@@ -734,7 +734,7 @@ const SupplierPortal = () => {
       });
     } catch (e) {
       console.error("Excel export error:", e);
-      toast.error(currencyCode === "CLP" ? "Error al generar planilla." : "Erro ao gerar planilha.");
+      toast.error(isES ? "Error al generar planilla." : "Erro ao gerar planilha.");
     } finally {
       setDownloadingExcel(false);
     }
@@ -742,7 +742,7 @@ const SupplierPortal = () => {
 
   const handleDecline = async () => {
     if (!supplier) return;
-    const isCLP = currencyCode === "CLP";
+    const isCLP = isES;
     setDeclining(true);
     try {
       const { error } = await supabase.rpc("supplier_portal_set_status" as never, {
@@ -778,7 +778,7 @@ const SupplierPortal = () => {
       if (updErr) throw updErr;
       const result = (rpcData ?? {}) as { success?: boolean };
       if (!result.success) {
-        throw new Error(currencyCode === "CLP" ? "No se pudo registrar el envío. Actualice la página e intente nuevamente." : "Não foi possível registrar o envio. Atualize a página e tente novamente.");
+        throw new Error(isES ? "No se pudo registrar el envío. Actualice la página e intente nuevamente." : "Não foi possível registrar o envio. Atualize a página e tente novamente.");
       }
 
       // Save snapshot
@@ -843,7 +843,7 @@ const SupplierPortal = () => {
             {portal.errorDetail}
           </p>
           <Button onClick={() => window.location.reload()} variant="outline">
-            {currencyCode === "CLP" ? "Intentar nuevamente" : "Tentar novamente"}
+            {isES ? "Intentar nuevamente" : "Tentar novamente"}
           </Button>
         </div>
       </div>
@@ -1129,7 +1129,7 @@ const SupplierPortal = () => {
                         setDownloadingStores(true);
                         try {
                           await handleDownloadStoresExcel();
-                          toast.success(currencyCode === "CLP" ? "Planilla descargada con éxito." : "Planilha baixada com sucesso.");
+                          toast.success(isES ? "Planilla descargada con éxito." : "Planilha baixada com sucesso.");
                         } finally {
                           setDownloadingStores(false);
                         }
@@ -1140,7 +1140,7 @@ const SupplierPortal = () => {
                       {downloadingStores ? (
                         <div className="flex items-center gap-2">
                           <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                          {currencyCode === "CLP" ? "Descargando..." : "Baixando..."}
+                          {isES ? "Descargando..." : "Baixando..."}
                         </div>
                       ) : (
                         <>
@@ -1299,10 +1299,10 @@ const SupplierPortal = () => {
                   setDownloadingExcel(true);
                   try {
                     await handleDownloadExcel();
-                    toast.success(currencyCode === "CLP" ? "Planilla descargada con éxito." : "Planilha baixada com sucesso.");
+                    toast.success(isES ? "Planilla descargada con éxito." : "Planilha baixada com sucesso.");
                   } catch (e) {
                     console.error("Excel download error:", e);
-                    toast.error(currencyCode === "CLP" ? "Erro ao baixar planilha." : "Erro ao baixar planilha.");
+                    toast.error(isES ? "Erro ao baixar planilha." : "Erro ao baixar planilha.");
                   } finally {
                     setDownloadingExcel(false);
                   }
@@ -1607,7 +1607,7 @@ const SupplierPortal = () => {
                   onClick={handleDownloadStoresExcel}
                 >
                   <Download className={`w-3.5 h-3.5 ${downloadingStores ? 'animate-bounce' : ''}`} />
-                  {downloadingStores ? (currencyCode === "CLP" ? "Generando..." : "Gerando...") : portal.storesDownload}
+                  {downloadingStores ? (isES ? "Generando..." : "Gerando...") : portal.storesDownload}
                 </Button>
 
                 <Sheet>
@@ -1837,7 +1837,7 @@ const SupplierPortal = () => {
                     : "bg-[#8C6F4E] hover:bg-[#7A5F3E] text-white px-10 py-6 text-lg font-semibold"}
                   onClick={() => setShowConfirm1(true)}
                   disabled={submitting || overTarget}
-                  title={overTarget ? (currencyCode === "CLP" ? "Total sobre el techo máximo" : "Total acima do teto máximo") : undefined}
+                  title={overTarget ? (isES ? "Total sobre el techo máximo" : "Total acima do teto máximo") : undefined}
                 >
                   <Send className="w-5 h-5 mr-2" />
                   {inNegotiation ? portal.submitButtonNegotiation : portal.submitButton}
@@ -1848,7 +1848,7 @@ const SupplierPortal = () => {
                   className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                   onClick={() => setDeclineOpen(true)}
                 >
-                  {currencyCode === "CLP" ? "No participaré en esta cotización" : "Não participarei desta cotação"}
+                  {isES ? "No participaré en esta cotización" : "Não participarei desta cotação"}
                 </Button>
               </div>
             </div>
@@ -1861,15 +1861,15 @@ const SupplierPortal = () => {
               <CardContent className="p-6 text-center space-y-2">
                 <AlertTriangle className="w-8 h-8 text-amber-500 mx-auto" />
                 <h3 className="font-semibold text-amber-900">
-                  {currencyCode === "CLP" ? "Has declinado participar" : "Você declinou participar"}
+                  {isES ? "Has declinado participar" : "Você declinou participar"}
                 </h3>
                 <p className="text-sm text-amber-800">
-                  {currencyCode === "CLP" ? "Tu decisión ha sido registrada. ¡Gracias!" : "Sua decisão foi registrada. Obrigado!"}
+                  {isES ? "Tu decisión ha sido registrada. ¡Gracias!" : "Sua decisão foi registrada. Obrigado!"}
                 </p>
                 {supplier.decline_reason && (
                   <div className="mt-4 pt-4 border-t border-amber-200 text-left">
                     <p className="text-xs font-medium text-amber-900 uppercase tracking-wider mb-1">
-                      {currencyCode === "CLP" ? "Motivo informado:" : "Motivo informado:"}
+                      {isES ? "Motivo informado:" : "Motivo informado:"}
                     </p>
                     <p className="text-sm text-amber-800 italic">"{supplier.decline_reason}"</p>
                   </div>
@@ -1884,20 +1884,20 @@ const SupplierPortal = () => {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {currencyCode === "CLP" ? "¿Confirmas que no participarás?" : "Confirma que não irá participar?"}
+              {isES ? "¿Confirmas que no participarás?" : "Confirma que não irá participar?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              {currencyCode === "CLP" 
+              {isES 
                 ? "Esta acción informará al equipo que no enviarás una propuesta para esta campaña."
                 : "Esta ação informará à equipe que você não enviará uma proposta para esta campanha."}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="py-4 space-y-2">
             <label className="text-sm font-medium">
-              {currencyCode === "CLP" ? "Motivo (opcional):" : "Motivo (opcional):"}
+              {isES ? "Motivo (opcional):" : "Motivo (opcional):"}
             </label>
             <Textarea
-              placeholder={currencyCode === "CLP" ? "Escribe aquí si quieres explicar por qué..." : "Escreva aqui se quiser explicar o motivo..."}
+              placeholder={isES ? "Escribe aquí si quieres explicar por qué..." : "Escreva aqui se quiser explicar o motivo..."}
               value={declineReason}
               onChange={(e) => setDeclineReason(e.target.value)}
               rows={3}
