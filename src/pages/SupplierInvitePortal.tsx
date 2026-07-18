@@ -21,18 +21,23 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { formatPhoneByCountry } from "@/lib/countryConfig";
+import {
+  formatPhoneByCountry,
+  getCountryConfig,
+  SUPPLIER_COUNTRIES,
+  formatTaxId,
+  validateTaxId,
+  getTaxIdPlaceholder,
+  getPhonePlaceholder,
+} from "@/lib/countryConfig";
 import { buildSupplierFilePath, SUPPLIER_FILES_BUCKET } from "@/lib/supplierFiles";
-
-const formatCNPJ = (value: string) => {
-  const d = value.replace(/\D/g, "").slice(0, 14);
-  if (d.length <= 2) return d;
-  if (d.length <= 5) return `${d.slice(0, 2)}.${d.slice(2)}`;
-  if (d.length <= 8) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5)}`;
-  if (d.length <= 12) return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8)}`;
-  return `${d.slice(0, 2)}.${d.slice(2, 5)}.${d.slice(5, 8)}/${d.slice(8, 12)}-${d.slice(12)}`;
-};
-const formatPhoneBR = (v: string) => formatPhoneByCountry(v, "BR");
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 
 
