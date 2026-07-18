@@ -424,7 +424,10 @@ Qualquer dúvida, estamos à disposição!` : "";
                     {s.trade_name && (
                       <p className="text-sm text-muted-foreground mt-0.5">{s.trade_name}</p>
                     )}
-                    <p className="text-xs text-muted-foreground mt-1">{s.cnpj}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {s.cnpj ? `${getCountryConfig(s.country).taxIdLabel}: ${s.cnpj}` : null}
+                      {s.country && s.country !== "BR" ? ` · ${getCountryConfig(s.country).name}` : ""}
+                    </p>
                   </div>
                   <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDetailsSupplier(s)} title="Ver detalhes / enviar e-mail">
