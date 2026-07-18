@@ -39,8 +39,8 @@ export const supplierQuoteLabels = {
   },
 } as const;
 
-export function getSupplierLabels(currency?: string) {
-  const locale = getLocaleFromCurrency(currency);
+export function getSupplierLabels(currency?: string, localeOverride?: CurrencyLocale) {
+  const locale = localeOverride ?? getLocaleFromCurrency(currency);
   return supplierQuoteLabels[locale];
 }
 
