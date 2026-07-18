@@ -339,7 +339,10 @@ Qualquer dúvida, estamos à disposição!` : "";
                       {s.trade_name && (
                         <div className="text-xs text-muted-foreground">{s.trade_name}</div>
                       )}
-                      <div className="text-[10px] text-muted-foreground">{s.cnpj}</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {s.cnpj ? `${getCountryConfig(s.country).taxIdLabel}: ${s.cnpj}` : null}
+                        {s.country && s.country !== "BR" ? ` · ${getCountryConfig(s.country).name}` : ""}
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm font-medium">
