@@ -418,13 +418,32 @@ export default function SupplierFormDialog({
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="cnpj">CNPJ</Label>
-                <Input
-                  id="cnpj"
-                  value={form.cnpj}
-                  onChange={(e) => setForm((f) => ({ ...f, cnpj: e.target.value }))}
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="country">País</Label>
+                  <Select
+                    value={form.country}
+                    onValueChange={(value) => setForm((f) => ({ ...f, country: value, cnpj: "" }))}
+                  >
+                    <SelectTrigger id="country">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SUPPLIER_COUNTRIES.map((c) => (
+                        <SelectItem key={c.code} value={c.code}>{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cnpj">{getCountryConfig(form.country).taxIdLabel}</Label>
+                  <Input
+                    id="cnpj"
+                    value={form.cnpj}
+                    placeholder={getTaxIdPlaceholder(form.country)}
+                    onChange={(e) => setForm((f) => ({ ...f, cnpj: formatTaxId(e.target.value, f.country) }))}
+                  />
+                </div>
               </div>
               <div className="space-y-4 pt-2">
                 <div className="flex items-center justify-between">
