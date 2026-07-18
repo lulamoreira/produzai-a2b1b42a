@@ -33,6 +33,20 @@ import {
   SOCIAL_ERROR_MESSAGE,
   type SocialNetwork,
 } from "@/lib/socialUrls";
+import {
+  getCountryConfig,
+  SUPPLIER_COUNTRIES,
+  formatTaxId,
+  validateTaxId,
+  getTaxIdPlaceholder,
+} from "@/lib/countryConfig";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface SupplierFormDialogProps {
   open: boolean;
