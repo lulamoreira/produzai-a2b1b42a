@@ -371,6 +371,8 @@ const SupplierPortal = () => {
         };
 
         setCampaignName(header.campaign_name ?? "");
+        // Fonte da verdade para moeda no portal anônimo (RPC SECURITY DEFINER).
+        if (header.currency_code) setCurrencyCode(header.currency_code);
         const resolvedClientName = header.client_name ?? "";
         const resolvedAgencyName = header.agency_name ?? "";
         const resolvedClientId = header.client_id ?? null;
