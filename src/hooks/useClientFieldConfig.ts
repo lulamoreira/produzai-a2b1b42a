@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { MAX_CUSTOM_FIELDS } from "@/lib/customFields";
 
 export type FieldType = "text" | "number" | "boolean" | "select" | "date";
 
@@ -78,7 +79,7 @@ export function useCustomFieldFilledCounts(clientId: string | undefined) {
     queryKey: ["client-field-filled-counts", clientId],
     enabled: !!clientId,
     queryFn: async () => {
-      const indices = Array.from({ length: 15 }, (_, i) => i + 1);
+      const indices = Array.from({ length: MAX_CUSTOM_FIELDS }, (_, i) => i + 1);
       const results = await Promise.all(
         indices.map(async (i) => {
           const col = `custom_field_${i}`;

@@ -14,6 +14,8 @@ import {
   type ClientFieldConfig,
   type FieldType,
 } from "@/hooks/useClientFieldConfig";
+import { MAX_CUSTOM_FIELDS, customFieldIndices, customFieldLabelKey } from "@/lib/customFields";
+import { useUpdateClient } from "@/hooks/useMultiClientData";
 
 interface Props {
   clientId: string;
@@ -79,12 +81,42 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
 
   const labels = useMemo(() => {
     const out: { index: number; label: string }[] = [];
-    for (let i = 1; i <= 15; i++) {
-      const lbl = (client as any)?.[`custom_field_${i}_label`];
+    for (const i of customFieldIndices()) {
+      const lbl = (client as any)?.[customFieldLabelKey(i)];
       if (lbl && String(lbl).trim() !== "") out.push({ index: i, label: String(lbl) });
     }
     return out;
   }, [client]);
+
+  const emptySlots = useMemo(() => {
+    const used = new Set(labels.map((l) => l.index));
+    return customFieldIndices().filter((i) => !used.has(i));
+  }, [labels]);
+
+  const updateClient = useUpdateClient();
+  const [newNames, setNewNames] = useState<Record<number, string>>({});
+  const [creatingIdx, setCreatingIdx] = useState<number | null>(null);
+
+  const createField = async (idx: number) => {
+    const name = (newNames[idx] ?? "").trim();
+    if (!name) {
+      toast({ title: "Digite um nome para o campo", variant: "destructive" });
+      return;
+    }
+    setCreatingIdx(idx);
+    try {
+      await updateClient.mutateAsync({
+        id: clientId,
+        [customFieldLabelKey(idx)]: name,
+      } as any);
+      setNewNames((p) => ({ ...p, [idx]: "" }));
+      toast({ title: "Campo criado" });
+    } catch (e: any) {
+      toast({ title: "Erro ao criar campo", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setCreatingIdx(null);
+    }
+  };
 
   const [rows, setRows] = useState<Record<number, RowState>>({});
 
@@ -143,21 +175,19 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
     );
   }
 
-  if (labels.length === 0) {
-    return (
-      <div className="mt-4 rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-        Este cliente ainda não tem campos personalizados definidos.
-        <br />
-        Defina os rótulos dos campos personalizados na edição do cliente para poder configurá-los aqui.
-      </div>
-    );
-  }
+  const usedCount = labels.length;
+  const remaining = MAX_CUSTOM_FIELDS - usedCount;
 
   return (
     <div className="mt-4 space-y-3">
-      <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-        Marque quais dos campos personalizados do cliente o lojista poderá preencher na Ficha da Loja.
-        O valor final continua indo para os mesmos campos personalizados das lojas.
+      <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground flex items-center justify-between gap-3 flex-wrap">
+        <span>
+          Marque quais dos campos personalizados do cliente o lojista poderá preencher na Ficha da Loja.
+          O valor final continua indo para os mesmos campos personalizados das lojas.
+        </span>
+        <span className="text-xs font-medium text-foreground whitespace-nowrap">
+          {usedCount} de {MAX_CUSTOM_FIELDS} campos usados
+        </span>
       </div>
 
       {loadingConfigs || loadingCounts ? (
@@ -166,6 +196,11 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
         </div>
       ) : (
         <div className="space-y-2">
+          {labels.length === 0 && (
+            <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              Nenhum campo personalizado criado ainda. Crie um abaixo.
+            </div>
+          )}
           {labels.map(({ index, label }) => {
             const row = rows[index] ?? emptyRow();
             const filled = filledCounts[index] ?? 0;
@@ -311,6 +346,40 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
               </div>
             );
           })}
+
+          <div className="mt-4 rounded-lg border border-border bg-card p-3">
+            <div className="text-sm font-medium text-foreground mb-1">Adicionar novo campo</div>
+            <div className="text-[11px] text-muted-foreground mb-3">
+              Nomeie um slot disponível para criar um novo campo personalizado no cliente.
+            </div>
+            {remaining <= 0 ? (
+              <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-[12px] text-amber-800">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Limite de {MAX_CUSTOM_FIELDS} campos atingido.</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {emptySlots.map((i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <span className="text-[11px] text-muted-foreground w-14 shrink-0">#{i}</span>
+                    <Input
+                      value={newNames[i] ?? ""}
+                      onChange={(e) => setNewNames((p) => ({ ...p, [i]: e.target.value }))}
+                      placeholder="Nome do campo"
+                      disabled={!canEdit || creatingIdx === i}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => createField(i)}
+                      disabled={!canEdit || creatingIdx === i || !(newNames[i] ?? "").trim()}
+                    >
+                      {creatingIdx === i ? <Loader2 className="w-3 h-3 animate-spin" /> : "Criar"}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
