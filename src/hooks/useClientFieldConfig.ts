@@ -79,7 +79,7 @@ export function useCustomFieldFilledCounts(clientId: string | undefined) {
     queryKey: ["client-field-filled-counts", clientId],
     enabled: !!clientId,
     queryFn: async () => {
-      const indices = Array.from({ length: 15 }, (_, i) => i + 1);
+      const indices = Array.from({ length: MAX_CUSTOM_FIELDS }, (_, i) => i + 1);
       const results = await Promise.all(
         indices.map(async (i) => {
           const col = `custom_field_${i}`;
