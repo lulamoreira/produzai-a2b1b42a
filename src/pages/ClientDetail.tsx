@@ -61,6 +61,7 @@ import DeleteAllStoresDialog from "@/components/DeleteAllStoresDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import StoreContactsSection from "@/components/StoreContactsSection";
 import ClientEmailMemoryManager from "@/components/Email/ClientEmailMemoryManager";
+import StoreFormFieldsConfig from "@/components/client/StoreFormFieldsConfig";
 import { getCountryConfig, SUPPORTED_COUNTRIES, type CountryConfig } from "@/lib/countryConfig";
 import { getStoreIdentityKey, normalizeStoreIdentityCnpj, normalizeStoreIdentityName } from "@/lib/storeHelpers";
 import { useLanguage } from "@/hooks/useLanguage";
