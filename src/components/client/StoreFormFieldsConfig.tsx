@@ -14,6 +14,8 @@ import {
   type ClientFieldConfig,
   type FieldType,
 } from "@/hooks/useClientFieldConfig";
+import { MAX_CUSTOM_FIELDS, customFieldIndices, customFieldLabelKey } from "@/lib/customFields";
+import { useUpdateClient } from "@/hooks/useMultiClientData";
 
 interface Props {
   clientId: string;
