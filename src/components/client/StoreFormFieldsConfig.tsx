@@ -5,8 +5,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, Plus, X, Loader2 } from "lucide-react";
+import { AlertTriangle, Plus, X, Loader2, Link2, Copy, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { buildPublicAppUrl } from "@/lib/publicAppOrigin";
 import {
   useClientFieldConfig,
   useUpsertClientFieldConfig,
@@ -78,6 +79,32 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
   const { data: configs = [], isLoading: loadingConfigs } = useClientFieldConfig(clientId);
   const { data: filledCounts = {}, isLoading: loadingCounts } = useCustomFieldFilledCounts(clientId);
   const upsert = useUpsertClientFieldConfig();
+
+  const { data: tokenRow } = useQuery({
+    queryKey: ["client-form-token", clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_form_tokens")
+        .select("token")
+        .eq("client_id", clientId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const publicUrl = tokenRow?.token ? buildPublicAppUrl(`/ficha/${tokenRow.token}`) : null;
+  const [copied, setCopied] = useState(false);
+  const copyLink = async () => {
+    if (!publicUrl) return;
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      setCopied(true);
+      toast({ title: "Link copiado" });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: "Não foi possível copiar", variant: "destructive" });
+    }
+  };
 
   const labels = useMemo(() => {
     const out: { index: number; label: string }[] = [];
@@ -180,6 +207,23 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
 
   return (
     <div className="mt-4 space-y-3">
+      {publicUrl && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <Link2 className="w-4 h-4" /> Link público da Ficha da Loja
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Input readOnly value={publicUrl} className="flex-1 min-w-[220px] text-xs font-mono" />
+            <Button size="sm" variant="outline" onClick={copyLink}>
+              {copied ? <Check className="w-3.5 h-3.5 mr-1" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
+              {copied ? "Copiado" : "Copiar"}
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Compartilhe com os lojistas. Eles escolhem a loja e preenchem apenas os campos marcados abaixo.
+          </p>
+        </div>
+      )}
       <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground flex items-center justify-between gap-3 flex-wrap">
         <span>
           Marque quais dos campos personalizados do cliente o lojista poderá preencher na Ficha da Loja.

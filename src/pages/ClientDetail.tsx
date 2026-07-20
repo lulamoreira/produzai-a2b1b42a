@@ -1746,6 +1746,38 @@ const ClientDetail = () => {
               />
             ) : (
             <>
+            {(() => {
+              const lockedStores = (stores as any[]).filter((s) => s.form_locked);
+              if (!canEditStores || lockedStores.length === 0) return null;
+              return (
+                <div className="mb-3 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/20 p-3">
+                  <div className="text-xs font-semibold text-amber-900 dark:text-amber-200 mb-2">
+                    {lockedStores.length} loja(s) com Ficha da Loja enviada (bloqueada para edição do lojista)
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {lockedStores.slice(0, 30).map((s) => (
+                      <Button
+                        key={s.id}
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-xs bg-background"
+                        disabled={updateStore.isPending}
+                        onClick={async () => {
+                          await updateStore.mutateAsync({ id: s.id, form_locked: false } as any);
+                          toast.success(`Edição liberada para ${s.nickname || s.name}`);
+                        }}
+                        title="Liberar edição para o lojista preencher novamente"
+                      >
+                        {s.nickname || s.name} · Liberar
+                      </Button>
+                    ))}
+                    {lockedStores.length > 30 && (
+                      <span className="text-xs text-amber-800 self-center">+{lockedStores.length - 30}</span>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
             {loadingStores ? (
               <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
             ) : filteredStoresCount === 0 ? (
