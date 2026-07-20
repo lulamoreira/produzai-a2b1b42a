@@ -207,6 +207,23 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
 
   return (
     <div className="mt-4 space-y-3">
+      {publicUrl && (
+        <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+            <Link2 className="w-4 h-4" /> Link público da Ficha da Loja
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <Input readOnly value={publicUrl} className="flex-1 min-w-[220px] text-xs font-mono" />
+            <Button size="sm" variant="outline" onClick={copyLink}>
+              {copied ? <Check className="w-3.5 h-3.5 mr-1" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
+              {copied ? "Copiado" : "Copiar"}
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            Compartilhe com os lojistas. Eles escolhem a loja e preenchem apenas os campos marcados abaixo.
+          </p>
+        </div>
+      )}
       <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground flex items-center justify-between gap-3 flex-wrap">
         <span>
           Marque quais dos campos personalizados do cliente o lojista poderá preencher na Ficha da Loja.
