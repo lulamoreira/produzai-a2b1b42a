@@ -1873,6 +1873,19 @@ const ClientDetail = () => {
         {new URLSearchParams(location.search).get("tab") === "emails" && (
           <ClientEmailMemoryManager clientId={clientId!} canEdit={canEditClients} />
         )}
+
+        {/* ─── Ficha da Loja: field configuration ─── */}
+        {new URLSearchParams(location.search).get("tab") === "fieldConfig" && (
+          <div>
+            <div className="mb-2">
+              <h2 className="text-lg font-semibold text-foreground">Ficha da Loja</h2>
+              <p className="text-sm text-muted-foreground">
+                Configure quais campos personalizados o lojista poderá preencher.
+              </p>
+            </div>
+            <StoreFormFieldsConfig clientId={clientId!} canEdit={canEditClients} />
+          </div>
+        )}
       </div>
 
       {/* ─── Supplier Add/Edit Dialog ─── */}
