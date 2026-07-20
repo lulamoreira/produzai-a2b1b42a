@@ -27,7 +27,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star, Building2, Pencil, Layers, Wrench, Package } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star, Building2, Pencil, Layers, Wrench, Package, ClipboardList } from "lucide-react";
 import { useClientSuppliers, useAddClientSupplier, useUpdateClientSupplier, useDeleteClientSupplier, type ClientSupplier } from "@/hooks/useClientSuppliers";
 import { Textarea } from "@/components/ui/textarea";
 import { useFavoriteIds, useToggleFavorite } from "@/hooks/useCampaignFavorites";
@@ -61,6 +61,7 @@ import DeleteAllStoresDialog from "@/components/DeleteAllStoresDialog";
 import { useUserRole } from "@/hooks/useUserRole";
 import StoreContactsSection from "@/components/StoreContactsSection";
 import ClientEmailMemoryManager from "@/components/Email/ClientEmailMemoryManager";
+import StoreFormFieldsConfig from "@/components/client/StoreFormFieldsConfig";
 import { getCountryConfig, SUPPORTED_COUNTRIES, type CountryConfig } from "@/lib/countryConfig";
 import { getStoreIdentityKey, normalizeStoreIdentityCnpj, normalizeStoreIdentityName } from "@/lib/storeHelpers";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -1298,6 +1299,17 @@ const ClientDetail = () => {
               </div>
             </div>
           )}
+          {isAdminOrMaster && (
+            <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=fieldConfig`)}>
+              <div className="w-10 h-10 rounded-lg bg-primary/40 flex items-center justify-center">
+                <ClipboardList className="w-5 h-5 text-primary-foreground" />
+              </div>
+              <div>
+                <p className="text-sm sm:text-base font-semibold text-foreground leading-tight">Ficha da Loja</p>
+                <p className="text-[11px] text-muted-foreground">Configurar campos do lojista</p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ─── Campaigns View (default) ─── */}
@@ -1860,6 +1872,19 @@ const ClientDetail = () => {
         {/* ─── Email Memory View ─── */}
         {new URLSearchParams(location.search).get("tab") === "emails" && (
           <ClientEmailMemoryManager clientId={clientId!} canEdit={canEditClients} />
+        )}
+
+        {/* ─── Ficha da Loja: field configuration ─── */}
+        {new URLSearchParams(location.search).get("tab") === "fieldConfig" && (
+          <div>
+            <div className="mb-2">
+              <h2 className="text-lg font-semibold text-foreground">Ficha da Loja</h2>
+              <p className="text-sm text-muted-foreground">
+                Configure quais campos personalizados o lojista poderá preencher.
+              </p>
+            </div>
+            <StoreFormFieldsConfig clientId={clientId!} canEdit={canEditClients} />
+          </div>
         )}
       </div>
 
