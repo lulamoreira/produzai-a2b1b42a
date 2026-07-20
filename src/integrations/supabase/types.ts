@@ -2551,6 +2551,35 @@ export type Database = {
           },
         ]
       }
+      client_form_tokens: {
+        Row: {
+          client_id: string
+          created_at: string
+          id: string
+          token: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          id?: string
+          token?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_form_tokens_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: true
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_store_models: {
         Row: {
           client_id: string
@@ -2606,6 +2635,8 @@ export type Database = {
           custom_field_8: string | null
           custom_field_9: string | null
           email: string | null
+          form_locked: boolean
+          form_submitted_at: string | null
           id: string
           latitude: number | null
           longitude: number | null
@@ -2651,6 +2682,8 @@ export type Database = {
           custom_field_8?: string | null
           custom_field_9?: string | null
           email?: string | null
+          form_locked?: boolean
+          form_submitted_at?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
@@ -2696,6 +2729,8 @@ export type Database = {
           custom_field_8?: string | null
           custom_field_9?: string | null
           email?: string | null
+          form_locked?: boolean
+          form_submitted_at?: string | null
           id?: string
           latitude?: number | null
           longitude?: number | null
@@ -5944,6 +5979,10 @@ export type Database = {
           name: string
         }[]
       }
+      get_client_form_directory_by_token: {
+        Args: { p_token: string }
+        Returns: Json
+      }
       get_client_teams_for_import: {
         Args: { p_client_id: string }
         Returns: Json
@@ -6085,6 +6124,10 @@ export type Database = {
       }
       submit_budget_qty_requote: {
         Args: { p_notes?: string; p_prices: Json; p_token: string }
+        Returns: Json
+      }
+      submit_client_store_form: {
+        Args: { p_answers: Json; p_store_id: string; p_token: string }
         Returns: Json
       }
       supplier_portal_delete_suggestion: {
