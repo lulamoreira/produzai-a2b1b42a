@@ -2456,6 +2456,53 @@ export type Database = {
           },
         ]
       }
+      client_custom_field_config: {
+        Row: {
+          client_id: string
+          created_at: string
+          field_index: number
+          field_type: string
+          fillable_by_store: boolean
+          help_text: string | null
+          id: string
+          options: Json
+          required: boolean
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          field_index: number
+          field_type?: string
+          fillable_by_store?: boolean
+          help_text?: string | null
+          id?: string
+          options?: Json
+          required?: boolean
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          field_index?: number
+          field_type?: string
+          fillable_by_store?: boolean
+          help_text?: string | null
+          id?: string
+          options?: Json
+          required?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_custom_field_config_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_email_memory: {
         Row: {
           agency_id: string
