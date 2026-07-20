@@ -175,21 +175,19 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
     );
   }
 
-  if (labels.length === 0) {
-    return (
-      <div className="mt-4 rounded-lg border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-        Este cliente ainda não tem campos personalizados definidos.
-        <br />
-        Defina os rótulos dos campos personalizados na edição do cliente para poder configurá-los aqui.
-      </div>
-    );
-  }
+  const usedCount = labels.length;
+  const remaining = MAX_CUSTOM_FIELDS - usedCount;
 
   return (
     <div className="mt-4 space-y-3">
-      <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-        Marque quais dos campos personalizados do cliente o lojista poderá preencher na Ficha da Loja.
-        O valor final continua indo para os mesmos campos personalizados das lojas.
+      <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground flex items-center justify-between gap-3 flex-wrap">
+        <span>
+          Marque quais dos campos personalizados do cliente o lojista poderá preencher na Ficha da Loja.
+          O valor final continua indo para os mesmos campos personalizados das lojas.
+        </span>
+        <span className="text-xs font-medium text-foreground whitespace-nowrap">
+          {usedCount} de {MAX_CUSTOM_FIELDS} campos usados
+        </span>
       </div>
 
       {loadingConfigs || loadingCounts ? (
@@ -198,6 +196,11 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
         </div>
       ) : (
         <div className="space-y-2">
+          {labels.length === 0 && (
+            <div className="rounded-lg border border-dashed border-border p-6 text-center text-sm text-muted-foreground">
+              Nenhum campo personalizado criado ainda. Crie um abaixo.
+            </div>
+          )}
           {labels.map(({ index, label }) => {
             const row = rows[index] ?? emptyRow();
             const filled = filledCounts[index] ?? 0;
