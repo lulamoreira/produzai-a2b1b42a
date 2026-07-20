@@ -80,6 +80,32 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
   const { data: filledCounts = {}, isLoading: loadingCounts } = useCustomFieldFilledCounts(clientId);
   const upsert = useUpsertClientFieldConfig();
 
+  const { data: tokenRow } = useQuery({
+    queryKey: ["client-form-token", clientId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("client_form_tokens")
+        .select("token")
+        .eq("client_id", clientId)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const publicUrl = tokenRow?.token ? buildPublicAppUrl(`/ficha/${tokenRow.token}`) : null;
+  const [copied, setCopied] = useState(false);
+  const copyLink = async () => {
+    if (!publicUrl) return;
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      setCopied(true);
+      toast({ title: "Link copiado" });
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      toast({ title: "Não foi possível copiar", variant: "destructive" });
+    }
+  };
+
   const labels = useMemo(() => {
     const out: { index: number; label: string }[] = [];
     for (const i of customFieldIndices()) {
