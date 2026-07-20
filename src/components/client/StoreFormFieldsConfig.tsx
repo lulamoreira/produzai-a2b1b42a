@@ -5,8 +5,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, Plus, X, Loader2 } from "lucide-react";
+import { AlertTriangle, Plus, X, Loader2, Link2, Copy, Check } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
+import { buildPublicAppUrl } from "@/lib/publicAppOrigin";
 import {
   useClientFieldConfig,
   useUpsertClientFieldConfig,
