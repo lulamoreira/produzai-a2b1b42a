@@ -81,12 +81,42 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
 
   const labels = useMemo(() => {
     const out: { index: number; label: string }[] = [];
-    for (let i = 1; i <= 15; i++) {
-      const lbl = (client as any)?.[`custom_field_${i}_label`];
+    for (const i of customFieldIndices()) {
+      const lbl = (client as any)?.[customFieldLabelKey(i)];
       if (lbl && String(lbl).trim() !== "") out.push({ index: i, label: String(lbl) });
     }
     return out;
   }, [client]);
+
+  const emptySlots = useMemo(() => {
+    const used = new Set(labels.map((l) => l.index));
+    return customFieldIndices().filter((i) => !used.has(i));
+  }, [labels]);
+
+  const updateClient = useUpdateClient();
+  const [newNames, setNewNames] = useState<Record<number, string>>({});
+  const [creatingIdx, setCreatingIdx] = useState<number | null>(null);
+
+  const createField = async (idx: number) => {
+    const name = (newNames[idx] ?? "").trim();
+    if (!name) {
+      toast({ title: "Digite um nome para o campo", variant: "destructive" });
+      return;
+    }
+    setCreatingIdx(idx);
+    try {
+      await updateClient.mutateAsync({
+        id: clientId,
+        [customFieldLabelKey(idx)]: name,
+      } as any);
+      setNewNames((p) => ({ ...p, [idx]: "" }));
+      toast({ title: "Campo criado" });
+    } catch (e: any) {
+      toast({ title: "Erro ao criar campo", description: e?.message ?? String(e), variant: "destructive" });
+    } finally {
+      setCreatingIdx(null);
+    }
+  };
 
   const [rows, setRows] = useState<Record<number, RowState>>({});
 
