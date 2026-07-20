@@ -323,6 +323,7 @@ const App = () => (
                   <Route path="/recotacao-qtd/:token" element={<BudgetQtyRequotePortal />} />
                   <Route path="/convite/fornecedor/:token" element={<SupplierInvitePortal />} />
                   <Route path="/loja/:token" element={<StorePortal />} />
+                  <Route path="/ficha/:token" element={<StoreFormPortal />} />
                   <Route path="/ocorrencias-portal/t/:token" element={<OccurrencesPortal />} />
                   <Route path="/ocorrencias-portal/:campaignId" element={<ProtectedRoute><OccurrencesPortal /></ProtectedRoute>} />
                   <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
