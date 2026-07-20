@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/anonClient";
+import { supabaseAnon as supabase } from "@/integrations/supabase/anonClient";
 import { Loader2, AlertTriangle, Search, ArrowLeft, CheckCircle2, Store as StoreIcon, Lock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
