@@ -346,6 +346,40 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
               </div>
             );
           })}
+
+          <div className="mt-4 rounded-lg border border-border bg-card p-3">
+            <div className="text-sm font-medium text-foreground mb-1">Adicionar novo campo</div>
+            <div className="text-[11px] text-muted-foreground mb-3">
+              Nomeie um slot disponível para criar um novo campo personalizado no cliente.
+            </div>
+            {remaining <= 0 ? (
+              <div className="flex items-start gap-2 rounded-md border border-amber-300 bg-amber-50 p-2.5 text-[12px] text-amber-800">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>Limite de {MAX_CUSTOM_FIELDS} campos atingido.</span>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {emptySlots.map((i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <span className="text-[11px] text-muted-foreground w-14 shrink-0">#{i}</span>
+                    <Input
+                      value={newNames[i] ?? ""}
+                      onChange={(e) => setNewNames((p) => ({ ...p, [i]: e.target.value }))}
+                      placeholder="Nome do campo"
+                      disabled={!canEdit || creatingIdx === i}
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => createField(i)}
+                      disabled={!canEdit || creatingIdx === i || !(newNames[i] ?? "").trim()}
+                    >
+                      {creatingIdx === i ? <Loader2 className="w-3 h-3 animate-spin" /> : "Criar"}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
