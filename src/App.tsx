@@ -130,7 +130,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     "/ocorrencias/",
     "/ocorrencia/",
     "/unsubscribe",
-    "/join/"
+    "/join/",
+    "/ficha/"
   ];
   const isPublicPath = publicPaths.some(path => window.location.pathname.startsWith(path));
 
