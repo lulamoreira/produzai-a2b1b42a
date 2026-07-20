@@ -56,7 +56,7 @@ export default function StoreFormPortal() {
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_client_form_directory_by_token", { p_token: token! });
       if (error) throw error;
-      return data as Directory | null;
+      return data as unknown as Directory | null;
     },
   });
 
