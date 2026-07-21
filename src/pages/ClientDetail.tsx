@@ -877,7 +877,7 @@ const ClientDetail = () => {
       });
 
       // Add custom fields to the item if they exist in the row
-      for (let i = 1; i <= 15; i++) {
+      for (let i = 1; i <= MAX_CUSTOM_FIELDS; i++) {
         const key = `custom_field_${i}`;
         if (row[key] !== undefined) {
           item[key] = row[key];
