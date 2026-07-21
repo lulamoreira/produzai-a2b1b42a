@@ -45,6 +45,11 @@ const OPTIONAL_FIELDS: StoreFieldDef[] = [
   { key: "custom_field_13", label: "Campo personalizado 13" },
   { key: "custom_field_14", label: "Campo personalizado 14" },
   { key: "custom_field_15", label: "Campo personalizado 15" },
+  { key: "custom_field_16", label: "Campo personalizado 16" },
+  { key: "custom_field_17", label: "Campo personalizado 17" },
+  { key: "custom_field_18", label: "Campo personalizado 18" },
+  { key: "custom_field_19", label: "Campo personalizado 19" },
+  { key: "custom_field_20", label: "Campo personalizado 20" },
 ];
 
 interface Props {
