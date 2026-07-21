@@ -256,9 +256,45 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
                   <Checkbox
                     checked={row.fillable_by_store}
                     disabled={!canEdit || row.saving}
-                    onCheckedChange={(v) =>
-                      updateRow(index, { fillable_by_store: !!v })
-                    }
+                    onCheckedChange={async (v) => {
+                      const checked = !!v;
+                      updateRow(index, { fillable_by_store: checked });
+                      if (!checked) {
+                        // Persist immediately when unchecking so the user
+                        // doesn't lose the change by leaving the screen.
+                        setRows((prev) => ({
+                          ...prev,
+                          [index]: { ...(prev[index] ?? emptyRow()), fillable_by_store: false, saving: true },
+                        }));
+                        try {
+                          const current = rows[index] ?? emptyRow();
+                          await upsert.mutateAsync({
+                            client_id: clientId,
+                            field_index: index,
+                            fillable_by_store: false,
+                            field_type: current.field_type,
+                            options:
+                              current.field_type === "select"
+                                ? current.options.filter((o) => o.trim() !== "")
+                                : [],
+                            help_text: current.help_text.trim() === "" ? null : current.help_text.trim(),
+                            required: current.required,
+                          });
+                          setRows((prev) => ({
+                            ...prev,
+                            [index]: { ...prev[index], fillable_by_store: false, dirty: false, saving: false },
+                          }));
+                          toast({ title: "Configuração salva" });
+                        } catch (e: any) {
+                          setRows((prev) => ({ ...prev, [index]: { ...prev[index], saving: false } }));
+                          toast({
+                            title: "Erro ao salvar",
+                            description: e?.message ?? String(e),
+                            variant: "destructive",
+                          });
+                        }
+                      }
+                    }}
                   />
                   <div className="flex-1 min-w-[160px]">
                     <div className="text-sm font-medium text-foreground">{label}</div>
