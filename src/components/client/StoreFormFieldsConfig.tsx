@@ -137,6 +137,7 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
         id: clientId,
         [customFieldLabelKey(idx)]: name,
       } as any);
+      await queryClient.invalidateQueries({ queryKey: ["client-field-labels", clientId] });
       setNewNames((p) => ({ ...p, [idx]: "" }));
       toast({ title: "Campo criado" });
     } catch (e: any) {
