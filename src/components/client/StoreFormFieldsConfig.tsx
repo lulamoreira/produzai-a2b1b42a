@@ -554,6 +554,76 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
           </div>
         </div>
       )}
+
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => {
+          if (!o) closeDelete();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Apagar o campo "{deleteTarget?.label}"?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>Esta ação vai apagar permanentemente:</p>
+                <ul className="list-disc pl-5 space-y-0.5 text-foreground">
+                  <li>
+                    o campo "{deleteTarget?.label}" (coluna{" "}
+                    <code>custom_field_{deleteTarget?.index}</code>)
+                  </li>
+                  <li>
+                    os dados preenchidos deste campo em{" "}
+                    {deleteTarget ? filledCounts[deleteTarget.index] ?? 0 : 0} loja(s)
+                  </li>
+                  <li>a configuração dele na Ficha da Loja</li>
+                </ul>
+                <p className="font-medium text-destructive">
+                  Esta ação não pode ser desfeita.
+                </p>
+                <div className="pt-2">
+                  <label className="text-xs text-muted-foreground block mb-1">
+                    Para confirmar, digite o nome do campo:{" "}
+                    <span className="font-mono text-foreground">
+                      {deleteTarget?.label}
+                    </span>
+                  </label>
+                  <Input
+                    autoFocus
+                    value={deleteConfirm}
+                    onChange={(e) => setDeleteConfirm(e.target.value)}
+                    placeholder={deleteTarget?.label ?? ""}
+                    disabled={deleting}
+                  />
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                performDelete();
+              }}
+              disabled={
+                deleting ||
+                !deleteTarget ||
+                deleteConfirm.trim() !== (deleteTarget?.label ?? "").trim()
+              }
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Apagar campo"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
