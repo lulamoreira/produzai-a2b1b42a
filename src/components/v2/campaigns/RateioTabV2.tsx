@@ -33,6 +33,7 @@ import {
 } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
 import MatrixFilterSidebar, { EMPTY_FILTERS, EMPTY_STORE_FILTERS, type PieceFilters, type StoreFilters, type FilterLogicMode } from "@/components/MatrixFilterSidebar";
+import { MAX_CUSTOM_FIELDS } from "@/lib/customFields";
 import MatrixDistributionDashboard from "@/components/Matrix/MatrixDistributionDashboard";
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
 import CopyQuantitiesDialog from "@/components/Matrix/CopyQuantitiesDialog";
@@ -594,7 +595,7 @@ export default function RateioTabV2({
       if (storeFilters.city.size > 0) checks.push(storeFilters.city.has(s.city));
       if (storeFilters.state.size > 0) checks.push(storeFilters.state.has(s.state?.trim()));
       if (storeFilters.store_model.size > 0) checks.push(storeFilters.store_model.has(s.store_model));
-      for (let i = 1; i <= 15; i++) {
+      for (let i = 1; i <= MAX_CUSTOM_FIELDS; i++) {
         const key = `custom_field_${i}` as keyof typeof storeFilters;
         const set = storeFilters[key] as Set<string> | undefined;
         if (set && set.size > 0) checks.push(!!((s as any)[key]) && set.has((s as any)[key]));
@@ -606,7 +607,7 @@ export default function RateioTabV2({
       if (storeFilters.city.size > 0 && !storeFilters.city.has(s.city)) return false;
       if (storeFilters.state.size > 0 && !storeFilters.state.has(s.state?.trim())) return false;
       if (storeFilters.store_model.size > 0 && !storeFilters.store_model.has(s.store_model)) return false;
-      for (let i = 1; i <= 15; i++) {
+      for (let i = 1; i <= MAX_CUSTOM_FIELDS; i++) {
         const key = `custom_field_${i}` as keyof typeof storeFilters;
         const set = storeFilters[key] as Set<string> | undefined;
         if (set && set.size > 0 && (!((s as any)[key]) || !set.has((s as any)[key]))) return false;

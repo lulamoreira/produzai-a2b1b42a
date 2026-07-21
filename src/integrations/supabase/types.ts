@@ -2626,7 +2626,12 @@ export type Database = {
           custom_field_13: string | null
           custom_field_14: string | null
           custom_field_15: string | null
+          custom_field_16: string | null
+          custom_field_17: string | null
+          custom_field_18: string | null
+          custom_field_19: string | null
           custom_field_2: string | null
+          custom_field_20: string | null
           custom_field_3: string | null
           custom_field_4: string | null
           custom_field_5: string | null
@@ -2673,7 +2678,12 @@ export type Database = {
           custom_field_13?: string | null
           custom_field_14?: string | null
           custom_field_15?: string | null
+          custom_field_16?: string | null
+          custom_field_17?: string | null
+          custom_field_18?: string | null
+          custom_field_19?: string | null
           custom_field_2?: string | null
+          custom_field_20?: string | null
           custom_field_3?: string | null
           custom_field_4?: string | null
           custom_field_5?: string | null
@@ -2720,7 +2730,12 @@ export type Database = {
           custom_field_13?: string | null
           custom_field_14?: string | null
           custom_field_15?: string | null
+          custom_field_16?: string | null
+          custom_field_17?: string | null
+          custom_field_18?: string | null
+          custom_field_19?: string | null
           custom_field_2?: string | null
+          custom_field_20?: string | null
           custom_field_3?: string | null
           custom_field_4?: string | null
           custom_field_5?: string | null
@@ -2819,7 +2834,12 @@ export type Database = {
           custom_field_13_label: string | null
           custom_field_14_label: string | null
           custom_field_15_label: string | null
+          custom_field_16_label: string | null
+          custom_field_17_label: string | null
+          custom_field_18_label: string | null
+          custom_field_19_label: string | null
           custom_field_2_label: string | null
+          custom_field_20_label: string | null
           custom_field_3_label: string | null
           custom_field_4_label: string | null
           custom_field_5_label: string | null
@@ -2846,7 +2866,12 @@ export type Database = {
           custom_field_13_label?: string | null
           custom_field_14_label?: string | null
           custom_field_15_label?: string | null
+          custom_field_16_label?: string | null
+          custom_field_17_label?: string | null
+          custom_field_18_label?: string | null
+          custom_field_19_label?: string | null
           custom_field_2_label?: string | null
+          custom_field_20_label?: string | null
           custom_field_3_label?: string | null
           custom_field_4_label?: string | null
           custom_field_5_label?: string | null
@@ -2873,7 +2898,12 @@ export type Database = {
           custom_field_13_label?: string | null
           custom_field_14_label?: string | null
           custom_field_15_label?: string | null
+          custom_field_16_label?: string | null
+          custom_field_17_label?: string | null
+          custom_field_18_label?: string | null
+          custom_field_19_label?: string | null
           custom_field_2_label?: string | null
+          custom_field_20_label?: string | null
           custom_field_3_label?: string | null
           custom_field_4_label?: string | null
           custom_field_5_label?: string | null
