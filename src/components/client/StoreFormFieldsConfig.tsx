@@ -62,6 +62,7 @@ const fromConfig = (c: ClientFieldConfig): RowState => ({
 });
 
 const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
+  const queryClient = useQueryClient();
   // Load client labels (custom_field_1_label .. 15_label)
   const { data: client, isLoading: loadingClient } = useQuery({
     queryKey: ["client-field-labels", clientId],
