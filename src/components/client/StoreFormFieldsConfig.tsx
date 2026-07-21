@@ -5,7 +5,17 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertTriangle, Plus, X, Loader2, Link2, Copy, Check } from "lucide-react";
+import { AlertTriangle, Plus, X, Loader2, Link2, Copy, Check, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "@/hooks/use-toast";
 import { buildPublicAppUrl } from "@/lib/publicAppOrigin";
 import {
@@ -148,6 +158,74 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
   };
 
   const [rows, setRows] = useState<Record<number, RowState>>({});
+
+  // Delete field state
+  const [deleteTarget, setDeleteTarget] = useState<{ index: number; label: string } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  const openDelete = (index: number, label: string) => {
+    setDeleteTarget({ index, label });
+    setDeleteConfirm("");
+  };
+  const closeDelete = () => {
+    if (deleting) return;
+    setDeleteTarget(null);
+    setDeleteConfirm("");
+  };
+
+  const performDelete = async () => {
+    if (!deleteTarget) return;
+    const { index: idx } = deleteTarget;
+    setDeleting(true);
+    try {
+      // 1) Clear values in all stores of this client
+      const { error: e1 } = await supabase
+        .from("client_stores")
+        .update({ [`custom_field_${idx}`]: null } as any)
+        .eq("client_id", clientId);
+      if (e1) throw e1;
+
+      // 2) Remove ficha config for this field (if any)
+      const { error: e2 } = await supabase
+        .from("client_custom_field_config")
+        .delete()
+        .eq("client_id", clientId)
+        .eq("field_index", idx);
+      if (e2) throw e2;
+
+      // 3) Clear the label on the client
+      await updateClient.mutateAsync({
+        id: clientId,
+        [customFieldLabelKey(idx)]: null,
+      } as any);
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["client-field-labels", clientId] }),
+        queryClient.invalidateQueries({ queryKey: ["client-field-config", clientId] }),
+        queryClient.invalidateQueries({ queryKey: ["client-field-filled-counts", clientId] }),
+      ]);
+
+      // Drop the local row state for this index so it doesn't linger
+      setRows((prev) => {
+        const next = { ...prev };
+        delete next[idx];
+        return next;
+      });
+
+      toast({ title: "Campo apagado" });
+      setDeleteTarget(null);
+      setDeleteConfirm("");
+    } catch (e: any) {
+      toast({
+        title: "Erro ao apagar campo",
+        description: e?.message ?? String(e),
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   // Seed local rows from server data when it lands
   useEffect(() => {
@@ -311,6 +389,18 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
                       {row.saving ? <Loader2 className="w-3 h-3 animate-spin" /> : "Salvar"}
                     </Button>
                   )}
+                  {canEdit && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => openDelete(index, label)}
+                      disabled={row.saving}
+                      title="Apagar campo personalizado"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
 
                 {row.fillable_by_store && filled > 0 && (
@@ -464,6 +554,76 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
           </div>
         </div>
       )}
+
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => {
+          if (!o) closeDelete();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Apagar o campo "{deleteTarget?.label}"?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>Esta ação vai apagar permanentemente:</p>
+                <ul className="list-disc pl-5 space-y-0.5 text-foreground">
+                  <li>
+                    o campo "{deleteTarget?.label}" (coluna{" "}
+                    <code>custom_field_{deleteTarget?.index}</code>)
+                  </li>
+                  <li>
+                    os dados preenchidos deste campo em{" "}
+                    {deleteTarget ? filledCounts[deleteTarget.index] ?? 0 : 0} loja(s)
+                  </li>
+                  <li>a configuração dele na Ficha da Loja</li>
+                </ul>
+                <p className="font-medium text-destructive">
+                  Esta ação não pode ser desfeita.
+                </p>
+                <div className="pt-2">
+                  <label className="text-xs text-muted-foreground block mb-1">
+                    Para confirmar, digite o nome do campo:{" "}
+                    <span className="font-mono text-foreground">
+                      {deleteTarget?.label}
+                    </span>
+                  </label>
+                  <Input
+                    autoFocus
+                    value={deleteConfirm}
+                    onChange={(e) => setDeleteConfirm(e.target.value)}
+                    placeholder={deleteTarget?.label ?? ""}
+                    disabled={deleting}
+                  />
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                performDelete();
+              }}
+              disabled={
+                deleting ||
+                !deleteTarget ||
+                deleteConfirm.trim() !== (deleteTarget?.label ?? "").trim()
+              }
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                "Apagar campo"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
