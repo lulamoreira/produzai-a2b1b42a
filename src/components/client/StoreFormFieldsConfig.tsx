@@ -389,6 +389,18 @@ const StoreFormFieldsConfig = ({ clientId, canEdit }: Props) => {
                       {row.saving ? <Loader2 className="w-3 h-3 animate-spin" /> : "Salvar"}
                     </Button>
                   )}
+                  {canEdit && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => openDelete(index, label)}
+                      disabled={row.saving}
+                      title="Apagar campo personalizado"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
                 </div>
 
                 {row.fillable_by_store && filled > 0 && (
