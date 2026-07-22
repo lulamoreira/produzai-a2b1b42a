@@ -731,6 +731,15 @@ const SupplierPortal = () => {
         freight: extraCosts.freight_value,
         grandTotal,
         labels: excelLabels,
+        rateio: {
+          pieces: allPieces as any,
+          kits: kitsData as any,
+          kitPieces: kitPiecesData as any,
+          stores: storeData as any,
+          qtyMap: fullQtyMap,
+          installation: extraCosts.installation_value,
+          freight: extraCosts.freight_value,
+        },
       });
     } catch (e) {
       console.error("Excel export error:", e);
