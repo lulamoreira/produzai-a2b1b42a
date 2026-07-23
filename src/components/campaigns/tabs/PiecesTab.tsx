@@ -577,8 +577,18 @@ export default function PiecesTab({
           <span className="px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-accent/15 text-accent-foreground">
             {visiblePieces.length + kits.length} {t("pieces.pieceCountShort")}
           </span>
+          {kitOnlyPieces.length > 0 && (
+            <Button
+              size="sm"
+              variant={showKitPieces ? "default" : "outline"}
+              onClick={() => setShowKitPieces(v => !v)}
+              className="text-[10px] sm:text-xs gap-1"
+              title="Mostra as peças que existem somente dentro de kits, para permitir selecioná-las (o kit pai é incluído automaticamente na recotação)."
+            >
+              {showKitPieces ? "✓ " : ""}Mostrar peças de kits ({kitOnlyPieces.length})
+            </Button>
+          )}
           <div className="flex-1" />
-          {canEditPieces && (
             <>
               {isAdminOrMaster && (
                 <Popover open={customFieldsOpen} onOpenChange={setCustomFieldsOpen}>
