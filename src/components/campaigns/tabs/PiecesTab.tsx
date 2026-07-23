@@ -38,6 +38,7 @@ import FindReplaceSpecDialog from "@/components/FindReplaceSpecDialog";
 import KitOnlyPiecesDialog from "@/components/KitOnlyPiecesDialog";
 import CustomExportDialog from "@/components/CustomExportDialog";
 import ChangeCaseDialog from "@/components/ChangeCaseDialog";
+import { exportRequoteSheet } from "@/lib/exportRequoteSheet";
 
 interface PiecesTabProps {
   campaignId: string;
@@ -270,6 +271,50 @@ export default function PiecesTab({
 
   const visiblePieces = useMemo(() => pieces.filter(p => !p.kit_only), [pieces]);
   const kitOnlyPieces = useMemo(() => pieces.filter(p => p.kit_only), [pieces]);
+
+  const handleExportRequoteSheet = async () => {
+    if (selectedPieceIds.length === 0) {
+      toast.info("Selecione ao menos uma peça (use as caixas de seleção) para gerar a recotação.");
+      return;
+    }
+    const toastId = "export-requote-sheet";
+    toast.loading("Gerando planilha de recotação...", { id: toastId });
+    try {
+      const selectedSet = new Set(selectedPieceIds);
+      // Pieces (kit_only=false) that were selected go as columns directly.
+      const standalonePieces = pieces.filter((p) => selectedSet.has(p.id) && !p.kit_only);
+      // For kit_only pieces selected, include their parent kits as columns automatically.
+      const kitIdsFromSelectedComponents = new Set<string>();
+      const selectedKitOnlyIds = pieces.filter((p) => selectedSet.has(p.id) && p.kit_only).map((p) => p.id);
+      for (const kp of kitPieces) {
+        if (selectedKitOnlyIds.includes(kp.piece_id)) kitIdsFromSelectedComponents.add(kp.kit_id);
+      }
+      // Also include kits explicitly selected (if any kit ids ever appear in selectedPieceIds).
+      for (const k of kits) if (selectedSet.has(k.id)) kitIdsFromSelectedComponents.add(k.id);
+      const includedKits = kits.filter((k) => kitIdsFromSelectedComponents.has(k.id));
+
+      if (standalonePieces.length + includedKits.length === 0) {
+        toast.error("Nenhuma peça válida selecionada para recotação.", { id: toastId });
+        return;
+      }
+
+      await exportRequoteSheet({
+        stores,
+        pieces: standalonePieces,
+        allPieces: pieces,
+        kits: includedKits,
+        kitPieces,
+        qtyMap,
+        campaignName: campaign?.name || "Campanha",
+        agencyName: agency?.name,
+        clientName: client?.name,
+        currencyCode: campaign?.currency_code,
+      });
+      toast.success("Planilha de recotação gerada!", { id: toastId });
+    } catch (e: any) {
+      toast.error(`Erro ao gerar recotação: ${e?.message || e}`, { id: toastId });
+    }
+  };
 
   useLayoutEffect(() => {
     if (editScrollSnapshotRef.current) {
@@ -709,6 +754,16 @@ export default function PiecesTab({
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setKitOnlyDialogOpen(true)}>
                     <Package className="w-4 h-4 mr-2" /> Peças de kits
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleExportRequoteSheet}
+                    disabled={selectedPieceIds.length === 0}
+                  >
+                    <Download className="w-4 h-4 mr-2" /> Planilha de recotação (selecionadas)
+                    {selectedPieceIds.length > 0 && (
+                      <span className="ml-auto text-[10px] text-muted-foreground">{selectedPieceIds.length}</span>
+                    )}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setBulkDeleteOpen(true)} className="text-destructive focus:text-destructive">
