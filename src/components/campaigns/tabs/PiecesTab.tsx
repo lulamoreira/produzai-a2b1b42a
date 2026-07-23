@@ -589,6 +589,7 @@ export default function PiecesTab({
             </Button>
           )}
           <div className="flex-1" />
+          {canEditPieces && (
             <>
               {isAdminOrMaster && (
                 <Popover open={customFieldsOpen} onOpenChange={setCustomFieldsOpen}>
