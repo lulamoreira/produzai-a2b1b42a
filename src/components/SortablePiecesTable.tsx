@@ -197,25 +197,24 @@ function SortableRow({
     <TableRow ref={setNodeRef} style={style}>
       <TableCell className="w-10 p-2">
         <div className="flex justify-center">
-          {piece.kit_only ? (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="opacity-50 cursor-not-allowed">
-                    <Checkbox disabled checked />
-                  </div>
-                </TooltipTrigger>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Checkbox 
+                    checked={selectedPieceIds?.includes(piece.id)} 
+                    onCheckedChange={() => onToggleSelection?.(piece.id)}
+                    aria-label={piece.kit_only ? "Selecionar peça de kit" : "Selecionar peça"}
+                  />
+                </div>
+              </TooltipTrigger>
+              {piece.kit_only && (
                 <TooltipContent>
-                  <p>{t("pieces.alreadyInKit")}</p>
+                  <p>Selecionar para recotação — o kit pai será incluído automaticamente.</p>
                 </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ) : (
-            <Checkbox 
-              checked={selectedPieceIds?.includes(piece.id)} 
-              onCheckedChange={() => onToggleSelection?.(piece.id)} 
-            />
-          )}
+              )}
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </TableCell>
       {canEditPieces && (
@@ -451,7 +450,7 @@ export default function SortablePiecesTable({
             <TableRow>
               <TableHead className="w-10 p-2 text-center">
                 <Checkbox 
-                  checked={pieces.length > 0 && pieces.filter(p => !p.kit_only).every(p => selectedPieceIds?.includes(p.id))}
+                  checked={pieces.length > 0 && pieces.every(p => selectedPieceIds?.includes(p.id))}
                   onCheckedChange={(checked) => onToggleSelectAll?.(!!checked)}
                 />
               </TableHead>
