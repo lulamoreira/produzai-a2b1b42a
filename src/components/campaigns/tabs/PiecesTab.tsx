@@ -756,6 +756,16 @@ export default function PiecesTab({
                     <Package className="w-4 h-4 mr-2" /> Peças de kits
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleExportRequoteSheet}
+                    disabled={selectedPieceIds.length === 0}
+                  >
+                    <Download className="w-4 h-4 mr-2" /> Planilha de recotação (selecionadas)
+                    {selectedPieceIds.length > 0 && (
+                      <span className="ml-auto text-[10px] text-muted-foreground">{selectedPieceIds.length}</span>
+                    )}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setBulkDeleteOpen(true)} className="text-destructive focus:text-destructive">
                     <Trash2 className="w-4 h-4 mr-2" /> {t("pieces.bulkDelete")}
                   </DropdownMenuItem>
