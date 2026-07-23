@@ -38,6 +38,7 @@ import FindReplaceSpecDialog from "@/components/FindReplaceSpecDialog";
 import KitOnlyPiecesDialog from "@/components/KitOnlyPiecesDialog";
 import CustomExportDialog from "@/components/CustomExportDialog";
 import ChangeCaseDialog from "@/components/ChangeCaseDialog";
+import { exportRequoteSheet } from "@/lib/exportRequoteSheet";
 
 interface PiecesTabProps {
   campaignId: string;
