@@ -269,7 +269,11 @@ export default function PiecesTab({
     }
   };
 
-  const visiblePieces = useMemo(() => pieces.filter(p => !p.kit_only), [pieces]);
+  const [showKitPieces, setShowKitPieces] = useState(false);
+  const visiblePieces = useMemo(
+    () => (showKitPieces ? pieces : pieces.filter(p => !p.kit_only)),
+    [pieces, showKitPieces]
+  );
   const kitOnlyPieces = useMemo(() => pieces.filter(p => p.kit_only), [pieces]);
 
   const handleExportRequoteSheet = async () => {
