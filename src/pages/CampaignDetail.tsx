@@ -394,7 +394,7 @@ const CampaignDetail = () => {
             <TabsContent value="pieces">
               <PiecesTab 
                 campaignId={campaignId!} clientId={clientId!} campaign={campaign} agency={agency} client={client}
-                pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={qtyMap}
+                pieces={pieces} kits={kits} kitPieces={kitPieces} stores={stores} qtyMap={matrixQtyMap}
                 canEditPieces={true} canDeletePieces={true} pieceLocations={pieceLocations} pieceSubLocations={pieceSubLocations}
                 addPiece={addPiece} updatePiece={updatePiece} deletePiece={deletePiece} addKit={addKit} updateKit={updateKit} deleteKit={deleteKit}
                 addKitPiece={addKitPiece} updateKitPiece={updateKitPiece} deleteKitPiece={deleteKitPiece} reorderKitPieces={reorderKitPieces}
