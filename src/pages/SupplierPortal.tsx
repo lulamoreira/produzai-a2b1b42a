@@ -818,7 +818,7 @@ const SupplierPortal = () => {
       else toast.success(labels.successMsg);
     } catch (e) {
       console.error(e);
-      const msg = e instanceof Error ? e.message : "Erro ao enviar cotação.";
+      const msg = (e as any)?.message || (e as any)?.error_description || (e as any)?.hint || (isES ? "Error al enviar la cotización." : "Erro ao enviar cotação.");
       toast.error(msg);
     } finally {
       setSubmitting(false);
