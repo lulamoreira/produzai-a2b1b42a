@@ -2482,6 +2482,16 @@ ${msgLabels.winnerWaFooter}
                       >
                         <Pencil className="w-3.5 h-3.5" />
                       </Button>
+                      <Button
+                        size="sm" variant="ghost" className="h-7 w-7 p-0"
+                        title="Baixar planilha (preços atuais)"
+                        disabled={downloadingSupplierId === sup.id}
+                        onClick={() => handleDownloadSupplierSheet(sup)}
+                      >
+                        {downloadingSupplierId === sup.id
+                          ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          : <Download className="w-3.5 h-3.5" />}
+                      </Button>
                       {isAdminOrMaster && sup.submitted_at && (
                         <Button
                           size="sm" variant="ghost" className="h-7 w-7 p-0"
