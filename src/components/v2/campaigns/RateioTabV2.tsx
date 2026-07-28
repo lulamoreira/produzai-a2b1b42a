@@ -1020,11 +1020,16 @@ export default function RateioTabV2({
       setHistory(newHistory);
       setHistoryIndex(newHistory.length - 1);
 
-      queryClient.invalidateQueries({ queryKey: ["campaign_store_pieces"] });
-      queryClient.invalidateQueries({ queryKey: ["campaign_negotiation_store_pieces", campaignId] });
-      queryClient.invalidateQueries({ queryKey: ["negotiation_store_pieces", effectiveNegSupplierId] });
+      // Força refetch imediato (não apenas marca como stale) e aguarda a
+      // chegada dos dados frescos antes de liberar a UI, para que os totais
+      // (peças e kits) reflitam o servidor sem exigir refresh manual.
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ["campaign_store_pieces", campaignId] }),
+        queryClient.refetchQueries({ queryKey: ["campaign_negotiation_store_pieces", campaignId] }),
+        queryClient.refetchQueries({ queryKey: ["negotiation_store_pieces", effectiveNegSupplierId] }),
+        queryClient.refetchQueries({ queryKey: ["adjustment_rateio_qty_map"] }),
+      ]);
       queryClient.invalidateQueries({ queryKey: ["budget_negotiation_store_pieces"] });
-      queryClient.invalidateQueries({ queryKey: ["adjustment_rateio_qty_map"] });
       if (label) toast.success(label);
     } catch (err) {
       console.error("Erro detalhado (applyWithHistory):", err);
