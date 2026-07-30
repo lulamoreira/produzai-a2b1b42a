@@ -12,6 +12,8 @@ interface ExportPPTParams {
     id: string; 
     name: string; 
     description?: string; 
+    /** Medida bruta como cadastrada (ex.: "50x180", "50 × 180 cm"). Tem prioridade sobre width/height. */
+    size?: string;
     width?: number; 
     height?: number; 
     material?: string; 
@@ -21,6 +23,7 @@ interface ExportPPTParams {
     status?: string; 
     photo_url?: string; 
   }>;
+
   kits: Array<{ 
     id: string; 
     name: string; 
