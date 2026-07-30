@@ -236,13 +236,17 @@ export default function ExportReportDropdown({
       const piecesData = ordered
         .filter(entry => entry.type === 'piece')
         .map(({ item: p }) => {
-          const sizeParts = (p.size || "").split(" x ");
+          // Medidas podem vir como "50 x 180", "50x180", "50×180" ou "50 X 180".
+          const rawSize = (p.size ?? "").toString().trim();
+          const sizeParts = rawSize.split(/\s*[x×X]\s*/);
           return {
             id: p.id,
             name: p.name,
             description: p.specification,
-            width: sizeParts[0] ? Number(sizeParts[0]) || undefined : undefined,
-            height: sizeParts[1] ? Number(sizeParts[1]) || undefined : undefined,
+            size: rawSize || undefined,
+            width: sizeParts[0] ? Number(String(sizeParts[0]).replace(",", ".")) || undefined : undefined,
+            height: sizeParts[1] ? Number(String(sizeParts[1]).replace(",", ".")) || undefined : undefined,
+
             material: undefined,
             quantity: undefined,
             code: String(p.code ?? ""),
