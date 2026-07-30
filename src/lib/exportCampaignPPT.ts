@@ -85,6 +85,26 @@ async function urlToBase64(url: string): Promise<string | null> {
   }
 }
 
+/**
+ * Normaliza a medida da peça para exibição em destaque.
+ * Prioriza o valor bruto cadastrado (`size`); cai para width/height quando ausente.
+ * Retorna null quando não houver medida válida.
+ */
+function formatMeasurements(piece: { size?: string; width?: number; height?: number }): string | null {
+  const raw = (piece.size ?? "").toString().trim();
+  if (raw) {
+    const parts = raw.split(/\s*[x×X]\s*/).map(p => p.trim()).filter(Boolean);
+    const numeric = parts.map(p => p.replace(/[^\d.,]/g, "")).filter(Boolean);
+    if (numeric.length >= 2) return `${numeric[0]} × ${numeric[1]} cm`;
+    return raw;
+  }
+  if (piece.width && piece.height) return `${piece.width} × ${piece.height} cm`;
+  if (piece.width) return `${piece.width} cm`;
+  if (piece.height) return `${piece.height} cm`;
+  return null;
+}
+
+
 export async function exportCampaignPPT(params: ExportPPTParams): Promise<string> {
   const { campaign, pieces, kits, onProgress, signal } = params;
   const pptx = new pptxgen();
