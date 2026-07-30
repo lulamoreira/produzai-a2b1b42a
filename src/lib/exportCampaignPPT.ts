@@ -358,37 +358,23 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
       currentY += 0.15;
     };
 
-    // ── MEDIDAS EM DESTAQUE ─────────────────────────────
+    // ── MEDIDAS (discreto, como os demais campos) ───────
     const dim = formatMeasurements(piece);
     if (dim) {
-      const boxH = 1.0;
-      slide.addShape(pptx.ShapeType.rect, {
-        x: infoX, y: currentY, w: 6.1, h: boxH,
-        fill: { color: COLORS.cardBg }, line: { color: COLORS.accent, width: 1.5 }
-      });
-      // Faixa lateral de destaque
-      slide.addShape(pptx.ShapeType.rect, {
-        x: infoX, y: currentY, w: 0.12, h: boxH, fill: { color: COLORS.accent }
-      });
       slide.addText("MEDIDAS", {
-        x: infoX + 0.28, y: currentY + 0.08, w: 5.6, h: 0.24,
-        color: COLORS.accent, fontSize: 10, fontFace: "Calibri", bold: true
+        x: infoX, y: currentY, w: 6.1, h: 0.2,
+        color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri", bold: true
       });
+      currentY += 0.25;
       slide.addText(dim, {
-        x: infoX + 0.28, y: currentY + 0.32, w: 5.6, h: 0.6, valign: "middle",
-        color: COLORS.textPrimary, fontSize: 24, fontFace: "Calibri", bold: true
+        x: infoX, y: currentY, w: 6.1, h: 0.28, valign: "top",
+        color: COLORS.textPrimary, fontSize: 12, fontFace: "Calibri", bold: true
       });
-      currentY += boxH + 0.25;
-
-      // Selo de medidas sobre a área da foto (consistente em todas as peças)
-      slide.addShape(pptx.ShapeType.rect, {
-        x: 0.35, y: 5.95, w: 2.6, h: 0.4, fill: { color: COLORS.accent }
-      });
-      slide.addText(dim, {
-        x: 0.35, y: 5.95, w: 2.6, h: 0.4, align: "center", valign: "middle",
-        color: COLORS.white, fontSize: 12, fontFace: "Calibri", bold: true
-      });
+      currentY += 0.38;
+      slide.addShape(pptx.ShapeType.line, { x: infoX, y: currentY, w: 6.1, line: { color: COLORS.border, width: 0.4 } });
+      currentY += 0.15;
     }
+
 
     addField("DESCRIÇÃO", piece.description);
 
