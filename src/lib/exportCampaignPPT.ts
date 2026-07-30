@@ -12,6 +12,8 @@ interface ExportPPTParams {
     id: string; 
     name: string; 
     description?: string; 
+    /** Medida bruta como cadastrada (ex.: "50x180", "50 × 180 cm"). Tem prioridade sobre width/height. */
+    size?: string;
     width?: number; 
     height?: number; 
     material?: string; 
@@ -21,6 +23,7 @@ interface ExportPPTParams {
     status?: string; 
     photo_url?: string; 
   }>;
+
   kits: Array<{ 
     id: string; 
     name: string; 
@@ -81,6 +84,26 @@ async function urlToBase64(url: string): Promise<string | null> {
     return null;
   }
 }
+
+/**
+ * Normaliza a medida da peça para exibição em destaque.
+ * Prioriza o valor bruto cadastrado (`size`); cai para width/height quando ausente.
+ * Retorna null quando não houver medida válida.
+ */
+function formatMeasurements(piece: { size?: string; width?: number; height?: number }): string | null {
+  const raw = (piece.size ?? "").toString().trim();
+  if (raw) {
+    const parts = raw.split(/\s*[x×X]\s*/).map(p => p.trim()).filter(Boolean);
+    const numeric = parts.map(p => p.replace(/[^\d.,]/g, "")).filter(Boolean);
+    if (numeric.length >= 2) return `${numeric[0]} × ${numeric[1]} cm`;
+    return raw;
+  }
+  if (piece.width && piece.height) return `${piece.width} × ${piece.height} cm`;
+  if (piece.width) return `${piece.width} cm`;
+  if (piece.height) return `${piece.height} cm`;
+  return null;
+}
+
 
 export async function exportCampaignPPT(params: ExportPPTParams): Promise<string> {
   const { campaign, pieces, kits, onProgress, signal } = params;
@@ -335,9 +358,40 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
       currentY += 0.15;
     };
 
+    // ── MEDIDAS EM DESTAQUE ─────────────────────────────
+    const dim = formatMeasurements(piece);
+    if (dim) {
+      const boxH = 1.0;
+      slide.addShape(pptx.ShapeType.rect, {
+        x: infoX, y: currentY, w: 6.1, h: boxH,
+        fill: { color: COLORS.cardBg }, line: { color: COLORS.accent, width: 1.5 }
+      });
+      // Faixa lateral de destaque
+      slide.addShape(pptx.ShapeType.rect, {
+        x: infoX, y: currentY, w: 0.12, h: boxH, fill: { color: COLORS.accent }
+      });
+      slide.addText("MEDIDAS", {
+        x: infoX + 0.28, y: currentY + 0.08, w: 5.6, h: 0.24,
+        color: COLORS.accent, fontSize: 10, fontFace: "Calibri", bold: true
+      });
+      slide.addText(dim, {
+        x: infoX + 0.28, y: currentY + 0.32, w: 5.6, h: 0.6, valign: "middle",
+        color: COLORS.textPrimary, fontSize: 24, fontFace: "Calibri", bold: true
+      });
+      currentY += boxH + 0.25;
+
+      // Selo de medidas sobre a área da foto (consistente em todas as peças)
+      slide.addShape(pptx.ShapeType.rect, {
+        x: 0.35, y: 5.95, w: 2.6, h: 0.4, fill: { color: COLORS.accent }
+      });
+      slide.addText(dim, {
+        x: 0.35, y: 5.95, w: 2.6, h: 0.4, align: "center", valign: "middle",
+        color: COLORS.white, fontSize: 12, fontFace: "Calibri", bold: true
+      });
+    }
+
     addField("DESCRIÇÃO", piece.description);
-    const dim = (piece.width && piece.height) ? `${piece.width}cm × ${piece.height}cm` : undefined;
-    addField("DIMENSÕES", dim);
+
     addField("MATERIAL", piece.material);
     addField("QUANTIDADE", piece.quantity);
     addField("CÓDIGO / REF", piece.code);
