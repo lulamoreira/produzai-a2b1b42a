@@ -5986,6 +5986,19 @@ export type Database = {
         Returns: string
       }
       get_adjustment_requote: { Args: { p_token: string }; Returns: Json }
+      get_batch_user_access_details: {
+        Args: {
+          p_resource_ids: string[]
+          p_resource_type: string
+          p_user_ids: string[]
+        }
+        Returns: {
+          current_category_id: string
+          current_category_name: string
+          resource_id: string
+          user_id: string
+        }[]
+      }
       get_budget_qty_requote: { Args: { p_token: string }; Returns: Json }
       get_campaign_automations_for_import: {
         Args: { p_campaign_id: string }
