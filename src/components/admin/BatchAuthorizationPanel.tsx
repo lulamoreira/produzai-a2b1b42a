@@ -37,7 +37,7 @@ export function BatchAuthorizationPanel() {
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [resourceType, setResourceType] = useState<"agency" | "client" | "campaign">("client");
   const [selectedResourceIds, setSelectedResourceIds] = useState<string[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("");
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>("keep_current");
   
   const [userSearch, setUserSearch] = useState("");
   const [resourceSearch, setResourceSearch] = useState("");
@@ -115,7 +115,7 @@ export function BatchAuthorizationPanel() {
       return;
     }
     if (!selectedCategoryId) {
-      toast.error("Selecione uma categoria de acesso.");
+      toast.error("Selecione uma categoria de acesso ou mantenha a atual.");
       return;
     }
 
@@ -123,7 +123,7 @@ export function BatchAuthorizationPanel() {
       userIds: selectedUserIds,
       resourceIds: selectedResourceIds,
       resourceType,
-      categoryId: selectedCategoryId
+      categoryId: selectedCategoryId === "keep_current" ? null : selectedCategoryId
     }, {
       onSuccess: () => {
         setSelectedUserIds([]);
@@ -368,6 +368,7 @@ export function BatchAuthorizationPanel() {
                   <SelectValue placeholder="Selecione uma categoria" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="keep_current">Manter Categoria Atual</SelectItem>
                   {categories.map(c => (
                     <SelectItem key={c.id} value={c.id}>
                       {c.name}
@@ -403,7 +404,7 @@ export function BatchAuthorizationPanel() {
               <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
               <div className="text-xs text-stone-600 space-y-1">
                 <p><strong>Impacto:</strong> Serão criados até {selectedUserIds.length * selectedResourceIds.length} registros de acesso.</p>
-                <p>Se um usuário já tiver acesso ao recurso, a categoria será atualizada para a nova selecionada.</p>
+                <p>Se um usuário já tiver acesso ao recurso, a categoria será {selectedCategoryId === "keep_current" ? "mantida" : "atualizada para a nova selecionada"}.</p>
                 <p>Acessos existentes não serão removidos, apenas atualizados ou adicionados.</p>
               </div>
             </div>

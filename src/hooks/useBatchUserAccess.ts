@@ -6,7 +6,7 @@ export interface BatchAccessParams {
   userIds: string[];
   resourceIds: string[];
   resourceType: "agency" | "client" | "campaign";
-  categoryId: string;
+  categoryId: string | null;
 }
 
 export function useBatchUserAccess() {
