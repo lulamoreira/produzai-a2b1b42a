@@ -14,13 +14,14 @@ export function useBatchUserAccess() {
 
   return useMutation({
     mutationFn: async ({ userIds, resourceIds, resourceType, categoryId }: BatchAccessParams) => {
-      const { data, error } = await supabase.functions.invoke("batch-user-access", {
-        body: { userIds, resourceIds, resourceType, categoryId },
+      const { data, error } = await supabase.rpc("process_batch_user_access", {
+        p_user_ids: userIds,
+        p_resource_ids: resourceIds,
+        p_resource_type: resourceType,
+        p_category_id: categoryId
       });
 
       if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-
       return data;
     },
     onSuccess: (_, vars) => {
