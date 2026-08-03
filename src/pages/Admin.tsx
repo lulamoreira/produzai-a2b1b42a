@@ -11,13 +11,14 @@ import { Navigate, useNavigate, useParams, useSearchParams } from "react-router-
 import { 
   Users, Mail, Tag, MessageSquare, Bell, CheckSquare, 
   Palette, Image as ImageIcon, Database, Home, 
-  UserCheck, Search, ChevronRight, Menu, X, Plus, Clock, UserX, Trash2
+  UserCheck, Search, ChevronRight, Menu, X, Plus, Clock, UserX, Trash2, Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CreateUserDialog } from "@/components/CreateUserDialog";
 import UserPermissionCard from "@/components/admin/UserPermissionCard";
+import UserApprovalDetailsDialog from "@/components/UserApprovalDetailsDialog";
 import { InvitesPanel } from "@/components/admin/InvitesPanel";
 import { MessagesPanel } from "@/components/admin/MessagesPanel";
 import NotificationSettingsManager from "@/components/admin/NotificationSettingsManager";
@@ -255,6 +256,7 @@ const AdminApprovals = () => {
   const { data: users = [], isLoading } = useAllUsersApproval();
   const updateStatus = useUpdateApprovalStatus();
   const qc = useQueryClient();
+  const [detailsUserId, setDetailsUserId] = useState<string | null>(null);
 
   const deleteUser = useMutation({
     mutationFn: async (userId: string) => {
