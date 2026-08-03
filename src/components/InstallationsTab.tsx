@@ -1162,12 +1162,13 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           const currentMaxSeq = reinstalls.reduce((m, r) => Math.max(m, (r as any).reinstall_seq ?? 0), 0);
 
           return (
-            <div key={store.id} className="flex flex-col gap-2">
+            <div key={store.id} id={`install-store-${store.id}`} className="flex flex-col gap-2 scroll-mt-24">
             <div
               className={cn(
                 "group/card card-base overflow-hidden flex flex-col transition-shadow duration-150 hover:shadow-md relative",
                 isCardLocked && "opacity-80",
-                selectedStores.has(store.id) && "ring-2 ring-primary/40"
+                selectedStores.has(store.id) && "ring-2 ring-primary/40",
+                focusStoreId === store.id && "ring-2 ring-primary shadow-lg"
               )}
               style={{ borderLeft: `4px solid ${borderLeftColor}`, padding: 0 }}
             >
