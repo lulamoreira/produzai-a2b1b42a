@@ -86,6 +86,8 @@ interface InstallationsTabProps {
   clientName?: string;
   initialFilter?: InstallationsInitialFilter | null;
   onInitialFilterApplied?: () => void;
+  /** Store card to focus/expand when arriving from a deep link (ex.: notificação de nova foto) */
+  focusStoreId?: string | null;
 }
 
 const PREDEFINED_MODELS = ["LOOK & FEEL", "NOVO", "ANTIGO", "QUIOSQUE NOVO", "QUIOSQUE ANTIGO"];
@@ -96,7 +98,7 @@ const CATEGORY_OPTIONS = [
   { value: "after", labelKey: "installations.after" },
 ];
 
-const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId, agencyName = "", clientName = "", initialFilter, onInitialFilterApplied }: InstallationsTabProps) => {
+const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId, agencyName = "", clientName = "", initialFilter, onInitialFilterApplied, focusStoreId = null }: InstallationsTabProps) => {
   const { t } = useTranslation();
   const fmt = useFormatters();
   const queryClient = useQueryClient();
