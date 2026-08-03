@@ -7,18 +7,20 @@ export interface BatchAccessParams {
   resourceIds: string[];
   resourceType: "agency" | "client" | "campaign";
   categoryId: string | null;
+  replaceExisting?: boolean;
 }
 
 export function useBatchUserAccess() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ userIds, resourceIds, resourceType, categoryId }: BatchAccessParams) => {
+    mutationFn: async ({ userIds, resourceIds, resourceType, categoryId, replaceExisting }: BatchAccessParams) => {
       const { data, error } = await supabase.rpc("process_batch_user_access", {
         p_user_ids: userIds,
         p_resource_ids: resourceIds,
         p_resource_type: resourceType,
-        p_category_id: categoryId
+        p_category_id: categoryId,
+        p_replace_existing: replaceExisting || false
       });
 
       if (error) throw error;

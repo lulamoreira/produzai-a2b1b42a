@@ -380,6 +380,56 @@ export type Database = {
           },
         ]
       }
+      batch_access_history: {
+        Row: {
+          admin_id: string
+          category_id: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          replace_existing: boolean
+          resource_ids: string[]
+          resource_type: string
+          status: string
+          summary: string | null
+          user_ids: string[]
+        }
+        Insert: {
+          admin_id: string
+          category_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          replace_existing?: boolean
+          resource_ids: string[]
+          resource_type: string
+          status: string
+          summary?: string | null
+          user_ids: string[]
+        }
+        Update: {
+          admin_id?: string
+          category_id?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          replace_existing?: boolean
+          resource_ids?: string[]
+          resource_type?: string
+          status?: string
+          summary?: string | null
+          user_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "batch_access_history_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "permission_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budget_extra_costs: {
         Row: {
           adjusted_freight_value: number | null
@@ -6135,15 +6185,26 @@ export type Database = {
         }
         Returns: number
       }
-      process_batch_user_access: {
-        Args: {
-          p_category_id?: string
-          p_resource_ids: string[]
-          p_resource_type: string
-          p_user_ids: string[]
-        }
-        Returns: Json
-      }
+      process_batch_user_access:
+        | {
+            Args: {
+              p_category_id?: string
+              p_resource_ids: string[]
+              p_resource_type: string
+              p_user_ids: string[]
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_category_id?: string
+              p_replace_existing?: boolean
+              p_resource_ids: string[]
+              p_resource_type: string
+              p_user_ids: string[]
+            }
+            Returns: Json
+          }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
