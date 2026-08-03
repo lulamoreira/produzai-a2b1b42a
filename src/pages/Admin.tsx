@@ -257,6 +257,8 @@ const AdminApprovals = () => {
   const updateStatus = useUpdateApprovalStatus();
   const qc = useQueryClient();
   const [detailsUserId, setDetailsUserId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ApprovalStatus | "all">("all");
 
   const deleteUser = useMutation({
     mutationFn: async (userId: string) => {
@@ -282,9 +284,24 @@ const AdminApprovals = () => {
     );
   }
 
-  const pending = users.filter((u) => u.approval_status === "pending");
-  const approved = users.filter((u) => u.approval_status === "approved");
-  const rejected = users.filter((u) => u.approval_status === "rejected");
+  const filtered = useMemo(() => {
+    return users.filter(u => {
+      const matchesSearch = 
+        !searchQuery.trim() ||
+        (u.display_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        u.user_id.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      const matchesStatus = 
+        statusFilter === "all" || 
+        u.approval_status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [users, searchQuery, statusFilter]);
+
+  const pending = filtered.filter((u) => u.approval_status === "pending");
+  const approved = filtered.filter((u) => u.approval_status === "approved");
+  const rejected = filtered.filter((u) => u.approval_status === "rejected");
   const sorted = [...pending, ...approved, ...rejected];
 
   return (
