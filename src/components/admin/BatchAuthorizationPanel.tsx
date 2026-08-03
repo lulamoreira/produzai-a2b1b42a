@@ -417,14 +417,10 @@ export function BatchAuthorizationPanel() {
               <Button 
                 variant="outline"
                 className="flex-1 h-10 font-bold bg-white"
-                onClick={() => {
-                  if (selectedUserIds.length === 0 || selectedResourceIds.length === 0) {
-                    toast.error("Selecione usuários e recursos primeiro.");
-                    return;
-                  }
-                  setShowPreview(true);
-                }}
+                onClick={fetchAccessDetails}
+                disabled={loadingDetails}
               >
+                {loadingDetails ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                 Visualizar Prévia
               </Button>
               <Button 
@@ -458,37 +454,59 @@ export function BatchAuthorizationPanel() {
                 </Button>
               </div>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Usuários Afetados ({selectedUserIds.length})</p>
-                  <div className="max-h-32 overflow-y-auto border rounded p-2 bg-stone-50 space-y-1">
-                    {users.filter(u => selectedUserIds.includes(u.user_id)).map(u => (
-                      <div key={u.user_id} className="text-[11px] flex justify-between">
-                        <span className="font-medium">{capitalizeName(u.display_name)}</span>
-                        <span className="text-muted-foreground">{u.company}</span>
-                      </div>
-                    ))}
+              <div className="space-y-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Detalhamento das Associações</p>
+                <ScrollArea className="h-48 border rounded p-2 bg-stone-50">
+                  <div className="space-y-3">
+                    {selectedUserIds.map(uId => {
+                      const user = users.find(u => u.user_id === uId);
+                      return (
+                        <div key={uId} className="space-y-1.5 border-b pb-2 last:border-0 last:pb-0">
+                          <p className="text-[11px] font-bold text-primary">{capitalizeName(user?.display_name) || "Usuário"}</p>
+                          <div className="space-y-1">
+                            {selectedResourceIds.map(rId => {
+                              const resource = filteredResources.find(r => r.id === rId);
+                              const existingAccess = accessDetails.find(a => a.user_id === uId && a.resource_id === rId);
+                              const targetCategoryName = selectedCategoryId === "keep_current" 
+                                ? (existingAccess?.current_category_name || "Padrão") 
+                                : categories.find(c => c.id === selectedCategoryId)?.name;
+                              
+                              const isChanging = existingAccess && selectedCategoryId !== "keep_current" && existingAccess.current_category_id !== selectedCategoryId;
+
+                              return (
+                                <div key={rId} className="flex items-center justify-between text-[10px] bg-white p-1.5 rounded border border-stone-100">
+                                  <span className="font-medium truncate max-w-[150px]">{resource?.name}</span>
+                                  <div className="flex items-center gap-2">
+                                    {existingAccess ? (
+                                      <>
+                                        <Badge variant="outline" className="text-[9px] h-4 px-1">{existingAccess.current_category_name}</Badge>
+                                        {isChanging && (
+                                          <>
+                                            <ArrowRight className="w-3 h-3 text-muted-foreground" />
+                                            <Badge variant="default" className="text-[9px] h-4 px-1 bg-amber-500">{targetCategoryName}</Badge>
+                                          </>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <Badge variant="secondary" className="text-[9px] h-4 px-1">Novo: {targetCategoryName}</Badge>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Recursos ({selectedResourceIds.length})</p>
-                  <div className="max-h-32 overflow-y-auto border rounded p-2 bg-stone-50 space-y-1">
-                    {filteredResources.filter(r => selectedResourceIds.includes(r.id)).map(r => (
-                      <div key={r.id} className="text-[11px] font-medium">
-                        {r.name}
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                </ScrollArea>
               </div>
 
               <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                 <div className="text-xs text-stone-600 space-y-1">
-                  <p><strong>Impacto:</strong> Serão criados até {selectedUserIds.length * selectedResourceIds.length} registros de acesso.</p>
-                  <p>A categoria será <strong>{selectedCategoryId === "keep_current" ? "MANTIDA" : categories.find(c => c.id === selectedCategoryId)?.name}</strong>.</p>
-                  <p>Acessos existentes não serão removidos, apenas atualizados ou adicionados.</p>
+                  <p><strong>Impacto Final:</strong> A categoria será <strong>{selectedCategoryId === "keep_current" ? "MANTIDA" : categories.find(c => c.id === selectedCategoryId)?.name}</strong>.</p>
+                  <p>Usuários com acesso prévio terão suas categorias {selectedCategoryId === "keep_current" ? "preservadas" : "atualizadas"}.</p>
                 </div>
               </div>
             </div>
