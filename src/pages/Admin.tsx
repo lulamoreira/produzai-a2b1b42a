@@ -347,11 +347,22 @@ const AdminApprovals = () => {
                   {u.approval_status === "approved" ? "Aprovado" : u.approval_status === "pending" ? "Pendente" : "Rejeitado"}
                 </Badge>
               </div>
-              {isCurrentUser ? (
-                <span className="text-xs text-muted-foreground italic">Você</span>
-              ) : (
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 shrink-0"
+                  title="Ver detalhes"
+                  onClick={() => setDetailsUserId(u.user_id)}
+                >
+                  <Eye className="w-4 h-4" />
+                </Button>
+                {isCurrentUser ? (
+                  <span className="text-xs text-muted-foreground italic">Você</span>
+                ) : (
+                <div className="flex items-center gap-2 flex-1">
                   <Select
+
                     value={u.approval_status}
                     onValueChange={(val) => updateStatus.mutate({ userId: u.user_id, status: val as ApprovalStatus })}
                   >
