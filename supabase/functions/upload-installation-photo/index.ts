@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
           _type: "installation_photo",
           _title: "Nova foto de instalação",
           _body: `${storeName?.name || "Loja"} — foto (${category}) enviada pelo instalador`,
-          _action_url: `/campanhas/${campaignId}/instalacoes`,
+          _action_url: `/agency/${agencyId}/clients/${(campInfo as any)?.client_id}/campaigns/${campaignId}?section=installations&store=${storeId}`,
         }).then(() => {}).catch(() => {});
       }
     } catch { /* silent */ }

@@ -9,6 +9,8 @@ interface InstallationsTabProps {
   clientId: string;
   agencyName: string;
   clientName: string;
+  /** Loja a ser focada via deep link (ex.: notificação de nova foto de instalação) */
+  focusStoreId?: string | null;
 }
 
 export default function InstallationsTab({ 
@@ -18,7 +20,8 @@ export default function InstallationsTab({
   canEdit,
   clientId,
   agencyName,
-  clientName
+  clientName,
+  focusStoreId = null
 }: InstallationsTabProps) {
   return (
     <InstallationsTabComponent
@@ -29,6 +32,7 @@ export default function InstallationsTab({
       clientId={clientId}
       agencyName={agencyName}
       clientName={clientName}
+      focusStoreId={focusStoreId}
     />
   );
 }

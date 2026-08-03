@@ -611,6 +611,7 @@ const CampaignDetail = () => {
                     campaignId={campaignId!} campaignName={campaign.name} stores={stores}
                     canEdit={true} clientId={clientId!} agencyName={agency?.name || ""}
                     clientName={client?.name || ""}
+                    focusStoreId={new URLSearchParams(location.search).get("store")}
                   />
                 </TabsContent>
               )}

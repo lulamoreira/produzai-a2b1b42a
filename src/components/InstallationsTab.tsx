@@ -86,6 +86,8 @@ interface InstallationsTabProps {
   clientName?: string;
   initialFilter?: InstallationsInitialFilter | null;
   onInitialFilterApplied?: () => void;
+  /** Store card to focus/expand when arriving from a deep link (ex.: notificação de nova foto) */
+  focusStoreId?: string | null;
 }
 
 const PREDEFINED_MODELS = ["LOOK & FEEL", "NOVO", "ANTIGO", "QUIOSQUE NOVO", "QUIOSQUE ANTIGO"];
@@ -96,7 +98,7 @@ const CATEGORY_OPTIONS = [
   { value: "after", labelKey: "installations.after" },
 ];
 
-const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId, agencyName = "", clientName = "", initialFilter, onInitialFilterApplied }: InstallationsTabProps) => {
+const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId, agencyName = "", clientName = "", initialFilter, onInitialFilterApplied, focusStoreId = null }: InstallationsTabProps) => {
   const { t } = useTranslation();
   const fmt = useFormatters();
   const queryClient = useQueryClient();
@@ -165,6 +167,20 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
     onInitialFilterApplied?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialFilter]);
+
+  // Deep link: expande e rola até o card da loja indicada na URL (?store=<id>)
+  useEffect(() => {
+    if (!focusStoreId) return;
+    setExpandedCards((prev) => new Set(prev).add(focusStoreId));
+    const timer = window.setTimeout(() => {
+      document
+        .getElementById(`install-store-${focusStoreId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [focusStoreId]);
+
+
 
   const toggleCardExpanded = (storeId: string) => {
     setExpandedCards(prev => {
@@ -1162,12 +1178,13 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           const currentMaxSeq = reinstalls.reduce((m, r) => Math.max(m, (r as any).reinstall_seq ?? 0), 0);
 
           return (
-            <div key={store.id} className="flex flex-col gap-2">
+            <div key={store.id} id={`install-store-${store.id}`} className="flex flex-col gap-2 scroll-mt-24">
             <div
               className={cn(
                 "group/card card-base overflow-hidden flex flex-col transition-shadow duration-150 hover:shadow-md relative",
                 isCardLocked && "opacity-80",
-                selectedStores.has(store.id) && "ring-2 ring-primary/40"
+                selectedStores.has(store.id) && "ring-2 ring-primary/40",
+                focusStoreId === store.id && "ring-2 ring-primary shadow-lg"
               )}
               style={{ borderLeft: `4px solid ${borderLeftColor}`, padding: 0 }}
             >
