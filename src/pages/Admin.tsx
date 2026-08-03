@@ -28,6 +28,7 @@ import { BackupRestorePanel } from "@/components/BackupRestorePanel";
 import CategoryManager from "@/components/admin/CategoryManager";
 import { ADMIN_MENU_ITEMS } from "@/lib/adminMenuConfig";
 import { AppShellV2 } from "@/components/v2/layout/AppShellV2";
+import { BatchAuthorizationPanel } from "@/components/admin/BatchAuthorizationPanel";
 import { cn, capitalizeName } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -85,6 +86,7 @@ const AdminContent = ({ tab }: { tab: string }) => {
     case "appearance":   return <AppearancePanel />;
     case "images":       return <RegeneratePieceImagesPanel />;
     case "backup":       return <BackupRestorePanel />;
+    case "batch-access": return <BatchAuthorizationPanel />;
     default:             return <AdminHome />;
   }
 };

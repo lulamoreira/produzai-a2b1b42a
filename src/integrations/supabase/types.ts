@@ -6122,6 +6122,15 @@ export type Database = {
         }
         Returns: number
       }
+      process_batch_user_access: {
+        Args: {
+          p_category_id: string
+          p_resource_ids: string[]
+          p_resource_type: string
+          p_user_ids: string[]
+        }
+        Returns: Json
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
