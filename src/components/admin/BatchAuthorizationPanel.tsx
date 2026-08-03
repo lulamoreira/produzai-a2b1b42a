@@ -108,6 +108,30 @@ export function BatchAuthorizationPanel() {
     }
   };
 
+  const fetchAccessDetails = async () => {
+    if (selectedUserIds.length === 0 || selectedResourceIds.length === 0) {
+      toast.error("Selecione usuários e recursos primeiro.");
+      return;
+    }
+    
+    setLoadingDetails(true);
+    try {
+      const { data, error } = await supabase.rpc("get_batch_user_access_details", {
+        p_user_ids: selectedUserIds,
+        p_resource_ids: selectedResourceIds,
+        p_resource_type: resourceType
+      });
+      
+      if (error) throw error;
+      setAccessDetails(data || []);
+      setShowPreview(true);
+    } catch (e: any) {
+      toast.error("Erro ao carregar prévia: " + e.message);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
   const handleConfirm = () => {
     if (selectedUserIds.length === 0) {
       toast.error("Selecione pelo menos um usuário.");
@@ -132,6 +156,7 @@ export function BatchAuthorizationPanel() {
         setSelectedUserIds([]);
         setSelectedResourceIds([]);
         setShowPreview(false);
+        setAccessDetails([]);
       }
     });
   };
