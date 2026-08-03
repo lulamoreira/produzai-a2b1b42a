@@ -11,13 +11,14 @@ import { Navigate, useNavigate, useParams, useSearchParams } from "react-router-
 import { 
   Users, Mail, Tag, MessageSquare, Bell, CheckSquare, 
   Palette, Image as ImageIcon, Database, Home, 
-  UserCheck, Search, ChevronRight, Menu, X, Plus, Clock, UserX, Trash2
+  UserCheck, Search, ChevronRight, Menu, X, Plus, Clock, UserX, Trash2, Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CreateUserDialog } from "@/components/CreateUserDialog";
 import UserPermissionCard from "@/components/admin/UserPermissionCard";
+import UserApprovalDetailsDialog from "@/components/UserApprovalDetailsDialog";
 import { InvitesPanel } from "@/components/admin/InvitesPanel";
 import { MessagesPanel } from "@/components/admin/MessagesPanel";
 import NotificationSettingsManager from "@/components/admin/NotificationSettingsManager";
@@ -255,6 +256,7 @@ const AdminApprovals = () => {
   const { data: users = [], isLoading } = useAllUsersApproval();
   const updateStatus = useUpdateApprovalStatus();
   const qc = useQueryClient();
+  const [detailsUserId, setDetailsUserId] = useState<string | null>(null);
 
   const deleteUser = useMutation({
     mutationFn: async (userId: string) => {
@@ -345,11 +347,22 @@ const AdminApprovals = () => {
                   {u.approval_status === "approved" ? "Aprovado" : u.approval_status === "pending" ? "Pendente" : "Rejeitado"}
                 </Badge>
               </div>
-              {isCurrentUser ? (
-                <span className="text-xs text-muted-foreground italic">Você</span>
-              ) : (
-                <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 shrink-0"
+                  title="Ver detalhes"
+                  onClick={() => setDetailsUserId(u.user_id)}
+                >
+                  <Eye className="w-4 h-4" />
+                </Button>
+                {isCurrentUser ? (
+                  <span className="text-xs text-muted-foreground italic">Você</span>
+                ) : (
+                <div className="flex items-center gap-2 flex-1">
                   <Select
+
                     value={u.approval_status}
                     onValueChange={(val) => updateStatus.mutate({ userId: u.user_id, status: val as ApprovalStatus })}
                   >
@@ -380,8 +393,10 @@ const AdminApprovals = () => {
                     </AlertDialog>
                   )}
                 </div>
-              )}
+                )}
+              </div>
             </div>
+
           );
         })}
       </div>
@@ -420,6 +435,15 @@ const AdminApprovals = () => {
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        title="Ver detalhes"
+                        onClick={() => setDetailsUserId(u.user_id)}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
                       {!isCurrentUser && (
                         <>
                           <Select
@@ -467,7 +491,15 @@ const AdminApprovals = () => {
         </Table>
       </div>
 
+      {detailsUserId && (
+        <UserApprovalDetailsDialog
+          open={!!detailsUserId}
+          onOpenChange={(o) => !o && setDetailsUserId(null)}
+          userId={detailsUserId}
+        />
+      )}
     </div>
+
   );
 };
 
