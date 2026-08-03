@@ -4119,6 +4119,7 @@ export type Database = {
           description: string | null
           display_order: number | null
           id: string
+          is_default: boolean
           is_system: boolean | null
           name: string
         }
@@ -4174,6 +4175,7 @@ export type Database = {
           description?: string | null
           display_order?: number | null
           id?: string
+          is_default?: boolean
           is_system?: boolean | null
           name: string
         }
@@ -4229,6 +4231,7 @@ export type Database = {
           description?: string | null
           display_order?: number | null
           id?: string
+          is_default?: boolean
           is_system?: boolean | null
           name?: string
         }
