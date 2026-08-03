@@ -2,7 +2,8 @@ import React, { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { 
   Users, Building2, Briefcase, Megaphone, Shield, 
-  Search, Check, CheckSquare, Square, AlertCircle, Loader2
+  Search, Check, CheckSquare, Square, AlertCircle, Loader2,
+  ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,8 @@ import { usePermissionCategories } from "@/hooks/usePermissionCategories";
 import { useBatchUserAccess } from "@/hooks/useBatchUserAccess";
 import { capitalizeName, cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+
 
 export function BatchAuthorizationPanel() {
   const { t } = useTranslation();
