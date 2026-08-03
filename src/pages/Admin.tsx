@@ -393,8 +393,10 @@ const AdminApprovals = () => {
                     </AlertDialog>
                   )}
                 </div>
-              )}
+                )}
+              </div>
             </div>
+
           );
         })}
       </div>
