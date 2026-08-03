@@ -6022,6 +6022,10 @@ export type Database = {
         Args: { p_token: string }
         Returns: Json
       }
+      get_portal_token_for_campaign: {
+        Args: { p_campaign_id: string }
+        Returns: string
+      }
       get_public_occurrence_context: {
         Args: { _campaign_id: string }
         Returns: Json

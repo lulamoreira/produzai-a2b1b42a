@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,6 +32,28 @@ export default function OccurrencesPortal() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const isTokenMode = !!routeToken;
+
+  // Legacy public link (/ocorrencias-portal/:campaignId): resolve the campaign's
+  // public portal token and redirect to the token URL — keeps the portal public,
+  // without exposing any store data through the legacy queries.
+  useEffect(() => {
+    if (isTokenMode || !routeCampaignId) return;
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase.rpc("get_portal_token_for_campaign", {
+        p_campaign_id: routeCampaignId,
+      });
+      if (cancelled) return;
+      if (error) {
+        console.error("Supabase Error [get_portal_token_for_campaign]:", error);
+        return;
+      }
+      if (data) navigate(`/ocorrencias-portal/t/${data}`, { replace: true });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isTokenMode, routeCampaignId, navigate]);
 
   // Token mode: single RPC returns everything (works anonymously)
   const { data: tokenData, isLoading: loadingToken, isError: tokenError } = useQuery({
