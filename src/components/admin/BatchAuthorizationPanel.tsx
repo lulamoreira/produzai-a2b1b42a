@@ -41,6 +41,7 @@ export function BatchAuthorizationPanel() {
   
   const [userSearch, setUserSearch] = useState("");
   const [resourceSearch, setResourceSearch] = useState("");
+  const [showPreview, setShowPreview] = useState(false);
   
   // Secondary selections for dependent resources
   const [selectedAgencyIdForClients, setSelectedAgencyIdForClients] = useState<string>("all");
@@ -128,6 +129,7 @@ export function BatchAuthorizationPanel() {
       onSuccess: () => {
         setSelectedUserIds([]);
         setSelectedResourceIds([]);
+        setShowPreview(false);
       }
     });
   };
@@ -381,31 +383,83 @@ export function BatchAuthorizationPanel() {
               </p>
             </div>
             
-            <Button 
-              className="w-full h-10 font-bold" 
-              onClick={handleConfirm}
-              disabled={batchAccess.isPending}
-            >
-              {batchAccess.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Processando...
-                </>
-              ) : (
-                <>
-                  Conceder Acesso a {selectedUserIds.length} Usuários em {selectedResourceIds.length} Recursos
-                </>
-              )}
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                variant="outline"
+                className="flex-1 h-10 font-bold bg-white"
+                onClick={() => {
+                  if (selectedUserIds.length === 0 || selectedResourceIds.length === 0) {
+                    toast.error("Selecione usuários e recursos primeiro.");
+                    return;
+                  }
+                  setShowPreview(true);
+                }}
+              >
+                Visualizar Prévia
+              </Button>
+              <Button 
+                className="flex-[2] h-10 font-bold" 
+                onClick={handleConfirm}
+                disabled={batchAccess.isPending}
+              >
+                {batchAccess.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  <>
+                    Confirmar {selectedUserIds.length * selectedResourceIds.length} Associações
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
 
-          {(selectedUserIds.length > 0 || selectedResourceIds.length > 0) && (
-            <div className="p-3 bg-white/50 border rounded-lg flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-              <div className="text-xs text-stone-600 space-y-1">
-                <p><strong>Impacto:</strong> Serão criados até {selectedUserIds.length * selectedResourceIds.length} registros de acesso.</p>
-                <p>Se um usuário já tiver acesso ao recurso, a categoria será {selectedCategoryId === "keep_current" ? "mantida" : "atualizada para a nova selecionada"}.</p>
-                <p>Acessos existentes não serão removidos, apenas atualizados ou adicionados.</p>
+          {showPreview && (
+            <div className="mt-6 p-4 bg-white border rounded-xl shadow-sm space-y-4 animate-in fade-in slide-in-from-top-2">
+              <div className="flex items-center justify-between border-b pb-2">
+                <h4 className="font-bold text-sm flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 text-primary" />
+                  Resumo da Operação
+                </h4>
+                <Button variant="ghost" size="sm" onClick={() => setShowPreview(false)} className="h-7 text-xs">
+                  Fechar
+                </Button>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Usuários Afetados ({selectedUserIds.length})</p>
+                  <div className="max-h-32 overflow-y-auto border rounded p-2 bg-stone-50 space-y-1">
+                    {users.filter(u => selectedUserIds.includes(u.user_id)).map(u => (
+                      <div key={u.user_id} className="text-[11px] flex justify-between">
+                        <span className="font-medium">{capitalizeName(u.display_name)}</span>
+                        <span className="text-muted-foreground">{u.company}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Recursos ({selectedResourceIds.length})</p>
+                  <div className="max-h-32 overflow-y-auto border rounded p-2 bg-stone-50 space-y-1">
+                    {filteredResources.filter(r => selectedResourceIds.includes(r.id)).map(r => (
+                      <div key={r.id} className="text-[11px] font-medium">
+                        {r.name}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                <div className="text-xs text-stone-600 space-y-1">
+                  <p><strong>Impacto:</strong> Serão criados até {selectedUserIds.length * selectedResourceIds.length} registros de acesso.</p>
+                  <p>A categoria será <strong>{selectedCategoryId === "keep_current" ? "MANTIDA" : categories.find(c => c.id === selectedCategoryId)?.name}</strong>.</p>
+                  <p>Acessos existentes não serão removidos, apenas atualizados ou adicionados.</p>
+                </div>
               </div>
             </div>
           )}
