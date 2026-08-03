@@ -178,10 +178,20 @@ const UserApprovals = () => {
                         {cfg.icon} {cfg.label}
                       </Badge>
                     </div>
-                    {isCurrentUser ? (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 shrink-0"
+                        title="Ver informações"
+                        onClick={() => setDetailsUserId(u.user_id)}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      {isCurrentUser ? (
                       <span className="text-xs text-muted-foreground italic">Você</span>
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-1">
                         <Select
                           value={u.approval_status}
                           onValueChange={(val) =>
