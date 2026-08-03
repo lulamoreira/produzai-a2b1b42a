@@ -1274,9 +1274,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                     </span>
                   )}
                   {effectiveOs && (
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-0.5">
                       <FileText className="w-3 h-3 text-[var(--text-muted)]" />
                       OS: {effectiveOs}
+                      <CopyOsButton value={effectiveOs} className="h-6 w-6" />
                     </span>
                    )}
                   {/* Install code status indicator — admin/master only */}
