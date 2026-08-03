@@ -6124,7 +6124,7 @@ export type Database = {
       }
       process_batch_user_access: {
         Args: {
-          p_category_id: string
+          p_category_id?: string
           p_resource_ids: string[]
           p_resource_type: string
           p_user_ids: string[]
