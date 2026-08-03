@@ -168,6 +168,20 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialFilter]);
 
+  // Deep link: expande e rola até o card da loja indicada na URL (?store=<id>)
+  useEffect(() => {
+    if (!focusStoreId) return;
+    setExpandedCards((prev) => new Set(prev).add(focusStoreId));
+    const timer = window.setTimeout(() => {
+      document
+        .getElementById(`install-store-${focusStoreId}`)
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 400);
+    return () => window.clearTimeout(timer);
+  }, [focusStoreId]);
+
+
+
   const toggleCardExpanded = (storeId: string) => {
     setExpandedCards(prev => {
       const next = new Set(prev);
