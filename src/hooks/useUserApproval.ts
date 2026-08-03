@@ -8,6 +8,7 @@ export type ApprovalStatus = "pending" | "approved" | "rejected";
 export type UserApprovalInfo = {
   user_id: string;
   display_name: string | null;
+  email?: string | null;
   approval_status: ApprovalStatus;
   created_at: string;
   agency_id: string | null;

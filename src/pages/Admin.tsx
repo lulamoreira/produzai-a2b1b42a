@@ -286,10 +286,12 @@ const AdminApprovals = () => {
 
   const filtered = useMemo(() => {
     return users.filter(u => {
+      const search = searchQuery.toLowerCase().trim();
       const matchesSearch = 
-        !searchQuery.trim() ||
-        (u.display_name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.user_id.toLowerCase().includes(searchQuery.toLowerCase());
+        !search ||
+        (u.display_name || "").toLowerCase().includes(search) ||
+        (u.email || "").toLowerCase().includes(search) ||
+        u.user_id.toLowerCase().includes(search);
       
       const matchesStatus = 
         statusFilter === "all" || 
