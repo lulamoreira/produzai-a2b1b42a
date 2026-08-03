@@ -1374,7 +1374,10 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                           <FileText className="w-3 h-3" /> {t("scheduling.installationOs")}
                           {!hasOs && schedule?.scheduled_date && schedule?.scheduled_time && <AlertTriangle className="w-3 h-3 text-amber-500" />}
                         </label>
-                        <DebouncedInput disabled={!cardCanEdit} placeholder={t("scheduling.osNumber")} value={schedule?.installation_os || ""} onValueCommit={(val) => handleFieldChange(store.id, "installation_os", val || null)} className="h-8 text-xs" />
+                        <div className="flex items-center gap-1">
+                          <DebouncedInput disabled={!cardCanEdit} placeholder={t("scheduling.osNumber")} value={schedule?.installation_os || ""} onValueCommit={(val) => handleFieldChange(store.id, "installation_os", val || null)} className="h-8 text-xs flex-1" />
+                          <CopyOsButton value={schedule?.installation_os} />
+                        </div>
                       </div>
                       <div className="space-y-1">
                         <label className="text-xs font-medium text-foreground flex items-center gap-1"><Sun className="w-3 h-3" /> {t("scheduling.preferenceLabel")}</label>
