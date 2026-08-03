@@ -42,6 +42,8 @@ export function BatchAuthorizationPanel() {
   const [userSearch, setUserSearch] = useState("");
   const [resourceSearch, setResourceSearch] = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  const [accessDetails, setAccessDetails] = useState<any[]>([]);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   
   // Secondary selections for dependent resources
   const [selectedAgencyIdForClients, setSelectedAgencyIdForClients] = useState<string>("all");
