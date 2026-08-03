@@ -235,6 +235,7 @@ const UserApprovals = () => {
                         )}
                       </div>
                     )}
+                    </div>
                   </div>
                 );
               })}
