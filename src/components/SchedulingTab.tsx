@@ -1280,7 +1280,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                           <div className="px-3 pb-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
                             <div><span className="font-medium text-foreground">Data:</span> {schedule?.scheduled_date ? format(new Date(schedule.scheduled_date + "T12:00:00"), "dd/MM/yyyy") : "—"}</div>
                             <div><span className="font-medium text-foreground">Horário:</span> {schedule?.scheduled_time || "—"}</div>
-                            <div><span className="font-medium text-foreground">OS:</span> {schedule?.installation_os || "—"}</div>
+                            <div className="flex items-center gap-1"><span className="font-medium text-foreground">OS:</span> {schedule?.installation_os || "—"}{schedule?.installation_os && <CopyOsButton value={schedule.installation_os} className="h-6 w-6" />}</div>
                             <div><span className="font-medium text-foreground">Preferência:</span> {prefLabel(schedule?.installation_preference || "not_informed")}</div>
                           </div>
                         )}
