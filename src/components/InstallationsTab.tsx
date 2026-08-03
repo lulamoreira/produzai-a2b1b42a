@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import PhasePickerDialog, { type PhotoPhase } from "@/components/PhasePickerDialog";
 import EmptyState from "@/components/EmptyState";
+import CopyOsButton from "@/components/CopyOsButton";
 import { CardSkeleton } from "@/components/CardSkeleton";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -1274,9 +1275,10 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
                     </span>
                   )}
                   {effectiveOs && (
-                    <span className="flex items-center gap-1">
+                    <span className="flex items-center gap-0.5">
                       <FileText className="w-3 h-3 text-[var(--text-muted)]" />
                       OS: {effectiveOs}
+                      <CopyOsButton value={effectiveOs} className="h-6 w-6" />
                     </span>
                    )}
                   {/* Install code status indicator — admin/master only */}
