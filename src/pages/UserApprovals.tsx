@@ -6,8 +6,9 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { UserCheck, UserX, Clock, Trash2 } from "lucide-react";
+import { UserCheck, UserX, Clock, Trash2, Eye } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
+import UserApprovalDetailsDialog from "@/components/UserApprovalDetailsDialog";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -22,7 +23,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 const statusConfig: Record<ApprovalStatus, { label: string; color: string; icon: React.ReactNode }> = {
   approved: {
@@ -86,6 +87,7 @@ const UserApprovals = () => {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { agencyIds, clientIds } = useCurrentUserAccessScope();
+  const [detailsUserId, setDetailsUserId] = useState<string | null>(null);
 
   const deleteUser = useMutation({
     mutationFn: async (userId: string) => {
@@ -176,10 +178,20 @@ const UserApprovals = () => {
                         {cfg.icon} {cfg.label}
                       </Badge>
                     </div>
-                    {isCurrentUser ? (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 shrink-0"
+                        title="Ver informações"
+                        onClick={() => setDetailsUserId(u.user_id)}
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      {isCurrentUser ? (
                       <span className="text-xs text-muted-foreground italic">Você</span>
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 flex-1">
                         <Select
                           value={u.approval_status}
                           onValueChange={(val) =>
@@ -223,6 +235,7 @@ const UserApprovals = () => {
                         )}
                       </div>
                     )}
+                    </div>
                   </div>
                 );
               })}
@@ -268,6 +281,15 @@ const UserApprovals = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              title="Ver informações"
+                              onClick={() => setDetailsUserId(u.user_id)}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
                             {isCurrentUser ? (
                               <span className="text-xs text-muted-foreground italic">Você</span>
                             ) : (
@@ -326,6 +348,13 @@ const UserApprovals = () => {
           </>
         )}
 
+        {detailsUserId && (
+          <UserApprovalDetailsDialog
+            open={!!detailsUserId}
+            onOpenChange={(v) => !v && setDetailsUserId(null)}
+            userId={detailsUserId}
+          />
+        )}
       </div>
     </AppLayout>
   );
