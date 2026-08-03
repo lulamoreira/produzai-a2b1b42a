@@ -23,7 +23,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 const statusConfig: Record<ApprovalStatus, { label: string; color: string; icon: React.ReactNode }> = {
   approved: {
@@ -87,6 +87,7 @@ const UserApprovals = () => {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { agencyIds, clientIds } = useCurrentUserAccessScope();
+  const [detailsUserId, setDetailsUserId] = useState<string | null>(null);
 
   const deleteUser = useMutation({
     mutationFn: async (userId: string) => {
