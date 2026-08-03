@@ -16,6 +16,7 @@ import { useStoreContactsByClient, useStoreContactRoles, type StoreContact, type
 import { useClientPermission } from "@/hooks/useClientPermission";
 import { Input } from "@/components/ui/input";
 import DebouncedInput from "@/components/DebouncedInput";
+import CopyOsButton from "@/components/CopyOsButton";
 
 import ScheduleHistorySheet from "@/components/ScheduleHistorySheet";
 import ActivityLogPanel from "@/components/ActivityLogPanel";
