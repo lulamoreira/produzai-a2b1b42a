@@ -5,7 +5,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { capitalizeName, cn } from "@/lib/utils";
-import { User, Shield, Calendar, Activity, Mail, Phone, Building2, Briefcase, Globe, Fingerprint } from "lucide-react";
+import { User, Shield, Calendar, Activity, Mail, Phone, Building2, Briefcase, Globe, Fingerprint, Clock } from "lucide-react";
 
 interface Props {
   open: boolean;
