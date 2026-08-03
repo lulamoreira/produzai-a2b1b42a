@@ -281,6 +281,15 @@ const UserApprovals = () => {
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex items-center justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              title="Ver informações"
+                              onClick={() => setDetailsUserId(u.user_id)}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
                             {isCurrentUser ? (
                               <span className="text-xs text-muted-foreground italic">Você</span>
                             ) : (
