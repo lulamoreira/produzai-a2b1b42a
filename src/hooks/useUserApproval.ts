@@ -8,6 +8,7 @@ export type ApprovalStatus = "pending" | "approved" | "rejected";
 export type UserApprovalInfo = {
   user_id: string;
   display_name: string | null;
+  email?: string | null;
   approval_status: ApprovalStatus;
   created_at: string;
   agency_id: string | null;
@@ -50,12 +51,26 @@ export function useAllUsersApproval() {
   return useQuery({
     queryKey: ["all_users_approval"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: profiles, error } = await supabase
         .from("profiles")
         .select("user_id, display_name, approval_status, created_at, agency_id, client_id")
         .order("created_at", { ascending: false });
+      
       if (error) throw error;
-      return data as UserApprovalInfo[];
+
+      // Injected email fetch since profiles don't store it directly
+      const usersWithEmail = await Promise.all(
+        (profiles || []).map(async (u) => {
+          let email = null;
+          try {
+            const { data: e } = await supabase.rpc("get_user_email_admin", { _user_id: u.user_id });
+            email = e as string;
+          } catch {}
+          return { ...u, email };
+        })
+      );
+
+      return usersWithEmail as UserApprovalInfo[];
     },
   });
 }

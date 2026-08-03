@@ -257,6 +257,8 @@ const AdminApprovals = () => {
   const updateStatus = useUpdateApprovalStatus();
   const qc = useQueryClient();
   const [detailsUserId, setDetailsUserId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<ApprovalStatus | "all">("all");
 
   const deleteUser = useMutation({
     mutationFn: async (userId: string) => {
@@ -282,9 +284,26 @@ const AdminApprovals = () => {
     );
   }
 
-  const pending = users.filter((u) => u.approval_status === "pending");
-  const approved = users.filter((u) => u.approval_status === "approved");
-  const rejected = users.filter((u) => u.approval_status === "rejected");
+  const filtered = useMemo(() => {
+    return users.filter(u => {
+      const search = searchQuery.toLowerCase().trim();
+      const matchesSearch = 
+        !search ||
+        (u.display_name || "").toLowerCase().includes(search) ||
+        (u.email || "").toLowerCase().includes(search) ||
+        u.user_id.toLowerCase().includes(search);
+      
+      const matchesStatus = 
+        statusFilter === "all" || 
+        u.approval_status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [users, searchQuery, statusFilter]);
+
+  const pending = filtered.filter((u) => u.approval_status === "pending");
+  const approved = filtered.filter((u) => u.approval_status === "approved");
+  const rejected = filtered.filter((u) => u.approval_status === "rejected");
   const sorted = [...pending, ...approved, ...rejected];
 
   return (
@@ -292,6 +311,29 @@ const AdminApprovals = () => {
       <div>
         <h2 className="text-xl font-bold text-stone-900">Aprovação de Novos Usuários</h2>
         <p className="text-sm text-stone-600">Gerencie as solicitações de acesso ao sistema.</p>
+      </div>
+
+      <div className="flex flex-col md:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome, e-mail ou ID..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={(val: any) => setStatusFilter(val)}>
+          <SelectTrigger className="w-full md:w-[180px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os Status</SelectItem>
+            <SelectItem value="pending">Pendentes</SelectItem>
+            <SelectItem value="approved">Aprovados</SelectItem>
+            <SelectItem value="rejected">Rejeitados</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
 
