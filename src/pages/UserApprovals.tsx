@@ -6,8 +6,9 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { UserCheck, UserX, Clock, Trash2 } from "lucide-react";
+import { UserCheck, UserX, Clock, Trash2, Eye } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
+import UserApprovalDetailsDialog from "@/components/UserApprovalDetailsDialog";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
