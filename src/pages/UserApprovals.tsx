@@ -348,6 +348,13 @@ const UserApprovals = () => {
           </>
         )}
 
+        {detailsUserId && (
+          <UserApprovalDetailsDialog
+            open={!!detailsUserId}
+            onOpenChange={(v) => !v && setDetailsUserId(null)}
+            userId={detailsUserId}
+          />
+        )}
       </div>
     </AppLayout>
   );
