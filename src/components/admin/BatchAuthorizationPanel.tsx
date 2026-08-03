@@ -185,13 +185,39 @@ export function BatchAuthorizationPanel() {
       replaceExisting
     }, {
       onSuccess: () => {
+        toast.success("Operação concluída com sucesso!");
         setSelectedUserIds([]);
         setSelectedResourceIds([]);
         setShowPreview(false);
         setAccessDetails([]);
         setReplaceExisting(false);
-        // Refresh history if visible
         if (showHistory) fetchHistory();
+      },
+      onError: (error: any) => {
+        let errorMsg = "Ocorreu um erro inesperado.";
+        let recoveryHint = "Tente novamente em instantes.";
+
+        if (error.message?.includes("unique or exclusion constraint")) {
+          errorMsg = "Conflito de dados detectado.";
+          recoveryHint = "Alguns usuários já possuem acesso com estas configurações. Tente usar a opção 'Substituir' se desejar sobrescrever.";
+        } else if (error.message?.includes("permission denied")) {
+          errorMsg = "Acesso Negado.";
+          recoveryHint = "Sua sessão pode ter expirado ou você não tem permissão para esta ação.";
+        } else if (error.message?.includes("category_id")) {
+          errorMsg = "Categoria inválida.";
+          recoveryHint = "A categoria de acesso selecionada não está disponível. Tente escolher outra.";
+        }
+
+        toast.error(
+          <div className="flex flex-col gap-1">
+            <span className="font-bold">{errorMsg}</span>
+            <span className="text-xs opacity-90">{error.message}</span>
+            <span className="text-xs mt-1 bg-destructive-foreground/10 p-1.5 rounded border border-destructive-foreground/20 italic">
+              💡 {recoveryHint}
+            </span>
+          </div>,
+          { duration: 6000 }
+        );
       }
     });
   };
