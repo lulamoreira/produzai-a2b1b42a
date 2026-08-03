@@ -491,7 +491,15 @@ const AdminApprovals = () => {
         </Table>
       </div>
 
+      {detailsUserId && (
+        <UserApprovalDetailsDialog
+          open={!!detailsUserId}
+          onOpenChange={(o) => !o && setDetailsUserId(null)}
+          userId={detailsUserId}
+        />
+      )}
     </div>
+
   );
 };
 
