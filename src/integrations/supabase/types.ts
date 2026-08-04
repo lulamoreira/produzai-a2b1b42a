@@ -5995,6 +5995,17 @@ export type Database = {
         Args: { p_campaign_id: string }
         Returns: Json
       }
+      create_profile_on_invite: {
+        Args: { p_agency_id: string; p_display_name: string; p_user_id: string }
+        Returns: undefined
+      }
+      create_role_on_invite: {
+        Args: {
+          p_role: Database["public"]["Enums"]["app_role"]
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       criar_notificacao: {
         Args: {
           _action_url?: string
