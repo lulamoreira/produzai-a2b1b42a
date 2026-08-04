@@ -58,6 +58,7 @@ const WelcomePage = lazy(() => import("./pages/WelcomePage"));
 const FavoritesV2 = lazy(() => import("./pages/v2/FavoritesV2"));
 const AgenciesV2 = lazy(() => import("./pages/v2/AgenciesV2"));
 const AgencyDashboard = lazy(() => import("./pages/v2/AgencyDashboard"));
+const GlobalClients = lazy(() => import("./pages/v2/GlobalClients"));
 
 // Quitanda3dSHOP Pages
 const QuitandaDashboard = lazy(() => import("./pages/quitanda/DashboardPage"));
@@ -310,6 +311,7 @@ const App = () => (
                   <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
                   <Route path="/admin/:tab" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
                   <Route path="/approvals" element={<ProtectedRoute><Admin initialTab="approvals" /></ProtectedRoute>} />
+                  <Route path="/all-clients" element={<ProtectedRoute><AppLayout><GlobalClients /></AppLayout></ProtectedRoute>} />
 
 
                   <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
