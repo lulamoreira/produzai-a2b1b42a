@@ -346,6 +346,8 @@ export default function AppSidebar() {
           </button>
         )}
 
+        <div className="mx-2.5 my-1" style={{ borderTop: "1px solid var(--sidebar-border-raw, rgba(255,255,255,0.06))" }} />
+
         {/* ── Favoritos (all authenticated users) ── */}
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNavigate("/favorites"); }}
