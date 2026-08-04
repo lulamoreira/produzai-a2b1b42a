@@ -92,18 +92,18 @@ const JoinPage = () => {
       if (signInError) throw signInError;
 
 
-      const { error: profileError } = await (supabase.from('profiles') as any).insert({
-        user_id: authData.user.id,
-        display_name: name || invite.name,
-        agency_id: invite.agency_id,
-        approval_status: 'approved' // Invites bypass standard approval
+      // 3. Profiles insert handled by SECURITY DEFINER RPC to bypass RLS for new signups
+      const { error: profileError } = await (supabase.rpc as any)('create_profile_on_invite', {
+        p_user_id: authData.user.id,
+        p_display_name: name || invite.name,
+        p_agency_id: invite.agency_id
       });
       if (profileError) throw profileError;
 
-      // 3b. Insert role
-      const { error: roleError } = await (supabase.from('user_roles') as any).insert({
-        user_id: authData.user.id,
-        role: invite.role
+      // 3b. Insert role via RPC
+      const { error: roleError } = await (supabase.rpc as any)('create_role_on_invite', {
+        p_user_id: authData.user.id,
+        p_role: invite.role
       });
       if (roleError) throw roleError;
 
