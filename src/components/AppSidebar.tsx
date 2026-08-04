@@ -332,6 +332,20 @@ export default function AppSidebar() {
           </button>
         )}
 
+        {/* ── Clientes (Super Admin only - Global List) ── */}
+        {isAdmin && (
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNavigate("/all-clients"); }}
+            className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] transition-all relative before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-transparent before:rounded-r-full hover:before:bg-[var(--sidebar-active-bar)]/40"
+            style={itemStyle(location.pathname === "/all-clients")}
+            {...hoverHandlers(location.pathname === "/all-clients")}
+            title={collapsed ? t("sidebar.clients", "Clientes") : undefined}
+          >
+            <AquaIcon icon={Users} size="sm" color="#8C6F4E" />
+            {!collapsed && <span className="truncate font-medium">{t("sidebar.clients", "Clientes")}</span>}
+          </button>
+        )}
+
         {/* ── Favoritos (all authenticated users) ── */}
         <button
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleNavigate("/favorites"); }}
