@@ -27,9 +27,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function BlockedInstallersPanel() {
+export function BlockedInstallersPanel({ clientId }: { clientId?: string }) {
   const { t } = useTranslation();
-  const { data: blockedData, isLoading } = useBlockedInstallers();
+  const { data: blockedData, isLoading } = useBlockedInstallers(clientId);
   const { isAdminOrMaster } = useUserRole();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
