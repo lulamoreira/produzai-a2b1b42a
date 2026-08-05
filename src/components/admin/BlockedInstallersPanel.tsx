@@ -121,7 +121,7 @@ export function BlockedInstallersPanel({ clientId }: { clientId?: string }) {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={isAdminOrMaster ? 4 : 3} className="h-32 text-center text-muted-foreground">
+                <TableCell colSpan={isAdminOrMaster ? 5 : 4} className="h-32 text-center text-muted-foreground">
                   <div className="flex flex-col items-center gap-2">
                     <ShieldCheck className="w-8 h-8 text-muted/30" />
                     <p>Nenhum instalador bloqueado encontrado.</p>
