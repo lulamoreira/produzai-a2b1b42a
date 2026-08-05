@@ -472,7 +472,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
 
       return { imported, skipped, blocked, failures, duplicateDocs };
     },
-    onSuccess: ({ imported, skipped, blocked, failures }) => {
+    onSuccess: ({ imported, skipped, blocked, failures, duplicateDocs }) => {
       qc.invalidateQueries({ queryKey: ["installation_teams", campaignId] });
       qc.invalidateQueries({ queryKey: ["all_team_members", campaignId] });
       qc.invalidateQueries({ queryKey: ["all_team_vehicles", campaignId] });
