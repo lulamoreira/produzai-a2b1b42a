@@ -51,6 +51,7 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
   const { data: teams = [], isLoading: loadingTeams } = useInstallationTeams(campaignId);
   const { data: membersMap = {}, isLoading: loadingMembers } = useAllTeamMembers(campaignId);
   const { data: vehiclesMap = {}, isLoading: loadingVehicles } = useAllTeamVehicles(campaignId);
+  const { data: blockedData } = useBlockedInstallers(clientId);
 
   const [search, setSearch] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
