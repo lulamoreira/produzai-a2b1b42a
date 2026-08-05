@@ -273,6 +273,7 @@ export const PERMISSION_PRESETS: Record<
       "scheduling",
       "installations",
       "loja_a_loja",
+      "occurrences",
       "stores",
       "campaign_stores",
       "pieces",
