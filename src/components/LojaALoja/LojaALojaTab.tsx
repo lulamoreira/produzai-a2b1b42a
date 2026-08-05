@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Megaphone } from "lucide-react";
+import { useUserRole } from "@/hooks/useUserRole";
 import OccurrenceInviteDialog from "@/components/LojaALoja/OccurrenceInviteDialog";
 import TiposManager from "@/components/LojaALoja/TiposManager";
 import LojasManager from "@/components/LojaALoja/LojasManager";
@@ -111,6 +112,7 @@ function SortableTab({ id, t }: { id: string; t: any }) {
 
 export default function LojaALojaTab({ campaignId, clientId, permissions, initialTab }: Props) {
   const { t } = useTranslation();
+  const { isAdminOrMaster } = useUserRole();
   const { order, saveOrder, loaded } = useLojaALojaTabOrder();
   const [inviteOpen, setInviteOpen] = useState(false);
   const initialApplied = useRef(false);
@@ -196,7 +198,7 @@ export default function LojaALojaTab({ campaignId, clientId, permissions, initia
                 <SortableTab key={id} id={id} t={t} />
               ))}
             </TabsList>
-            {permissions.ocorrencias.canView && (
+            {isAdminOrMaster && (
               <Button
                 size="sm"
                 variant="default"
