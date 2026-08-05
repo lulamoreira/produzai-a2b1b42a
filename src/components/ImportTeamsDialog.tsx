@@ -19,9 +19,11 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { ChevronRight, Search, Users, Download, Car } from "lucide-react";
+import { ChevronRight, Search, Users, Download, Car, AlertTriangle } from "lucide-react";
 import { cn, normalizeTeamName } from "@/lib/utils";
 import { supabasePaginate } from "@/lib/supabasePaginate";
+import { useBlockedInstallers } from "@/hooks/useBlockedInstallers";
+import { normCpf, normRg } from "@/lib/normalizeDoc";
 
 interface Props {
   open: boolean;

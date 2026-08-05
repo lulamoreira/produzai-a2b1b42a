@@ -554,8 +554,7 @@ const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function Team
 function MemberRow({ member, isLeader }: { member: TeamMember; isLeader?: boolean }) {
   const qc = useQueryClient();
   const { data: blockedData } = useBlockedInstallers();
-  const { role } = useUserRole();
-  const isAdminOrMaster = role === "admin" || role === "moderator";
+  const { role, isAdminOrMaster } = useUserRole();
 
   const nCpf = normCpf(member.cpf);
   const nRg = normRg(member.rg);
