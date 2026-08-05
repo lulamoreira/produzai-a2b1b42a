@@ -195,9 +195,10 @@ interface InstallationTeamDialogProps {
   campaignId: string;
   canEdit: boolean;
   initialTeamId?: string | null;
+  clientId?: string;
 }
 
-export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit, initialTeamId }: InstallationTeamDialogProps) {
+export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit, initialTeamId, clientId }: InstallationTeamDialogProps) {
   const queryClient = useQueryClient();
   const { data: teams = [] } = useInstallationTeams(campaignId);
   const { data: teamStoreCounts = {} } = useQuery({
