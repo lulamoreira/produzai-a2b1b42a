@@ -623,6 +623,36 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId }: { teamId:
         return;
       }
 
+      // ─── Duplicate Doc Check (NEW) ───
+      const { data: teamsInCampaign } = await supabase
+        .from("installation_teams")
+        .select("id")
+        .eq("campaign_id", campaignId);
+      
+      if (teamsInCampaign && teamsInCampaign.length > 0) {
+        const teamIds = teamsInCampaign.map(t => t.id);
+        
+        let query = supabase
+          .from("installation_team_members")
+          .select("id, name, team_id, installation_teams(name)")
+          .in("team_id", teamIds)
+          .neq("id", id);
+        
+        const orConditions = [];
+        if (nCpf) orConditions.push(`cpf.eq.${nCpf}`);
+        if (nRg) orConditions.push(`rg.eq.${nRg}`);
+        
+        if (orConditions.length > 0) {
+          const { data: duplicates, error: dupError } = await query.or(orConditions.join(","));
+          
+          if (!dupError && duplicates && duplicates.length > 0) {
+            const dup = duplicates[0];
+            const teamName = (dup as any).installation_teams?.name || "outra equipe";
+            throw new Error(`Este documento já está cadastrado para "${dup.name}" na equipe "${teamName}".`);
+          }
+        }
+      }
+
       // If marking as leader, unset other leaders first
       if (data.isLeader) {
         await supabase.from("installation_team_members").update({ is_leader: false }).eq("team_id", teamId).eq("is_leader", true);
