@@ -84,7 +84,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [lastFailures, setLastFailures] = useState<{ id: string; name: string; error: string }[]>([]);
   const [blockedImports, setBlockedImports] = useState<{ name: string; cpf: string }[]>([]);
-  const { data: blockedData } = useBlockedInstallers();
+  const { data: blockedData } = useBlockedInstallers(clientId);
 
   // Direct campaigns query (works for admins / users with RLS-visible campaigns).
   const { data: directCampaigns = [], isLoading: loadingDirectCampaigns } = useQuery({
