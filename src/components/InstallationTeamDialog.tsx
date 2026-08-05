@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -10,6 +10,8 @@ import { Plus, Trash2, Users, Car, AlertTriangle, ChevronDown, ChevronRight, Edi
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn, normalizeTeamName, normalizeMemberName } from "@/lib/utils";
+import { useBlockedInstallers } from "@/hooks/useBlockedInstallers";
+import { normCpf, normRg } from "@/lib/normalizeDoc";
 
 // ─── Types ───────────────────────────────────────────────
 
