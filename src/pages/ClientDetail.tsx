@@ -2052,6 +2052,11 @@ const ClientDetail = () => {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* ─── Blocked Installers View ─── */}
+      {new URLSearchParams(location.search).get("tab") === "blockedInstallers" && isAdminOrMaster && (
+        <BlockedInstallersPanel clientId={clientId!} />
+      )}
+
       {/* ─── Store Models Management Dialog ─── */}
       <Dialog open={storeModelDialogOpen} onOpenChange={setStoreModelDialogOpen}>
         <DialogContent>
