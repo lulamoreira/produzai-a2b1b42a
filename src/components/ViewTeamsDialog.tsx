@@ -552,9 +552,9 @@ const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function Team
   );
 });
 
-function MemberRow({ member, isLeader }: { member: TeamMember; isLeader?: boolean }) {
+function MemberRow({ member, isLeader, clientId }: { member: TeamMember; isLeader?: boolean; clientId?: string }) {
   const qc = useQueryClient();
-  const { data: blockedData } = useBlockedInstallers();
+  const { data: blockedData } = useBlockedInstallers(clientId);
   const { role, isAdminOrMaster } = useUserRole();
   const [confirmBlockOpen, setConfirmBlockOpen] = useState(false);
 
@@ -567,8 +567,8 @@ function MemberRow({ member, isLeader }: { member: TeamMember; isLeader?: boolea
       if (block) {
         // Block
         const toInsert: any[] = [];
-        if (nCpf) toInsert.push({ doc_type: "cpf", doc_norm: nCpf, name: member.name, blocked_by: (await supabase.auth.getUser()).data.user?.id });
-        if (nRg) toInsert.push({ doc_type: "rg", doc_norm: nRg, name: member.name, blocked_by: (await supabase.auth.getUser()).data.user?.id });
+        if (nCpf) toInsert.push({ doc_type: "cpf", doc_norm: nCpf, name: member.name, blocked_by: (await supabase.auth.getUser()).data.user?.id, client_id: clientId || null });
+        if (nRg) toInsert.push({ doc_type: "rg", doc_norm: nRg, name: member.name, blocked_by: (await supabase.auth.getUser()).data.user?.id, client_id: clientId || null });
         
         if (toInsert.length === 0) return;
         const { error } = await supabase.from("blocked_installers" as any).upsert(toInsert, { onConflict: "doc_type,doc_norm" });
