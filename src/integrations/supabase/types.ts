@@ -430,6 +430,36 @@ export type Database = {
           },
         ]
       }
+      blocked_installers: {
+        Row: {
+          blocked_by: string | null
+          created_at: string
+          doc_norm: string
+          doc_type: string
+          id: string
+          name: string | null
+          reason: string | null
+        }
+        Insert: {
+          blocked_by?: string | null
+          created_at?: string
+          doc_norm: string
+          doc_type: string
+          id?: string
+          name?: string | null
+          reason?: string | null
+        }
+        Update: {
+          blocked_by?: string | null
+          created_at?: string
+          doc_norm?: string
+          doc_type?: string
+          id?: string
+          name?: string | null
+          reason?: string | null
+        }
+        Relationships: []
+      }
       budget_extra_costs: {
         Row: {
           adjusted_freight_value: number | null
