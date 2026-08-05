@@ -81,6 +81,16 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     ],
   },
   {
+    key: "occurrences",
+    label: "Ocorrências",
+    icon: "AlertTriangle",
+    category: "campaign",
+    description: "Gestão central de ocorrências da campanha",
+    actions: ["view", "edit", "delete"],
+    specialActions: [
+      { key: "export", label: "Exportar Ocorrências", description: "Gerar relatórios de ocorrências em Excel/PDF" },
+    ],
+  },
     key: "stores",
     label: "Lojas (Cadastro)",
     icon: "Store",
