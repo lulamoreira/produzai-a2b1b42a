@@ -559,13 +559,20 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId }: { teamId:
       // Check if this CPF or RG already exists in the SAME team
       const { data: duplicates, error: dupError } = await supabase
         .from("installation_team_members")
-        .select("id, name")
+        .select(`
+          id, 
+          name,
+          installation_teams!inner (
+            name
+          )
+        `)
         .eq("team_id", teamId)
         .or(`cpf.eq.${nCpf || 'none'},rg.eq.${nRg || 'none'}`);
       
       if (!dupError && duplicates && duplicates.length > 0) {
         const dup = duplicates[0];
-        throw new Error(`Este documento já está cadastrado nesta equipe para o instalador "${dup.name}".`);
+        const teamName = (dup.installation_teams as any)?.name || "esta equipe";
+        throw new Error(`Este documento já está cadastrado na equipe "${teamName}" para o instalador "${dup.name}".`);
       }
 
       // If marking as leader, unset other leaders first
@@ -610,14 +617,21 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId }: { teamId:
       // Check if this CPF or RG already exists in the SAME team (excluding current)
       const { data: duplicates, error: dupError } = await supabase
         .from("installation_team_members")
-        .select("id, name")
+        .select(`
+          id, 
+          name,
+          installation_teams!inner (
+            name
+          )
+        `)
         .eq("team_id", teamId)
         .neq("id", id)
         .or(`cpf.eq.${nCpf || 'none'},rg.eq.${nRg || 'none'}`);
       
       if (!dupError && duplicates && duplicates.length > 0) {
         const dup = duplicates[0];
-        throw new Error(`Este documento já está cadastrado nesta equipe para o instalador "${dup.name}".`);
+        const teamName = (dup.installation_teams as any)?.name || "esta equipe";
+        throw new Error(`Este documento já está cadastrado na equipe "${teamName}" para o instalador "${dup.name}".`);
       }
 
       // If marking as leader, unset other leaders first

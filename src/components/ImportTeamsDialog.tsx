@@ -413,10 +413,13 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
             );
 
             if (isDupInIncomingTeam) {
+              const otherMember = membersToInsert.find(existing => 
+                (nCpf && existing.cpf === nCpf) || (nRg && existing.rg === nRg)
+              );
               failures.push({ 
                 id: t.id, 
                 teamName: t.name, 
-                errorMessage: `Documento duplicado (${nCpf || nRg}) encontrado dentro da própria equipe importada para o instalador "${name}".` 
+                errorMessage: `Documento duplicado (${nCpf || nRg}) encontrado na equipe "${t.name}" para os instaladores "${name}" e "${otherMember?.name}".` 
               });
               return;
             }
