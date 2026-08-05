@@ -373,6 +373,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
       let skipped = 0;
       const blocked: { name: string; cpf: string }[] = [];
       const failures: { id: string; teamName: string; errorMessage: string }[] = [];
+      const duplicateDocs: { teamName: string; memberName: string; doc: string; existingTeam: string }[] = [];
 
       // Sanitize NOT NULL text columns (members.name, vehicles.name) — never send null/undefined.
       const s = (v: any) => (v === null || v === undefined ? "" : v);
