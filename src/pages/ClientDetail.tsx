@@ -392,9 +392,11 @@ const ClientDetail = () => {
   const { data: favoriteIds } = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
 
-  const displayCampaigns = isAdminOrMaster
-    ? campaigns
-    : campaigns.filter(c => myCampaignIds.includes(c.id));
+  const displayCampaigns = useMemo(() => {
+    return isAdminOrMaster
+      ? campaigns
+      : campaigns.filter(c => myCampaignIds.includes(c.id));
+  }, [isAdminOrMaster, campaigns, myCampaignIds]);
 
   const searchParams = new URLSearchParams(location.search);
   const favoritesFilterActive = searchParams.get("filter") === "favorites";
