@@ -114,6 +114,7 @@ export function BlockedInstallersPanel({ clientId }: { clientId?: string }) {
               <TableHead className="font-bold">Nome</TableHead>
               <TableHead className="font-bold">Documento</TableHead>
               <TableHead className="font-bold">Motivo</TableHead>
+              <TableHead className="font-bold">Escopo</TableHead>
               {isAdminOrMaster && <TableHead className="font-bold text-right w-[100px]">Ações</TableHead>}
             </TableRow>
           </TableHeader>
