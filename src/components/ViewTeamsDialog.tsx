@@ -17,7 +17,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Search, Users, Car, Crown, Phone, AlertTriangle, ChevronUp, ChevronDown, Download, Pencil, Trash2, UserPlus } from "lucide-react";
+import { 
+  Search, Users, Car, Crown, Phone, AlertTriangle, ChevronUp, ChevronDown, 
+  Download, Pencil, Trash2, UserPlus, ShieldBan, ShieldCheck, XCircle 
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   useInstallationTeams,
@@ -29,6 +32,10 @@ import {
   type TeamVehicle,
 } from "@/components/InstallationTeamDialog";
 import ImportTeamsDialog from "@/components/ImportTeamsDialog";
+import { useBlockedInstallers } from "@/hooks/useBlockedInstallers";
+import { normCpf, normRg } from "@/lib/normalizeDoc";
+import { useUserRole } from "@/hooks/useUserRole";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ViewTeamsDialogProps {
   open: boolean;
