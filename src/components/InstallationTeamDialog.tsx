@@ -525,7 +525,7 @@ function TeamVehiclesSection({ teamId, canEdit, campaignId }: { teamId: string; 
 
 // ─── Members Section ─────────────────────────────────────
 
-function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; canEdit: boolean; campaignId: string }) {
+function TeamMembersSection({ teamId, canEdit, campaignId, clientId }: { teamId: string; canEdit: boolean; campaignId: string; clientId?: string }) {
   const queryClient = useQueryClient();
   const { data: members = [] } = useTeamMembers(teamId);
   const { data: blockedData } = useBlockedInstallers();
