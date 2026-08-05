@@ -15,33 +15,30 @@ export function useBlockedInstallers(clientId?: string) {
   return useQuery({
     queryKey: ["blocked_installers", clientId],
     queryFn: async () => {
-      // Use standard pagination as requested
-      // The cast to 'any' is needed because the table might not be in the generated types yet
-      const data = await supabasePaginate<BlockedInstaller>((from, to) => {
-        let query = supabase
-          .from("blocked_installers" as any)
-          .select("id, doc_type, doc_norm, name, reason, client_id", { count: "exact" });
-        
-        if (clientId) {
-          query = query.or(`client_id.is.null,client_id.eq.${clientId}`);
-        } else {
-          query = query.is("client_id", null);
-        }
+      const { data, error } = await supabase
+        .from("blocked_installers" as any)
+        .select("id, doc_type, doc_norm, name, reason, client_id");
+      
+      if (error) throw error;
 
-        return query
-          .order("id")
-          .range(from, to) as any;
+      const filteredData = (data as any[]).filter(item => {
+        if (!clientId) {
+          // If no clientId provided (global admin), show only global blocks
+          return !item.client_id;
+        }
+        // If clientId provided, show global blocks AND blocks for this specific client
+        return !item.client_id || item.client_id === clientId;
       });
 
       const cpfs = new Set<string>();
       const rgs = new Set<string>();
 
-      data.forEach((item) => {
+      filteredData.forEach((item) => {
         if (item.doc_type === "cpf") cpfs.add(item.doc_norm);
         if (item.doc_type === "rg") rgs.add(item.doc_norm);
       });
 
-      return { cpfs, rgs, raw: data };
+      return { cpfs, rgs, raw: filteredData };
     },
     // We want this to be available quickly
     staleTime: 1000 * 60 * 5, // 5 minutes

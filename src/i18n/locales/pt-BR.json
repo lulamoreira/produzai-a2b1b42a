@@ -1,6 +1,6 @@
 {
   "welcome": {
-    "hello": "Antes de realizar qualquer ação, entenda o contexto e instrução recente do usuário, comando mais recente enviado por ele: Implemente um filtro ou alternância para eu conseguir visualizar instaladores bloqueados na lista e entender por que eles não aparecem.",
+    "hello": "Antes de realizar qualquer ação, entenda o contexto e instrução recente do usuário, comando mais recente enviado por ele: Janela de bloqueados tá aparecendo duas vezes e pior sem os instaladores bloqueados.",
     "subtitle": "Sua conta está pronta. Veja o que você pode acessar.",
     "yourRole": "Seu papel:",
     "yourCampaigns": "Suas campanhas",
