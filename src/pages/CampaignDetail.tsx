@@ -587,7 +587,7 @@ const CampaignDetail = () => {
 
 
             <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">Carregando aba...</div>}>
-              {hasModule("occurrences") && (
+              {lalPerms.ocorrencias?.canView && (
                 <TabsContent value="occurrences">
                   <OccurrencesTab 
                     campaignId={campaignId!} 
