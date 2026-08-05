@@ -1272,7 +1272,7 @@ const ClientDetail = () => {
         </div>
 
         {/* Stats cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
           <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}`)}>
             <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
               <Megaphone className="w-5 h-5 text-primary-foreground" />
