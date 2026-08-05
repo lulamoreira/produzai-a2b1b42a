@@ -1,6 +1,6 @@
 {
   "welcome": {
-    "hello": "Antes de realizar qualquer ação, entenda o contexto e instrução recente do usuário, comando mais recente enviado por ele: Janela de bloqueados tá aparecendo duas vezes e pior sem os instaladores bloqueados.",
+    "hello": "Antes de realizar qualquer ação, entenda o contexto e instrução recente do usuário, comando mais recente enviado por ele: **Funcionalidade:** Impedir que o mesmo CPF ou RG seja associado a mais de um instalador dentro da mesma equipe.\\n\\n\\n\\n**Requisitos Técnicos:**\\n\\n\\n\\n*   Implementar uma validação no sistema que verifique a unicidade do CPF e RG de instaladores dentro do contexto de uma equipe específica.\\n\\n*   A validação deve permitir que um mesmo CPF ou RG seja utilizado por instaladores em equipes diferentes.\\n\\n\\n\\n**Passos Necessários:**\\n\\n\\n\\n1.  Identificar os campos de CPF e RG na estrutura de dados dos instaladores.\\n\\n2.  Desenvolver a lógica de validação que cruza os dados do instalador com os instaladores já associados à mesma equipe.\\n\\n3.  Garantir que a validação não interfira na associação de instaladores com o mesmo documento em equipes distintas.\\n\\n4.  Implementar mensagens de erro claras para o usuário caso a validação falhe.",
     "subtitle": "Sua conta está pronta. Veja o que você pode acessar.",
     "yourRole": "Seu papel:",
     "yourCampaigns": "Suas campanhas",
