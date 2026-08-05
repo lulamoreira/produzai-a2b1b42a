@@ -151,6 +151,11 @@ export function BlockedInstallersPanel({ clientId }: { clientId?: string }) {
                       {item.reason || "Motivo não especificado"}
                     </span>
                   </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="text-[10px] font-medium">
+                      {(item as any).client_id ? "Cliente" : "Global"}
+                    </Badge>
+                  </TableCell>
                   {isAdminOrMaster && (
                     <TableCell className="text-right">
                       <Button
