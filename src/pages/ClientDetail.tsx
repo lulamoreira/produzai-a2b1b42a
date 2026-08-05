@@ -1960,7 +1960,16 @@ const ClientDetail = () => {
         {/* ─── Blocked Installers View ─── */}
         {new URLSearchParams(location.search).get("tab") === "blockedInstallers" && (
           <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
-            <BlockedInstallersPanel clientId={clientId!} />
+            <div className="mb-6">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <ShieldBan className="w-6 h-6 text-destructive" />
+                Instaladores Bloqueados
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Lista de profissionais impedidos de atuar nas campanhas por CPF ou RG.
+              </p>
+            </div>
+            <BlockedInstallersPanel clientId={clientId!} showHeader={false} />
           </div>
         )}
       </div>
