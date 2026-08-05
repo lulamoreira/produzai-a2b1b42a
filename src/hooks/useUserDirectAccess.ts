@@ -43,7 +43,7 @@ function modulesFromFlags(pc: PermissionFlags): string[] {
   if (pc.can_view_occurrences) mods.push("occurrences");
   if (pc.can_view_schedules) mods.push("scheduling");
   if (pc.can_view_installations) mods.push("installations");
-  // `budgets` is Admin-only — never exposed to limited users.
+  
   const lalView =
     pc.can_view_loja_a_loja ||
     pc.can_view_lal_estrutura ||
@@ -52,6 +52,12 @@ function modulesFromFlags(pc: PermissionFlags): string[] {
     pc.can_view_lal_config ||
     pc.can_view_lal_ocorrencias;
   if (lalView) mods.push("loja_a_loja");
+
+  // If we have granular occurrence permission, ensure the module key is present
+  if (pc.can_view_lal_ocorrencias && !mods.includes("occurrences")) {
+    mods.push("occurrences");
+  }
+
   return mods;
 }
 
