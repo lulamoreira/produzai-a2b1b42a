@@ -153,16 +153,23 @@ export function useUserDirectAccess() {
           .from("permission_grants")
           .select("category_id, module_key")
           .in("category_id", categoryIds)
-          .in("module_key", ["mockup", "adjustments", "occurrences", "briefing", "scheduling", "installations", "loja_a_loja", "stores", "pieces", "matrix"])
+          .in("module_key", ["mockup", "adjustments", "occurrences", "loja_a_loja.ocorrencias", "briefing", "scheduling", "installations", "loja_a_loja", "stores", "pieces", "matrix"])
           .eq("action", "view");
         (grants ?? []).forEach((g) => grantedV2Modules.add(`${g.category_id}:${g.module_key}`));
       }
 
       const v2ModulesFor = (categoryId?: string | null): string[] => {
         if (!categoryId) return [];
-        return (["mockup", "adjustments", "occurrences", "briefing", "scheduling", "installations", "loja_a_loja", "stores", "pieces", "matrix"] as const).filter((mk) =>
+        const mods = (["mockup", "adjustments", "occurrences", "briefing", "scheduling", "installations", "loja_a_loja", "stores", "pieces", "matrix"] as const).filter((mk) =>
           grantedV2Modules.has(`${categoryId}:${mk}`),
-        );
+        ) as string[];
+
+        // Ocorrências também é autorizada pela sub-área "Ocorrências (LaL)"
+        if (grantedV2Modules.has(`${categoryId}:loja_a_loja.ocorrencias`) && !mods.includes("occurrences")) {
+          mods.push("occurrences");
+        }
+
+        return mods;
       };
 
       // ---- Load the campaigns we need (client-level + campaign-level) ----
