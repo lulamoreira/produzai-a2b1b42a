@@ -1953,6 +1953,13 @@ const ClientDetail = () => {
             <StoreFormFieldsConfig clientId={clientId!} canEdit={canEditClients} />
           </div>
         )}
+
+        {/* ─── Blocked Installers View ─── */}
+        {new URLSearchParams(location.search).get("tab") === "blockedInstallers" && (
+          <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+            <BlockedInstallersPanel clientId={clientId!} />
+          </div>
+        )}
       </div>
 
       {/* ─── Supplier Add/Edit Dialog ─── */}
