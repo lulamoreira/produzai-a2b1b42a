@@ -154,7 +154,7 @@ export function useUserDirectAccess() {
 
       const v2ModulesFor = (categoryId?: string | null): string[] => {
         if (!categoryId) return [];
-        return (["mockup", "adjustments"] as const).filter((mk) =>
+        return (["mockup", "adjustments", "occurrences", "briefing"] as const).filter((mk) =>
           grantedV2Modules.has(`${categoryId}:${mk}`),
         );
       };
