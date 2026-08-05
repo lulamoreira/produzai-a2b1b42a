@@ -1,4 +1,4 @@
-import { Users, Mail, Tag, MessageSquare, Bell, CheckSquare, Palette, Image, Database, Home, ShieldCheck, type LucideIcon } from "lucide-react";
+import { Users, Mail, Tag, MessageSquare, Bell, CheckSquare, Palette, Image, Database, Home, ShieldCheck, UserX, type LucideIcon } from "lucide-react";
 
 export type AdminRole = "all" | "admin-only";
 
@@ -17,6 +17,7 @@ export const ADMIN_MENU_ITEMS: AdminMenuItem[] = [
   { key: "messages",     label: "Mensagens",      icon: MessageSquare, access: "all" },
   { key: "notificacoes", label: "Notificações",   icon: Bell,          access: "all" },
   { key: "approvals",    label: "Aprovações",     icon: CheckSquare,   access: "all" },
+  { key: "blocked-installers", label: "Instaladores Bloqueados", icon: UserX, access: "all" },
   { key: "appearance",   label: "Aparência",      icon: Palette,       access: "admin-only" },
   { key: "images",       label: "Imagens",        icon: Image,         access: "admin-only" },
   { key: "backup",       label: "Backup",         icon: Database,      access: "admin-only" },
