@@ -330,14 +330,9 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
                 .range(from, to),
             ).then((data) => ({ data }))
           : Promise.resolve({ data: [] as any[] }),
-        // Load current campaign members to check for duplicates
-        supabase.from("installation_teams").select("id").eq("campaign_id", campaignId)
-          .then(async ({ data: teams }) => {
-            if (!teams || teams.length === 0) return { data: [] };
-            const teamIds = teams.map(t => t.id);
-            const { data } = await supabase.from("installation_team_members").select("name, cpf, rg, team_id, installation_teams(name)").in("team_id", teamIds);
-            return { data: data || [] };
-          })
+        // No longer pre-checking documents globally for the whole campaign here
+        // as the requirement now allows duplicates across different teams.
+        Promise.resolve({ data: [] })
       ]);
 
       const currentCampaignDocs = new Map<string, { name: string; team: string }>();
@@ -410,17 +405,18 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
               return;
             }
 
-            // Check for duplicates in current campaign
-            const dupCpf = nCpf ? currentCampaignDocs.get(`cpf:${nCpf}`) : null;
-            const dupRg = nRg ? currentCampaignDocs.get(`rg:${nRg}`) : null;
-            const dup = dupCpf || dupRg;
+            // The requirement specifies validation WITHIN the same team.
+            // When importing a NEW team, we only need to check if the incoming members 
+            // have duplicate documents among themselves in THAT team.
+            const isDupInIncomingTeam = membersToInsert.some(existing => 
+              (nCpf && existing.cpf === nCpf) || (nRg && existing.rg === nRg)
+            );
 
-            if (dup) {
-              duplicateDocs.push({
-                teamName: t.name,
-                memberName: name,
-                doc: nCpf || nRg || "",
-                existingTeam: dup.team
+            if (isDupInIncomingTeam) {
+              failures.push({ 
+                id: t.id, 
+                teamName: t.name, 
+                errorMessage: `Documento duplicado (${nCpf || nRg}) encontrado dentro da própria equipe importada para o instalador "${name}".` 
               });
               return;
             }

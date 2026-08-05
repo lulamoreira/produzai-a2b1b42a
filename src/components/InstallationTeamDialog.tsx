@@ -555,34 +555,17 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId }: { teamId:
         return;
       }
 
-      // ─── Duplicate Doc Check (NEW) ───
-      // Check if this CPF or RG already exists in ANY team of this campaign
-      const { data: teamsInCampaign } = await supabase
-        .from("installation_teams")
-        .select("id")
-        .eq("campaign_id", campaignId);
+      // ─── Duplicate Doc Check ───
+      // Check if this CPF or RG already exists in the SAME team
+      const { data: duplicates, error: dupError } = await supabase
+        .from("installation_team_members")
+        .select("id, name")
+        .eq("team_id", teamId)
+        .or(`cpf.eq.${nCpf || 'none'},rg.eq.${nRg || 'none'}`);
       
-      if (teamsInCampaign && teamsInCampaign.length > 0) {
-        const teamIds = teamsInCampaign.map(t => t.id);
-        
-        let query = supabase
-          .from("installation_team_members")
-          .select("id, name, team_id, installation_teams(name)")
-          .in("team_id", teamIds);
-        
-        const orConditions = [];
-        if (nCpf) orConditions.push(`cpf.eq.${nCpf}`);
-        if (nRg) orConditions.push(`rg.eq.${nRg}`);
-        
-        if (orConditions.length > 0) {
-          const { data: duplicates, error: dupError } = await query.or(orConditions.join(","));
-          
-          if (!dupError && duplicates && duplicates.length > 0) {
-            const dup = duplicates[0];
-            const teamName = (dup as any).installation_teams?.name || "outra equipe";
-            throw new Error(`Este documento já está cadastrado para "${dup.name}" na equipe "${teamName}".`);
-          }
-        }
+      if (!dupError && duplicates && duplicates.length > 0) {
+        const dup = duplicates[0];
+        throw new Error(`Este documento já está cadastrado nesta equipe para o instalador "${dup.name}".`);
       }
 
       // If marking as leader, unset other leaders first
@@ -623,34 +606,18 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId }: { teamId:
         return;
       }
 
-      // ─── Duplicate Doc Check (NEW) ───
-      const { data: teamsInCampaign } = await supabase
-        .from("installation_teams")
-        .select("id")
-        .eq("campaign_id", campaignId);
+      // ─── Duplicate Doc Check ───
+      // Check if this CPF or RG already exists in the SAME team (excluding current)
+      const { data: duplicates, error: dupError } = await supabase
+        .from("installation_team_members")
+        .select("id, name")
+        .eq("team_id", teamId)
+        .neq("id", id)
+        .or(`cpf.eq.${nCpf || 'none'},rg.eq.${nRg || 'none'}`);
       
-      if (teamsInCampaign && teamsInCampaign.length > 0) {
-        const teamIds = teamsInCampaign.map(t => t.id);
-        
-        let query = supabase
-          .from("installation_team_members")
-          .select("id, name, team_id, installation_teams(name)")
-          .in("team_id", teamIds)
-          .neq("id", id);
-        
-        const orConditions = [];
-        if (nCpf) orConditions.push(`cpf.eq.${nCpf}`);
-        if (nRg) orConditions.push(`rg.eq.${nRg}`);
-        
-        if (orConditions.length > 0) {
-          const { data: duplicates, error: dupError } = await query.or(orConditions.join(","));
-          
-          if (!dupError && duplicates && duplicates.length > 0) {
-            const dup = duplicates[0];
-            const teamName = (dup as any).installation_teams?.name || "outra equipe";
-            throw new Error(`Este documento já está cadastrado para "${dup.name}" na equipe "${teamName}".`);
-          }
-        }
+      if (!dupError && duplicates && duplicates.length > 0) {
+        const dup = duplicates[0];
+        throw new Error(`Este documento já está cadastrado nesta equipe para o instalador "${dup.name}".`);
       }
 
       // If marking as leader, unset other leaders first
