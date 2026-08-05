@@ -2054,7 +2054,7 @@ const ClientDetail = () => {
 
       {/* ─── Blocked Installers View ─── */}
       {new URLSearchParams(location.search).get("tab") === "blockedInstallers" && isAdminOrMaster && (
-        <BlockedInstallersPanel clientId={clientId!} />
+        <BlockedInstallersPanel clientId={clientId!} showHeader={false} />
       )}
 
       {/* ─── Store Models Management Dialog ─── */}
