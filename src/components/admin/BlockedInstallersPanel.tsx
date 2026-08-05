@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 
-export function BlockedInstallersPanel({ clientId, showHeader = true }: { clientId?: string; showHeader?: boolean }) {
+export function BlockedInstallersPanel({ clientId, showHeader = false }: { clientId?: string; showHeader?: boolean }) {
   const { t } = useTranslation();
   const { data: blockedData, isLoading } = useBlockedInstallers(clientId);
   const { isAdminOrMaster } = useUserRole();
