@@ -562,6 +562,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId }: { teamId:
         .select(`
           id, 
           name,
+          team_id,
           installation_teams!inner (
             name
           )
@@ -572,7 +573,24 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId }: { teamId:
       if (!dupError && duplicates && duplicates.length > 0) {
         const dup = duplicates[0];
         const teamName = (dup.installation_teams as any)?.name || "esta equipe";
-        throw new Error(`Este documento já está cadastrado na equipe "${teamName}" para o instalador "${dup.name}".`);
+        toast.error(
+          <div className="flex flex-col gap-1">
+            <span>Este documento já está cadastrado para o instalador "{dup.name}".</span>
+            <Button 
+              variant="link" 
+              className="p-0 h-auto text-xs justify-start text-white underline"
+              onClick={() => {
+                setSelectedTeamId(dup.team_id);
+                // The list is already filtered or at the team level, 
+                // but we ensure the team is expanded.
+              }}
+            >
+              Ver equipe "{teamName}"
+            </Button>
+          </div>,
+          { duration: 5000 }
+        );
+        return;
       }
 
       // If marking as leader, unset other leaders first
@@ -620,6 +638,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId }: { teamId:
         .select(`
           id, 
           name,
+          team_id,
           installation_teams!inner (
             name
           )
@@ -631,7 +650,22 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId }: { teamId:
       if (!dupError && duplicates && duplicates.length > 0) {
         const dup = duplicates[0];
         const teamName = (dup.installation_teams as any)?.name || "esta equipe";
-        throw new Error(`Este documento já está cadastrado na equipe "${teamName}" para o instalador "${dup.name}".`);
+        toast.error(
+          <div className="flex flex-col gap-1">
+            <span>Este documento já está cadastrado para o instalador "{dup.name}".</span>
+            <Button 
+              variant="link" 
+              className="p-0 h-auto text-xs justify-start text-white underline"
+              onClick={() => {
+                setSelectedTeamId(dup.team_id);
+              }}
+            >
+              Ver equipe "{teamName}"
+            </Button>
+          </div>,
+          { duration: 5000 }
+        );
+        return;
       }
 
       // If marking as leader, unset other leaders first
