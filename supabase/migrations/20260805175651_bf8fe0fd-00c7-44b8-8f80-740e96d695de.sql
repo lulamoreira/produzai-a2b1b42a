@@ -1,0 +1,2 @@
+ALTER TABLE public.blocked_installers ADD COLUMN IF NOT EXISTS client_id uuid REFERENCES public.clients(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_blocked_installers_client_id ON public.blocked_installers(client_id);

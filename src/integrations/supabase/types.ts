@@ -433,6 +433,7 @@ export type Database = {
       blocked_installers: {
         Row: {
           blocked_by: string | null
+          client_id: string | null
           created_at: string
           doc_norm: string
           doc_type: string
@@ -442,6 +443,7 @@ export type Database = {
         }
         Insert: {
           blocked_by?: string | null
+          client_id?: string | null
           created_at?: string
           doc_norm: string
           doc_type: string
@@ -451,6 +453,7 @@ export type Database = {
         }
         Update: {
           blocked_by?: string | null
+          client_id?: string | null
           created_at?: string
           doc_norm?: string
           doc_type?: string
@@ -458,7 +461,15 @@ export type Database = {
           name?: string | null
           reason?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "blocked_installers_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       budget_extra_costs: {
         Row: {
