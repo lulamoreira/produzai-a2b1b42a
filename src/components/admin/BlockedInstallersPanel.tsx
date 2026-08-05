@@ -87,15 +87,17 @@ export function BlockedInstallersPanel({ clientId, showHeader = true }: { client
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-bold flex items-center gap-2">
-          <UserX className="w-6 h-6 text-red-500" />
-          Instaladores Bloqueados
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Lista de profissionais impedidos de atuar nas campanhas por CPF ou RG.
-        </p>
-      </div>
+      {showHeader && (
+        <div>
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <UserX className="w-6 h-6 text-red-500" />
+            Instaladores Bloqueados
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Lista de profissionais impedidos de atuar nas campanhas por CPF ou RG.
+          </p>
+        </div>
+      )}
 
       <div className="relative">
         <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
