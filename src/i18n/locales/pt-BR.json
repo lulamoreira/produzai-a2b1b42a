@@ -1,6 +1,6 @@
 {
   "welcome": {
-    "hello": "TEste liberando a categoria CLIENTES a ver as ocorrências.",
+    "hello": "Veja, mesmo com autorização, o cliente não tem acesso através dos ícones. Preciso que essas partes se comuniquem: se eu libero ou bloqueio algo, isso deve ser refletido nos ícones.",
     "subtitle": "Sua conta está pronta. Veja o que você pode acessar.",
     "yourRole": "Seu papel:",
     "yourCampaigns": "Suas campanhas",
