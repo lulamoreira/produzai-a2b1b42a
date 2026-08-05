@@ -20,10 +20,13 @@ export default function OccurrencesTab({ campaignId, clientId, lalPerms }: Occur
       <PortalDashboard 
         campaignId={campaignId} 
         clientId={clientId}
-        canView={lalPerms.ocorrencias.canView}
-        canEdit={lalPerms.ocorrencias.canEdit}
-        canDelete={lalPerms.ocorrencias.canDelete}
+        permissions={{
+          canView: lalPerms.ocorrencias.canView,
+          canEdit: lalPerms.ocorrencias.canEdit,
+          canDelete: lalPerms.ocorrencias.canDelete
+        }}
       />
     </div>
   );
 }
+
