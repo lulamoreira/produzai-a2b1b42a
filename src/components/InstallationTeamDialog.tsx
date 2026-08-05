@@ -369,7 +369,13 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
                 <div className="border-t p-3 space-y-4 bg-card">
                   <TeamVehiclesSection teamId={team.id} canEdit={canEdit} campaignId={campaignId} />
                   <hr className="border-border" />
-                  <TeamMembersSection teamId={team.id} canEdit={canEdit} campaignId={campaignId} clientId={clientId} />
+                  <TeamMembersSection 
+                    teamId={team.id} 
+                    canEdit={canEdit} 
+                    campaignId={campaignId} 
+                    clientId={clientId} 
+                    onNavigateToTeam={setSelectedTeamId}
+                  />
                 </div>
               )}
             </div>
@@ -525,7 +531,7 @@ function TeamVehiclesSection({ teamId, canEdit, campaignId }: { teamId: string; 
 
 // ─── Members Section ─────────────────────────────────────
 
-function TeamMembersSection({ teamId, canEdit, campaignId, clientId }: { teamId: string; canEdit: boolean; campaignId: string; clientId?: string }) {
+function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateToTeam }: { teamId: string; canEdit: boolean; campaignId: string; clientId?: string; onNavigateToTeam?: (id: string) => void }) {
   const queryClient = useQueryClient();
   const { data: members = [] } = useTeamMembers(teamId);
   const { data: blockedData } = useBlockedInstallers(clientId);
@@ -580,7 +586,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId }: { teamId:
               variant="link" 
               className="p-0 h-auto text-xs justify-start text-white underline"
               onClick={() => {
-                setSelectedTeamId(dup.team_id);
+                if (onNavigateToTeam) onNavigateToTeam(dup.team_id);
                 // The list is already filtered or at the team level, 
                 // but we ensure the team is expanded.
               }}
@@ -657,7 +663,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId }: { teamId:
               variant="link" 
               className="p-0 h-auto text-xs justify-start text-white underline"
               onClick={() => {
-                setSelectedTeamId(dup.team_id);
+                if (onNavigateToTeam) onNavigateToTeam(dup.team_id);
               }}
             >
               Ver equipe "{teamName}"
