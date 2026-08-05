@@ -288,7 +288,7 @@ export const PERMISSION_PRESETS: Record<
   operational_store: {
     label: "Operacional Loja",
     description: "Acesso restrito a operações de loja",
-    grants: ["stores", "campaign_stores", "scheduling", "installations"]
+    grants: ["stores", "campaign_stores", "scheduling", "installations", "occurrences"]
       .flatMap((k) => [
         { module_key: k, action: "view" },
         { module_key: k, action: "edit" },
