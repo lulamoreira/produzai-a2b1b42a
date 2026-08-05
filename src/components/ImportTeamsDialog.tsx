@@ -19,9 +19,11 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { toast } from "sonner";
-import { ChevronRight, Search, Users, Download, Car } from "lucide-react";
+import { ChevronRight, Search, Users, Download, Car, AlertTriangle } from "lucide-react";
 import { cn, normalizeTeamName } from "@/lib/utils";
 import { supabasePaginate } from "@/lib/supabasePaginate";
+import { useBlockedInstallers } from "@/hooks/useBlockedInstallers";
+import { normCpf, normRg } from "@/lib/normalizeDoc";
 
 interface Props {
   open: boolean;
@@ -81,6 +83,8 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [lastFailures, setLastFailures] = useState<{ id: string; name: string; error: string }[]>([]);
+  const [blockedImports, setBlockedImports] = useState<{ name: string; cpf: string }[]>([]);
+  const { data: blockedData } = useBlockedInstallers();
 
   // Direct campaigns query (works for admins / users with RLS-visible campaigns).
   const { data: directCampaigns = [], isLoading: loadingDirectCampaigns } = useQuery({
@@ -277,7 +281,9 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
   const importMutation = useMutation({
     mutationFn: async (overrideIds?: string[]) => {
       const idsToImport = overrideIds && overrideIds.length > 0 ? overrideIds : selectedIds;
-      if (idsToImport.length === 0) return { imported: 0, skipped: 0, failures: [] as { id: string; teamName: string; errorMessage: string }[] };
+      if (idsToImport.length === 0) return { imported: 0, skipped: 0, blocked: [] as { name: string; cpf: string }[], failures: [] as { id: string; teamName: string; errorMessage: string }[] };
+
+      setBlockedImports([]);
 
       // Existing team names in destination (to avoid duplicates)
       const { data: existing } = await supabase
@@ -350,6 +356,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
 
       let imported = 0;
       let skipped = 0;
+      const blocked: { name: string; cpf: string }[] = [];
       const failures: { id: string; teamName: string; errorMessage: string }[] = [];
 
       // Sanitize NOT NULL text columns (members.name, vehicles.name) — never send null/undefined.
@@ -373,19 +380,33 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
           newTeamId = newTeam.id;
           existingNames.add(normalizeTeamName(t.name));
 
-          const members = t.members
-            .filter((m: any) => s(m?.name).trim() !== "")
-            .map((m: any) => ({
+          const membersToInsert: any[] = [];
+          
+          t.members.forEach((m: any) => {
+            const name = s(m.name);
+            if (name.trim() === "") return;
+
+            const nCpf = normCpf(m.cpf);
+            const nRg = normRg(m.rg);
+
+            if ((nCpf && blockedData?.cpfs.has(nCpf)) || (nRg && blockedData?.rgs.has(nRg))) {
+              blocked.push({ name, cpf: s(m.cpf) });
+              return;
+            }
+
+            membersToInsert.push({
               team_id: newTeam.id,
-              name: s(m.name),
-              cpf: s(m.cpf),
-              rg: s(m.rg),
+              name,
+              cpf: nCpf,
+              rg: nRg,
               phone: s(m.phone),
               is_leader: b(m.is_leader),
               is_unified_doc: b(m.is_unified_doc),
-            }));
-          if (members.length) {
-            const { error } = await supabase.from("installation_team_members").insert(members);
+            });
+          });
+
+          if (membersToInsert.length) {
+            const { error } = await supabase.from("installation_team_members").insert(membersToInsert);
             if (error) throw error;
           }
 
@@ -418,12 +439,17 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
         }
       }
 
-      return { imported, skipped, failures };
+      return { imported, skipped, blocked, failures };
     },
-    onSuccess: ({ imported, skipped, failures }) => {
+    onSuccess: ({ imported, skipped, blocked, failures }) => {
       qc.invalidateQueries({ queryKey: ["installation_teams", campaignId] });
       qc.invalidateQueries({ queryKey: ["all_team_members", campaignId] });
       qc.invalidateQueries({ queryKey: ["all_team_vehicles", campaignId] });
+      
+      if (blocked.length > 0) {
+        setBlockedImports(blocked);
+      }
+
       if (imported > 0) toast.success(`${imported} equipe(s) importada(s)${skipped ? ` · ${skipped} ignorada(s) (nome duplicado)` : ""}`);
       else if (skipped > 0 && failures.length === 0) toast.info(`Todas as ${skipped} equipe(s) já existem nesta campanha.`);
 
@@ -618,6 +644,31 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
             </Button>
           </div>
         </DialogFooter>
+
+        <Dialog open={blockedImports.length > 0} onOpenChange={(open) => !open && setBlockedImports([])}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="w-5 h-5" />
+                Instaladores Bloqueados
+              </DialogTitle>
+              <DialogDescription>
+                Os seguintes instaladores foram identificados na lista de bloqueio do sistema e NÃO foram importados.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[300px] overflow-y-auto space-y-2 py-4">
+              {blockedImports.map((m, i) => (
+                <div key={i} className="flex flex-col p-2 rounded-md bg-destructive/5 border border-destructive/10 text-xs">
+                  <span className="font-bold text-destructive">{m.name}</span>
+                  <span className="text-muted-foreground">CPF: {m.cpf || "Não informado"}</span>
+                </div>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setBlockedImports([])}>Compreendi</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );

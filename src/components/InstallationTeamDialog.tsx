@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -10,6 +10,8 @@ import { Plus, Trash2, Users, Car, AlertTriangle, ChevronDown, ChevronRight, Edi
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { cn, normalizeTeamName, normalizeMemberName } from "@/lib/utils";
+import { useBlockedInstallers } from "@/hooks/useBlockedInstallers";
+import { normCpf, normRg } from "@/lib/normalizeDoc";
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -525,10 +527,12 @@ function TeamVehiclesSection({ teamId, canEdit, campaignId }: { teamId: string; 
 function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; canEdit: boolean; campaignId: string }) {
   const queryClient = useQueryClient();
   const { data: members = [] } = useTeamMembers(teamId);
+  const { data: blockedData } = useBlockedInstallers();
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false, isLeader: false });
   const [cpfError, setCpfError] = useState("");
+  const [blockAlert, setBlockAlert] = useState<{ name: string; cpf: string } | null>(null);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["team_members", teamId] });
@@ -537,9 +541,19 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
 
   const addMember = useMutation({
     mutationFn: async () => {
+      const nCpf = normCpf(form.cpf);
+      const nRg = normRg(form.rg);
+
       if (form.cpf && !isValidCpf(form.cpf)) {
         throw new Error("CPF inválido");
       }
+
+      // Check for blocked installers
+      if ((nCpf && blockedData?.cpfs.has(nCpf)) || (nRg && blockedData?.rgs.has(nRg))) {
+        setBlockAlert({ name: form.name, cpf: form.cpf });
+        return;
+      }
+
       // If marking as leader, unset other leaders first
       if (form.isLeader) {
         await supabase.from("installation_team_members").update({ is_leader: false }).eq("team_id", teamId).eq("is_leader", true);
@@ -548,22 +562,36 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
         team_id: teamId,
         name: normalizeMemberName(form.name),
         rg: form.isUnifiedDoc ? "" : form.rg,
-        cpf: form.cpf.replace(/\D/g, ""),
+        cpf: nCpf,
         phone: form.phone,
         is_unified_doc: form.isUnifiedDoc,
         is_leader: form.isLeader,
       });
       if (error) throw error;
+      setAdding(false);
+      setForm({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false, isLeader: false });
+      setCpfError("");
+      toast.success("Instalador adicionado!");
     },
-    onSuccess: () => { invalidate(); setForm({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false, isLeader: false }); setCpfError(""); setAdding(false); toast.success("Instalador adicionado!"); },
+    onSuccess: () => { invalidate(); },
     onError: (e) => toast.error(e.message || "Erro ao adicionar"),
   });
 
   const updateMember = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: { name: string; rg: string; cpf: string; phone: string; isUnifiedDoc: boolean; isLeader: boolean } }) => {
+      const nCpf = normCpf(data.cpf);
+      const nRg = normRg(data.rg);
+
       if (data.cpf && !isValidCpf(data.cpf)) {
         throw new Error("CPF inválido");
       }
+
+      // Check for blocked installers
+      if ((nCpf && blockedData?.cpfs.has(nCpf)) || (nRg && blockedData?.rgs.has(nRg))) {
+        setBlockAlert({ name: data.name, cpf: data.cpf });
+        return;
+      }
+
       // If marking as leader, unset other leaders first
       if (data.isLeader) {
         await supabase.from("installation_team_members").update({ is_leader: false }).eq("team_id", teamId).eq("is_leader", true);
@@ -571,14 +599,17 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
       const { error } = await supabase.from("installation_team_members").update({
         name: normalizeMemberName(data.name),
         rg: data.isUnifiedDoc ? "" : data.rg,
-        cpf: data.cpf.replace(/\D/g, ""),
+        cpf: nCpf,
         phone: data.phone,
         is_unified_doc: data.isUnifiedDoc,
         is_leader: data.isLeader,
       }).eq("id", id);
       if (error) throw error;
+      setEditingId(null);
+      setCpfError("");
+      toast.success("Instalador atualizado!");
     },
-    onSuccess: () => { invalidate(); setEditingId(null); setCpfError(""); toast.success("Instalador atualizado!"); },
+    onSuccess: () => { invalidate(); },
     onError: (e) => toast.error(e.message || "Erro ao atualizar"),
   });
 
@@ -729,6 +760,22 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
 
         {canEdit && adding && memberFormFields(true)}
       </div>
+
+      <Dialog open={!!blockAlert} onOpenChange={(o) => !o && setBlockAlert(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" /> Instalador Bloqueado
+            </DialogTitle>
+            <DialogDescription className="pt-2 text-foreground font-medium">
+              ⚠️ {blockAlert?.name} (CPF {blockAlert?.cpf}) está bloqueado no sistema e não poderá participar desta campanha.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end pt-4">
+            <Button onClick={() => setBlockAlert(null)}>Entendido</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
