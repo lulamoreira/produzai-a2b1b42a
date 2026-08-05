@@ -491,8 +491,15 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
           `${failures.length} equipe(s) falharam: ${names}${more}. Motivo: ${failures[0].errorMessage}`,
           { duration: 15000 },
         );
-        // eslint-disable-next-line no-console
-        console.error("[ImportTeamsDialog] Falhas na importação:", failures);
+      }
+
+      if (duplicateDocs.length > 0) {
+        const count = duplicateDocs.length;
+        const examples = duplicateDocs.slice(0, 3).map(d => `${d.memberName} (${d.teamName})`).join(", ");
+        toast.warning(
+          `${count} instalador(es) já estão em outras equipes desta campanha e foram ignorados: ${examples}${count > 3 ? "..." : ""}`,
+          { duration: 10000 }
+        );
       }
 
       // Track failures so the user can retry only what failed.
