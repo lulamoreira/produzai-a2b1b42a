@@ -11,7 +11,7 @@ import { Navigate, useNavigate, useParams, useSearchParams } from "react-router-
 import { 
   Users, Mail, Tag, MessageSquare, Bell, CheckSquare, 
   Palette, Image as ImageIcon, Database, Home, 
-  UserCheck, Search, ChevronRight, Menu, X, Plus, Clock, UserX, Trash2, Eye
+  UserCheck, Search, ChevronRight, Menu, X, Plus, Clock, UserX, Trash2, Eye, ShieldAlert
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,7 @@ import CategoryManager from "@/components/admin/CategoryManager";
 import { ADMIN_MENU_ITEMS } from "@/lib/adminMenuConfig";
 import { AppShellV2 } from "@/components/v2/layout/AppShellV2";
 import { BatchAuthorizationPanel } from "@/components/admin/BatchAuthorizationPanel";
+import { BlockedInstallersPanel } from "@/components/admin/BlockedInstallersPanel";
 import { cn, capitalizeName } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -36,6 +37,7 @@ import { toast } from "sonner";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
+
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -87,7 +89,9 @@ const AdminContent = ({ tab }: { tab: string }) => {
     case "images":       return <RegeneratePieceImagesPanel />;
     case "backup":       return <BackupRestorePanel />;
     case "batch-access": return <BatchAuthorizationPanel />;
+    case "blocked-installers": return <BlockedInstallersPanel />;
     default:             return <AdminHome />;
+
   }
 };
 
