@@ -644,6 +644,31 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
             </Button>
           </div>
         </DialogFooter>
+
+        <Dialog open={blockedImports.length > 0} onOpenChange={(open) => !open && setBlockedImports([])}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertTriangle className="w-5 h-5" />
+                Instaladores Bloqueados
+              </DialogTitle>
+              <DialogDescription>
+                Os seguintes instaladores foram identificados na lista de bloqueio do sistema e NÃO foram importados.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[300px] overflow-y-auto space-y-2 py-4">
+              {blockedImports.map((m, i) => (
+                <div key={i} className="flex flex-col p-2 rounded-md bg-destructive/5 border border-destructive/10 text-xs">
+                  <span className="font-bold text-destructive">{m.name}</span>
+                  <span className="text-muted-foreground">CPF: {m.cpf || "Não informado"}</span>
+                </div>
+              ))}
+            </div>
+            <DialogFooter>
+              <Button onClick={() => setBlockedImports([])}>Compreendi</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );
