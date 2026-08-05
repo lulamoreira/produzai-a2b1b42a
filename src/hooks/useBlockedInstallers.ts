@@ -16,6 +16,7 @@ export function useBlockedInstallers() {
     queryKey: ["blocked_installers"],
     queryFn: async () => {
       // Use standard pagination as requested
+      // The cast to 'any' is needed because the table might not be in the generated types yet
       const data = await supabasePaginate<BlockedInstaller>((from, to) =>
         supabase
           .from("blocked_installers" as any)
