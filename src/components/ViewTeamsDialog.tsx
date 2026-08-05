@@ -513,9 +513,9 @@ const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function Team
             <p className="text-xs text-muted-foreground italic">Nenhum instalador cadastrado</p>
           ) : (
             <ul className="space-y-1.5">
-              {leader && <MemberRow member={leader} isLeader />}
+              {leader && <MemberRow member={leader} isLeader clientId={clientId} />}
               {others.map((m) => (
-                <MemberRow key={m.id} member={m} />
+                <MemberRow key={m.id} member={m} clientId={clientId} />
               ))}
             </ul>
           )}
