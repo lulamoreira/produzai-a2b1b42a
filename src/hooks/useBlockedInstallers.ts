@@ -18,7 +18,7 @@ export function useBlockedInstallers() {
       // Use standard pagination as requested
       const data = await supabasePaginate<BlockedInstaller>((from, to) =>
         supabase
-          .from("blocked_installers")
+          .from("blocked_installers" as any)
           .select("id, doc_type, doc_norm, name, reason", { count: "exact" })
           .order("id")
           .range(from, to) as any
