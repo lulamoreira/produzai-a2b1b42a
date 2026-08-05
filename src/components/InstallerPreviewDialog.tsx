@@ -21,7 +21,7 @@ interface Props {
 }
 
 export default function InstallerPreviewDialog({
-  open, onOpenChange, campaignName, store, schedule, team, contacts, photos,
+  open, onOpenChange, campaignName, store, schedule, team, contacts, photos, clientId
 }: Props) {
   if (!store || !schedule) return null;
 
