@@ -17,6 +17,7 @@ interface Props {
   team: any;
   contacts: any[];
   photos: InstallationPhoto[];
+  clientId?: string;
 }
 
 export default function InstallerPreviewDialog({
