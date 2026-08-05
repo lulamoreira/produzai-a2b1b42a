@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { usePreviewUser } from "@/hooks/usePreviewUser";
 
 type PermissionKey =
   | "can_view_clients" | "can_edit_clients" | "can_delete_clients"
@@ -81,11 +82,14 @@ async function checkCategoryPermission(
 export function useClientPermission(clientId?: string, permission?: PermissionKey) {
   const { user } = useAuth();
   const { isAdmin, isMaster } = useUserRole();
+  const { previewUserId } = usePreviewUser();
+
+  const effectiveId = previewUserId ?? user?.id;
 
   const { data: hasPermission = false, isLoading } = useQuery({
-    queryKey: ["client_permission_v2", user?.id, clientId, permission],
+    queryKey: ["client_permission_v2", effectiveId, clientId, permission],
     queryFn: async () => {
-      if (!user || !clientId || !permission) return false;
+      if (!effectiveId || !clientId || !permission) return false;
       if (isAdmin || isMaster) return true;
 
       const categoryIds = new Set<string>();
@@ -94,7 +98,7 @@ export function useClientPermission(clientId?: string, permission?: PermissionKe
       const { data: clientAccess } = await supabase
         .from("user_client_access")
         .select("category_id")
-        .eq("user_id", user.id)
+        .eq("user_id", effectiveId)
         .eq("client_id", clientId)
         .eq("suspended", false);
       clientAccess?.forEach(r => r.category_id && categoryIds.add(r.category_id));
@@ -110,7 +114,7 @@ export function useClientPermission(clientId?: string, permission?: PermissionKe
         const { data: agencyAccess } = await supabase
           .from("user_agency_access")
           .select("category_id")
-          .eq("user_id", user.id)
+          .eq("user_id", effectiveId)
           .eq("agency_id", client.agency_id)
           .eq("suspended", false);
         agencyAccess?.forEach(r => r.category_id && categoryIds.add(r.category_id));
@@ -125,7 +129,7 @@ export function useClientPermission(clientId?: string, permission?: PermissionKe
         const { data: campaignAccesses } = await supabase
           .from("user_campaign_access")
           .select("category_id")
-          .eq("user_id", user.id)
+          .eq("user_id", effectiveId)
           .in("campaign_id", campaigns.map(c => c.id))
           .eq("suspended", false);
         campaignAccesses?.forEach(r => r.category_id && categoryIds.add(r.category_id));
@@ -139,7 +143,7 @@ export function useClientPermission(clientId?: string, permission?: PermissionKe
       }
       return false;
     },
-    enabled: !!user && !!clientId && !!permission,
+    enabled: !!effectiveId && !!clientId && !!permission,
   });
 
   return { hasPermission: isAdmin || isMaster || hasPermission, isLoading };

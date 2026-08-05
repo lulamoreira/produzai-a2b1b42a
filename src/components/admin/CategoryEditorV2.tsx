@@ -318,7 +318,7 @@ export default function CategoryEditorV2({ open, onOpenChange, category }: Props
         module={m}
         hasGrant={hasGrant}
         onToggle={handleToggle}
-        disabled={isSystem}
+        disabled={false}
         query={query}
       />
     ));

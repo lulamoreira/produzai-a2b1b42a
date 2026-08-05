@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
+import { usePreviewUser } from "@/hooks/usePreviewUser";
 
 export interface LalSubAreaPermission {
   canView: boolean;
@@ -85,11 +86,14 @@ export function useLojaALojaPermissions(
 ): LalPermissions {
   const { user } = useAuth();
   const { isAdminOrMaster, isLoading: roleLoading } = useUserRole();
+  const { previewUserId } = usePreviewUser();
+
+  const effectiveId = previewUserId ?? user?.id;
 
   const { data, isLoading: queryLoading } = useQuery({
-    queryKey: ["lal_permissions_v2", user?.id, clientId, campaignId],
+    queryKey: ["lal_permissions_v2", effectiveId, clientId, campaignId],
     queryFn: async () => {
-      if (!user || (!clientId && !campaignId)) return EMPTY_PERMS;
+      if (!effectiveId || (!clientId && !campaignId)) return EMPTY_PERMS;
 
       const categoryIds = new Set<string>();
       let masterFlag = false;
@@ -99,7 +103,7 @@ export function useLojaALojaPermissions(
         const { data: clientAccess } = await supabase
           .from("user_client_access")
           .select("category_id, can_edit")
-          .eq("user_id", user.id)
+          .eq("user_id", effectiveId)
           .eq("client_id", clientId)
           .eq("suspended", false);
         clientAccess?.forEach(r => {
@@ -117,7 +121,7 @@ export function useLojaALojaPermissions(
           const { data: agencyAccess } = await supabase
             .from("user_agency_access")
             .select("category_id, can_edit")
-            .eq("user_id", user.id)
+            .eq("user_id", effectiveId)
             .eq("agency_id", client.agency_id)
             .eq("suspended", false);
           agencyAccess?.forEach(r => {
@@ -132,7 +136,7 @@ export function useLojaALojaPermissions(
         const { data: campaignAccesses } = await supabase
           .from("user_campaign_access")
           .select("category_id")
-          .eq("user_id", user.id)
+          .eq("user_id", effectiveId)
           .eq("campaign_id", campaignId)
           .eq("suspended", false);
         campaignAccesses?.forEach(r => r.category_id && categoryIds.add(r.category_id));
@@ -171,7 +175,7 @@ export function useLojaALojaPermissions(
 
       return result;
     },
-    enabled: !!user && !isAdminOrMaster && (!!clientId || !!campaignId),
+    enabled: !!effectiveId && !isAdminOrMaster && (!!clientId || !!campaignId),
   });
 
   const isLoading = roleLoading || (!isAdminOrMaster && queryLoading);
