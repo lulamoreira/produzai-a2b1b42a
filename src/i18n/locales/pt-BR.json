@@ -1,6 +1,6 @@
 {
   "welcome": {
-    "hello": "Antes de realizar qualquer ação, entenda o contexto e instrução recente do usuário, comando mais recente enviado por ele: ## Funcionalidade: Listar Instaladores Bloqueados\n\n\n\n**Descrição:**\n\nO usuário deseja obter uma lista de todos os instaladores que estão atualmente bloqueados no sistema.\n\n\n\n**Requisitos:**\n\n- A lista deve conter os nomes dos instaladores bloqueados.\n\n- Se possível, incluir informações adicionais relevantes sobre o bloqueio (ex: data do bloqueio, motivo, se aplicável).\n\n\n\n**Passos:**\n\n1. Identificar o mecanismo ou local onde os instaladores bloqueados são registrados no sistema.\n\n2. Recuperar a lista de instaladores a partir desse local.\n\n3. Formatar a lista para apresentação ao usuário.",
+    "hello": "Antes de realizar qualquer ação, entenda o contexto e instrução recente do usuário, comando mais recente enviado por ele: Eu bloqueei esse intalador, e não tá aparecendo na lista, porque?",
     "subtitle": "Sua conta está pronta. Veja o que você pode acessar.",
     "yourRole": "Seu papel:",
     "yourCampaigns": "Suas campanhas",
