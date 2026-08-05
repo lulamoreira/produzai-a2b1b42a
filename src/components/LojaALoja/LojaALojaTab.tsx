@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -113,6 +113,7 @@ export default function LojaALojaTab({ campaignId, clientId, permissions, initia
   const { t } = useTranslation();
   const { order, saveOrder, loaded } = useLojaALojaTabOrder();
   const [inviteOpen, setInviteOpen] = useState(false);
+  const initialApplied = useRef(false);
 
 
   // Filter tabs by per-area view permission
@@ -144,13 +145,19 @@ export default function LojaALojaTab({ campaignId, clientId, permissions, initia
 
   useEffect(() => {
     if (!loaded) return;
-    if (initialTab && visibleTabs.includes(initialTab)) {
-      setActive(initialTab);
+    if (initialApplied.current) return;
+
+    if (initialTab) {
+      // só aplica quando a sub-aba pedida realmente já está visível (permissões carregadas)
+      if (visibleTabs.includes(initialTab)) {
+        setActive(initialTab);
+        initialApplied.current = true;
+      }
     } else if (visibleTabs[0]) {
       setActive(visibleTabs[0]);
+      initialApplied.current = true;
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loaded, initialTab]);
+  }, [loaded, visibleTabs, initialTab]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
