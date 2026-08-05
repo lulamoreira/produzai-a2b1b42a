@@ -2096,6 +2096,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         store={previewStore}
         schedule={previewSchedule}
         team={previewTeam}
+        clientId={clientId}
         contacts={previewStore ? (contactsByStore[previewStore.id] || []) : []}
         photos={previewStore ? (photosByStore[previewStore.id] || []) : []}
       />

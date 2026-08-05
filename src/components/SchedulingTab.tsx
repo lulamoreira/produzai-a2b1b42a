@@ -1642,6 +1642,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           if (!o) setTeamDialogInitialId(null);
         }}
         campaignId={campaignId}
+        clientId={clientId}
         canEdit={canEdit}
         initialTeamId={teamDialogInitialId}
       />

@@ -51,6 +51,7 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
   const { data: teams = [], isLoading: loadingTeams } = useInstallationTeams(campaignId);
   const { data: membersMap = {}, isLoading: loadingMembers } = useAllTeamMembers(campaignId);
   const { data: vehiclesMap = {}, isLoading: loadingVehicles } = useAllTeamVehicles(campaignId);
+  const { data: blockedData } = useBlockedInstallers(clientId);
 
   const [search, setSearch] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
@@ -325,6 +326,7 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
               onFocus={() => setActiveIdx(idx)}
               onSelect={onEditTeam ? () => onEditTeam(team.id) : undefined}
               onDelete={canEdit ? () => setTeamToDelete(team) : undefined}
+              clientId={clientId}
               ref={(el) => (itemRefs.current[idx] = el)}
             />
           ))}
@@ -409,10 +411,11 @@ interface TeamViewCardProps {
   onFocus: () => void;
   onSelect?: () => void;
   onDelete?: () => void;
+  clientId?: string;
 }
 
 const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function TeamViewCard(
-  { team, members, vehicles, active, canEdit, selected, onToggleSelected, onFocus, onSelect, onDelete },
+  { team, members, vehicles, active, canEdit, selected, onToggleSelected, onFocus, onSelect, onDelete, clientId },
   ref,
 ) {
   const incomplete = isTeamIncomplete(members);
@@ -512,9 +515,9 @@ const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function Team
             <p className="text-xs text-muted-foreground italic">Nenhum instalador cadastrado</p>
           ) : (
             <ul className="space-y-1.5">
-              {leader && <MemberRow member={leader} isLeader />}
+              {leader && <MemberRow member={leader} isLeader clientId={clientId} />}
               {others.map((m) => (
-                <MemberRow key={m.id} member={m} />
+                <MemberRow key={m.id} member={m} clientId={clientId} />
               ))}
             </ul>
           )}
@@ -551,9 +554,9 @@ const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function Team
   );
 });
 
-function MemberRow({ member, isLeader }: { member: TeamMember; isLeader?: boolean }) {
+function MemberRow({ member, isLeader, clientId }: { member: TeamMember; isLeader?: boolean; clientId?: string }) {
   const qc = useQueryClient();
-  const { data: blockedData } = useBlockedInstallers();
+  const { data: blockedData } = useBlockedInstallers(clientId);
   const { role, isAdminOrMaster } = useUserRole();
   const [confirmBlockOpen, setConfirmBlockOpen] = useState(false);
 
@@ -566,8 +569,8 @@ function MemberRow({ member, isLeader }: { member: TeamMember; isLeader?: boolea
       if (block) {
         // Block
         const toInsert: any[] = [];
-        if (nCpf) toInsert.push({ doc_type: "cpf", doc_norm: nCpf, name: member.name, blocked_by: (await supabase.auth.getUser()).data.user?.id });
-        if (nRg) toInsert.push({ doc_type: "rg", doc_norm: nRg, name: member.name, blocked_by: (await supabase.auth.getUser()).data.user?.id });
+        if (nCpf) toInsert.push({ doc_type: "cpf", doc_norm: nCpf, name: member.name, blocked_by: (await supabase.auth.getUser()).data.user?.id, client_id: clientId || null });
+        if (nRg) toInsert.push({ doc_type: "rg", doc_norm: nRg, name: member.name, blocked_by: (await supabase.auth.getUser()).data.user?.id, client_id: clientId || null });
         
         if (toInsert.length === 0) return;
         const { error } = await supabase.from("blocked_installers" as any).upsert(toInsert, { onConflict: "doc_type,doc_norm" });

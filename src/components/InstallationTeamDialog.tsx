@@ -195,9 +195,10 @@ interface InstallationTeamDialogProps {
   campaignId: string;
   canEdit: boolean;
   initialTeamId?: string | null;
+  clientId?: string;
 }
 
-export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit, initialTeamId }: InstallationTeamDialogProps) {
+export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit, initialTeamId, clientId }: InstallationTeamDialogProps) {
   const queryClient = useQueryClient();
   const { data: teams = [] } = useInstallationTeams(campaignId);
   const { data: teamStoreCounts = {} } = useQuery({
@@ -368,7 +369,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
                 <div className="border-t p-3 space-y-4 bg-card">
                   <TeamVehiclesSection teamId={team.id} canEdit={canEdit} campaignId={campaignId} />
                   <hr className="border-border" />
-                  <TeamMembersSection teamId={team.id} canEdit={canEdit} campaignId={campaignId} />
+                  <TeamMembersSection teamId={team.id} canEdit={canEdit} campaignId={campaignId} clientId={clientId} />
                 </div>
               )}
             </div>
@@ -524,10 +525,10 @@ function TeamVehiclesSection({ teamId, canEdit, campaignId }: { teamId: string; 
 
 // ─── Members Section ─────────────────────────────────────
 
-function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; canEdit: boolean; campaignId: string }) {
+function TeamMembersSection({ teamId, canEdit, campaignId, clientId }: { teamId: string; canEdit: boolean; campaignId: string; clientId?: string }) {
   const queryClient = useQueryClient();
   const { data: members = [] } = useTeamMembers(teamId);
-  const { data: blockedData } = useBlockedInstallers();
+  const { data: blockedData } = useBlockedInstallers(clientId);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false, isLeader: false });
@@ -552,6 +553,36 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
       if ((nCpf && blockedData?.cpfs.has(nCpf)) || (nRg && blockedData?.rgs.has(nRg))) {
         setBlockAlert({ name: form.name, cpf: form.cpf });
         return;
+      }
+
+      // ─── Duplicate Doc Check (NEW) ───
+      // Check if this CPF or RG already exists in ANY team of this campaign
+      const { data: teamsInCampaign } = await supabase
+        .from("installation_teams")
+        .select("id")
+        .eq("campaign_id", campaignId);
+      
+      if (teamsInCampaign && teamsInCampaign.length > 0) {
+        const teamIds = teamsInCampaign.map(t => t.id);
+        
+        let query = supabase
+          .from("installation_team_members")
+          .select("id, name, team_id, installation_teams(name)")
+          .in("team_id", teamIds);
+        
+        const orConditions = [];
+        if (nCpf) orConditions.push(`cpf.eq.${nCpf}`);
+        if (nRg) orConditions.push(`rg.eq.${nRg}`);
+        
+        if (orConditions.length > 0) {
+          const { data: duplicates, error: dupError } = await query.or(orConditions.join(","));
+          
+          if (!dupError && duplicates && duplicates.length > 0) {
+            const dup = duplicates[0];
+            const teamName = (dup as any).installation_teams?.name || "outra equipe";
+            throw new Error(`Este documento já está cadastrado para "${dup.name}" na equipe "${teamName}".`);
+          }
+        }
       }
 
       // If marking as leader, unset other leaders first
@@ -590,6 +621,36 @@ function TeamMembersSection({ teamId, canEdit, campaignId }: { teamId: string; c
       if ((nCpf && blockedData?.cpfs.has(nCpf)) || (nRg && blockedData?.rgs.has(nRg))) {
         setBlockAlert({ name: data.name, cpf: data.cpf });
         return;
+      }
+
+      // ─── Duplicate Doc Check (NEW) ───
+      const { data: teamsInCampaign } = await supabase
+        .from("installation_teams")
+        .select("id")
+        .eq("campaign_id", campaignId);
+      
+      if (teamsInCampaign && teamsInCampaign.length > 0) {
+        const teamIds = teamsInCampaign.map(t => t.id);
+        
+        let query = supabase
+          .from("installation_team_members")
+          .select("id, name, team_id, installation_teams(name)")
+          .in("team_id", teamIds)
+          .neq("id", id);
+        
+        const orConditions = [];
+        if (nCpf) orConditions.push(`cpf.eq.${nCpf}`);
+        if (nRg) orConditions.push(`rg.eq.${nRg}`);
+        
+        if (orConditions.length > 0) {
+          const { data: duplicates, error: dupError } = await query.or(orConditions.join(","));
+          
+          if (!dupError && duplicates && duplicates.length > 0) {
+            const dup = duplicates[0];
+            const teamName = (dup as any).installation_teams?.name || "outra equipe";
+            throw new Error(`Este documento já está cadastrado para "${dup.name}" na equipe "${teamName}".`);
+          }
+        }
       }
 
       // If marking as leader, unset other leaders first

@@ -28,8 +28,9 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star, Building2, Pencil, Layers, Wrench, Package, ClipboardList } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star, Building2, Pencil, Layers, Wrench, Package, ClipboardList, ShieldBan } from "lucide-react";
 import { useClientSuppliers, useAddClientSupplier, useUpdateClientSupplier, useDeleteClientSupplier, type ClientSupplier } from "@/hooks/useClientSuppliers";
+import { BlockedInstallersPanel } from "@/components/admin/BlockedInstallersPanel";
 import { Textarea } from "@/components/ui/textarea";
 import { useFavoriteIds, useToggleFavorite } from "@/hooks/useCampaignFavorites";
 import StoresMatrixTable from "@/components/StoresMatrixTable";
@@ -391,9 +392,11 @@ const ClientDetail = () => {
   const { data: favoriteIds } = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
 
-  const displayCampaigns = isAdminOrMaster
-    ? campaigns
-    : campaigns.filter(c => myCampaignIds.includes(c.id));
+  const displayCampaigns = useMemo(() => {
+    return isAdminOrMaster
+      ? campaigns
+      : campaigns.filter(c => myCampaignIds.includes(c.id));
+  }, [isAdminOrMaster, campaigns, myCampaignIds]);
 
   const searchParams = new URLSearchParams(location.search);
   const favoritesFilterActive = searchParams.get("filter") === "favorites";
@@ -587,16 +590,16 @@ const ClientDetail = () => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     
-    const displayCampaigns = isAdminOrMaster
+    const displayCampaignsInternal = isAdminOrMaster
       ? campaigns
       : campaigns.filter(c => myCampaignIds.includes(c.id));
 
-    const oldIndex = displayCampaigns.findIndex((c) => c.id === active.id);
-    const newIndex = displayCampaigns.findIndex((c) => c.id === over.id);
+    const oldIndex = displayCampaignsInternal.findIndex((c) => c.id === active.id);
+    const newIndex = displayCampaignsInternal.findIndex((c) => c.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
-    const reordered = arrayMove(displayCampaigns, oldIndex, newIndex);
+    const reordered = arrayMove(displayCampaignsInternal, oldIndex, newIndex);
     reorderCampaigns.mutate(reordered.map((c, i) => ({ id: c.id, display_order: i })));
-  }, [campaigns, displayCampaigns, reorderCampaigns]);
+  }, [campaigns, isAdminOrMaster, myCampaignIds, reorderCampaigns]);
 
   const handleAddCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1272,7 +1275,7 @@ const ClientDetail = () => {
         </div>
 
         {/* Stats cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-5 gap-3 sm:gap-4">
           <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}`)}>
             <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
               <Megaphone className="w-5 h-5 text-primary-foreground" />
@@ -1328,7 +1331,25 @@ const ClientDetail = () => {
               </div>
             </div>
           )}
+          {isAdminOrMaster && (
+            <div className="card-kpi p-3 sm:p-4 flex items-center gap-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all" onClick={() => navigate(`/agency/${agencyId}/clients/${clientId}?tab=blockedInstallers`)}>
+              <div className="w-10 h-10 rounded-lg bg-destructive/80 flex items-center justify-center">
+                <ShieldBan className="w-5 h-5 text-destructive-foreground" />
+              </div>
+              <div>
+                <p className="text-sm sm:text-base font-semibold text-foreground leading-tight">Instaladores Bloqueados</p>
+                <p className="text-[11px] text-muted-foreground">Gerenciar restrições</p>
+              </div>
+            </div>
+          )}
         </div>
+
+        {/* ─── Blocked Installers View ─── */}
+        {new URLSearchParams(location.search).get("tab") === "blockedInstallers" && isAdminOrMaster && (
+          <div className="bg-card border rounded-xl p-6 shadow-sm">
+            <BlockedInstallersPanel clientId={clientId!} showHeader={true} />
+          </div>
+        )}
 
         {/* ─── Campaigns View (default) ─── */}
         {!new URLSearchParams(location.search).has("tab") && (
@@ -1941,6 +1962,13 @@ const ClientDetail = () => {
             <StoreFormFieldsConfig clientId={clientId!} canEdit={canEditClients} />
           </div>
         )}
+
+        {/* ─── Blocked Installers View ─── */}
+        {new URLSearchParams(location.search).get("tab") === "blockedInstallers" && (
+          <div className="bg-card rounded-xl border border-border p-6 shadow-sm">
+            <BlockedInstallersPanel clientId={clientId!} />
+          </div>
+        )}
       </div>
 
       {/* ─── Supplier Add/Edit Dialog ─── */}
@@ -2030,6 +2058,7 @@ const ClientDetail = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
 
       {/* ─── Store Models Management Dialog ─── */}
       <Dialog open={storeModelDialogOpen} onOpenChange={setStoreModelDialogOpen}>

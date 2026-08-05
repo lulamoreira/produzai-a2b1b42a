@@ -11,19 +11,27 @@ export interface BlockedInstaller {
   reason: string | null;
 }
 
-export function useBlockedInstallers() {
+export function useBlockedInstallers(clientId?: string) {
   return useQuery({
-    queryKey: ["blocked_installers"],
+    queryKey: ["blocked_installers", clientId],
     queryFn: async () => {
       // Use standard pagination as requested
       // The cast to 'any' is needed because the table might not be in the generated types yet
-      const data = await supabasePaginate<BlockedInstaller>((from, to) =>
-        supabase
+      const data = await supabasePaginate<BlockedInstaller>((from, to) => {
+        let query = supabase
           .from("blocked_installers" as any)
-          .select("id, doc_type, doc_norm, name, reason", { count: "exact" })
+          .select("id, doc_type, doc_norm, name, reason, client_id", { count: "exact" });
+        
+        if (clientId) {
+          query = query.or(`client_id.is.null,client_id.eq.${clientId}`);
+        } else {
+          query = query.is("client_id", null);
+        }
+
+        return query
           .order("id")
-          .range(from, to) as any
-      );
+          .range(from, to) as any;
+      });
 
       const cpfs = new Set<string>();
       const rgs = new Set<string>();

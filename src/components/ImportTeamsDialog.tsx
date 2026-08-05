@@ -84,7 +84,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [lastFailures, setLastFailures] = useState<{ id: string; name: string; error: string }[]>([]);
   const [blockedImports, setBlockedImports] = useState<{ name: string; cpf: string }[]>([]);
-  const { data: blockedData } = useBlockedInstallers();
+  const { data: blockedData } = useBlockedInstallers(clientId);
 
   // Direct campaigns query (works for admins / users with RLS-visible campaigns).
   const { data: directCampaigns = [], isLoading: loadingDirectCampaigns } = useQuery({
@@ -299,7 +299,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
       const directIds = idsToImport.filter((id) => !cachedTeamById.has(id));
 
       // Load full source data for directIds via direct queries.
-      const [membersRes, vehiclesRes, teamsRes] = await Promise.all([
+      const [membersRes, vehiclesRes, teamsRes, currentCampaignMembersRes] = await Promise.all([
         directIds.length
           ? supabasePaginate<any>((from, to) =>
               supabase
@@ -330,7 +330,22 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
                 .range(from, to),
             ).then((data) => ({ data }))
           : Promise.resolve({ data: [] as any[] }),
+        // Load current campaign members to check for duplicates
+        supabase.from("installation_teams").select("id").eq("campaign_id", campaignId)
+          .then(async ({ data: teams }) => {
+            if (!teams || teams.length === 0) return { data: [] };
+            const teamIds = teams.map(t => t.id);
+            const { data } = await supabase.from("installation_team_members").select("name, cpf, rg, team_id, installation_teams(name)").in("team_id", teamIds);
+            return { data: data || [] };
+          })
       ]);
+
+      const currentCampaignDocs = new Map<string, { name: string; team: string }>();
+      (currentCampaignMembersRes.data || []).forEach((m: any) => {
+        const teamName = (m as any).installation_teams?.name || "outra equipe";
+        if (m.cpf) currentCampaignDocs.set(`cpf:${m.cpf}`, { name: m.name, team: teamName });
+        if (m.rg) currentCampaignDocs.set(`rg:${m.rg}`, { name: m.name, team: teamName });
+      });
 
       type SourceTeam = { id: string; name: string; members: any[]; vehicles: any[] };
       const sourceTeams: SourceTeam[] = [];
@@ -358,6 +373,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
       let skipped = 0;
       const blocked: { name: string; cpf: string }[] = [];
       const failures: { id: string; teamName: string; errorMessage: string }[] = [];
+      const duplicateDocs: { teamName: string; memberName: string; doc: string; existingTeam: string }[] = [];
 
       // Sanitize NOT NULL text columns (members.name, vehicles.name) — never send null/undefined.
       const s = (v: any) => (v === null || v === undefined ? "" : v);
@@ -391,6 +407,21 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
 
             if ((nCpf && blockedData?.cpfs.has(nCpf)) || (nRg && blockedData?.rgs.has(nRg))) {
               blocked.push({ name, cpf: s(m.cpf) });
+              return;
+            }
+
+            // Check for duplicates in current campaign
+            const dupCpf = nCpf ? currentCampaignDocs.get(`cpf:${nCpf}`) : null;
+            const dupRg = nRg ? currentCampaignDocs.get(`rg:${nRg}`) : null;
+            const dup = dupCpf || dupRg;
+
+            if (dup) {
+              duplicateDocs.push({
+                teamName: t.name,
+                memberName: name,
+                doc: nCpf || nRg || "",
+                existingTeam: dup.team
+              });
               return;
             }
 
@@ -439,9 +470,9 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
         }
       }
 
-      return { imported, skipped, blocked, failures };
+      return { imported, skipped, blocked, failures, duplicateDocs };
     },
-    onSuccess: ({ imported, skipped, blocked, failures }) => {
+    onSuccess: ({ imported, skipped, blocked, failures, duplicateDocs }) => {
       qc.invalidateQueries({ queryKey: ["installation_teams", campaignId] });
       qc.invalidateQueries({ queryKey: ["all_team_members", campaignId] });
       qc.invalidateQueries({ queryKey: ["all_team_vehicles", campaignId] });
@@ -460,8 +491,15 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
           `${failures.length} equipe(s) falharam: ${names}${more}. Motivo: ${failures[0].errorMessage}`,
           { duration: 15000 },
         );
-        // eslint-disable-next-line no-console
-        console.error("[ImportTeamsDialog] Falhas na importação:", failures);
+      }
+
+      if (duplicateDocs.length > 0) {
+        const count = duplicateDocs.length;
+        const examples = duplicateDocs.slice(0, 3).map(d => `${d.memberName} (${d.teamName})`).join(", ");
+        toast.warning(
+          `${count} instalador(es) já estão em outras equipes desta campanha e foram ignorados: ${examples}${count > 3 ? "..." : ""}`,
+          { duration: 10000 }
+        );
       }
 
       // Track failures so the user can retry only what failed.

@@ -17,10 +17,11 @@ interface Props {
   team: any;
   contacts: any[];
   photos: InstallationPhoto[];
+  clientId?: string;
 }
 
 export default function InstallerPreviewDialog({
-  open, onOpenChange, campaignName, store, schedule, team, contacts, photos,
+  open, onOpenChange, campaignName, store, schedule, team, contacts, photos, clientId
 }: Props) {
   if (!store || !schedule) return null;
 
