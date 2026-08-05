@@ -528,7 +528,7 @@ function TeamVehiclesSection({ teamId, canEdit, campaignId }: { teamId: string; 
 function TeamMembersSection({ teamId, canEdit, campaignId, clientId }: { teamId: string; canEdit: boolean; campaignId: string; clientId?: string }) {
   const queryClient = useQueryClient();
   const { data: members = [] } = useTeamMembers(teamId);
-  const { data: blockedData } = useBlockedInstallers();
+  const { data: blockedData } = useBlockedInstallers(clientId);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false, isLeader: false });
