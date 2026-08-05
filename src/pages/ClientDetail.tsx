@@ -1344,12 +1344,6 @@ const ClientDetail = () => {
           )}
         </div>
 
-        {/* ─── Blocked Installers View ─── */}
-        {new URLSearchParams(location.search).get("tab") === "blockedInstallers" && isAdminOrMaster && (
-          <div className="bg-card border rounded-xl p-6 shadow-sm">
-            <BlockedInstallersPanel clientId={clientId!} showHeader={true} />
-          </div>
-        )}
 
         {/* ─── Campaigns View (default) ─── */}
         {!new URLSearchParams(location.search).has("tab") && (
