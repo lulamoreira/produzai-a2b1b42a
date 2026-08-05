@@ -369,7 +369,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
                 <div className="border-t p-3 space-y-4 bg-card">
                   <TeamVehiclesSection teamId={team.id} canEdit={canEdit} campaignId={campaignId} />
                   <hr className="border-border" />
-                  <TeamMembersSection teamId={team.id} canEdit={canEdit} campaignId={campaignId} />
+                  <TeamMembersSection teamId={team.id} canEdit={canEdit} campaignId={campaignId} clientId={clientId} />
                 </div>
               )}
             </div>
