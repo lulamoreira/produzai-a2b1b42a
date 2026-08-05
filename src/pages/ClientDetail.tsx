@@ -590,7 +590,7 @@ const ClientDetail = () => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     
-    const displayCampaigns = isAdminOrMaster
+    const displayCampaignsInternal = isAdminOrMaster
       ? campaigns
       : campaigns.filter(c => myCampaignIds.includes(c.id));
 
