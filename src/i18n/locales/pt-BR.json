@@ -1,6 +1,6 @@
 {
   "welcome": {
-    "hello": "Antes de realizar qualquer ação, entenda o contexto e instrução recente do usuário, comando mais recente enviado por ele: Exiba mensagens de erro com detalhes do instalador e da equipe que já possuem o mesmo CPF ou RG, para eu entender exatamente o conflito.",
+    "hello": "Antes de realizar qualquer ação, entenda o contexto e instrução recente do usuário, comando mais recente enviado por ele: Adicione um link na mensagem de erro para eu navegar diretamente até a equipe e o instalador em conflito.",
     "subtitle": "Sua conta está pronta. Veja o que você pode acessar.",
     "yourRole": "Seu papel:",
     "yourCampaigns": "Suas campanhas",
