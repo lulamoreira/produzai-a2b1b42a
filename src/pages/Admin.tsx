@@ -29,7 +29,7 @@ import CategoryManager from "@/components/admin/CategoryManager";
 import { ADMIN_MENU_ITEMS } from "@/lib/adminMenuConfig";
 import { AppShellV2 } from "@/components/v2/layout/AppShellV2";
 import { BatchAuthorizationPanel } from "@/components/admin/BatchAuthorizationPanel";
-import { BlockedInstallersPanel } from "@/components/admin/BlockedInstallersPanel";
+
 import { cn, capitalizeName } from "@/lib/utils";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
