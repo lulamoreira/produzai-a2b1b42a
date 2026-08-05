@@ -555,6 +555,7 @@ function MemberRow({ member, isLeader }: { member: TeamMember; isLeader?: boolea
   const qc = useQueryClient();
   const { data: blockedData } = useBlockedInstallers();
   const { role, isAdminOrMaster } = useUserRole();
+  const [confirmBlockOpen, setConfirmBlockOpen] = useState(false);
 
   const nCpf = normCpf(member.cpf);
   const nRg = normRg(member.rg);
@@ -588,10 +589,7 @@ function MemberRow({ member, isLeader }: { member: TeamMember; isLeader?: boolea
   });
 
   const handleBlockToggle = () => {
-    const action = isBlocked ? "desbloquear" : "bloquear";
-    if (confirm(`Tem certeza que deseja ${action} este instalador no sistema todo?`)) {
-      blockMutation.mutate({ block: !isBlocked });
-    }
+    setConfirmBlockOpen(true);
   };
 
   return (
@@ -647,6 +645,30 @@ function MemberRow({ member, isLeader }: { member: TeamMember; isLeader?: boolea
           </a>
         )}
       </div>
+
+      <AlertDialog open={confirmBlockOpen} onOpenChange={setConfirmBlockOpen}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {isBlocked ? "Desbloquear instalador?" : "Bloquear instalador no sistema?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isBlocked
+                ? <>Deseja desbloquear <strong>{member.name || "este instalador"}</strong>? Ele voltará a poder ser cadastrado e importado em campanhas.</>
+                : <>Deseja bloquear <strong>{member.name || "este instalador"}</strong> no sistema todo? Ele não poderá ser cadastrado nem importado em novas campanhas (quem já está cadastrado não é afetado).</>}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={blockMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={blockMutation.isPending}
+              onClick={() => { blockMutation.mutate({ block: !isBlocked }); setConfirmBlockOpen(false); }}
+            >
+              {isBlocked ? "Desbloquear" : "Bloquear"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </li>
   );
 }
