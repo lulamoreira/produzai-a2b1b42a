@@ -552,6 +552,49 @@ const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function Team
 });
 
 function MemberRow({ member, isLeader }: { member: TeamMember; isLeader?: boolean }) {
+  const qc = useQueryClient();
+  const { data: blockedData } = useBlockedInstallers();
+  const { role } = useUserRole();
+  const isAdminOrMaster = role === "admin" || role === "moderator";
+
+  const nCpf = normCpf(member.cpf);
+  const nRg = normRg(member.rg);
+  const isBlocked = (nCpf && blockedData?.cpfs.has(nCpf)) || (nRg && blockedData?.rgs.has(nRg));
+
+  const blockMutation = useMutation({
+    mutationFn: async ({ block }: { block: boolean }) => {
+      if (block) {
+        // Block
+        const toInsert: any[] = [];
+        if (nCpf) toInsert.push({ doc_type: "cpf", doc_norm: nCpf, name: member.name, blocked_by: (await supabase.auth.getUser()).data.user?.id });
+        if (nRg) toInsert.push({ doc_type: "rg", doc_norm: nRg, name: member.name, blocked_by: (await supabase.auth.getUser()).data.user?.id });
+        
+        if (toInsert.length === 0) return;
+        const { error } = await supabase.from("blocked_installers" as any).upsert(toInsert, { onConflict: "doc_type,doc_norm" });
+        if (error) throw error;
+      } else {
+        // Unblock
+        const { error } = await supabase
+          .from("blocked_installers" as any)
+          .delete()
+          .or(`and(doc_type.eq.cpf,doc_norm.eq.${nCpf}),and(doc_type.eq.rg,doc_norm.eq.${nRg})`);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["blocked_installers"] });
+      toast.success(isBlocked ? "Instalador desbloqueado" : "Instalador bloqueado no sistema");
+    },
+    onError: (e: any) => toast.error(e.message || "Erro na operação"),
+  });
+
+  const handleBlockToggle = () => {
+    const action = isBlocked ? "desbloquear" : "bloquear";
+    if (confirm(`Tem certeza que deseja ${action} este instalador no sistema todo?`)) {
+      blockMutation.mutate({ block: !isBlocked });
+    }
+  };
+
   return (
     <li className="flex items-start gap-2 text-xs">
       {isLeader ? (
@@ -562,10 +605,37 @@ function MemberRow({ member, isLeader }: { member: TeamMember; isLeader?: boolea
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="font-medium break-words">{member.name || "—"}</span>
+          
+          {isBlocked && (
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <XCircle className="w-3.5 h-3.5 text-destructive cursor-help" />
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Bloqueado no sistema</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          )}
+
           {isLeader && (
             <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-500/40 text-amber-600">
               Líder
             </Badge>
+          )}
+          
+          {isAdminOrMaster && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={cn("h-5 w-5 ml-auto", isBlocked ? "text-green-600 hover:text-green-700 hover:bg-green-50" : "text-muted-foreground hover:text-destructive hover:bg-destructive/10")}
+              onClick={(e) => { e.stopPropagation(); handleBlockToggle(); }}
+              title={isBlocked ? "Desbloquear instalador" : "Bloquear instalador no sistema"}
+              disabled={blockMutation.isPending || (!nCpf && !nRg)}
+            >
+              {isBlocked ? <ShieldCheck className="w-3 h-3" /> : <ShieldBan className="w-3 h-3" />}
+            </Button>
           )}
         </div>
         {member.phone && (
