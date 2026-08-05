@@ -299,7 +299,7 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
       const directIds = idsToImport.filter((id) => !cachedTeamById.has(id));
 
       // Load full source data for directIds via direct queries.
-      const [membersRes, vehiclesRes, teamsRes] = await Promise.all([
+      const [membersRes, vehiclesRes, teamsRes, currentCampaignMembersRes] = await Promise.all([
         directIds.length
           ? supabasePaginate<any>((from, to) =>
               supabase
@@ -330,7 +330,22 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
                 .range(from, to),
             ).then((data) => ({ data }))
           : Promise.resolve({ data: [] as any[] }),
+        // Load current campaign members to check for duplicates
+        supabase.from("installation_teams").select("id").eq("campaign_id", campaignId)
+          .then(async ({ data: teams }) => {
+            if (!teams || teams.length === 0) return { data: [] };
+            const teamIds = teams.map(t => t.id);
+            const { data } = await supabase.from("installation_team_members").select("name, cpf, rg, team_id, installation_teams(name)").in("team_id", teamIds);
+            return { data: data || [] };
+          })
       ]);
+
+      const currentCampaignDocs = new Map<string, { name: string; team: string }>();
+      (currentCampaignMembersRes.data || []).forEach((m: any) => {
+        const teamName = (m as any).installation_teams?.name || "outra equipe";
+        if (m.cpf) currentCampaignDocs.set(`cpf:${m.cpf}`, { name: m.name, team: teamName });
+        if (m.rg) currentCampaignDocs.set(`rg:${m.rg}`, { name: m.name, team: teamName });
+      });
 
       type SourceTeam = { id: string; name: string; members: any[]; vehicles: any[] };
       const sourceTeams: SourceTeam[] = [];
