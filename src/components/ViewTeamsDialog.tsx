@@ -326,6 +326,7 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
               onFocus={() => setActiveIdx(idx)}
               onSelect={onEditTeam ? () => onEditTeam(team.id) : undefined}
               onDelete={canEdit ? () => setTeamToDelete(team) : undefined}
+              clientId={clientId}
               ref={(el) => (itemRefs.current[idx] = el)}
             />
           ))}
