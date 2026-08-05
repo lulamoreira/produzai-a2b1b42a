@@ -410,10 +410,11 @@ interface TeamViewCardProps {
   onFocus: () => void;
   onSelect?: () => void;
   onDelete?: () => void;
+  clientId?: string;
 }
 
 const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function TeamViewCard(
-  { team, members, vehicles, active, canEdit, selected, onToggleSelected, onFocus, onSelect, onDelete },
+  { team, members, vehicles, active, canEdit, selected, onToggleSelected, onFocus, onSelect, onDelete, clientId },
   ref,
 ) {
   const incomplete = isTeamIncomplete(members);
