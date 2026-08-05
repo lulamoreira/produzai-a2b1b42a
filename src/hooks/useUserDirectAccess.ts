@@ -147,7 +147,7 @@ export function useUserDirectAccess() {
           .from("permission_grants")
           .select("category_id, module_key")
           .in("category_id", categoryIds)
-          .in("module_key", ["mockup", "adjustments", "occurrences", "briefing"])
+          .in("module_key", ["mockup", "adjustments", "occurrences", "briefing", "scheduling", "installations", "loja_a_loja", "stores", "pieces", "matrix"])
           .eq("action", "view");
         (grants ?? []).forEach((g) => grantedV2Modules.add(`${g.category_id}:${g.module_key}`));
       }
