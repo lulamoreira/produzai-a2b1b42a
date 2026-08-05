@@ -37,12 +37,21 @@ export default function OccurrencesTab({ campaignId, clientId, lalPerms }: Occur
         </Button>
       </div>
 
-      <PortalDashboard campaignId={campaignId} />
+      <PortalDashboard 
+        campaignId={campaignId} 
+        clientId={clientId}
+        permissions={{
+          canView: lalPerms?.ocorrencias?.canView || false,
+          canEdit: lalPerms?.ocorrencias?.canEdit || false,
+          canDelete: lalPerms?.ocorrencias?.canDelete || false
+        }}
+      />
 
       <OccurrenceInviteDialog 
         open={inviteOpen} 
         onOpenChange={setInviteOpen} 
         campaignId={campaignId} 
+        clientId={clientId}
       />
     </div>
   );
