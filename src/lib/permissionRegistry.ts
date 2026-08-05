@@ -91,6 +91,7 @@ export const PERMISSION_MODULES: PermissionModule[] = [
       { key: "export", label: "Exportar Ocorrências", description: "Gerar relatórios de ocorrências em Excel/PDF" },
     ],
   },
+  {
     key: "stores",
     label: "Lojas (Cadastro)",
     icon: "Store",
