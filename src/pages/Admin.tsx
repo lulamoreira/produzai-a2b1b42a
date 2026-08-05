@@ -89,7 +89,7 @@ const AdminContent = ({ tab }: { tab: string }) => {
     case "images":       return <RegeneratePieceImagesPanel />;
     case "backup":       return <BackupRestorePanel />;
     case "batch-access": return <BatchAuthorizationPanel />;
-    case "blocked-installers": return <BlockedInstallersPanel />;
+    
     default:             return <AdminHome />;
 
   }
