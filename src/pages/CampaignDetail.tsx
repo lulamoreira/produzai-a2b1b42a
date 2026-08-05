@@ -359,7 +359,7 @@ const CampaignDetail = () => {
             {hasModule("pieces") && <TabsTrigger value="pieces">{t("tabs.pieces", "Peças")}</TabsTrigger>}
             {hasModule("matrix") && <TabsTrigger value="matrix">{t("tabs.rateio", "Rateio")}</TabsTrigger>}
             {isAdmin && <TabsTrigger value="budgets">{t("tabs.cotacoes", "Cotações")}</TabsTrigger>}
-            {hasModule("occurrences") && <TabsTrigger value="occurrences">{t("occurrences.title", "Ocorrências")}</TabsTrigger>}
+            
             {hasModule("scheduling") && <TabsTrigger value="scheduling" className="hidden">Agendamento</TabsTrigger>}
             {hasModule("installations") && <TabsTrigger value="installations" className="hidden">Instalações</TabsTrigger>}
             <TabsTrigger value="approvals" className="hidden">Aprovações</TabsTrigger>
@@ -587,7 +587,7 @@ const CampaignDetail = () => {
 
 
             <Suspense fallback={<div className="p-8 text-center text-muted-foreground italic">Carregando aba...</div>}>
-              {hasModule("occurrences") && (
+              {lalPerms.ocorrencias?.canView && (
                 <TabsContent value="occurrences">
                   <OccurrencesTab 
                     campaignId={campaignId!} 
