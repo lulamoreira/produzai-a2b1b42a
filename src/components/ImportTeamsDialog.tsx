@@ -410,6 +410,21 @@ export default function ImportTeamsDialog({ open, onOpenChange, campaignId, clie
               return;
             }
 
+            // Check for duplicates in current campaign
+            const dupCpf = nCpf ? currentCampaignDocs.get(`cpf:${nCpf}`) : null;
+            const dupRg = nRg ? currentCampaignDocs.get(`rg:${nRg}`) : null;
+            const dup = dupCpf || dupRg;
+
+            if (dup) {
+              duplicateDocs.push({
+                teamName: t.name,
+                memberName: name,
+                doc: nCpf || nRg || "",
+                existingTeam: dup.team
+              });
+              return;
+            }
+
             membersToInsert.push({
               team_id: newTeam.id,
               name,
