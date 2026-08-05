@@ -328,6 +328,7 @@ export function getLegacyColumnName(moduleKey: string, action: string): string |
     "loja_a_loja.acessos": "lal_acessos",
     "loja_a_loja.config": "lal_config",
     "loja_a_loja.ocorrencias": "lal_ocorrencias",
+    occurrences: "lal_ocorrencias",
   };
 
   const dbModule = standardMap[moduleKey];
