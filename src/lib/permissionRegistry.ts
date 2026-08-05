@@ -81,17 +81,6 @@ export const PERMISSION_MODULES: PermissionModule[] = [
     ],
   },
   {
-    key: "occurrences",
-    label: "Ocorrências",
-    icon: "AlertTriangle",
-    category: "campaign",
-    description: "Gestão central de ocorrências da campanha",
-    actions: ["view", "edit", "delete"],
-    specialActions: [
-      { key: "export", label: "Exportar Ocorrências", description: "Gerar relatórios de ocorrências em Excel/PDF" },
-    ],
-  },
-  {
     key: "stores",
     label: "Lojas (Cadastro)",
     icon: "Store",
@@ -273,7 +262,7 @@ export const PERMISSION_PRESETS: Record<
       "scheduling",
       "installations",
       "loja_a_loja",
-      "occurrences",
+      
       "stores",
       "campaign_stores",
       "pieces",
@@ -288,7 +277,7 @@ export const PERMISSION_PRESETS: Record<
   operational_store: {
     label: "Operacional Loja",
     description: "Acesso restrito a operações de loja",
-    grants: ["stores", "campaign_stores", "scheduling", "installations", "occurrences"]
+    grants: ["stores", "campaign_stores", "scheduling", "installations"]
       .flatMap((k) => [
         { module_key: k, action: "view" },
         { module_key: k, action: "edit" },
@@ -329,7 +318,7 @@ export function getLegacyColumnName(moduleKey: string, action: string): string |
     "loja_a_loja.acessos": "lal_acessos",
     "loja_a_loja.config": "lal_config",
     "loja_a_loja.ocorrencias": "lal_ocorrencias",
-    occurrences: "lal_ocorrencias",
+    
   };
 
   const dbModule = standardMap[moduleKey];
