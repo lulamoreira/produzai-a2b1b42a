@@ -274,14 +274,14 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
                   {({ zoomIn, zoomOut, resetTransform }) => (
                     <>
                       <TransformComponent
-                        wrapperClass="!w-full !h-full flex items-center justify-center"
-                        contentClass="flex items-center justify-center"
+                        wrapperClass="!w-full !h-full"
+                        contentClass="!w-full !h-full"
                       >
                         <img
                           src={currentLightbox.photo_url}
                           alt={currentLightbox.caption || "Foto"}
                           draggable={false}
-                          className="max-w-[90vw] max-h-[75vh] object-contain rounded-lg select-none"
+                          className="w-full h-full object-contain select-none"
                           onError={() => handleMediaError(currentLightbox.id, currentLightbox.campaign_id, currentLightbox.photo_url)}
                         />
                       </TransformComponent>
