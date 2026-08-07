@@ -122,7 +122,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [filterLocked, setFilterLocked] = useState("");
   const [filterReschedule, setFilterReschedule] = useState("");
   const [filterModel, setFilterModel] = useState("");
-  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "completed" | "pending" | "withTeam" | "withPhotos" | "withReschedule" | "withOccurrence" | "noCheckin">("");
+  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "completed" | "pending" | "withTeam" | "withPhotos" | "withReschedule" | "withOccurrence" | "noCheckin" | "noPhotos">("");
   const [filterCheckin, setFilterCheckin] = useState("");
   const [groupBy, setGroupBy] = useState<"none" | "state" | "team" | "status">("none");
   const [sortBy, setSortBy] = useState<string>("name_az");
@@ -395,7 +395,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         case "withPhotos": return (photosByStore[s.id] || []).length > 0;
         case "withReschedule": return !!sch?.reschedule_enabled;
         case "withOccurrence": return occ?.hasOccurrence && !occ.allResolved;
-        case "noCheckin": return !sch?.photo_checkin;
+        case "noPhotos": return (photosByStore[s.id] || []).length === 0;
         default: return true;
       }
     });
@@ -967,7 +967,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: t("installations.photos"), isTotal: false, dangerWhenPositive: false },
           { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: t("scheduling.reschedule"), isTotal: false, dangerWhenPositive: false },
           { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: t("occurrences.title"), isTotal: false, dangerWhenPositive: true },
-          { key: "noCheckin" as const, value: summaryMetrics.noCheckin, label: t("installations.noPhotos"), isTotal: false, dangerWhenPositive: true, visible: showPhotoCheckin },
+          { key: "noPhotos" as const, value: summaryMetrics.noPhotos, label: t("installations.noPhotos"), isTotal: false, dangerWhenPositive: true },
         ]).filter(m => m.visible !== false).map((m, idx, arr) => (
           <button
             key={m.key}
