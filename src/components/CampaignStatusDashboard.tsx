@@ -180,11 +180,18 @@ export default function CampaignStatusDashboard({
   return (
     <div className="rounded-xl border border-border bg-card p-4 mb-4">
       {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-sm font-semibold text-foreground">
-          {t("dashboard.campaignStatus")}
-        </span>
-        <span className="text-[11px] text-muted-foreground">
+      <div className="flex items-start justify-between mb-3 gap-4">
+        <div className="space-y-1">
+          <span className="text-sm font-semibold text-foreground">
+            {t("dashboard.campaignStatus")}
+          </span>
+          {stats.instalacoes_pendentes > 0 && stats.instalacoes_concluidas > 0 && (
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              Por que essas lojas aparecem como pendentes, se a instalação delas já ocorreu?
+            </p>
+          )}
+        </div>
+        <span className="text-[11px] text-muted-foreground shrink-0">
           {t("dashboard.updateInterval")}
         </span>
       </div>
