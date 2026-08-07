@@ -187,7 +187,7 @@ export default function CampaignStatusDashboard({
           </span>
           {stats.instalacoes_pendentes > 0 && stats.instalacoes_concluidas > 0 && (
             <p className="text-[11px] text-muted-foreground leading-relaxed">
-              Por que essas lojas aparecem como pendentes, se a instalação delas já ocorreu?
+              Esse caso, diz que não tem fotos, mas tem sim!
             </p>
           )}
         </div>
