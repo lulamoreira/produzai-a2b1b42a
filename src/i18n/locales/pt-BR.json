@@ -1,6 +1,6 @@
 {
   "welcome": {
-    "hello": "Esse caso, diz que não tem fotos, mas tem sim!",
+    "hello": "**Funcionalidade:** Zoom em fotos\n\n\n\n**Descrição:** Implementar a capacidade de dar zoom em imagens dentro da aplicação.\n\n\n\n**Requisitos:**\n\n*   Permitir zoom in e zoom out.\n\n*   Suporte a gestos de pinça (pinch-to-zoom) em dispositivos com tela sensível ao toque.\n\n*   Possibilidade de arrastar a imagem após o zoom para visualização de detalhes.\n\n\n\n**Passos:**\n\n1.  Implementar a lógica de zoom na exibição das imagens.\n\n2.  Integrar o tratamento de gestos para controle do zoom.\n\n3.  Adicionar a funcionalidade de arrastar a imagem.\n\n4.  Testar a usabilidade e performance em diferentes dispositivos.",
     "subtitle": "Sua conta está pronta. Veja o que você pode acessar.",
     "yourRole": "Seu papel:",
     "yourCampaigns": "Suas campanhas",
