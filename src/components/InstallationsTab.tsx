@@ -396,6 +396,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         case "withReschedule": return !!sch?.reschedule_enabled;
         case "withOccurrence": return occ?.hasOccurrence && !occ.allResolved;
         case "noPhotos": return (photosByStore[s.id] || []).length === 0;
+        case "noCheckin": return !sch?.photo_checkin;
         default: return true;
       }
     });
