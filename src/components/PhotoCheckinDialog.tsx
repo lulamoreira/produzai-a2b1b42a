@@ -292,6 +292,7 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
                   onUpdate={onUpdate}
                   wheelScaleFactor={0.5}
                   draggableUnZoomed={false}
+                  shouldInterceptWheel={() => true}
                   containerProps={{
                     className: "w-full h-full flex items-center justify-center"
                   }}
@@ -300,7 +301,7 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
                     ref={imgRef}
                     src={currentLightbox.photo_url}
                     alt={currentLightbox.caption || "Foto"}
-                    className="max-w-[90vw] max-h-[75vh] object-contain rounded-lg transition-transform duration-100 will-change-transform"
+                    className="max-w-[90vw] max-h-[75vh] object-contain rounded-lg transition-transform duration-100 will-change-transform pointer-events-auto"
                     onError={() => handleMediaError(currentLightbox.id, currentLightbox.campaign_id, currentLightbox.photo_url)}
                   />
                 </QuickPinchZoom>
