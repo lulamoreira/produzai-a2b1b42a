@@ -122,7 +122,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   const [filterLocked, setFilterLocked] = useState("");
   const [filterReschedule, setFilterReschedule] = useState("");
   const [filterModel, setFilterModel] = useState("");
-  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "completed" | "pending" | "withTeam" | "withPhotos" | "withReschedule" | "withOccurrence" | "noCheckin">("");
+  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "completed" | "pending" | "withTeam" | "withPhotos" | "withReschedule" | "withOccurrence" | "noCheckin" | "noPhotos">("");
   const [filterCheckin, setFilterCheckin] = useState("");
   const [groupBy, setGroupBy] = useState<"none" | "state" | "team" | "status">("none");
   const [sortBy, setSortBy] = useState<string>("name_az");
@@ -395,7 +395,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         case "withPhotos": return (photosByStore[s.id] || []).length > 0;
         case "withReschedule": return !!sch?.reschedule_enabled;
         case "withOccurrence": return occ?.hasOccurrence && !occ.allResolved;
-        case "noCheckin": return !sch?.photo_checkin;
+        case "noPhotos": return (photosByStore[s.id] || []).length === 0;
         default: return true;
       }
     });
@@ -643,7 +643,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       return occ?.hasOccurrence && !occ.allResolved;
     }).length;
     const noCheckin = filteredStores.filter(s => !scheduleMap[s.id]?.photo_checkin).length;
-    return { total, completed, pending, withTeam, withPhotos, withReschedule, withOccurrence, noCheckin };
+    const noPhotos = filteredStores.filter(s => (photosByStore[s.id] || []).length === 0).length;
+    return { total, completed, pending, withTeam, withPhotos, withReschedule, withOccurrence, noCheckin, noPhotos };
   }, [filteredStores, scheduleMap, photosByStore, storeOccurrenceStatus]);
 
   // Count active secondary filters
@@ -960,15 +961,15 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         }}
       >
         {([
-          { key: "total" as const, value: summaryMetrics.total, label: t("common.total"), isTotal: true, dangerWhenPositive: false },
-          { key: "completed" as const, value: summaryMetrics.completed, label: t("installations.completed"), isTotal: false, dangerWhenPositive: false },
-          { key: "pending" as const, value: summaryMetrics.pending, label: t("installations.pending"), isTotal: false, dangerWhenPositive: false },
-          { key: "withTeam" as const, value: summaryMetrics.withTeam, label: t("scheduling.withTeam"), isTotal: false, dangerWhenPositive: false },
-          { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: t("installations.photos"), isTotal: false, dangerWhenPositive: false },
-          { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: t("scheduling.reschedule"), isTotal: false, dangerWhenPositive: false },
-          { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: t("occurrences.title"), isTotal: false, dangerWhenPositive: true },
-          { key: "noCheckin" as const, value: summaryMetrics.noCheckin, label: t("installations.noPhotos"), isTotal: false, dangerWhenPositive: true, visible: showPhotoCheckin },
-        ]).filter(m => m.visible !== false).map((m, idx, arr) => (
+          { key: "total" as const, value: summaryMetrics.total, label: t("common.total"), isTotal: true, dangerWhenPositive: false, visible: true },
+          { key: "completed" as const, value: summaryMetrics.completed, label: t("installations.completed"), isTotal: false, dangerWhenPositive: false, visible: true },
+          { key: "pending" as const, value: summaryMetrics.pending, label: t("installations.pending"), isTotal: false, dangerWhenPositive: false, visible: true },
+          { key: "withTeam" as const, value: summaryMetrics.withTeam, label: t("scheduling.withTeam"), isTotal: false, dangerWhenPositive: false, visible: true },
+          { key: "withPhotos" as const, value: summaryMetrics.withPhotos, label: t("installations.photos"), isTotal: false, dangerWhenPositive: false, visible: true },
+          { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: t("scheduling.reschedule"), isTotal: false, dangerWhenPositive: false, visible: true },
+          { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: t("occurrences.title"), isTotal: false, dangerWhenPositive: true, visible: true },
+          { key: "noPhotos" as const, value: summaryMetrics.noPhotos, label: t("installations.noPhotos"), isTotal: false, dangerWhenPositive: true, visible: true },
+        ] as const).filter(m => (m as any).visible !== false).map((m, idx, arr) => (
           <button
             key={m.key}
             type="button"
@@ -997,7 +998,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       {summaryFilter && summaryFilter !== "total" && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>{t("filters.filteringBy")} <strong className="text-foreground">{
-            { completed: t("dashboard.completed"), pending: t("dashboard.pending"), withTeam: t("scheduling.withTeam"), withPhotos: t("installations.photos"), withReschedule: t("scheduling.reschedule"), withOccurrence: t("occurrences.title"), noCheckin: t("installations.noPhotos") }[summaryFilter]
+            { completed: t("dashboard.completed"), pending: t("dashboard.pending"), withTeam: t("scheduling.withTeam"), withPhotos: t("installations.photos"), withReschedule: t("scheduling.reschedule"), withOccurrence: t("occurrences.title"), noCheckin: t("installations.noPhotos"), noPhotos: t("installations.noPhotos") }[summaryFilter as any]
           }</strong> ({displayedStores.length})</span>
           <Button variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setSummaryFilter("")}>✕</Button>
         </div>
