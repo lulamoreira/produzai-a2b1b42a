@@ -1,10 +1,10 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Trash2, Edit3, X, ChevronLeft, ChevronRight, Camera, Video, ZoomIn, ZoomOut, RefreshCcw } from "lucide-react";
-import QuickPinchZoom, { make3dTransformValue } from "react-quick-pinch-zoom";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { type ClientStore } from "@/hooks/useMultiClientData";
 import { type InstallationPhoto, useUpdateInstallationPhoto, useDeleteInstallationPhoto, isVideo } from "@/hooks/useInstallationPhotos";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -36,33 +36,6 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [editingCaption, setEditingCaption] = useState<string | null>(null);
   const [captionValue, setCaptionValue] = useState("");
-  const imgRef = useRef<HTMLImageElement>(null);
-  const pinchZoomRef = useRef<any>(null);
-
-  const onUpdate = useCallback(({ x, y, scale }: any) => {
-    const value = make3dTransformValue({ x, y, scale });
-    if (imgRef.current) {
-      imgRef.current.style.setProperty("transform", value);
-    }
-  }, []);
-
-  const handleZoomIn = () => {
-    if (pinchZoomRef.current) {
-      pinchZoomRef.current.scaleTo({ scale: pinchZoomRef.current.getScale() * 1.5, x: 0, y: 0 });
-    }
-  };
-
-  const handleZoomOut = () => {
-    if (pinchZoomRef.current) {
-      pinchZoomRef.current.scaleTo({ scale: pinchZoomRef.current.getScale() / 1.5, x: 0, y: 0 });
-    }
-  };
-
-  const handleResetZoom = () => {
-    if (pinchZoomRef.current) {
-      pinchZoomRef.current.scaleTo({ scale: 1, x: 0, y: 0 });
-    }
-  };
   const [reinstallFilter, setReinstallFilter] = useState<ReinstallPhotoFilterValue>("all");
 
   const reinstallFilteredPhotos = reinstallFilter === "all"
@@ -287,37 +260,46 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
               />
             ) : (
               <div className="relative w-full h-full flex items-center justify-center overflow-hidden" onClick={(e) => e.stopPropagation()}>
-                <QuickPinchZoom
-                  ref={pinchZoomRef}
-                  onUpdate={onUpdate}
-                  wheelScaleFactor={0.5}
-                  draggableUnZoomed={false}
-                  shouldInterceptWheel={() => true}
-                  containerProps={{
-                    className: "w-full h-full flex items-center justify-center"
-                  }}
+                <TransformWrapper
+                  key={currentLightbox.id}
+                  minScale={1}
+                  maxScale={6}
+                  initialScale={1}
+                  centerOnInit
+                  limitToBounds
+                  doubleClick={{ mode: "zoomIn", step: 0.7 }}
+                  wheel={{ step: 0.15 }}
+                  pinch={{ step: 5 }}
                 >
-                  <img
-                    ref={imgRef}
-                    src={currentLightbox.photo_url}
-                    alt={currentLightbox.caption || "Foto"}
-                    className="max-w-[90vw] max-h-[75vh] object-contain rounded-lg transition-transform duration-100 will-change-transform pointer-events-auto"
-                    onError={() => handleMediaError(currentLightbox.id, currentLightbox.campaign_id, currentLightbox.photo_url)}
-                  />
-                </QuickPinchZoom>
-
-                {/* Floating Zoom Controls */}
-                <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/40 backdrop-blur-md rounded-full p-1 border border-white/10 z-20">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-white rounded-full hover:bg-white/20" onClick={handleZoomOut}>
-                    <ZoomOut className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-white rounded-full hover:bg-white/20" onClick={handleResetZoom}>
-                    <RefreshCcw className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-white rounded-full hover:bg-white/20" onClick={handleZoomIn}>
-                    <ZoomIn className="w-4 h-4" />
-                  </Button>
-                </div>
+                  {({ zoomIn, zoomOut, resetTransform }) => (
+                    <>
+                      <TransformComponent
+                        wrapperClass="!w-full !h-full flex items-center justify-center"
+                        contentClass="flex items-center justify-center"
+                      >
+                        <img
+                          src={currentLightbox.photo_url}
+                          alt={currentLightbox.caption || "Foto"}
+                          draggable={false}
+                          className="max-w-[90vw] max-h-[75vh] object-contain rounded-lg select-none"
+                          onError={() => handleMediaError(currentLightbox.id, currentLightbox.campaign_id, currentLightbox.photo_url)}
+                        />
+                      </TransformComponent>
+                      {/* Floating Zoom Controls */}
+                      <div className="absolute top-4 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-black/40 backdrop-blur-md rounded-full p-1 border border-white/10 z-20">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-white rounded-full hover:bg-white/20" onClick={() => zoomOut()}>
+                          <ZoomOut className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-white rounded-full hover:bg-white/20" onClick={() => resetTransform()}>
+                          <RefreshCcw className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-white rounded-full hover:bg-white/20" onClick={() => zoomIn()}>
+                          <ZoomIn className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </>
+                  )}
+                </TransformWrapper>
               </div>
             )}
 

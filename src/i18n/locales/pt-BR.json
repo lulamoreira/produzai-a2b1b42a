@@ -1,6 +1,6 @@
 {
   "welcome": {
-    "hello": "No ProduzAI, corrigir o KPI \"Nenhuma foto disponível\" da aba Instalações. Bug: esse número está amarrado à métrica de CHECK-IN (lojas sem photo_checkin), não à ausência de foto. Deve contar apenas lojas que realmente não têm nenhuma foto.",
+    "hello": "No ProduzAI, refazer o controle de zoom do visualizador de fotos (lightbox) do Checkin Fotográfico. O zoom atual (react-quick-pinch-zoom) está ruim: os botões resetam a posição para (0,0), a imagem \"pula\" para o canto ao ampliar, e no desktop o scroll/arraste/duplo-clique não funcionam bem. Trocar pela biblioteca react-zoom-pan-pinch, que faz zoom pelo cursor no scroll, arrastar para mover, pinça no mobile, duplo-clique para ampliar e botões de +/−/reset que ampliam pelo centro.",
     "subtitle": "Sua conta está pronta. Veja o que você pode acessar.",
     "yourRole": "Seu papel:",
     "yourCampaigns": "Suas campanhas",
