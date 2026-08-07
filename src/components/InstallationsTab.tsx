@@ -643,7 +643,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       return occ?.hasOccurrence && !occ.allResolved;
     }).length;
     const noCheckin = filteredStores.filter(s => !scheduleMap[s.id]?.photo_checkin).length;
-    return { total, completed, pending, withTeam, withPhotos, withReschedule, withOccurrence, noCheckin };
+    const noPhotos = filteredStores.filter(s => (photosByStore[s.id] || []).length === 0).length;
+    return { total, completed, pending, withTeam, withPhotos, withReschedule, withOccurrence, noCheckin, noPhotos };
   }, [filteredStores, scheduleMap, photosByStore, storeOccurrenceStatus]);
 
   // Count active secondary filters
