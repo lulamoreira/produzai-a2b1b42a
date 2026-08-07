@@ -970,6 +970,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
           { key: "withReschedule" as const, value: summaryMetrics.withReschedule, label: t("scheduling.reschedule"), isTotal: false, dangerWhenPositive: false, visible: true },
           { key: "withOccurrence" as const, value: summaryMetrics.withOccurrence, label: t("occurrences.title"), isTotal: false, dangerWhenPositive: true, visible: true },
           { key: "noPhotos" as const, value: summaryMetrics.noPhotos, label: t("installations.noPhotos"), isTotal: false, dangerWhenPositive: true, visible: true },
+          { key: "noCheckin" as const, value: summaryMetrics.noCheckin, label: t("installations.noCheckin"), isTotal: false, dangerWhenPositive: true, visible: showPhotoCheckin },
         ] as const).filter(m => (m as any).visible !== false).map((m, idx, arr) => (
           <button
             key={m.key}
