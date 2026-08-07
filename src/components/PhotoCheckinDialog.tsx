@@ -36,33 +36,6 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [editingCaption, setEditingCaption] = useState<string | null>(null);
   const [captionValue, setCaptionValue] = useState("");
-  const imgRef = useRef<HTMLImageElement>(null);
-  const pinchZoomRef = useRef<any>(null);
-
-  const onUpdate = useCallback(({ x, y, scale }: any) => {
-    const value = make3dTransformValue({ x, y, scale });
-    if (imgRef.current) {
-      imgRef.current.style.setProperty("transform", value);
-    }
-  }, []);
-
-  const handleZoomIn = () => {
-    if (pinchZoomRef.current) {
-      pinchZoomRef.current.scaleTo({ scale: pinchZoomRef.current.getScale() * 1.5, x: 0, y: 0 });
-    }
-  };
-
-  const handleZoomOut = () => {
-    if (pinchZoomRef.current) {
-      pinchZoomRef.current.scaleTo({ scale: pinchZoomRef.current.getScale() / 1.5, x: 0, y: 0 });
-    }
-  };
-
-  const handleResetZoom = () => {
-    if (pinchZoomRef.current) {
-      pinchZoomRef.current.scaleTo({ scale: 1, x: 0, y: 0 });
-    }
-  };
   const [reinstallFilter, setReinstallFilter] = useState<ReinstallPhotoFilterValue>("all");
 
   const reinstallFilteredPhotos = reinstallFilter === "all"
