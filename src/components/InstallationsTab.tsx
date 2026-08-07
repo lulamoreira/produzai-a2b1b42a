@@ -1000,7 +1000,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
       {summaryFilter && summaryFilter !== "total" && (
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>{t("filters.filteringBy")} <strong className="text-foreground">{
-            { completed: t("dashboard.completed"), pending: t("dashboard.pending"), withTeam: t("scheduling.withTeam"), withPhotos: t("installations.photos"), withReschedule: t("scheduling.reschedule"), withOccurrence: t("occurrences.title"), noCheckin: t("installations.noPhotos"), noPhotos: t("installations.noPhotos") }[summaryFilter as any]
+            { completed: t("dashboard.completed"), pending: t("dashboard.pending"), withTeam: t("scheduling.withTeam"), withPhotos: t("installations.photos"), withReschedule: t("scheduling.reschedule"), withOccurrence: t("occurrences.title"), noCheckin: t("installations.noCheckin"), noPhotos: t("installations.noPhotos") }[summaryFilter as any]
           }</strong> ({displayedStores.length})</span>
           <Button variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setSummaryFilter("")}>✕</Button>
         </div>
