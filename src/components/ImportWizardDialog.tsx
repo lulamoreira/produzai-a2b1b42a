@@ -1041,7 +1041,7 @@ export default function ImportWizardDialog({
                     onCheckedChange={setUpdateExisting}
                   />
                   <Label htmlFor="update-existing" className="text-xs cursor-pointer">
-                    Atualizar duplicados por nome + CNPJ
+                    Atualizar duplicados por nome + código
                   </Label>
                 </div>
                 {mode === "stores" && missingStores.length > 0 && (
