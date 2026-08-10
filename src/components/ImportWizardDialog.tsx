@@ -1205,8 +1205,11 @@ export default function ImportWizardDialog({
               <Eye className="w-5 h-5" />
               Status detalhado das lojas
             </DialogTitle>
-            <DialogDescription>
-              O que vai acontecer com cada loja quando você confirmar a importação.
+            <DialogDescription className="space-y-2">
+              <p>O que vai acontecer com cada loja quando você confirmar a importação.</p>
+              <div className="bg-amber-50 dark:bg-amber-950/30 p-2.5 rounded-md border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-200 text-[11px] leading-relaxed">
+                <strong>O que é desativar?</strong> As lojas marcadas como "Desativar" são aquelas que existem no banco de dados, mas <strong>não estão presentes</strong> na sua planilha atual. Elas serão mantidas no sistema (para histórico de campanhas passadas), mas ficarão com status <em>Inativo</em> e não aparecerão na próxima campanha.
+              </div>
             </DialogDescription>
           </DialogHeader>
 
