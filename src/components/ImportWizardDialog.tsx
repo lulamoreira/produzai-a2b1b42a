@@ -453,9 +453,9 @@ export default function ImportWizardDialog({
 
     const rowsByIdentity = new Map<string, Record<string, string>>();
     const rowsWithoutIdentity: Record<string, string>[] = [];
-
+    
     transformedRows.forEach((row) => {
-      const identityKey = getStrictNameCodeIdentityKey({ name: row.name, store_code: row.store_code });
+      const identityKey = getStoreIdentityKey({ name: row.name, store_code: row.store_code, cnpj: row.cnpj });
       if (!identityKey) {
         rowsWithoutIdentity.push(row);
         return;
@@ -467,20 +467,55 @@ export default function ImportWizardDialog({
   }, [mode, transformedRows]);
 
   const stats = useMemo(() => {
-    const existingKeys = new Set(existingItems.map((i) => getStrictNameCodeIdentityKey(i)).filter(Boolean));
+    const existingIdentityKeys = new Map<string, ExistingImportItem>();
+    existingItems.forEach((item) => {
+      const key = getStoreIdentityKey({ name: item.name, store_code: item.store_code, cnpj: item.cnpj });
+      if (key) existingIdentityKeys.set(key, item);
+    });
+
     const toCreateRows: Record<string, string>[] = [];
     const toUpdateRows: Record<string, string>[] = [];
     const ignoredRows: { row: Record<string, string>; missing: string[]; index: number }[] = [];
+    
     importRows.forEach((r, idx) => {
       const missing = requiredKeys.filter((k) => (r[k] ?? "").trim() === "");
       if (missing.length > 0) {
         ignoredRows.push({ row: r, missing, index: idx + 2 });
         return;
       }
-      const identityKey = getStrictNameCodeIdentityKey({ name: r.name, store_code: r.store_code });
-      if (updateExisting && identityKey && existingKeys.has(identityKey)) toUpdateRows.push(r);
-      else toCreateRows.push(r);
+      
+      let existing: ExistingImportItem | undefined;
+      const identityKey = getStoreIdentityKey({ name: r.name, store_code: r.store_code, cnpj: r.cnpj });
+      if (identityKey) {
+        existing = existingIdentityKeys.get(identityKey);
+      }
+
+      if (updateExisting && existing) {
+        toUpdateRows.push(r);
+        // Audit changes for stores
+        if (mode === "stores") {
+          const changes: string[] = [];
+          Object.entries(r).forEach(([k, v]) => {
+            if (k === "name" || k === "cnpj" || k === "store_code") return;
+            const currentVal = existing ? (existing as any)[k] : undefined;
+            const newVal = v === null || v === undefined ? "" : String(v);
+            const oldVal = currentVal === null || currentVal === undefined ? "" : String(currentVal);
+            
+            if (newVal !== oldVal) {
+              const label = systemFields.find(f => f.key === k)?.label || k;
+              changes.push(label);
+            }
+          });
+          
+          if (changes.length > 0) {
+            (r as any)._audit_changes = changes.join(", ");
+          }
+        }
+      } else {
+        toCreateRows.push(r);
+      }
     });
+
     return {
       toCreate: toCreateRows.length,
       toUpdate: toUpdateRows.length,
@@ -489,17 +524,17 @@ export default function ImportWizardDialog({
       toUpdateRows,
       ignoredRows,
     };
-  }, [importRows, existingItems, updateExisting, requiredKeys]);
+  }, [importRows, existingItems, updateExisting, requiredKeys, mode, systemFields]);
 
   // Existing items whose name + CNPJ identity is NOT present in the incoming file (stores mode only)
   const missingStores = useMemo(() => {
     if (mode !== "stores") return [] as ExistingImportItem[];
     const incomingKeys = new Set(
       importRows
-        .map((r) => getStrictNameCodeIdentityKey({ name: r.name, store_code: r.store_code }) || getStoreIdentityKey({ name: r.name, store_code: r.store_code }))
+        .map((r) => getStoreIdentityKey({ name: r.name, store_code: r.store_code, cnpj: r.cnpj }))
         .filter((key) => key !== "")
     );
-    return existingItems.filter((s) => !incomingKeys.has(getStrictNameCodeIdentityKey(s) || getStoreIdentityKey(s)));
+    return existingItems.filter((s) => !incomingKeys.has(getStoreIdentityKey(s)));
   }, [mode, existingItems, importRows]);
 
   // Pre-existing duplicates in DB: same name + CNPJ identity appears more than once.
@@ -511,7 +546,7 @@ export default function ImportWizardDialog({
     const seen = new Set<string>();
     const extras: ExistingImportItem[] = [];
     for (const s of existingItems) {
-      const k = getStrictNameCodeIdentityKey(s);
+      const k = getStoreIdentityKey(s);
       if (!k) continue;
       if (seen.has(k)) extras.push(s);
       else seen.add(k);
