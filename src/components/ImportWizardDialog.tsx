@@ -469,7 +469,11 @@ export default function ImportWizardDialog({
   const stats = useMemo(() => {
     const existingIdentityKeys = new Map<string, ExistingImportItem>();
     existingItems.forEach((item) => {
-      const key = getStoreIdentityKey({ name: item.name, store_code: item.store_code, cnpj: item.cnpj });
+      const key = getStoreIdentityKey({ 
+        name: item.name, 
+        store_code: (item as any).store_code, 
+        cnpj: item.cnpj 
+      });
       if (key) existingIdentityKeys.set(key, item);
     });
 
