@@ -1331,7 +1331,93 @@ export default function ImportWizardDialog({
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Dialog>
+      
+      {/* Field Selection Dialog */}
+      <Dialog open={importSelectionDialogOpen} onOpenChange={setImportSelectionDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
+          <DialogHeader className="px-6 pt-6">
+            <DialogTitle>Seleção de Campos para Importação</DialogTitle>
+            <DialogDescription>
+              Selecione quais campos você deseja importar. Campos não selecionados serão preservados no sistema.
+              Valores nulos ou zero na planilha resultarão em campos vazios se o campo for selecionado.
+            </DialogDescription>
+          </DialogHeader>
 
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between pb-2 border-b">
+                <h4 className="font-medium text-sm">Campos Disponíveis</h4>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-xs h-7"
+                    onClick={() => setSelectedFieldsToImport(new Set(systemFields.map(f => f.key)))}
+                  >
+                    Selecionar Todos
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-xs h-7"
+                    onClick={() => setSelectedFieldsToImport(new Set(["name", "cnpj"]))}
+                  >
+                    Limpar
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {systemFields.map((field) => (
+                  <div 
+                    key={field.key} 
+                    className={cn(
+                      "flex items-center space-x-3 p-2 rounded-md border transition-colors",
+                      selectedFieldsToImport.has(field.key) ? "bg-primary/5 border-primary/20" : "hover:bg-muted/50"
+                    )}
+                  >
+                    <Checkbox 
+                      id={`field-${field.key}`} 
+                      checked={selectedFieldsToImport.has(field.key)}
+                      disabled={field.required}
+                      onCheckedChange={(checked) => {
+                        const next = new Set(selectedFieldsToImport);
+                        if (checked) next.add(field.key);
+                        else if (!field.required) next.delete(field.key);
+                        setSelectedFieldsToImport(next);
+                      }}
+                    />
+                    <Label 
+                      htmlFor={`field-${field.key}`}
+                      className={cn("flex-1 cursor-pointer text-sm", field.required && "font-semibold")}
+                    >
+                      {field.label}
+                      {field.required && <span className="ml-1 text-destructive">*</span>}
+                      {field.isCustom && <Badge variant="outline" className="ml-2 text-[10px] h-4">Custom</Badge>}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="px-6 py-4 bg-muted/30 border-t">
+            <Button variant="outline" onClick={() => setImportSelectionDialogOpen(false)} disabled={importing}>
+              Cancelar
+            </Button>
+            <Button 
+              onClick={() => {
+                setImportSelectionDialogOpen(false);
+                executeImport(Array.from(selectedFieldsToImport));
+              }}
+              disabled={importing || (mode === "stores" && selectedFieldsToImport.size === 0)}
+            >
+              {importing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+              Confirmar Importação
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Dialog>
   );
 }
