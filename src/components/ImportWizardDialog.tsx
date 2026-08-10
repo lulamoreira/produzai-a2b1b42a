@@ -94,10 +94,10 @@ const PIECE_FIELDS: SystemField[] = [
 
 const IGNORE = "__ignore__";
 
-const getStrictNameCnpjIdentityKey = (store: { name?: string | null; cnpj?: string | null }): string => {
+const getStrictNameCodeIdentityKey = (store: { name?: string | null; store_code?: string | null }): string => {
   const name = normalizeStoreIdentityName(store.name);
-  const cnpj = normalizeStoreIdentityCnpj(store.cnpj);
-  return name && cnpj ? `name_cnpj:${name}:${cnpj}` : "";
+  const code = (store.store_code ?? "").trim().toLowerCase();
+  return name && code ? `name_code:${name}:${code}` : "";
 };
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -204,7 +204,7 @@ export default function ImportWizardDialog({
   const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
   const [currentStoreName, setCurrentStoreName] = useState('');
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
-  const [statusSelectedFields, setStatusSelectedFields] = useState<Set<string>>(new Set(["name", "cnpj"]));
+  const [statusSelectedFields, setStatusSelectedFields] = useState<Set<string>>(new Set(["name", "store_code"]));
   const [statusSort, setStatusSort] = useState<{ field: string; dir: "asc" | "desc" }>({ field: "action", dir: "asc" });
   const [statusActionFilter, setStatusActionFilter] = useState<string>("all");
   const [selectedFieldsToImport, setSelectedFieldsToImport] = useState<Set<string>>(new Set());
@@ -440,7 +440,7 @@ export default function ImportWizardDialog({
     const seen = new Set<string>();
     const dups: Record<string, string>[] = [];
     transformedRows.forEach((row) => {
-      const identityKey = getStrictNameCnpjIdentityKey({ name: row.name, cnpj: row.cnpj });
+      const identityKey = getStrictNameCodeIdentityKey({ name: row.name, store_code: row.store_code });
       if (!identityKey) return;
       if (seen.has(identityKey)) dups.push(row);
       else seen.add(identityKey);
@@ -455,7 +455,7 @@ export default function ImportWizardDialog({
     const rowsWithoutIdentity: Record<string, string>[] = [];
 
     transformedRows.forEach((row) => {
-      const identityKey = getStrictNameCnpjIdentityKey({ name: row.name, cnpj: row.cnpj });
+      const identityKey = getStrictNameCodeIdentityKey({ name: row.name, store_code: row.store_code });
       if (!identityKey) {
         rowsWithoutIdentity.push(row);
         return;
@@ -467,7 +467,7 @@ export default function ImportWizardDialog({
   }, [mode, transformedRows]);
 
   const stats = useMemo(() => {
-    const existingKeys = new Set(existingItems.map((i) => getStrictNameCnpjIdentityKey(i)).filter(Boolean));
+    const existingKeys = new Set(existingItems.map((i) => getStrictNameCodeIdentityKey(i)).filter(Boolean));
     const toCreateRows: Record<string, string>[] = [];
     const toUpdateRows: Record<string, string>[] = [];
     const ignoredRows: { row: Record<string, string>; missing: string[]; index: number }[] = [];
@@ -477,7 +477,7 @@ export default function ImportWizardDialog({
         ignoredRows.push({ row: r, missing, index: idx + 2 });
         return;
       }
-      const identityKey = getStrictNameCnpjIdentityKey({ name: r.name, cnpj: r.cnpj });
+      const identityKey = getStrictNameCodeIdentityKey({ name: r.name, store_code: r.store_code });
       if (updateExisting && identityKey && existingKeys.has(identityKey)) toUpdateRows.push(r);
       else toCreateRows.push(r);
     });
@@ -496,10 +496,10 @@ export default function ImportWizardDialog({
     if (mode !== "stores") return [] as ExistingImportItem[];
     const incomingKeys = new Set(
       importRows
-        .map((r) => getStrictNameCnpjIdentityKey({ name: r.name, cnpj: r.cnpj }) || getStoreIdentityKey({ name: r.name, cnpj: r.cnpj }))
+        .map((r) => getStrictNameCodeIdentityKey({ name: r.name, store_code: r.store_code }) || getStoreIdentityKey({ name: r.name, store_code: r.store_code }))
         .filter((key) => key !== "")
     );
-    return existingItems.filter((s) => !incomingKeys.has(getStrictNameCnpjIdentityKey(s) || getStoreIdentityKey(s)));
+    return existingItems.filter((s) => !incomingKeys.has(getStrictNameCodeIdentityKey(s) || getStoreIdentityKey(s)));
   }, [mode, existingItems, importRows]);
 
   // Pre-existing duplicates in DB: same name + CNPJ identity appears more than once.
@@ -511,7 +511,7 @@ export default function ImportWizardDialog({
     const seen = new Set<string>();
     const extras: ExistingImportItem[] = [];
     for (const s of existingItems) {
-      const k = getStrictNameCnpjIdentityKey(s);
+      const k = getStrictNameCodeIdentityKey(s);
       if (!k) continue;
       if (seen.has(k)) extras.push(s);
       else seen.add(k);
@@ -532,11 +532,11 @@ export default function ImportWizardDialog({
     const inactiveExistingKeys = new Set(
       existingItems
         .filter((s) => s.active === false)
-        .map((s) => getStrictNameCnpjIdentityKey(s))
+        .map((s) => getStrictNameCodeIdentityKey(s))
         .filter(Boolean),
     );
     const reactivatedRows = stats.toUpdateRows.filter((r) => {
-      const key = getStrictNameCnpjIdentityKey({ name: r.name, cnpj: r.cnpj });
+      const key = getStrictNameCodeIdentityKey({ name: r.name, store_code: r.store_code });
       return key && inactiveExistingKeys.has(key);
     }).length;
     const keptExisting = activeExisting - (disableMissing ? activeMissing : 0) - activeDuplicateExtras;
@@ -555,17 +555,17 @@ export default function ImportWizardDialog({
     const rows: StatusRow[] = [];
     const incomingByIdentity = new Map<string, Record<string, string>>();
     importRows.forEach((r) => {
-      const key = getStrictNameCnpjIdentityKey({ name: r.name, cnpj: r.cnpj });
+      const key = getStrictNameCodeIdentityKey({ name: r.name, store_code: r.store_code });
       if (key) incomingByIdentity.set(key, r);
     });
-    const existingIdentityKeys = new Set(existingItems.map((i) => getStrictNameCnpjIdentityKey(i)).filter(Boolean));
+    const existingIdentityKeys = new Set(existingItems.map((i) => getStrictNameCodeIdentityKey(i)).filter(Boolean));
 
     // Enforce dedup here directly: first occurrence of each normalized name +
     // CNPJ identity is canonical; only later records with the same identity are disabled.
     const seenExistingIdentityKeys = new Set<string>();
 
     existingItems.forEach((s) => {
-      const identityKey = getStrictNameCnpjIdentityKey(s) || getStoreIdentityKey(s);
+      const identityKey = getStrictNameCodeIdentityKey(s) || getStoreIdentityKey(s);
       const isDuplicate = identityKey !== "" && seenExistingIdentityKeys.has(identityKey);
       if (identityKey) seenExistingIdentityKeys.add(identityKey);
 
@@ -603,7 +603,7 @@ export default function ImportWizardDialog({
 
     // New/ignored from file
     stats.toCreateRows.forEach((r, i) => {
-      const identityKey = getStrictNameCnpjIdentityKey({ name: r.name, cnpj: r.cnpj });
+      const identityKey = getStrictNameCodeIdentityKey({ name: r.name, store_code: r.store_code });
       if (identityKey && existingIdentityKeys.has(identityKey)) return; // already accounted (update)
       rows.push({ action: "criar", name: r.name || `(sem nome) #${i + 1}`, data: r, key: `c-${i}` });
     });
@@ -672,7 +672,7 @@ export default function ImportWizardDialog({
         // Always include identity fields for stores
         if (mode === "stores") {
           filtered.name = row.name;
-          filtered.cnpj = row.cnpj;
+          filtered.store_code = row.store_code;
         } else {
           filtered.name = row.name;
         }
@@ -991,12 +991,12 @@ export default function ImportWizardDialog({
                 </p>
                 {updateExisting && (
                   <p>
-                    <strong>{stats.toUpdate}</strong> serão atualizados (por nome + CNPJ)
+                    <strong>{stats.toUpdate}</strong> serão atualizados (por nome + código)
                   </p>
                 )}
                 {mode === "stores" && fileDuplicates.length > 0 && (
                   <p className="text-amber-600 dark:text-amber-500 font-medium">
-                    <strong>{fileDuplicates.length}</strong> linha(s) duplicada(s) no arquivo (mesmo nome + CNPJ) — apenas a última ocorrência será usada
+                    <strong>{fileDuplicates.length}</strong> linha(s) duplicada(s) no arquivo (mesmo nome + código) — apenas a última ocorrência será usada
                   </p>
                 )}
                 {mode === "stores" && duplicateExtras.length > 0 && (
@@ -1041,7 +1041,7 @@ export default function ImportWizardDialog({
                     onCheckedChange={setUpdateExisting}
                   />
                   <Label htmlFor="update-existing" className="text-xs cursor-pointer">
-                    Atualizar duplicados por nome + CNPJ
+                    Atualizar duplicados por nome + código
                   </Label>
                 </div>
                 {mode === "stores" && missingStores.length > 0 && (
@@ -1124,7 +1124,7 @@ export default function ImportWizardDialog({
             {updateExisting && stats.toUpdate > 0 && (
               <details className="border rounded-md p-2 text-xs">
                 <summary className="cursor-pointer text-primary font-medium">
-                  Ver {stats.toUpdate} registro(s) que serão atualizados (por nome + CNPJ)
+                  Ver {stats.toUpdate} registro(s) que serão atualizados (por nome + código)
                 </summary>
                 <div className="mt-2 max-h-40 overflow-y-auto flex flex-wrap gap-1">
                   {stats.toUpdateRows.map((r, i) => (
