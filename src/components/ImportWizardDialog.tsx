@@ -1268,7 +1268,7 @@ export default function ImportWizardDialog({
             <div>
               <p className="text-xs font-medium mb-1.5">Campos a exibir:</p>
               <div className="flex flex-wrap gap-2">
-                {[{ key: "name", label: "Nome" }, { key: "cnpj", label: "CNPJ" }, ...Array.from(new Set([...Array.from(mappedSystemKeys), ...(priorityFieldKey ? [priorityFieldKey] : [])])).filter((k) => k !== "name" && k !== "cnpj").map((k) => ({ key: k, label: systemFields.find((f) => f.key === k)?.label ?? k }))].map((f) => (
+                {[{ key: "name", label: "Nome" }, { key: "store_code", label: "Código" }, { key: "cnpj", label: "CNPJ" }, { key: "_audit_changes", label: "Campos Alterados" }, ...Array.from(new Set([...Array.from(mappedSystemKeys), ...(priorityFieldKey ? [priorityFieldKey] : [])])).filter((k) => k !== "name" && k !== "cnpj" && k !== "store_code").map((k) => ({ key: k, label: systemFields.find((f) => f.key === k)?.label ?? k }))].map((f) => (
                   <label key={f.key} className="flex items-center gap-1.5 text-xs cursor-pointer">
                     <Checkbox
                       checked={statusSelectedFields.has(f.key)}
@@ -1342,7 +1342,7 @@ export default function ImportWizardDialog({
                     </TableCell>
                     {Array.from(statusSelectedFields).map((k) => (
                       <TableCell key={k} className="text-xs whitespace-nowrap">
-                        {k === "name" ? r.name : (r.data[k] || <span className="text-muted-foreground italic">—</span>)}
+                        {k === "name" ? r.name : k === "_audit_changes" ? (r.data._audit_changes || <span className="text-muted-foreground italic">Sem alterações</span>) : (r.data[k] || <span className="text-muted-foreground italic">—</span>)}
                       </TableCell>
                     ))}
                   </TableRow>
