@@ -1258,6 +1258,9 @@ export default function ImportWizardDialog({
               <div className="bg-amber-50 dark:bg-amber-950/30 p-2.5 rounded-md border border-amber-200 dark:border-amber-900 text-amber-800 dark:text-amber-200 text-[11px] leading-relaxed">
                 <strong>O que é desativar?</strong> As lojas marcadas como "Desativar" são aquelas que existem no banco de dados, mas <strong>não estão presentes</strong> na sua planilha atual. Elas serão mantidas no sistema (para histórico de campanhas passadas), mas ficarão com status <em>Inativo</em> e não aparecerão na próxima campanha.
               </div>
+              <div className="bg-blue-50 dark:bg-blue-950/30 p-2.5 rounded-md border border-blue-200 dark:border-blue-900 text-blue-800 dark:text-blue-200 text-[11px] mt-2 font-medium">
+                Funcionalidade de Importação Seletiva: Após confirmar nesta tela, você poderá escolher quais colunas específicas deseja atualizar.
+              </div>
             </DialogDescription>
           </DialogHeader>
 
