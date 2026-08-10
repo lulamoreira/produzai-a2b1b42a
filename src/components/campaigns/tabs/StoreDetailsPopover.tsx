@@ -25,7 +25,7 @@ export function StoreDetailsPopover({ store, customFieldLabels }: { store: Clien
       seenCustomKeys.add(field.key);
       return { label: cleanCustomFieldLabel(field.label), value: storeAny[field.key] };
     }),
-    ...Array.from({ length: 10 }, (_, idx) => {
+    ...Array.from({ length: 20 }, (_, idx) => {
       const key = `custom_field_${idx + 1}`;
       return seenCustomKeys.has(key) ? null : { label: `Campo personalizado ${idx + 1}`, value: storeAny[key] };
     }).filter((field): field is { label: string; value: unknown } => field !== null),

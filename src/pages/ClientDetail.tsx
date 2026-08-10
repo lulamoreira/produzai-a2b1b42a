@@ -101,10 +101,7 @@ function capitalizeStoreFields<T extends Record<string, any>>(data: T): T {
   const CAPITALIZE_KEYS = [
     "name", "nickname", "street", "complement", "neighborhood", "city",
     "manager_name", "country", "observations",
-    "custom_field_1", "custom_field_2", "custom_field_3", "custom_field_4", "custom_field_5",
-    "custom_field_6", "custom_field_7", "custom_field_8", "custom_field_9", "custom_field_10",
-    "custom_field_11", "custom_field_12", "custom_field_13", "custom_field_14", "custom_field_15",
-    "custom_field_16", "custom_field_17", "custom_field_18", "custom_field_19", "custom_field_20",
+    ...Array.from({ length: MAX_CUSTOM_FIELDS }, (_, i) => `custom_field_${i + 1}`),
   ];
   const result = { ...data };
   for (const key of CAPITALIZE_KEYS) {
@@ -137,10 +134,9 @@ const emptyStoreForm = {
   zip_code: "", street: "", number: "", complement: "", neighborhood: "",
   city: "", state: "", phone: "", manager_name: "",
   store_model: "", country: "", store_code: "", email: "",
-  custom_field_1: "", custom_field_2: "", custom_field_3: "", custom_field_4: "", custom_field_5: "",
-  custom_field_6: "", custom_field_7: "", custom_field_8: "", custom_field_9: "", custom_field_10: "",
-  custom_field_11: "", custom_field_12: "", custom_field_13: "", custom_field_14: "", custom_field_15: "",
-  custom_field_16: "", custom_field_17: "", custom_field_18: "", custom_field_19: "", custom_field_20: "",
+  ...Object.fromEntries(
+    Array.from({ length: MAX_CUSTOM_FIELDS }, (_, i) => [`custom_field_${i + 1}`, ""])
+  ),
   observations: "", showcase_count: "0",
   tipo_entrega: 'frete_instalacao' as const,
 };
@@ -530,27 +526,13 @@ const ClientDetail = () => {
   const [bulkDeleteProgress, setBulkDeleteProgress] = useState({ current: 0, total: 0 });
 
   // Custom field labels
-  const [customLabels, setCustomLabels] = useState<Record<string, string>>({
-    custom_field_1_label: client?.custom_field_1_label || "",
-    custom_field_2_label: client?.custom_field_2_label || "",
-    custom_field_3_label: client?.custom_field_3_label || "",
-    custom_field_4_label: client?.custom_field_4_label || "",
-    custom_field_5_label: client?.custom_field_5_label || "",
-    custom_field_6_label: client?.custom_field_6_label || "",
-    custom_field_7_label: client?.custom_field_7_label || "",
-    custom_field_8_label: client?.custom_field_8_label || "",
-    custom_field_9_label: client?.custom_field_9_label || "",
-    custom_field_10_label: client?.custom_field_10_label || "",
-    custom_field_11_label: (client as any)?.custom_field_11_label || "",
-    custom_field_12_label: (client as any)?.custom_field_12_label || "",
-    custom_field_13_label: (client as any)?.custom_field_13_label || "",
-    custom_field_14_label: (client as any)?.custom_field_14_label || "",
-    custom_field_15_label: (client as any)?.custom_field_15_label || "",
-    custom_field_16_label: (client as any)?.custom_field_16_label || "",
-    custom_field_17_label: (client as any)?.custom_field_17_label || "",
-    custom_field_18_label: (client as any)?.custom_field_18_label || "",
-    custom_field_19_label: (client as any)?.custom_field_19_label || "",
-    custom_field_20_label: (client as any)?.custom_field_20_label || "",
+  const [customLabels, setCustomLabels] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    for (let i = 1; i <= MAX_CUSTOM_FIELDS; i++) {
+      const key = `custom_field_${i}_label`;
+      initial[key] = (client as any)?.[key] || "";
+    }
+    return initial;
   });
 
   // Country / currency / language
@@ -657,26 +639,12 @@ const ClientDetail = () => {
       country: store.country || "",
       store_code: store.store_code || "",
       email: (store as any).email || "",
-      custom_field_1: store.custom_field_1 || "",
-      custom_field_2: store.custom_field_2 || "",
-      custom_field_3: store.custom_field_3 || "",
-      custom_field_4: store.custom_field_4 || "",
-      custom_field_5: store.custom_field_5 || "",
-      custom_field_6: (store as any).custom_field_6 || "",
-      custom_field_7: (store as any).custom_field_7 || "",
-      custom_field_8: (store as any).custom_field_8 || "",
-      custom_field_9: (store as any).custom_field_9 || "",
-      custom_field_10: (store as any).custom_field_10 || "",
-      custom_field_11: (store as any).custom_field_11 || "",
-      custom_field_12: (store as any).custom_field_12 || "",
-      custom_field_13: (store as any).custom_field_13 || "",
-      custom_field_14: (store as any).custom_field_14 || "",
-      custom_field_15: (store as any).custom_field_15 || "",
-      custom_field_16: (store as any).custom_field_16 || "",
-      custom_field_17: (store as any).custom_field_17 || "",
-      custom_field_18: (store as any).custom_field_18 || "",
-      custom_field_19: (store as any).custom_field_19 || "",
-      custom_field_20: (store as any).custom_field_20 || "",
+      ...Object.fromEntries(
+        Array.from({ length: MAX_CUSTOM_FIELDS }, (_, i) => [
+          `custom_field_${i + 1}`,
+          (store as any)[`custom_field_${i + 1}`] || ""
+        ])
+      ),
       observations: (store as any).observations || "",
       showcase_count: String((store as any).showcase_count ?? 0),
       tipo_entrega: (store as any).tipo_entrega || 'frete_instalacao',

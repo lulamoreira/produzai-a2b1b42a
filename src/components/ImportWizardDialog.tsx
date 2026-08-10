@@ -140,7 +140,7 @@ export default function ImportWizardDialog({
 
   const customFields: SystemField[] = useMemo(() => {
     if (mode === "stores" && client) {
-      return Array.from({ length: 15 }, (_, i) => {
+      return Array.from({ length: 20 }, (_, i) => {
         const idx = i + 1;
         const rawLabel = (client as any)[`custom_field_${idx}_label`];
         if (!rawLabel) return null;
