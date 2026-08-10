@@ -849,10 +849,16 @@ const ClientDetail = () => {
       });
 
       // Add custom fields to the item if they exist in the row
-      for (let i = 1; i <= MAX_CUSTOM_FIELDS; i++) {
-        const key = `custom_field_${i}`;
+      for (let j = 1; j <= MAX_CUSTOM_FIELDS; j++) {
+        const key = `custom_field_${j}`;
         if (row[key] !== undefined) {
-          item[key] = row[key];
+          // If value is null, zero or empty string, set it to empty
+          const rawValue = row[key];
+          if (rawValue === null || rawValue === undefined || rawValue === "" || String(rawValue) === "0") {
+            item[key] = "";
+          } else {
+            item[key] = rawValue;
+          }
         }
       }
 
@@ -862,7 +868,24 @@ const ClientDetail = () => {
       if (onProgress) onProgress(i + 1, dedupedRows.length, item.name);
 
       if (existing && updateExisting) {
-        await updateStore.mutateAsync({ id: existing.id, ...item });
+        // Only update fields that were actually present in the row
+        // This ensures selective mapping works correctly
+        const updatePayload: any = { id: existing.id };
+        
+        // Always include basic identification
+        updatePayload.name = item.name;
+        if (item.cnpj) updatePayload.cnpj = item.cnpj;
+        if (item.active !== undefined) updatePayload.active = item.active;
+
+        // Add only the keys that were in the original row to the payload
+        Object.keys(row).forEach(key => {
+          // Map system field key if needed, or use as is
+          if (item[key] !== undefined) {
+            updatePayload[key] = item[key];
+          }
+        });
+
+        await updateStore.mutateAsync(updatePayload);
         updated++;
       } else {
         await addStore.mutateAsync(item);
