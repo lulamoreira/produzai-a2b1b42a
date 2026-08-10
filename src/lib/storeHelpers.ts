@@ -4,6 +4,7 @@ import type { StoreContact } from "@/hooks/useStoreContacts";
 type StoreIdentityInput = {
   name?: string | null;
   cnpj?: string | null;
+  store_code?: string | null;
 };
 
 /** Normalize store names for identity comparisons without changing display text. */
@@ -23,15 +24,18 @@ export function normalizeStoreIdentityCnpj(cnpj?: string | null): string {
 
 /**
  * Build the store import identity key.
- * When CNPJ is available, name + CNPJ is the canonical identity; otherwise we
- * only fall back to name for records that truly do not carry CNPJ.
+ * When store_code is available, name + store_code is the canonical identity; 
+ * otherwise we fall back to name + CNPJ if available, then just name.
  */
 export function getStoreIdentityKey(store: StoreIdentityInput): string {
   const name = normalizeStoreIdentityName(store.name);
+  const code = (store.store_code ?? "").trim().toLowerCase();
   const cnpj = normalizeStoreIdentityCnpj(store.cnpj);
 
+  if (name && code) return `name_code:${name}:${code}`;
   if (name && cnpj) return `name_cnpj:${name}:${cnpj}`;
   if (name) return `name:${name}`;
+  if (code) return `code:${code}`;
   if (cnpj) return `cnpj:${cnpj}`;
   return "";
 }
