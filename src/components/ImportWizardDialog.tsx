@@ -647,7 +647,7 @@ export default function ImportWizardDialog({
 
 
   // ─── Confirm import ───────────────────────────────────────────────────────
-  const handleConfirm = async () => {
+  const executeImport = useCallback(async (fieldsToUpdate: string[]) => {
     const valid = importRows.filter((r) =>
       requiredKeys.every((k) => (r[k] ?? "").trim() !== ""),
     );
@@ -655,12 +655,31 @@ export default function ImportWizardDialog({
       toast.error("Nenhuma linha válida para importar.");
       return;
     }
+    
     setImporting(true);
     setImportProgress({ current: 0, total: valid.length });
     setCurrentStoreName('');
     
     try {
-      await onImport(valid, { 
+      // Filter rows to only include selected fields for import
+      const rowsToImport = valid.map(row => {
+        const filtered: Record<string, string> = {};
+        fieldsToUpdate.forEach(key => {
+          if (key in row) {
+            filtered[key] = row[key];
+          }
+        });
+        // Always include identity fields for stores
+        if (mode === "stores") {
+          filtered.name = row.name;
+          filtered.cnpj = row.cnpj;
+        } else {
+          filtered.name = row.name;
+        }
+        return filtered;
+      });
+
+      await onImport(rowsToImport, { 
         updateExisting,
         disableMissingIds: mode === "stores"
           ? [
@@ -711,7 +730,19 @@ export default function ImportWizardDialog({
     } finally {
       setImporting(false);
     }
-  };
+  }, [importRows, requiredKeys, onImport, updateExisting, disableMissing, missingStores, duplicateExtras, mode, campaignId, clientId, mapping, aiMapped, fileName, columns, queryClient, historyKey, t, onOpenChange]);
+
+  const handleConfirm = useCallback(async () => {
+    if (importRows.length === 0) return;
+    
+    // Open selection dialog before importing if in stores mode
+    if (mode === "stores") {
+      setImportSelectionDialogOpen(true);
+      return;
+    }
+    
+    executeImport(Array.from(systemFields.map(f => f.key)));
+  }, [importRows, mode, systemFields, executeImport]);
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
