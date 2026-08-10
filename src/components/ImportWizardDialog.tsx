@@ -206,6 +206,8 @@ export default function ImportWizardDialog({
   const [statusSelectedFields, setStatusSelectedFields] = useState<Set<string>>(new Set(["name", "cnpj"]));
   const [statusSort, setStatusSort] = useState<{ field: string; dir: "asc" | "desc" }>({ field: "action", dir: "asc" });
   const [statusActionFilter, setStatusActionFilter] = useState<string>("all");
+  const [selectedFieldsToImport, setSelectedFieldsToImport] = useState<Set<string>>(new Set());
+  const [importSelectionDialogOpen, setImportSelectionDialogOpen] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -275,6 +277,8 @@ export default function ImportWizardDialog({
       setImportProgress({ current: 0, total: 0 });
       setCurrentStoreName('');
       setStatusSelectedFields(new Set(["name", "cnpj"]));
+      setSelectedFieldsToImport(new Set());
+      setImportSelectionDialogOpen(false);
     }
   }, [open]);
 
@@ -323,6 +327,9 @@ export default function ImportWizardDialog({
         setSamples(sampleMap);
         setMapping(initial);
         setAiMapped(new Set());
+        // Auto-select all mapped fields by default
+        const initialSelected = new Set(cols.filter(c => initial[c] !== IGNORE).map(c => initial[c]));
+        setSelectedFieldsToImport(initialSelected);
       } catch (e) {
         console.error(e);
         toast.error("Erro ao ler a planilha.");
@@ -355,6 +362,15 @@ export default function ImportWizardDialog({
       }
       setMapping(next);
       setAiMapped(flagged);
+      // Update selected fields to include newly mapped AI fields
+      setSelectedFieldsToImport(prev => {
+        const nextSet = new Set(prev);
+        flagged.forEach(col => {
+          const mappingValue = next[col];
+          if (mappingValue !== IGNORE) nextSet.add(mappingValue);
+        });
+        return nextSet;
+      });
     } catch (e: any) {
       const msg = e?.message ?? "";
       if (msg.includes("429") || /rate/i.test(msg)) {
