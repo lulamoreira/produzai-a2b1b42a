@@ -854,7 +854,7 @@ const ClientDetail = () => {
         if (row[key] !== undefined) {
           // If value is null, zero or empty string, set it to empty
           const rawValue = row[key];
-          if (rawValue === null || rawValue === undefined || rawValue === "" || rawValue === 0 || rawValue === "0") {
+          if (rawValue === null || rawValue === undefined || rawValue === "" || String(rawValue) === "0") {
             item[key] = "";
           } else {
             item[key] = rawValue;
