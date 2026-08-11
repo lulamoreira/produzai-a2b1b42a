@@ -984,7 +984,7 @@ const ClientDetail = () => {
         .select("*")
         .in("id", duplicateSiblingIds);
 
-      if (siblingsToDeactivate) {
+      if (batchId && siblingsToDeactivate) {
         siblingsToDeactivate.forEach(s => {
           snapshotItems.push({
             batch_id: batchId,
