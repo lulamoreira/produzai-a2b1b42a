@@ -658,6 +658,19 @@ export default function ImportWizardDialog({
     return rows;
   }, [mode, existingItems, importRows, stats.toCreateRows, stats.ignoredRows, updateExisting, disableMissing, duplicateExtraIds]);
 
+  const handleFinalImport = useCallback(() => {
+    onImport(importRows, { 
+      updateExisting, 
+      disableMissingIds: disableMissing ? missingStores.concat(duplicateExtras).map(s => s.id) : [], 
+      onProgress: (current, total, name) => {
+        setImportProgress({ current, total });
+        if (name) setCurrentStoreName(name);
+      },
+      fileName: fileName
+    } as any);
+    setImporting(true);
+  }, [onImport, importRows, updateExisting, disableMissing, missingStores, duplicateExtras, fileName]);
+
   const filteredStatusRows = useMemo(() => {
     const filtered = statusActionFilter === "all"
       ? statusRows
