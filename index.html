@@ -42,23 +42,15 @@
   <body>
     <div id="root"></div>
     <div id="task-description" style="display: none; padding: 2rem; max-width: 800px; margin: 0 auto; font-family: sans-serif; line-height: 1.6;">
-      No ProduzAI, há um problema crítico: a migração 20260811115000_store_import_revert.sql NÃO foi aplicada no banco de dados. As tabelas public.store_import_batches, public.store_import_snapshot_items e a função public.revert_store_import não existem (erro PGRST205 "Could not find the table 'public.store_import_batches' in the schema cache"). Isso QUEBROU a importação de lojas: o handleStoresImport tenta criar o "lote" antes de importar e, como a tabela não existe, aborta a importação inteira (mas mostra "Importação concluída"). Resultado: importar lojas não cria/atualiza nada.
+      No ProduzAI, corrigir a atualização da lista de lojas após reverter uma importação. No arquivo src/components/RevertImportButton.tsx, na função que roda após o reverter com sucesso, a invalidação usa a chave errada: ["client-stores"] (com hífen), mas a lista de lojas usa ["client_stores"] (com underline). Trocar:
 
-PARTE 1 — Aplicar a migração no banco:
+  queryClient.invalidateQueries({ queryKey: ["client-stores"] });
 
-- Executar/aplicar de fato no banco de dados a migração 20260811115000_store_import_revert.sql (criar as duas tabelas, as policies RLS, e a função revert_store_import). Confirmar que public.store_import_batches passa a existir e responder no schema (PostgREST). Se necessário, recarregar o schema cache do PostgREST após criar as tabelas.
+por:
 
-PARTE 2 — Tornar o rastreamento de reverter NÃO-BLOQUEANTE (essencial): o recurso de reverter jamais pode impedir a importação em si. No arquivo src/pages/ClientDetail.tsx, função handleStoresImport:
+  queryClient.invalidateQueries({ queryKey: ["client_stores"] });
 
-- Hoje, se a criação do lote (insert em store_import_batches) falhar, o código faz toast.error e RETURN, abortando tudo. Trocar esse comportamento: se a criação do lote falhar, apenas registrar um console.warn, deixar batchId = null e CONTINUAR a importação normalmente (sem rastreamento de reverter para essa importação).
-
-- Ao longo da função, só empurrar snapshotItems e só inserir em store_import_snapshot_items / atualizar contagens do lote QUANDO batchId não for null. Se batchId for null, pular todo o passo de snapshot mas executar normalmente o criar/atualizar/desativar das lojas.
-
-- Envolver a inserção dos snapshotItems e a atualização das contagens em try/catch que só faz console.warn em caso de erro (nunca aborta nem mostra erro pro usuário sobre isso).
-
-Assim, mesmo que as tabelas de reverter tenham qualquer problema, a importação de lojas continua funcionando 100%; o botão de reverter só fica disponível quando o lote foi realmente criado.
-
-Teste: depois de aplicar a migração, importar 1 loja de teste num cliente deve REALMENTE criar a loja (a contagem sobe) e o botão "Reverter última importação" deve ficar ATIVO com "1 criada".
+Manter a outra invalidação (["latest_store_import_batch"]) como está. Assim, ao reverter, a lista de lojas e a contagem atualizam na hora, sem precisar recarregar a página.
     </div>
     <script>
       // Only show the task description if specifically requested or in a debug view
