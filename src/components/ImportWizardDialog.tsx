@@ -411,6 +411,20 @@ export default function ImportWizardDialog({
   const missingRequired = requiredKeys.filter((k) => !mappedSystemKeys.has(k));
   const canAdvanceFromStep2 = missingRequired.length === 0;
 
+  // Track if we need to show the FileName in the onImport call
+  const handleFinalImport = useCallback(() => {
+    onImport(importRows, { 
+      updateExisting, 
+      disableMissingIds: disableMissing ? missingStores.concat(duplicateExtras).map(s => s.id) : [], 
+      onProgress: (current, total, name) => {
+        setImportProgress({ current, total });
+        if (name) setCurrentStoreName(name);
+      },
+      fileName: fileName // Added fileName
+    } as any);
+    setImporting(true);
+  }, [onImport, importRows, updateExisting, disableMissing, missingStores, duplicateExtras, fileName]);
+
   // ─── Step 3 — preview transformed rows ────────────────────────────────────
   const transformedRows = useMemo(() => {
     // rawRows already has the header removed and objects with correct keys.
