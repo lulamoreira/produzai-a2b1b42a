@@ -784,22 +784,27 @@ const ClientDetail = () => {
   ) => {
     if (!clientId) return;
 
-    // 1) Start Batch
-    const { data: batchData, error: batchError } = await (supabase.from("store_import_batches" as any).insert({
-      client_id: clientId,
-      created_by: user?.id,
-      file_name: fileName || "Planilha",
-      added_count: 0,
-      updated_count: 0,
-      deactivated_count: 0
-    }).select() as any);
+    // 1) Start Batch (Non-blocking)
+    let batchId: string | null = null;
+    try {
+      const { data: batchData, error: batchError } = await (supabase.from("store_import_batches" as any).insert({
+        client_id: clientId,
+        created_by: user?.id,
+        file_name: fileName || "Planilha",
+        added_count: 0,
+        updated_count: 0,
+        deactivated_count: 0
+      }).select() as any);
 
-    if (batchError || !batchData?.[0]) {
-      console.error("Error creating import batch:", batchError);
-      toast.error("Erro ao iniciar lote de importação.");
-      return;
+      if (batchError || !batchData?.[0]) {
+        console.warn("Failed to create import batch for revert tracking:", batchError);
+      } else {
+        batchId = batchData[0].id;
+      }
+    } catch (err) {
+      console.warn("Error creating import batch:", err);
     }
-    const batchId = batchData[0].id;
+
     const snapshotItems: any[] = [];
 
     // Group ALL existing stores by identity so we can pick a canonical one
@@ -911,18 +916,20 @@ const ClientDetail = () => {
         });
 
         // Capture snapshot before update
-        snapshotItems.push({
-          batch_id: batchId,
-          store_id: existing.id,
-          action: 'updated',
-          before_data: existing,
-        });
+        if (batchId) {
+          snapshotItems.push({
+            batch_id: batchId,
+            store_id: existing.id,
+            action: 'updated',
+            before_data: existing,
+          });
+        }
 
         await updateStore.mutateAsync(updatePayload);
         updated++;
       } else {
         const newStore: any = await addStore.mutateAsync(item);
-        if (newStore?.id) {
+        if (batchId && newStore?.id) {
           snapshotItems.push({
             batch_id: batchId,
             store_id: newStore.id,
@@ -944,7 +951,7 @@ const ClientDetail = () => {
         .select("*")
         .in("id", disableMissingIds);
 
-      if (storesToDeactivate) {
+      if (batchId && storesToDeactivate) {
         storesToDeactivate.forEach(s => {
           snapshotItems.push({
             batch_id: batchId,
@@ -977,7 +984,7 @@ const ClientDetail = () => {
         .select("*")
         .in("id", duplicateSiblingIds);
 
-      if (siblingsToDeactivate) {
+      if (batchId && siblingsToDeactivate) {
         siblingsToDeactivate.forEach(s => {
           snapshotItems.push({
             batch_id: batchId,
@@ -999,27 +1006,33 @@ const ClientDetail = () => {
       }
     }
 
-    // Save all snapshot items in batches
-    if (snapshotItems.length > 0) {
-      const CHUNK_SIZE = 500;
-      for (let j = 0; j < snapshotItems.length; j += CHUNK_SIZE) {
-        const chunk = snapshotItems.slice(j, j + CHUNK_SIZE);
-        const { error: snapshotError } = await supabase
-          .from("store_import_snapshot_items" as any)
-          .insert(chunk);
-        if (snapshotError) console.error("Error saving import snapshots:", snapshotError);
+    // Finalize snapshots and batch counts (Non-blocking)
+    if (batchId) {
+      try {
+        if (snapshotItems.length > 0) {
+          const CHUNK_SIZE = 500;
+          for (let j = 0; j < snapshotItems.length; j += CHUNK_SIZE) {
+            const chunk = snapshotItems.slice(j, j + CHUNK_SIZE);
+            const { error: snapshotError } = await supabase
+              .from("store_import_snapshot_items" as any)
+              .insert(chunk);
+            if (snapshotError) console.warn("Error saving import snapshots:", snapshotError);
+          }
+        }
+
+        // Update batch counts
+        await supabase
+          .from("store_import_batches" as any)
+          .update({
+            added_count: added,
+            updated_count: updated,
+            deactivated_count: disabled + deduped,
+          })
+          .eq("id", batchId);
+      } catch (finalizeErr) {
+        console.warn("Error finalizing import batch:", finalizeErr);
       }
     }
-
-    // Update batch counts
-    await supabase
-      .from("store_import_batches" as any)
-      .update({
-        added_count: added,
-        updated_count: updated,
-        deactivated_count: disabled + deduped,
-      })
-      .eq("id", batchId);
 
     await refetchStores();
 

@@ -4942,6 +4942,95 @@ export type Database = {
           },
         ]
       }
+      store_import_batches: {
+        Row: {
+          added_count: number
+          client_id: string
+          created_at: string
+          created_by: string | null
+          deactivated_count: number
+          file_name: string | null
+          id: string
+          reverted_at: string | null
+          reverted_by: string | null
+          updated_count: number
+        }
+        Insert: {
+          added_count?: number
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          deactivated_count?: number
+          file_name?: string | null
+          id?: string
+          reverted_at?: string | null
+          reverted_by?: string | null
+          updated_count?: number
+        }
+        Update: {
+          added_count?: number
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          deactivated_count?: number
+          file_name?: string | null
+          id?: string
+          reverted_at?: string | null
+          reverted_by?: string | null
+          updated_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_import_batches_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      store_import_snapshot_items: {
+        Row: {
+          action: string
+          batch_id: string
+          before_data: Json | null
+          created_at: string
+          id: string
+          store_id: string
+        }
+        Insert: {
+          action: string
+          batch_id: string
+          before_data?: Json | null
+          created_at?: string
+          id?: string
+          store_id: string
+        }
+        Update: {
+          action?: string
+          batch_id?: string
+          before_data?: Json | null
+          created_at?: string
+          id?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_import_snapshot_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "store_import_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_import_snapshot_items_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "client_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_maintenance_requests: {
         Row: {
           agency_notes: string | null
@@ -6276,6 +6365,7 @@ export type Database = {
         Args: { p_id: string; p_notes?: string }
         Returns: Json
       }
+      revert_store_import: { Args: { _batch_id: string }; Returns: Json }
       shift_display_orders: {
         Args: { p_after_order: number; p_campaign_id: string; p_slots: number }
         Returns: undefined
