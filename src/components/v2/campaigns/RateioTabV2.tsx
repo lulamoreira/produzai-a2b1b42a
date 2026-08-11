@@ -542,7 +542,7 @@ export default function RateioTabV2({
   
   // Custom field labels for automation
   const customFieldLabels = useMemo(() => {
-    return Array.from({ length: 15 }, (_, idx) => {
+    return Array.from({ length: MAX_CUSTOM_FIELDS }, (_, idx) => {
       const i = idx + 1;
       const label = (client as any)?.[`custom_field_${i}_label`];
       return label ? { index: i, label, key: `custom_field_${i}` } : null;
