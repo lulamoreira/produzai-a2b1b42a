@@ -951,7 +951,7 @@ const ClientDetail = () => {
         .select("*")
         .in("id", disableMissingIds);
 
-      if (storesToDeactivate) {
+      if (batchId && storesToDeactivate) {
         storesToDeactivate.forEach(s => {
           snapshotItems.push({
             batch_id: batchId,
