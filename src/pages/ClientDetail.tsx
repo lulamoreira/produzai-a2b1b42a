@@ -784,22 +784,27 @@ const ClientDetail = () => {
   ) => {
     if (!clientId) return;
 
-    // 1) Start Batch
-    const { data: batchData, error: batchError } = await (supabase.from("store_import_batches" as any).insert({
-      client_id: clientId,
-      created_by: user?.id,
-      file_name: fileName || "Planilha",
-      added_count: 0,
-      updated_count: 0,
-      deactivated_count: 0
-    }).select() as any);
+    // 1) Start Batch (Non-blocking)
+    let batchId: string | null = null;
+    try {
+      const { data: batchData, error: batchError } = await (supabase.from("store_import_batches" as any).insert({
+        client_id: clientId,
+        created_by: user?.id,
+        file_name: fileName || "Planilha",
+        added_count: 0,
+        updated_count: 0,
+        deactivated_count: 0
+      }).select() as any);
 
-    if (batchError || !batchData?.[0]) {
-      console.error("Error creating import batch:", batchError);
-      toast.error("Erro ao iniciar lote de importação.");
-      return;
+      if (batchError || !batchData?.[0]) {
+        console.warn("Failed to create import batch for revert tracking:", batchError);
+      } else {
+        batchId = batchData[0].id;
+      }
+    } catch (err) {
+      console.warn("Error creating import batch:", err);
     }
-    const batchId = batchData[0].id;
+
     const snapshotItems: any[] = [];
 
     // Group ALL existing stores by identity so we can pick a canonical one
