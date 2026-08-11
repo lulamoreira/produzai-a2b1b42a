@@ -823,10 +823,10 @@ const ClientDetail = () => {
       });
     });
 
-    // Dedupe incoming rows by name + CNPJ — the last occurrence wins only when
-    // both records represent the same legal store identity.
+    // Dedupe incoming rows by identity key (Name + Code priority)
+    // The last occurrence wins when both records represent the same store identity.
     // Prevents the import itself from creating duplicate stores when the same
-    // company appears more than once in the spreadsheet.
+    // store appears more than once in the spreadsheet.
     const rowByIdentity = new Map<string, Record<string, string>>();
     const rowsWithoutStrictIdentity: Record<string, string>[] = [];
     for (const r of rows) {
