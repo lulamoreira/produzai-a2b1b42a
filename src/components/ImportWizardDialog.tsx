@@ -567,11 +567,11 @@ export default function ImportWizardDialog({
     const inactiveExistingKeys = new Set(
       existingItems
         .filter((s) => s.active === false)
-        .map((s) => getStrictNameCodeIdentityKey(s))
+        .map((s) => getStoreIdentityKey(s))
         .filter(Boolean),
     );
     const reactivatedRows = stats.toUpdateRows.filter((r) => {
-      const key = getStrictNameCodeIdentityKey({ name: r.name, store_code: r.store_code });
+      const key = getStoreIdentityKey(r);
       return key && inactiveExistingKeys.has(key);
     }).length;
     const keptExisting = activeExisting - (disableMissing ? activeMissing : 0) - activeDuplicateExtras;
