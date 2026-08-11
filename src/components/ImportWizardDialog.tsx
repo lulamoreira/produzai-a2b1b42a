@@ -531,7 +531,7 @@ export default function ImportWizardDialog({
     if (mode !== "stores") return [] as ExistingImportItem[];
     const incomingKeys = new Set(
       importRows
-        .map((r) => getStoreIdentityKey({ name: r.name, store_code: r.store_code, cnpj: r.cnpj }))
+        .map((r) => getStoreIdentityKey(r))
         .filter((key) => key !== "")
     );
     return existingItems.filter((s) => !incomingKeys.has(getStoreIdentityKey(s)));
