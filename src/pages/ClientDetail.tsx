@@ -1602,7 +1602,7 @@ const ClientDetail = () => {
                   </>
                 }
               />
-              {isAdminOrMaster && <RevertImportButton clientId={clientId!} />}
+              {isAdminOrMaster && <div className="mt-2"><RevertImportButton clientId={clientId!} /></div>}
             </div>
 
             {enriching && (
