@@ -469,11 +469,7 @@ export default function ImportWizardDialog({
   const stats = useMemo(() => {
     const existingIdentityKeys = new Map<string, ExistingImportItem>();
     existingItems.forEach((item) => {
-      const key = getStoreIdentityKey({ 
-        name: item.name, 
-        store_code: (item as any).store_code, 
-        cnpj: item.cnpj 
-      });
+      const key = getStoreIdentityKey(item);
       if (key) existingIdentityKeys.set(key, item);
     });
 
@@ -489,7 +485,7 @@ export default function ImportWizardDialog({
       }
       
       let existing: ExistingImportItem | undefined;
-      const identityKey = getStoreIdentityKey({ name: r.name, store_code: r.store_code, cnpj: r.cnpj });
+      const identityKey = getStoreIdentityKey(r);
       if (identityKey) {
         existing = existingIdentityKeys.get(identityKey);
       }
@@ -500,7 +496,7 @@ export default function ImportWizardDialog({
         if (mode === "stores") {
           const changes: string[] = [];
           Object.entries(r).forEach(([k, v]) => {
-            if (k === "name" || k === "cnpj" || k === "store_code") return;
+            if (k === "name" || k === "cnpj" || k === "store_code" || k.startsWith('_')) return;
             const currentVal = existing ? (existing as any)[k] : undefined;
             const newVal = v === null || v === undefined ? "" : String(v);
             const oldVal = currentVal === null || currentVal === undefined ? "" : String(currentVal);
