@@ -803,7 +803,7 @@ export default function ImportWizardDialog({
             <Upload className="w-5 h-5" />
             {t("common.import")} {mode === "stores" ? t("modules.stores") : t("modules.pieces")}
             <span className="text-xs font-normal text-muted-foreground ml-2">
-              Etapa {step} de 3
+              Etapa {step} de {mode === "stores" ? 4 : 3}
             </span>
           </DialogTitle>
           <DialogDescription>
@@ -1287,7 +1287,7 @@ export default function ImportWizardDialog({
                   <Loader2 className="w-3 h-3 mr-1 animate-spin" /> {t("common.loading")}
                 </>
               ) : (
-                <>{t("common.confirm")} {t("common.import")}</>
+                <>{mode === "stores" ? "Escolher campos a importar" : `${t("common.confirm")} ${t("common.import")}`}</>
               )}
             </Button>
           )}
@@ -1420,7 +1420,12 @@ export default function ImportWizardDialog({
       <Dialog open={importSelectionDialogOpen} onOpenChange={setImportSelectionDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
           <DialogHeader className="px-6 pt-6">
-            <DialogTitle>Seleção de Campos para Importação</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              Seleção de Campos para Importação
+              <span className="text-xs font-normal text-muted-foreground ml-2">
+                Etapa 4 de 4
+              </span>
+            </DialogTitle>
             <DialogDescription>
               Selecione quais campos você deseja importar. Campos não selecionados serão preservados no sistema.
               Valores nulos ou zero na planilha resultarão em campos vazios se o campo for selecionado.
