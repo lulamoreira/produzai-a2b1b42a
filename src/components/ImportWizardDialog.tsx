@@ -600,7 +600,7 @@ export default function ImportWizardDialog({
     const seenExistingIdentityKeys = new Set<string>();
 
     existingItems.forEach((s) => {
-      const identityKey = getStrictNameCodeIdentityKey(s) || getStoreIdentityKey(s);
+      const identityKey = getStoreIdentityKey(s);
       const isDuplicate = identityKey !== "" && seenExistingIdentityKeys.has(identityKey);
       if (identityKey) seenExistingIdentityKeys.add(identityKey);
 
