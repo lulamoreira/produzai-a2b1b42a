@@ -411,10 +411,6 @@ export default function ImportWizardDialog({
   const missingRequired = requiredKeys.filter((k) => !mappedSystemKeys.has(k));
   const canAdvanceFromStep2 = missingRequired.length === 0;
 
-  // This will be moved after transformedRows declaration to fix TS2448
-  const handleFinalImport = useCallback(() => {
-    // ... logic moved below transformedRows ...
-  }, []);
 
   // ─── Step 3 — preview transformed rows ────────────────────────────────────
   const transformedRows = useMemo(() => {
