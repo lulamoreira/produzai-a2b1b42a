@@ -1,17 +1,1 @@
-No ProduzAI, melhorar a clareza do fluxo de importação de lojas (src/components/ImportWizardDialog.tsx). Hoje o wizard mostra "Etapa X de 3", mas no modo lojas existe um 4º passo (o diálogo "Seleção de Campos para Importação"). Fazer 3 ajustes, todos SÓ para o modo lojas (mode === "stores") — nos outros modos não muda nada:
-
-1) Contador de etapas do wizard (linha ~806, onde está `Etapa {step} de 3`):
-
-   trocar por: Etapa {step} de {mode === "stores" ? 4 : 3}
-
-2) Botão de avançar da Etapa 3 (o que tem onClick={handleConfirm}, linha ~1290, hoje exibe {t("common.confirm")} {t("common.import")}): tornar o texto condicional:
-
-   - se mode === "stores": exibir "Escolher campos a importar" (porque nesse modo ele NÃO importa, apenas abre a seleção de campos)
-
-   - caso contrário: manter o texto atual
-
-   Manter o estado de loading ("importing") como está.
-
-3) Diálogo "Seleção de Campos para Importação" (DialogTitle na linha ~1423): adicionar um indicador de etapa "Etapa 4 de 4" ao lado/abaixo do título, no mesmo estilo visual do indicador de etapas do wizard principal (o "Etapa X de Y" da linha 806). Esse diálogo só aparece no modo lojas, então o "de 4" é coerente.
-
-NÃO alterar o botão interno desse diálogo ("Confirmar Importação"), pois esse é o que realmente importa.
+O que está acontecendo?
