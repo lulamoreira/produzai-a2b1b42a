@@ -590,10 +590,10 @@ export default function ImportWizardDialog({
     const rows: StatusRow[] = [];
     const incomingByIdentity = new Map<string, Record<string, string>>();
     importRows.forEach((r) => {
-      const key = getStrictNameCodeIdentityKey({ name: r.name, store_code: r.store_code });
+      const key = getStoreIdentityKey(r);
       if (key) incomingByIdentity.set(key, r);
     });
-    const existingIdentityKeys = new Set(existingItems.map((i) => getStrictNameCodeIdentityKey(i)).filter(Boolean));
+    const existingIdentityKeys = new Set(existingItems.map((i) => getStoreIdentityKey(i)).filter(Boolean));
 
     // Enforce dedup here directly: first occurrence of each normalized name +
     // CNPJ identity is canonical; only later records with the same identity are disabled.
