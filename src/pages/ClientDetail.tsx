@@ -2219,6 +2219,7 @@ const ClientDetail = () => {
           name: s.name,
           id: s.id,
           cnpj: s.cnpj,
+          store_code: s.store_code,
           active: (s as any).active,
           custom_field_1: s.custom_field_1,
           custom_field_2: s.custom_field_2,

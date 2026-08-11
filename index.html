@@ -42,15 +42,15 @@
   <body>
     <div id="root"></div>
     <div id="task-description" style="display: none; padding: 2rem; max-width: 800px; margin: 0 auto; font-family: sans-serif; line-height: 1.6;">
-      No ProduzAI, corrigir a atualização da lista de lojas após reverter uma importação. No arquivo src/components/RevertImportButton.tsx, na função que roda após o reverter com sucesso, a invalidação usa a chave errada: ["client-stores"] (com hífen), mas a lista de lojas usa ["client_stores"] (com underline). Trocar:
+      No ProduzAI, corrigir a correspondência (matching) da importação de lojas. Bug: em src/pages/ClientDetail.tsx, o objeto existingItems passado ao &lt;ImportWizardDialog&gt; NÃO inclui o campo store_code. Como getStoreIdentityKey prioriza nome + código (store_code), as lojas existentes ficam com chave "nome+cnpj" enquanto as linhas da planilha (que têm código) ficam com chave "nome+código" — nunca casam. Resultado: o preview mostra lojas existentes como "serão criadas" (falsas duplicatas) e as existentes como "ausentes".
 
-  queryClient.invalidateQueries({ queryKey: ["client-stores"] });
+Correção: no map de existingItems (por volta da linha 2218, dentro de existingItems={stores.map(s =&gt; ({ ... }))}), adicionar o campo store_code. Ou seja, incluir:
 
-por:
+   store_code: s.store_code,
 
-  queryClient.invalidateQueries({ queryKey: ["client_stores"] });
+junto com name, id, cnpj, active e os custom_field_*.
 
-Manter a outra invalidação (["latest_store_import_batch"]) como está. Assim, ao reverter, a lista de lojas e a contagem atualizam na hora, sem precisar recarregar a página.
+Não alterar mais nada. Depois disso, ao importar uma planilha cujas lojas já existem (mesmo nome + código), o preview deve mostrar corretamente "atualizadas" em vez de "criadas".
     </div>
     <script>
       // Only show the task description if specifically requested or in a debug view
