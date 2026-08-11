@@ -802,8 +802,11 @@ const ClientDetail = () => {
     // Group ALL existing stores by identity so we can pick a canonical one
     // and deactivate any duplicate siblings — the imported row always wins.
     const existingGroups = new Map<string, ClientStore[]>();
+    const seenByIdentity = new Set<string>();
+    
+    // Track duplicates by Identity Key (priority to Code + Name)
     stores.forEach((store) => {
-      const key = getStrictNameCodeIdentityKey(store);
+      const key = getStoreIdentityKey(store);
       if (!key) return;
       const arr = existingGroups.get(key) ?? [];
       arr.push(store);
