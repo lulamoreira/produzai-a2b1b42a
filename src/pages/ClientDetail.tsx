@@ -31,6 +31,7 @@ import {
 import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star, Building2, Pencil, Layers, Wrench, Package, ClipboardList, ShieldBan } from "lucide-react";
 import { useClientSuppliers, useAddClientSupplier, useUpdateClientSupplier, useDeleteClientSupplier, type ClientSupplier } from "@/hooks/useClientSuppliers";
 import { BlockedInstallersPanel } from "@/components/admin/BlockedInstallersPanel";
+import { RevertImportButton } from "@/components/RevertImportButton";
 import { Textarea } from "@/components/ui/textarea";
 import { useFavoriteIds, useToggleFavorite } from "@/hooks/useCampaignFavorites";
 import StoresMatrixTable from "@/components/StoresMatrixTable";
