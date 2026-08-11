@@ -931,6 +931,23 @@ const ClientDetail = () => {
     // to preserve historical campaigns that reference them)
     let disabled = 0;
     if (disableMissingIds && disableMissingIds.length > 0) {
+      // Capture snapshots for deactivated stores
+      const { data: storesToDeactivate } = await supabase
+        .from("client_stores")
+        .select("*")
+        .in("id", disableMissingIds);
+
+      if (storesToDeactivate) {
+        storesToDeactivate.forEach(s => {
+          snapshotItems.push({
+            batch_id: batchId,
+            store_id: s.id,
+            action: 'deactivated',
+            before_data: s,
+          });
+        });
+      }
+
       const { error } = await supabase
         .from("client_stores")
         .update({ active: false } as any)
@@ -942,11 +959,28 @@ const ClientDetail = () => {
         disabled = disableMissingIds.length;
       }
     }
-    
+
     // Also deactivate duplicate siblings of any store touched by the import,
     // so only the imported/canonical record remains active.
     let deduped = 0;
     if (duplicateSiblingIds.length > 0) {
+      // Capture snapshots for duplicate siblings
+      const { data: siblingsToDeactivate } = await supabase
+        .from("client_stores")
+        .select("*")
+        .in("id", duplicateSiblingIds);
+
+      if (siblingsToDeactivate) {
+        siblingsToDeactivate.forEach(s => {
+          snapshotItems.push({
+            batch_id: batchId,
+            store_id: s.id,
+            action: 'deactivated',
+            before_data: s,
+          });
+        });
+      }
+
       const { error } = await supabase
         .from("client_stores")
         .update({ active: false } as any)
@@ -958,7 +992,30 @@ const ClientDetail = () => {
       }
     }
 
+    // Save all snapshot items in batches
+    if (snapshotItems.length > 0) {
+      const CHUNK_SIZE = 500;
+      for (let j = 0; j < snapshotItems.length; j += CHUNK_SIZE) {
+        const chunk = snapshotItems.slice(j, j + CHUNK_SIZE);
+        const { error: snapshotError } = await supabase
+          .from("store_import_snapshot_items" as any)
+          .insert(chunk);
+        if (snapshotError) console.error("Error saving import snapshots:", snapshotError);
+      }
+    }
+
+    // Update batch counts
+    await supabase
+      .from("store_import_batches" as any)
+      .update({
+        added_count: added,
+        updated_count: updated,
+        deactivated_count: disabled + deduped,
+      })
+      .eq("id", batchId);
+
     await refetchStores();
+
 
     const parts: string[] = [];
     if (added > 0) parts.push(`${added} adicionada(s)`);
@@ -1538,6 +1595,7 @@ const ClientDetail = () => {
                   </>
                 }
               />
+              {isAdminOrMaster && <RevertImportButton clientId={clientId!} />}
             </div>
 
             {enriching && (
