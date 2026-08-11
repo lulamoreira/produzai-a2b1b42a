@@ -1420,7 +1420,12 @@ export default function ImportWizardDialog({
       <Dialog open={importSelectionDialogOpen} onOpenChange={setImportSelectionDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden">
           <DialogHeader className="px-6 pt-6">
-            <DialogTitle>Seleção de Campos para Importação</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              Seleção de Campos para Importação
+              <span className="text-xs font-normal text-muted-foreground ml-2">
+                Etapa 4 de 4
+              </span>
+            </DialogTitle>
             <DialogDescription>
               Selecione quais campos você deseja importar. Campos não selecionados serão preservados no sistema.
               Valores nulos ou zero na planilha resultarão em campos vazios se o campo for selecionado.
