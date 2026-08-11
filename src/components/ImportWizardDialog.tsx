@@ -638,7 +638,7 @@ export default function ImportWizardDialog({
 
     // New/ignored from file
     stats.toCreateRows.forEach((r, i) => {
-      const identityKey = getStrictNameCodeIdentityKey({ name: r.name, store_code: r.store_code });
+      const identityKey = getStoreIdentityKey(r);
       if (identityKey && existingIdentityKeys.has(identityKey)) return; // already accounted (update)
       rows.push({ action: "criar", name: r.name || `(sem nome) #${i + 1}`, data: r, key: `c-${i}` });
     });
