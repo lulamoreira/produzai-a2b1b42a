@@ -830,7 +830,7 @@ const ClientDetail = () => {
     const rowByIdentity = new Map<string, Record<string, string>>();
     const rowsWithoutStrictIdentity: Record<string, string>[] = [];
     for (const r of rows) {
-      const k = getStrictNameCodeIdentityKey({ name: r.name, store_code: r.store_code });
+      const k = getStoreIdentityKey({ name: r.name, store_code: r.store_code, cnpj: r.cnpj });
       if (!k) {
         rowsWithoutStrictIdentity.push(r);
         continue;
