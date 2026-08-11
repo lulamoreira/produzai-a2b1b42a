@@ -32,7 +32,7 @@ export function RevertImportButton({ clientId }: RevertImportButtonProps) {
     queryKey: ["latest_store_import_batch", clientId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("store_import_batches")
+        .from("store_import_batches" as any)
         .select("*")
         .eq("client_id", clientId)
         .is("reverted_at", null)
@@ -41,7 +41,7 @@ export function RevertImportButton({ clientId }: RevertImportButtonProps) {
         .maybeSingle();
 
       if (error) throw error;
-      return data;
+      return data as any;
     },
   });
 
@@ -49,7 +49,7 @@ export function RevertImportButton({ clientId }: RevertImportButtonProps) {
     if (!latestBatch) return;
     setReverting(true);
     try {
-      const { data, error } = await supabase.rpc("revert_store_import", {
+      const { data, error } = await (supabase.rpc as any)("revert_store_import", {
         _batch_id: latestBatch.id,
       });
 
