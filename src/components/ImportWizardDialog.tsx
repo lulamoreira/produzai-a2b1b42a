@@ -1287,7 +1287,7 @@ export default function ImportWizardDialog({
                   <Loader2 className="w-3 h-3 mr-1 animate-spin" /> {t("common.loading")}
                 </>
               ) : (
-                <>{t("common.confirm")} {t("common.import")}</>
+                <>{mode === "stores" ? "Escolher campos a importar" : `${t("common.confirm")} ${t("common.import")}`}</>
               )}
             </Button>
           )}
