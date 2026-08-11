@@ -914,7 +914,7 @@ const ClientDetail = () => {
         await updateStore.mutateAsync(updatePayload);
         updated++;
       } else {
-        const newStore = await addStore.mutateAsync(item);
+        const newStore: any = await addStore.mutateAsync(item);
         if (newStore?.id) {
           snapshotItems.push({
             batch_id: batchId,
