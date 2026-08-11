@@ -803,7 +803,7 @@ const ClientDetail = () => {
     // and deactivate any duplicate siblings — the imported row always wins.
     const existingGroups = new Map<string, ClientStore[]>();
     stores.forEach((store) => {
-      const key = getStrictNameCnpjIdentityKey(store);
+      const key = getStrictNameCodeIdentityKey(store);
       if (!key) return;
       const arr = existingGroups.get(key) ?? [];
       arr.push(store);
