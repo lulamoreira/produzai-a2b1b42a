@@ -541,8 +541,9 @@ export function useAddClientStore() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (store: Partial<ClientStore> & { client_id: string; name: string }) => {
-      const { error } = await supabase.from("client_stores").insert(store);
+      const { data, error } = await supabase.from("client_stores").insert(store).select().single();
       if (error) throw error;
+      return data as ClientStore;
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["client_stores"] }); toast.success("Loja adicionada!"); },
     onError: (e) => toast.error("Erro: " + e.message),

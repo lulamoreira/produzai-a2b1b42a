@@ -411,6 +411,7 @@ export default function ImportWizardDialog({
   const missingRequired = requiredKeys.filter((k) => !mappedSystemKeys.has(k));
   const canAdvanceFromStep2 = missingRequired.length === 0;
 
+
   // ─── Step 3 — preview transformed rows ────────────────────────────────────
   const transformedRows = useMemo(() => {
     // rawRows already has the header removed and objects with correct keys.
@@ -469,11 +470,7 @@ export default function ImportWizardDialog({
   const stats = useMemo(() => {
     const existingIdentityKeys = new Map<string, ExistingImportItem>();
     existingItems.forEach((item) => {
-      const key = getStoreIdentityKey({ 
-        name: item.name, 
-        store_code: (item as any).store_code, 
-        cnpj: item.cnpj 
-      });
+      const key = getStoreIdentityKey(item);
       if (key) existingIdentityKeys.set(key, item);
     });
 
@@ -489,7 +486,7 @@ export default function ImportWizardDialog({
       }
       
       let existing: ExistingImportItem | undefined;
-      const identityKey = getStoreIdentityKey({ name: r.name, store_code: r.store_code, cnpj: r.cnpj });
+      const identityKey = getStoreIdentityKey(r);
       if (identityKey) {
         existing = existingIdentityKeys.get(identityKey);
       }
@@ -500,7 +497,7 @@ export default function ImportWizardDialog({
         if (mode === "stores") {
           const changes: string[] = [];
           Object.entries(r).forEach(([k, v]) => {
-            if (k === "name" || k === "cnpj" || k === "store_code") return;
+            if (k === "name" || k === "cnpj" || k === "store_code" || k.startsWith('_')) return;
             const currentVal = existing ? (existing as any)[k] : undefined;
             const newVal = v === null || v === undefined ? "" : String(v);
             const oldVal = currentVal === null || currentVal === undefined ? "" : String(currentVal);
@@ -535,7 +532,7 @@ export default function ImportWizardDialog({
     if (mode !== "stores") return [] as ExistingImportItem[];
     const incomingKeys = new Set(
       importRows
-        .map((r) => getStoreIdentityKey({ name: r.name, store_code: r.store_code, cnpj: r.cnpj }))
+        .map((r) => getStoreIdentityKey(r))
         .filter((key) => key !== "")
     );
     return existingItems.filter((s) => !incomingKeys.has(getStoreIdentityKey(s)));
@@ -571,11 +568,11 @@ export default function ImportWizardDialog({
     const inactiveExistingKeys = new Set(
       existingItems
         .filter((s) => s.active === false)
-        .map((s) => getStrictNameCodeIdentityKey(s))
+        .map((s) => getStoreIdentityKey(s))
         .filter(Boolean),
     );
     const reactivatedRows = stats.toUpdateRows.filter((r) => {
-      const key = getStrictNameCodeIdentityKey({ name: r.name, store_code: r.store_code });
+      const key = getStoreIdentityKey(r);
       return key && inactiveExistingKeys.has(key);
     }).length;
     const keptExisting = activeExisting - (disableMissing ? activeMissing : 0) - activeDuplicateExtras;
@@ -594,17 +591,17 @@ export default function ImportWizardDialog({
     const rows: StatusRow[] = [];
     const incomingByIdentity = new Map<string, Record<string, string>>();
     importRows.forEach((r) => {
-      const key = getStrictNameCodeIdentityKey({ name: r.name, store_code: r.store_code });
+      const key = getStoreIdentityKey(r);
       if (key) incomingByIdentity.set(key, r);
     });
-    const existingIdentityKeys = new Set(existingItems.map((i) => getStrictNameCodeIdentityKey(i)).filter(Boolean));
+    const existingIdentityKeys = new Set(existingItems.map((i) => getStoreIdentityKey(i)).filter(Boolean));
 
     // Enforce dedup here directly: first occurrence of each normalized name +
     // CNPJ identity is canonical; only later records with the same identity are disabled.
     const seenExistingIdentityKeys = new Set<string>();
 
     existingItems.forEach((s) => {
-      const identityKey = getStrictNameCodeIdentityKey(s) || getStoreIdentityKey(s);
+      const identityKey = getStoreIdentityKey(s);
       const isDuplicate = identityKey !== "" && seenExistingIdentityKeys.has(identityKey);
       if (identityKey) seenExistingIdentityKeys.add(identityKey);
 
@@ -642,7 +639,7 @@ export default function ImportWizardDialog({
 
     // New/ignored from file
     stats.toCreateRows.forEach((r, i) => {
-      const identityKey = getStrictNameCodeIdentityKey({ name: r.name, store_code: r.store_code });
+      const identityKey = getStoreIdentityKey(r);
       if (identityKey && existingIdentityKeys.has(identityKey)) return; // already accounted (update)
       rows.push({ action: "criar", name: r.name || `(sem nome) #${i + 1}`, data: r, key: `c-${i}` });
     });
@@ -656,6 +653,19 @@ export default function ImportWizardDialog({
     });
     return rows;
   }, [mode, existingItems, importRows, stats.toCreateRows, stats.ignoredRows, updateExisting, disableMissing, duplicateExtraIds]);
+
+  const handleFinalImport = useCallback(() => {
+    onImport(importRows, { 
+      updateExisting, 
+      disableMissingIds: disableMissing ? missingStores.concat(duplicateExtras).map(s => s.id) : [], 
+      onProgress: (current, total, name) => {
+        setImportProgress({ current, total });
+        if (name) setCurrentStoreName(name);
+      },
+      fileName: fileName
+    } as any);
+    setImporting(true);
+  }, [onImport, importRows, updateExisting, disableMissing, missingStores, duplicateExtras, fileName]);
 
   const filteredStatusRows = useMemo(() => {
     const filtered = statusActionFilter === "all"

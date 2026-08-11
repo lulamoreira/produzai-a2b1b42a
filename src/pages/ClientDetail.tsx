@@ -31,6 +31,7 @@ import {
 import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star, Building2, Pencil, Layers, Wrench, Package, ClipboardList, ShieldBan } from "lucide-react";
 import { useClientSuppliers, useAddClientSupplier, useUpdateClientSupplier, useDeleteClientSupplier, type ClientSupplier } from "@/hooks/useClientSuppliers";
 import { BlockedInstallersPanel } from "@/components/admin/BlockedInstallersPanel";
+import { RevertImportButton } from "@/components/RevertImportButton";
 import { Textarea } from "@/components/ui/textarea";
 import { useFavoriteIds, useToggleFavorite } from "@/hooks/useCampaignFavorites";
 import StoresMatrixTable from "@/components/StoresMatrixTable";
@@ -159,10 +160,10 @@ function generateStoreCode(clientName: string, country: string, existingStores: 
   return `${prefix}${String(seq).padStart(4, "0")}`;
 }
 
-function getStrictNameCnpjIdentityKey(store: { name?: string | null; cnpj?: string | null }): string {
+function getStrictNameCodeIdentityKey(store: { name?: string | null; store_code?: string | null }): string {
   const name = normalizeStoreIdentityName(store.name);
-  const cnpj = normalizeStoreIdentityCnpj(store.cnpj);
-  return name && cnpj ? `name_cnpj:${name}:${cnpj}` : "";
+  const code = (store.store_code || "").trim().toUpperCase();
+  return name && code ? `name_code:${name}:${code}` : "";
 }
 
 const CAMPAIGN_COLORS = [
@@ -779,14 +780,36 @@ const ClientDetail = () => {
 
   const handleStoresImport = async (
     rows: Record<string, string>[],
-    { updateExisting, disableMissingIds, onProgress }: { updateExisting: boolean; disableMissingIds?: string[]; onProgress?: (current: number, total: number, name?: string) => void },
+    { updateExisting, disableMissingIds, onProgress, fileName }: { updateExisting: boolean; disableMissingIds?: string[]; onProgress?: (current: number, total: number, name?: string) => void; fileName?: string },
   ) => {
     if (!clientId) return;
+
+    // 1) Start Batch
+    const { data: batchData, error: batchError } = await (supabase.from("store_import_batches" as any).insert({
+      client_id: clientId,
+      created_by: user?.id,
+      file_name: fileName || "Planilha",
+      added_count: 0,
+      updated_count: 0,
+      deactivated_count: 0
+    }).select() as any);
+
+    if (batchError || !batchData?.[0]) {
+      console.error("Error creating import batch:", batchError);
+      toast.error("Erro ao iniciar lote de importação.");
+      return;
+    }
+    const batchId = batchData[0].id;
+    const snapshotItems: any[] = [];
+
     // Group ALL existing stores by identity so we can pick a canonical one
     // and deactivate any duplicate siblings — the imported row always wins.
     const existingGroups = new Map<string, ClientStore[]>();
+    
+    
+    // Track duplicates by Identity Key (priority to Code + Name)
     stores.forEach((store) => {
-      const key = getStrictNameCnpjIdentityKey(store);
+      const key = getStoreIdentityKey(store);
       if (!key) return;
       const arr = existingGroups.get(key) ?? [];
       arr.push(store);
@@ -803,14 +826,14 @@ const ClientDetail = () => {
       });
     });
 
-    // Dedupe incoming rows by name + CNPJ — the last occurrence wins only when
-    // both records represent the same legal store identity.
+    // Dedupe incoming rows by identity key (Name + Code priority)
+    // The last occurrence wins when both records represent the same store identity.
     // Prevents the import itself from creating duplicate stores when the same
-    // company appears more than once in the spreadsheet.
+    // store appears more than once in the spreadsheet.
     const rowByIdentity = new Map<string, Record<string, string>>();
     const rowsWithoutStrictIdentity: Record<string, string>[] = [];
     for (const r of rows) {
-      const k = getStrictNameCnpjIdentityKey({ name: r.name, cnpj: r.cnpj });
+      const k = getStoreIdentityKey({ name: r.name, store_code: r.store_code, cnpj: r.cnpj });
       if (!k) {
         rowsWithoutStrictIdentity.push(r);
         continue;
@@ -863,7 +886,8 @@ const ClientDetail = () => {
       }
 
       const identityInput = { name: item.name, cnpj: item.cnpj, store_code: item.store_code };
-      const existing = existingByIdentity.get(getStoreIdentityKey(identityInput));
+      const identityKey = getStoreIdentityKey(identityInput);
+      const existing = existingByIdentity.get(identityKey);
       
       // Update progress before potentially long await
       if (onProgress) onProgress(i + 1, dedupedRows.length, item.name);
@@ -886,10 +910,26 @@ const ClientDetail = () => {
           }
         });
 
+        // Capture snapshot before update
+        snapshotItems.push({
+          batch_id: batchId,
+          store_id: existing.id,
+          action: 'updated',
+          before_data: existing,
+        });
+
         await updateStore.mutateAsync(updatePayload);
         updated++;
       } else {
-        await addStore.mutateAsync(item);
+        const newStore: any = await addStore.mutateAsync(item);
+        if (newStore?.id) {
+          snapshotItems.push({
+            batch_id: batchId,
+            store_id: newStore.id,
+            action: 'created',
+            before_data: null,
+          });
+        }
         added++;
       }
     }
@@ -898,6 +938,23 @@ const ClientDetail = () => {
     // to preserve historical campaigns that reference them)
     let disabled = 0;
     if (disableMissingIds && disableMissingIds.length > 0) {
+      // Capture snapshots for deactivated stores
+      const { data: storesToDeactivate } = await supabase
+        .from("client_stores")
+        .select("*")
+        .in("id", disableMissingIds);
+
+      if (storesToDeactivate) {
+        storesToDeactivate.forEach(s => {
+          snapshotItems.push({
+            batch_id: batchId,
+            store_id: s.id,
+            action: 'deactivated',
+            before_data: s,
+          });
+        });
+      }
+
       const { error } = await supabase
         .from("client_stores")
         .update({ active: false } as any)
@@ -909,11 +966,28 @@ const ClientDetail = () => {
         disabled = disableMissingIds.length;
       }
     }
-    
+
     // Also deactivate duplicate siblings of any store touched by the import,
     // so only the imported/canonical record remains active.
     let deduped = 0;
     if (duplicateSiblingIds.length > 0) {
+      // Capture snapshots for duplicate siblings
+      const { data: siblingsToDeactivate } = await supabase
+        .from("client_stores")
+        .select("*")
+        .in("id", duplicateSiblingIds);
+
+      if (siblingsToDeactivate) {
+        siblingsToDeactivate.forEach(s => {
+          snapshotItems.push({
+            batch_id: batchId,
+            store_id: s.id,
+            action: 'deactivated',
+            before_data: s,
+          });
+        });
+      }
+
       const { error } = await supabase
         .from("client_stores")
         .update({ active: false } as any)
@@ -925,7 +999,30 @@ const ClientDetail = () => {
       }
     }
 
+    // Save all snapshot items in batches
+    if (snapshotItems.length > 0) {
+      const CHUNK_SIZE = 500;
+      for (let j = 0; j < snapshotItems.length; j += CHUNK_SIZE) {
+        const chunk = snapshotItems.slice(j, j + CHUNK_SIZE);
+        const { error: snapshotError } = await supabase
+          .from("store_import_snapshot_items" as any)
+          .insert(chunk);
+        if (snapshotError) console.error("Error saving import snapshots:", snapshotError);
+      }
+    }
+
+    // Update batch counts
+    await supabase
+      .from("store_import_batches" as any)
+      .update({
+        added_count: added,
+        updated_count: updated,
+        deactivated_count: disabled + deduped,
+      })
+      .eq("id", batchId);
+
     await refetchStores();
+
 
     const parts: string[] = [];
     if (added > 0) parts.push(`${added} adicionada(s)`);
@@ -1505,6 +1602,7 @@ const ClientDetail = () => {
                   </>
                 }
               />
+              {isAdminOrMaster && <div className="mt-2"><RevertImportButton clientId={clientId!} /></div>}
             </div>
 
             {enriching && (
