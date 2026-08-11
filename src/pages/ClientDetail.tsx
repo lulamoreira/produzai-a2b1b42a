@@ -780,9 +780,25 @@ const ClientDetail = () => {
 
   const handleStoresImport = async (
     rows: Record<string, string>[],
-    { updateExisting, disableMissingIds, onProgress }: { updateExisting: boolean; disableMissingIds?: string[]; onProgress?: (current: number, total: number, name?: string) => void },
+    { updateExisting, disableMissingIds, onProgress, fileName }: { updateExisting: boolean; disableMissingIds?: string[]; onProgress?: (current: number, total: number, name?: string) => void; fileName?: string },
   ) => {
     if (!clientId) return;
+
+    // 1) Start Batch
+    const { data: batchData, error: batchError } = await (supabase.from("store_import_batches" as any).insert({
+      client_id: clientId,
+      created_by: user?.id,
+      file_name: fileName || "Planilha",
+    }).select() as any);
+
+    if (batchError || !batchData?.[0]) {
+      console.error("Error creating import batch:", batchError);
+      toast.error("Erro ao iniciar lote de importação.");
+      return;
+    }
+    const batchId = batchData[0].id;
+    const snapshotItems: any[] = [];
+
     // Group ALL existing stores by identity so we can pick a canonical one
     // and deactivate any duplicate siblings — the imported row always wins.
     const existingGroups = new Map<string, ClientStore[]>();
