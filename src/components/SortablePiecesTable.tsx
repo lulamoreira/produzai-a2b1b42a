@@ -131,10 +131,10 @@ function SortableRow({
           <TableCell className="hidden lg:table-cell">—</TableCell>
         )}
         {(!visibleColumns || visibleColumns.specification) && (
-          <TableCell className="text-sm text-muted-foreground hidden lg:table-cell">—</TableCell>
+          <TableCell className="text-sm text-muted-foreground hidden lg:table-cell min-w-[300px]">—</TableCell>
         )}
         {(!visibleColumns || visibleColumns.installation_instructions) && (
-          <TableCell className="text-sm text-muted-foreground hidden xl:table-cell">—</TableCell>
+          <TableCell className="text-sm text-muted-foreground hidden xl:table-cell min-w-[250px]">—</TableCell>
         )}
         
         {customFieldLabels?.map((label, i) => {
@@ -259,10 +259,10 @@ function SortableRow({
         </TableCell>
       )}
       {(!visibleColumns || visibleColumns.specification) && (
-        <TableCell className="text-sm text-muted-foreground hidden lg:table-cell whitespace-pre-wrap">{piece.specification}</TableCell>
+        <TableCell className="text-sm text-muted-foreground hidden lg:table-cell whitespace-pre-wrap min-w-[300px] max-w-[500px]">{piece.specification}</TableCell>
       )}
       {(!visibleColumns || visibleColumns.installation_instructions) && (
-        <TableCell className="text-sm text-muted-foreground hidden xl:table-cell whitespace-pre-wrap">{piece.installation_instructions}</TableCell>
+        <TableCell className="text-sm text-muted-foreground hidden xl:table-cell whitespace-pre-wrap min-w-[250px] max-w-[400px]">{piece.installation_instructions}</TableCell>
       )}
       
       {customFieldLabels?.map((label, i) => {
