@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 import { useTranslation } from "react-i18next";
+import { MAX_CUSTOM_FIELDS } from "@/lib/customFields";
 import { 
   Table2, BarChart3 as BarChart3Icon, ChevronDown, ChevronUp, 
   Search, Filter, X, Grid3X3, ArrowDownAZ, MapPin, Copy, 
@@ -186,7 +187,7 @@ export default function MatrixTab({
   const { isAdminOrMaster } = useUserRole();
 
   const customFieldLabels = useMemo(() => {
-    return Array.from({ length: 15 }, (_, idx) => {
+    return Array.from({ length: MAX_CUSTOM_FIELDS }, (_, idx) => {
       const i = idx + 1;
       const label = (client as any)?.[`custom_field_${i}_label`];
       return label ? { index: i, label } : null;
