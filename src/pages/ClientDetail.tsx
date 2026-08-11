@@ -916,18 +916,20 @@ const ClientDetail = () => {
         });
 
         // Capture snapshot before update
-        snapshotItems.push({
-          batch_id: batchId,
-          store_id: existing.id,
-          action: 'updated',
-          before_data: existing,
-        });
+        if (batchId) {
+          snapshotItems.push({
+            batch_id: batchId,
+            store_id: existing.id,
+            action: 'updated',
+            before_data: existing,
+          });
+        }
 
         await updateStore.mutateAsync(updatePayload);
         updated++;
       } else {
         const newStore: any = await addStore.mutateAsync(item);
-        if (newStore?.id) {
+        if (batchId && newStore?.id) {
           snapshotItems.push({
             batch_id: batchId,
             store_id: newStore.id,
