@@ -60,7 +60,7 @@ export function RevertImportButton({ clientId }: RevertImportButtonProps) {
         toast.success(
           `Importação revertida! Restauradas ${result.restored_updated} lojas, ${result.reactivated} reativadas, ${result.deleted} excluídas e ${result.deactivated_created} inativadas.`
         );
-        queryClient.invalidateQueries({ queryKey: ["client-stores"] });
+        queryClient.invalidateQueries({ queryKey: ["client_stores"] });
         queryClient.invalidateQueries({ queryKey: ["latest_store_import_batch"] });
         refetch();
       } else {
