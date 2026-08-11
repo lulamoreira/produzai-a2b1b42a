@@ -1,64 +1,17 @@
-<!doctype html>
-<html lang="pt-BR" translate="no" class="notranslate">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="google" content="notranslate">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&family=Geist:wght@400;500;600;700&family=Sora:wght@400;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
-    <title>ProduzAI</title>
-    <meta name="description" content="Produção de Campanhas de Retail Marketing">
-    <meta name="author" content="Lovable" />
+No ProduzAI, melhorar a clareza do fluxo de importação de lojas (src/components/ImportWizardDialog.tsx). Hoje o wizard mostra "Etapa X de 3", mas no modo lojas existe um 4º passo (o diálogo "Seleção de Campos para Importação"). Fazer 3 ajustes, todos SÓ para o modo lojas (mode === "stores") — nos outros modos não muda nada:
 
-    <!-- TODO: Update og:title to match your application name -->
-    
-    
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://produzai.lovable.app/favicon.svg">
+1) Contador de etapas do wizard (linha ~806, onde está `Etapa {step} de 3`):
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@ProduzAI" />
-    <meta name="twitter:image" content="https://produzai.lovable.app/favicon.svg">
-    
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  <meta property="og:title" content="ProduzAI">
-  <meta name="twitter:title" content="ProduzAI">
-  <meta property="og:description" content="Produção de Campanhas de Retail Marketing">
-  <meta name="twitter:description" content="Produção de Campanhas de Retail Marketing">
-</head>
+   trocar por: Etapa {step} de {mode === "stores" ? 4 : 3}
 
-  <body>
-    <div id="root"></div>
-    <div id="task-description" style="display: none; padding: 2rem; max-width: 800px; margin: 0 auto; font-family: sans-serif; line-height: 1.6;">
-      No ProduzAI, corrigir a correspondência (matching) da importação de lojas. Bug: em src/pages/ClientDetail.tsx, o objeto existingItems passado ao &lt;ImportWizardDialog&gt; NÃO inclui o campo store_code. Como getStoreIdentityKey prioriza nome + código (store_code), as lojas existentes ficam com chave "nome+cnpj" enquanto as linhas da planilha (que têm código) ficam com chave "nome+código" — nunca casam. Resultado: o preview mostra lojas existentes como "serão criadas" (falsas duplicatas) e as existentes como "ausentes".
+2) Botão de avançar da Etapa 3 (o que tem onClick={handleConfirm}, linha ~1290, hoje exibe {t("common.confirm")} {t("common.import")}): tornar o texto condicional:
 
-Correção: no map de existingItems (por volta da linha 2218, dentro de existingItems={stores.map(s =&gt; ({ ... }))}), adicionar o campo store_code. Ou seja, incluir:
+   - se mode === "stores": exibir "Escolher campos a importar" (porque nesse modo ele NÃO importa, apenas abre a seleção de campos)
 
-   store_code: s.store_code,
+   - caso contrário: manter o texto atual
 
-junto com name, id, cnpj, active e os custom_field_*.
+   Manter o estado de loading ("importing") como está.
 
-Não alterar mais nada. Depois disso, ao importar uma planilha cujas lojas já existem (mesmo nome + código), o preview deve mostrar corretamente "atualizadas" em vez de "criadas".
-    </div>
-    <script>
-      // Only show the task description if specifically requested or in a debug view
-      if (window.location.search.includes('showTask=true')) {
-        document.getElementById('root').style.display = 'none';
-        document.getElementById('task-description').style.display = 'block';
-      }
-    </script>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>
+3) Diálogo "Seleção de Campos para Importação" (DialogTitle na linha ~1423): adicionar um indicador de etapa "Etapa 4 de 4" ao lado/abaixo do título, no mesmo estilo visual do indicador de etapas do wizard principal (o "Etapa X de Y" da linha 806). Esse diálogo só aparece no modo lojas, então o "de 4" é coerente.
+
+NÃO alterar o botão interno desse diálogo ("Confirmar Importação"), pois esse é o que realmente importa.
