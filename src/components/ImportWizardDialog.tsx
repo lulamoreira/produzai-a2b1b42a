@@ -803,7 +803,7 @@ export default function ImportWizardDialog({
             <Upload className="w-5 h-5" />
             {t("common.import")} {mode === "stores" ? t("modules.stores") : t("modules.pieces")}
             <span className="text-xs font-normal text-muted-foreground ml-2">
-              Etapa {step} de 3
+              Etapa {step} de {mode === "stores" ? 4 : 3}
             </span>
           </DialogTitle>
           <DialogDescription>
