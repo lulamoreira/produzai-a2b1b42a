@@ -880,7 +880,8 @@ const ClientDetail = () => {
       }
 
       const identityInput = { name: item.name, cnpj: item.cnpj, store_code: item.store_code };
-      const existing = existingByIdentity.get(getStoreIdentityKey(identityInput));
+      const identityKey = getStoreIdentityKey(identityInput);
+      const existing = existingByIdentity.get(identityKey);
       
       // Update progress before potentially long await
       if (onProgress) onProgress(i + 1, dedupedRows.length, item.name);
