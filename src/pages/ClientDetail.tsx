@@ -160,10 +160,10 @@ function generateStoreCode(clientName: string, country: string, existingStores: 
   return `${prefix}${String(seq).padStart(4, "0")}`;
 }
 
-function getStrictNameCnpjIdentityKey(store: { name?: string | null; cnpj?: string | null }): string {
+function getStrictNameCodeIdentityKey(store: { name?: string | null; store_code?: string | null }): string {
   const name = normalizeStoreIdentityName(store.name);
-  const cnpj = normalizeStoreIdentityCnpj(store.cnpj);
-  return name && cnpj ? `name_cnpj:${name}:${cnpj}` : "";
+  const code = (store.store_code || "").trim().toUpperCase();
+  return name && code ? `name_code:${name}:${code}` : "";
 }
 
 const CAMPAIGN_COLORS = [
