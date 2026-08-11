@@ -186,7 +186,7 @@ export default function MatrixTab({
   const { isAdminOrMaster } = useUserRole();
 
   const customFieldLabels = useMemo(() => {
-    return Array.from({ length: 15 }, (_, idx) => {
+    return Array.from({ length: MAX_CUSTOM_FIELDS }, (_, idx) => {
       const i = idx + 1;
       const label = (client as any)?.[`custom_field_${i}_label`];
       return label ? { index: i, label } : null;
