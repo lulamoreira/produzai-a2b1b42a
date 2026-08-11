@@ -1006,27 +1006,33 @@ const ClientDetail = () => {
       }
     }
 
-    // Save all snapshot items in batches
-    if (snapshotItems.length > 0) {
-      const CHUNK_SIZE = 500;
-      for (let j = 0; j < snapshotItems.length; j += CHUNK_SIZE) {
-        const chunk = snapshotItems.slice(j, j + CHUNK_SIZE);
-        const { error: snapshotError } = await supabase
-          .from("store_import_snapshot_items" as any)
-          .insert(chunk);
-        if (snapshotError) console.error("Error saving import snapshots:", snapshotError);
+    // Finalize snapshots and batch counts (Non-blocking)
+    if (batchId) {
+      try {
+        if (snapshotItems.length > 0) {
+          const CHUNK_SIZE = 500;
+          for (let j = 0; j < snapshotItems.length; j += CHUNK_SIZE) {
+            const chunk = snapshotItems.slice(j, j + CHUNK_SIZE);
+            const { error: snapshotError } = await supabase
+              .from("store_import_snapshot_items" as any)
+              .insert(chunk);
+            if (snapshotError) console.warn("Error saving import snapshots:", snapshotError);
+          }
+        }
+
+        // Update batch counts
+        await supabase
+          .from("store_import_batches" as any)
+          .update({
+            added_count: added,
+            updated_count: updated,
+            deactivated_count: disabled + deduped,
+          })
+          .eq("id", batchId);
+      } catch (finalizeErr) {
+        console.warn("Error finalizing import batch:", finalizeErr);
       }
     }
-
-    // Update batch counts
-    await supabase
-      .from("store_import_batches" as any)
-      .update({
-        added_count: added,
-        updated_count: updated,
-        deactivated_count: disabled + deduped,
-      })
-      .eq("id", batchId);
 
     await refetchStores();
 
