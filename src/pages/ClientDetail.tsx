@@ -903,10 +903,26 @@ const ClientDetail = () => {
           }
         });
 
+        // Capture snapshot before update
+        snapshotItems.push({
+          batch_id: batchId,
+          store_id: existing.id,
+          action: 'updated',
+          before_data: existing,
+        });
+
         await updateStore.mutateAsync(updatePayload);
         updated++;
       } else {
-        await addStore.mutateAsync(item);
+        const newStore = await addStore.mutateAsync(item);
+        if (newStore?.id) {
+          snapshotItems.push({
+            batch_id: batchId,
+            store_id: newStore.id,
+            action: 'created',
+            before_data: null,
+          });
+        }
         added++;
       }
     }
