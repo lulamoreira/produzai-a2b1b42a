@@ -789,6 +789,9 @@ const ClientDetail = () => {
       client_id: clientId,
       created_by: user?.id,
       file_name: fileName || "Planilha",
+      added_count: 0,
+      updated_count: 0,
+      deactivated_count: 0
     }).select() as any);
 
     if (batchError || !batchData?.[0]) {
