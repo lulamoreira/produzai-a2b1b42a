@@ -106,7 +106,17 @@ function formatMeasurements(piece: { size?: string; width?: number; height?: num
 
 
 export async function exportCampaignPPT(params: ExportPPTParams): Promise<string> {
-  const { campaign, pieces, kits, onProgress, signal } = params;
+  const { campaign, pieces: rawPieces, kits: rawKits, onProgress, signal } = params;
+  
+  // Sort pieces and kits by code before processing
+  const pieces = [...rawPieces].sort((a, b) => {
+    return String(a.code || "").localeCompare(String(b.code || ""), undefined, { numeric: true, sensitivity: 'base' });
+  });
+
+  const kits = [...rawKits].sort((a, b) => {
+    return String(a.code || "").localeCompare(String(b.code || ""), undefined, { numeric: true, sensitivity: 'base' });
+  });
+
   const pptx = new pptxgen();
   pptx.layout = "LAYOUT_WIDE";
 
@@ -120,12 +130,12 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     });
   });
 
-  const totalSlides = 1 + 1 + pieces.length + 1;
+  const totalSlides = 1 + 1 + pieces.length + kits.length + 1;
   const exportDate = new Date().toLocaleDateString();
 
-  // Progresso: imagens + capa + indice + cada peca + final + writeFile
-  const totalImgs = (campaign.cover_image_url ? 1 : 0) + pieces.filter(p => p.photo_url).length;
-  const totalSteps = totalImgs + 1 + 1 + pieces.length + 1 + 1;
+  // Progresso: imagens + capa + indice + cada peca + cada kit + final + writeFile
+  const totalImgs = (campaign.cover_image_url ? 1 : 0) + pieces.filter(p => p.photo_url).length + kits.filter(k => k.photo_url).length;
+  const totalSteps = totalImgs + 1 + 1 + pieces.length + kits.length + 1 + 1;
   let step = 0;
   const tick = (label: string) => {
     step++;
@@ -143,10 +153,14 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     tick(label);
     return r;
   };
-  const [coverImageB64, ...pieceImages] = await Promise.all([
+  const [coverImageB64, ...allImages] = await Promise.all([
     campaign.cover_image_url ? loadWithTick(campaign.cover_image_url, "Carregando capa...") : Promise.resolve(null),
-    ...pieces.map((p, i) => p.photo_url ? loadWithTick(p.photo_url, `Carregando imagem ${i + 1}/${pieces.length}...`) : Promise.resolve(null))
+    ...pieces.map((p, i) => p.photo_url ? loadWithTick(p.photo_url, `Carregando imagem de peça ${i + 1}/${pieces.length}...`) : Promise.resolve(null)),
+    ...kits.map((k, i) => k.photo_url ? loadWithTick(k.photo_url, `Carregando imagem de kit ${i + 1}/${kits.length}...`) : Promise.resolve(null))
   ]);
+
+  const pieceImages = allImages.slice(0, pieces.length);
+  const kitImages = allImages.slice(pieces.length);
 
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -235,8 +249,11 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     x: 7.0, y: 0, w: 5.93, h: 0.7, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri"
   });
 
-  // Listagem - apenas peças
-  const combinedItems = pieces.map(p => ({ name: p.name, kit: pieceToKits.get(p.name)?.[0] }));
+  // Listagem - peças e kits
+  const combinedItems = [
+    ...pieces.map(p => ({ name: p.name, code: p.code, sub: pieceToKits.get(p.name)?.[0] ? `(${pieceToKits.get(p.name)?.[0]})` : "" })),
+    ...kits.map(k => ({ name: k.name, code: k.code, sub: "(KIT)" }))
+  ];
 
   const half = Math.ceil(combinedItems.length / 2);
   const col1 = combinedItems.slice(0, half);
@@ -246,7 +263,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     items.forEach((item, idx) => {
       const y = 1.0 + (idx * 0.3);
       const num = String(idx + 1 + offset).padStart(2, '0');
-      const suffix = item.kit ? `  (${item.kit})` : "";
+      const suffix = item.sub ? `  ${item.sub}` : "";
 
       slideIndice.addText([
         { text: num, options: { color: COLORS.accent, bold: true } },
@@ -392,6 +409,93 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     slide.addText(campaign.name, { x: 0.4, y: 7.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
     slide.addText(`Página ${pageNum} / ${totalSlides}`, { x: 10.0, y: 7.2, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri" });
     tick(`Peca ${idx + 1}/${pieces.length}: ${piece.name}`);
+    if (idx % 3 === 0) await new Promise(r => setTimeout(r, 0));
+  }
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // SLIDES DE KIT
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  for (let idx = 0; idx < kits.length; idx++) {
+    const kit = kits[idx];
+    const slide = pptx.addSlide();
+    slide.background = { color: COLORS.bg };
+    const pageNum = pieces.length + idx + 3;
+
+    // Barra topo
+    slide.addShape(pptx.ShapeType.rect, {
+      x: 0, y: 0, w: 13.33, h: 0.65, fill: { color: COLORS.header }
+    });
+    slide.addText([
+      { text: "KIT\n", options: { fontSize: 7 } },
+      { text: kit.name, options: { fontSize: 12, bold: true } }
+    ], { x: 0.4, y: 0, w: 5.5, h: 0.65, valign: "middle", color: COLORS.white, fontFace: "Calibri" });
+
+    slide.addText(String(pieces.length + idx + 1).padStart(2, '0'), { x: 12.0, y: 0, w: 1.0, h: 0.65, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri" });
+
+    // ÁREA DA FOTO (esquerda)
+    slide.addShape(pptx.ShapeType.rect, {
+      x: 0.35, y: 0.85, w: 6.2, h: 5.5, fill: { color: COLORS.cardBg }, line: { color: COLORS.border, width: 0.5 }
+    });
+    const b64 = kitImages[idx];
+    if (b64) {
+      const size = await getImageSize(b64);
+      const maxWidth = 6.0;
+      const maxHeight = 5.3;
+      let finalW = maxWidth;
+      let finalH = maxHeight;
+
+      if (size.width > 0 && size.height > 0) {
+        const ratio = size.width / size.height;
+        if (ratio > maxWidth / maxHeight) {
+          finalH = maxWidth / ratio;
+        } else {
+          finalW = maxHeight * ratio;
+        }
+      }
+
+      slide.addImage({ 
+        data: b64, 
+        x: 0.45 + (maxWidth - finalW) / 2, 
+        y: 0.95 + (maxHeight - finalH) / 2, 
+        w: finalW, 
+        h: finalH 
+      });
+    } else {
+      slide.addText("Sem foto", { x: 0.35, y: 0.85, w: 6.2, h: 5.5, align: "center", valign: "middle", color: COLORS.textSecondary, fontSize: 14 });
+    }
+
+    // ÁREA DE INFORMAÇÕES (direita)
+    const infoX = 6.85;
+    let currentY = 0.85;
+    
+    slide.addShape(pptx.ShapeType.rect, {
+      x: infoX, y: currentY, w: 6.1, h: 0.75, fill: { color: COLORS.header }
+    });
+    slide.addText(kit.name, { x: infoX + 0.2, y: currentY, w: 5.7, h: 0.75, valign: "middle", color: COLORS.white, fontSize: 14, fontFace: "Calibri", bold: true });
+    
+    currentY += 0.95;
+
+    const addField = (label: string, value: string | number | undefined, italic = false) => {
+      if (value === undefined || value === "" || value === 0) return;
+      const str = String(value);
+      const lines = str.split("\n").reduce((acc, ln) => acc + Math.max(1, Math.ceil(ln.length / 65)), 0);
+      const valueH = Math.max(0.25, lines * 0.25);
+      
+      slide.addText(label, { x: infoX, y: currentY, w: 6.1, h: 0.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri", bold: true });
+      currentY += 0.25;
+      slide.addText(str, { x: infoX, y: currentY, w: 6.1, h: valueH, valign: "top", color: COLORS.textPrimary, fontSize: 10, fontFace: "Calibri", bold: !italic, italic });
+      currentY += valueH + 0.1;
+      slide.addShape(pptx.ShapeType.line, { x: infoX, y: currentY, w: 6.1, line: { color: COLORS.border, width: 0.4 } });
+      currentY += 0.15;
+    };
+
+    addField("CÓDIGO / REF", kit.code);
+    addField("COMPOSIÇÃO", (kit.pieces || []).map(p => p.name).join(", "));
+    addField("OBSERVAÇÕES", kit.observations, true);
+
+    slide.addShape(pptx.ShapeType.line, { x: 0.4, y: 7.1, w: 12.53, line: { color: COLORS.border, width: 0.5 } });
+    slide.addText(campaign.name, { x: 0.4, y: 7.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
+    slide.addText(`Página ${pageNum} / ${totalSlides}`, { x: 10.0, y: 7.2, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri" });
+    tick(`Kit ${idx + 1}/${kits.length}: ${kit.name}`);
     if (idx % 3 === 0) await new Promise(r => setTimeout(r, 0));
   }
 

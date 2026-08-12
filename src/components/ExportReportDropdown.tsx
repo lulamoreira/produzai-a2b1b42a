@@ -232,10 +232,9 @@ export default function ExportReportDropdown({
     setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Apresentacao PPT", minimized: false });
     const toastId = toast.loading("Gerando apresentação PPT...");
     try {
-      const ordered = buildInterleavedOrder(pieces, kits, kitPieces);
-      const piecesData = ordered
-        .filter(entry => entry.type === 'piece')
-        .map(({ item: p }) => {
+      
+      const piecesData = pieces
+        .map(p => {
           // Medidas podem vir como "50 x 180", "50x180", "50×180" ou "50 X 180".
           const rawSize = (p.size ?? "").toString().trim();
           const sizeParts = rawSize.split(/\s*[x×X]\s*/);
