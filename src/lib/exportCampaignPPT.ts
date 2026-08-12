@@ -153,10 +153,14 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     tick(label);
     return r;
   };
-  const [coverImageB64, ...pieceImages] = await Promise.all([
+  const [coverImageB64, ...allImages] = await Promise.all([
     campaign.cover_image_url ? loadWithTick(campaign.cover_image_url, "Carregando capa...") : Promise.resolve(null),
-    ...pieces.map((p, i) => p.photo_url ? loadWithTick(p.photo_url, `Carregando imagem ${i + 1}/${pieces.length}...`) : Promise.resolve(null))
+    ...pieces.map((p, i) => p.photo_url ? loadWithTick(p.photo_url, `Carregando imagem de peça ${i + 1}/${pieces.length}...`) : Promise.resolve(null)),
+    ...kits.map((k, i) => k.photo_url ? loadWithTick(k.photo_url, `Carregando imagem de kit ${i + 1}/${kits.length}...`) : Promise.resolve(null))
   ]);
+
+  const pieceImages = allImages.slice(0, pieces.length);
+  const kitImages = allImages.slice(pieces.length);
 
 
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
