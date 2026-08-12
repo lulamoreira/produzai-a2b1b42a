@@ -232,28 +232,24 @@ export default function ExportReportDropdown({
     setCatalogProgress({ open: true, current: 0, total: 0, label: "Preparando dados...", title: "Gerando Apresentacao PPT", minimized: false });
     const toastId = toast.loading("Gerando apresentação PPT...");
     try {
-      
-      const piecesData = pieces
-        .map(p => {
-          // Medidas podem vir como "50 x 180", "50x180", "50×180" ou "50 X 180".
-          const rawSize = (p.size ?? "").toString().trim();
-          const sizeParts = rawSize.split(/\s*[x×X]\s*/);
-          return {
-            id: p.id,
-            name: p.name,
-            description: p.specification,
-            size: rawSize || undefined,
-            width: sizeParts[0] ? Number(String(sizeParts[0]).replace(",", ".")) || undefined : undefined,
-            height: sizeParts[1] ? Number(String(sizeParts[1]).replace(",", ".")) || undefined : undefined,
-
-            material: undefined,
-            quantity: undefined,
-            code: String(p.code ?? ""),
-            observations: p.installation_instructions || undefined,
-            status: undefined,
-            photo_url: p.image_url || undefined,
-          };
-        });
+      const piecesData = pieces.map(p => {
+        const rawSize = (p.size ?? "").toString().trim();
+        const sizeParts = rawSize.split(/\s*[x×X]\s*/);
+        return {
+          id: p.id,
+          name: p.name,
+          description: p.specification,
+          size: rawSize || undefined,
+          width: sizeParts[0] ? Number(String(sizeParts[0]).replace(",", ".")) || undefined : undefined,
+          height: sizeParts[1] ? Number(String(sizeParts[1]).replace(",", ".")) || undefined : undefined,
+          material: undefined,
+          quantity: undefined,
+          code: String(p.code ?? ""),
+          observations: p.installation_instructions || undefined,
+          status: undefined,
+          photo_url: p.image_url || undefined,
+        };
+      });
 
       const kitsData = kits.map(k => {
         const kpForKit = kitPieces.filter((kp: any) => kp.kit_id === k.id);
@@ -269,8 +265,8 @@ export default function ExportReportDropdown({
           observations: undefined,
           photo_url: k.image_url || undefined,
           pieces: kitPieceDetails.map((p: any) => ({
-            name: p.name,
-            photo_url: p.image_url || undefined,
+            name: p?.name || '',
+            photo_url: p?.image_url || undefined,
           })),
         };
       });
