@@ -249,8 +249,11 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     x: 7.0, y: 0, w: 5.93, h: 0.7, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri"
   });
 
-  // Listagem - apenas peças
-  const combinedItems = pieces.map(p => ({ name: p.name, kit: pieceToKits.get(p.name)?.[0] }));
+  // Listagem - peças e kits
+  const combinedItems = [
+    ...pieces.map(p => ({ name: p.name, code: p.code, sub: pieceToKits.get(p.name)?.[0] ? `(${pieceToKits.get(p.name)?.[0]})` : "" })),
+    ...kits.map(k => ({ name: k.name, code: k.code, sub: "(KIT)" }))
+  ];
 
   const half = Math.ceil(combinedItems.length / 2);
   const col1 = combinedItems.slice(0, half);
