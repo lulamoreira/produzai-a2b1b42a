@@ -411,6 +411,93 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     tick(`Peca ${idx + 1}/${pieces.length}: ${piece.name}`);
     if (idx % 3 === 0) await new Promise(r => setTimeout(r, 0));
   }
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // SLIDES DE KIT
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  for (let idx = 0; idx < kits.length; idx++) {
+    const kit = kits[idx];
+    const slide = pptx.addSlide();
+    slide.background = { color: COLORS.bg };
+    const pageNum = pieces.length + idx + 3;
+
+    // Barra topo
+    slide.addShape(pptx.ShapeType.rect, {
+      x: 0, y: 0, w: 13.33, h: 0.65, fill: { color: COLORS.header }
+    });
+    slide.addText([
+      { text: "KIT\n", options: { fontSize: 7 } },
+      { text: kit.name, options: { fontSize: 12, bold: true } }
+    ], { x: 0.4, y: 0, w: 5.5, h: 0.65, valign: "middle", color: COLORS.white, fontFace: "Calibri" });
+
+    slide.addText(String(pieces.length + idx + 1).padStart(2, '0'), { x: 12.0, y: 0, w: 1.0, h: 0.65, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri" });
+
+    // ÁREA DA FOTO (esquerda)
+    slide.addShape(pptx.ShapeType.rect, {
+      x: 0.35, y: 0.85, w: 6.2, h: 5.5, fill: { color: COLORS.cardBg }, line: { color: COLORS.border, width: 0.5 }
+    });
+    const b64 = kitImages[idx];
+    if (b64) {
+      const size = await getImageSize(b64);
+      const maxWidth = 6.0;
+      const maxHeight = 5.3;
+      let finalW = maxWidth;
+      let finalH = maxHeight;
+
+      if (size.width > 0 && size.height > 0) {
+        const ratio = size.width / size.height;
+        if (ratio > maxWidth / maxHeight) {
+          finalH = maxWidth / ratio;
+        } else {
+          finalW = maxHeight * ratio;
+        }
+      }
+
+      slide.addImage({ 
+        data: b64, 
+        x: 0.45 + (maxWidth - finalW) / 2, 
+        y: 0.95 + (maxHeight - finalH) / 2, 
+        w: finalW, 
+        h: finalH 
+      });
+    } else {
+      slide.addText("Sem foto", { x: 0.35, y: 0.85, w: 6.2, h: 5.5, align: "center", valign: "middle", color: COLORS.textSecondary, fontSize: 14 });
+    }
+
+    // ÁREA DE INFORMAÇÕES (direita)
+    const infoX = 6.85;
+    let currentY = 0.85;
+    
+    slide.addShape(pptx.ShapeType.rect, {
+      x: infoX, y: currentY, w: 6.1, h: 0.75, fill: { color: COLORS.header }
+    });
+    slide.addText(kit.name, { x: infoX + 0.2, y: currentY, w: 5.7, h: 0.75, valign: "middle", color: COLORS.white, fontSize: 14, fontFace: "Calibri", bold: true });
+    
+    currentY += 0.95;
+
+    const addField = (label: string, value: string | number | undefined, italic = false) => {
+      if (value === undefined || value === "" || value === 0) return;
+      const str = String(value);
+      const lines = str.split("\n").reduce((acc, ln) => acc + Math.max(1, Math.ceil(ln.length / 65)), 0);
+      const valueH = Math.max(0.25, lines * 0.25);
+      
+      slide.addText(label, { x: infoX, y: currentY, w: 6.1, h: 0.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri", bold: true });
+      currentY += 0.25;
+      slide.addText(str, { x: infoX, y: currentY, w: 6.1, h: valueH, valign: "top", color: COLORS.textPrimary, fontSize: 10, fontFace: "Calibri", bold: !italic, italic });
+      currentY += valueH + 0.1;
+      slide.addShape(pptx.ShapeType.line, { x: infoX, y: currentY, w: 6.1, line: { color: COLORS.border, width: 0.4 } });
+      currentY += 0.15;
+    };
+
+    addField("CÓDIGO / REF", kit.code);
+    addField("COMPOSIÇÃO", (kit.pieces || []).map(p => p.name).join(", "));
+    addField("OBSERVAÇÕES", kit.observations, true);
+
+    slide.addShape(pptx.ShapeType.line, { x: 0.4, y: 7.1, w: 12.53, line: { color: COLORS.border, width: 0.5 } });
+    slide.addText(campaign.name, { x: 0.4, y: 7.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
+    slide.addText(`Página ${pageNum} / ${totalSlides}`, { x: 10.0, y: 7.2, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri" });
+    tick(`Kit ${idx + 1}/${kits.length}: ${kit.name}`);
+    if (idx % 3 === 0) await new Promise(r => setTimeout(r, 0));
+  }
 
 
 
