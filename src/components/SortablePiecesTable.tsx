@@ -436,10 +436,18 @@ export default function SortablePiecesTable({
   };
 
   const getKitCategory = (kit: CampaignKit) => {
+    const cat = (kit.category ?? "").trim();
+    const sub = ((kit as any).sub_location ?? "").trim();
+
+    if (cat || sub) return sub ? `${cat} / ${sub}` : cat;
+
     const kpForKit = kitPiecesList.filter(kp => kp.kit_id === kit.id);
     if (kpForKit.length === 0) return "";
+
     const firstPiece = allPieces.find(p => p.id === kpForKit[0].piece_id);
-    return firstPiece?.category || "";
+    if (!firstPiece) return "";
+
+    return firstPiece.sub_location ? `${firstPiece.category} / ${firstPiece.sub_location}` : firstPiece.category;
   };
 
   return (
