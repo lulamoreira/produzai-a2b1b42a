@@ -106,7 +106,21 @@ function formatMeasurements(piece: { size?: string; width?: number; height?: num
 
 
 export async function exportCampaignPPT(params: ExportPPTParams): Promise<string> {
-  const { campaign, pieces, kits, onProgress, signal } = params;
+  const { campaign, pieces: rawPieces, kits: rawKits, onProgress, signal } = params;
+  
+  // Sort pieces and kits by code before processing
+  const pieces = [...rawPieces].sort((a, b) => {
+    const codeA = String(a.code || "");
+    const codeB = String(b.code || "");
+    return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
+  });
+
+  const kits = [...rawKits].sort((a, b) => {
+    const codeA = String(a.code || "");
+    const codeB = String(b.code || "");
+    return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
+  });
+
   const pptx = new pptxgen();
   pptx.layout = "LAYOUT_WIDE";
 
