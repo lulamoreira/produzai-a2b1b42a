@@ -130,12 +130,12 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     });
   });
 
-  const totalSlides = 1 + 1 + pieces.length + 1;
+  const totalSlides = 1 + 1 + pieces.length + kits.length + 1;
   const exportDate = new Date().toLocaleDateString();
 
-  // Progresso: imagens + capa + indice + cada peca + final + writeFile
-  const totalImgs = (campaign.cover_image_url ? 1 : 0) + pieces.filter(p => p.photo_url).length;
-  const totalSteps = totalImgs + 1 + 1 + pieces.length + 1 + 1;
+  // Progresso: imagens + capa + indice + cada peca + cada kit + final + writeFile
+  const totalImgs = (campaign.cover_image_url ? 1 : 0) + pieces.filter(p => p.photo_url).length + kits.filter(k => k.photo_url).length;
+  const totalSteps = totalImgs + 1 + 1 + pieces.length + kits.length + 1 + 1;
   let step = 0;
   const tick = (label: string) => {
     step++;
