@@ -110,15 +110,11 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
   
   // Sort pieces and kits by code before processing
   const pieces = [...rawPieces].sort((a, b) => {
-    const codeA = String(a.code || "");
-    const codeB = String(b.code || "");
-    return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
+    return String(a.code || "").localeCompare(String(b.code || ""), undefined, { numeric: true, sensitivity: 'base' });
   });
 
   const kits = [...rawKits].sort((a, b) => {
-    const codeA = String(a.code || "");
-    const codeB = String(b.code || "");
-    return codeA.localeCompare(codeB, undefined, { numeric: true, sensitivity: 'base' });
+    return String(a.code || "").localeCompare(String(b.code || ""), undefined, { numeric: true, sensitivity: 'base' });
   });
 
   const pptx = new pptxgen();
