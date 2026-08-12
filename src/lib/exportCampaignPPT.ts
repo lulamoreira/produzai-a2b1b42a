@@ -411,6 +411,70 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     tick(`Peca ${idx + 1}/${pieces.length}: ${piece.name}`);
     if (idx % 3 === 0) await new Promise(r => setTimeout(r, 0));
   }
+
+  // 4.2 Slides de Kits
+  for (let idx = 0; idx < kits.length; idx++) {
+    const kit = kits[idx];
+    const kitImg = kitImages[idx];
+    const slide = pptx.addSlide();
+
+    // Background color
+    slide.background = { color: "F8F9FA" };
+
+    // Layout igual ao de Peças
+    // Title area
+    slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: "100%", h: 0.8, fill: { color: "8C6F4E" } });
+    slide.addText(`KIT: ${kit.name}`, { x: 0.5, y: 0.2, w: 8, h: 0.4, fontFace: "Arial", fontSize: 24, bold: true, color: "FFFFFF" });
+    slide.addText(`Cód: ${kit.code}`, { x: 8.5, y: 0.2, w: 4, h: 0.4, fontFace: "Arial", fontSize: 18, color: "FFFFFF", align: "right" });
+
+    // Left column: Image
+    slide.addShape(pptx.ShapeType.rect, { x: 0.5, y: 1.0, w: 7.5, h: 5.5, fill: { color: "FFFFFF" }, line: { color: "E2E8F0", width: 1 } });
+    if (kitImg) {
+      slide.addImage({ data: kitImg, x: 0.6, y: 1.1, w: 7.3, h: 5.3, sizing: { type: "contain", w: 7.3, h: 5.3 } });
+    } else {
+      slide.addText("Sem Imagem", { x: 0.6, y: 1.1, w: 7.3, h: 5.3, align: "center", valign: "middle", fontFace: "Arial", fontSize: 20, color: "CBD5E0" });
+    }
+
+    // Right column: Info
+    const startY = 1.0;
+    const colX = 8.2;
+    const colW = 4.3;
+
+    // Location box
+    slide.addShape(pptx.ShapeType.rect, { x: colX, y: startY, w: colW, h: 0.8, fill: { color: "F1F5F9" }, line: { color: "E2E8F0", width: 1 } });
+    slide.addText("LOCALIZAÇÃO", { x: colX + 0.1, y: startY + 0.1, w: colW - 0.2, h: 0.2, fontFace: "Arial", fontSize: 10, bold: true, color: "64748B" });
+    slide.addText(kit.category || "—", { x: colX + 0.1, y: startY + 0.35, w: colW - 0.2, h: 0.3, fontFace: "Arial", fontSize: 14, bold: true, color: "1E293B" });
+
+    // Details box
+    slide.addShape(pptx.ShapeType.rect, { x: colX, y: startY + 0.9, w: colW, h: 4.6, fill: { color: "FFFFFF" }, line: { color: "E2E8F0", width: 1 } });
+    slide.addText("DETALHES DO KIT", { x: colX + 0.1, y: startY + 1.0, w: colW - 0.2, h: 0.2, fontFace: "Arial", fontSize: 10, bold: true, color: "64748B" });
+    
+    // Lista de componentes
+    const components = kitPieces.filter(kp => kp.kit_id === kit.id);
+    const componentLines = components.map(kp => {
+      const p = pieces.find(piece => piece.id === kp.piece_id);
+      return `• (${kp.quantity}x) ${p?.name || 'Peça'} [${p?.code || ''}]`;
+    }).slice(0, 15); // Limitar para não estourar o slide
+
+    slide.addText(componentLines.join("\n"), {
+      x: colX + 0.1,
+      y: startY + 1.3,
+      w: colW - 0.2,
+      h: 4.0,
+      fontFace: "Arial",
+      fontSize: 10,
+      color: "334155",
+      valign: "top",
+      bullet: false
+    });
+
+    // Footer
+    slide.addText(`${campaign.name} | ${exportDate}`, { x: 0.5, y: 7.0, w: 12, h: 0.3, fontFace: "Arial", fontSize: 9, color: "94A3B8" });
+    slide.addText(`Slide ${2 + pieces.length + idx + 1}/${totalSlides}`, { x: 10, y: 7.0, w: 2.5, h: 0.3, fontFace: "Arial", fontSize: 9, color: "94A3B8", align: "right" });
+
+    tick(`Kit ${idx + 1}/${kits.length}: ${kit.name}`);
+    if (idx % 3 === 0) await new Promise(r => setTimeout(r, 0));
+  }
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   // SLIDES DE KIT
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
