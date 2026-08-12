@@ -263,7 +263,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     items.forEach((item, idx) => {
       const y = 1.0 + (idx * 0.3);
       const num = String(idx + 1 + offset).padStart(2, '0');
-      const suffix = item.kit ? `  (${item.kit})` : "";
+      const suffix = item.sub ? `  ${item.sub}` : "";
 
       slideIndice.addText([
         { text: num, options: { color: COLORS.accent, bold: true } },
