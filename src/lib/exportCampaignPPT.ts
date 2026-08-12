@@ -46,8 +46,6 @@ function ensureNotAborted(signal?: AbortSignal) {
   }
 }
 
-
-
 const COLORS = {
   bg: "#FFFFFF",
   header: "#1A2238",       // Navy escuro Vimer
@@ -85,11 +83,6 @@ async function urlToBase64(url: string): Promise<string | null> {
   }
 }
 
-/**
- * Normaliza a medida da peça para exibição em destaque.
- * Prioriza o valor bruto cadastrado (`size`); cai para width/height quando ausente.
- * Retorna null quando não houver medida válida.
- */
 function formatMeasurements(piece: { size?: string; width?: number; height?: number }): string | null {
   const raw = (piece.size ?? "").toString().trim();
   if (raw) {
@@ -104,11 +97,10 @@ function formatMeasurements(piece: { size?: string; width?: number; height?: num
   return null;
 }
 
-
 export async function exportCampaignPPT(params: ExportPPTParams): Promise<string> {
   const { campaign, pieces: rawPieces, kits: rawKits, onProgress, signal } = params;
   
-  // Sort pieces and kits by code before processing
+  // Sort pieces and kits by code before processing (natural numeric/alphanumeric sort)
   const pieces = [...rawPieces].sort((a, b) => {
     return String(a.code || "").localeCompare(String(b.code || ""), undefined, { numeric: true, sensitivity: 'base' });
   });
@@ -133,7 +125,6 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
   const totalSlides = 1 + 1 + pieces.length + kits.length + 1;
   const exportDate = new Date().toLocaleDateString();
 
-  // Progresso: imagens + capa + indice + cada peca + cada kit + final + writeFile
   const totalImgs = (campaign.cover_image_url ? 1 : 0) + pieces.filter(p => p.photo_url).length + kits.filter(k => k.photo_url).length;
   const totalSteps = totalImgs + 1 + 1 + pieces.length + kits.length + 1 + 1;
   let step = 0;
@@ -145,8 +136,6 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
   onProgress?.(0, totalSteps, "Iniciando...");
   ensureNotAborted(signal);
 
-
-  // 1. Preload images com tick por imagem
   const loadWithTick = async (url: string | undefined | null, label: string) => {
     if (!url) return null;
     const r = await urlToBase64(url);
@@ -162,10 +151,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
   const pieceImages = allImages.slice(0, pieces.length);
   const kitImages = allImages.slice(pieces.length);
 
-
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // SLIDE 1 — CAPA
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 1. CAPA
   const slideCapa = pptx.addSlide();
   slideCapa.background = { color: COLORS.header };
   
@@ -175,18 +161,11 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     const maxHeight = 7.5;
     let finalW = maxWidth;
     let finalH = maxHeight;
-
     if (size.width > 0 && size.height > 0) {
       const ratio = size.width / size.height;
-      if (ratio > maxWidth / maxHeight) {
-        // Image is wider than slide ratio
-        finalH = maxWidth / ratio;
-      } else {
-        // Image is taller than slide ratio
-        finalW = maxHeight * ratio;
-      }
+      if (ratio > maxWidth / maxHeight) finalH = maxWidth / ratio;
+      else finalW = maxHeight * ratio;
     }
-
     slideCapa.addImage({
       data: coverImageB64,
       x: (maxWidth - finalW) / 2,
@@ -195,61 +174,24 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
       h: finalH,
       sizing: { type: 'contain', w: finalW, h: finalH }
     });
-
-    // Add a slight overlay to ensure text readability if needed, 
-    // but the user wants it to fit perfectly, so let's keep text clean
-    slideCapa.addShape(pptx.ShapeType.rect, {
-      x: 0, y: 0, w: 13.33, h: 7.5, fill: { color: "#000000", transparency: 40 }
-    });
+    slideCapa.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.33, h: 7.5, fill: { color: "#000000", transparency: 40 } });
   }
 
-  // Barra vertical esquerda
-  slideCapa.addShape(pptx.ShapeType.rect, { 
-    x: 0, y: 0, w: 0.15, h: 7.5, fill: { color: COLORS.accent } 
-  });
-  
-  slideCapa.addText(campaign.agency_name || "VIMER RETAIL EXPERIENCE", {
-    x: 1.0, y: 0.35, color: COLORS.grayMuted, fontSize: 11, fontFace: "Calibri"
-  });
-  
-  slideCapa.addText(campaign.client_name || "Cliente", {
-    x: 1.0, y: 2.8, w: 11.33, color: COLORS.white, fontSize: 28, fontFace: "Calibri", bold: true
-  });
-  
-  slideCapa.addText(campaign.name, {
-    x: 1.0, y: 3.55, color: COLORS.accent, fontSize: 18, fontFace: "Calibri"
-  });
-  
-  slideCapa.addText(exportDate, {
-    x: 1.0, y: 6.9, color: COLORS.textSecondary, fontSize: 10, fontFace: "Calibri"
-  });
-  
-  slideCapa.addText("Peças & Kits", {
-    x: 10.0, y: 6.9, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 10, fontFace: "Calibri"
-  });
+  slideCapa.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 0.15, h: 7.5, fill: { color: COLORS.accent } });
+  slideCapa.addText(campaign.agency_name || "VIMER RETAIL EXPERIENCE", { x: 1.0, y: 0.35, color: COLORS.grayMuted, fontSize: 11, fontFace: "Calibri" });
+  slideCapa.addText(campaign.client_name || "Cliente", { x: 1.0, y: 2.8, w: 11.33, color: COLORS.white, fontSize: 28, fontFace: "Calibri", bold: true });
+  slideCapa.addText(campaign.name, { x: 1.0, y: 3.55, color: COLORS.accent, fontSize: 18, fontFace: "Calibri" });
+  slideCapa.addText(exportDate, { x: 1.0, y: 6.9, color: COLORS.textSecondary, fontSize: 10, fontFace: "Calibri" });
+  slideCapa.addText("Peças & Kits", { x: 10.0, y: 6.9, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 10, fontFace: "Calibri" });
   tick("Capa gerada");
 
-
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // SLIDE 2 — ÍNDICE
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 2. ÍNDICE
   const slideIndice = pptx.addSlide();
   slideIndice.background = { color: COLORS.bg };
-  
-  // Barra topo
-  slideIndice.addShape(pptx.ShapeType.rect, {
-    x: 0, y: 0, w: 13.33, h: 0.7, fill: { color: COLORS.header }
-  });
-  
-  slideIndice.addText("ÍNDICE DE PEÇAS", {
-    x: 0.4, y: 0, w: 6, h: 0.7, valign: "middle", color: COLORS.white, fontSize: 12, fontFace: "Calibri", bold: true
-  });
-  
-  slideIndice.addText(campaign.name, {
-    x: 7.0, y: 0, w: 5.93, h: 0.7, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri"
-  });
+  slideIndice.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.33, h: 0.7, fill: { color: COLORS.header } });
+  slideIndice.addText("ÍNDICE DE PEÇAS & KITS", { x: 0.4, y: 0, w: 6, h: 0.7, valign: "middle", color: COLORS.white, fontSize: 12, fontFace: "Calibri", bold: true });
+  slideIndice.addText(campaign.name, { x: 7.0, y: 0, w: 5.93, h: 0.7, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri" });
 
-  // Listagem - peças e kits
   const combinedItems = [
     ...pieces.map(p => ({ name: p.name, code: p.code, sub: pieceToKits.get(p.name)?.[0] ? `(${pieceToKits.get(p.name)?.[0]})` : "" })),
     ...kits.map(k => ({ name: k.name, code: k.code, sub: "(KIT)" }))
@@ -264,7 +206,6 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
       const y = 1.0 + (idx * 0.3);
       const num = String(idx + 1 + offset).padStart(2, '0');
       const suffix = item.sub ? `  ${item.sub}` : "";
-
       slideIndice.addText([
         { text: num, options: { color: COLORS.accent, bold: true } },
         { text: `  ${item.name}`, options: { color: COLORS.textPrimary } },
@@ -272,33 +213,21 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
       ], { x: startX, y, fontSize: 10, fontFace: "Calibri" });
     });
   };
-
   renderIndexCol(col1, 0.5, 0);
   renderIndexCol(col2, 6.85, col1.length);
 
-  // Rodapé índice
-  slideIndice.addShape(pptx.ShapeType.line, {
-    x: 0.4, y: 7.1, w: 12.53, line: { color: COLORS.border, width: 0.5 }
-  });
-  slideIndice.addText(`Página 2 / ${totalSlides}`, {
-    x: 10.0, y: 7.2, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri"
-  });
+  slideIndice.addShape(pptx.ShapeType.line, { x: 0.4, y: 7.1, w: 12.53, line: { color: COLORS.border, width: 0.5 } });
+  slideIndice.addText(`Página 2 / ${totalSlides}`, { x: 10.0, y: 7.2, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri" });
   tick("Indice gerado");
 
-
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // SLIDES DE PEÇA
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 3. SLIDES DE PEÇA
   for (let idx = 0; idx < pieces.length; idx++) {
     const piece = pieces[idx];
     const slide = pptx.addSlide();
     slide.background = { color: COLORS.bg };
     const pageNum = idx + 3;
 
-    // Barra topo
-    slide.addShape(pptx.ShapeType.rect, {
-      x: 0, y: 0, w: 13.33, h: 0.65, fill: { color: COLORS.header }
-    });
+    slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.33, h: 0.65, fill: { color: COLORS.header } });
     slide.addText([
       { text: "PEÇA\n", options: { fontSize: 7 } },
       { text: piece.name, options: { fontSize: 12, bold: true } }
@@ -306,16 +235,11 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
 
     const kitNames = pieceToKits.get(piece.name);
     if (kitNames && kitNames.length > 0) {
-      slide.addText(`COMPÕE O KIT: ${kitNames.join(", ").toUpperCase()}`, {
-        x: 6.0, y: 0, w: 5.8, h: 0.65, color: COLORS.accent, fontSize: 9, fontFace: "Calibri", bold: true, align: "right", valign: "middle"
-      });
+      slide.addText(`COMPÕE O KIT: ${kitNames.join(", ").toUpperCase()}`, { x: 6.0, y: 0, w: 5.8, h: 0.65, color: COLORS.accent, fontSize: 9, fontFace: "Calibri", bold: true, align: "right", valign: "middle" });
     }
     slide.addText(String(idx + 1).padStart(2, '0'), { x: 12.0, y: 0, w: 1.0, h: 0.65, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri" });
 
-    // ÁREA DA FOTO (esquerda)
-    slide.addShape(pptx.ShapeType.rect, {
-      x: 0.35, y: 0.85, w: 6.2, h: 5.5, fill: { color: COLORS.cardBg }, line: { color: COLORS.border, width: 0.5 }
-    });
+    slide.addShape(pptx.ShapeType.rect, { x: 0.35, y: 0.85, w: 6.2, h: 5.5, fill: { color: COLORS.cardBg }, line: { color: COLORS.border, width: 0.5 } });
     const b64 = pieceImages[idx];
     if (b64) {
       const size = await getImageSize(b64);
@@ -323,78 +247,46 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
       const maxHeight = 5.3;
       let finalW = maxWidth;
       let finalH = maxHeight;
-
       if (size.width > 0 && size.height > 0) {
         const ratio = size.width / size.height;
-        if (ratio > maxWidth / maxHeight) {
-          finalH = maxWidth / ratio;
-        } else {
-          finalW = maxHeight * ratio;
-        }
+        if (ratio > maxWidth / maxHeight) finalH = maxWidth / ratio;
+        else finalW = maxHeight * ratio;
       }
-
-      slide.addImage({ 
-        data: b64, 
-        x: 0.45 + (maxWidth - finalW) / 2, 
-        y: 0.95 + (maxHeight - finalH) / 2, 
-        w: finalW, 
-        h: finalH 
-      });
+      slide.addImage({ data: b64, x: 0.45 + (maxWidth - finalW) / 2, y: 0.95 + (maxHeight - finalH) / 2, w: finalW, h: finalH });
     } else {
       slide.addText("Sem foto", { x: 0.35, y: 0.85, w: 6.2, h: 5.5, align: "center", valign: "middle", color: COLORS.textSecondary, fontSize: 14 });
     }
 
-    // ÁREA DE INFORMAÇÕES (direita)
     const infoX = 6.85;
     let currentY = 0.85;
-    
-    slide.addShape(pptx.ShapeType.rect, {
-      x: infoX, y: currentY, w: 6.1, h: 0.75, fill: { color: COLORS.header }
-    });
+    slide.addShape(pptx.ShapeType.rect, { x: infoX, y: currentY, w: 6.1, h: 0.75, fill: { color: COLORS.header } });
     slide.addText(piece.name, { x: infoX + 0.2, y: currentY, w: 5.7, h: 0.75, valign: "middle", color: COLORS.white, fontSize: 14, fontFace: "Calibri", bold: true });
-    
     currentY += 0.95;
 
     const addField = (label: string, value: string | number | undefined, italic = false) => {
       if (value === undefined || value === "" || value === 0) return;
       const str = String(value);
-      // Estimate height more conservatively: ~65 chars per line at fontSize 10 within 6.1" width
       const lines = str.split("\n").reduce((acc, ln) => acc + Math.max(1, Math.ceil(ln.length / 65)), 0);
       const valueH = Math.max(0.25, lines * 0.25);
-      
-      // Label text box
       slide.addText(label, { x: infoX, y: currentY, w: 6.1, h: 0.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri", bold: true });
-      currentY += 0.25; // Increase gap between label and value
-      
-      // Value text box
+      currentY += 0.25;
       slide.addText(str, { x: infoX, y: currentY, w: 6.1, h: valueH, valign: "top", color: COLORS.textPrimary, fontSize: 10, fontFace: "Calibri", bold: !italic, italic });
       currentY += valueH + 0.1;
-      
-      // Separator line
       slide.addShape(pptx.ShapeType.line, { x: infoX, y: currentY, w: 6.1, line: { color: COLORS.border, width: 0.4 } });
       currentY += 0.15;
     };
 
-    // ── MEDIDAS (discreto, como os demais campos) ───────
     const dim = formatMeasurements(piece);
     if (dim) {
-      slide.addText("MEDIDAS", {
-        x: infoX, y: currentY, w: 6.1, h: 0.2,
-        color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri", bold: true
-      });
+      slide.addText("MEDIDAS", { x: infoX, y: currentY, w: 6.1, h: 0.2, color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri", bold: true });
       currentY += 0.25;
-      slide.addText(dim, {
-        x: infoX, y: currentY, w: 6.1, h: 0.28, valign: "top",
-        color: COLORS.textPrimary, fontSize: 12, fontFace: "Calibri", bold: true
-      });
+      slide.addText(dim, { x: infoX, y: currentY, w: 6.1, h: 0.28, valign: "top", color: COLORS.textPrimary, fontSize: 12, fontFace: "Calibri", bold: true });
       currentY += 0.38;
       slide.addShape(pptx.ShapeType.line, { x: infoX, y: currentY, w: 6.1, line: { color: COLORS.border, width: 0.4 } });
       currentY += 0.15;
     }
 
-
     addField("DESCRIÇÃO", piece.description);
-
     addField("MATERIAL", piece.material);
     addField("QUANTIDADE", piece.quantity);
     addField("CÓDIGO / REF", piece.code);
@@ -412,93 +304,21 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     if (idx % 3 === 0) await new Promise(r => setTimeout(r, 0));
   }
 
-  // 4.2 Slides de Kits
-  for (let idx = 0; idx < kits.length; idx++) {
-    const kit = kits[idx];
-    const kitImg = kitImages[idx];
-    const slide = pptx.addSlide();
-
-    // Background color
-    slide.background = { color: "F8F9FA" };
-
-    // Layout igual ao de Peças
-    // Title area
-    slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: "100%", h: 0.8, fill: { color: "8C6F4E" } });
-    slide.addText(`KIT: ${kit.name}`, { x: 0.5, y: 0.2, w: 8, h: 0.4, fontFace: "Arial", fontSize: 24, bold: true, color: "FFFFFF" });
-    slide.addText(`Cód: ${kit.code}`, { x: 8.5, y: 0.2, w: 4, h: 0.4, fontFace: "Arial", fontSize: 18, color: "FFFFFF", align: "right" });
-
-    // Left column: Image
-    slide.addShape(pptx.ShapeType.rect, { x: 0.5, y: 1.0, w: 7.5, h: 5.5, fill: { color: "FFFFFF" }, line: { color: "E2E8F0", width: 1 } });
-    if (kitImg) {
-      slide.addImage({ data: kitImg, x: 0.6, y: 1.1, w: 7.3, h: 5.3, sizing: { type: "contain", w: 7.3, h: 5.3 } });
-    } else {
-      slide.addText("Sem Imagem", { x: 0.6, y: 1.1, w: 7.3, h: 5.3, align: "center", valign: "middle", fontFace: "Arial", fontSize: 20, color: "CBD5E0" });
-    }
-
-    // Right column: Info
-    const startY = 1.0;
-    const colX = 8.2;
-    const colW = 4.3;
-
-    // Location box
-    slide.addShape(pptx.ShapeType.rect, { x: colX, y: startY, w: colW, h: 0.8, fill: { color: "F1F5F9" }, line: { color: "E2E8F0", width: 1 } });
-    slide.addText("LOCALIZAÇÃO", { x: colX + 0.1, y: startY + 0.1, w: colW - 0.2, h: 0.2, fontFace: "Arial", fontSize: 10, bold: true, color: "64748B" });
-    slide.addText(kit.category || "—", { x: colX + 0.1, y: startY + 0.35, w: colW - 0.2, h: 0.3, fontFace: "Arial", fontSize: 14, bold: true, color: "1E293B" });
-
-    // Details box
-    slide.addShape(pptx.ShapeType.rect, { x: colX, y: startY + 0.9, w: colW, h: 4.6, fill: { color: "FFFFFF" }, line: { color: "E2E8F0", width: 1 } });
-    slide.addText("DETALHES DO KIT", { x: colX + 0.1, y: startY + 1.0, w: colW - 0.2, h: 0.2, fontFace: "Arial", fontSize: 10, bold: true, color: "64748B" });
-    
-    // Lista de componentes
-    const components = kitPieces.filter(kp => kp.kit_id === kit.id);
-    const componentLines = components.map(kp => {
-      const p = pieces.find(piece => piece.id === kp.piece_id);
-      return `• (${kp.quantity}x) ${p?.name || 'Peça'} [${p?.code || ''}]`;
-    }).slice(0, 15); // Limitar para não estourar o slide
-
-    slide.addText(componentLines.join("\n"), {
-      x: colX + 0.1,
-      y: startY + 1.3,
-      w: colW - 0.2,
-      h: 4.0,
-      fontFace: "Arial",
-      fontSize: 10,
-      color: "334155",
-      valign: "top",
-      bullet: false
-    });
-
-    // Footer
-    slide.addText(`${campaign.name} | ${exportDate}`, { x: 0.5, y: 7.0, w: 12, h: 0.3, fontFace: "Arial", fontSize: 9, color: "94A3B8" });
-    slide.addText(`Slide ${2 + pieces.length + idx + 1}/${totalSlides}`, { x: 10, y: 7.0, w: 2.5, h: 0.3, fontFace: "Arial", fontSize: 9, color: "94A3B8", align: "right" });
-
-    tick(`Kit ${idx + 1}/${kits.length}: ${kit.name}`);
-    if (idx % 3 === 0) await new Promise(r => setTimeout(r, 0));
-  }
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // SLIDES DE KIT
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 4. SLIDES DE KIT
   for (let idx = 0; idx < kits.length; idx++) {
     const kit = kits[idx];
     const slide = pptx.addSlide();
     slide.background = { color: COLORS.bg };
     const pageNum = pieces.length + idx + 3;
 
-    // Barra topo
-    slide.addShape(pptx.ShapeType.rect, {
-      x: 0, y: 0, w: 13.33, h: 0.65, fill: { color: COLORS.header }
-    });
+    slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.33, h: 0.65, fill: { color: COLORS.header } });
     slide.addText([
       { text: "KIT\n", options: { fontSize: 7 } },
       { text: kit.name, options: { fontSize: 12, bold: true } }
     ], { x: 0.4, y: 0, w: 5.5, h: 0.65, valign: "middle", color: COLORS.white, fontFace: "Calibri" });
-
     slide.addText(String(pieces.length + idx + 1).padStart(2, '0'), { x: 12.0, y: 0, w: 1.0, h: 0.65, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri" });
 
-    // ÁREA DA FOTO (esquerda)
-    slide.addShape(pptx.ShapeType.rect, {
-      x: 0.35, y: 0.85, w: 6.2, h: 5.5, fill: { color: COLORS.cardBg }, line: { color: COLORS.border, width: 0.5 }
-    });
+    slide.addShape(pptx.ShapeType.rect, { x: 0.35, y: 0.85, w: 6.2, h: 5.5, fill: { color: COLORS.cardBg }, line: { color: COLORS.border, width: 0.5 } });
     const b64 = kitImages[idx];
     if (b64) {
       const size = await getImageSize(b64);
@@ -506,36 +326,20 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
       const maxHeight = 5.3;
       let finalW = maxWidth;
       let finalH = maxHeight;
-
       if (size.width > 0 && size.height > 0) {
         const ratio = size.width / size.height;
-        if (ratio > maxWidth / maxHeight) {
-          finalH = maxWidth / ratio;
-        } else {
-          finalW = maxHeight * ratio;
-        }
+        if (ratio > maxWidth / maxHeight) finalH = maxWidth / ratio;
+        else finalW = maxHeight * ratio;
       }
-
-      slide.addImage({ 
-        data: b64, 
-        x: 0.45 + (maxWidth - finalW) / 2, 
-        y: 0.95 + (maxHeight - finalH) / 2, 
-        w: finalW, 
-        h: finalH 
-      });
+      slide.addImage({ data: b64, x: 0.45 + (maxWidth - finalW) / 2, y: 0.95 + (maxHeight - finalH) / 2, w: finalW, h: finalH });
     } else {
       slide.addText("Sem foto", { x: 0.35, y: 0.85, w: 6.2, h: 5.5, align: "center", valign: "middle", color: COLORS.textSecondary, fontSize: 14 });
     }
 
-    // ÁREA DE INFORMAÇÕES (direita)
     const infoX = 6.85;
     let currentY = 0.85;
-    
-    slide.addShape(pptx.ShapeType.rect, {
-      x: infoX, y: currentY, w: 6.1, h: 0.75, fill: { color: COLORS.header }
-    });
+    slide.addShape(pptx.ShapeType.rect, { x: infoX, y: currentY, w: 6.1, h: 0.75, fill: { color: COLORS.header } });
     slide.addText(kit.name, { x: infoX + 0.2, y: currentY, w: 5.7, h: 0.75, valign: "middle", color: COLORS.white, fontSize: 14, fontFace: "Calibri", bold: true });
-    
     currentY += 0.95;
 
     const addField = (label: string, value: string | number | undefined, italic = false) => {
@@ -543,7 +347,6 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
       const str = String(value);
       const lines = str.split("\n").reduce((acc, ln) => acc + Math.max(1, Math.ceil(ln.length / 65)), 0);
       const valueH = Math.max(0.25, lines * 0.25);
-      
       slide.addText(label, { x: infoX, y: currentY, w: 6.1, h: 0.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri", bold: true });
       currentY += 0.25;
       slide.addText(str, { x: infoX, y: currentY, w: 6.1, h: valueH, valign: "top", color: COLORS.textPrimary, fontSize: 10, fontFace: "Calibri", bold: !italic, italic });
@@ -563,35 +366,18 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     if (idx % 3 === 0) await new Promise(r => setTimeout(r, 0));
   }
 
-
-
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // SLIDE FINAL — ENCERRAMENTO
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  // 5. FINAL
   const slideFinal = pptx.addSlide();
   slideFinal.background = { color: COLORS.header };
   slideFinal.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 0.15, h: 7.5, fill: { color: COLORS.accent } });
-  
-  slideFinal.addText("Obrigado", {
-    x: 0, y: 3.0, w: 13.33, align: "center", color: COLORS.white, fontSize: 36, fontFace: "Calibri", bold: true
-  });
-  
-  slideFinal.addText(campaign.agency_name || "VIMER RETAIL EXPERIENCE", {
-    x: 0, y: 3.8, w: 13.33, align: "center", color: COLORS.grayMuted, fontSize: 14, fontFace: "Calibri"
-  });
-  
-  slideFinal.addText(exportDate, {
-    x: 0, y: 6.9, w: 13.33, align: "center", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri"
-  });
+  slideFinal.addText("Obrigado", { x: 0, y: 3.0, w: 13.33, align: "center", color: COLORS.white, fontSize: 36, fontFace: "Calibri", bold: true });
+  slideFinal.addText(campaign.agency_name || "VIMER RETAIL EXPERIENCE", { x: 0, y: 3.8, w: 13.33, align: "center", color: COLORS.grayMuted, fontSize: 14, fontFace: "Calibri" });
+  slideFinal.addText(exportDate, { x: 0, y: 6.9, w: 13.33, align: "center", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri" });
   tick("Slide final gerado");
 
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  // WRITE FILE
-  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   const fileName = `${campaign.name}_pecas_${new Date().toISOString().slice(0,10)}.pptx`;
   onProgress?.(totalSteps - 1, totalSteps, "Gerando arquivo .pptx...");
   await pptx.writeFile({ fileName });
   tick("Concluido");
   return fileName;
 }
-
