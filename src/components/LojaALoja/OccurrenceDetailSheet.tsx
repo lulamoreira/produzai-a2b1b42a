@@ -11,7 +11,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
-import { Camera, X, Loader2, ExternalLink, RotateCw, ImageIcon } from "lucide-react";
+import { Camera, X, Loader2, ExternalLink, RotateCw, ImageIcon, Plus, Check } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { compressImage } from "@/lib/compressImage";
@@ -583,29 +583,68 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
               </div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                {(checkinQuery.data ?? []).map((p: any) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => setLightboxUrl(p.photo_url)}
-                    className="group relative aspect-square rounded-md overflow-hidden border border-border hover:border-primary transition"
-                    title={p.caption || p.category || ""}
-                  >
-                    <img
-                      src={getThumbnailUrl(p.photo_url, 400)}
-                      alt={p.caption || ""}
-                      loading="lazy"
-                      decoding="async"
-                      className="w-full h-full object-cover"
-                    />
-                    {(p.caption || p.category) && (
-                      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-[10px] text-white text-left">
-                        <div className="truncate">{p.caption || p.category}</div>
-                        <div className="opacity-70">{formatDateTime(p.created_at)}</div>
-                      </div>
-                    )}
-                  </button>
-                ))}
+                {(checkinQuery.data ?? []).map((p: any) => {
+                  const jaAnexada = resolutionPhotos.includes(p.photo_url);
+                  return (
+                    <div
+                      key={p.id}
+                      className="group relative aspect-square rounded-md overflow-hidden border border-border hover:border-primary transition"
+                      title={p.caption || p.category || ""}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => setLightboxUrl(p.photo_url)}
+                        className="w-full h-full"
+                      >
+                        <img
+                          src={getThumbnailUrl(p.photo_url, 400)}
+                          alt={p.caption || ""}
+                          loading="lazy"
+                          decoding="async"
+                          className="w-full h-full object-cover"
+                        />
+                      </button>
+
+                      {canEdit && p.media_type !== "video" && (
+                        <div className="absolute top-1 right-1 z-10">
+                          {jaAnexada ? (
+                            <div className="bg-green-500 text-white rounded-full p-1 shadow-md" title="Já anexada à comprovação">
+                              <Check className="w-3.5 h-3.5" />
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              title="Usar como comprovação"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (resolutionPhotos.length >= 3) {
+                                  toast.error("Máximo de 3 fotos de comprovação.");
+                                  return;
+                                }
+                                if (resolutionPhotos.includes(p.photo_url)) {
+                                  toast.info("Foto já anexada.");
+                                  return;
+                                }
+                                setResolutionPhotos([...resolutionPhotos, p.photo_url]);
+                                toast.success("Foto anexada à comprovação. Clique em Salvar para confirmar.");
+                              }}
+                              className="bg-black/60 hover:bg-black/80 text-white rounded-full p-1 shadow-md transition-colors"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {(p.caption || p.category) && (
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-[10px] text-white text-left pointer-events-none">
+                          <div className="truncate">{p.caption || p.category}</div>
+                          <div className="opacity-70">{formatDateTime(p.created_at)}</div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>
