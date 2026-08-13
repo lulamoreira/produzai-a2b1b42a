@@ -318,12 +318,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
       if (filterPieceIds.length > 0 && !filterPieceIds.includes(o.loja_a_loja_peca_id)) return false;
       
       if (kpiFilter === "valid" && !countsAsOccurrence(o.tratativa_status)) return false;
-      if (kpiFilter === "atrasadas") {
-        const overdue = o.expected_resolution_date &&
-          new Date(o.expected_resolution_date).getTime() < Date.now() &&
-          status !== "resolvida";
-        if (!overdue) return false;
-      }
+      if (kpiFilter === "atrasadas" && !isOverdue(o)) return false;
       if (kpiFilter === "reinst") {
         if (!(o.needs_reinstallation && status !== "resolvida")) return false;
       }
