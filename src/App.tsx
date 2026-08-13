@@ -280,65 +280,65 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <UIVersionProvider>
             <PreviewUserProvider>
-            <SidebarStateProvider>
-            <ErrorBoundary>
-              <UserActivityTracker />
-              <PreviewUserBanner />
-              <Suspense fallback={<RouteFallback />}>
-                <Routes>
-                  {/* Quitanda3dSHOP Routes */}
-                  <Route path="/quitanda" element={<QuitandaLayout><QuitandaDashboard /></QuitandaLayout>} />
-                  <Route path="/quitanda/drops" element={<QuitandaLayout><QuitandaDrops /></QuitandaLayout>} />
-                  <Route path="/quitanda/historico" element={<QuitandaLayout><QuitandaHistory /></QuitandaLayout>} />
-                  <Route path="/quitanda/financeiro" element={<QuitandaLayout><QuitandaFinancial /></QuitandaLayout>} />
-                  <Route path="/quitanda/configuracoes" element={<QuitandaLayout><QuitandaSettings /></QuitandaLayout>} />
+              <UIVersionProvider>
+                <SidebarStateProvider>
+                <ErrorBoundary>
+                  <UserActivityTracker />
+                  <PreviewUserBanner />
+                  <Suspense fallback={<RouteFallback />}>
+                    <Routes>
+                      {/* Quitanda3dSHOP Routes */}
+                      <Route path="/quitanda" element={<QuitandaLayout><QuitandaDashboard /></QuitandaLayout>} />
+                      <Route path="/quitanda/drops" element={<QuitandaLayout><QuitandaDrops /></QuitandaLayout>} />
+                      <Route path="/quitanda/historico" element={<QuitandaHistory />} />
+                      <Route path="/quitanda/financeiro" element={<QuitandaLayout><QuitandaFinancial /></QuitandaLayout>} />
+                      <Route path="/quitanda/configuracoes" element={<QuitandaLayout><QuitandaSettings /></QuitandaLayout>} />
 
-                  <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
-                  <Route path="/join/:token" element={<JoinPage />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
-                  <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
-                   <Route path="/agencies" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
-                   <Route path="/agency/:agencyId" element={<ProtectedRoute><AgencyParamGuard><AgencyDashboard /></AgencyParamGuard></ProtectedRoute>} />
-                   <Route path="/agency/:agencyId/clients" element={<ProtectedRoute><AgencyParamGuard><Dashboard /></AgencyParamGuard></ProtectedRoute>} />
-                  <Route path="/agency/:agencyId/clients/:clientId" element={<ProtectedRoute><AgencyParamGuard><ClientDetail /></AgencyParamGuard></ProtectedRoute>} />
-                  <Route path="/agency/:agencyId/clients/:clientId/campaigns" element={<ProtectedRoute><AgencyParamGuard><ClientDetail /></AgencyParamGuard></ProtectedRoute>} />
-                  <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId/*" element={<ProtectedRoute><AgencyParamGuard><ErrorBoundary><CampaignDetail /></ErrorBoundary></AgencyParamGuard></ProtectedRoute>} />
-                  <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId" element={<ProtectedRoute><AgencyParamGuard><ErrorBoundary><CampaignDetail /></ErrorBoundary></AgencyParamGuard></ProtectedRoute>} />
+                      <Route path="/auth" element={<PublicRoute><Auth /></PublicRoute>} />
+                      <Route path="/join/:token" element={<JoinPage />} />
+                      <Route path="/reset-password" element={<ResetPassword />} />
+                      <Route path="/" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
+                      <Route path="/agencies" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
+                      <Route path="/agency/:agencyId" element={<ProtectedRoute><AgencyParamGuard><AgencyDashboard /></AgencyParamGuard></ProtectedRoute>} />
+                      <Route path="/agency/:agencyId/clients" element={<ProtectedRoute><AgencyParamGuard><Dashboard /></AgencyParamGuard></ProtectedRoute>} />
+                      <Route path="/agency/:agencyId/clients/:clientId" element={<ProtectedRoute><AgencyParamGuard><ClientDetail /></AgencyParamGuard></ProtectedRoute>} />
+                      <Route path="/agency/:agencyId/clients/:clientId/campaigns" element={<ProtectedRoute><AgencyParamGuard><ClientDetail /></AgencyParamGuard></ProtectedRoute>} />
+                      <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId/*" element={<ProtectedRoute><AgencyParamGuard><ErrorBoundary><CampaignDetail /></ErrorBoundary></AgencyParamGuard></ProtectedRoute>} />
+                      <Route path="/agency/:agencyId/clients/:clientId/campaigns/:campaignId" element={<ProtectedRoute><AgencyParamGuard><ErrorBoundary><CampaignDetail /></ErrorBoundary></AgencyParamGuard></ProtectedRoute>} />
 
-                  <Route path="/checkin/:campaignId/:storeId" element={<ProtectedRoute><PhotoCheckin /></ProtectedRoute>} />
-                  <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-                  <Route path="/admin/:tab" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
-                  <Route path="/approvals" element={<ProtectedRoute><Admin initialTab="approvals" /></ProtectedRoute>} />
-                  <Route path="/all-clients" element={<ProtectedRoute><AppLayout><GlobalClients /></AppLayout></ProtectedRoute>} />
+                      <Route path="/checkin/:campaignId/:storeId" element={<ProtectedRoute><PhotoCheckin /></ProtectedRoute>} />
+                      <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                      <Route path="/admin/:tab" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+                      <Route path="/approvals" element={<ProtectedRoute><Admin initialTab="approvals" /></ProtectedRoute>} />
+                      <Route path="/all-clients" element={<ProtectedRoute><AppLayout><GlobalClients /></AppLayout></ProtectedRoute>} />
 
 
-                  <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
-                  <Route path="/suppliers" element={<ProtectedRoute><AgencySuppliers /></ProtectedRoute>} />
-                  <Route path="/agency/:agencyId/suppliers" element={<ProtectedRoute><AgencyParamGuard><AgencySuppliers /></AgencyParamGuard></ProtectedRoute>} />
-                  <Route path="/favorites" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
-                  <Route path="/installer" element={<InstallerPortal />} />
-                  <Route path="/instalador" element={<InstallerPortal />} />
-                  <Route path="/orcamento/:token" element={<SupplierPortal />} />
-                  <Route path="/recotacao/:token" element={<AdjustmentRequotePortal />} />
-                  <Route path="/recotacao-qtd/:token" element={<BudgetQtyRequotePortal />} />
-                  <Route path="/convite/fornecedor/:token" element={<SupplierInvitePortal />} />
-                  <Route path="/loja/:token" element={<StorePortal />} />
-                  <Route path="/ficha/:token" element={<StoreFormPortal />} />
-                  <Route path="/ocorrencias-portal/t/:token" element={<OccurrencesPortal />} />
-                  <Route path="/ocorrencias-portal/:campaignId" element={<OccurrencesPortal />} />
-                  <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
-                  <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
-                  <Route path="/unsubscribe" element={<Unsubscribe />} />
-                  <Route path="/clients/:clientId" element={<Navigate to="/" replace />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Suspense>
-            </ErrorBoundary>
-            </SidebarStateProvider>
+                      <Route path="/my-campaigns" element={<ProtectedRoute><MyCampaigns /></ProtectedRoute>} />
+                      <Route path="/suppliers" element={<ProtectedRoute><AgencySuppliers /></ProtectedRoute>} />
+                      <Route path="/agency/:agencyId/suppliers" element={<ProtectedRoute><AgencyParamGuard><AgencySuppliers /></AgencyParamGuard></ProtectedRoute>} />
+                      <Route path="/favorites" element={<ProtectedRoute><HomeRedirect /></ProtectedRoute>} />
+                      <Route path="/installer" element={<InstallerPortal />} />
+                      <Route path="/instalador" element={<InstallerPortal />} />
+                      <Route path="/orcamento/:token" element={<SupplierPortal />} />
+                      <Route path="/recotacao/:token" element={<AdjustmentRequotePortal />} />
+                      <Route path="/recotacao-qtd/:token" element={<BudgetQtyRequotePortal />} />
+                      <Route path="/convite/fornecedor/:token" element={<SupplierInvitePortal />} />
+                      <Route path="/loja/:token" element={<StorePortal />} />
+                      <Route path="/ficha/:token" element={<StoreFormPortal />} />
+                      <Route path="/ocorrencias-portal/t/:token" element={<OccurrencesPortal />} />
+                      <Route path="/ocorrencias-portal/:campaignId" element={<OccurrencesPortal />} />
+                      <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
+                      <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
+                      <Route path="/unsubscribe" element={<Unsubscribe />} />
+                      <Route path="/clients/:clientId" element={<Navigate to="/" replace />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </Suspense>
+                </ErrorBoundary>
+                </SidebarStateProvider>
+              </UIVersionProvider>
             </PreviewUserProvider>
-            </UIVersionProvider>
           </AuthProvider>
         </BrowserRouter>
         </HistoryShortcutProvider>
