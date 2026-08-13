@@ -1203,7 +1203,7 @@ function KpiCard({ icon: Icon, label, value, color }: { icon: any; label: string
   );
 }
 
-function MiniKpi({ icon: Icon, label, value, color, active, onClick }: { icon: any; label: string; value: number; color: string; active?: boolean; onClick?: () => void }) {
+function MiniKpi({ icon: Icon, label, value, color, active, onClick, tooltip }: { icon: any; label: string; value: number; color: string; active?: boolean; onClick?: () => void; tooltip?: string }) {
   const content = (
     <>
       <Icon className={`w-4 h-4 shrink-0 ${color}`} />
