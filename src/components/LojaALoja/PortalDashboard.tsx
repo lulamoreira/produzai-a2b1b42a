@@ -648,9 +648,12 @@ _Relatório gerado pelo ProduzAI_ 🚀`;
             return (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                 <MiniKpi label="Total bruto" value={rawTotal} icon={AlertCircle} color="text-muted-foreground"
-                  active={isActive("all", "all")} onClick={() => applyKpi("all", "all")} />
+                  active={isActive("all", "all")} onClick={() => applyKpi("all", "all")} 
+                  tooltip="Como eu sinalizo que uma foto tem que entrar nas ocorrências?"
+                />
                 <MiniKpi label="Válidas" value={total} icon={CheckCircle2} color="text-green-600"
-                  active={isActive("all", "valid")} onClick={() => applyKpi("all", "valid")} />
+                  active={isActive("all", "valid")} onClick={() => applyKpi("all", "valid")} 
+                />
                 <MiniKpi label="Abertas" value={abertas} icon={AlertTriangle} color="text-destructive"
                   active={isActive("aberta", "all")} onClick={() => applyKpi("aberta", "all")} />
                 <MiniKpi label="Em andamento" value={emAndamento} icon={Clock} color="text-yellow-600"
