@@ -296,19 +296,32 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
 
   const filteredOccurrences = useMemo(() => {
     return occList.filter((o) => {
-      if (filterStatus !== "all" && (o.tratativa_status ?? "aberta") !== filterStatus) return false;
+      const status = o.tratativa_status ?? "aberta";
+
+      // Requisito: "NÃO PROCEDE" não deve ser exibida por padrão ao interagir com KPIs,
+      // a menos que o usuário selecione explicitamente "NÃO PROCEDE".
+      if (kpiFilter !== "all") {
+        // Se estamos em um modo de KPI (Válidas, Abertas, Atrasadas, etc)
+        // Ocultamos "nao_procede" a menos que o filtro de status seja explicitamente "nao_procede"
+        if (status === "nao_procede" && filterStatus !== "nao_procede") {
+          return false;
+        }
+      }
+
+      if (filterStatus !== "all" && status !== filterStatus) return false;
       if (filterPriority !== "all" && o.priority !== filterPriority) return false;
       if (filterStore !== "all" && o.store_id !== filterStore) return false;
       if (filterPieceIds.length > 0 && !filterPieceIds.includes(o.loja_a_loja_peca_id)) return false;
+      
       if (kpiFilter === "valid" && !countsAsOccurrence(o.tratativa_status)) return false;
       if (kpiFilter === "atrasadas") {
         const overdue = o.expected_resolution_date &&
           new Date(o.expected_resolution_date).getTime() < Date.now() &&
-          o.tratativa_status !== "resolvida";
+          status !== "resolvida";
         if (!overdue) return false;
       }
       if (kpiFilter === "reinst") {
-        if (!(o.needs_reinstallation && o.tratativa_status !== "resolvida")) return false;
+        if (!(o.needs_reinstallation && status !== "resolvida")) return false;
       }
       return true;
     });
