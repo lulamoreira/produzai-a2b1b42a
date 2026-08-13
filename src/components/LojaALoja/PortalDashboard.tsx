@@ -271,17 +271,21 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
   });
   const countsAsOccurrence = (status: string | null | undefined) =>
     tratativaStatuses.find((s) => s.value === (status ?? "aberta"))?.conta_como_ocorrencia !== false;
+
+  const isOverdue = (o: any) =>
+    countsAsOccurrence(o.tratativa_status) &&
+    !!o.expected_resolution_date &&
+    new Date(o.expected_resolution_date).getTime() < Date.now() &&
+    (o.tratativa_status ?? "aberta") !== "resolvida" &&
+    (o.tratativa_status ?? "aberta") !== "nao_procede";
+
   const rawTotal = occList.length;
   const validOccList = occList.filter((o) => countsAsOccurrence(o.tratativa_status));
   const total = validOccList.length;
   const abertas = validOccList.filter((o) => (o.tratativa_status ?? "aberta") === "aberta").length;
   const emAndamento = validOccList.filter((o) => o.tratativa_status === "em_andamento").length;
   const resolvidas = validOccList.filter((o) => o.tratativa_status === "resolvida").length;
-  const atrasadas = validOccList.filter((o) =>
-    o.expected_resolution_date &&
-    new Date(o.expected_resolution_date).getTime() < Date.now() &&
-    o.tratativa_status !== "resolvida"
-  ).length;
+  const atrasadas = occList.filter(isOverdue).length;
   const reinst = validOccList.filter((o) => o.needs_reinstallation && o.tratativa_status !== "resolvida").length;
   const naoProcede = occList.filter((o) => o.tratativa_status === "nao_procede").length;
 
