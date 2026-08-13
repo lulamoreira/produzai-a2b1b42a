@@ -1216,7 +1216,7 @@ function MiniKpi({ icon: Icon, label, value, color, active, onClick, tooltip }: 
   const baseCls = `border rounded-md p-2.5 flex items-center gap-2 bg-card transition-all ${active ? "ring-2 ring-primary border-primary" : ""}`;
   if (onClick) {
     return (
-      <button type="button" onClick={onClick} className={`${baseCls} hover:bg-muted/40 cursor-pointer w-full`}>
+      <button type="button" onClick={onClick} title={tooltip} className={`${baseCls} hover:bg-muted/40 cursor-pointer w-full`}>
         {content}
       </button>
     );
