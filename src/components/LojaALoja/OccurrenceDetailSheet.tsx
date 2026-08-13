@@ -345,7 +345,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                   size="sm"
                   className="h-8 gap-1.5 flex-shrink-0"
                   onClick={() => setCheckinOpen(true)}
-                  title="Como eu sinalizo que uma foto tem que entrar nas ocorrências?"
+                  title="Acho que alguma coisa aqui, abrindo o checkin das fotos da loja e onde eu marco qual foto vai ficar para as ocorrências seria melhor, não?"
                 >
                   <ImageIcon className="w-3.5 h-3.5" />
                   Check-in da loja

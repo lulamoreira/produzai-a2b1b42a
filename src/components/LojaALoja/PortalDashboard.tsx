@@ -649,7 +649,7 @@ _Relatório gerado pelo ProduzAI_ 🚀`;
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
                 <MiniKpi label="Total bruto" value={rawTotal} icon={AlertCircle} color="text-muted-foreground"
                   active={isActive("all", "all")} onClick={() => applyKpi("all", "all")} 
-                  tooltip="Como eu sinalizo que uma foto tem que entrar nas ocorrências?"
+                  tooltip="Acho que alguma coisa aqui, abrindo o checkin das fotos da loja e onde eu marco qual foto vai ficar para as ocorrências seria melhor, não?"
                 />
                 <MiniKpi label="Válidas" value={total} icon={CheckCircle2} color="text-green-600"
                   active={isActive("all", "valid")} onClick={() => applyKpi("all", "valid")} 
