@@ -23,7 +23,9 @@ import {
   UserCheck,
   MapPin,
   ClipboardCheck,
-  PowerOff
+  PowerOff,
+  Star,
+  Bell
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +37,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from "@/components/ui/button";
 import { KpiDetailDialog } from "@/components/v2/home/KpiDetailDialog";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useCampaignFavorites, useToggleFavorite, useFavoriteIds } from "@/hooks/useCampaignFavorites";
+import { useNotifications } from "@/hooks/useNotifications";
+import { useUpdateCampaign } from "@/hooks/useMultiClientData";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+
 
 export function HomeV2() {
   const { t } = useTranslation();
