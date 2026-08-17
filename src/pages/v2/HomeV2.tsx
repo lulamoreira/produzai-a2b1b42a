@@ -56,6 +56,13 @@ export function HomeV2() {
   const [selectedKpi, setSelectedKpi] = useState<string | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<any>(null);
 
+  const { data: favorites = [], isLoading: loadingFavorites } = useCampaignFavorites();
+  const { notifications, isLoading: loadingNotifications, markAsRead } = useNotifications();
+  const { data: favoriteIds } = useFavoriteIds();
+  const toggleFavorite = useToggleFavorite();
+  const updateCampaign = useUpdateCampaign();
+
+
   const { data: userAgency, isLoading: loadingAgency } = useQuery({
     queryKey: ["user-agency-id", user?.id],
     queryFn: async () => {
@@ -322,14 +329,65 @@ export function HomeV2() {
   return (
     <div className="max-w-7xl mx-auto animate-in fade-in duration-500">
       {/* Greeting Section */}
-      <section>
-        <h2 className="text-2xl font-semibold text-stone-800 dark:text-stone-100">
-          {getGreeting()}, {userName}
-        </h2>
-        <p className="text-sm text-stone-500 mt-0.5">
-          {formatters.custom(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy")}
-        </p>
+      <section className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-semibold text-stone-800 dark:text-stone-100">
+            {getGreeting()}, {userName}
+          </h2>
+          <p className="text-sm text-stone-500 mt-0.5">
+            {formatters.custom(new Date(), "EEEE, dd 'de' MMMM 'de' yyyy")}
+          </p>
+        </div>
       </section>
+
+      {/* Favorites Section */}
+      {favorites.length > 0 && (
+        <section className="mt-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+            <h3 className="text-base font-semibold text-stone-700 dark:text-stone-200">
+              {t("sidebar.favorites", "Favoritos")}
+            </h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {favorites.map((fav) => (
+              <Card
+                key={fav.campaign_id}
+                className="bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition-shadow cursor-pointer group relative overflow-hidden"
+                onClick={() => navigate(`/agency/${fav.agency_id}/clients/${fav.client_id}/campaigns/${fav.campaign_id}`)}
+              >
+                <div 
+                  className="absolute top-0 left-0 w-1 h-full" 
+                  style={{ backgroundColor: fav.campaign_color || "#8C6F4E" }} 
+                />
+                <div className="flex justify-between items-start mb-2">
+                  <Badge variant="outline" className="text-[10px] font-semibold uppercase bg-stone-50">
+                    {fav.client_name}
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavorite.mutate({ campaignId: fav.campaign_id, isFavorited: true });
+                    }}
+                  >
+                    <Star className="w-4 h-4 fill-current" />
+                  </Button>
+                </div>
+                <h4 className="text-sm font-bold text-stone-800 dark:text-stone-100 truncate group-hover:text-[#C2714F] transition-colors">
+                  {fav.campaign_name}
+                </h4>
+                <p className="text-[10px] text-stone-400 mt-1 uppercase tracking-wider font-medium">
+                  {fav.agency_name}
+                </p>
+              </Card>
+            ))}
+          </div>
+        </section>
+      )}
+
 
       {/* KPI Section */}
       <section className={cn("grid grid-cols-2 gap-4 mt-6", isAdminOrMaster ? "md:grid-cols-5" : "md:grid-cols-4")}>
@@ -401,43 +459,85 @@ export function HomeV2() {
                 <SkeletonCard key={i} />
               ))
             ) : recentCampaigns && recentCampaigns.length > 0 ? (
-              recentCampaigns.map((camp) => (
-                <Card 
-                  key={camp.id}
-                  className="bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition-shadow cursor-pointer group"
-                  onClick={() => userAgency && navigate(`/agency/${userAgency}/clients/${camp.client_id}/campaigns/${camp.id}`)}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <Badge 
-                      variant={camp.is_active === false ? "destructive" : "outline"} 
-                      className={cn(
-                        "text-[10px] font-semibold uppercase",
-                        camp.is_active === false 
-                          ? "bg-red-100 text-red-600 border-red-200 hover:bg-red-100" 
-                          : ""
-                      )}
-                    >
-                      {camp.is_active === false ? t("common.campaign_inactive") : t("campaigns.status.active")}
-                    </Badge>
-                    <span className="text-[10px] text-stone-400">
-                      {formatters.dateShort(new Date(camp.created_at))}
-                    </span>
-                  </div>
-                  <h4 className={cn(
-                    "text-sm font-semibold truncate group-hover:text-brand-400 transition-colors",
-                    camp.is_active === false ? "text-stone-400" : "text-stone-800 dark:text-stone-100"
-                  )}>
-                    {camp.name}
-                  </h4>
-                  <p className="text-xs text-stone-500 mt-0.5 truncate">
-                    {(camp as any).clients?.name || t("common.client")}
-                  </p>
-                  <div className="border-t border-stone-100 dark:border-stone-800 mt-3 pt-3 flex justify-between items-center text-[10px] text-stone-500">
-                    <ChevronRight className="w-3 h-3 text-stone-300 ml-auto" />
-                  </div>
-                </Card>
-              ))
+              recentCampaigns.map((camp) => {
+                const isFavorited = favoriteIds?.has(camp.id) ?? false;
+                return (
+                  <Card 
+                    key={camp.id}
+                    className={cn(
+                      "bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition-shadow cursor-pointer group",
+                      camp.is_active === false && "opacity-75"
+                    )}
+                    onClick={() => userAgency && navigate(`/agency/${userAgency}/clients/${camp.client_id}/campaigns/${camp.id}`)}
+                  >
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={camp.is_active === false ? "destructive" : "outline"} 
+                          className={cn(
+                            "text-[10px] font-semibold uppercase",
+                            camp.is_active === false 
+                              ? "bg-red-100 text-red-600 border-red-200 hover:bg-red-100" 
+                              : "bg-green-50 text-green-700 border-green-100"
+                          )}
+                        >
+                          {camp.is_active === false ? t("common.campaign_inactive") : t("campaigns.status.active")}
+                        </Badge>
+                        <span className="text-[10px] text-stone-400">
+                          {formatters.dateShort(new Date(camp.created_at))}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn(
+                            "h-7 w-7 transition-colors",
+                            isFavorited ? "text-yellow-500 hover:text-yellow-600" : "text-stone-300 hover:text-yellow-500"
+                          )}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite.mutate({ campaignId: camp.id, isFavorited });
+                          }}
+                        >
+                          <Star className={cn("w-4 h-4", isFavorited && "fill-current")} />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <h4 className={cn(
+                      "text-sm font-bold truncate group-hover:text-[#C2714F] transition-colors mb-1",
+                      camp.is_active === false ? "text-stone-400" : "text-stone-800 dark:text-stone-100"
+                    )}>
+                      {camp.name}
+                    </h4>
+                    <p className="text-xs text-stone-500 truncate">
+                      {(camp as any).clients?.name || t("common.client")}
+                    </p>
+
+                    {isAdminOrMaster && (
+                      <div className="mt-4 pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between">
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          <Switch
+                            id={`status-${camp.id}`}
+                            checked={camp.is_active !== false}
+                            onCheckedChange={(checked) => {
+                              updateCampaign.mutate({ id: camp.id, is_active: checked });
+                            }}
+                            className="scale-75 origin-left data-[state=checked]:bg-green-600"
+                          />
+                          <Label htmlFor={`status-${camp.id}`} className="text-[10px] font-bold text-stone-400 uppercase cursor-pointer">
+                            {camp.is_active !== false ? "Ativa" : "Inativa"}
+                          </Label>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-[#C2714F] transition-colors" />
+                      </div>
+                    )}
+                  </Card>
+                );
+              })
             ) : (
+
               <div className="md:col-span-2 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl">
                 <EmptyStateV2 
                   icon={Megaphone}
@@ -449,58 +549,94 @@ export function HomeV2() {
           </div>
         </section>
 
-        {/* Recent Activity Section */}
+        {/* Recent Notifications Section */}
         <section>
-          <h3 className="text-base font-semibold text-stone-700 dark:text-stone-200 mb-4">
-            {t("homeV2.recentActivity.title")}
-          </h3>
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-base font-semibold text-stone-700 dark:text-stone-200">
+              {t("notifications.title", "Notificações")}
+            </h3>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-brand-50 rounded-full border border-brand-100">
+              <Bell className="w-3 h-3 text-brand-500" />
+              <span className="text-[10px] font-bold text-brand-600 uppercase">Alertas</span>
+            </div>
+          </div>
+          
           <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-700 rounded-xl overflow-hidden shadow-sm">
             <div className="divide-y divide-stone-100 dark:divide-stone-800">
-              {loadingActivity ? (
-                Array(5).fill(0).map((_, i) => (
-                  <div key={i} className="p-4 h-14 bg-stone-50 dark:bg-stone-800/50 animate-pulse" />
+              {loadingNotifications ? (
+                Array(6).fill(0).map((_, i) => (
+                  <div key={i} className="p-4 h-16 bg-stone-50 dark:bg-stone-800/50 animate-pulse" />
                 ))
-              ) : recentActivity && recentActivity.length > 0 ? (
-                recentActivity.map((activity) => (
+              ) : notifications && notifications.length > 0 ? (
+                notifications.slice(0, 8).map((notification) => (
                   <button
                     type="button"
-                    key={activity.id}
-                    onClick={() => setSelectedActivity(activity)}
-                    className="w-full text-left flex gap-3 p-4 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors cursor-pointer"
+                    key={notification.id}
+                    onClick={() => {
+                      if (!notification.read) markAsRead(notification.id);
+                      if (notification.action_url) {
+                        navigate(notification.action_url);
+                      }
+                    }}
+                    className={cn(
+                      "w-full text-left flex gap-3 p-4 hover:bg-stone-50 dark:hover:bg-stone-800/50 transition-colors cursor-pointer relative group",
+                      !notification.read && "bg-brand-50/30 dark:bg-brand-900/10"
+                    )}
                   >
-                    <div className="w-8 h-8 rounded-full bg-stone-100 dark:bg-stone-800 flex items-center justify-center flex-shrink-0">
-                      <activity.icon className="w-4 h-4 text-stone-500" />
+                    {!notification.read && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-brand-400" />
+                    )}
+                    <div className={cn(
+                      "w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 border shadow-sm",
+                      !notification.read 
+                        ? "bg-white border-brand-100 text-brand-500" 
+                        : "bg-stone-50 border-stone-100 text-stone-400"
+                    )}>
+                      <Bell className="w-4 h-4" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm text-stone-700 dark:text-stone-300 truncate font-medium">
-                          {activity.title}
+                        <p className={cn(
+                          "text-sm truncate",
+                          !notification.read ? "font-bold text-stone-900" : "font-medium text-stone-600"
+                        )}>
+                          {notification.title}
                         </p>
                         <span className="text-[10px] text-stone-400 flex items-center gap-1 flex-shrink-0">
-                          <Clock className="w-2.5 h-2.5" /> {formatters.relative(activity.time)}
+                          <Clock className="w-2.5 h-2.5" /> {formatters.relative(new Date(notification.created_at))}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between mt-0.5 gap-2">
-                        <span className="text-xs text-stone-500 truncate">
-                          {activity.actor && <span className="font-semibold text-brand-400 mr-1">{activity.actor}:</span>}
-                          {activity.campaignName ? activity.campaignName : activity.description}
-                        </span>
-                      </div>
+                      <p className="text-xs text-stone-500 line-clamp-1 mt-0.5">
+                        {notification.body}
+                      </p>
                     </div>
+                    {notification.action_url && (
+                      <ExternalLink className="w-3.5 h-3.5 text-stone-300 opacity-0 group-hover:opacity-100 transition-opacity self-center ml-1" />
+                    )}
                   </button>
                 ))
               ) : (
-                <div className="p-8">
-                  <EmptyStateV2 
-                    icon={Inbox}
-                    title={t("common.noResults")}
-                    description={t("common.noResults")}
-                  />
+                <div className="p-12 text-center">
+                  <div className="w-12 h-12 bg-stone-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <Inbox className="w-6 h-6 text-stone-300" />
+                  </div>
+                  <h4 className="text-sm font-semibold text-stone-900 mb-1">{t("common.noResults")}</h4>
+                  <p className="text-xs text-stone-500">{t("common.noResults")}</p>
                 </div>
               )}
             </div>
+            {notifications.length > 0 && (
+              <Button 
+                variant="ghost" 
+                className="w-full h-11 rounded-none border-t border-stone-100 dark:border-stone-800 text-xs font-bold text-brand-500 hover:bg-stone-50 hover:text-brand-600 transition-colors uppercase tracking-wider"
+                onClick={() => navigate("/notifications")}
+              >
+                Ver todas as notificações
+              </Button>
+            )}
           </div>
         </section>
+
       </div>
 
       <Dialog open={!!selectedActivity} onOpenChange={(open) => !open && setSelectedActivity(null)}>
