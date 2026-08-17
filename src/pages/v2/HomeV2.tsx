@@ -271,40 +271,60 @@ export function HomeV2() {
             </h3>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {favorites.map((fav) => (
-              <Card
-                key={fav.campaign_id}
-                className="bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition-shadow cursor-pointer group relative overflow-hidden"
-                onClick={() => navigate(`/agency/${fav.agency_id}/clients/${fav.client_id}/campaigns/${fav.campaign_id}`)}
-              >
-                <div 
-                  className="absolute top-0 left-0 w-1 h-full" 
-                  style={{ backgroundColor: fav.campaign_color || "#8C6F4E" }} 
-                />
-                <div className="flex justify-between items-start mb-2">
-                  <Badge variant="outline" className="text-[10px] font-semibold uppercase bg-stone-50">
-                    {fav.client_name}
-                  </Badge>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 z-10"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleFavorite.mutate({ campaignId: fav.campaign_id, isFavorited: true });
-                    }}
-                  >
-                    <Star className="w-4 h-4 fill-current" />
-                  </Button>
-                </div>
-                <h4 className="text-sm font-bold text-stone-800 dark:text-stone-100 truncate group-hover:text-[#C2714F] transition-colors">
-                  {fav.campaign_name}
-                </h4>
-                <p className="text-[10px] text-stone-400 mt-1 uppercase tracking-wider font-medium">
-                  {fav.agency_name}
-                </p>
-              </Card>
-            ))}
+            {favorites.map((fav) => {
+              const isFavorited = favoriteIds?.has(fav.campaign_id) ?? false;
+              return (
+                <Card
+                  key={fav.campaign_id}
+                  className="bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition-shadow cursor-pointer group relative overflow-hidden"
+                  onClick={() => navigate(`/agency/${fav.agency_id}/clients/${fav.client_id}/campaigns/${fav.campaign_id}`)}
+                >
+                  <div 
+                    className="absolute top-0 left-0 w-1 h-full" 
+                    style={{ backgroundColor: fav.campaign_color || "#8C6F4E" }} 
+                  />
+                  <div className="flex justify-between items-start mb-2">
+                    <Badge variant="outline" className="text-[10px] font-semibold uppercase bg-stone-50">
+                      {fav.client_name}
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 z-10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite.mutate({ campaignId: fav.campaign_id, isFavorited });
+                      }}
+                    >
+                      <Star className={cn("w-4 h-4", isFavorited && "fill-current")} />
+                    </Button>
+                  </div>
+                  <h4 className="text-sm font-bold text-stone-800 dark:text-stone-100 truncate group-hover:text-[#C2714F] transition-colors">
+                    {fav.campaign_name}
+                  </h4>
+                  <p className="text-[10px] text-stone-400 mt-1 uppercase tracking-wider font-medium">
+                    {fav.agency_name}
+                  </p>
+                  
+                  {isAdminOrMaster && (
+                    <div className="mt-4 pt-3 border-t border-stone-100 dark:border-stone-800 flex items-center justify-between">
+                      <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                        <Switch
+                          id={`status-fav-${fav.campaign_id}`}
+                          checked={fav.is_active !== false}
+                          onCheckedChange={() => handleToggleStatus({ id: fav.campaign_id, name: fav.campaign_name, is_active: fav.is_active })}
+                          className="scale-75 origin-left data-[state=checked]:bg-green-600"
+                        />
+                        <Label htmlFor={`status-fav-${fav.campaign_id}`} className="text-[10px] font-bold text-stone-400 uppercase cursor-pointer">
+                          {fav.is_active !== false ? "Ativa" : "Inativa"}
+                        </Label>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-[#C2714F] transition-colors" />
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
           </div>
         </section>
       )}
