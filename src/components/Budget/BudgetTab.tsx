@@ -2702,7 +2702,7 @@ ${msgLabels.winnerWaFooter}
         {/* ═══ COMPARATIVO DE FORNECEDORES (mesmo em preenchimento) ═══ */}
         {suppliers.length > 0 && (
           <Card>
-            <CardContent className="p-4 space-y-3">
+            <CardContent className="p-4 space-y-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h4 className="text-sm font-semibold text-foreground">Comparativo lado a lado</h4>
@@ -2716,6 +2716,61 @@ ${msgLabels.winnerWaFooter}
                   </Badge>
                 )}
               </div>
+
+              {/* Gráficos de Pizza Lado a Lado */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {suppliers.filter(s => s.status === "enviado" || supplierPartialTotals[s.id]?.total > 0).map((sup) => {
+                  const p = supplierPartialTotals[sup.id];
+                  const prod = p.total - p.installation - p.freight;
+                  const data = [
+                    { name: "Produção", value: prod, color: "#8C6F4E" },
+                    { name: "Frete", value: p.freight, color: "#D4B996" },
+                    { name: "Instalação", value: p.installation, color: "#E5E7EB" },
+                  ].filter(d => d.value > 0);
+
+                  if (data.length === 0) return null;
+
+                  return (
+                    <div key={`chart-${sup.id}`} className="flex flex-col items-center border rounded-lg p-3 bg-muted/5">
+                      <p className="text-[11px] font-semibold mb-2 text-center line-clamp-1">{sup.company_name}</p>
+                      <div className="h-[140px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={data}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={30}
+                              outerRadius={50}
+                              paddingAngle={2}
+                              dataKey="value"
+                            >
+                              {data.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                              ))}
+                            </Pie>
+                            <RechartsTooltip 
+                              formatter={(value: number) => fmtCurrency(value)}
+                              contentStyle={{ fontSize: '10px', borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="flex flex-wrap justify-center gap-x-3 gap-y-1 mt-1">
+                        {data.map((d) => (
+                          <div key={d.name} className="flex items-center gap-1">
+                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: d.color }} />
+                            <span className="text-[9px] text-muted-foreground whitespace-nowrap">
+                              {d.name}: {Math.round((d.value / p.total) * 100)}%
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
               <div className="overflow-x-auto">
                 <Table className="text-xs">
                   <TableHeader>
