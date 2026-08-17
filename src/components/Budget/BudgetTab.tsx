@@ -2154,7 +2154,7 @@ ${msgLabels.winnerWaFooter}
                 <p className="text-sm font-semibold leading-tight">Cronograma da Campanha</p>
                 {!timelineExpanded && (
                   <span className="text-[11px] text-muted-foreground italic ml-2 hidden sm:inline">
-                    Datas e entregas acordadas com o fornecedor
+                    Sempre mantenha essa área atualizada, sem eu precisar ficar recarregando a página.
                   </span>
                 )}
               </div>
