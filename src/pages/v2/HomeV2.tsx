@@ -33,7 +33,24 @@ import { Card } from "@/components/ui/card";
 import { useFormatters } from "@/lib/formatters";
 import { SkeletonCard } from "@/components/v2/ui/SkeletonCard";
 import { EmptyStateV2 } from "@/components/v2/ui/EmptyStateV2";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogDescription, 
+  DialogFooter 
+} from "@/components/ui/dialog";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { KpiDetailDialog } from "@/components/v2/home/KpiDetailDialog";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -193,121 +210,25 @@ export function HomeV2() {
     }
   });
 
-  const { data: recentActivity = [], isLoading: loadingActivity } = useQuery({
-    queryKey: ["v2-recent-activity", isAdmin, isMaster, userAgency],
-    enabled: isAdminOrMaster && !loadingAgency,
-    queryFn: async () => {
-      // Determine accessible campaign IDs for masters
-      let accessibleCampaignIds: string[] | null = null;
-      if (!isAdmin) {
-        if (!userAgency) return [];
-        const { data: clients } = await supabase
-          .from("clients").select("id").eq("agency_id", userAgency);
-        const clientIds = (clients || []).map((c: any) => c.id);
-        if (!clientIds.length) return [];
-        const { data: cams } = await supabase
-          .from("campaigns").select("id").in("client_id", clientIds);
-        accessibleCampaignIds = (cams || []).map((c: any) => c.id);
-        if (!accessibleCampaignIds.length) return [];
-      }
+  const [statusConfirm, setStatusConfirm] = useState<{ id: string; name: string; is_active: boolean } | null>(null);
 
-      const [activityLogRes, occurrencesRes, campaignsRes] = await Promise.all([
-        accessibleCampaignIds
-          ? supabase.from("campaign_activity_log")
-              .select("*, campaigns(name, client_id, clients(name)), client_stores(name)")
-              .in("campaign_id", accessibleCampaignIds)
-              .order("created_at", { ascending: false }).limit(10)
-          : supabase.from("campaign_activity_log")
-              .select("*, campaigns(name, client_id, clients(name)), client_stores(name)")
-              .order("created_at", { ascending: false }).limit(10),
-        accessibleCampaignIds
-          ? supabase.from("occurrences")
-              .select("*, campaigns(name, client_id, clients(name)), client_stores(name)")
-              .in("campaign_id", accessibleCampaignIds)
-              .order("created_at", { ascending: false }).limit(5)
-          : supabase.from("occurrences")
-              .select("*, campaigns(name, client_id, clients(name)), client_stores(name)")
-              .order("created_at", { ascending: false }).limit(5),
-        accessibleCampaignIds
-          ? supabase.from("campaigns")
-              .select("*, clients(name)")
-              .in("id", accessibleCampaignIds)
-              .order("created_at", { ascending: false }).limit(5)
-          : supabase.from("campaigns")
-              .select("*, clients(name)")
-              .order("created_at", { ascending: false }).limit(5),
-      ]);
-
-      const userIds = [...new Set((activityLogRes.data || []).map((item: any) => item.user_id).filter(Boolean))];
-      let profileMap: Record<string, string> = {};
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from("profiles").select("user_id, display_name").in("user_id", userIds);
-        profiles?.forEach((p: any) => { profileMap[p.user_id] = p.display_name; });
-      }
-
-      const activities: any[] = [];
-
-      (activityLogRes.data || []).forEach((item: any) => {
-        const actorName = item.actor_name || profileMap[item.user_id] || t("common.user");
-        let icon = Wrench;
-        if (item.action?.includes("concluida")) icon = Package;
-        if (item.action?.includes("foto")) icon = Megaphone;
-        if (item.action?.includes("agendamento")) icon = CalendarIcon;
-        activities.push({
-          id: `log-${item.id}`,
-          type: "activity",
-          title: item.client_stores?.name || item.campaigns?.name || t("common.activity"),
-          description: item.description || item.action,
-          time: new Date(item.created_at),
-          icon,
-          campaignId: item.campaign_id,
-          clientId: item.campaigns?.client_id,
-          clientName: item.campaigns?.clients?.name,
-          campaignName: item.campaigns?.name,
-          actor: actorName,
-          extra: item.action?.replace(/_/g, " "),
-          navigateTo: item.campaign_id && userAgency ? `/agency/${userAgency}/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}` : null,
-        });
-      });
-
-      (occurrencesRes.data || []).forEach((item: any) => {
-        activities.push({
-          id: `occ-${item.id}`,
-          type: "occurrence",
-          title: item.campaigns?.name || t("common.occurrence"),
-          description: item.description || t("common.occurrence"),
-          time: new Date(item.created_at),
-          icon: Inbox,
-          campaignId: item.campaign_id,
-          clientId: item.campaigns?.client_id,
-          clientName: item.campaigns?.clients?.name,
-          campaignName: item.campaigns?.name,
-          actor: item.reporter_name,
-          extra: item.status,
-          navigateTo: item.campaign_id && userAgency ? `/agency/${userAgency}/clients/${item.campaigns?.client_id}/campaigns/${item.campaign_id}` : null,
-        });
-      });
-
-      (campaignsRes.data || []).forEach((item: any) => {
-        activities.push({
-          id: `camp-${item.id}`,
-          type: "campaign",
-          title: item.name,
-          description: t("homeV2.recentActivity.newCampaign"),
-          time: new Date(item.created_at),
-          icon: Megaphone,
-          campaignId: item.id,
-          clientId: item.client_id,
-          clientName: item.clients?.name,
-          campaignName: item.name,
-          navigateTo: userAgency ? `/agency/${userAgency}/clients/${item.client_id}/campaigns/${item.id}` : null,
-        });
-      });
-
-      return activities.sort((a: any, b: any) => b.time.getTime() - a.time.getTime());
+  const handleToggleStatus = (camp: any) => {
+    const newStatus = camp.is_active === false;
+    if (newStatus) {
+      // Reativar direto se for pra ativar
+      updateCampaign.mutate({ id: camp.id, is_active: true });
+    } else {
+      // Pedir confirmação pra inativar
+      setStatusConfirm({ id: camp.id, name: camp.name, is_active: false });
     }
-  });
+  };
+
+  const confirmStatusChange = () => {
+    if (statusConfirm) {
+      updateCampaign.mutate({ id: statusConfirm.id, is_active: statusConfirm.is_active });
+      setStatusConfirm(null);
+    }
+  };
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -367,7 +288,7 @@ export function HomeV2() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-6 w-6 text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50"
+                    className="h-6 w-6 text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 z-10"
                     onClick={(e) => {
                       e.stopPropagation();
                       toggleFavorite.mutate({ campaignId: fav.campaign_id, isFavorited: true });
@@ -492,7 +413,7 @@ export function HomeV2() {
                           variant="ghost"
                           size="icon"
                           className={cn(
-                            "h-7 w-7 transition-colors",
+                            "h-7 w-7 transition-colors z-10",
                             isFavorited ? "text-yellow-500 hover:text-yellow-600" : "text-stone-300 hover:text-yellow-500"
                           )}
                           onClick={(e) => {
@@ -521,9 +442,7 @@ export function HomeV2() {
                           <Switch
                             id={`status-${camp.id}`}
                             checked={camp.is_active !== false}
-                            onCheckedChange={(checked) => {
-                              updateCampaign.mutate({ id: camp.id, is_active: checked });
-                            }}
+                            onCheckedChange={() => handleToggleStatus(camp)}
                             className="scale-75 origin-left data-[state=checked]:bg-green-600"
                           />
                           <Label htmlFor={`status-${camp.id}`} className="text-[10px] font-bold text-stone-400 uppercase cursor-pointer">
@@ -724,6 +643,26 @@ export function HomeV2() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={!!statusConfirm} onOpenChange={(open) => !open && setStatusConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("campaign.inactivate_title", "Inativar campanha?")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("campaign.inactivate_description", "Esta ação tornará a campanha invisível para todos os usuários, exceto admins e masters. Você poderá reativá-la depois.")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setStatusConfirm(null)}>{t("common.cancel", "Cancelar")}</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={confirmStatusChange}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t("common.confirm", "Confirmar")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
