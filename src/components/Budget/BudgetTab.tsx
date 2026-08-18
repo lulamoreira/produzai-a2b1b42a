@@ -3647,8 +3647,8 @@ ${msgLabels.winnerWaFooter}
         campaignId={campaignId}
         pieces={pieces}
         kits={kits}
-        kitPieceTotals={kitPieceTotals}
-        qtyMap={qtyMap}
+        kitPieces={kitPieces}
+        qtyMap={pieceTotals}
         currencyCode={currencyCode}
       />
 
