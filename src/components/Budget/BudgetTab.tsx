@@ -3648,7 +3648,7 @@ ${msgLabels.winnerWaFooter}
         pieces={pieces}
         kits={kits}
         kitPieceTotals={kitPieceTotals}
-        qtyMap={qtyMap}
+        qtyMap={pieceTotals}
         currencyCode={currencyCode}
       />
 

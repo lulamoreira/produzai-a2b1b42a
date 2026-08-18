@@ -71,19 +71,37 @@ export default function CostAnalysisDialog({
       basePrices.set(p.id, price ?? 0);
     });
 
-    const itemCosts = [...pieces.map(p => ({
-      name: p.name,
-      id: p.id,
-      qty: qtyMap[p.id] || 0,
-      price: basePrices.get(p.id) || 0,
-      total: (qtyMap[p.id] || 0) * (basePrices.get(p.id) || 0),
-      isKit: false
-    })), ...kits.map(k => {
-      const components = kitPieceTotals[k.id] || [];
-      const totalPrice = components.reduce((acc, c) => acc + (c.qty * (basePrices.get(c.pieceId) || 0)), 0);
-      const totalQty = qtyMap[k.id] || 0; 
-      return { name: k.name, id: k.id, qty: totalQty, price: 0, total: totalPrice, isKit: true };
-    })].sort((a, b) => b.total - a.total);
+    const itemCosts = [
+      ...pieces.filter(p => !p.kit_only).map(p => ({
+        name: p.name,
+        id: p.id,
+        qty: qtyMap[p.id] || 0,
+        price: basePrices.get(p.id) || 0,
+        total: (qtyMap[p.id] || 0) * (basePrices.get(p.id) || 0),
+        isKit: false
+      })), 
+      ...kits.map(k => {
+        const components = kitPieceTotals[k.id] || [];
+        const totalPrice = components.reduce((acc, c) => acc + (c.qty * (basePrices.get(c.pieceId) || 0)), 0);
+        
+        // Calculate kit quantity: min of (component_total_qty / qty_in_kit)
+        // or sum of components if ratio not available
+        let totalQty = 0;
+        if (components.length > 0) {
+          const ratios = components.map(c => {
+            const piece = pieces.find(p => p.id === c.pieceId);
+            const qtyInKit = piece?.quantidadeNoKit || 1;
+            return Math.floor(c.qty / qtyInKit);
+          });
+          totalQty = Math.min(...ratios);
+          if (totalQty === 0) {
+            totalQty = components.reduce((acc, c) => acc + c.qty, 0);
+          }
+        }
+        
+        return { name: k.name, id: k.id, qty: totalQty, price: 0, total: totalPrice, isKit: true };
+      })
+    ].sort((a, b) => b.total - a.total);
 
     const totalCampaign = itemCosts.reduce((acc, curr) => acc + curr.total, 0);
 
@@ -127,7 +145,7 @@ export default function CostAnalysisDialog({
     const simOutlier = storeStats.find(s => s.outliers.length > 0 && s.total > 0);
     if (simOutlier) {
       const currentTotal = simOutlier.total;
-      const simulatedTotal = simOutlier.count * simOutlier.mean; // This is actually the same, bad logic. 
+      // Simulation capped to mean logic follows below
       // Better: if we capped outliers to mean
       const cappedTotal = storePieces.filter(sp => sp.piece_id === simOutlier.id).reduce((acc, sp) => {
           const q = Number(sp.quantity);
