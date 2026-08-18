@@ -19,13 +19,13 @@ interface CostAnalysisDialogProps {
   campaignId: string;
   pieces: CampaignPiece[];
   kits: CampaignKit[];
-  kitPieceTotals: Record<string, { kitId: string; pieceId: string; qty: number }[]>;
+  kitPieces: { id: string; kit_id: string; piece_id: string; quantity: number }[];
   qtyMap: Record<string, number>;
   currencyCode: string;
 }
 
 export default function CostAnalysisDialog({
-  open, onOpenChange, campaignId, pieces, kits, kitPieceTotals, qtyMap, currencyCode
+  open, onOpenChange, campaignId, pieces, kits, kitPieces, qtyMap, currencyCode
 }: CostAnalysisDialogProps) {
   const { data: budgetData } = useQuery({
     queryKey: ["cost_analysis_data", campaignId],
@@ -81,21 +81,27 @@ export default function CostAnalysisDialog({
         isKit: false
       })), 
       ...kits.map(k => {
-        const components = kitPieceTotals[k.id] || [];
-        const totalPrice = components.reduce((acc, c) => acc + (c.qty * (basePrices.get(c.pieceId) || 0)), 0);
+        const components = kitPieces.filter(kp => kp.kit_id === k.id);
+        const totalPrice = components.reduce((acc, c) => {
+          const piecePrice = basePrices.get(c.piece_id) || 0;
+          const pieceTotalQty = qtyMap[c.piece_id] || 0;
+          // Note: The kit total cost is usually derived from its components' unit prices
+          // but we need to know how many KITS there are.
+          return acc + (pieceTotalQty * piecePrice);
+        }, 0);
         
         // Calculate kit quantity: min of (component_total_qty / qty_in_kit)
-        // or sum of components if ratio not available
         let totalQty = 0;
         if (components.length > 0) {
           const ratios = components.map(c => {
-            const piece = pieces.find(p => p.id === c.pieceId);
-            const qtyInKit = piece?.quantidadeNoKit || 1;
-            return Math.floor(c.qty / qtyInKit);
+            const qtyInKit = c.quantity || 1;
+            const pieceTotalQty = qtyMap[c.piece_id] || 0;
+            return Math.floor(pieceTotalQty / qtyInKit);
           });
           totalQty = Math.min(...ratios);
+          // Fallback if mapping seems broken but components have quantities
           if (totalQty === 0) {
-            totalQty = components.reduce((acc, c) => acc + c.qty, 0);
+            totalQty = components.reduce((acc, c) => acc + (qtyMap[c.piece_id] || 0), 0);
           }
         }
         
@@ -106,7 +112,7 @@ export default function CostAnalysisDialog({
     const totalCampaign = itemCosts.reduce((acc, curr) => acc + curr.total, 0);
 
     // Section 2: Gap analysis
-    const gaps = pieces.map(p => {
+    const gaps = pieces.filter(p => !p.kit_only).map(p => {
       const relevantPrices = prices.filter(pr => pr.piece_id === p.id && submitted.some(s => s.id === pr.supplier_id)).map(pr => Number(pr.unit_price));
       if (relevantPrices.length < 2) return null;
       const min = Math.min(...relevantPrices);
@@ -166,7 +172,7 @@ export default function CostAnalysisDialog({
       suggestions,
       baseLabel: winner ? `Fornecedor vencedor: ${winner.company_name}` : "Menor preço por peça (entre enviados)"
     };
-  }, [budgetData, pieces, kits, kitPieceTotals, qtyMap, storePieces, currencyCode]);
+  }, [budgetData, pieces, kits, kitPieces, qtyMap, storePieces, currencyCode]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
