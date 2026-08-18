@@ -7,25 +7,29 @@ import {
 } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { TrendingDown, PieChart, AlertTriangle, Lightbulb, Info } from "lucide-react";
+import { TrendingDown, PieChart, AlertTriangle, Lightbulb, Info, FileText } from "lucide-react";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 import { cn } from "@/lib/utils";
+import { exportCostAnalysisPDF } from "@/lib/exportCostAnalysisPDF";
 
 interface CostAnalysisDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   campaignId: string;
+  campaignName: string;
   pieces: CampaignPiece[];
   kits: CampaignKit[];
   kitPieces: { id: string; kit_id: string; piece_id: string; quantity: number }[];
   qtyMap: Record<string, number>;
   currencyCode: string;
+  agencySuppliers: any[];
 }
 
 export default function CostAnalysisDialog({
-  open, onOpenChange, campaignId, pieces, kits, kitPieces, qtyMap, currencyCode
+  open, onOpenChange, campaignId, campaignName, pieces, kits, kitPieces, qtyMap, currencyCode, agencySuppliers
 }: CostAnalysisDialogProps) {
   const { data: budgetData } = useQuery({
     queryKey: ["cost_analysis_data", campaignId],
@@ -59,7 +63,14 @@ export default function CostAnalysisDialog({
     // 1) Supplier Nicknames map
     const supplierNicknames = new Map<string, string>();
     suppliers.forEach(s => {
-      if (s.company_name) {
+      // Look for match in agencySuppliers by company_name
+      const found = agencySuppliers.find(as => 
+        as.company_name?.trim().toLowerCase() === s.company_name?.trim().toLowerCase()
+      );
+      
+      if (found && found.trade_name?.trim()) {
+        supplierNicknames.set(s.id, found.trade_name.trim());
+      } else if (s.company_name) {
         const firstWord = s.company_name.trim().split(/\s+/)[0];
         supplierNicknames.set(s.id, firstWord.toUpperCase());
       }
@@ -190,9 +201,11 @@ export default function CostAnalysisDialog({
       gaps, 
       storeStats, 
       suggestions,
-      baseLabel: winner ? `Fornecedor vencedor: ${winner.company_name}` : "Menor preço por peça (entre enviados)"
+      baseLabel: winner 
+        ? `Fornecedor vencedor: ${supplierNicknames.get(winner.id) || winner.company_name}` 
+        : "Menor preço por peça (entre enviados)"
     };
-  }, [budgetData, pieces, kits, kitPieces, qtyMap, storePieces, currencyCode]);
+  }, [budgetData, pieces, kits, kitPieces, qtyMap, storePieces, currencyCode, agencySuppliers]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -204,10 +217,21 @@ export default function CostAnalysisDialog({
               <DialogDescription className="text-brand-600">Visão analítica de cotações e distribuição física.</DialogDescription>
             </div>
             {analysis && (
-              <Badge variant="secondary" className="bg-brand-100 text-brand-700 border-brand-200">
-                <Info className="w-3 h-3 mr-1" />
-                Base: {analysis.baseLabel}
-              </Badge>
+              <div className="flex items-center gap-3">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-8 gap-1.5 text-brand-700 border-brand-200 hover:bg-brand-50"
+                  onClick={() => exportCostAnalysisPDF(analysis, campaignName, currencyCode)}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  Exportar PDF
+                </Button>
+                <Badge variant="secondary" className="bg-brand-100 text-brand-700 border-brand-200">
+                  <Info className="w-3 h-3 mr-1" />
+                  Base: {analysis.baseLabel}
+                </Badge>
+              </div>
             )}
           </div>
         </DialogHeader>
