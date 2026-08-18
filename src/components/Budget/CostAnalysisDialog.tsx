@@ -56,6 +56,15 @@ export default function CostAnalysisDialog({
     if (!budgetData) return null;
     const { suppliers, prices } = budgetData;
 
+    // 1) Supplier Nicknames map
+    const supplierNicknames = new Map<string, string>();
+    suppliers.forEach(s => {
+      if (s.company_name) {
+        const firstWord = s.company_name.trim().split(/\s+/)[0];
+        supplierNicknames.set(s.id, firstWord.toUpperCase());
+      }
+    });
+
     const winner = suppliers.find(s => s.is_winner);
     const basePrices = new Map<string, number>();
     const submitted = suppliers.filter(s => s.status === 'enviado');
@@ -113,12 +122,23 @@ export default function CostAnalysisDialog({
 
     // Section 2: Gap analysis
     const gaps = pieces.filter(p => !p.kit_only).map(p => {
-      const relevantPrices = prices.filter(pr => pr.piece_id === p.id && submitted.some(s => s.id === pr.supplier_id)).map(pr => Number(pr.unit_price));
-      if (relevantPrices.length < 2) return null;
-      const min = Math.min(...relevantPrices);
-      const max = Math.max(...relevantPrices);
+      const supplierPrices = prices
+        .filter(pr => pr.piece_id === p.id && submitted.some(s => s.id === pr.supplier_id))
+        .map(pr => ({ supplierId: pr.supplier_id, price: Number(pr.unit_price) }))
+        .sort((a, b) => a.price - b.price);
+
+      if (supplierPrices.length < 2) return null;
+
+      const minItem = supplierPrices[0];
+      const maxItem = supplierPrices[supplierPrices.length - 1];
+      
+      const min = minItem.price;
+      const max = maxItem.price;
+      const minSupplier = supplierNicknames.get(minItem.supplierId) || "—";
+      const maxSupplier = supplierNicknames.get(maxItem.supplierId) || "—";
+      
       const gapPct = min === 0 ? 0 : ((max - min) / min) * 100;
-      return { id: p.id, name: p.name, min, max, gapPct };
+      return { id: p.id, name: p.name, min, max, minSupplier, maxSupplier, gapPct };
     }).filter(Boolean).sort((a, b) => (b?.gapPct || 0) - (a?.gapPct || 0));
 
     // Section 3: Distribution
@@ -258,8 +278,12 @@ export default function CostAnalysisDialog({
                         <div className="flex justify-between items-end">
                           <div className="space-y-1">
                             <p className="text-[10px] uppercase text-muted-foreground tracking-wider">Menor vs Maior</p>
-                            <p className="text-xs font-medium tabular-nums text-emerald-600">{formatCurrencyByCode(gap.min, currencyCode)}</p>
-                            <p className="text-xs font-medium tabular-nums text-rose-600">{formatCurrencyByCode(gap.max, currencyCode)}</p>
+                            <p className="text-xs font-medium tabular-nums text-emerald-600 truncate max-w-[120px]" title={gap.minSupplier}>
+                              {gap.minSupplier} · {formatCurrencyByCode(gap.min, currencyCode)}
+                            </p>
+                            <p className="text-xs font-medium tabular-nums text-rose-600 truncate max-w-[120px]" title={gap.maxSupplier}>
+                              {gap.maxSupplier} · {formatCurrencyByCode(gap.max, currencyCode)}
+                            </p>
                           </div>
                           <div className="text-right space-y-1">
                             <p className="text-[10px] uppercase text-muted-foreground tracking-wider">Disparidade</p>
