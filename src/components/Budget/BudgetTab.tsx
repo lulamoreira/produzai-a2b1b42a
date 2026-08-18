@@ -3515,7 +3515,7 @@ ${msgLabels.winnerWaFooter}
         pieces={pieces}
         kits={kits}
         kitPieces={kitPieces}
-        qtyMap={pieceTotalsFull}
+        qtyMap={pieceTotals}
         currencyCode={currencyCode}
         agencySuppliers={agencySuppliers}
       />
@@ -3657,16 +3657,6 @@ ${msgLabels.winnerWaFooter}
         />
       )}
 
-      <CostAnalysisDialog
-        open={costAnalysisOpen}
-        onOpenChange={setCostAnalysisOpen}
-        campaignId={campaignId}
-        pieces={pieces}
-        kits={kits}
-        kitPieces={kitPieces}
-        qtyMap={pieceTotals}
-        currencyCode={currencyCode}
-      />
 
       <div className="rounded-lg border border-border bg-card p-4 space-y-3">
         <div className="flex items-start justify-between gap-3 flex-wrap">
