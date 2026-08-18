@@ -76,13 +76,12 @@ export default function CostAnalysisDialog({
       id: p.id,
       qty: qtyMap[p.id] || 0,
       price: basePrices.get(p.id) || 0,
-      total: (qtyMap[p.id] || 0) * (basePrices.get(p.id) || 0)
+      total: (qtyMap[p.id] || 0) * (basePrices.get(p.id) || 0),
+      isKit: false
     })), ...kits.map(k => {
       const components = kitPieceTotals[k.id] || [];
       const totalPrice = components.reduce((acc, c) => acc + (c.qty * (basePrices.get(c.pieceId) || 0)), 0);
-      const totalQty = qtyMap[k.id] || 0; // The component sums kit qty differently, but we follow qtyMap for consistency if it exists for kits
-      // However kits usually don't have direct entries in qtyMap if they are broken down. 
-      // Actually BudgetTab calculates kit qty by dividing component totals.
+      const totalQty = qtyMap[k.id] || 0; 
       return { name: k.name, id: k.id, qty: totalQty, price: 0, total: totalPrice, isKit: true };
     })].sort((a, b) => b.total - a.total);
 
