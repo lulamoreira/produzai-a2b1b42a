@@ -2316,7 +2316,10 @@ ${msgLabels.winnerWaFooter}
                         size="sm"
                         variant="outline"
                         className="gap-1 min-h-[44px] md:min-h-0 w-full md:w-auto justify-start md:justify-center border-brand-200 text-brand-700 hover:bg-brand-50"
-                        onClick={() => setCostAnalysisOpen(true)}
+                        onClick={() => {
+                          // CostAnalysisDialog is now rendered at the bottom for consistency
+                          setCostAnalysisOpen(true);
+                        }}
                       >
                         <BarChart3 className="w-3.5 h-3.5" /> Análise de Custos
                       </Button>
@@ -3504,6 +3507,19 @@ ${msgLabels.winnerWaFooter}
         deadline={settings?.deadline ?? null}
       />
 
+      <CostAnalysisDialog
+        open={costAnalysisOpen}
+        onOpenChange={setCostAnalysisOpen}
+        campaignId={campaignId}
+        campaignName={campaignName}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        qtyMap={pieceTotals}
+        currencyCode={currencyCode}
+        agencySuppliers={agencySuppliers}
+      />
+
       {/* Histórico de valores do fornecedor (Admin/Master) */}
       <BudgetSupplierHistorySheet
         open={!!historySupplierId}
@@ -3641,16 +3657,6 @@ ${msgLabels.winnerWaFooter}
         />
       )}
 
-      <CostAnalysisDialog
-        open={costAnalysisOpen}
-        onOpenChange={setCostAnalysisOpen}
-        campaignId={campaignId}
-        pieces={pieces}
-        kits={kits}
-        kitPieces={kitPieces}
-        qtyMap={pieceTotals}
-        currencyCode={currencyCode}
-      />
 
       <div className="rounded-lg border border-border bg-card p-4 space-y-3">
         <div className="flex items-start justify-between gap-3 flex-wrap">
