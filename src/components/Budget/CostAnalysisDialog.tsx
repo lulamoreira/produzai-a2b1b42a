@@ -194,7 +194,7 @@ export default function CostAnalysisDialog({
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {analysis.itemCosts.map((item, i) => (
+                        {analysis.itemCosts.map((item: any, i) => (
                           <TableRow key={item.id} className={cn(i < 5 ? "bg-amber-50/30" : "", "hover:bg-brand-50/50 transition-colors")}>
                             <TableCell className="font-medium">
                               {item.name}
