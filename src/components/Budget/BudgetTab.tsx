@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { format } from "date-fns";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers, AlertCircle, FileSpreadsheet, Package, Wrench, Store, AlertTriangle, RotateCcw, PieChart as PieChartIcon
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers, AlertCircle, FileSpreadsheet, Package, Wrench, Store, AlertTriangle, RotateCcw, PieChart as PieChartIcon, BarChart3
 } from "lucide-react";
 import { useExportRequoteFinal } from "@/hooks/useExportRequoteFinal";
 import RequoteFinalExportDialog from "@/components/RequoteFinalExportDialog";
@@ -80,6 +80,7 @@ import BudgetWinnerDialog from "@/components/Budget/BudgetWinnerDialog";
 import BudgetNegotiationDialog from "@/components/Budget/BudgetNegotiationDialog";
 import SendQtyRequoteDialog from "@/components/Budget/SendQtyRequoteDialog";
 import StartAdjustmentDialog from "@/components/Adjustments/StartAdjustmentDialog";
+import CostAnalysisDialog from "@/components/Budget/CostAnalysisDialog";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 
@@ -321,6 +322,7 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   const [winnerSupplierId, setWinnerSupplierId] = useState<string | null>(null);
   const [negotiationSupplierId, setNegotiationSupplierId] = useState<string | null>(null);
   const [sendNegotiatedOpen, setSendNegotiatedOpen] = useState(false);
+  const [costAnalysisOpen, setCostAnalysisOpen] = useState(false);
 
   // ── Editor de "Links do Vencedor" (configuração padrão usada no e-mail de vencedor) ──
   const settingsAny = settings as any;
@@ -2309,6 +2311,16 @@ ${msgLabels.winnerWaFooter}
                         <RefreshCw className="w-3.5 h-3.5" /> Recotação por Qtd.
                       </Button>
                     )}
+                    {isAdminOrMaster && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 min-h-[44px] md:min-h-0 w-full md:w-auto justify-start md:justify-center border-brand-200 text-brand-700 hover:bg-brand-50"
+                        onClick={() => setCostAnalysisOpen(true)}
+                      >
+                        <BarChart3 className="w-3.5 h-3.5" /> Análise de Custos
+                      </Button>
+                    )}
                   </>
                 }
               />
@@ -3628,6 +3640,17 @@ ${msgLabels.winnerWaFooter}
           defaultCcEmail={settingsAny?.winner_cc_email ?? null}
         />
       )}
+
+      <CostAnalysisDialog
+        open={costAnalysisOpen}
+        onOpenChange={setCostAnalysisOpen}
+        campaignId={campaignId}
+        pieces={pieces}
+        kits={kits}
+        kitPieceTotals={kitPieceTotals}
+        qtyMap={qtyMap}
+        currencyCode={currencyCode}
+      />
 
       <div className="rounded-lg border border-border bg-card p-4 space-y-3">
         <div className="flex items-start justify-between gap-3 flex-wrap">
