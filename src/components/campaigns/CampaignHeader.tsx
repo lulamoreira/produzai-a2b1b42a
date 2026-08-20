@@ -144,7 +144,7 @@ export function CampaignHeader({
           </div>
           {campaign.root_campaign_id && (
             <Link 
-              to={`/agency/${agency?.id}/clients/${client?.id}/campaigns/${campaign.root_campaign_id}`}
+              to={`/agency/${agencyId}/clients/${clientId}/campaigns/${campaign.root_campaign_id}`}
               className="flex items-center gap-1 hover:underline text-stone-500 font-medium"
             >
               Ver campanha original
