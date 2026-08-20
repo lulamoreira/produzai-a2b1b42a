@@ -2437,11 +2437,14 @@ export type Database = {
           name: string
           occurrence_end_date: string | null
           occurrence_start_date: string | null
+          origin_label: string | null
+          parent_campaign_id: string | null
           piece_custom_field_1_label: string | null
           piece_custom_field_2_label: string | null
           piece_custom_field_3_label: string | null
           piece_custom_field_4_label: string | null
           piece_custom_field_5_label: string | null
+          root_campaign_id: string | null
         }
         Insert: {
           access_days_after?: number | null
@@ -2460,11 +2463,14 @@ export type Database = {
           name: string
           occurrence_end_date?: string | null
           occurrence_start_date?: string | null
+          origin_label?: string | null
+          parent_campaign_id?: string | null
           piece_custom_field_1_label?: string | null
           piece_custom_field_2_label?: string | null
           piece_custom_field_3_label?: string | null
           piece_custom_field_4_label?: string | null
           piece_custom_field_5_label?: string | null
+          root_campaign_id?: string | null
         }
         Update: {
           access_days_after?: number | null
@@ -2483,11 +2489,14 @@ export type Database = {
           name?: string
           occurrence_end_date?: string | null
           occurrence_start_date?: string | null
+          origin_label?: string | null
+          parent_campaign_id?: string | null
           piece_custom_field_1_label?: string | null
           piece_custom_field_2_label?: string | null
           piece_custom_field_3_label?: string | null
           piece_custom_field_4_label?: string | null
           piece_custom_field_5_label?: string | null
+          root_campaign_id?: string | null
         }
         Relationships: [
           {
@@ -2495,6 +2504,20 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaigns_parent_campaign_id_fkey"
+            columns: ["parent_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaigns_root_campaign_id_fkey"
+            columns: ["root_campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
             referencedColumns: ["id"]
           },
         ]
