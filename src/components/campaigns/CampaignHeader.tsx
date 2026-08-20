@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Edit3, Database, Layers, PauseCircle, PlayCircle, AlertTriangle, PowerOff, ExternalLink, Info } from "lucide-react";
+import { Edit3, Database, Layers, PauseCircle, PlayCircle, AlertTriangle, PowerOff, ExternalLink, Info, GitBranch, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
