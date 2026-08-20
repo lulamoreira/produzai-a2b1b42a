@@ -4,7 +4,7 @@ import { Edit3, Database, Layers, PauseCircle, PlayCircle, AlertTriangle, PowerO
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import ExportReportDropdown from "@/components/ExportReportDropdown";
 import ExportAllPhotosDialog from "@/components/ExportAllPhotosDialog";
@@ -57,6 +57,7 @@ export function CampaignHeader({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { agencyId, clientId } = useParams();
 
   // Query to check for renegotiations
   const { data: latestRenegotiation } = useQuery({
@@ -101,7 +102,7 @@ export function CampaignHeader({
       setIsRenegotiationAlertOpen(false);
       
       if (data) {
-        navigate(`/agency/${agency?.id}/clients/${client?.id}/campaigns/${data}`);
+        navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${data}`);
       }
     } catch (err: any) {
       toast.error("Erro ao processar solicitação: " + err.message);
@@ -143,7 +144,7 @@ export function CampaignHeader({
           </div>
           {campaign.root_campaign_id && (
             <Link 
-              to={`/agency/${agency?.id}/clients/${client?.id}/campaigns/${campaign.root_campaign_id}`}
+              to={`/agency/${agencyId}/clients/${clientId}/campaigns/${campaign.root_campaign_id}`}
               className="flex items-center gap-1 hover:underline text-stone-500 font-medium"
             >
               Ver campanha original
@@ -160,7 +161,7 @@ export function CampaignHeader({
             <span>Esta campanha possui uma renegociação mais recente em andamento.</span>
           </div>
           <Link 
-            to={`/agency/${agency?.id}/clients/${client?.id}/campaigns/${latestRenegotiation.id}`}
+            to={`/agency/${agencyId}/clients/${clientId}/campaigns/${latestRenegotiation.id}`}
             className="flex items-center gap-1 hover:underline text-amber-700 font-bold"
           >
             Ir para versão mais recente ({latestRenegotiation.origin_label || "Renegociação"})
