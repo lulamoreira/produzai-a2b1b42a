@@ -272,6 +272,50 @@ export function CampaignHeader({
           )}
           
           {isAdminOrMaster && (activeSection === "summary" || !activeSection) && (
+            <>
+              <Button
+                size="sm"
+                variant="secondary"
+                className="gap-1.5 h-8 bg-stone-100 text-stone-700 hover:bg-stone-200 border-stone-200"
+                onClick={() => setIsRenegotiationAlertOpen(true)}
+              >
+                <GitBranch className="w-3.5 h-3.5" /> Solicitar renegociação
+              </Button>
+
+              <AlertDialog open={isRenegotiationAlertOpen} onOpenChange={setIsRenegotiationAlertOpen}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Criar campanha de renegociação?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Isto cria uma NOVA campanha, cópia exata desta (peças, kits, rateio, Loja a Loja e cotação com todos os fornecedores). As duas ficam totalmente independentes — o que você fizer em uma não afeta a outra. A campanha atual continua existindo e ativa.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isCloning}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleCreateRenegotiation();
+                      }}
+                      disabled={isCloning}
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      {isCloning ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Criando...
+                        </>
+                      ) : (
+                        "Criar renegociação"
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </>
+          )}
+
+          {isAdminOrMaster && (activeSection === "summary" || !activeSection) && (
             <ExportAllPhotosDialog
               campaignId={campaign.id}
               campaignName={campaign.name}
