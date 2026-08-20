@@ -46,6 +46,9 @@ export type Campaign = {
   display_order: number;
   cover_images?: Array<{ url: string; timestamp: string }>;
   is_active: boolean;
+  parent_campaign_id: string | null;
+  root_campaign_id: string | null;
+  origin_label: string | null;
   created_at: string;
 };
 
