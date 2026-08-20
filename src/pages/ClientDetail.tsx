@@ -389,8 +389,62 @@ const ClientDetail = () => {
   const { data: favoriteIds } = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
 
+  const displayCampaigns = useMemo(() => {
+    return isAdminOrMaster
+      ? campaigns
+      : campaigns.filter(c => myCampaignIds.includes(c.id));
+  }, [isAdminOrMaster, campaigns, myCampaignIds]);
+
   const searchParams = new URLSearchParams(location.search);
   const favoritesFilterActive = searchParams.get("filter") === "favorites";
+
+  const { data: siblingCampaigns = [] } = useQuery({
+    queryKey: ["campaign-siblings", clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("id, root_campaign_id, parent_campaign_id, created_at, name, color, is_active, origin_label")
+        .eq("client_id", clientId)
+        .not("root_campaign_id", "is", null);
+      if (error) throw error;
+      return data as Campaign[];
+    },
+    enabled: !!clientId,
+  });
+
+  const campaignFamilies = useMemo(() => {
+    const topLevel = displayCampaigns.filter(c => !c.root_campaign_id);
+    const siblings = siblingCampaigns.filter(c => 
+      !displayCampaigns.some(dc => dc.id === c.id) // Avoid duplicates
+    );
+    const allKnown = [...displayCampaigns, ...siblings];
+    
+    return topLevel.map(parent => {
+      const children = allKnown
+        .filter(c => c.root_campaign_id === parent.id)
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      return { parent, children };
+    });
+  }, [displayCampaigns, siblingCampaigns]);
+
+  const visibleFamilies = useMemo(() => {
+    if (!favoritesFilterActive) return campaignFamilies;
+    return campaignFamilies.filter(fam => 
+      favoriteIds?.has(fam.parent.id) || fam.children.some(c => favoriteIds?.has(c.id))
+    );
+  }, [campaignFamilies, favoritesFilterActive, favoriteIds]);
+
+  // Flattened list for KPI count and search checks
+  const allVisibleCampaigns = useMemo(() => {
+    const result: Campaign[] = [];
+    visibleFamilies.forEach(fam => {
+      result.push(fam.parent);
+      fam.children.forEach(child => result.push(child));
+    });
+    return result;
+  }, [visibleFamilies]);
+
 
 
   const { data: siblingCampaigns = [] } = useQuery({
