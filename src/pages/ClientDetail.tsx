@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -253,6 +253,11 @@ function SortableCampaignCard({
             )}>
               {campaign.name}
             </h3>
+            {campaign.origin_label && (
+              <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-medium border-stone-300 text-stone-600 bg-stone-50">
+                {campaign.origin_label}
+              </Badge>
+            )}
             {campaign.is_active === false ? (
               <span className="badge-base bg-red-100 text-red-600 border-red-200 flex-shrink-0 uppercase text-[10px] font-bold">
                 ● {t("common.campaign_inactive") || "Inativa"}
