@@ -6113,6 +6113,10 @@ export type Database = {
         }
         Returns: number
       }
+      clone_campaign_for_renegotiation: {
+        Args: { _source_campaign_id: string }
+        Returns: string
+      }
       compute_budget_qty_requote_changes: {
         Args: { p_campaign_id: string; p_existing: Json }
         Returns: Json
