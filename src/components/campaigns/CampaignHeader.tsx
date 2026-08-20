@@ -161,7 +161,7 @@ export function CampaignHeader({
             <span>Esta campanha possui uma renegociação mais recente em andamento.</span>
           </div>
           <Link 
-            to={`/agency/${agency?.id}/clients/${client?.id}/campaigns/${latestRenegotiation.id}`}
+            to={`/agency/${agencyId}/clients/${clientId}/campaigns/${latestRenegotiation.id}`}
             className="flex items-center gap-1 hover:underline text-amber-700 font-bold"
           >
             Ir para versão mais recente ({latestRenegotiation.origin_label || "Renegociação"})
