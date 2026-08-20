@@ -627,12 +627,14 @@ const ClientDetail = () => {
       ? campaigns
       : campaigns.filter(c => myCampaignIds.includes(c.id));
 
-    const oldIndex = displayCampaignsInternal.findIndex((c) => c.id === active.id);
-    const newIndex = displayCampaignsInternal.findIndex((c) => c.id === over.id);
+    const topLevelCampaigns = displayCampaignsInternal.filter(c => !c.root_campaign_id);
+    const oldIndex = topLevelCampaigns.findIndex((c) => c.id === active.id);
+    const newIndex = topLevelCampaigns.findIndex((c) => c.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
-    const reordered = arrayMove(displayCampaignsInternal, oldIndex, newIndex);
+    const reordered = arrayMove(topLevelCampaigns, oldIndex, newIndex);
     reorderCampaigns.mutate(reordered.map((c, i) => ({ id: c.id, display_order: i })));
   }, [campaigns, isAdminOrMaster, myCampaignIds, reorderCampaigns]);
+
 
   const handleAddCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
