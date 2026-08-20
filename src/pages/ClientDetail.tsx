@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -253,6 +253,11 @@ function SortableCampaignCard({
             )}>
               {campaign.name}
             </h3>
+            {campaign.origin_label && (
+              <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-medium border-stone-300 text-stone-600 bg-stone-50">
+                {campaign.origin_label}
+              </Badge>
+            )}
             {campaign.is_active === false ? (
               <span className="badge-base bg-red-100 text-red-600 border-red-200 flex-shrink-0 uppercase text-[10px] font-bold">
                 ● {t("common.campaign_inactive") || "Inativa"}
@@ -397,9 +402,54 @@ const ClientDetail = () => {
 
   const searchParams = new URLSearchParams(location.search);
   const favoritesFilterActive = searchParams.get("filter") === "favorites";
-  const visibleCampaigns = favoritesFilterActive
-    ? displayCampaigns.filter(c => favoriteIds?.has(c.id))
-    : displayCampaigns;
+
+  const { data: siblingCampaigns = [] } = useQuery({
+    queryKey: ["campaign-siblings", clientId],
+    queryFn: async () => {
+      if (!clientId) return [];
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("id, root_campaign_id, parent_campaign_id, created_at, name, color, is_active, origin_label")
+        .eq("client_id", clientId)
+        .not("root_campaign_id", "is", null);
+      if (error) throw error;
+      return data as Campaign[];
+    },
+    enabled: !!clientId,
+  });
+
+  const campaignFamilies = useMemo(() => {
+    const topLevel = displayCampaigns.filter(c => !c.root_campaign_id);
+    const siblings = siblingCampaigns.filter(c => 
+      !displayCampaigns.some(dc => dc.id === c.id)
+    );
+    const allKnown = [...displayCampaigns, ...siblings];
+    
+    return topLevel.map(parent => {
+      const children = allKnown
+        .filter(c => c.root_campaign_id === parent.id)
+        .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+      return { parent, children };
+    });
+  }, [displayCampaigns, siblingCampaigns]);
+
+  const visibleFamilies = useMemo(() => {
+    if (!favoritesFilterActive) return campaignFamilies;
+    return campaignFamilies.filter(fam => 
+      favoriteIds?.has(fam.parent.id) || fam.children.some(c => favoriteIds?.has(c.id))
+    );
+  }, [campaignFamilies, favoritesFilterActive, favoriteIds]);
+
+  const allVisibleCampaigns = useMemo(() => {
+    const result: Campaign[] = [];
+    visibleFamilies.forEach(fam => {
+      result.push(fam.parent);
+      fam.children.forEach(child => result.push(child));
+    });
+    return result;
+  }, [visibleFamilies]);
+
+
 
 
   const { data: agencyInfo } = useQuery({
@@ -577,12 +627,14 @@ const ClientDetail = () => {
       ? campaigns
       : campaigns.filter(c => myCampaignIds.includes(c.id));
 
-    const oldIndex = displayCampaignsInternal.findIndex((c) => c.id === active.id);
-    const newIndex = displayCampaignsInternal.findIndex((c) => c.id === over.id);
+    const topLevelCampaigns = displayCampaignsInternal.filter(c => !c.root_campaign_id);
+    const oldIndex = topLevelCampaigns.findIndex((c) => c.id === active.id);
+    const newIndex = topLevelCampaigns.findIndex((c) => c.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
-    const reordered = arrayMove(displayCampaignsInternal, oldIndex, newIndex);
+    const reordered = arrayMove(topLevelCampaigns, oldIndex, newIndex);
     reorderCampaigns.mutate(reordered.map((c, i) => ({ id: c.id, display_order: i })));
   }, [campaigns, isAdminOrMaster, myCampaignIds, reorderCampaigns]);
+
 
   const handleAddCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1384,7 +1436,7 @@ const ClientDetail = () => {
             </div>
             <div>
               <p className="text-xl sm:text-2xl font-bold text-foreground">
-                {visibleCampaigns.length}
+                {allVisibleCampaigns.length}
               </p>
               <p className="text-[11px] text-muted-foreground">{t("clientDashboard.campaignCount")}</p>
             </div>
@@ -1505,7 +1557,7 @@ const ClientDetail = () => {
 
             {loadingCampaigns ? (
               <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
-            ) : visibleCampaigns.length === 0 ? (
+            ) : allVisibleCampaigns.length === 0 ? (
               <div className="bg-white rounded-xl border border-stone-200 border-dashed mt-6">
                 <EmptyStateV2
                   icon={Megaphone}
@@ -1520,26 +1572,47 @@ const ClientDetail = () => {
             ) : (
               <div className="mt-6">
                 <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
-                  <SortableContext items={visibleCampaigns.map((c) => c.id)} strategy={rectSortingStrategy}>
-                    <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1">
-                      {visibleCampaigns.map((c) => (
-                        <SortableCampaignCard
-                          key={c.id}
-                          campaign={c}
-                          canDelete={canDeleteCampaigns}
-                          canEdit={canEditCampaigns}
-                          onNavigate={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${c.id}`)}
-                          onDelete={() => deleteCampaign.mutate(c.id)}
-                          onColorChange={(color) => updateCampaign.mutate({ id: c.id, color })}
-                          isFavorited={favoriteIds?.has(c.id) ?? false}
-                          onToggleFavorite={() => toggleFavorite.mutate({ campaignId: c.id, isFavorited: favoriteIds?.has(c.id) ?? false })}
-                          showFavorite={true}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
+                  <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1">
+                    {visibleFamilies.map((fam) => (
+                      <React.Fragment key={fam.parent.id}>
+                        <SortableContext items={[fam.parent.id]} strategy={rectSortingStrategy}>
+                          <SortableCampaignCard
+                            campaign={fam.parent}
+                            canDelete={canDeleteCampaigns}
+                            canEdit={canEditCampaigns}
+                            onNavigate={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${fam.parent.id}`)}
+                            onDelete={() => deleteCampaign.mutate(fam.parent.id)}
+                            onColorChange={(color) => updateCampaign.mutate({ id: fam.parent.id, color })}
+                            isFavorited={favoriteIds?.has(fam.parent.id) ?? false}
+                            onToggleFavorite={() => toggleFavorite.mutate({ campaignId: fam.parent.id, isFavorited: favoriteIds?.has(fam.parent.id) ?? false })}
+                            showFavorite={true}
+                          />
+                        </SortableContext>
+                        
+                        {fam.children.length > 0 && (
+                          <div className="ml-8 sm:ml-12 pl-4 border-l-2 border-stone-200 space-y-3 mt-3 mb-6">
+                            {fam.children.map(child => (
+                              <SortableCampaignCard
+                                key={child.id}
+                                campaign={child}
+                                canDelete={canDeleteCampaigns}
+                                canEdit={canEditCampaigns}
+                                onNavigate={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${child.id}`)}
+                                onDelete={() => deleteCampaign.mutate(child.id)}
+                                onColorChange={(color) => updateCampaign.mutate({ id: child.id, color })}
+                                isFavorited={favoriteIds?.has(child.id) ?? false}
+                                onToggleFavorite={() => toggleFavorite.mutate({ campaignId: child.id, isFavorited: favoriteIds?.has(child.id) ?? false })}
+                                showFavorite={true}
+                              />
+                            ))}
+                          </div>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </div>
                 </DndContext>
               </div>
+
             )}
           </>
         )}
