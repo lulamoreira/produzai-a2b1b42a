@@ -56,10 +56,17 @@ export default function GlobalClients() {
   const { data: campaignCounts = {} } = useQuery({
     queryKey: ["global-campaign-counts"],
     queryFn: async () => {
-      const { data } = await supabase.from("campaigns").select("client_id");
-      const counts: Record<string, number> = {};
+      const { data } = await supabase.from("campaigns").select("client_id, root_campaign_id");
+      const counts: Record<string, { campaigns: number; renegotiations: number }> = {};
       (data || []).forEach((c) => {
-        counts[c.client_id] = (counts[c.client_id] || 0) + 1;
+        if (!counts[c.client_id]) {
+          counts[c.client_id] = { campaigns: 0, renegotiations: 0 };
+        }
+        if (c.root_campaign_id === null) {
+          counts[c.client_id].campaigns++;
+        } else {
+          counts[c.client_id].renegotiations++;
+        }
       });
       return counts;
     },
@@ -137,7 +144,9 @@ export default function GlobalClients() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {agencyClients.map((client) => {
                   const avatarColor = getClientAvatarColor(client.name);
-                  const count = campaignCounts[client.id] || 0;
+                  const stats = campaignCounts[client.id] || { campaigns: 0, renegotiations: 0 };
+                  const campaignsLabel = stats.campaigns === 1 ? t("clients.campaign", "campanha") : t("clients.campaigns", "campanhas");
+                  const renegLabel = stats.renegotiations === 1 ? t("clients.renegotiation", "renegociação") : t("clients.renegotiations", "renegociações");
                   const agencyId = client.agency_id;
                   
                   return (
@@ -165,7 +174,8 @@ export default function GlobalClients() {
 
                       <div className="mt-auto pt-4 border-t border-stone-100 flex items-center justify-between">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-600">
-                          {count} {t("clients.campaigns", "Campanhas")}
+                          {stats.campaigns} {campaignsLabel}
+                          {stats.renegotiations > 0 && ` · ${stats.renegotiations} ${renegLabel}`}
                         </span>
                         <span
                           className="text-xs font-semibold flex items-center gap-1 transition-all group-hover:gap-1.5"
