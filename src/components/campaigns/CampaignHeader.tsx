@@ -80,8 +80,35 @@ export function CampaignHeader({
 
   const isRenegotiation = !!campaign.origin_label;
 
-
   const [isAlertOpen, setIsAlertOpen] = useState(false);
+  const [isRenegotiationAlertOpen, setIsRenegotiationAlertOpen] = useState(false);
+  const [isCloning, setIsCloning] = useState(false);
+
+  const handleCreateRenegotiation = async () => {
+    try {
+      setIsCloning(true);
+      const { data, error } = await supabase.rpc("clone_campaign_for_renegotiation", { 
+        _source_campaign_id: campaign.id 
+      });
+
+      if (error) {
+        toast.error("Erro ao criar renegociação: " + error.message);
+        return;
+      }
+
+      toast.success("Renegociação criada!");
+      queryClient.invalidateQueries({ queryKey: ["campaigns"] });
+      setIsRenegotiationAlertOpen(false);
+      
+      if (data) {
+        navigate(`/agency/${agency?.id}/clients/${client?.id}/campaigns/${data}`);
+      }
+    } catch (err: any) {
+      toast.error("Erro ao processar solicitação: " + err.message);
+    } finally {
+      setIsCloning(false);
+    }
+  };
 
   const handleToggleActive = async () => {
     const newValue = !campaign.is_active;
