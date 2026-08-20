@@ -102,7 +102,7 @@ export function CampaignHeader({
       setIsRenegotiationAlertOpen(false);
       
       if (data) {
-        navigate(`/agency/${agency?.id}/clients/${client?.id}/campaigns/${data}`);
+        navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${data}`);
       }
     } catch (err: any) {
       toast.error("Erro ao processar solicitação: " + err.message);
