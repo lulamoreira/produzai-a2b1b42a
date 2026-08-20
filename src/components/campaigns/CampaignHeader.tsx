@@ -57,6 +57,7 @@ export function CampaignHeader({
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { agencyId, clientId } = useParams();
 
   // Query to check for renegotiations
   const { data: latestRenegotiation } = useQuery({
