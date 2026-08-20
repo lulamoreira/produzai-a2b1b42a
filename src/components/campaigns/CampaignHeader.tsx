@@ -69,6 +69,7 @@ export function CampaignHeader({
         .select("id, name, created_at, origin_label")
         .eq("root_campaign_id", rootId)
         .neq("id", campaign.id)
+        .gt("created_at", campaign.created_at)
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
