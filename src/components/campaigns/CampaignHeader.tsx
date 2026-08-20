@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Edit3, Database, Layers, PauseCircle, PlayCircle, AlertTriangle, PowerOff } from "lucide-react";
+import { Edit3, Database, Layers, PauseCircle, PlayCircle, AlertTriangle, PowerOff, ExternalLink, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useQuery } from "@tanstack/react-query";
+import { Link, useNavigate } from "react-router-dom";
+
 import ExportReportDropdown from "@/components/ExportReportDropdown";
 import ExportAllPhotosDialog from "@/components/ExportAllPhotosDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,6 +56,30 @@ export function CampaignHeader({
 }: CampaignHeaderProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  // Query to check for renegotiations
+  const { data: latestRenegotiation } = useQuery({
+    queryKey: ["campaign-renegotiations", campaign.id],
+    queryFn: async () => {
+      const rootId = campaign.root_campaign_id || campaign.id;
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("id, name, created_at, origin_label")
+        .eq("root_campaign_id", rootId)
+        .neq("id", campaign.id)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!campaign.id,
+  });
+
+  const isRenegotiation = !!campaign.origin_label;
+
 
   const [isAlertOpen, setIsAlertOpen] = useState(false);
 
@@ -81,12 +108,47 @@ export function CampaignHeader({
 
   return (
     <div className="space-y-4 mb-6">
+      {isRenegotiation && (
+        <div className="bg-stone-50 border-b border-stone-200 px-6 py-1.5 text-stone-600 text-[11px] flex items-center justify-between gap-2 rounded-t-lg -mx-4 sm:-mx-6 -mt-6 mb-2 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-2">
+            <Info size={12} className="text-stone-400" />
+            <span>Você está visualizando uma <strong>{campaign.origin_label}</strong>.</span>
+          </div>
+          {campaign.root_campaign_id && (
+            <Link 
+              to={`/agency/${agency?.id}/clients/${client?.id}/campaigns/${campaign.root_campaign_id}`}
+              className="flex items-center gap-1 hover:underline text-stone-500 font-medium"
+            >
+              Ver campanha original
+              <ExternalLink size={10} />
+            </Link>
+          )}
+        </div>
+      )}
+
+      {latestRenegotiation && (
+        <div className="bg-amber-50 border-b border-amber-200 px-6 py-1.5 text-amber-800 text-[11px] flex items-center justify-between gap-2 rounded-t-lg -mx-4 sm:-mx-6 -mt-6 mb-2 animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={12} className="text-amber-500" />
+            <span>Esta campanha possui uma renegociação mais recente em andamento.</span>
+          </div>
+          <Link 
+            to={`/agency/${agency?.id}/clients/${client?.id}/campaigns/${latestRenegotiation.id}`}
+            className="flex items-center gap-1 hover:underline text-amber-700 font-bold"
+          >
+            Ir para versão mais recente ({latestRenegotiation.origin_label || "Renegociação"})
+            <ExternalLink size={10} />
+          </Link>
+        </div>
+      )}
+
       {isInactive && (
-        <div className="bg-amber-50 border-b border-amber-200 px-6 py-2 text-amber-700 text-sm flex items-center gap-2 rounded-t-lg -mx-4 sm:-mx-6 -mt-6 mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
-          <AlertTriangle size={16} className="text-amber-500" />
+        <div className="bg-red-50 border-b border-red-200 px-6 py-2 text-red-700 text-sm flex items-center gap-2 rounded-t-lg -mx-4 sm:-mx-6 -mt-6 mb-6 animate-in fade-in slide-in-from-top-4 duration-300">
+          <AlertTriangle size={16} className="text-red-500" />
           {t("common.campaign_inactiveBanner")}
         </div>
       )}
+
 
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -106,7 +168,13 @@ export function CampaignHeader({
                   <Edit3 className="w-4 h-4" />
                 </Button>
               )}
+              {isRenegotiation && (
+                <Badge variant="outline" className="h-6 border-stone-300 text-stone-600 bg-stone-50 font-medium">
+                  {campaign.origin_label}
+                </Badge>
+              )}
             </h1>
+
             {isInactive && (
               <Badge variant="destructive" className="bg-red-100 text-red-600 border-red-200 hover:bg-red-100 text-[10px] uppercase font-bold px-2 py-0.5 rounded-full">
                 {t("common.campaign_inactive")}
