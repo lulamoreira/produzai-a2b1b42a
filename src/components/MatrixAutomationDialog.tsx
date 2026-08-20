@@ -829,7 +829,7 @@ export default function MatrixAutomationDialog({
 
       setExecutionStatus({ step: 4, totalSteps: 4, label: "Finalizando...", details: "Atualizando interface." });
       toast.success(t("automation.successMessage", { updated: uniqueUpdateStores, kept: keepCount, zeroed: zeroCount }));
-      await onComplete();
+      if (onComplete) await onComplete();
       onOpenChange(false);
     } catch (err: any) {
       toast.error(t("automation.executionError") + ": " + (err.message || ""));

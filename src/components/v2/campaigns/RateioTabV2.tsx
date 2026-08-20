@@ -1358,9 +1358,15 @@ export default function RateioTabV2({
     };
   }, [anchorCell, editingCell, isTabEditable, handleExcelPaste]);
 
-  const handleAutomationComplete = () => {
+  const handleAutomationComplete = async () => {
     setIsAutomationOpen(false);
-    // You might want to refresh data here, but react-query usually handles it via mutations
+    setLocalQtyOverrides({});
+    await Promise.all([
+      queryClient.refetchQueries({ queryKey: ["campaign_store_pieces", campaignId] }),
+      queryClient.refetchQueries({ queryKey: ["campaign_negotiation_store_pieces", campaignId] }),
+      queryClient.refetchQueries({ queryKey: ["negotiation_store_pieces", effectiveNegSupplierId] }),
+      queryClient.refetchQueries({ queryKey: ["adjustment_rateio_qty_map"] }),
+    ]);
   };
 
   const handleExport = async () => {
@@ -2298,6 +2304,9 @@ export default function RateioTabV2({
         adjustmentId={activeAdjustment?.id}
         isNegotiationView={activeTabData?.type === "negotiation"}
         negotiationSupplierId={effectiveNegSupplierId}
+        runBulkWithHistory={async (label, upserts, deletes) => {
+          await applyWithHistory(upserts, deletes, label);
+        }}
       />
       <CopyQuantitiesDialog 
         open={copyQtyOpen}
