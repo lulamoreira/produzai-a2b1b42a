@@ -303,9 +303,9 @@ export default function StoresTab({
     try {
       await upsertStatus.mutateAsync({
         campaignId,
-        store_id: storeId,
+        storeId,
         enabled: !currentEnabled,
-      } as any);
+      });
     } catch (error: any) {
       toast.error("Erro ao atualizar status da loja: " + error.message);
     }
