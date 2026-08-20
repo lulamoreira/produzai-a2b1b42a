@@ -4,7 +4,7 @@ import { Edit3, Database, Layers, PauseCircle, PlayCircle, AlertTriangle, PowerO
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 
 import ExportReportDropdown from "@/components/ExportReportDropdown";
 import ExportAllPhotosDialog from "@/components/ExportAllPhotosDialog";
