@@ -1874,7 +1874,6 @@ const SupplierPortal = () => {
         {/* Grand total */}
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="p-5">
-          return (
             <div className="flex flex-col gap-2 w-full">
               <div className="flex items-center justify-between">
                 <div>
@@ -1894,10 +1893,8 @@ const SupplierPortal = () => {
                 </div>
               )}
             </div>
-          );
-        })()}
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
 
     {/* Submit button */}
     {!isLocked && supplier?.status !== 'declinado' && (() => {
