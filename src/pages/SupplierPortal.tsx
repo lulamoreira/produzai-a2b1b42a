@@ -290,6 +290,7 @@ const SupplierPortal = () => {
           supplier: any;
           prices: any[] | null;
           extra_costs: any[] | null;
+          is_renegotiation: boolean;
         };
         const sup = portalPayload.supplier;
         if (!sup) { setError(portal.errorTitle); setLoading(false); return; }
