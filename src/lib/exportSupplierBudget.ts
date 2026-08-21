@@ -55,6 +55,7 @@ type Params = {
   rows: SupplierExportRow[];
   installation: number | null;
   freight: number | null;
+  discount?: number | null;
   grandTotal: number;
   labels?: ReturnType<typeof getSupplierExcelLabels>;
   /** When true: write Total del Ítem (col G) as formula =E*F and items total as =SUM(G_body). */
