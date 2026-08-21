@@ -1115,6 +1115,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         rows,
         installation,
         freight,
+        discount: ec?.discount_value != null ? Number(ec.discount_value) : 0,
         grandTotal,
         rateio: {
           pieces,
