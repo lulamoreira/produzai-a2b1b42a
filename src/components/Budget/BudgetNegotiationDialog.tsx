@@ -86,8 +86,10 @@ type ExtraCost = {
   supplier_id: string;
   installation_value: number | string | null;
   freight_value: number | string | null;
+  discount_value: number | string | null;
   adjusted_installation_value?: number | string | null;
   adjusted_freight_value?: number | string | null;
+  adjusted_discount_value?: number | string | null;
 };
 
 interface Props {
@@ -192,6 +194,7 @@ export default function BudgetNegotiationDialog({
       extraCostResolver: () => ({
         installation: toNum(supplierEC?.installation_value),
         freight: toNum(supplierEC?.freight_value),
+        discount: toNum(supplierEC?.discount_value),
       }),
     });
   }, [supplier.id, pieces, kitPieceTotals, effectivePieceTotals, supplierPrices, supplierEC, frozenTotal, negotiationPieces.length]);
@@ -209,7 +212,7 @@ export default function BudgetNegotiationDialog({
     return Number.isFinite(n) && n > 0 ? n : 0;
   }, [target]);
 
-  const fixedCosts = toNum(supplierEC?.installation_value) + toNum(supplierEC?.freight_value);
+  const fixedCosts = toNum(supplierEC?.installation_value) + toNum(supplierEC?.freight_value) - toNum(supplierEC?.discount_value);
   const currentPiecesTotal = currentTotal - fixedCosts;
   const piecesOnlyTarget = targetNum - fixedCosts;
   const piecesOnlyInvalid = mode === "auto" && adjustScope === "pieces_only" && targetNum > 0 && piecesOnlyTarget <= 0;
@@ -260,7 +263,7 @@ export default function BudgetNegotiationDialog({
     // Step 2: redistribute leftover cents to get as close to the cap as possible
     // without ever exceeding it. Add 1 cent at a time, prioritizing rows with
     // the largest qty (max impact) to converge fast.
-    const fixed = (adjustedInstallation || 0) + (adjustedFreight || 0);
+    const fixed = (adjustedInstallation || 0) + (adjustedFreight || 0) - toNum(supplierEC?.discount_value);
     const piecesCap = adjustScope === "pieces_only" ? piecesOnlyTarget : (targetNum - fixed);
     if (piecesCap > 0) {
       let piecesSum = rows.reduce((s, r) => s + r.adjusted * r.qty, 0);
@@ -294,7 +297,7 @@ export default function BudgetNegotiationDialog({
 
   const newTotal = useMemo(() => {
     if (mode !== "auto") return targetNum;
-    let t = (adjustedInstallation || 0) + (adjustedFreight || 0);
+    let t = (adjustedInstallation || 0) + (adjustedFreight || 0) - toNum(supplierEC?.discount_value);
     for (const row of autoPreview) {
       t += row.adjusted * row.qty;
     }
@@ -311,7 +314,8 @@ export default function BudgetNegotiationDialog({
   const actualTotal =
     actualPiecesTotal +
     toNum(supplierEC?.installation_value) +
-    toNum(supplierEC?.freight_value);
+    toNum(supplierEC?.freight_value) -
+    toNum(supplierEC?.discount_value);
   const residual = targetNum - actualTotal;
   const applyResidualToFreight =
     adjustScope === "pieces_only" &&

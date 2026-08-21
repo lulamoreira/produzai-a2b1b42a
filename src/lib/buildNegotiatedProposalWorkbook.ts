@@ -47,8 +47,10 @@ export type NegotiatedProposalParams = {
   extraCosts: {
     installation_value: number;
     freight_value: number;
+    discount_value: number;
     adjusted_installation_value: number | null;
     adjusted_freight_value: number | null;
+    adjusted_discount_value: number | null;
   };
   campaignName: string;
   agencyName: string;
@@ -65,6 +67,8 @@ export type NegotiatedProposalTotals = {
   installationNegotiated: number;
   freightOriginal: number;
   freightNegotiated: number;
+  discountOriginal: number;
+  discountNegotiated: number;
   totalOriginal: number;
   totalNegotiated: number;
   savings: number;
@@ -119,6 +123,11 @@ export function computeNegotiatedTotals(
     params.extraCosts.adjusted_freight_value ?? params.extraCosts.freight_value ?? 0,
   );
 
+  const discountOriginal = Number(params.extraCosts.discount_value || 0);
+  const discountNegotiated = Number(
+    params.extraCosts.adjusted_discount_value ?? params.extraCosts.discount_value ?? 0,
+  );
+
   const totalOriginal = computeSupplierTotal({
     supplierId: params.supplier.id,
     pieces: params.pieces,
@@ -128,7 +137,11 @@ export function computeNegotiatedTotals(
       const pr = params.prices.find((p) => p.piece_id === pieceId);
       return Number(pr?.unit_price ?? 0);
     },
-    extraCostResolver: () => ({ installation: installationOriginal, freight: freightOriginal }),
+    extraCostResolver: () => ({ 
+      installation: installationOriginal, 
+      freight: freightOriginal,
+      discount: discountOriginal
+    }),
   });
 
   const totalNegotiated = computeSupplierTotal({
@@ -140,11 +153,15 @@ export function computeNegotiatedTotals(
       const pr = params.prices.find((p) => p.piece_id === pieceId);
       return Number(pr?.adjusted_unit_price ?? pr?.unit_price ?? 0);
     },
-    extraCostResolver: () => ({ installation: installationNegotiated, freight: freightNegotiated }),
+    extraCostResolver: () => ({ 
+      installation: installationNegotiated, 
+      freight: freightNegotiated,
+      discount: discountNegotiated
+    }),
   });
 
-  const itemsOriginal = totalOriginal - installationOriginal - freightOriginal;
-  const itemsNegotiated = totalNegotiated - installationNegotiated - freightNegotiated;
+  const itemsOriginal = totalOriginal - installationOriginal - freightOriginal + discountOriginal;
+  const itemsNegotiated = totalNegotiated - installationNegotiated - freightNegotiated + discountNegotiated;
 
   return {
     itemsOriginal,
@@ -153,6 +170,8 @@ export function computeNegotiatedTotals(
     installationNegotiated,
     freightOriginal,
     freightNegotiated,
+    discountOriginal,
+    discountNegotiated,
     totalOriginal,
     totalNegotiated,
     savings: totalOriginal - totalNegotiated,

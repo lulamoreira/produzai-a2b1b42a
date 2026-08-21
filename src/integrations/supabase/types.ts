@@ -473,27 +473,33 @@ export type Database = {
       }
       budget_extra_costs: {
         Row: {
+          adjusted_discount_value: number | null
           adjusted_freight_value: number | null
           adjusted_installation_value: number | null
           created_at: string | null
+          discount_value: number
           freight_value: number | null
           id: string
           installation_value: number | null
           supplier_id: string
         }
         Insert: {
+          adjusted_discount_value?: number | null
           adjusted_freight_value?: number | null
           adjusted_installation_value?: number | null
           created_at?: string | null
+          discount_value?: number
           freight_value?: number | null
           id?: string
           installation_value?: number | null
           supplier_id: string
         }
         Update: {
+          adjusted_discount_value?: number | null
           adjusted_freight_value?: number | null
           adjusted_installation_value?: number | null
           created_at?: string | null
+          discount_value?: number
           freight_value?: number | null
           id?: string
           installation_value?: number | null

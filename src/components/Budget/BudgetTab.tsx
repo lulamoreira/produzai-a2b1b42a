@@ -15,10 +15,11 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/hooks/useAuth";
 import { snapshotSupplierBudget } from "@/lib/budgetPriceSnapshot";
 import { computeSupplierTotal } from "@/lib/computeSupplierTotal";
-import { ClientStore } from "@/hooks/useMultiClientData";
+import { ClientStore, Campaign } from "@/hooks/useMultiClientData";
 import BudgetSupplierHistorySheet from "@/components/Budget/BudgetSupplierHistorySheet";
 import { getSupplierLabels, getMessageLabels, getLocaleFromCurrency, getSupplierPortalLabels } from "@/utils/currencyLocale";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
+
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -98,6 +99,7 @@ interface BudgetTabProps {
   onNavigateToRateio?: () => void;
   onNavigateToSection?: (section: string) => void;
   activeAdjustment?: { id: string; name: string } | null;
+  campaign?: Campaign | null;
 }
 
 
@@ -215,7 +217,7 @@ function AdminInlineNumberInput({
 }
 
 // ─── Main Component ──────────────────────────────────────
-export default function BudgetTab({ campaignId, clientId, agencyId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio, onNavigateToSection, activeAdjustment }: BudgetTabProps) {
+export default function BudgetTab({ campaignId, clientId, agencyId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio, onNavigateToSection, activeAdjustment, campaign }: BudgetTabProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -509,7 +511,7 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   // garantindo paridade EXATA com supplierNegotiationTotals (mesma
   // lógica de kit_only + expansão de kits + dedup).
   const supplierPartialTotals = useMemo(() => {
-    const result: Record<string, { total: number; installation: number; freight: number; pricedPieces: number; totalPiecesNeeded: number; pct: number }> = {};
+    const result: Record<string, { total: number; installation: number; freight: number; discount: number; pricedPieces: number; totalPiecesNeeded: number; pct: number }> = {};
     const qtyResolver = (pieceId: string) => pieceTotals[pieceId] || 0;
     suppliers.forEach((sup) => {
       const priceResolver = (_sid: string, pid: string) => {
@@ -521,6 +523,7 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
         return {
           installation: Number(ec?.installation_value) || 0,
           freight: Number(ec?.freight_value) || 0,
+          discount: Number(ec?.discount_value) || 0,
         };
       };
       const total = computeSupplierTotal({
@@ -562,11 +565,12 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
       const ec = extraCosts.find((e) => e.supplier_id === sup.id);
       const installation = Number(ec?.installation_value) || 0;
       const freight = Number(ec?.freight_value) || 0;
+      const discount = Number(ec?.discount_value) || 0;
       const pct = totalPiecesNeeded > 0 ? Math.round((pricedPieces / totalPiecesNeeded) * 100) : 0;
-      result[sup.id] = { total, installation, freight, pricedPieces, totalPiecesNeeded, pct };
+      result[sup.id] = { total, installation, freight, discount, pricedPieces, totalPiecesNeeded, pct };
     });
     return result;
-  }, [suppliers, prices, extraCosts, pieceTotals, kitPieceTotals, pieces]);
+  }, [suppliers, prices, extraCosts, pieceTotals, kitPieceTotals, pieces, computeSupplierTotal]);
 
   // ─── Negotiation rateio (per-supplier isolated quantities) ───
   const negotiatingSupplierIds = useMemo(
@@ -627,6 +631,7 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
         return {
           installation: Number(ec?.adjusted_installation_value ?? ec?.installation_value ?? 0),
           freight: Number(ec?.adjusted_freight_value ?? ec?.freight_value ?? 0),
+          discount: Number(ec?.adjusted_discount_value ?? ec?.discount_value ?? 0),
         };
       };
       result[sup.id] = computeSupplierTotal({
@@ -1527,6 +1532,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     });
     total += Number(detailCosts?.installation_value) || 0;
     total += Number(detailCosts?.freight_value) || 0;
+    total -= Number(detailCosts?.discount_value) || 0;
     return total;
   }, [detailSupplier, detailPrices, detailCosts, pieceTotals, kitPieceTotals, pieces]);
 
@@ -1552,7 +1558,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     await queryClient.invalidateQueries({ queryKey: ["budget_prices", campaignId] });
   };
 
-  const upsertAdminExtra = async (field: "installation_value" | "freight_value", value: number | null) => {
+  const upsertAdminExtra = async (field: "installation_value" | "freight_value" | "discount_value", value: number | null) => {
     if (!detailSupplier) return;
     const { error } = await supabase
       .from("budget_extra_costs")
@@ -1879,7 +1885,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                     const ec = extraCosts.find((e) => e.supplier_id === (winnerSupplier as any).id) as any;
                     const installation = Number(ec?.adjusted_installation_value ?? ec?.installation_value ?? 0);
                     const freight = Number(ec?.adjusted_freight_value ?? ec?.freight_value ?? 0);
-                    const production = Math.max(0, winnerNegotiatedTotal - installation - freight);
+                    const discount = Number(ec?.adjusted_discount_value ?? ec?.discount_value ?? 0);
+                    const production = Math.max(0, winnerNegotiatedTotal - installation - freight + discount);
                     return (
                       <div className="mt-3 pt-3 border-t border-border/60 space-y-1">
                         <div className="flex items-center justify-between text-[11px]">
@@ -1894,6 +1901,12 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                           <span className="text-muted-foreground">Instalação</span>
                           <span className="font-medium tabular-nums">{fmtCurrency(installation)}</span>
                         </div>
+                        {discount > 0 && (
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-muted-foreground">Desconto</span>
+                            <span className="font-medium tabular-nums text-red-600">-{fmtCurrency(discount)}</span>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
@@ -1911,7 +1924,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                     const ec = extraCosts.find((e) => e.supplier_id === sup.id) as any;
                     const installation = Number(ec?.installation_value ?? 0);
                     const freight = Number(ec?.freight_value ?? 0);
-                    const production = Math.max(0, bestSupplier.total - installation - freight);
+                    const discount = Number(ec?.discount_value ?? 0);
+                    const production = Math.max(0, bestSupplier.total - installation - freight + discount);
                     return (
                       <div className="mt-3 pt-3 border-t border-border/60 space-y-1">
                         <div className="flex items-center justify-between text-[11px]">
@@ -1926,6 +1940,12 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                           <span className="text-muted-foreground">Instalação</span>
                           <span className="font-medium tabular-nums">{fmtCurrency(installation)}</span>
                         </div>
+                        {discount > 0 && (
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-muted-foreground">Desconto</span>
+                            <span className="font-medium tabular-nums text-red-600">-{fmtCurrency(discount)}</span>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
@@ -2447,12 +2467,18 @@ ${msgLabels.winnerWaFooter}
                         </div>
                         <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-0.5 border-t border-border/40">
                           <span>Produção</span>
-                          <span>{fmtCurrency(displayTotal - (partial.installation + partial.freight))}</span>
+                          <span>{fmtCurrency(displayTotal - (partial.installation + partial.freight - partial.discount))}</span>
                         </div>
                         {(partial.installation > 0 || partial.freight > 0) && (
                           <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                             <span>Embalagem / Frete + Inst.</span>
                             <span>{fmtCurrency(partial.installation + partial.freight)}</span>
+                          </div>
+                        )}
+                        {partial.discount > 0 && (
+                          <div className="flex items-center justify-between text-[10px] text-red-600">
+                            <span>Desconto</span>
+                            <span>-{fmtCurrency(partial.discount)}</span>
                           </div>
                         )}
                       </div>
@@ -2796,6 +2822,7 @@ ${msgLabels.winnerWaFooter}
                       <TableHead className="text-xs text-right">Produção</TableHead>
                       <TableHead className="text-xs text-right">Frete</TableHead>
                       <TableHead className="text-xs text-right">Instalação</TableHead>
+                      <TableHead className="text-xs text-right">Desconto</TableHead>
                       <TableHead className="text-xs text-right">Total Geral</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -2804,7 +2831,7 @@ ${msgLabels.winnerWaFooter}
                       const st = getDisplayStatus(sup, deadlineDate);
                       const p = supplierPartialTotals[sup.id];
                       if (!p) return null;
-                      const piecesTotal = p.total - p.installation - p.freight;
+                      const piecesTotal = p.total - p.installation - p.freight + p.discount;
                       const isBest = bestSupplier?.id === sup.id;
                       return (
                         <TableRow key={sup.id} className={cn(isBest && "bg-emerald-50/60 dark:bg-emerald-900/10")}>
@@ -2835,6 +2862,9 @@ ${msgLabels.winnerWaFooter}
                           </TableCell>
                           <TableCell className="text-right tabular-nums">
                             {p.installation > 0 ? fmtCurrency(p.installation) : "—"}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums text-red-600">
+                            {p.discount > 0 ? `-${fmtCurrency(p.discount)}` : "—"}
                           </TableCell>
                           <TableCell className={cn(
                             "text-right tabular-nums font-semibold",
@@ -3460,13 +3490,44 @@ ${msgLabels.winnerWaFooter}
                   )}
                 </CardContent>
               </Card>
+
+              {/* Discount field - only in renegotiations */}
+              {campaign?.origin_label && (
+                <Card>
+                  <CardContent className="pt-3 pb-3 space-y-1">
+                    <p className="text-xs text-muted-foreground">Desconto (R$)</p>
+                    {isAdminOrMaster ? (
+                      <AdminInlineNumberInput
+                        initial={detailCosts?.discount_value != null ? Number(detailCosts.discount_value) : null}
+                        onSave={(v) => upsertAdminExtra("discount_value", v)}
+                        ariaLabel="Valor de desconto"
+                        className="justify-start"
+                      />
+                    ) : (
+                      <p className="text-sm font-semibold text-red-600">-{fmtCurrency(Number(detailCosts?.discount_value) || 0)}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Grand Total */}
             <Card className="border-primary/30">
-              <CardContent className="pt-3 pb-3 flex items-center justify-between">
-                <p className="text-sm font-semibold">Total Geral</p>
-                <p className="text-xl font-bold text-primary">{fmtCurrency(detailGrandTotal)}</p>
+              <CardContent className="pt-3 pb-3 flex flex-col gap-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Itens + Instalação + Frete</span>
+                  <span>{fmtCurrency(detailGrandTotal + (Number(detailCosts?.discount_value) || 0))}</span>
+                </div>
+                {detailCosts?.discount_value ? (
+                  <div className="flex items-center justify-between text-xs text-red-600">
+                    <span>Desconto</span>
+                    <span>-{fmtCurrency(Number(detailCosts.discount_value))}</span>
+                  </div>
+                ) : null}
+                <div className="flex items-center justify-between pt-1 border-t border-border/60">
+                  <p className="text-sm font-semibold">Total Geral</p>
+                  <p className="text-xl font-bold text-primary">{fmtCurrency(detailGrandTotal)}</p>
+                </div>
               </CardContent>
             </Card>
                 </div>
@@ -4323,13 +4384,16 @@ function RequoteTotalsBreakdown({ requote }: { requote: AdjustmentBudgetRequest 
     prices?: { piece_id: string; new_price: number }[];
     installation?: number;
     freight?: number;
+    discount?: number;
   };
   const extras = (requote.adjusted_extras_jsonb || {}) as {
     installation?: number;
     freight?: number;
+    discount?: number;
   };
   const installation = Number(extras.installation ?? j.installation ?? 0);
   const freight = Number(extras.freight ?? j.freight ?? 0);
+  const discount = Number(extras.discount ?? j.discount ?? 0);
 
   const enabled = !!requote.adjustment_id && !!requote.supplier_id;
 
@@ -4416,7 +4480,7 @@ function RequoteTotalsBreakdown({ requote }: { requote: AdjustmentBudgetRequest 
     }
   }
 
-  const grand = production + installation + freight;
+  const grand = production + installation + freight - discount;
 
   return (
     <div className="space-y-1 text-sm">
@@ -4431,6 +4495,10 @@ function RequoteTotalsBreakdown({ requote }: { requote: AdjustmentBudgetRequest 
       <div className="flex items-center justify-between">
         <span className="text-muted-foreground">Embalagem / Frete</span>
         <span className="font-medium">{fmt(freight)}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground">Desconto</span>
+        <span className="font-medium text-red-600">-{fmt(discount)}</span>
       </div>
       <div className="flex items-center justify-between pt-1 border-t">
         <span className="text-foreground font-semibold">Total geral</span>
@@ -4559,9 +4627,11 @@ function AdjustmentKPIBlock({ campaignId, currencyCode }: { campaignId: string; 
   const extras = (requote.adjusted_extras_jsonb || {}) as {
     installation?: number;
     freight?: number;
+    discount_value?: number;
   };
   const installation = Number(extras.installation ?? j.installation ?? 0);
   const freight = Number(extras.freight ?? j.freight ?? 0);
+  const discount = Number(extras.discount_value ?? 0);
 
   const ready = !!adjPieces && !!baselinePrices && !!storeQty;
 
@@ -4597,7 +4667,7 @@ function AdjustmentKPIBlock({ campaignId, currencyCode }: { campaignId: string; 
     }
   }
 
-  const total = production + installation + freight;
+  const total = production + installation + freight - discount;
   const initialValue = budgetSettings?.budget_amount ? Number(budgetSettings.budget_amount) : total;
   const diff = total - initialValue;
 
@@ -4628,7 +4698,7 @@ function AdjustmentKPIBlock({ campaignId, currencyCode }: { campaignId: string; 
 
       <div className="h-px bg-stone-100 mb-6" />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <div className="space-y-1">
           <p className="text-stone-400 text-[10px] uppercase tracking-wide">
             {t("budgets.production")}
@@ -4651,6 +4721,14 @@ function AdjustmentKPIBlock({ campaignId, currencyCode }: { campaignId: string; 
           </p>
           <p className="text-stone-900 font-semibold text-lg">
             {fmt(installation)}
+          </p>
+        </div>
+        <div className="space-y-1">
+          <p className="text-stone-400 text-[10px] uppercase tracking-wide">
+            Desconto
+          </p>
+          <p className="text-red-500 font-semibold text-lg">
+            {discount > 0 ? `-${fmt(discount)}` : "—"}
           </p>
         </div>
         <div className="bg-[#C2714F] rounded-xl p-4 flex flex-col justify-center">
