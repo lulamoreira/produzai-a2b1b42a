@@ -4627,9 +4627,11 @@ function AdjustmentKPIBlock({ campaignId, currencyCode }: { campaignId: string; 
   const extras = (requote.adjusted_extras_jsonb || {}) as {
     installation?: number;
     freight?: number;
+    discount_value?: number;
   };
   const installation = Number(extras.installation ?? j.installation ?? 0);
   const freight = Number(extras.freight ?? j.freight ?? 0);
+  const discount = Number(extras.discount_value ?? 0);
 
   const ready = !!adjPieces && !!baselinePrices && !!storeQty;
 
@@ -4665,7 +4667,7 @@ function AdjustmentKPIBlock({ campaignId, currencyCode }: { campaignId: string; 
     }
   }
 
-  const total = production + installation + freight;
+  const total = production + installation + freight - discount;
   const initialValue = budgetSettings?.budget_amount ? Number(budgetSettings.budget_amount) : total;
   const diff = total - initialValue;
 
@@ -4696,7 +4698,7 @@ function AdjustmentKPIBlock({ campaignId, currencyCode }: { campaignId: string; 
 
       <div className="h-px bg-stone-100 mb-6" />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <div className="space-y-1">
           <p className="text-stone-400 text-[10px] uppercase tracking-wide">
             {t("budgets.production")}
@@ -4719,6 +4721,14 @@ function AdjustmentKPIBlock({ campaignId, currencyCode }: { campaignId: string; 
           </p>
           <p className="text-stone-900 font-semibold text-lg">
             {fmt(installation)}
+          </p>
+        </div>
+        <div className="space-y-1">
+          <p className="text-stone-400 text-[10px] uppercase tracking-wide">
+            Desconto
+          </p>
+          <p className="text-red-500 font-semibold text-lg">
+            {discount > 0 ? `-${fmt(discount)}` : "—"}
           </p>
         </div>
         <div className="bg-[#C2714F] rounded-xl p-4 flex flex-col justify-center">
