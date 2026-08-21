@@ -261,11 +261,14 @@ export async function buildSupplierBudgetWorkbook(
   // Totals
   ws.addRow([]);
   const itemsTotal = params.rows.reduce((s, r) => s + (r.type === "kit_header" ? 0 : r.lineTotal), 0);
-  const addTotalRow = (label: string, value: number | null | any, emphasized = false) => {
+  const addTotalRow = (label: string, value: number | null | any, emphasized = false, isDiscount = false) => {
     const r = ws.addRow(["", "", "", "", "", label, value as any]);
     r.getCell(6).alignment = { horizontal: "right", vertical: "middle" };
     r.getCell(7).alignment = { horizontal: "right", vertical: "middle" };
     r.getCell(7).numFmt = money;
+    if (isDiscount) {
+      r.getCell(7).font = { color: { argb: "FFFF0000" } };
+    }
     if (emphasized) {
       r.getCell(6).font = { bold: true, color: { argb: WHITE } };
       r.getCell(7).font = { bold: true, color: { argb: WHITE } };
@@ -280,23 +283,25 @@ export async function buildSupplierBudgetWorkbook(
   if (params.useFormulas && bodyRowNumbers.length > 0) {
     const first = bodyRowNumbers[0];
     const last = bodyRowNumbers[bodyRowNumbers.length - 1];
-    // Use SUM over the full range (kit_header rows are blank in col G so they sum to 0)
     const itemsRow = addTotalRow(labels.rowItemsTotal, { formula: `SUM(G${first}:G${last})` } as any);
     const itemsRowNum = itemsRow.number;
     const instRow = addTotalRow(labels.rowInstallation, params.installation ?? 0);
     const instRowNum = instRow.number;
     const frRow = addTotalRow(labels.rowFreight, params.freight ?? 0);
     const frRowNum = frRow.number;
+    const discRow = addTotalRow("Desconto", -(params.discount ?? 0), false, true);
+    const discRowNum = discRow.number;
     addTotalRow(
       labels.rowGrandTotal,
-      { formula: `G${itemsRowNum}+G${instRowNum}+G${frRowNum}` } as any,
+      { formula: `G${itemsRowNum}+G${instRowNum}+G${frRowNum}-G${discRowNum}` } as any,
       true,
     );
   } else {
     addTotalRow(labels.rowItemsTotal, itemsTotal);
     addTotalRow(labels.rowInstallation, params.installation ?? 0);
     addTotalRow(labels.rowFreight, params.freight ?? 0);
-    addTotalRow(labels.rowGrandTotal, params.grandTotal, true);
+    addTotalRow("Desconto", -(params.discount ?? 0), false, true);
+    addTotalRow(labels.rowGrandTotal, (params.grandTotal ?? 0) - (params.discount ?? 0), true);
   }
 
 
