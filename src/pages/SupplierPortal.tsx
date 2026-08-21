@@ -494,6 +494,8 @@ const SupplierPortal = () => {
         // 9) Extra costs (from RPC payload)
         const ecData = portalExtraCosts[0] ?? null;
 
+        setIsRenegotiation(!!portalPayload.is_renegotiation);
+
         setExtraCosts({
           id: ecData?.id,
           supplier_id: sup.id,
@@ -503,8 +505,12 @@ const SupplierPortal = () => {
           freight_value: inNegotiation
             ? ((ecData as any)?.adjusted_freight_value ?? ecData?.freight_value ?? null)
             : (ecData?.freight_value ?? null),
+          discount_value: inNegotiation
+            ? ((ecData as any)?.adjusted_discount_value ?? ecData?.discount_value ?? null)
+            : (ecData?.discount_value ?? null),
           adjusted_installation_value: (ecData as any)?.adjusted_installation_value ?? null,
           adjusted_freight_value: (ecData as any)?.adjusted_freight_value ?? null,
+          adjusted_discount_value: (ecData as any)?.adjusted_discount_value ?? null,
         });
 
 
