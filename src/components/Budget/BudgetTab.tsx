@@ -1115,6 +1115,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         rows,
         installation,
         freight,
+        discount: ec?.discount_value != null ? Number(ec.discount_value) : 0,
         grandTotal,
         rateio: {
           pieces,
@@ -1298,6 +1299,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         rows,
         installation,
         freight,
+        discount: ec?.adjusted_discount_value != null ? Number(ec.adjusted_discount_value) : (ec?.discount_value != null ? Number(ec.discount_value) : 0),
         grandTotal,
         useFormulas: true,
         rateio: {
@@ -1413,8 +1415,9 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       const ec = extraCosts.find((e) => e.supplier_id === sup.id);
       const installation = ec?.installation_value != null ? Number(ec.installation_value) : null;
       const freight = ec?.freight_value != null ? Number(ec.freight_value) : null;
+      const discount = ec?.discount_value != null ? Number(ec.discount_value) : 0;
       const itemsTotal = rows.reduce((s, r) => s + (r.type === "kit_header" ? 0 : r.lineTotal), 0);
-      const grandTotal = itemsTotal + (installation || 0) + (freight || 0);
+      const grandTotal = itemsTotal + (installation || 0) + (freight || 0) - discount;
 
       // ─── Build Rateio (Matriz Lojas x Peças) using the negotiation rateio
       //     for this supplier. Falls back to the original campaign qtyMap when
@@ -1478,6 +1481,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         rows,
         installation,
         freight,
+        discount,
         grandTotal,
         rateio: {
           pieces,

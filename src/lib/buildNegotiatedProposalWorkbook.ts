@@ -329,6 +329,7 @@ export async function buildNegotiatedProposalWorkbook(
   addTotal1("Total dos Itens", totals.itemsNegotiated);
   addTotal1("Instalação", totals.installationNegotiated);
   addTotal1("Embalagem / Frete / Despacho", totals.freightNegotiated);
+  addTotal1("Desconto", -totals.discountNegotiated);
   addTotal1("TOTAL GERAL NEGOCIADO", totals.totalNegotiated, true);
 
   const freightDelta = totals.freightNegotiated - totals.freightOriginal;
@@ -439,6 +440,7 @@ export async function buildNegotiatedProposalWorkbook(
     ["", "Original", "Negociado", "Δ / Economia"],
     ["Instalação", totals.installationOriginal, totals.installationNegotiated, totals.installationOriginal - totals.installationNegotiated],
     ["Embalagem / Frete", totals.freightOriginal, totals.freightNegotiated, totals.freightOriginal - totals.freightNegotiated],
+    ["Desconto", -totals.discountOriginal, -totals.discountNegotiated, totals.discountNegotiated - totals.discountOriginal],
     ["Total Geral", totals.totalOriginal, totals.totalNegotiated, totals.savings],
   ];
   summary.forEach((rowVals, i) => {

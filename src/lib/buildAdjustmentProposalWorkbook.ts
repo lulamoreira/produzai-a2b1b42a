@@ -98,7 +98,7 @@ export interface AdjustmentProposalParams {
 
   /** budget_prices for the winner supplier. piece_id = source piece id. */
   currentPrices: { piece_id: string; unit_price: number; adjusted_unit_price: number | null }[];
-  extraCosts: { installation_value: number; freight_value: number };
+  extraCosts: { installation_value: number; freight_value: number; discount_value?: number };
 
   /** True if `originalStorePieces` came from a negotiation rather than the
    *  original campaign rateio. Drives wording in the Modificações sheet. */
@@ -811,17 +811,23 @@ export async function buildAdjustmentProposalWorkbook(
   instRow.getCell(9).value = Number(params.extraCosts.installation_value || 0);
   const freightRow = addTotalRow("Frete / Despacho", Number(params.extraCosts.freight_value || 0), false, true);
   freightRow.getCell(9).value = Number(params.extraCosts.freight_value || 0);
+  const discountRow = addTotalRow("Desconto", Number(params.extraCosts.discount_value || 0), false, true);
+  discountRow.getCell(7).font = { color: { argb: "FFFF0000" } };
+  discountRow.getCell(9).value = Number(params.extraCosts.discount_value || 0);
+  discountRow.getCell(9).font = { color: { argb: "FFFF0000" } };
+
   const grand =
     totalCurrent +
     Number(params.extraCosts.installation_value || 0) +
-    Number(params.extraCosts.freight_value || 0);
+    Number(params.extraCosts.freight_value || 0) -
+    Number(params.extraCosts.discount_value || 0);
   addTotalRow("TOTAL ATUAL", grand, true);
   addTotalRow(
     "TOTAL REORÇAMENTO",
     null,
     true,
     false,
-    { formula: `I${itemsRow.number}+I${instRow.number}+I${freightRow.number}` },
+    { formula: `I${itemsRow.number}+I${instRow.number}+I${freightRow.number}-I${discountRow.number}` },
   );
 
   ws1.addRow([]);

@@ -146,6 +146,8 @@ export interface RequoteFinalParams {
   previousFreight: number;
   newInstallation: number;
   newFreight: number;
+  previousDiscount: number;
+  newDiscount: number;
 
   generatedAt: Date;
 
@@ -894,8 +896,20 @@ export async function buildRequoteFinalWorkbook(
       styleValue(iVal);
       instRow.height = 22;
 
+      // Linha branca separadora + DESCONTO
+      const discountRowNum = instRowNum + 2;
+      const discountRow = matrixWs.getRow(discountRowNum);
+      matrixWs.mergeCells(discountRowNum, 1, discountRowNum, SUMMARY_LABEL_COL_END);
+      const dLabel = matrixWs.getCell(discountRowNum, 1);
+      dLabel.value = "DESCONTO";
+      styleLabel(dLabel);
+      const dVal = matrixWs.getCell(discountRowNum, SUMMARY_VALUE_COL);
+      dVal.value = -Number(params.newDiscount || 0);
+      styleValue(dVal, { fgArgb: "FFFF0000" });
+      discountRow.height = 22;
+
       // Linha branca separadora + VALOR TOTAL GERAL (destaque, fórmula real)
-      const grandRowNum = instRowNum + 2;
+      const grandRowNum = discountRowNum + 2;
       const grandRow = matrixWs.getRow(grandRowNum);
       matrixWs.mergeCells(grandRowNum, 1, grandRowNum, SUMMARY_LABEL_COL_END);
       const gLabel = matrixWs.getCell(grandRowNum, 1);
@@ -905,7 +919,7 @@ export async function buildRequoteFinalWorkbook(
       gLabel.fill = { type: "pattern", pattern: "solid", fgColor: { argb: DARK } };
       const gVal = matrixWs.getCell(grandRowNum, SUMMARY_VALUE_COL);
       gVal.value = {
-        formula: `${valCol}${prodRowNum}+${valCol}${freightRowNum}+${valCol}${instRowNum}`,
+        formula: `${valCol}${prodRowNum}+${valCol}${freightRowNum}+${valCol}${instRowNum}+${valCol}${discountRowNum}`,
       } as any;
       gVal.numFmt = money;
       gVal.font = { bold: true, color: { argb: WHITE }, size: 14 };

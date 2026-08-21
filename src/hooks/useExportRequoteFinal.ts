@@ -143,10 +143,14 @@ export async function buildRequoteFinalPackage(params: {
   const previousFreight = Number(
     extras.adjusted_freight_value ?? extras.freight_value ?? 0,
   );
+  const previousDiscount = Number(
+    extras.adjusted_discount_value ?? extras.discount_value ?? 0,
+  );
   const newInstallation = Number(
     ex.installation ?? j.installation ?? previousInstallation,
   );
   const newFreight = Number(ex.freight ?? j.freight ?? previousFreight);
+  const newDiscount = Number(ex.discount ?? j.discount ?? previousDiscount);
 
   const previousPriceBySourcePiece: Record<string, number> = {};
   for (const r of (baselineRows.data as any[]) || []) {
@@ -253,8 +257,10 @@ export async function buildRequoteFinalPackage(params: {
     newPriceByAdjPiece,
     previousInstallation,
     previousFreight,
+    previousDiscount,
     newInstallation,
     newFreight,
+    newDiscount,
     generatedAt: new Date(),
     extraHiddenStoreFields,
   });

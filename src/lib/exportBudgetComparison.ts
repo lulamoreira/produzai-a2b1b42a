@@ -170,14 +170,15 @@ export async function exportBudgetComparison(params: ExportBudgetComparisonParam
   const pieceTotals = getPieceTotals(params.pieces, params.stores, params.qtyMap);
   const kitComponentTotals = getKitComponentTotals(params.kits, params.kitPieces, pieceTotals);
   const extraBySupplier = new Map(params.extraCosts.map((cost) => [cost.supplier_id, cost]));
-  const supplierTotals = new Map<string, { items: number; installation: number; freight: number; grand: number }>();
+  const supplierTotals = new Map<string, { items: number; installation: number; freight: number; discount: number; grand: number }>();
 
   params.suppliers.forEach((supplier) => {
     const extra = extraBySupplier.get(supplier.id) as any;
     const items = getSupplierItemTotal(supplier.id, params.prices, params.pieces, pieceTotals, kitComponentTotals);
     const installation = toNumber(extra?.adjusted_installation_value ?? extra?.installation_value);
     const freight = toNumber(extra?.adjusted_freight_value ?? extra?.freight_value);
-    supplierTotals.set(supplier.id, { items, installation, freight, grand: items + installation + freight });
+    const discount = toNumber(extra?.adjusted_discount_value ?? extra?.discount_value);
+    supplierTotals.set(supplier.id, { items, installation, freight, discount, grand: items + installation + freight - discount });
   });
 
   const summary = wb.addWorksheet("Resumo");
@@ -190,10 +191,10 @@ export async function exportBudgetComparison(params: ExportBudgetComparisonParam
   summary.addRow(["Moeda", params.currencyCode, "Budget", params.budgetAmount ?? "", "Fornecedores", params.suppliers.length]);
   summary.getCell("D2").numFmt = money;
   summary.addRow([]);
-  styleHeader(summary.addRow(["Fornecedor", "Contato", "E-mail", "Status", "Itens", "Instalação", "Embalagem / Frete", "Total Geral", "Diferença vs Budget"]));
+  styleHeader(summary.addRow(["Fornecedor", "Contato", "E-mail", "Status", "Itens", "Instalação", "Embalagem / Frete", "Desconto", "Total Geral", "Diferença vs Budget"]));
 
   params.suppliers.forEach((supplier, index) => {
-    const totals = supplierTotals.get(supplier.id) ?? { items: 0, installation: 0, freight: 0, grand: 0 };
+    const totals = supplierTotals.get(supplier.id) ?? { items: 0, installation: 0, freight: 0, discount: 0, grand: 0 };
     const row = summary.addRow([
       supplier.company_name,
       supplier.contact_name || "",
@@ -202,15 +203,16 @@ export async function exportBudgetComparison(params: ExportBudgetComparisonParam
       totals.items,
       totals.installation,
       totals.freight,
+      -totals.discount,
       totals.grand,
       params.budgetAmount == null ? "" : totals.grand - params.budgetAmount,
     ]);
-    [5, 6, 7, 8, 9].forEach((col) => { row.getCell(col).numFmt = money; });
+    [5, 6, 7, 8, 9, 10].forEach((col) => { row.getCell(col).numFmt = money; });
     styleBody(row, index % 2 === 0);
   });
   summary.columns = [
     { width: 28 }, { width: 22 }, { width: 32 }, { width: 18 },
-    { width: 16 }, { width: 16 }, { width: 16 }, { width: 18 }, { width: 20 },
+    { width: 16 }, { width: 16 }, { width: 16 }, { width: 16 }, { width: 18 }, { width: 20 },
   ];
   summary.views = [{ state: "frozen", ySplit: 4 }];
 
