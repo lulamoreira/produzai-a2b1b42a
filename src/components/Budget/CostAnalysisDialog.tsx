@@ -167,7 +167,7 @@ export default function CostAnalysisDialog({
 
     // Section 3: Distribution
     const storeStats = pieces.map(p => {
-      const pStores = storePieces.filter(sp => sp.piece_id === p.id && !sp.disabled_store_ids?.has(sp.store_id));
+      const pStores = storePieces.filter(sp => sp.piece_id === p.id && !disabledStoreIds.has(sp.store_id));
       if (pStores.length === 0) return null;
       const qtys = pStores.map(s => Number(s.quantity));
       const n = qtys.length;
