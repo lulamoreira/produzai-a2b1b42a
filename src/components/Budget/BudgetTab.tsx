@@ -570,7 +570,7 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
       result[sup.id] = { total, installation, freight, discount, pricedPieces, totalPiecesNeeded, pct };
     });
     return result;
-  }, [suppliers, prices, extraCosts, pieceTotals, kitPieceTotals, pieces]);
+  }, [suppliers, prices, extraCosts, pieceTotals, kitPieceTotals, pieces, computeSupplierTotal]);
 
   // ─── Negotiation rateio (per-supplier isolated quantities) ───
   const negotiatingSupplierIds = useMemo(

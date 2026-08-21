@@ -13,6 +13,7 @@ interface BudgetTabProps {
   qtyMap: Record<string, number>;
   stores: any[];
   isAdmin: boolean;
+  campaign?: any;
 }
 
 export default function BudgetTab({ 
@@ -26,7 +27,8 @@ export default function BudgetTab({
   kitPieces = [],
   qtyMap = {},
   stores = [],
-  isAdmin 
+  isAdmin,
+  campaign
 }: BudgetTabProps) {
   return (
     <BudgetTabComponent
@@ -40,6 +42,7 @@ export default function BudgetTab({
       kitPieces={kitPieces}
       qtyMap={qtyMap}
       stores={stores}
+      campaign={campaign}
     />
   );
 }
