@@ -22,8 +22,8 @@ export interface ComputeSupplierTotalParams {
   qtyResolver: (pieceId: string) => number;
   /** Returns the unit price (or adjusted unit price) for supplier x piece. */
   priceResolver: (supplierId: string, pieceId: string) => number;
-  /** Returns installation + freight (or adjusted) for the supplier. */
-  extraCostResolver: (supplierId: string) => { installation: number; freight: number };
+  /** Returns installation + freight + discount (or adjusted) for the supplier. */
+  extraCostResolver: (supplierId: string) => { installation: number; freight: number; discount: number };
 }
 
 export function computeSupplierTotal(params: ComputeSupplierTotalParams): number {
@@ -36,8 +36,8 @@ export function computeSupplierTotal(params: ComputeSupplierTotalParams): number
     extraCostResolver,
   } = params;
 
-  const { installation, freight } = extraCostResolver(supplierId);
-  let total = installation + freight;
+  const { installation, freight, discount } = extraCostResolver(supplierId);
+  let total = installation + freight - discount;
   const counted = new Set<string>();
 
   // Standalone pieces (not kit_only)
@@ -74,6 +74,7 @@ export interface PhaseAwareTotal {
   piecesTotal: number;
   installation: number;
   freight: number;
+  discount: number;
   source: "original" | "negotiated" | "adjustment";
   isLocked: boolean;
 }
@@ -114,7 +115,7 @@ export async function computeCurrentTotal(
         | { piece_id?: string; kit_id?: string; unit_price: number }[]
         | null) ?? [];
       const extras = adjRequest.adjusted_extras_jsonb as
-        | { installation_value?: number; freight_value?: number }
+        | { installation_value?: number; freight_value?: number; discount_value?: number }
         | null;
 
       const { data: adjPieces } = await (supabase as any)
@@ -135,7 +136,8 @@ export async function computeCurrentTotal(
 
       const installation = Number(extras?.installation_value ?? 0);
       const freight = Number(extras?.freight_value ?? 0);
-      const total = piecesTotal + installation + freight;
+      const discount = Number(extras?.discount_value ?? 0);
+      const total = piecesTotal + installation + freight - discount;
 
       return {
         phase: "ajuste",
@@ -143,6 +145,7 @@ export async function computeCurrentTotal(
         piecesTotal,
         installation,
         freight,
+        discount,
         source: "adjustment",
         isLocked: true,
       };
@@ -153,8 +156,9 @@ export async function computeCurrentTotal(
         phase: "ajuste",
         total: Number(winner.negotiation_locked_total),
         piecesTotal: Number(winner.negotiation_locked_total),
-        installation: 0,
-        freight: 0,
+          installation: 0,
+          freight: 0,
+          discount: 0,
         source: "negotiated",
         isLocked: true,
       };
@@ -170,6 +174,7 @@ export async function computeCurrentTotal(
         piecesTotal: Number(winner.negotiation_locked_total),
         installation: 0,
         freight: 0,
+        discount: 0,
         source: "negotiated",
         isLocked: true,
       };
@@ -184,6 +189,7 @@ export async function computeCurrentTotal(
     piecesTotal: originalTotal,
     installation: 0,
     freight: 0,
+    discount: 0,
     source: "original",
     isLocked: currentPhase !== "cotacoes",
   };
