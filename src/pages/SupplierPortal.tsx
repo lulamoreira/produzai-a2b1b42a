@@ -81,8 +81,10 @@ interface ExtraCosts {
   supplier_id: string;
   installation_value: number | null;
   freight_value: number | null;
+  discount_value: number | null;
   adjusted_installation_value?: number | null;
   adjusted_freight_value?: number | null;
+  adjusted_discount_value?: number | null;
 }
 
 // A display row in the matrix
@@ -173,7 +175,16 @@ const SupplierPortal = () => {
   const [prices, setPrices] = useState<Record<string, number | null>>({}); // keyed by piece_id — current editable price (adjusted in negotiation, otherwise unit_price)
   const [originalPrices, setOriginalPrices] = useState<Record<string, number | null>>({}); // shown as reference in negotiation mode
   const [priceInputs, setPriceInputs] = useState<Record<string, string>>({});
-  const [extraCosts, setExtraCosts] = useState<ExtraCosts>({ supplier_id: "", installation_value: null, freight_value: null, adjusted_installation_value: null, adjusted_freight_value: null });
+  const [extraCosts, setExtraCosts] = useState<ExtraCosts>({ 
+    supplier_id: "", 
+    installation_value: null, 
+    freight_value: null, 
+    discount_value: null,
+    adjusted_installation_value: null, 
+    adjusted_freight_value: null,
+    adjusted_discount_value: null 
+  });
+  const [isRenegotiation, setIsRenegotiation] = useState(false);
   const [negotiationTarget, setNegotiationTarget] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [showConfirm1, setShowConfirm1] = useState(false);
@@ -279,6 +290,7 @@ const SupplierPortal = () => {
           supplier: any;
           prices: any[] | null;
           extra_costs: any[] | null;
+          is_renegotiation: boolean;
         };
         const sup = portalPayload.supplier;
         if (!sup) { setError(portal.errorTitle); setLoading(false); return; }
@@ -482,6 +494,8 @@ const SupplierPortal = () => {
         // 9) Extra costs (from RPC payload)
         const ecData = portalExtraCosts[0] ?? null;
 
+        setIsRenegotiation(!!portalPayload.is_renegotiation);
+
         setExtraCosts({
           id: ecData?.id,
           supplier_id: sup.id,
@@ -491,8 +505,12 @@ const SupplierPortal = () => {
           freight_value: inNegotiation
             ? ((ecData as any)?.adjusted_freight_value ?? ecData?.freight_value ?? null)
             : (ecData?.freight_value ?? null),
+          discount_value: inNegotiation
+            ? ((ecData as any)?.adjusted_discount_value ?? ecData?.discount_value ?? null)
+            : (ecData?.discount_value ?? null),
           adjusted_installation_value: (ecData as any)?.adjusted_installation_value ?? null,
           adjusted_freight_value: (ecData as any)?.adjusted_freight_value ?? null,
+          adjusted_discount_value: (ecData as any)?.adjusted_discount_value ?? null,
         });
 
 
@@ -627,7 +645,7 @@ const SupplierPortal = () => {
 
   // ─── Save extra costs on blur ──────────────────────────
   const saveExtraCosts = useCallback(
-    async (field: "installation_value" | "freight_value", value: number | null) => {
+    async (field: "installation_value" | "freight_value" | "discount_value", value: number | null) => {
       if (!supplier) return;
       const isNeg = supplier.negotiation_status === "pending";
       await supabase.rpc("supplier_portal_save_extra_costs" as never, {
@@ -696,7 +714,7 @@ const SupplierPortal = () => {
 
   const grandTotal = useMemo(() => {
     const itemsTotal = Object.values(lineTotals).reduce((s, v) => s + v, 0);
-    return itemsTotal + (extraCosts.installation_value || 0) + (extraCosts.freight_value || 0);
+    return itemsTotal + (extraCosts.installation_value || 0) + (extraCosts.freight_value || 0) - (extraCosts.discount_value || 0);
   }, [lineTotals, extraCosts]);
 
   // ─── Excel download (matches on-screen budget) ─────────
@@ -729,6 +747,7 @@ const SupplierPortal = () => {
         rows: exportRows,
         installation: extraCosts.installation_value,
         freight: extraCosts.freight_value,
+        discount: extraCosts.discount_value,
         grandTotal,
         labels: excelLabels,
         rateio: {
@@ -1807,6 +1826,37 @@ const SupplierPortal = () => {
                   </div>
                 </div>
               </div>
+
+              {isRenegotiation && (
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                      {isES ? "Descuento" : "Desconto"}
+                      <span className="text-[11px] font-normal text-muted-foreground">({currencyCode})</span>
+                    </label>
+                  </div>
+                  <div className="relative group">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder={labels.noPrice}
+                      disabled={isLocked}
+                      className="h-11 bg-background border-border group-hover:border-primary/30 focus:border-primary transition-all pr-12 font-semibold text-destructive"
+                      value={extraCosts.discount_value ?? ""}
+                      onFocus={markFilling}
+                      onChange={(e) => {
+                        const val = e.target.value === "" ? null : parseFloat(e.target.value);
+                        setExtraCosts((ec) => ({ ...ec, discount_value: val }));
+                      }}
+                      onBlur={() => saveExtraCosts("discount_value", extraCosts.discount_value)}
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground opacity-40">
+                      <Trash2 className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {storeData.filter(s => s.tipo_entrega === 'sem_logistica').length > 0 && (
@@ -1824,18 +1874,30 @@ const SupplierPortal = () => {
         {/* Grand total */}
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">{labels.columnTotal} {portal.grandTotalBudget}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{portal.grandTotalFormula}</p>
+            <div className="flex flex-col gap-2 w-full">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{labels.columnTotal} {portal.grandTotalBudget}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{portal.grandTotalFormula}</p>
+                </div>
+                <span className="text-2xl font-bold text-primary">{fmt(grandTotal)}</span>
               </div>
-              <span className="text-2xl font-bold text-primary">{fmt(grandTotal)}</span>
+              
+              {extraCosts.discount_value && extraCosts.discount_value > 0 && (
+                <div className="flex items-center justify-between pt-2 border-t border-primary/10">
+                  <span className="text-xs font-medium text-destructive flex items-center gap-1.5">
+                    <Trash2 className="w-3 h-3" />
+                    {isES ? "Descuento aplicado" : "Desconto aplicado"}
+                  </span>
+                  <span className="text-sm font-semibold text-destructive">-{fmt(extraCosts.discount_value)}</span>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
 
-        {/* Submit button */}
-        {!isLocked && supplier?.status !== 'declinado' && (() => {
+    {/* Submit button */}
+    {!isLocked && supplier?.status !== 'declinado' && (() => {
           const overTarget = inNegotiation && negotiationTarget != null && grandTotal > negotiationTarget;
           const pct = inNegotiation && negotiationTarget && negotiationTarget > 0
             ? Math.round((grandTotal / negotiationTarget) * 100) : 0;
