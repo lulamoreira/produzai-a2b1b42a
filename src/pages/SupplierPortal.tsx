@@ -767,6 +767,7 @@ const SupplierPortal = () => {
           qtyMap: fullQtyMap,
           installation: extraCosts.installation_value,
           freight: extraCosts.freight_value,
+          disabledStoreIds: disabledStoreIds,
         },
       });
     } catch (e) {
