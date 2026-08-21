@@ -1826,6 +1826,37 @@ const SupplierPortal = () => {
                   </div>
                 </div>
               </div>
+
+              {isRenegotiation && (
+                <div className="relative">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                      {isES ? "Descuento" : "Desconto"}
+                      <span className="text-[11px] font-normal text-muted-foreground">({currencyCode})</span>
+                    </label>
+                  </div>
+                  <div className="relative group">
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder={labels.noPrice}
+                      disabled={isLocked}
+                      className="h-11 bg-background border-border group-hover:border-primary/30 focus:border-primary transition-all pr-12 font-semibold text-destructive"
+                      value={extraCosts.discount_value ?? ""}
+                      onFocus={markFilling}
+                      onChange={(e) => {
+                        const val = e.target.value === "" ? null : parseFloat(e.target.value);
+                        setExtraCosts((ec) => ({ ...ec, discount_value: val }));
+                      }}
+                      onBlur={() => saveExtraCosts("discount_value", extraCosts.discount_value)}
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground opacity-40">
+                      <Trash2 className="w-4 h-4" />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {storeData.filter(s => s.tipo_entrega === 'sem_logistica').length > 0 && (
