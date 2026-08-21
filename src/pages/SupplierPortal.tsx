@@ -714,7 +714,7 @@ const SupplierPortal = () => {
 
   const grandTotal = useMemo(() => {
     const itemsTotal = Object.values(lineTotals).reduce((s, v) => s + v, 0);
-    return itemsTotal + (extraCosts.installation_value || 0) + (extraCosts.freight_value || 0);
+    return itemsTotal + (extraCosts.installation_value || 0) + (extraCosts.freight_value || 0) - (extraCosts.discount_value || 0);
   }, [lineTotals, extraCosts]);
 
   // ─── Excel download (matches on-screen budget) ─────────
