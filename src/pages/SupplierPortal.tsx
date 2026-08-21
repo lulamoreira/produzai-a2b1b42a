@@ -185,6 +185,7 @@ const SupplierPortal = () => {
     adjusted_discount_value: null 
   });
   const [isRenegotiation, setIsRenegotiation] = useState(false);
+  const [disabledStoreIds, setDisabledStoreIds] = useState<Set<string>>(new Set());
   const [negotiationTarget, setNegotiationTarget] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [showConfirm1, setShowConfirm1] = useState(false);
@@ -291,6 +292,7 @@ const SupplierPortal = () => {
           prices: any[] | null;
           extra_costs: any[] | null;
           is_renegotiation: boolean;
+          disabled_store_ids?: string[];
         };
         const sup = portalPayload.supplier;
         if (!sup) { setError(portal.errorTitle); setLoading(false); return; }
@@ -443,7 +445,14 @@ const SupplierPortal = () => {
         const spQtyMap: Record<string, number> = {};
         const fullQMap: Record<string, number> = {};
         const storeIds = new Set<string>();
+        
+        const disabledIds = new Set(portalPayload.disabled_store_ids || []);
+        setDisabledStoreIds(disabledIds);
+
         allStorePieces.forEach((sp) => {
+          // PULAR (não somar) as linhas cujo store_id esteja no Set de desabilitados.
+          if (disabledIds.has(sp.store_id)) return;
+
           spQtyMap[sp.piece_id] = (spQtyMap[sp.piece_id] || 0) + (Number(sp.quantity) || 0);
           fullQMap[`${sp.store_id}-${sp.piece_id}`] = Number(sp.quantity) || 0;
           storeIds.add(sp.store_id);
@@ -758,6 +767,7 @@ const SupplierPortal = () => {
           qtyMap: fullQtyMap,
           installation: extraCosts.installation_value,
           freight: extraCosts.freight_value,
+          disabledStoreIds: disabledStoreIds,
         },
       });
     } catch (e) {
@@ -1770,7 +1780,7 @@ const SupplierPortal = () => {
                     <span className="text-[11px] font-normal text-muted-foreground">({currencyCode})</span>
                   </label>
                   <div className="flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
-                    {storeData.filter(s => (s.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length} {portal.summaryInstallations}
+                    {storeData.filter(s => !disabledStoreIds.has(s.id) && (s.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length} {portal.summaryInstallations}
                   </div>
                 </div>
                 <div className="relative group">
@@ -1802,7 +1812,7 @@ const SupplierPortal = () => {
                     <span className="text-[11px] font-normal text-muted-foreground">({currencyCode})</span>
                   </label>
                   <div className="flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                    {storeData.filter(s => (s.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica').length} {portal.summaryFrete}
+                    {storeData.filter(s => !disabledStoreIds.has(s.id) && (s.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica').length} {portal.summaryFrete}
                   </div>
                 </div>
                 <div className="relative group">

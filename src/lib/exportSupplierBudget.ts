@@ -72,6 +72,7 @@ type Params = {
     freight?: number | null;
     locations?: CampaignPieceLocation[];
     subLocations?: CampaignPieceSubLocation[];
+    disabledStoreIds?: Set<string>;
   };
 };
 
@@ -134,7 +135,7 @@ export async function buildSupplierBudgetWorkbook(
   ws.getRow(3).height = 22;
 
   // Add "Only Delivery" warning if any
-  const somenteEntrega = params.rateio?.stores.filter((s: any) => (s.tipo_entrega ?? 'frete_instalacao') !== 'frete_instalacao').length || 0;
+  const somenteEntrega = params.rateio?.stores.filter((s: any) => !params.rateio?.disabledStoreIds?.has(s.id) && (s.tipo_entrega ?? 'frete_instalacao') !== 'frete_instalacao').length || 0;
   if (somenteEntrega > 0) {
     const note = labels.onlyDeliveryNote(somenteEntrega);
     ws.mergeCells("A4:G4");
@@ -315,9 +316,10 @@ export async function buildSupplierBudgetWorkbook(
     // Mirror the Rateio module: only standalone pieces (kit_only=false) become
     // columns in the "Matriz Lojas x Peças" tab. The full piece pool is still
     // passed via `allPieces` so kit components can be resolved.
+    const activeStores = params.rateio.stores.filter(s => !params.rateio?.disabledStoreIds?.has(s.id));
     const visiblePieces = params.rateio.pieces.filter((p: any) => p.kit_only !== true);
     const matrixSheetName = await appendMatrixSheets(wb, {
-      stores: params.rateio.stores,
+      stores: activeStores,
       pieces: visiblePieces,
       qtyMap: params.rateio.qtyMap,
       campaignName: params.campaignName,
@@ -363,7 +365,7 @@ export async function buildSupplierBudgetWorkbook(
       );
       appendMatrixFinancialFooter({
         ws: matrixWs,
-        storeCount: params.rateio.stores.length,
+        storeCount: activeStores.length,
         storeMetaColumnCount: getMatrixStoreFieldsWithHidden().length,
         unitPricesByColumn: columnItems.map((item) => item.unitPrice),
         moneyFormat: money,
@@ -389,7 +391,7 @@ export async function buildSupplierBudgetWorkbook(
           (a.id < b.id ? -1 : 1),
       );
       const metaCols = getMatrixStoreFieldsWithHidden().length;
-      const totalQtyRow = getMatrixTotalQtyRowNum(params.rateio.stores.length);
+      const totalQtyRow = getMatrixTotalQtyRowNum(activeStores.length);
       const idToColLetter = new Map<string, string>();
       matrixColumns.forEach((c, idx) => {
         idToColLetter.set(c.id, getExcelColumnLetter(metaCols + 1 + idx));
