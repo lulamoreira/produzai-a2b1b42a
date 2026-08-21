@@ -81,8 +81,10 @@ interface ExtraCosts {
   supplier_id: string;
   installation_value: number | null;
   freight_value: number | null;
+  discount_value: number | null;
   adjusted_installation_value?: number | null;
   adjusted_freight_value?: number | null;
+  adjusted_discount_value?: number | null;
 }
 
 // A display row in the matrix
