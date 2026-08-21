@@ -95,9 +95,10 @@ export default function CostAnalysisDialog({
     pieces.forEach(p => {
       let price: number | null = null;
       if (winner) {
-        price = Number(prices.find(pr => pr.supplier_id === winner.id && pr.piece_id === p.id)?.unit_price ?? 0);
+        const pr = prices.find(pr => pr.supplier_id === winner.id && pr.piece_id === p.id);
+        price = Number(pr?.adjusted_unit_price ?? pr?.unit_price ?? 0);
       } else if (submitted.length > 0) {
-        const pPrices = prices.filter(pr => pr.piece_id === p.id && submitted.some(s => s.id === pr.supplier_id)).map(pr => Number(pr.unit_price));
+        const pPrices = prices.filter(pr => pr.piece_id === p.id && submitted.some(s => s.id === pr.supplier_id)).map(pr => Number(pr.adjusted_unit_price ?? pr.unit_price));
         price = pPrices.length > 0 ? Math.min(...pPrices) : 0;
       }
       basePrices.set(p.id, price ?? 0);

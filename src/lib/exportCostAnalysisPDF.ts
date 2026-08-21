@@ -59,7 +59,7 @@ export async function exportCostAnalysisPDF(
     head: [["Item", "Qtd Total", "Preço Unit.", "Custo Total", "%"]],
     body: rankingBody,
     foot: [[
-      "Total Acumulado",
+      "Total Líquido (Itens + Extras - Descontos)",
       "",
       "",
       formatCurrencyByCode(analysis.totalCampaign, currencyCode),

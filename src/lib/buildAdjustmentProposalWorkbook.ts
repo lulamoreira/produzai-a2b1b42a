@@ -98,7 +98,7 @@ export interface AdjustmentProposalParams {
 
   /** budget_prices for the winner supplier. piece_id = source piece id. */
   currentPrices: { piece_id: string; unit_price: number; adjusted_unit_price: number | null }[];
-  extraCosts: { installation_value: number; freight_value: number };
+  extraCosts: { installation_value: number; freight_value: number; discount_value?: number };
 
   /** True if `originalStorePieces` came from a negotiation rather than the
    *  original campaign rateio. Drives wording in the Modificações sheet. */

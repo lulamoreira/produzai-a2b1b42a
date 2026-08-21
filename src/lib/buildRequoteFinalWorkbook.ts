@@ -146,6 +146,8 @@ export interface RequoteFinalParams {
   previousFreight: number;
   newInstallation: number;
   newFreight: number;
+  previousDiscount: number;
+  newDiscount: number;
 
   generatedAt: Date;
 
