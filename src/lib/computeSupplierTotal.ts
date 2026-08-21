@@ -38,24 +38,20 @@ export function computeSupplierTotal(params: ComputeSupplierTotalParams): number
 
   const { installation, freight, discount } = extraCostResolver(supplierId);
   let total = installation + freight - discount;
-  const counted = new Set<string>();
 
-  // Standalone pieces (not kit_only)
+  // Peças avulsas (não kit_only)
   for (const piece of pieces) {
     if (piece.kit_only) continue;
     const qty = qtyResolver(piece.id);
     if (qty <= 0) continue;
     total += priceResolver(supplierId, piece.id) * qty;
-    counted.add(piece.id);
   }
 
-  // Kit-expanded pieces — kits are derived (not directly rateated),
-  // so they always use the original kit expansion qty.
+  // Contribuições de kit — somar em TODOS os kits (peça compartilhada por
+  // vários kits deve ser contada para cada kit a que pertence).
   for (const kpItems of Object.values(kitPieceTotals)) {
     for (const kpi of kpItems) {
-      if (counted.has(kpi.pieceId)) continue;
       if (kpi.qty <= 0) continue;
-      counted.add(kpi.pieceId);
       total += priceResolver(supplierId, kpi.pieceId) * kpi.qty;
     }
   }
