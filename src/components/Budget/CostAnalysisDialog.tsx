@@ -46,15 +46,27 @@ export default function CostAnalysisDialog({
     enabled: open,
   });
 
-  const { data: storePieces = [] } = useQuery({
+  const { data: storePiecesData } = useQuery({
     queryKey: ["store_pieces_analysis", campaignId],
     queryFn: async () => {
-      return supabasePaginate((from, to) => 
-        supabase.from("campaign_store_pieces").select("*", { count: "exact" }).eq("campaign_id", campaignId).order("id").range(from, to)
-      );
+      const [pieces, status] = await Promise.all([
+        supabasePaginate((from, to) => 
+          supabase.from("campaign_store_pieces").select("*", { count: "exact" }).eq("campaign_id", campaignId).order("id").range(from, to)
+        ),
+        supabase.from("campaign_store_status").select("store_id").eq("campaign_id", campaignId).eq("enabled", false)
+      ]);
+      
+      const disabledIds = new Set(status.data?.map(s => s.store_id) || []);
+      return { 
+        pieces: pieces as any[], 
+        disabledIds 
+      };
     },
     enabled: open,
   });
+
+  const storePieces = storePiecesData?.pieces || [];
+  const disabledStoreIds = storePiecesData?.disabledIds || new Set<string>();
 
   const analysis = useMemo(() => {
     if (!budgetData) return null;
