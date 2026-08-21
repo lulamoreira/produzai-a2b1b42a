@@ -1882,7 +1882,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                     const ec = extraCosts.find((e) => e.supplier_id === (winnerSupplier as any).id) as any;
                     const installation = Number(ec?.adjusted_installation_value ?? ec?.installation_value ?? 0);
                     const freight = Number(ec?.adjusted_freight_value ?? ec?.freight_value ?? 0);
-                    const production = Math.max(0, winnerNegotiatedTotal - installation - freight);
+                    const discount = Number(ec?.adjusted_discount_value ?? ec?.discount_value ?? 0);
+                    const production = Math.max(0, winnerNegotiatedTotal - installation - freight + discount);
                     return (
                       <div className="mt-3 pt-3 border-t border-border/60 space-y-1">
                         <div className="flex items-center justify-between text-[11px]">
@@ -1897,6 +1898,12 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                           <span className="text-muted-foreground">Instalação</span>
                           <span className="font-medium tabular-nums">{fmtCurrency(installation)}</span>
                         </div>
+                        {discount > 0 && (
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-muted-foreground">Desconto</span>
+                            <span className="font-medium tabular-nums text-red-600">-{fmtCurrency(discount)}</span>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
@@ -1914,7 +1921,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                     const ec = extraCosts.find((e) => e.supplier_id === sup.id) as any;
                     const installation = Number(ec?.installation_value ?? 0);
                     const freight = Number(ec?.freight_value ?? 0);
-                    const production = Math.max(0, bestSupplier.total - installation - freight);
+                    const discount = Number(ec?.discount_value ?? 0);
+                    const production = Math.max(0, bestSupplier.total - installation - freight + discount);
                     return (
                       <div className="mt-3 pt-3 border-t border-border/60 space-y-1">
                         <div className="flex items-center justify-between text-[11px]">
@@ -1929,6 +1937,12 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                           <span className="text-muted-foreground">Instalação</span>
                           <span className="font-medium tabular-nums">{fmtCurrency(installation)}</span>
                         </div>
+                        {discount > 0 && (
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-muted-foreground">Desconto</span>
+                            <span className="font-medium tabular-nums text-red-600">-{fmtCurrency(discount)}</span>
+                          </div>
+                        )}
                       </div>
                     );
                   })()}
@@ -3463,13 +3477,44 @@ ${msgLabels.winnerWaFooter}
                   )}
                 </CardContent>
               </Card>
+
+              {/* Discount field - only in renegotiations */}
+              {campaign?.origin_label && (
+                <Card>
+                  <CardContent className="pt-3 pb-3 space-y-1">
+                    <p className="text-xs text-muted-foreground">Desconto (R$)</p>
+                    {isAdminOrMaster ? (
+                      <AdminInlineNumberInput
+                        initial={detailCosts?.discount_value != null ? Number(detailCosts.discount_value) : null}
+                        onSave={(v) => upsertAdminExtra("discount_value", v)}
+                        ariaLabel="Valor de desconto"
+                        className="justify-start"
+                      />
+                    ) : (
+                      <p className="text-sm font-semibold text-red-600">-{fmtCurrency(Number(detailCosts?.discount_value) || 0)}</p>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
             </div>
 
             {/* Grand Total */}
             <Card className="border-primary/30">
-              <CardContent className="pt-3 pb-3 flex items-center justify-between">
-                <p className="text-sm font-semibold">Total Geral</p>
-                <p className="text-xl font-bold text-primary">{fmtCurrency(detailGrandTotal)}</p>
+              <CardContent className="pt-3 pb-3 flex flex-col gap-2">
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Itens + Instalação + Frete</span>
+                  <span>{fmtCurrency(detailGrandTotal + (Number(detailCosts?.discount_value) || 0))}</span>
+                </div>
+                {detailCosts?.discount_value ? (
+                  <div className="flex items-center justify-between text-xs text-red-600">
+                    <span>Desconto</span>
+                    <span>-{fmtCurrency(Number(detailCosts.discount_value))}</span>
+                  </div>
+                ) : null}
+                <div className="flex items-center justify-between pt-1 border-t border-border/60">
+                  <p className="text-sm font-semibold">Total Geral</p>
+                  <p className="text-xl font-bold text-primary">{fmtCurrency(detailGrandTotal)}</p>
+                </div>
               </CardContent>
             </Card>
                 </div>
