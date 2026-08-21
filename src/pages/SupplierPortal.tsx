@@ -175,7 +175,16 @@ const SupplierPortal = () => {
   const [prices, setPrices] = useState<Record<string, number | null>>({}); // keyed by piece_id — current editable price (adjusted in negotiation, otherwise unit_price)
   const [originalPrices, setOriginalPrices] = useState<Record<string, number | null>>({}); // shown as reference in negotiation mode
   const [priceInputs, setPriceInputs] = useState<Record<string, string>>({});
-  const [extraCosts, setExtraCosts] = useState<ExtraCosts>({ supplier_id: "", installation_value: null, freight_value: null, adjusted_installation_value: null, adjusted_freight_value: null });
+  const [extraCosts, setExtraCosts] = useState<ExtraCosts>({ 
+    supplier_id: "", 
+    installation_value: null, 
+    freight_value: null, 
+    discount_value: null,
+    adjusted_installation_value: null, 
+    adjusted_freight_value: null,
+    adjusted_discount_value: null 
+  });
+  const [isRenegotiation, setIsRenegotiation] = useState(false);
   const [negotiationTarget, setNegotiationTarget] = useState<number | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [showConfirm1, setShowConfirm1] = useState(false);
