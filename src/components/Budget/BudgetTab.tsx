@@ -98,6 +98,7 @@ interface BudgetTabProps {
   onNavigateToRateio?: () => void;
   onNavigateToSection?: (section: string) => void;
   activeAdjustment?: { id: string; name: string } | null;
+  campaign?: Campaign | null;
 }
 
 
@@ -215,7 +216,7 @@ function AdminInlineNumberInput({
 }
 
 // ─── Main Component ──────────────────────────────────────
-export default function BudgetTab({ campaignId, clientId, agencyId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio, onNavigateToSection, activeAdjustment }: BudgetTabProps) {
+export default function BudgetTab({ campaignId, clientId, agencyId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio, onNavigateToSection, activeAdjustment, campaign }: BudgetTabProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
 
@@ -1555,7 +1556,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     await queryClient.invalidateQueries({ queryKey: ["budget_prices", campaignId] });
   };
 
-  const upsertAdminExtra = async (field: "installation_value" | "freight_value", value: number | null) => {
+  const upsertAdminExtra = async (field: "installation_value" | "freight_value" | "discount_value", value: number | null) => {
     if (!detailSupplier) return;
     const { error } = await supabase
       .from("budget_extra_costs")
