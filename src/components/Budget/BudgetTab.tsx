@@ -682,7 +682,11 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
     const result: Record<string, number> = {};
     const hasWinner = !!winnerSupplier;
     suppliers.forEach((sup) => {
-      if (sup.status !== "enviado") return;
+      const pct = supplierPartialTotals[sup.id]?.pct ?? 0;
+      const eligivel = sup.status === "enviado" || pct === 100;
+
+      if (!eligivel || sup.status === "declinado") return;
+
       const locked = (sup as any).winner_locked_total;
       result[sup.id] = hasWinner && locked != null
         ? Number(locked)
