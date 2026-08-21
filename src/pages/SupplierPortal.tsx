@@ -747,6 +747,7 @@ const SupplierPortal = () => {
         rows: exportRows,
         installation: extraCosts.installation_value,
         freight: extraCosts.freight_value,
+        discount: extraCosts.discount_value,
         grandTotal,
         labels: excelLabels,
         rateio: {
