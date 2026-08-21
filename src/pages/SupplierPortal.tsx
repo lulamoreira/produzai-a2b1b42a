@@ -1779,7 +1779,7 @@ const SupplierPortal = () => {
                     <span className="text-[11px] font-normal text-muted-foreground">({currencyCode})</span>
                   </label>
                   <div className="flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
-                    {storeData.filter(s => (s.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length} {portal.summaryInstallations}
+                    {storeData.filter(s => !disabledStoreIds.has(s.id) && (s.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length} {portal.summaryInstallations}
                   </div>
                 </div>
                 <div className="relative group">
