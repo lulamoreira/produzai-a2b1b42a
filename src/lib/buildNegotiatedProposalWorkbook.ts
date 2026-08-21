@@ -166,6 +166,8 @@ export function computeNegotiatedTotals(
     installationNegotiated,
     freightOriginal,
     freightNegotiated,
+    discountOriginal,
+    discountNegotiated,
     totalOriginal,
     totalNegotiated,
     savings: totalOriginal - totalNegotiated,

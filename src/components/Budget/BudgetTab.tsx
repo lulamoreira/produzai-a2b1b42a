@@ -509,7 +509,7 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   // garantindo paridade EXATA com supplierNegotiationTotals (mesma
   // lógica de kit_only + expansão de kits + dedup).
   const supplierPartialTotals = useMemo(() => {
-    const result: Record<string, { total: number; installation: number; freight: number; pricedPieces: number; totalPiecesNeeded: number; pct: number }> = {};
+    const result: Record<string, { total: number; installation: number; freight: number; discount: number; pricedPieces: number; totalPiecesNeeded: number; pct: number }> = {};
     const qtyResolver = (pieceId: string) => pieceTotals[pieceId] || 0;
     suppliers.forEach((sup) => {
       const priceResolver = (_sid: string, pid: string) => {
@@ -521,6 +521,7 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
         return {
           installation: Number(ec?.installation_value) || 0,
           freight: Number(ec?.freight_value) || 0,
+          discount: Number(ec?.discount_value) || 0,
         };
       };
       const total = computeSupplierTotal({
@@ -562,8 +563,9 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
       const ec = extraCosts.find((e) => e.supplier_id === sup.id);
       const installation = Number(ec?.installation_value) || 0;
       const freight = Number(ec?.freight_value) || 0;
+      const discount = Number(ec?.discount_value) || 0;
       const pct = totalPiecesNeeded > 0 ? Math.round((pricedPieces / totalPiecesNeeded) * 100) : 0;
-      result[sup.id] = { total, installation, freight, pricedPieces, totalPiecesNeeded, pct };
+      result[sup.id] = { total, installation, freight, discount, pricedPieces, totalPiecesNeeded, pct };
     });
     return result;
   }, [suppliers, prices, extraCosts, pieceTotals, kitPieceTotals, pieces]);
@@ -627,6 +629,7 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
         return {
           installation: Number(ec?.adjusted_installation_value ?? ec?.installation_value ?? 0),
           freight: Number(ec?.adjusted_freight_value ?? ec?.freight_value ?? 0),
+          discount: Number(ec?.adjusted_discount_value ?? ec?.discount_value ?? 0),
         };
       };
       result[sup.id] = computeSupplierTotal({
@@ -4323,13 +4326,16 @@ function RequoteTotalsBreakdown({ requote }: { requote: AdjustmentBudgetRequest 
     prices?: { piece_id: string; new_price: number }[];
     installation?: number;
     freight?: number;
+    discount?: number;
   };
   const extras = (requote.adjusted_extras_jsonb || {}) as {
     installation?: number;
     freight?: number;
+    discount?: number;
   };
   const installation = Number(extras.installation ?? j.installation ?? 0);
   const freight = Number(extras.freight ?? j.freight ?? 0);
+  const discount = Number(extras.discount ?? j.discount ?? 0);
 
   const enabled = !!requote.adjustment_id && !!requote.supplier_id;
 
@@ -4416,7 +4422,7 @@ function RequoteTotalsBreakdown({ requote }: { requote: AdjustmentBudgetRequest 
     }
   }
 
-  const grand = production + installation + freight;
+  const grand = production + installation + freight - discount;
 
   return (
     <div className="space-y-1 text-sm">
@@ -4431,6 +4437,10 @@ function RequoteTotalsBreakdown({ requote }: { requote: AdjustmentBudgetRequest 
       <div className="flex items-center justify-between">
         <span className="text-muted-foreground">Embalagem / Frete</span>
         <span className="font-medium">{fmt(freight)}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className="text-muted-foreground">Desconto</span>
+        <span className="font-medium text-red-600">-{fmt(discount)}</span>
       </div>
       <div className="flex items-center justify-between pt-1 border-t">
         <span className="text-foreground font-semibold">Total geral</span>

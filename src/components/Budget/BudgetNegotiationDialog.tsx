@@ -86,8 +86,10 @@ type ExtraCost = {
   supplier_id: string;
   installation_value: number | string | null;
   freight_value: number | string | null;
+  discount_value: number | string | null;
   adjusted_installation_value?: number | string | null;
   adjusted_freight_value?: number | string | null;
+  adjusted_discount_value?: number | string | null;
 };
 
 interface Props {
