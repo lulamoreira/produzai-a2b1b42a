@@ -1874,18 +1874,33 @@ const SupplierPortal = () => {
         {/* Grand total */}
         <Card className="border-primary/30 bg-primary/5">
           <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">{labels.columnTotal} {portal.grandTotalBudget}</p>
-                <p className="text-xs text-muted-foreground mt-0.5">{portal.grandTotalFormula}</p>
+          return (
+            <div className="flex flex-col gap-2 w-full">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{labels.columnTotal} {portal.grandTotalBudget}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{portal.grandTotalFormula}</p>
+                </div>
+                <span className="text-2xl font-bold text-primary">{fmt(grandTotal)}</span>
               </div>
-              <span className="text-2xl font-bold text-primary">{fmt(grandTotal)}</span>
+              
+              {extraCosts.discount_value && extraCosts.discount_value > 0 && (
+                <div className="flex items-center justify-between pt-2 border-t border-primary/10">
+                  <span className="text-xs font-medium text-destructive flex items-center gap-1.5">
+                    <Trash2 className="w-3 h-3" />
+                    {isES ? "Descuento aplicado" : "Desconto aplicado"}
+                  </span>
+                  <span className="text-sm font-semibold text-destructive">-{fmt(extraCosts.discount_value)}</span>
+                </div>
+              )}
             </div>
-          </CardContent>
-        </Card>
+          );
+        })()}
+      </CardContent>
+    </Card>
 
-        {/* Submit button */}
-        {!isLocked && supplier?.status !== 'declinado' && (() => {
+    {/* Submit button */}
+    {!isLocked && supplier?.status !== 'declinado' && (() => {
           const overTarget = inNegotiation && negotiationTarget != null && grandTotal > negotiationTarget;
           const pct = inNegotiation && negotiationTarget && negotiationTarget > 0
             ? Math.round((grandTotal / negotiationTarget) * 100) : 0;
