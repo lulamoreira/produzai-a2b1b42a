@@ -192,6 +192,7 @@ export default function BudgetNegotiationDialog({
       extraCostResolver: () => ({
         installation: toNum(supplierEC?.installation_value),
         freight: toNum(supplierEC?.freight_value),
+        discount: toNum(supplierEC?.discount_value),
       }),
     });
   }, [supplier.id, pieces, kitPieceTotals, effectivePieceTotals, supplierPrices, supplierEC, frozenTotal, negotiationPieces.length]);
