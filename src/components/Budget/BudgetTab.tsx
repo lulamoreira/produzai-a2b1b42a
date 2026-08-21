@@ -15,10 +15,11 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useAuth } from "@/hooks/useAuth";
 import { snapshotSupplierBudget } from "@/lib/budgetPriceSnapshot";
 import { computeSupplierTotal } from "@/lib/computeSupplierTotal";
-import { ClientStore } from "@/hooks/useMultiClientData";
+import { ClientStore, Campaign } from "@/hooks/useMultiClientData";
 import BudgetSupplierHistorySheet from "@/components/Budget/BudgetSupplierHistorySheet";
 import { getSupplierLabels, getMessageLabels, getLocaleFromCurrency, getSupplierPortalLabels } from "@/utils/currencyLocale";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from "recharts";
+
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

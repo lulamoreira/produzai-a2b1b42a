@@ -582,6 +582,7 @@ const CampaignDetail = () => {
                 campaignName={campaign.name} agencyName={agency?.name || ""}
                 pieces={pieces} kits={kits} kitPieces={kitPieces} qtyMap={qtyMap}
                 stores={stores} isAdmin={isAdmin}
+                campaign={campaign}
               />
 
             </TabsContent>
