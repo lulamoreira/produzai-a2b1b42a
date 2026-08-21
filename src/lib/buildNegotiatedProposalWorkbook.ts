@@ -153,11 +153,15 @@ export function computeNegotiatedTotals(
       const pr = params.prices.find((p) => p.piece_id === pieceId);
       return Number(pr?.adjusted_unit_price ?? pr?.unit_price ?? 0);
     },
-    extraCostResolver: () => ({ installation: installationNegotiated, freight: freightNegotiated }),
+    extraCostResolver: () => ({ 
+      installation: installationNegotiated, 
+      freight: freightNegotiated,
+      discount: discountNegotiated
+    }),
   });
 
-  const itemsOriginal = totalOriginal - installationOriginal - freightOriginal;
-  const itemsNegotiated = totalNegotiated - installationNegotiated - freightNegotiated;
+  const itemsOriginal = totalOriginal - installationOriginal - freightOriginal + discountOriginal;
+  const itemsNegotiated = totalNegotiated - installationNegotiated - freightNegotiated + discountNegotiated;
 
   return {
     itemsOriginal,
