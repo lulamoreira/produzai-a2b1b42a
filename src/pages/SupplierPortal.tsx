@@ -645,7 +645,7 @@ const SupplierPortal = () => {
 
   // ─── Save extra costs on blur ──────────────────────────
   const saveExtraCosts = useCallback(
-    async (field: "installation_value" | "freight_value", value: number | null) => {
+    async (field: "installation_value" | "freight_value" | "discount_value", value: number | null) => {
       if (!supplier) return;
       const isNeg = supplier.negotiation_status === "pending";
       await supabase.rpc("supplier_portal_save_extra_costs" as never, {
