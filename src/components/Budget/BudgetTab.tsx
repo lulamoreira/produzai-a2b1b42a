@@ -1532,6 +1532,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     });
     total += Number(detailCosts?.installation_value) || 0;
     total += Number(detailCosts?.freight_value) || 0;
+    total -= Number(detailCosts?.discount_value) || 0;
     return total;
   }, [detailSupplier, detailPrices, detailCosts, pieceTotals, kitPieceTotals, pieces]);
 
@@ -2466,12 +2467,18 @@ ${msgLabels.winnerWaFooter}
                         </div>
                         <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-0.5 border-t border-border/40">
                           <span>Produção</span>
-                          <span>{fmtCurrency(displayTotal - (partial.installation + partial.freight))}</span>
+                          <span>{fmtCurrency(displayTotal - (partial.installation + partial.freight - partial.discount))}</span>
                         </div>
                         {(partial.installation > 0 || partial.freight > 0) && (
                           <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                             <span>Embalagem / Frete + Inst.</span>
                             <span>{fmtCurrency(partial.installation + partial.freight)}</span>
+                          </div>
+                        )}
+                        {partial.discount > 0 && (
+                          <div className="flex items-center justify-between text-[10px] text-red-600">
+                            <span>Desconto</span>
+                            <span>-{fmtCurrency(partial.discount)}</span>
                           </div>
                         )}
                       </div>
@@ -2815,6 +2822,7 @@ ${msgLabels.winnerWaFooter}
                       <TableHead className="text-xs text-right">Produção</TableHead>
                       <TableHead className="text-xs text-right">Frete</TableHead>
                       <TableHead className="text-xs text-right">Instalação</TableHead>
+                      <TableHead className="text-xs text-right">Desconto</TableHead>
                       <TableHead className="text-xs text-right">Total Geral</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -2823,7 +2831,7 @@ ${msgLabels.winnerWaFooter}
                       const st = getDisplayStatus(sup, deadlineDate);
                       const p = supplierPartialTotals[sup.id];
                       if (!p) return null;
-                      const piecesTotal = p.total - p.installation - p.freight;
+                      const piecesTotal = p.total - p.installation - p.freight + p.discount;
                       const isBest = bestSupplier?.id === sup.id;
                       return (
                         <TableRow key={sup.id} className={cn(isBest && "bg-emerald-50/60 dark:bg-emerald-900/10")}>
@@ -2854,6 +2862,9 @@ ${msgLabels.winnerWaFooter}
                           </TableCell>
                           <TableCell className="text-right tabular-nums">
                             {p.installation > 0 ? fmtCurrency(p.installation) : "—"}
+                          </TableCell>
+                          <TableCell className="text-right tabular-nums text-red-600">
+                            {p.discount > 0 ? `-${fmtCurrency(p.discount)}` : "—"}
                           </TableCell>
                           <TableCell className={cn(
                             "text-right tabular-nums font-semibold",
