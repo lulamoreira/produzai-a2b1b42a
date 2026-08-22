@@ -134,6 +134,9 @@ function AdvancePhaseButton({
 
   if (!nextPhase || currentPhase === "ajuste") return null;
 
+  // Bloqueia o avanço para fases de negociação e ajuste para novos fluxos
+  if (nextPhase === "negociacao" || nextPhase === "ajuste") return null;
+
   const descriptions: Record<BudgetPhase, string> = {
     rateio: "",
     cotacoes: "O rateio será congelado. Cotações dos fornecedores serão coletadas.",

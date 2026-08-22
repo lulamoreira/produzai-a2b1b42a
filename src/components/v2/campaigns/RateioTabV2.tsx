@@ -1482,7 +1482,8 @@ export default function RateioTabV2({
             </>
           )}
 
-          {currentPhase === "negociacao" && !hasNegotiationRateio && isViewingVigente && (
+          {/* Escondendo botão Criar cópia para negociação para descontinuar fluxo */}
+          {false && currentPhase === "negociacao" && !hasNegotiationRateio && isViewingVigente && (
             <Button
               variant="outline"
               size="sm"
@@ -1579,7 +1580,8 @@ export default function RateioTabV2({
                   );
                 })}
                 <div className="ml-auto flex items-center gap-1 pb-1">
-                  {!activeAdjustment ? (
+                  {/* Escondendo botão Iniciar Ajuste para descontinuar fluxo */}
+                  {false && !activeAdjustment && !hasAnyAdjustment ? (
                     <Button
                       size="sm"
                       variant="outline"
@@ -1603,7 +1605,8 @@ export default function RateioTabV2({
               </div>
 
 
-              {showStartNegotiationCallout && (
+              {/* Escondendo banner de Iniciar Negociação para descontinuar fluxo */}
+              {false && showStartNegotiationCallout && (
                 <div className="mx-6 my-2 border border-amber-200 bg-amber-50/60 rounded-lg p-4 flex flex-col md:flex-row md:items-center gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-semibold text-stone-900">Iniciar Rateio de Negociação</div>
