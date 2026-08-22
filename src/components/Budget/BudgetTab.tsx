@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { format } from "date-fns";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers, AlertCircle, FileSpreadsheet, Package, Wrench, Store, AlertTriangle, RotateCcw, PieChart as PieChartIcon, BarChart3, GitBranch, ExternalLink
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers, AlertCircle, FileSpreadsheet, Package, Wrench, Store, AlertTriangle, RotateCcw, PieChart as PieChartIcon, BarChart3
 } from "lucide-react";
 import { useExportRequoteFinal } from "@/hooks/useExportRequoteFinal";
 import RequoteFinalExportDialog from "@/components/RequoteFinalExportDialog";
@@ -335,7 +335,6 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   const [savingWinnerLinks, setSavingWinnerLinks] = useState(false);
 
   // Collapsible sections (start collapsed)
-  const [waferRenegotiationExpanded, setWaferRenegotiationExpanded] = useState(false);
   const [winnerLinksExpanded, setWinnerLinksExpanded] = useState(false);
   const [timelineExpanded, setTimelineExpanded] = useState(false);
 
@@ -1638,110 +1637,6 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       />
 
       <AdjustmentKPIBlock campaignId={campaignId} currencyCode={currencyCode} />
-
-      {campaign?.origin_label && (
-        <Collapsible
-          open={waferRenegotiationExpanded}
-          onOpenChange={setWaferRenegotiationExpanded}
-          className="rounded-lg border border-stone-200 bg-stone-50/50 shadow-sm"
-        >
-          <CollapsibleTrigger asChild>
-            <div className="flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-stone-100/50 transition-colors">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-stone-100 rounded-md">
-                  <GitBranch className="w-4 h-4 text-stone-600" />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-stone-900">Wafer de Renegociação</h3>
-                  <p className="text-[11px] text-stone-500">Dados vinculados da campanha original</p>
-                </div>
-              </div>
-              {waferRenegotiationExpanded ? <ChevronUp className="w-4 h-4 text-stone-400" /> : <ChevronDown className="w-4 h-4 text-stone-400" />}
-            </div>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="px-4 pb-4 pt-2 space-y-4 border-t border-stone-100">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-stone-700">Link do vencedor</Label>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Input
-                          value={settingsAny?.winner_book_url || ""}
-                          readOnly
-                          placeholder="Nenhum link configurado"
-                          className="h-8 text-xs bg-white pr-8 border-stone-200"
-                        />
-                        <Link2 className="absolute right-2.5 top-2 w-3 h-3 text-stone-400" />
-                      </div>
-                      {settingsAny?.winner_book_url && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs px-2 border-stone-200 hover:bg-white"
-                          onClick={() => window.open(settingsAny.winner_book_url, "_blank")}
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-stone-700">Mockup vencedor</Label>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Input
-                          value={settingsAny?.winner_mockup_url || ""}
-                          readOnly
-                          placeholder="Nenhum link configurado"
-                          className="h-8 text-xs bg-white pr-8 border-stone-200"
-                        />
-                        <Layers className="absolute right-2.5 top-2 w-3 h-3 text-stone-400" />
-                      </div>
-                      {settingsAny?.winner_mockup_url && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="h-8 text-xs px-2 border-stone-200 hover:bg-white"
-                          onClick={() => window.open(settingsAny.winner_mockup_url, "_blank")}
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-stone-700">Cronograma da campanha original</Label>
-                  <div className="rounded-md border border-stone-200 bg-white min-h-[84px] p-2 overflow-y-auto max-h-40">
-                    {timelineEntries.length === 0 ? (
-                      <p className="text-[11px] text-stone-400 italic text-center py-4">Nenhum cronograma disponível.</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {[...timelineEntries]
-                          .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
-                          .map((entry) => (
-                            <div key={entry.id} className="flex items-start gap-2 text-[11px]">
-                              <div className="shrink-0 p-1 bg-stone-50 rounded border border-stone-100 flex items-center gap-1">
-                                <CalendarIcon className="w-2.5 h-2.5 text-stone-400" />
-                                <span className="font-medium text-stone-600">
-                                  {format(new Date(entry.entry_date + "T00:00:00"), "dd/MM/yyyy")}
-                                </span>
-                              </div>
-                              <span className="text-stone-600 pt-1">{entry.description}</span>
-                            </div>
-                          ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      )}
 
       {/* ═══ KPI CARDS ═══ */}
       <div className={cn("grid grid-cols-1 gap-4 items-stretch", winnerSupplier ? "md:grid-cols-4" : "md:grid-cols-3")}>
