@@ -99,7 +99,7 @@ export function PhaseStepper({
                   )}
                 </div>
 
-                {index < PHASE_ORDER.length - 1 && (
+                {index < maxVisibleIndex && (
                   <ChevronRight className="w-4 h-4 text-muted-foreground mt-2.5 md:mt-3 shrink-0" />
                 )}
               </div>
