@@ -1482,7 +1482,8 @@ export default function RateioTabV2({
             </>
           )}
 
-          {currentPhase === "negociacao" && !hasNegotiationRateio && isViewingVigente && (
+          {/* Escondendo botão Criar cópia para negociação para descontinuar fluxo */}
+          {false && currentPhase === "negociacao" && !hasNegotiationRateio && isViewingVigente && (
             <Button
               variant="outline"
               size="sm"
