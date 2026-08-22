@@ -26,12 +26,14 @@ export function PhaseStepper({
 }: PhaseStepperProps) {
   const { t } = useTranslation();
   const currentIndex = PHASE_ORDER.indexOf(currentPhase);
+  const maxVisibleIndex = Math.max(currentIndex, PHASE_ORDER.indexOf("cotacoes"));
 
   return (
     <div className="rounded-lg border border-border bg-card p-3 md:p-4 space-y-3 md:space-y-4">
       <div className="relative">
         <div className="flex items-start gap-2 overflow-x-auto pb-1 pr-6 md:pr-0 scrollbar-thin">
           {PHASE_ORDER.map((phase, index) => {
+            if (index > maxVisibleIndex) return null;
             const ajusteApprovedHere = phase === "ajuste" && isAdjustmentApproved && index === currentIndex;
             const isCompleted = index < currentIndex || ajusteApprovedHere;
             const isActive = index === currentIndex && !ajusteApprovedHere;
