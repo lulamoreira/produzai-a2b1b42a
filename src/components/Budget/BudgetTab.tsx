@@ -483,6 +483,17 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
 
   // Agency suppliers picker (multi-select)
   const { data: agencySuppliers = [] } = useAgencySuppliers(agencyId);
+
+  const supplierDisplay = (companyName?: string | null): string => {
+    const cn = (companyName ?? "").trim();
+    if (!cn) return "";
+    const found = agencySuppliers.find(
+      (as) => (as.company_name ?? "").trim().toLowerCase() === cn.toLowerCase()
+    );
+    if (found && found.trade_name && found.trade_name.trim()) return found.trade_name.trim();
+    return cn.split(/\s+/)[0].toUpperCase();
+  };
+
   const [agencySupplierSearch, setAgencySupplierSearch] = useState("");
   const [selectedAgencySupplierIds, setSelectedAgencySupplierIds] = useState<string[]>([]);
   const [supplierFormOpen, setSupplierFormOpen] = useState(false);
