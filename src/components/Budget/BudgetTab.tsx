@@ -822,17 +822,40 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   // SourceBadge component for showing where the displayed total comes from
   const SourceBadge = () => {
     if (!currentTotal) return null;
-    const labels: Record<string, { label: string; color: string }> = {
-      original: { label: "Cotação original", color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300" },
-      negotiated: { label: "Negociado", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
-      adjustment: { label: "Ajuste ativo", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+    const labels: Record<string, { label: string; color: string; tooltip?: string }> = {
+      original: {
+        label: "Cotação original",
+        color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
+        tooltip: "Valor da cotação original do fornecedor, antes de qualquer negociação ou ajuste.",
+      },
+      negotiated: {
+        label: "Negociado",
+        color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+        tooltip: "Valor resultante de uma negociação com o fornecedor.",
+      },
+      adjustment: {
+        label: "Ajuste ativo",
+        color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+        tooltip: "Valor alterado por um ajuste de mockup ativo.",
+      },
     };
     const meta = labels[currentTotal.source];
     if (!meta) return null;
-    return (
+    const badge = (
       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${meta.color}`}>
         {meta.label}
       </span>
+    );
+    if (!meta.tooltip) return badge;
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>{badge}</TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs text-xs">
+            {meta.tooltip}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   };
 
