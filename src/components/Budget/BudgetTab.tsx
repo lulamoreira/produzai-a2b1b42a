@@ -2711,7 +2711,7 @@ ${msgLabels.winnerWaFooter}
                     )}
 
                     {/* Winner toggle: admin/master, visible only after submission */}
-                    {isAdminOrMaster && sup.submitted_at && (
+                    {isAdminOrMaster && (sup.submitted_at || sup.status === "enviado") && (
                       <div className="flex items-center justify-between gap-2 pt-2 mt-1 border-t border-border/60">
                         <div className="flex items-center gap-1.5 min-w-0">
                           <Trophy className={cn("w-3.5 h-3.5 shrink-0", (sup as any).is_winner ? "text-amber-500" : "text-muted-foreground")} />
