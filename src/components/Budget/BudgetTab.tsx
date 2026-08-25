@@ -1642,20 +1642,43 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         const semLogistica = stores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
         
         return (
-          <div className="flex flex-wrap gap-3">
-            <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-full border border-border shadow-sm">
-              <Package className="w-4 h-4 text-primary" />
-              <span className="text-xs font-semibold">{comFrete} {pLabels.summaryFrete}</span>
+          <TooltipProvider>
+            <div className="flex flex-wrap gap-3">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-full border border-border shadow-sm cursor-default">
+                    <Package className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-semibold">{comFrete} {pLabels.summaryFrete}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Lojas que recebem material com frete
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100 shadow-sm cursor-default">
+                    <Wrench className="w-4 h-4 text-emerald-600" />
+                    <span className="text-xs font-semibold text-emerald-700">{comInstalacao} {pLabels.summaryInstallations}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Lojas que recebem instalação
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100 shadow-sm cursor-default">
+                    <Store className="w-4 h-4 text-gray-600" />
+                    <span className="text-xs font-semibold text-gray-700">{semLogistica} {pLabels.summaryNoLogistics}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Lojas sem frete e sem instalação
+                </TooltipContent>
+              </Tooltip>
             </div>
-            <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100 shadow-sm">
-              <Wrench className="w-4 h-4 text-emerald-600" />
-              <span className="text-xs font-semibold text-emerald-700">{comInstalacao} {pLabels.summaryInstallations}</span>
-            </div>
-            <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">
-              <Store className="w-4 h-4 text-gray-600" />
-              <span className="text-xs font-semibold text-gray-700">{semLogistica} {pLabels.summaryNoLogistics}</span>
-            </div>
-          </div>
+          </TooltipProvider>
         );
       })()}
 
