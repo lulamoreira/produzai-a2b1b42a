@@ -2034,11 +2034,14 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                 </>
               ) : bestSupplier ? (
                 <>
-                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(bestSupplier.total)}</p>
+                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="text-[11px] font-medium text-muted-foreground align-baseline">{currencyCode} </span>
+                    <span className="whitespace-nowrap">{fmtCurrency(bestSupplier.total).replace(currencyCode + " ", "")}</span>
+                  </p>
                   {currencyCode !== "BRL" && (
                     <p className="text-[11px] text-muted-foreground mt-0.5">Ref. {fmtBRL(bestSupplier.total * exchangeRate)}</p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-1">{bestSupplier.name}</p>
+                  <p className="text-xs text-muted-foreground mt-1" title={bestSupplier.name}>{supplierDisplay(bestSupplier.name)}</p>
                   {(() => {
                     const sup = (suppliers as any[]).find((s) => s.company_name === bestSupplier.name);
                     if (!sup) return null;
