@@ -1848,14 +1848,24 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                       onClick={() => { setBudgetDraft(budgetAmount?.toString() ?? ""); setEditingBudget(true); }}
                       className="text-2xl font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2"
                     >
-                      {budgetAmount != null ? fmtCurrency(budgetAmount) : "Definir"}
+                      {budgetAmount != null ? (
+                        <>
+                          <span className="text-[11px] font-medium text-muted-foreground align-baseline">{currencyCode} </span>
+                          <span className="whitespace-nowrap">{fmtCurrency(budgetAmount).replace(currencyCode + " ", "")}</span>
+                        </>
+                      ) : "Definir"}
                       <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
                     </button>
                   );
                 }
                 return (
                   <span className="text-2xl font-bold text-foreground flex items-center gap-2">
-                    {budgetAmount != null ? fmtCurrency(budgetAmount) : "—"}
+                    {budgetAmount != null ? (
+                      <>
+                        <span className="text-[11px] font-medium text-muted-foreground align-baseline">{currencyCode} </span>
+                        <span className="whitespace-nowrap">{fmtCurrency(budgetAmount).replace(currencyCode + " ", "")}</span>
+                      </>
+                    ) : "—"}
                     <Lock className="w-3.5 h-3.5 text-muted-foreground" />
                   </span>
                 );
