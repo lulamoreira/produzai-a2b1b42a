@@ -151,6 +151,18 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
   const pieceImages = allImages.slice(0, pieces.length);
   const kitImages = allImages.slice(pieces.length);
 
+  // Sequência unificada (peças + kits) ordenada por código.
+  // Garante que índice, slides e numeração sigam SEMPRE a ordem global dos códigos
+  // (ex.: kit código 1 aparece antes da peça código 2).
+  type SeqEntry =
+    | { kind: "piece"; item: (typeof pieces)[number]; imgIdx: number; code: string }
+    | { kind: "kit"; item: (typeof kits)[number]; imgIdx: number; code: string };
+
+  const sequence: SeqEntry[] = [
+    ...pieces.map((p, i): SeqEntry => ({ kind: "piece", item: p, imgIdx: i, code: String(p.code || "") })),
+    ...kits.map((k, i): SeqEntry => ({ kind: "kit", item: k, imgIdx: i, code: String(k.code || "") })),
+  ].sort((a, b) => a.code.localeCompare(b.code, undefined, { numeric: true, sensitivity: "base" }));
+
   // 1. CAPA
   const slideCapa = pptx.addSlide();
   slideCapa.background = { color: COLORS.header };
@@ -192,10 +204,14 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
   slideIndice.addText("ÍNDICE DE PEÇAS & KITS", { x: 0.4, y: 0, w: 6, h: 0.7, valign: "middle", color: COLORS.white, fontSize: 12, fontFace: "Calibri", bold: true });
   slideIndice.addText(campaign.name, { x: 7.0, y: 0, w: 5.93, h: 0.7, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri" });
 
-  const combinedItems = [
-    ...pieces.map(p => ({ name: p.name, code: p.code, sub: pieceToKits.get(p.name)?.[0] ? `(${pieceToKits.get(p.name)?.[0]})` : "" })),
-    ...kits.map(k => ({ name: k.name, code: k.code, sub: "(KIT)" }))
-  ];
+  // Índice segue a mesma sequência global ordenada por código (peças e kits intercalados)
+  const combinedItems = sequence.map((e) => ({
+    name: e.item.name,
+    code: e.item.code,
+    sub: e.kind === "kit"
+      ? "(KIT)"
+      : (pieceToKits.get(e.item.name)?.[0] ? `(${pieceToKits.get(e.item.name)?.[0]})` : ""),
+  }));
 
   const half = Math.ceil(combinedItems.length / 2);
   const col1 = combinedItems.slice(0, half);
@@ -220,12 +236,11 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
   slideIndice.addText(`Página 2 / ${totalSlides}`, { x: 10.0, y: 7.2, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri" });
   tick("Indice gerado");
 
-  // 3. SLIDES DE PEÇA
-  for (let idx = 0; idx < pieces.length; idx++) {
-    const piece = pieces[idx];
+  // 3-4. SLIDES DE PEÇAS E KITS — renderizados na sequência global por código
+  const renderPieceSlide = async (piece: (typeof pieces)[number], b64: string | null, seqIdx: number) => {
     const slide = pptx.addSlide();
     slide.background = { color: COLORS.bg };
-    const pageNum = idx + 3;
+    const pageNum = seqIdx + 3;
 
     slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.33, h: 0.65, fill: { color: COLORS.header } });
     slide.addText([
@@ -237,10 +252,9 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     if (kitNames && kitNames.length > 0) {
       slide.addText(`COMPÕE O KIT: ${kitNames.join(", ").toUpperCase()}`, { x: 6.0, y: 0, w: 5.8, h: 0.65, color: COLORS.accent, fontSize: 9, fontFace: "Calibri", bold: true, align: "right", valign: "middle" });
     }
-    slide.addText(String(idx + 1).padStart(2, '0'), { x: 12.0, y: 0, w: 1.0, h: 0.65, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri" });
+    slide.addText(String(seqIdx + 1).padStart(2, '0'), { x: 12.0, y: 0, w: 1.0, h: 0.65, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri" });
 
     slide.addShape(pptx.ShapeType.rect, { x: 0.35, y: 0.85, w: 6.2, h: 5.5, fill: { color: COLORS.cardBg }, line: { color: COLORS.border, width: 0.5 } });
-    const b64 = pieceImages[idx];
     if (b64) {
       const size = await getImageSize(b64);
       const maxWidth = 6.0;
@@ -300,26 +314,22 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     slide.addShape(pptx.ShapeType.line, { x: 0.4, y: 7.1, w: 12.53, line: { color: COLORS.border, width: 0.5 } });
     slide.addText(campaign.name, { x: 0.4, y: 7.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
     slide.addText(`Página ${pageNum} / ${totalSlides}`, { x: 10.0, y: 7.2, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri" });
-    tick(`Peca ${idx + 1}/${pieces.length}: ${piece.name}`);
-    if (idx % 3 === 0) await new Promise(r => setTimeout(r, 0));
-  }
+    tick(`Peca ${seqIdx + 1}/${sequence.length}: ${piece.name}`);
+  };
 
-  // 4. SLIDES DE KIT
-  for (let idx = 0; idx < kits.length; idx++) {
-    const kit = kits[idx];
+  const renderKitSlide = async (kit: (typeof kits)[number], b64: string | null, seqIdx: number) => {
     const slide = pptx.addSlide();
     slide.background = { color: COLORS.bg };
-    const pageNum = pieces.length + idx + 3;
+    const pageNum = seqIdx + 3;
 
     slide.addShape(pptx.ShapeType.rect, { x: 0, y: 0, w: 13.33, h: 0.65, fill: { color: COLORS.header } });
     slide.addText([
       { text: "KIT\n", options: { fontSize: 7 } },
       { text: kit.name, options: { fontSize: 12, bold: true } }
     ], { x: 0.4, y: 0, w: 5.5, h: 0.65, valign: "middle", color: COLORS.white, fontFace: "Calibri" });
-    slide.addText(String(pieces.length + idx + 1).padStart(2, '0'), { x: 12.0, y: 0, w: 1.0, h: 0.65, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri" });
+    slide.addText(String(seqIdx + 1).padStart(2, '0'), { x: 12.0, y: 0, w: 1.0, h: 0.65, align: "right", valign: "middle", color: COLORS.accent, fontSize: 11, fontFace: "Calibri" });
 
     slide.addShape(pptx.ShapeType.rect, { x: 0.35, y: 0.85, w: 6.2, h: 5.5, fill: { color: COLORS.cardBg }, line: { color: COLORS.border, width: 0.5 } });
-    const b64 = kitImages[idx];
     if (b64) {
       const size = await getImageSize(b64);
       const maxWidth = 6.0;
@@ -362,8 +372,17 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     slide.addShape(pptx.ShapeType.line, { x: 0.4, y: 7.1, w: 12.53, line: { color: COLORS.border, width: 0.5 } });
     slide.addText(campaign.name, { x: 0.4, y: 7.2, color: COLORS.textSecondary, fontSize: 8, fontFace: "Calibri" });
     slide.addText(`Página ${pageNum} / ${totalSlides}`, { x: 10.0, y: 7.2, w: 3.0, align: "right", color: COLORS.textSecondary, fontSize: 9, fontFace: "Calibri" });
-    tick(`Kit ${idx + 1}/${kits.length}: ${kit.name}`);
-    if (idx % 3 === 0) await new Promise(r => setTimeout(r, 0));
+    tick(`Kit ${seqIdx + 1}/${sequence.length}: ${kit.name}`);
+  };
+
+  for (let seqIdx = 0; seqIdx < sequence.length; seqIdx++) {
+    const entry = sequence[seqIdx];
+    if (entry.kind === "piece") {
+      await renderPieceSlide(entry.item, pieceImages[entry.imgIdx], seqIdx);
+    } else {
+      await renderKitSlide(entry.item, kitImages[entry.imgIdx], seqIdx);
+    }
+    if (seqIdx % 3 === 0) await new Promise(r => setTimeout(r, 0));
   }
 
   // 5. FINAL
