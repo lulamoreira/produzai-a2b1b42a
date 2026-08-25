@@ -338,6 +338,51 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   const [winnerLinksExpanded, setWinnerLinksExpanded] = useState(false);
   const [timelineExpanded, setTimelineExpanded] = useState(false);
 
+  const didAutoExpandTimeline = useRef(false);
+  const didAutoExpandWinnerLinks = useRef(false);
+
+  // Auto-expand timeline once after entries load
+  useEffect(() => {
+    if (!didAutoExpandTimeline.current && timelineEntries.length > 0) {
+      setTimelineExpanded(true);
+      didAutoExpandTimeline.current = true;
+    }
+  }, [timelineEntries.length]);
+
+  // Auto-expand winner links once if any link is already configured
+  useEffect(() => {
+    if (
+      !didAutoExpandWinnerLinks.current &&
+      (settingsAny?.winner_mockup_url || settingsAny?.winner_book_url || settingsAny?.winner_cc_email)
+    ) {
+      setWinnerLinksExpanded(true);
+      didAutoExpandWinnerLinks.current = true;
+    }
+  }, [settingsAny?.winner_mockup_url, settingsAny?.winner_book_url, settingsAny?.winner_cc_email]);
+
+  const timelineSummary = useMemo(() => {
+    const entries = timelineEntries
+      .filter((e) => e.entry_date)
+      .sort((a, b) => {
+        if (a.entry_date !== b.entry_date) return a.entry_date.localeCompare(b.entry_date);
+        return (a.display_order ?? 0) - (b.display_order ?? 0);
+      });
+    if (entries.length === 0) return "Nenhuma entrega cadastrada — clique para adicionar.";
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    const future = entries.filter((e) => e.entry_date >= todayStr);
+    const next = future.length > 0 ? future[0] : entries[entries.length - 1];
+    const dateLabel = format(new Date(`${next.entry_date}T00:00:00`), "dd/MM");
+    if (!next.description?.trim()) return `${entries.length} entrega${entries.length > 1 ? "s" : ""} · próxima: ${dateLabel}`;
+    return `${entries.length} entrega${entries.length > 1 ? "s" : ""} · próxima: ${next.description.trim()} ${dateLabel}`;
+  }, [timelineEntries]);
+
+  const winnerLinksSummary = useMemo(() => {
+    const hasMockup = !!settingsAny?.winner_mockup_url;
+    const hasBook = !!settingsAny?.winner_book_url;
+    const cc = settingsAny?.winner_cc_email;
+    return `Mockup ${hasMockup ? "✓" : "—"} · Book ${hasBook ? "✓" : "—"} · CC ${cc || "—"}`;
+  }, [settingsAny?.winner_mockup_url, settingsAny?.winner_book_url, settingsAny?.winner_cc_email]);
+
   React.useEffect(() => {
     setWinnerMockupUrlDraft(settingsAny?.winner_mockup_url ?? "");
     setWinnerBookUrlDraft(settingsAny?.winner_book_url ?? "");
