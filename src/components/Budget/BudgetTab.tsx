@@ -1979,7 +1979,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
               {winnerSupplier && winnerInNegotiation ? (
                 <>
                   <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                    {fmtCurrency(winnerNegotiatedTotal)}
+                    <span className="text-[11px] font-medium text-muted-foreground align-baseline">{currencyCode} </span>
+                    <span className="whitespace-nowrap">{fmtCurrency(winnerNegotiatedTotal).replace(currencyCode + " ", "")}</span>
                     {(winnerSupplier as any)?.negotiation_status === "approved" && (winnerSupplier as any)?.negotiation_locked_total != null && (
                       <TooltipProvider>
                         <Tooltip>
@@ -1997,9 +1998,10 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                     <p className="text-[11px] text-muted-foreground mt-0.5">Ref. {fmtBRL(winnerNegotiatedTotal * exchangeRate)}</p>
                   )}
                   <p className="text-[11px] text-muted-foreground line-through mt-1">
-                    Original: {fmtCurrency(winnerOriginalTotal)}
+                    Original: <span className="text-[11px] font-medium text-muted-foreground align-baseline">{currencyCode} </span>
+                    <span className="whitespace-nowrap">{fmtCurrency(winnerOriginalTotal).replace(currencyCode + " ", "")}</span>
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">{(winnerSupplier as any).company_name}</p>
+                  <p className="text-xs text-muted-foreground mt-1" title={(winnerSupplier as any).company_name}>{supplierDisplay((winnerSupplier as any).company_name)}</p>
                   {(() => {
                     const ec = extraCosts.find((e) => e.supplier_id === (winnerSupplier as any).id) as any;
                     const installation = Number(ec?.adjusted_installation_value ?? ec?.installation_value ?? 0);
