@@ -1749,8 +1749,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             </div>
             <CardContent className="px-6 py-4 flex-1 flex flex-col gap-3">
               <div>
-                <p className="text-lg font-bold text-amber-700 dark:text-amber-400 leading-tight truncate" title={(winnerSupplier as any).company_name}>
-                  {(winnerSupplier as any).company_name}
+                <p className="text-lg font-bold text-amber-700 dark:text-amber-400 leading-tight" title={(winnerSupplier as any).company_name}>
+                  {supplierDisplay((winnerSupplier as any).company_name)}
                 </p>
                 {(winnerSupplier as any).winner_declared_at && (
                   <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -1766,7 +1766,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   <SourceBadge />
                 </div>
                 <p className="text-xl font-bold text-amber-700 dark:text-amber-400 mt-0.5">
-                  {fmtCurrency(winnerOriginalTotal)}
+                  <span className="text-[11px] font-medium text-muted-foreground align-baseline">{currencyCode} </span>
+                  <span className="whitespace-nowrap">{fmtCurrency(winnerOriginalTotal).replace(currencyCode + " ", "")}</span>
                 </p>
                 {currencyCode !== "BRL" && (
                   <p className="text-[11px] text-muted-foreground mt-0.5">Ref. {fmtBRL(winnerOriginalTotal * exchangeRate)}</p>
