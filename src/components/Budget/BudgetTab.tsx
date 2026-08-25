@@ -2052,14 +2052,21 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
               )}
             </div>
           );
+          const bothEqual = winnerDiff != null && bestDiff != null && Math.abs(winnerDiff - bestDiff) < 0.01;
           return (
             <Card className="h-full flex flex-col">
               <div className="px-6 h-12 flex items-center border-b border-border/60">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Diferença</p>
               </div>
               <CardContent className="px-6 py-4 flex-1 flex flex-col justify-around gap-3">
-                {renderDiff("vs. Proposta vencedora", winnerDiff)}
-                {renderDiff("vs. Melhor proposta", bestDiff)}
+                {bothEqual ? (
+                  renderDiff("Diferença vs. Budget", winnerDiff)
+                ) : (
+                  <>
+                    {winnerDiff != null && renderDiff("vs. Proposta vencedora", winnerDiff)}
+                    {bestDiff != null && renderDiff("vs. Melhor proposta", bestDiff)}
+                  </>
+                )}
               </CardContent>
             </Card>
           );
