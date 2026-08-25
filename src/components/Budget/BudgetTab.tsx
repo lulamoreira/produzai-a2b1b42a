@@ -1781,7 +1781,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                     {winnerNegotiationStatus === "approved" ? "✅ Valor negociado (vale)" : "🤝 Em negociação"}
                   </p>
                   <p className={`text-xl font-bold mt-0.5 ${winnerNegotiationStatus === "approved" ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}`}>
-                    {fmtCurrency(winnerNegotiatedTotal)}
+                    <span className="text-[11px] font-medium text-muted-foreground align-baseline">{currencyCode} </span>
+                    <span className="whitespace-nowrap">{fmtCurrency(winnerNegotiatedTotal).replace(currencyCode + " ", "")}</span>
                     {(winnerSupplier as any)?.negotiation_status === "approved" && (winnerSupplier as any)?.negotiation_locked_total != null && (
                       <TooltipProvider>
                         <Tooltip>
