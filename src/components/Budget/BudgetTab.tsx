@@ -3825,21 +3825,15 @@ ${msgLabels.winnerWaFooter}
       )}
 
 
-      <div className="rounded-lg border border-border bg-card p-4 space-y-3">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div className="min-w-0">
-            <h3 className="text-sm font-semibold text-foreground">Ajuste</h3>
-            {activeAdjustment ? (
+      {activeAdjustment && (
+        <div className="rounded-lg border border-border bg-card p-4 space-y-3">
+          <div className="flex items-start justify-between gap-3 flex-wrap">
+            <div className="min-w-0">
+              <h3 className="text-sm font-semibold text-foreground">Ajuste</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
                 Ajuste ativo: <strong className="text-foreground">{activeAdjustment.name}</strong>
               </p>
-            ) : (
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Congele o rateio vigente e inicie um ajuste a qualquer momento.
-              </p>
-            )}
-          </div>
-          {activeAdjustment ? (
+            </div>
             <Button
               size="sm"
               variant="outline"
@@ -3850,22 +3844,10 @@ ${msgLabels.winnerWaFooter}
               Abrir Ajustes
               <ArrowRight className="w-3.5 h-3.5" />
             </Button>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setStartAdjustOpen(true)}
-              className="gap-2 shrink-0"
-            >
-              <FileEdit className="w-3.5 h-3.5" />
-              Iniciar Ajuste
-            </Button>
-          )}
-        </div>
-        {activeAdjustment && (
+          </div>
           <AdjustmentSummaryCard campaignId={campaignId} onNavigateToSection={onNavigateToSection} />
-        )}
-      </div>
+        </div>
+      )}
 
       <StartAdjustmentDialog
         open={startAdjustOpen}
