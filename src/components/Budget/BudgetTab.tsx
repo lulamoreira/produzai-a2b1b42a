@@ -2112,7 +2112,9 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
               {val != null ? (
                 <>
                   <p className={cn("text-lg font-bold", val <= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
-                    {val <= 0 ? "" : "+"}{fmtCurrency(val)}
+                    {val <= 0 ? "" : "+"}
+                    <span className="text-[11px] font-medium text-muted-foreground align-baseline">{currencyCode} </span>
+                    <span className="whitespace-nowrap">{fmtCurrency(val).replace(currencyCode + " ", "")}</span>
                   </p>
                   {currencyCode !== "BRL" && (
                     <p className="text-[10px] text-muted-foreground">Ref. {fmtBRL(val * exchangeRate)}</p>
