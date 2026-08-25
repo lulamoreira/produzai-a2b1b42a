@@ -2134,7 +2134,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   <p className="text-sm font-semibold leading-tight">Links do Vencedor</p>
                   {!winnerLinksExpanded && (
                     <span className="text-[11px] text-muted-foreground italic ml-2 truncate hidden sm:inline">
-                      Mockup: {settingsAny?.winner_mockup_url ? "configurado" : "não configurado"}
+                      {winnerLinksSummary}
                     </span>
                   )}
                 </div>
