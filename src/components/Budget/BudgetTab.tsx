@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -337,6 +337,51 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   // Collapsible sections (start collapsed)
   const [winnerLinksExpanded, setWinnerLinksExpanded] = useState(false);
   const [timelineExpanded, setTimelineExpanded] = useState(false);
+
+  const didAutoExpandTimeline = useRef(false);
+  const didAutoExpandWinnerLinks = useRef(false);
+
+  // Auto-expand timeline once after entries load
+  useEffect(() => {
+    if (!didAutoExpandTimeline.current && timelineEntries.length > 0) {
+      setTimelineExpanded(true);
+      didAutoExpandTimeline.current = true;
+    }
+  }, [timelineEntries.length]);
+
+  // Auto-expand winner links once if any link is already configured
+  useEffect(() => {
+    if (
+      !didAutoExpandWinnerLinks.current &&
+      (settingsAny?.winner_mockup_url || settingsAny?.winner_book_url || settingsAny?.winner_cc_email)
+    ) {
+      setWinnerLinksExpanded(true);
+      didAutoExpandWinnerLinks.current = true;
+    }
+  }, [settingsAny?.winner_mockup_url, settingsAny?.winner_book_url, settingsAny?.winner_cc_email]);
+
+  const timelineSummary = useMemo(() => {
+    const entries = timelineEntries
+      .filter((e) => e.entry_date)
+      .sort((a, b) => {
+        if (a.entry_date !== b.entry_date) return a.entry_date.localeCompare(b.entry_date);
+        return (a.display_order ?? 0) - (b.display_order ?? 0);
+      });
+    if (entries.length === 0) return "Nenhuma entrega cadastrada — clique para adicionar.";
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    const future = entries.filter((e) => e.entry_date >= todayStr);
+    const next = future.length > 0 ? future[0] : entries[entries.length - 1];
+    const dateLabel = format(new Date(`${next.entry_date}T00:00:00`), "dd/MM");
+    if (!next.description?.trim()) return `${entries.length} entrega${entries.length > 1 ? "s" : ""} · próxima: ${dateLabel}`;
+    return `${entries.length} entrega${entries.length > 1 ? "s" : ""} · próxima: ${next.description.trim()} ${dateLabel}`;
+  }, [timelineEntries]);
+
+  const winnerLinksSummary = useMemo(() => {
+    const hasMockup = !!settingsAny?.winner_mockup_url;
+    const hasBook = !!settingsAny?.winner_book_url;
+    const cc = settingsAny?.winner_cc_email;
+    return `Mockup ${hasMockup ? "✓" : "—"} · Book ${hasBook ? "✓" : "—"} · CC ${cc || "—"}`;
+  }, [settingsAny?.winner_mockup_url, settingsAny?.winner_book_url, settingsAny?.winner_cc_email]);
 
   React.useEffect(() => {
     setWinnerMockupUrlDraft(settingsAny?.winner_mockup_url ?? "");
@@ -777,17 +822,40 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   // SourceBadge component for showing where the displayed total comes from
   const SourceBadge = () => {
     if (!currentTotal) return null;
-    const labels: Record<string, { label: string; color: string }> = {
-      original: { label: "Cotação original", color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300" },
-      negotiated: { label: "Negociado", color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300" },
-      adjustment: { label: "Ajuste ativo", color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300" },
+    const labels: Record<string, { label: string; color: string; tooltip?: string }> = {
+      original: {
+        label: "Cotação original",
+        color: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300",
+        tooltip: "Valor da cotação original do fornecedor, antes de qualquer negociação ou ajuste.",
+      },
+      negotiated: {
+        label: "Negociado",
+        color: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300",
+        tooltip: "Valor resultante de uma negociação com o fornecedor.",
+      },
+      adjustment: {
+        label: "Ajuste ativo",
+        color: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300",
+        tooltip: "Valor alterado por um ajuste de mockup ativo.",
+      },
     };
     const meta = labels[currentTotal.source];
     if (!meta) return null;
-    return (
+    const badge = (
       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${meta.color}`}>
         {meta.label}
       </span>
+    );
+    if (!meta.tooltip) return badge;
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>{badge}</TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs text-xs">
+            {meta.tooltip}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
     );
   };
 
@@ -1597,20 +1665,43 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         const semLogistica = stores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
         
         return (
-          <div className="flex flex-wrap gap-3">
-            <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-full border border-border shadow-sm">
-              <Package className="w-4 h-4 text-primary" />
-              <span className="text-xs font-semibold">{comFrete} {pLabels.summaryFrete}</span>
+          <TooltipProvider>
+            <div className="flex flex-wrap gap-3">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-full border border-border shadow-sm cursor-default">
+                    <Package className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-semibold">{comFrete} {pLabels.summaryFrete}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Lojas que recebem material com frete
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100 shadow-sm cursor-default">
+                    <Wrench className="w-4 h-4 text-emerald-600" />
+                    <span className="text-xs font-semibold text-emerald-700">{comInstalacao} {pLabels.summaryInstallations}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Lojas que recebem instalação
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100 shadow-sm cursor-default">
+                    <Store className="w-4 h-4 text-gray-600" />
+                    <span className="text-xs font-semibold text-gray-700">{semLogistica} {pLabels.summaryNoLogistics}</span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Lojas sem frete e sem instalação
+                </TooltipContent>
+              </Tooltip>
             </div>
-            <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100 shadow-sm">
-              <Wrench className="w-4 h-4 text-emerald-600" />
-              <span className="text-xs font-semibold text-emerald-700">{comInstalacao} {pLabels.summaryInstallations}</span>
-            </div>
-            <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100 shadow-sm">
-              <Store className="w-4 h-4 text-gray-600" />
-              <span className="text-xs font-semibold text-gray-700">{semLogistica} {pLabels.summaryNoLogistics}</span>
-            </div>
-          </div>
+          </TooltipProvider>
         );
       })()}
 
@@ -2007,14 +2098,21 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
               )}
             </div>
           );
+          const bothEqual = winnerDiff != null && bestDiff != null && Math.abs(winnerDiff - bestDiff) < 0.01;
           return (
             <Card className="h-full flex flex-col">
               <div className="px-6 h-12 flex items-center border-b border-border/60">
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Diferença</p>
               </div>
               <CardContent className="px-6 py-4 flex-1 flex flex-col justify-around gap-3">
-                {renderDiff("vs. Proposta vencedora", winnerDiff)}
-                {renderDiff("vs. Melhor proposta", bestDiff)}
+                {bothEqual ? (
+                  renderDiff("Diferença vs. Budget", winnerDiff)
+                ) : (
+                  <>
+                    {winnerDiff != null && renderDiff("vs. Proposta vencedora", winnerDiff)}
+                    {bestDiff != null && renderDiff("vs. Melhor proposta", bestDiff)}
+                  </>
+                )}
               </CardContent>
             </Card>
           );
@@ -2036,7 +2134,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   <p className="text-sm font-semibold leading-tight">Links do Vencedor</p>
                   {!winnerLinksExpanded && (
                     <span className="text-[11px] text-muted-foreground italic ml-2 truncate hidden sm:inline">
-                      Mockup: {settingsAny?.winner_mockup_url ? "configurado" : "não configurado"}
+                      {winnerLinksSummary}
                     </span>
                   )}
                 </div>
@@ -2184,7 +2282,7 @@ ${msgLabels.winnerWaFooter}
                 <p className="text-sm font-semibold leading-tight">Cronograma da Campanha</p>
                 {!timelineExpanded && (
                   <span className="text-[11px] text-muted-foreground italic ml-2 hidden sm:inline">
-                    Sempre mantenha esta área atualizada, sem que eu precise recarregar a página.
+                    {timelineSummary}
                   </span>
                 )}
               </div>
