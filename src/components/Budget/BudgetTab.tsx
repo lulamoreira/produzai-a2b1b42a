@@ -483,6 +483,17 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
 
   // Agency suppliers picker (multi-select)
   const { data: agencySuppliers = [] } = useAgencySuppliers(agencyId);
+
+  const supplierDisplay = (companyName?: string | null): string => {
+    const cn = (companyName ?? "").trim();
+    if (!cn) return "";
+    const found = agencySuppliers.find(
+      (as) => (as.company_name ?? "").trim().toLowerCase() === cn.toLowerCase()
+    );
+    if (found && found.trade_name && found.trade_name.trim()) return found.trade_name.trim();
+    return cn.split(/\s+/)[0].toUpperCase();
+  };
+
   const [agencySupplierSearch, setAgencySupplierSearch] = useState("");
   const [selectedAgencySupplierIds, setSelectedAgencySupplierIds] = useState<string[]>([]);
   const [supplierFormOpen, setSupplierFormOpen] = useState(false);
@@ -1738,8 +1749,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
             </div>
             <CardContent className="px-6 py-4 flex-1 flex flex-col gap-3">
               <div>
-                <p className="text-lg font-bold text-amber-700 dark:text-amber-400 leading-tight truncate" title={(winnerSupplier as any).company_name}>
-                  {(winnerSupplier as any).company_name}
+                <p className="text-lg font-bold text-amber-700 dark:text-amber-400 leading-tight" title={(winnerSupplier as any).company_name}>
+                  {supplierDisplay((winnerSupplier as any).company_name)}
                 </p>
                 {(winnerSupplier as any).winner_declared_at && (
                   <p className="text-[11px] text-muted-foreground mt-0.5">
@@ -1755,7 +1766,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                   <SourceBadge />
                 </div>
                 <p className="text-xl font-bold text-amber-700 dark:text-amber-400 mt-0.5">
-                  {fmtCurrency(winnerOriginalTotal)}
+                  <span className="text-[11px] font-medium text-muted-foreground align-baseline">{currencyCode} </span>
+                  <span className="whitespace-nowrap">{fmtCurrency(winnerOriginalTotal).replace(currencyCode + " ", "")}</span>
                 </p>
                 {currencyCode !== "BRL" && (
                   <p className="text-[11px] text-muted-foreground mt-0.5">Ref. {fmtBRL(winnerOriginalTotal * exchangeRate)}</p>
@@ -1769,7 +1781,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                     {winnerNegotiationStatus === "approved" ? "✅ Valor negociado (vale)" : "🤝 Em negociação"}
                   </p>
                   <p className={`text-xl font-bold mt-0.5 ${winnerNegotiationStatus === "approved" ? "text-emerald-700 dark:text-emerald-400" : "text-amber-700 dark:text-amber-400"}`}>
-                    {fmtCurrency(winnerNegotiatedTotal)}
+                    <span className="text-[11px] font-medium text-muted-foreground align-baseline">{currencyCode} </span>
+                    <span className="whitespace-nowrap">{fmtCurrency(winnerNegotiatedTotal).replace(currencyCode + " ", "")}</span>
                     {(winnerSupplier as any)?.negotiation_status === "approved" && (winnerSupplier as any)?.negotiation_locked_total != null && (
                       <TooltipProvider>
                         <Tooltip>
@@ -1835,14 +1848,24 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                       onClick={() => { setBudgetDraft(budgetAmount?.toString() ?? ""); setEditingBudget(true); }}
                       className="text-2xl font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2"
                     >
-                      {budgetAmount != null ? fmtCurrency(budgetAmount) : "Definir"}
+                      {budgetAmount != null ? (
+                        <>
+                          <span className="text-[11px] font-medium text-muted-foreground align-baseline">{currencyCode} </span>
+                          <span className="whitespace-nowrap">{fmtCurrency(budgetAmount).replace(currencyCode + " ", "")}</span>
+                        </>
+                      ) : "Definir"}
                       <Edit3 className="w-3.5 h-3.5 text-muted-foreground" />
                     </button>
                   );
                 }
                 return (
                   <span className="text-2xl font-bold text-foreground flex items-center gap-2">
-                    {budgetAmount != null ? fmtCurrency(budgetAmount) : "—"}
+                    {budgetAmount != null ? (
+                      <>
+                        <span className="text-[11px] font-medium text-muted-foreground align-baseline">{currencyCode} </span>
+                        <span className="whitespace-nowrap">{fmtCurrency(budgetAmount).replace(currencyCode + " ", "")}</span>
+                      </>
+                    ) : "—"}
                     <Lock className="w-3.5 h-3.5 text-muted-foreground" />
                   </span>
                 );
@@ -1956,7 +1979,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
               {winnerSupplier && winnerInNegotiation ? (
                 <>
                   <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                    {fmtCurrency(winnerNegotiatedTotal)}
+                    <span className="text-[11px] font-medium text-muted-foreground align-baseline">{currencyCode} </span>
+                    <span className="whitespace-nowrap">{fmtCurrency(winnerNegotiatedTotal).replace(currencyCode + " ", "")}</span>
                     {(winnerSupplier as any)?.negotiation_status === "approved" && (winnerSupplier as any)?.negotiation_locked_total != null && (
                       <TooltipProvider>
                         <Tooltip>
@@ -1974,9 +1998,10 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                     <p className="text-[11px] text-muted-foreground mt-0.5">Ref. {fmtBRL(winnerNegotiatedTotal * exchangeRate)}</p>
                   )}
                   <p className="text-[11px] text-muted-foreground line-through mt-1">
-                    Original: {fmtCurrency(winnerOriginalTotal)}
+                    Original: <span className="text-[11px] font-medium text-muted-foreground align-baseline">{currencyCode} </span>
+                    <span className="whitespace-nowrap">{fmtCurrency(winnerOriginalTotal).replace(currencyCode + " ", "")}</span>
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">{(winnerSupplier as any).company_name}</p>
+                  <p className="text-xs text-muted-foreground mt-1" title={(winnerSupplier as any).company_name}>{supplierDisplay((winnerSupplier as any).company_name)}</p>
                   {(() => {
                     const ec = extraCosts.find((e) => e.supplier_id === (winnerSupplier as any).id) as any;
                     const installation = Number(ec?.adjusted_installation_value ?? ec?.installation_value ?? 0);
@@ -2009,11 +2034,14 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                 </>
               ) : bestSupplier ? (
                 <>
-                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{fmtCurrency(bestSupplier.total)}</p>
+                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
+                    <span className="text-[11px] font-medium text-muted-foreground align-baseline">{currencyCode} </span>
+                    <span className="whitespace-nowrap">{fmtCurrency(bestSupplier.total).replace(currencyCode + " ", "")}</span>
+                  </p>
                   {currencyCode !== "BRL" && (
                     <p className="text-[11px] text-muted-foreground mt-0.5">Ref. {fmtBRL(bestSupplier.total * exchangeRate)}</p>
                   )}
-                  <p className="text-xs text-muted-foreground mt-1">{bestSupplier.name}</p>
+                  <p className="text-xs text-muted-foreground mt-1" title={bestSupplier.name}>{supplierDisplay(bestSupplier.name)}</p>
                   {(() => {
                     const sup = (suppliers as any[]).find((s) => s.company_name === bestSupplier.name);
                     if (!sup) return null;
@@ -2084,7 +2112,9 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
               {val != null ? (
                 <>
                   <p className={cn("text-lg font-bold", val <= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400")}>
-                    {val <= 0 ? "" : "+"}{fmtCurrency(val)}
+                    {val <= 0 ? "" : "+"}
+                    <span className="text-[11px] font-medium text-muted-foreground align-baseline">{currencyCode} </span>
+                    <span className="whitespace-nowrap">{fmtCurrency(val).replace(currencyCode + " ", "")}</span>
                   </p>
                   {currencyCode !== "BRL" && (
                     <p className="text-[10px] text-muted-foreground">Ref. {fmtBRL(val * exchangeRate)}</p>
