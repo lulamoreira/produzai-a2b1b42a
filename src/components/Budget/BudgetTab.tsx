@@ -1718,14 +1718,16 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         );
       })()}
 
-      <PhaseStepperWithApproval
-        campaignId={campaignId}
-        currentPhase={currentPhase}
-        phaseLockedAt={phaseLockedAt as Record<string, string>}
-        isAdminOrMaster={isAdminOrMaster}
-        onUnlock={(phase) => setUnlockTarget(phase)}
-        isUnlocking={isUnlocking}
-      />
+      {false && (
+        <PhaseStepperWithApproval
+          campaignId={campaignId}
+          currentPhase={currentPhase}
+          phaseLockedAt={phaseLockedAt as Record<string, string>}
+          isAdminOrMaster={isAdminOrMaster}
+          onUnlock={(phase) => setUnlockTarget(phase)}
+          isUnlocking={isUnlocking}
+        />
+      )}
 
       <AdjustmentKPIBlock campaignId={campaignId} currencyCode={currencyCode} />
 
