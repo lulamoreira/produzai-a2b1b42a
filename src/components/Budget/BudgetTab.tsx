@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { format } from "date-fns";
 import {
-  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers, AlertCircle, FileSpreadsheet, Package, Wrench, Store, AlertTriangle, RotateCcw, PieChart as PieChartIcon, BarChart3
+  DollarSign, Plus, Trash2, Eye, MessageCircle, Mail, Lock, Check, Clock, Edit3, CalendarIcon, CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Download, Link2, Copy, Pencil, Loader2, Send, History, Unlock, Trophy, TrendingDown, Share2, Layers, AlertCircle, FileSpreadsheet, Package, Wrench, Store, AlertTriangle, RotateCcw, PieChart as PieChartIcon, BarChart3, Truck
 } from "lucide-react";
 import { useExportRequoteFinal } from "@/hooks/useExportRequoteFinal";
 import RequoteFinalExportDialog from "@/components/RequoteFinalExportDialog";
@@ -1656,52 +1656,47 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       )}
 
       {(() => {
-        const pLabels = getSupplierPortalLabels(currencyCode);
         const comFrete = stores.filter(s => {
           const tipo = (s as any).tipo_entrega ?? 'frete_instalacao';
           return tipo === 'frete_instalacao' || tipo === 'frete_apenas';
         }).length;
         const comInstalacao = stores.filter(s => ((s as any).tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length;
         const semLogistica = stores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
-        
+        const totalLojas = stores.length;
         return (
-          <TooltipProvider>
-            <div className="flex flex-wrap gap-3">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-2 bg-muted/50 px-3 py-1.5 rounded-full border border-border shadow-sm cursor-default">
-                    <Package className="w-4 h-4 text-primary" />
-                    <span className="text-xs font-semibold">{comFrete} {pLabels.summaryFrete}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  Lojas que recebem material com frete
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-2 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100 shadow-sm cursor-default">
-                    <Wrench className="w-4 h-4 text-emerald-600" />
-                    <span className="text-xs font-semibold text-emerald-700">{comInstalacao} {pLabels.summaryInstallations}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  Lojas que recebem instalação
-                </TooltipContent>
-              </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100 shadow-sm cursor-default">
-                    <Store className="w-4 h-4 text-gray-600" />
-                    <span className="text-xs font-semibold text-gray-700">{semLogistica} {pLabels.summaryNoLogistics}</span>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="text-xs">
-                  Lojas sem frete e sem instalação
-                </TooltipContent>
-              </Tooltip>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Truck className="w-4 h-4 text-muted-foreground shrink-0" />
+              <span className="text-sm font-semibold text-foreground">Logística das lojas</span>
+              <span className="text-xs text-muted-foreground">· {totalLojas} {totalLojas === 1 ? 'loja no total' : 'lojas no total'}</span>
             </div>
-          </TooltipProvider>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-xl border border-blue-100 bg-blue-50/70 dark:border-blue-900/50 dark:bg-blue-950/20 p-4">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Package className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span className="text-2xl font-bold text-blue-700 dark:text-blue-300 leading-none">{comFrete}</span>
+                </div>
+                <p className="text-sm font-medium text-blue-800 dark:text-blue-200">{comFrete === 1 ? 'Loja com frete' : 'Lojas com frete'}</p>
+                <p className="text-[11px] text-blue-700/80 dark:text-blue-300/80 mt-0.5">Recebem o material via transportadora</p>
+              </div>
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50/70 dark:border-emerald-900/50 dark:bg-emerald-950/20 p-4">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Wrench className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                  <span className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 leading-none">{comInstalacao}</span>
+                </div>
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">{comInstalacao === 1 ? 'Loja com instalação' : 'Lojas com instalação'}</p>
+                <p className="text-[11px] text-emerald-700/80 dark:text-emerald-300/80 mt-0.5">Equipe monta o material no local</p>
+              </div>
+              <div className="rounded-xl border border-border bg-muted/40 p-4">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Store className="w-5 h-5 text-muted-foreground shrink-0" />
+                  <span className="text-2xl font-bold text-foreground leading-none">{semLogistica}</span>
+                </div>
+                <p className="text-sm font-medium text-foreground">{semLogistica === 1 ? 'Loja sem logística' : 'Lojas sem logística'}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Sem frete e sem instalação</p>
+              </div>
+            </div>
+          </div>
         );
       })()}
 
