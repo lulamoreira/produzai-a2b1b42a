@@ -159,7 +159,7 @@ export default function ClientsV2({ onAddClick }: { onAddClick: () => void }) {
                   >
                     {client.name.charAt(0).toUpperCase()}
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <h3 className="text-stone-900 font-semibold truncate group-hover:text-stone-700 transition-colors">
                       {client.name}
                     </h3>
@@ -167,7 +167,21 @@ export default function ClientsV2({ onAddClick }: { onAddClick: () => void }) {
                       {agencyInfo?.name || "..."}
                     </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleClientFavorite.mutate({ clientId: client.id });
+                    }}
+                    disabled={toggleClientFavorite.isPending}
+                    className="p-1 rounded hover:bg-stone-100 transition-colors shrink-0"
+                    aria-label={favoriteIds?.has(client.id) ? t("favorites.remove", "Remover dos favoritos") : t("favorites.add", "Adicionar aos favoritos")}
+                    title={favoriteIds?.has(client.id) ? t("favorites.remove", "Remover dos favoritos") : t("favorites.add", "Adicionar aos favoritos")}
+                  >
+                    <Star className={favoriteIds?.has(client.id) ? "w-4 h-4 text-amber-400 fill-amber-400" : "w-4 h-4 text-stone-300"} />
+                  </button>
                 </div>
+
 
                 <div className="mt-auto pt-4 border-t border-stone-100 flex items-center justify-between">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-600">
