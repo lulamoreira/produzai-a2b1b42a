@@ -6,6 +6,7 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { useSidebarPermissions } from "@/hooks/useSidebarPermissions";
 import { useCampaignFavorites } from "@/hooks/useCampaignFavorites";
+import { useClientFavorites } from "@/hooks/useClientFavorites";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -90,6 +91,8 @@ export function SidebarV2() {
 
   // Favorites in sidebar
   const { data: favorites = [] } = useCampaignFavorites();
+  const { data: clientFavorites = [] } = useClientFavorites();
+  const totalFavorites = favorites.length + clientFavorites.length;
   const [favoritesExpanded, setFavoritesExpanded] = useState(() => {
     return localStorage.getItem("sidebar-v2-favorites-expanded") !== "false";
   });
@@ -508,7 +511,7 @@ export function SidebarV2() {
           </div>
 
           {/* Favorites list (hidden when none) */}
-          {favorites.length > 0 && !collapsed && (
+          {totalFavorites > 0 && !collapsed && (
             <div className="space-y-1">
               <button
                 type="button"
@@ -541,7 +544,7 @@ export function SidebarV2() {
                     aria-label={favoritesFilterActive ? "Remover filtro de favoritos" : "Filtrar campanhas favoritas"}
                     title={favoritesFilterActive ? "Remover filtro de favoritos" : "Filtrar campanhas favoritas"}
                   >
-                    ({favorites.length})
+                    ({totalFavorites})
                   </span>
                 </span>
                 <ChevronDown
@@ -551,28 +554,64 @@ export function SidebarV2() {
               </button>
               {favoritesExpanded && (
                 <div className="space-y-0.5">
-                  {favorites.map((fav) => {
-                    const route = `/agency/${fav.agency_id}/clients/${fav.client_id}/campaigns/${fav.campaign_id}`;
-                    const isActive = campaignId === fav.campaign_id;
-                    return (
-                      <NavLink
-                        key={fav.id}
-                        to={route}
-                        className="group flex items-center gap-2 pl-[1.875rem] pr-3 py-1.5 rounded-lg transition-colors text-xs"
-                        style={{
-                          background: isActive ? 'var(--v2-sidebar-active)' : 'transparent',
-                          color: isActive ? 'var(--v2-sidebar-active-text)' : 'var(--v2-sidebar-muted)',
-                        }}
-                        title={`${fav.campaign_name} · ${fav.client_name}`}
-                      >
-                        <span
-                          className="w-2 h-2 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: fav.campaign_color || "#8C6F4E" }}
-                        />
-                        <span className="truncate font-medium">{fav.campaign_name}</span>
-                      </NavLink>
-                    );
-                  })}
+                  {/* Client favorites */}
+                  {clientFavorites.length > 0 && (
+                    <>
+                      <div className="px-3 py-0.5 text-[10px] uppercase tracking-wider opacity-60" style={{ color: 'var(--v2-sidebar-section-label)' }}>
+                        {t("sidebar.clients", "Clientes")}
+                      </div>
+                      {clientFavorites.map((fav) => {
+                        const route = `/agency/${fav.agency_id}/clients/${fav.client_id}`;
+                        const isActive = clientId === fav.client_id;
+                        return (
+                          <NavLink
+                            key={fav.id}
+                            to={route}
+                            className="group flex items-center gap-2 pl-[1.875rem] pr-3 py-1.5 rounded-lg transition-colors text-xs"
+                            style={{
+                              background: isActive ? 'var(--v2-sidebar-active)' : 'transparent',
+                              color: isActive ? 'var(--v2-sidebar-active-text)' : 'var(--v2-sidebar-muted)',
+                            }}
+                            title={`${fav.client_name} · ${fav.agency_name}`}
+                          >
+                            <Briefcase className="w-3 h-3 flex-shrink-0 opacity-80" />
+                            <span className="truncate font-medium">{fav.client_name}</span>
+                          </NavLink>
+                        );
+                      })}
+                    </>
+                  )}
+
+                  {/* Campaign favorites */}
+                  {favorites.length > 0 && (
+                    <>
+                      <div className="px-3 py-0.5 text-[10px] uppercase tracking-wider opacity-60" style={{ color: 'var(--v2-sidebar-section-label)' }}>
+                        {t("sidebar.campaigns", "Campanhas")}
+                      </div>
+                      {favorites.map((fav) => {
+                        const route = `/agency/${fav.agency_id}/clients/${fav.client_id}/campaigns/${fav.campaign_id}`;
+                        const isActive = campaignId === fav.campaign_id;
+                        return (
+                          <NavLink
+                            key={fav.id}
+                            to={route}
+                            className="group flex items-center gap-2 pl-[1.875rem] pr-3 py-1.5 rounded-lg transition-colors text-xs"
+                            style={{
+                              background: isActive ? 'var(--v2-sidebar-active)' : 'transparent',
+                              color: isActive ? 'var(--v2-sidebar-active-text)' : 'var(--v2-sidebar-muted)',
+                            }}
+                            title={`${fav.campaign_name} · ${fav.client_name}`}
+                          >
+                            <span
+                              className="w-2 h-2 rounded-full flex-shrink-0"
+                              style={{ backgroundColor: fav.campaign_color || "#8C6F4E" }}
+                            />
+                            <span className="truncate font-medium">{fav.campaign_name}</span>
+                          </NavLink>
+                        );
+                      })}
+                    </>
+                  )}
                 </div>
               )}
             </div>
