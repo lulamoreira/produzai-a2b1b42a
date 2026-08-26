@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useCampaignFavorites, useToggleFavorite } from "@/hooks/useCampaignFavorites";
+import { useClientFavorites, useToggleClientFavorite } from "@/hooks/useClientFavorites";
 import AppLayout from "@/components/AppLayout";
-import { Star, ArrowRight } from "lucide-react";
+import { Star, ArrowRight, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const Favorites = () => {
@@ -10,6 +11,9 @@ const Favorites = () => {
   const navigate = useNavigate();
   const { data: favorites, isLoading } = useCampaignFavorites();
   const toggleFavorite = useToggleFavorite();
+  const { data: clientFavorites = [] } = useClientFavorites();
+  const toggleClientFavorite = useToggleClientFavorite();
+
 
   return (
     <AppLayout>
