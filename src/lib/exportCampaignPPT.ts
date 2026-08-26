@@ -17,6 +17,8 @@ interface ExportPPTParams {
     width?: number; 
     height?: number; 
     material?: string; 
+    /** Modelo (loja) da peça, exibido como "MODELO" no slide. */
+    model?: string;
     quantity?: number; 
     code?: string; 
     observations?: string; 
@@ -30,10 +32,12 @@ interface ExportPPTParams {
     description?: string; 
     pieces_count?: number; 
     code?: string; 
+    model?: string;
     observations?: string; 
     photo_url?: string; 
     pieces?: Array<{ name: string; photo_url?: string }>; 
   }>;
+
   onProgress?: (current: number, total: number, label: string) => void;
   signal?: AbortSignal;
 }
