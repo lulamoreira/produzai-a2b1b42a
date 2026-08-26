@@ -33,6 +33,9 @@ export default function GlobalClients() {
   const navigate = useNavigate();
   const { isAdmin } = useUserRole();
   const [search, setSearch] = useState("");
+  const { data: favoriteIds } = useClientFavoriteIds();
+  const toggleClientFavorite = useToggleClientFavorite();
+
 
   const { data: clients = [], isLoading } = useQuery({
     queryKey: ["global-clients"],
