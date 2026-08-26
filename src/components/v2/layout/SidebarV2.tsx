@@ -91,6 +91,8 @@ export function SidebarV2() {
 
   // Favorites in sidebar
   const { data: favorites = [] } = useCampaignFavorites();
+  const { data: clientFavorites = [] } = useClientFavorites();
+  const totalFavorites = favorites.length + clientFavorites.length;
   const [favoritesExpanded, setFavoritesExpanded] = useState(() => {
     return localStorage.getItem("sidebar-v2-favorites-expanded") !== "false";
   });
