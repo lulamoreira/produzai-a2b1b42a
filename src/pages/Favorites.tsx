@@ -26,21 +26,71 @@ const Favorites = () => {
           </h1>
         </div>
 
+        {clientFavorites.length > 0 && (
+          <div className="mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-4 h-4 text-muted-foreground" />
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                {t("favorites.clients", "Clientes")}
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {clientFavorites.map((fav) => (
+                <div
+                  key={fav.id}
+                  className="group card-base cursor-pointer hover:shadow-md transition-shadow duration-150"
+                  onClick={() => navigate(`/agency/${fav.agency_id}/clients/${fav.client_id}`)}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-[10px] flex items-center justify-center flex-shrink-0 bg-primary">
+                      <span className="text-primary-foreground font-semibold text-base">
+                        {(fav.client_name || "C").charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-base truncate" style={{ color: "var(--text-primary)" }}>
+                        {fav.client_name}
+                      </h3>
+                      <p className="text-xs mt-0.5" style={{ color: "var(--text-muted)" }}>
+                        {fav.agency_name}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 flex-shrink-0"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleClientFavorite.mutate({ clientId: fav.client_id });
+                      }}
+                    >
+                      <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {isLoading ? (
           <div className="flex items-center justify-center py-20">
             <div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" />
           </div>
         ) : !favorites || favorites.length === 0 ? (
+          clientFavorites.length > 0 ? null : (
           <div className="text-center py-12">
             <Star className="w-12 h-12 mx-auto mb-3 text-muted-foreground/40" />
             <p className="text-muted-foreground text-sm">
               {t("favorites.empty", "Nenhuma campanha favoritada ainda.")}
             </p>
             <p className="text-muted-foreground text-xs mt-1">
-              {t("favorites.emptyHint", "Use a estrela nos cards de campanha para adicionar favoritos.")}
+              {t("favorites.emptyHint", "Use a estrela nos cards de campanha ou cliente para adicionar favoritos.")}
             </p>
           </div>
+          )
         ) : (
+
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {favorites.map((fav) => {
               const color = fav.campaign_color || "#6366f1";
