@@ -20,6 +20,34 @@ export type FavoriteWithDetails = CampaignFavorite & {
   is_active?: boolean;
 };
 
+type CampaignFamilyRow = {
+  id: string;
+  root_campaign_id: string | null;
+  created_at: string;
+};
+
+async function getCampaignFamily(campaignId: string): Promise<CampaignFamilyRow[]> {
+  const { data: selectedCampaign, error: selectedError } = await supabase
+    .from("campaigns")
+    .select("id, root_campaign_id, created_at")
+    .eq("id", campaignId)
+    .maybeSingle();
+
+  if (selectedError) throw selectedError;
+  if (!selectedCampaign) throw new Error("Campanha não encontrada");
+
+  const rootId = selectedCampaign.root_campaign_id ?? selectedCampaign.id;
+  const { data: family, error: familyError } = await supabase
+    .from("campaigns")
+    .select("id, root_campaign_id, created_at")
+    .or(`id.eq.${rootId},root_campaign_id.eq.${rootId}`)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false });
+
+  if (familyError) throw familyError;
+  return family ?? [];
+}
+
 export function useCampaignFavorites() {
   const { user } = useAuth();
 
@@ -113,7 +141,34 @@ export function useFavoriteIds() {
         .select("campaign_id")
         .eq("user_id", user!.id);
       if (error) throw error;
-      return new Set(data?.map((d) => d.campaign_id) ?? []);
+      const storedIds = data?.map((d) => d.campaign_id) ?? [];
+      if (storedIds.length === 0) return new Set<string>();
+
+      const { data: storedCampaigns, error: campaignsError } = await supabase
+        .from("campaigns")
+        .select("id, root_campaign_id")
+        .in("id", storedIds);
+      if (campaignsError) throw campaignsError;
+
+      const rootIds = Array.from(new Set(
+        (storedCampaigns ?? []).map((campaign) => campaign.root_campaign_id ?? campaign.id)
+      ));
+      const familyIds = new Set<string>(storedIds);
+
+      if (rootIds.length > 0) {
+        const rootFilters = rootIds.flatMap((rootId) => [
+          `id.eq.${rootId}`,
+          `root_campaign_id.eq.${rootId}`,
+        ]);
+        const { data: familyCampaigns, error: familyError } = await supabase
+          .from("campaigns")
+          .select("id")
+          .or(rootFilters.join(","));
+        if (familyError) throw familyError;
+        familyCampaigns?.forEach((campaign) => familyIds.add(campaign.id));
+      }
+
+      return familyIds;
     },
   });
 }
@@ -123,20 +178,33 @@ export function useToggleFavorite() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ campaignId, isFavorited }: { campaignId: string; isFavorited: boolean }) => {
+    mutationFn: async ({ campaignId }: { campaignId: string; isFavorited: boolean }) => {
       if (!user) throw new Error("Not authenticated");
 
-      if (isFavorited) {
+      const family = await getCampaignFamily(campaignId);
+      if (family.length === 0) throw new Error("Campanha não encontrada");
+
+      const familyIds = family.map((campaign) => campaign.id);
+      const latestCampaignId = family[0].id;
+      const { data: existingFavorites, error: favoriteError } = await supabase
+        .from("user_campaign_favorites")
+        .select("id")
+        .eq("user_id", user.id)
+        .in("campaign_id", familyIds)
+        .limit(1);
+      if (favoriteError) throw favoriteError;
+
+      if ((existingFavorites?.length ?? 0) > 0) {
         const { error } = await supabase
           .from("user_campaign_favorites")
           .delete()
           .eq("user_id", user.id)
-          .eq("campaign_id", campaignId);
+          .in("campaign_id", familyIds);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("user_campaign_favorites")
-          .insert({ user_id: user.id, campaign_id: campaignId });
+          .insert({ user_id: user.id, campaign_id: latestCampaignId });
         if (error) throw error;
       }
     },
