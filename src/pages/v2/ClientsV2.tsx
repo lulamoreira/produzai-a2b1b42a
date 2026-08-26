@@ -39,6 +39,9 @@ export default function ClientsV2({ onAddClick }: { onAddClick: () => void }) {
   const { data: clients = [], isLoading } = useClients(agencyId);
   const [search, setSearch] = useState("");
   const { clientIds, isLoading: loadingAccess } = useMyAccessibleClientIds();
+  const { data: favoriteIds } = useClientFavoriteIds();
+  const toggleClientFavorite = useToggleClientFavorite();
+
 
   const { data: agencyInfo } = useQuery({
     queryKey: ["agency_name", agencyId],
