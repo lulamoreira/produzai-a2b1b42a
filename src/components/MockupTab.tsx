@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import {
   useCampaignMockups,
@@ -202,6 +202,53 @@ export default function MockupTab({
     ).length;
     return piecesCount + kitsCount;
   }, [pieces, kits, kitPieces]);
+
+  // Pieces/kits flagged as mockup that are NOT yet present in the current mockup.
+  // Used to auto-sync newly marked pieces once the mockup has already been started.
+  const missingIds = useMemo(() => {
+    const existingPieceIds = new Set(
+      mockups.filter((m) => !m.parent_mockup_id && m.piece_id).map((m) => m.piece_id!)
+    );
+    const existingKitIds = new Set(mockups.filter((m) => m.kit_id).map((m) => m.kit_id!));
+    const mockupPieceIds = new Set(pieces.filter((p) => p.is_mockup).map((p) => p.id));
+
+    const missingPieces = pieces
+      .filter((p) => p.is_mockup && !p.kit_only && !existingPieceIds.has(p.id))
+      .map((p) => p.id as string);
+    const missingKits = kits
+      .filter(
+        (k) =>
+          (k.is_mockup ||
+            kitPieces.some((kp) => kp.kit_id === k.id && mockupPieceIds.has(kp.piece_id))) &&
+          !existingKitIds.has(k.id)
+      )
+      .map((k) => k.id as string);
+
+    return [...missingPieces, ...missingKits];
+  }, [pieces, kits, kitPieces, mockups]);
+
+  // Auto-sync: as soon as a piece/kit is marked as mockup and the mockup already exists,
+  // add it to the current mockup without requiring a manual "sync" click.
+  const autoSyncKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (isLoading) return;
+    if (mockups.length === 0) return; // mockup not started yet — keep manual start
+    if (missingIds.length === 0) return;
+    if (initialize.isPending) return;
+
+    const key = missingIds.slice().sort().join("|");
+    if (autoSyncKeyRef.current === key) return; // already attempted for this exact set
+    autoSyncKeyRef.current = key;
+
+    initialize.mutate({
+      campaignId,
+      pieces: pieces.map((p) => ({ id: p.id, is_mockup: p.is_mockup, kit_only: p.kit_only })),
+      kits: kits.map((k) => ({ id: k.id, is_mockup: k.is_mockup })),
+      kitPieces: kitPieces.map((kp) => ({ kit_id: kp.kit_id, piece_id: kp.piece_id })),
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, mockups.length, missingIds, campaignId]);
+
 
   const openReview = (id: string) => {
     setReviewId(id);
