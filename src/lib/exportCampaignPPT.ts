@@ -304,6 +304,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
       currentY += 0.15;
     }
 
+    addField("MODELO", piece.model);
     addField("DESCRIÇÃO", piece.description);
     addField("MATERIAL", piece.material);
     addField("QUANTIDADE", piece.quantity);
@@ -370,6 +371,7 @@ export async function exportCampaignPPT(params: ExportPPTParams): Promise<string
     };
 
     addField("CÓDIGO / REF", kit.code);
+    addField("MODELO", kit.model);
     addField("COMPOSIÇÃO", (kit.pieces || []).map(p => p.name).join(", "));
     addField("OBSERVAÇÕES", kit.observations, true);
 
