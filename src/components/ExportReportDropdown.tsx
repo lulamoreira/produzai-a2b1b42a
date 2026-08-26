@@ -243,6 +243,7 @@ export default function ExportReportDropdown({
           width: sizeParts[0] ? Number(String(sizeParts[0]).replace(",", ".")) || undefined : undefined,
           height: sizeParts[1] ? Number(String(sizeParts[1]).replace(",", ".")) || undefined : undefined,
           material: undefined,
+          model: (p as any).store_category || undefined,
           quantity: undefined,
           code: String(p.code ?? ""),
           observations: p.installation_instructions || undefined,
@@ -262,6 +263,7 @@ export default function ExportReportDropdown({
           description: undefined,
           pieces_count: kpForKit.length,
           code: String(k.code ?? ""),
+          model: (k as any).store_category || undefined,
           observations: undefined,
           photo_url: k.image_url || undefined,
           pieces: kitPieceDetails.map((p: any) => ({
