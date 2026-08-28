@@ -178,39 +178,23 @@ export function useToggleFavorite() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ campaignId }: { campaignId: string; isFavorited: boolean }) => {
+    mutationFn: async ({ campaignId, isFavorited }: { campaignId: string; isFavorited: boolean }) => {
       if (!user) throw new Error("Not authenticated");
 
-      const family = await getCampaignFamily(campaignId);
-      if (family.length === 0) throw new Error("Campanha não encontrada");
+      const { data, error } = await supabase.rpc("set_campaign_favorite" as never, {
+        _campaign_id: campaignId,
+        _favorite: !isFavorited,
+      } as never);
 
-      const familyIds = family.map((campaign) => campaign.id);
-      const latestCampaignId = family[0].id;
-      const { data: existingFavorites, error: favoriteError } = await supabase
-        .from("user_campaign_favorites")
-        .select("id")
-        .eq("user_id", user.id)
-        .in("campaign_id", familyIds)
-        .limit(1);
-      if (favoriteError) throw favoriteError;
-
-      if ((existingFavorites?.length ?? 0) > 0) {
-        const { error } = await supabase
-          .from("user_campaign_favorites")
-          .delete()
-          .eq("user_id", user.id)
-          .in("campaign_id", familyIds);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase
-          .from("user_campaign_favorites")
-          .insert({ user_id: user.id, campaign_id: latestCampaignId });
-        if (error) throw error;
-      }
+      if (error) throw error;
+      return { latestName: data as unknown as string | null, wasFavoriting: !isFavorited };
     },
-    onSuccess: () => {
+    onSuccess: (res: any) => {
       qc.invalidateQueries({ queryKey: ["campaign_favorites"] });
       qc.invalidateQueries({ queryKey: ["campaign_favorite_ids"] });
+      if (res?.wasFavoriting && res?.latestName) {
+        toast.success(`Favoritado: ${res.latestName}`);
+      }
     },
     onError: (e: Error) => toast.error(e.message),
   });
