@@ -6428,6 +6428,10 @@ export type Database = {
         Returns: Json
       }
       revert_store_import: { Args: { _batch_id: string }; Returns: Json }
+      set_campaign_favorite: {
+        Args: { _campaign_id: string; _favorite: boolean }
+        Returns: string
+      }
       shift_display_orders: {
         Args: { p_after_order: number; p_campaign_id: string; p_slots: number }
         Returns: undefined
