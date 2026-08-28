@@ -26,6 +26,37 @@ const ALT_BG: [number, number, number] = [254, 235, 235];
 // Line height in mm for 9pt body
 const LINE_H = 4.2;
 
+/**
+ * Redimensiona e recomprime a imagem para JPEG antes de embutir no PDF.
+ * Sem isso, campanhas com muitas imagens estouram o limite de string do
+ * jsPDF (RangeError: Invalid string length) ao gerar o arquivo final.
+ */
+async function toCompressedJpeg(
+  src: string,
+  maxSide = 1200,
+  quality = 0.72
+): Promise<{ dataUrl: string; w: number; h: number }> {
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new Image();
+    i.crossOrigin = "anonymous";
+    i.onload = () => resolve(i);
+    i.onerror = reject;
+    i.src = src;
+  });
+  const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+  const w = Math.max(1, Math.round(img.width * scale));
+  const h = Math.max(1, Math.round(img.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas 2D context unavailable");
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, w, h);
+  ctx.drawImage(img, 0, 0, w, h);
+  return { dataUrl: canvas.toDataURL("image/jpeg", quality), w, h };
+}
+
 async function loadImage(url: string | null | undefined): Promise<{ data: string; w: number; h: number } | null> {
   if (!url) return null;
   try {
@@ -38,13 +69,8 @@ async function loadImage(url: string | null | undefined): Promise<{ data: string
       reader.onerror = reject;
       reader.readAsDataURL(blob);
     });
-    const dims = await new Promise<{ w: number; h: number }>((resolve) => {
-      const img = new Image();
-      img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
-      img.onerror = () => resolve({ w: 1, h: 1 });
-      img.src = dataUrl;
-    });
-    return { data: dataUrl, w: dims.w, h: dims.h };
+    const compressed = await toCompressedJpeg(dataUrl);
+    return { data: compressed.dataUrl, w: compressed.w, h: compressed.h };
   } catch {
     return null;
   }
@@ -92,7 +118,7 @@ export async function exportMockupPDF(params: Params): Promise<{ blob: Blob; fil
 
   const topLevel = mockups.filter((m) => !m.parent_mockup_id);
 
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 15;
@@ -229,9 +255,9 @@ export async function exportMockupPDF(params: Params): Promise<{ blob: Blob; fil
       }
       const x = (pageW - w) / 2;
       try {
-        doc.addImage(img.data, x, y, w, h);
+        doc.addImage(img.data, "JPEG", x, y, w, h, undefined, "FAST");
       } catch {
-        // ignore
+        // Se uma imagem falhar, pula ela e continua o PDF
       }
       if (m.annotated_image_url) {
         doc.setFont("helvetica", "italic");
