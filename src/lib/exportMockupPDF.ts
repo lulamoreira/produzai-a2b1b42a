@@ -118,7 +118,7 @@ export async function exportMockupPDF(params: Params): Promise<{ blob: Blob; fil
 
   const topLevel = mockups.filter((m) => !m.parent_mockup_id);
 
-  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4", compress: true });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
   const margin = 15;
