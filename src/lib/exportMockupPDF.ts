@@ -255,9 +255,9 @@ export async function exportMockupPDF(params: Params): Promise<{ blob: Blob; fil
       }
       const x = (pageW - w) / 2;
       try {
-        doc.addImage(img.data, x, y, w, h);
+        doc.addImage(img.data, "JPEG", x, y, w, h, undefined, "FAST");
       } catch {
-        // ignore
+        // Se uma imagem falhar, pula ela e continua o PDF
       }
       if (m.annotated_image_url) {
         doc.setFont("helvetica", "italic");
