@@ -287,8 +287,8 @@ export default function MockupTab({
         extension: ".pdf",
       });
       toast.success(t("mockupReview.exports.pdfReady"), { id: tId });
-    } catch (e: any) {
-      toast.error(e?.message || t("mockupReview.exports.pdfError"), { id: tId });
+    } catch {
+      toast.error("Não foi possível gerar o PDF — tente reduzir a campanha (filtre por status) e tente novamente.", { id: tId });
     }
   };
 
