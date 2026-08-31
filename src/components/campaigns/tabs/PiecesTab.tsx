@@ -393,9 +393,11 @@ export default function PiecesTab({
 
     const maxCode = existingMax?.code ?? 0;
 
-    // (b) Registro kit-aware: guarda { kitName, code } de cada peça e a ordem dos kitNames
-    const kitMembers: { kitName: string; code: number }[] = [];
-    const kitNameOrder: string[] = [];
+    // (b) Registro kit-aware: guarda { kitName, category, code } de cada peça
+    //     Kits são agrupados por (nome + localização), nunca só pelo nome.
+    const kitMembers: { kitName: string; category: string; code: number }[] = [];
+    const kitKeyOrder: Array<{ kitName: string; category: string }> = [];
+
 
     for (let i = 0; i < total; i++) {
       const row = rows[i];
@@ -439,9 +441,13 @@ export default function PiecesTab({
         };
         
         if (kitName) {
-          kitMembers.push({ kitName, code: finalCode });
-          if (!kitNameOrder.includes(kitName)) kitNameOrder.push(kitName);
+          const kitCategory = String(pieceData.category ?? "").trim();
+          kitMembers.push({ kitName, category: kitCategory, code: finalCode });
+          if (!kitKeyOrder.some((k) => k.kitName === kitName && k.category === kitCategory)) {
+            kitKeyOrder.push({ kitName, category: kitCategory });
+          }
         }
+
 
         if (options.updateExisting && !isNaN(parsedCode)) {
           const existing = pieces.find(p => p.code === finalCode);
@@ -461,7 +467,7 @@ export default function PiecesTab({
     
     // (c) Criar kits e ligar componentes
     let kitsCreated = 0;
-    if (kitNameOrder.length > 0) {
+    if (kitKeyOrder.length > 0) {
       options.onProgress?.(total, total, "Criando kits...");
 
       // 1. Mapa code→id das peças da campanha
@@ -482,36 +488,56 @@ export default function PiecesTab({
       const maxKitCode = (existingKits || []).reduce((max, k) => Math.max(max, k.code ?? 0), 0);
       let nextKitCode = maxKitCode + 1;
 
-      // 3. Para cada kitName distinto, na ordem de aparição
-      for (const kitName of kitNameOrder) {
-        let kitId = kitByName.get(kitName) as string | undefined;
+      // Nome final: sufixo da localização só quando o mesmo nome colide
+      // entre localizações diferentes dentro desta importação.
+      const nameCollisions = new Map<string, number>();
+      for (const k of kitKeyOrder) {
+        nameCollisions.set(k.kitName, (nameCollisions.get(k.kitName) ?? 0) + 1);
+      }
+
+      // 3. Para cada par (nome, localização) distinto, na ordem de aparição
+      for (const key of kitKeyOrder) {
+        const finalName =
+          (nameCollisions.get(key.kitName) ?? 0) > 1 && key.category
+            ? `${key.kitName} - ${key.category}`
+            : key.kitName;
+
+        let kitId = kitByName.get(finalName) as string | undefined;
 
         if (!kitId) {
           const { data: newKit, error: kitError } = await supabase
             .from("campaign_kits")
-            .insert({ campaign_id: campaignId, name: kitName, code: nextKitCode++ })
+            .insert({
+              campaign_id: campaignId,
+              name: finalName,
+              category: key.category || null,
+              code: nextKitCode++,
+            })
             .select()
             .single();
           if (kitError) {
-            console.error(`Erro ao criar kit "${kitName}":`, kitError);
+            console.error(`Erro ao criar kit "${finalName}":`, kitError);
             continue;
           }
           kitId = newKit.id;
-          kitByName.set(kitName, kitId);
+          kitByName.set(finalName, kitId);
           kitsCreated++;
         }
 
         // Ligar componentes (quantity sempre 1)
         let displayOrder = 0;
-        for (const member of kitMembers.filter(m => m.kitName === kitName)) {
+        for (const member of kitMembers.filter(
+          m => m.kitName === key.kitName && m.category === key.category,
+        )) {
           const pieceId = codeToId.get(member.code);
           if (!pieceId) continue;
           const { error: kpError } = await supabase
             .from("campaign_kit_pieces")
             .insert({ kit_id: kitId, piece_id: pieceId, quantity: 1, display_order: displayOrder++ });
-          if (kpError) console.error(`Erro ao ligar peça ${member.code} ao kit "${kitName}":`, kpError);
+          if (kpError) console.error(`Erro ao ligar peça ${member.code} ao kit "${finalName}":`, kpError);
         }
       }
+
     }
 
     // Desambiguação automática de nomes duplicados entre peças de kits
