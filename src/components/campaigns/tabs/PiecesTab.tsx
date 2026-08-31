@@ -987,6 +987,15 @@ export default function PiecesTab({
                 <Package className="w-3.5 h-3.5" />
                 {t("pieces.groupInKit")}
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="gap-2 rounded-full h-8 px-4"
+                onClick={() => setBulkLocationDialogOpen(true)}
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                Localização na Loja
+              </Button>
               <Button 
                 size="icon" 
                 variant="ghost" 
