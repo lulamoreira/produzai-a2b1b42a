@@ -2,8 +2,10 @@ import React, { useState, useMemo, useEffect, useRef, useCallback, useLayoutEffe
 import { useTranslation } from "react-i18next";
 import { 
   Plus, Download, Upload, Sparkles, RefreshCw, ArrowDownAZ, MapPin, Copy, 
-  Trash2, Search, X, Package, MoreHorizontal, Presentation, Settings2, Columns, CaseSensitive
+  Trash2, Search, X, Package, MoreHorizontal, Presentation, Settings2, Columns, CaseSensitive,
+  FileSpreadsheet
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,6 +42,9 @@ import CustomExportDialog from "@/components/CustomExportDialog";
 import ChangeCaseDialog from "@/components/ChangeCaseDialog";
 import { exportRequoteSheet } from "@/lib/exportRequoteSheet";
 import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
+import { OneNoteImportDialog } from "@/components/OneNoteImportDialog";
+import { parseOneNoteFile, type OneNoteParsedPiece } from "@/lib/parseOneNoteSheet";
+
 
 interface PiecesTabProps {
   campaignId: string;
@@ -119,6 +124,28 @@ export default function PiecesTab({
   const [orderByLocationOpen, setOrderByLocationOpen] = useState(false);
   const [pptExportOpen, setPptExportOpen] = useState(false);
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
+  const [oneNoteOpen, setOneNoteOpen] = useState(false);
+  const [oneNoteParsed, setOneNoteParsed] = useState<OneNoteParsedPiece[]>([]);
+  const oneNoteInputRef = useRef<HTMLInputElement>(null);
+
+  /** Lê o arquivo cru do OneNote e abre o diálogo de confirmação. */
+  const handleOneNoteFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const parsed = await parseOneNoteFile(file);
+      if (parsed.length === 0) {
+        toast.error("Nenhuma peça encontrada na planilha.");
+        return;
+      }
+      setOneNoteParsed(parsed);
+      setOneNoteOpen(true);
+    } catch (err: any) {
+      toast.error(`Erro ao ler planilha: ${err?.message || err}`);
+    }
+  };
+
   const [findReplaceOpen, setFindReplaceOpen] = useState(false);
   const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
   const [kitOnlyDialogOpen, setKitOnlyDialogOpen] = useState(false);
@@ -937,6 +964,10 @@ export default function PiecesTab({
                   <DropdownMenuItem onClick={() => setPieceImportOpen(true)}>
                     <Upload className="w-4 h-4 mr-2" /> {t("common.import")}
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => oneNoteInputRef.current?.click()}>
+                    <FileSpreadsheet className="w-4 h-4 mr-2" /> Importar do OneNote
+                  </DropdownMenuItem>
+
                   <DropdownMenuItem onClick={handleReviewPieceCodes}>
                     <Sparkles className="w-4 h-4 mr-2" /> {t("pieces.reviewCodes")}
                   </DropdownMenuItem>
@@ -1377,6 +1408,22 @@ export default function PiecesTab({
         />
       )}
       
+      <input
+        ref={oneNoteInputRef}
+        type="file"
+        accept=".xlsx,.xls"
+        className="hidden"
+        onChange={handleOneNoteFile}
+      />
+      <OneNoteImportDialog
+        open={oneNoteOpen}
+        onOpenChange={setOneNoteOpen}
+        campaignId={campaignId}
+        campaignName={campaign?.name || "campanha atual"}
+        parsed={oneNoteParsed}
+      />
+
+
       <ImportWizardDialog
         open={pieceImportOpen}
         onOpenChange={setPieceImportOpen}
