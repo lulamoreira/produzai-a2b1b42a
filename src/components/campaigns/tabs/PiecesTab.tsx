@@ -1408,6 +1408,22 @@ export default function PiecesTab({
         />
       )}
       
+      <input
+        ref={oneNoteInputRef}
+        type="file"
+        accept=".xlsx,.xls"
+        className="hidden"
+        onChange={handleOneNoteFile}
+      />
+      <OneNoteImportDialog
+        open={oneNoteOpen}
+        onOpenChange={setOneNoteOpen}
+        campaignId={campaignId}
+        campaignName={campaign?.name || "campanha atual"}
+        parsed={oneNoteParsed}
+      />
+
+
       <ImportWizardDialog
         open={pieceImportOpen}
         onOpenChange={setPieceImportOpen}
