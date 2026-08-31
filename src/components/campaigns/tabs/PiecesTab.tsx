@@ -124,6 +124,28 @@ export default function PiecesTab({
   const [orderByLocationOpen, setOrderByLocationOpen] = useState(false);
   const [pptExportOpen, setPptExportOpen] = useState(false);
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
+  const [oneNoteOpen, setOneNoteOpen] = useState(false);
+  const [oneNoteParsed, setOneNoteParsed] = useState<OneNoteParsedPiece[]>([]);
+  const oneNoteInputRef = useRef<HTMLInputElement>(null);
+
+  /** Lê o arquivo cru do OneNote e abre o diálogo de confirmação. */
+  const handleOneNoteFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const parsed = await parseOneNoteFile(file);
+      if (parsed.length === 0) {
+        toast.error("Nenhuma peça encontrada na planilha.");
+        return;
+      }
+      setOneNoteParsed(parsed);
+      setOneNoteOpen(true);
+    } catch (err: any) {
+      toast.error(`Erro ao ler planilha: ${err?.message || err}`);
+    }
+  };
+
   const [findReplaceOpen, setFindReplaceOpen] = useState(false);
   const [customFieldsOpen, setCustomFieldsOpen] = useState(false);
   const [kitOnlyDialogOpen, setKitOnlyDialogOpen] = useState(false);
