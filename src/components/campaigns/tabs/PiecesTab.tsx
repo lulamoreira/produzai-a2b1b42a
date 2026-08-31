@@ -2,8 +2,10 @@ import React, { useState, useMemo, useEffect, useRef, useCallback, useLayoutEffe
 import { useTranslation } from "react-i18next";
 import { 
   Plus, Download, Upload, Sparkles, RefreshCw, ArrowDownAZ, MapPin, Copy, 
-  Trash2, Search, X, Package, MoreHorizontal, Presentation, Settings2, Columns, CaseSensitive
+  Trash2, Search, X, Package, MoreHorizontal, Presentation, Settings2, Columns, CaseSensitive,
+  FileSpreadsheet
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
