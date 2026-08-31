@@ -393,9 +393,11 @@ export default function PiecesTab({
 
     const maxCode = existingMax?.code ?? 0;
 
-    // (b) Registro kit-aware: guarda { kitName, code } de cada peça e a ordem dos kitNames
-    const kitMembers: { kitName: string; code: number }[] = [];
-    const kitNameOrder: string[] = [];
+    // (b) Registro kit-aware: guarda { kitName, category, code } de cada peça
+    //     Kits são agrupados por (nome + localização), nunca só pelo nome.
+    const kitMembers: { kitName: string; category: string; code: number }[] = [];
+    const kitKeyOrder: Array<{ kitName: string; category: string }> = [];
+
 
     for (let i = 0; i < total; i++) {
       const row = rows[i];
