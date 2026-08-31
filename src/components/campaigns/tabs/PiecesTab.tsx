@@ -469,7 +469,16 @@ export default function PiecesTab({
       }
     }
 
-    toast.success(`Importação concluída: ${importedCount} peças importadas${kitsCreated > 0 ? ` e ${kitsCreated} kits criados` : ""}.${skippedCount > 0 ? ` ${skippedCount} linhas ignoradas (sem nome).` : ""}`);
+    // Desambiguação automática de nomes duplicados entre peças de kits
+    let renamedCount = 0;
+    try {
+      renamedCount = await disambiguateKitPieceNames(campaignId);
+    } catch (err) {
+      console.error("Falha na desambiguação de nomes de peças de kit:", err);
+    }
+
+    toast.success(`Importação concluída: ${importedCount} peças importadas${kitsCreated > 0 ? ` e ${kitsCreated} kits criados` : ""}.${renamedCount > 0 ? ` ${renamedCount} nome(s) desambiguado(s).` : ""}${skippedCount > 0 ? ` ${skippedCount} linhas ignoradas (sem nome).` : ""}`);
+    
     
     qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
     qc.invalidateQueries({ queryKey: ["campaign_kits", campaignId] });
