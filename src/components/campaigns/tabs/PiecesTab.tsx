@@ -365,6 +365,10 @@ export default function PiecesTab({
         const parsedCode = parseInt(String(row.code ?? ""), 10);
         const finalCode = isNaN(parsedCode) ? maxCode + i + 1 : parsedCode;
 
+        // (a) Coluna "Kit" preenchida => componente de kit (kit_only forçado)
+        const kitName = (row.kit ?? "").trim();
+        const kitOnlyFromColumn = ["true", "1", "sim", "yes"].includes(String(row.kit_only ?? "").toLowerCase());
+
         const pieceData = {
           campaign_id: campaignId,
           name: name,
@@ -375,7 +379,7 @@ export default function PiecesTab({
           store_category: row.store_category ?? null,
           installation_instructions: row.installation_instructions ?? "Sem informações específicas",
           sub_location: row.sub_location ?? null,
-          kit_only: ["true", "1", "sim", "yes"].includes(String(row.kit_only ?? "").toLowerCase()),
+          kit_only: kitName ? true : kitOnlyFromColumn,
           is_deleted: false,
           display_order: i,
           is_mockup: false,
