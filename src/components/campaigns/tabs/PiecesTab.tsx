@@ -39,6 +39,7 @@ import KitOnlyPiecesDialog from "@/components/KitOnlyPiecesDialog";
 import CustomExportDialog from "@/components/CustomExportDialog";
 import ChangeCaseDialog from "@/components/ChangeCaseDialog";
 import { exportRequoteSheet } from "@/lib/exportRequoteSheet";
+import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
 
 interface PiecesTabProps {
   campaignId: string;
@@ -1133,8 +1134,13 @@ export default function PiecesTab({
         kits={kits}
         kitPieces={kitPieces}
         pieces={pieces}
-        onSuccess={() => {
+        onSuccess={async () => {
           setSelectedPieceIds([]);
+          try {
+            await disambiguateKitPieceNames(campaignId);
+          } catch (err) {
+            console.error("Falha na desambiguação de nomes de peças de kit:", err);
+          }
           qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
           qc.invalidateQueries({ queryKey: ["campaign_kits", campaignId] });
           qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] });
