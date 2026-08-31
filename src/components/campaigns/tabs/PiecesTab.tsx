@@ -1325,7 +1325,7 @@ export default function PiecesTab({
         onOpenChange={setOrderByLocationOpen}
         locations={Object.keys(countsByLocation)}
         countsByLocation={countsByLocation}
-        onApply={() => {}}
+        onApply={handleApplyLocationOrder}
       />
       {viewKitDetail && (
         <KitDetailDialog
