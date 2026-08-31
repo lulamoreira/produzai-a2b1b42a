@@ -302,9 +302,25 @@ export default function PiecesTab({
   };
 
   const [showKitPieces, setShowKitPieces] = useState(false);
+  const searchTerm = pieceSearch.trim().toLowerCase();
+  const matchesSearch = (item: { name?: string; code?: number; category?: string | null }) => {
+    if (!searchTerm) return true;
+    const name = (item.name || "").toLowerCase();
+    const code = String(item.code ?? "").toLowerCase();
+    const category = (item.category || "").toLowerCase();
+    return name.includes(searchTerm) || code.includes(searchTerm) || category.includes(searchTerm);
+  };
+
   const visiblePieces = useMemo(
-    () => (showKitPieces ? pieces : pieces.filter(p => !p.kit_only)),
-    [pieces, showKitPieces]
+    () => {
+      const base = showKitPieces ? pieces : pieces.filter(p => !p.kit_only);
+      return base.filter(matchesSearch);
+    },
+    [pieces, showKitPieces, searchTerm]
+  );
+  const filteredKits = useMemo(
+    () => kits.filter(matchesSearch),
+    [kits, searchTerm]
   );
   const kitOnlyPieces = useMemo(() => pieces.filter(p => p.kit_only), [pieces]);
 
