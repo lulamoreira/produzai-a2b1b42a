@@ -805,8 +805,25 @@ export default function PiecesTab({
       <div className="sticky top-0 z-30 bg-background -mx-4 sm:-mx-6 px-4 sm:px-6 pt-2 pb-2 border-b border-border/40">
         <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4">
           <span className="px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-accent/15 text-accent-foreground">
-            {visiblePieces.length + kits.length} {t("pieces.pieceCountShort")}
+            {visiblePieces.length + filteredKits.length} {t("pieces.pieceCountShort")}
           </span>
+          <div className="relative flex-1 min-w-[140px] max-w-xs">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+            <Input
+              placeholder={t("common.search") + " peça/kit"}
+              value={pieceSearch}
+              onChange={(e) => setPieceSearch(e.target.value)}
+              className="h-8 pl-8 pr-7 text-xs"
+            />
+            {pieceSearch && (
+              <button
+                onClick={() => setPieceSearch("")}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
           {kitOnlyPieces.length > 0 && (
             <Button
               size="sm"
