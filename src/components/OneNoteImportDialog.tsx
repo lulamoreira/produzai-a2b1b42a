@@ -131,17 +131,15 @@ export function OneNoteImportDialog({
       if (lastKitError) throw lastKitError;
       let nextKitCode = (lastKit?.[0]?.code ?? 0) + 1;
 
-      for (const kitName of kitNames) {
-        const memberIdx = parsed
-          .map((p, idx) => ({ p, idx }))
-          .filter(({ p }) => p.kitName === kitName);
-        const kitIsMockup = memberIdx.some(({ p }) => p.is_mockup);
+      for (const group of kitGroups) {
+        const kitIsMockup = group.indexes.some((idx) => parsed[idx].is_mockup);
 
         const { data: kit, error: kitError } = await supabase
           .from("campaign_kits")
           .insert({
             campaign_id: campaignId,
-            name: kitName,
+            name: group.displayName,
+            category: group.category || null,
             code: nextKitCode++,
             is_deleted: false,
             is_mockup: kitIsMockup,
@@ -150,8 +148,8 @@ export function OneNoteImportDialog({
           .single();
         if (kitError) throw kitError;
 
-        for (let order = 0; order < memberIdx.length; order++) {
-          const pieceId = codeToId.get(rowCodes[memberIdx[order].idx]);
+        for (let order = 0; order < group.indexes.length; order++) {
+          const pieceId = codeToId.get(rowCodes[group.indexes[order]]);
           if (!pieceId) continue;
           const { error: linkError } = await supabase.from("campaign_kit_pieces").insert({
             kit_id: kit.id,
@@ -162,6 +160,7 @@ export function OneNoteImportDialog({
           if (linkError) throw linkError;
         }
       }
+
 
       // 4) desambiguação de nomes de peças de kit
       await disambiguateKitPieceNames(campaignId);
