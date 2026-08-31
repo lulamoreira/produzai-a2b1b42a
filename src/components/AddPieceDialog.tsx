@@ -279,7 +279,9 @@ const AddPieceDialog = ({
       if (campaignId) {
         try {
           await disambiguateKitPieceNames(campaignId);
+          await ensureCampaignLocations(campaignId);
           qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
+          qc.invalidateQueries({ queryKey: ["campaign_piece_locations"] });
         } catch (err) {
           console.error("Falha na desambiguação de nomes de peças de kit:", err);
         }
