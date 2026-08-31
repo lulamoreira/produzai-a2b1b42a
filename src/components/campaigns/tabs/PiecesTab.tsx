@@ -1236,7 +1236,16 @@ export default function PiecesTab({
         existingPieces={pieces}
         allKitPieces={kitPieces}
         onCreateKit={(k: any) => addKit?.mutateAsync?.(k)}
-        onAddKitPiece={(kp: any) => addKitPiece?.mutateAsync?.(kp)}
+        onAddKitPiece={async (kp: any) => {
+          await addKitPiece?.mutateAsync?.(kp);
+          try {
+            await disambiguateKitPieceNames(campaignId);
+          } catch (err) {
+            console.error("Falha na desambiguação de nomes de peças de kit:", err);
+          }
+          qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
+          qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] });
+        }}
         onUpdateKit={(k: any) => updateKit?.mutateAsync?.(k)}
         onUpdatePiece={(p: any) => updatePiece?.mutateAsync?.(p)}
         preSelectedPieceIds={preSelectedForKit}
@@ -1351,7 +1360,16 @@ export default function PiecesTab({
           allPieces={pieces}
           canEdit={canEditPieces}
           onDeleteKitPiece={(id) => deleteKitPiece?.mutate?.(id)}
-          onAddKitPiece={(kp) => addKitPiece?.mutateAsync?.(kp)}
+          onAddKitPiece={async (kp) => {
+            await addKitPiece?.mutateAsync?.(kp);
+            try {
+              await disambiguateKitPieceNames(campaignId);
+            } catch (err) {
+              console.error("Falha na desambiguação de nomes de peças de kit:", err);
+            }
+            qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
+            qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] });
+          }}
           onUpdateKit={(k) => updateKit?.mutateAsync?.(k)}
           onUpdateKitPiece={(kp) => updateKitPiece?.mutateAsync?.(kp)}
           onReorderKitPieces={(updates) => reorderKitPieces?.mutateAsync?.(updates)}
