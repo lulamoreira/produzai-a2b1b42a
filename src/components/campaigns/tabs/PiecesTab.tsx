@@ -964,6 +964,10 @@ export default function PiecesTab({
                   <DropdownMenuItem onClick={() => setPieceImportOpen(true)}>
                     <Upload className="w-4 h-4 mr-2" /> {t("common.import")}
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => oneNoteInputRef.current?.click()}>
+                    <FileSpreadsheet className="w-4 h-4 mr-2" /> Importar do OneNote
+                  </DropdownMenuItem>
+
                   <DropdownMenuItem onClick={handleReviewPieceCodes}>
                     <Sparkles className="w-4 h-4 mr-2" /> {t("pieces.reviewCodes")}
                   </DropdownMenuItem>
