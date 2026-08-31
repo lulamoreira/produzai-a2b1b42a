@@ -391,6 +391,11 @@ export default function PiecesTab({
           custom_field_5: row.custom_field_5 ?? null,
         };
         
+        if (kitName) {
+          kitMembers.push({ kitName, code: finalCode });
+          if (!kitNameOrder.includes(kitName)) kitNameOrder.push(kitName);
+        }
+
         if (options.updateExisting && !isNaN(parsedCode)) {
           const existing = pieces.find(p => p.code === finalCode);
           if (existing && updatePiece?.mutateAsync) {
