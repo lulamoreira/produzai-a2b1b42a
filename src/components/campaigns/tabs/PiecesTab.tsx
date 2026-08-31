@@ -441,9 +441,13 @@ export default function PiecesTab({
         };
         
         if (kitName) {
-          kitMembers.push({ kitName, code: finalCode });
-          if (!kitNameOrder.includes(kitName)) kitNameOrder.push(kitName);
+          const kitCategory = String(pieceData.category ?? "").trim();
+          kitMembers.push({ kitName, category: kitCategory, code: finalCode });
+          if (!kitKeyOrder.some((k) => k.kitName === kitName && k.category === kitCategory)) {
+            kitKeyOrder.push({ kitName, category: kitCategory });
+          }
         }
+
 
         if (options.updateExisting && !isNaN(parsedCode)) {
           const existing = pieces.find(p => p.code === finalCode);
