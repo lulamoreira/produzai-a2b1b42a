@@ -53,6 +53,7 @@ const AddPieceDialog = ({
   existingKits
 }: AddPieceDialogProps) => {
   const { t } = useTranslation();
+  const qc = useQueryClient();
   const [internalOpen, setInternalOpen] = useState(false);
   
   const open = controlledOpen !== undefined ? controlledOpen : internalOpen;
