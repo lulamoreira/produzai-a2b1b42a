@@ -314,7 +314,7 @@ const AddPieceDialog = ({
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">{t("common.category")}</label>
+                <label className="text-xs font-medium text-muted-foreground">Localização na Loja</label>
                 <Input
                   required
                   list="piece-categories-list"
