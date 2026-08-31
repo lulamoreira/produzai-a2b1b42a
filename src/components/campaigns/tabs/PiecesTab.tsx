@@ -498,22 +498,125 @@ export default function PiecesTab({
     setSelectedPieceIds([]);
   }, [campaignId]);
 
+  /** Localização (categoria pai) de um kit: metadado próprio ou herdado da 1ª peça componente. */
+  const getKitLocation = useCallback((kit: any): string => {
+    const own = (kit?.category ?? "").trim();
+    if (own) return own;
+    const kps = kitPieces
+      .filter((kp: any) => kp.kit_id === kit.id)
+      .sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
+    const firstPiece = pieces.find((p: any) => p.id === kps[0]?.piece_id);
+    return (firstPiece?.category ?? "").trim();
+  }, [pieces, kitPieces]);
+
   const countsByLocation = useMemo(() => {
     const counts: Record<string, number> = {};
-    pieces.forEach(p => {
-      const loc = p.category || "";
+    pieces.filter(p => !p.kit_only).forEach(p => {
+      const loc = (p.category || "").trim();
       counts[loc] = (counts[loc] || 0) + 1;
     });
     kits.forEach(k => {
-      const kp = kitPieces.filter(kp => kp.kit_id === k.id);
-      if (kp.length > 0) {
-        const p = pieces.find(p => p.id === kp[0].piece_id);
-        const loc = p?.category || "";
-        counts[loc] = (counts[loc] || 0) + 1;
-      }
+      const loc = getKitLocation(k);
+      counts[loc] = (counts[loc] || 0) + 1;
     });
     return counts;
-  }, [pieces, kits, kitPieces]);
+  }, [pieces, kits, getKitLocation]);
+
+  /**
+   * Aplica a ordem de localizações escolhida no dialog:
+   * agrupa peças/kits por localização (na ordem definida), ordena
+   * alfabeticamente pelo nome dentro de cada grupo, grava display_order
+   * e recodifica todos os códigos sequencialmente.
+   */
+  const handleApplyLocationOrder = async (orderedLocations: string[]) => {
+    const rank = new Map<string, number>();
+    orderedLocations.forEach((loc, i) => rank.set((loc || "").trim(), i));
+    const rankOf = (loc: string) => rank.get((loc || "").trim()) ?? Number.MAX_SAFE_INTEGER;
+
+    type Entry = { type: "piece" | "kit"; item: any; loc: string; name: string };
+    const entries: Entry[] = [
+      ...pieces
+        .filter((p: any) => !p.kit_only)
+        .map((p: any) => ({ type: "piece" as const, item: p, loc: (p.category || "").trim(), name: p.name || "" })),
+      ...kits.map((k: any) => ({ type: "kit" as const, item: k, loc: getKitLocation(k), name: k.name || "" })),
+    ];
+
+    entries.sort((a, b) => {
+      const ra = rankOf(a.loc);
+      const rb = rankOf(b.loc);
+      if (ra !== rb) return ra - rb;
+      return a.name.localeCompare(b.name, "pt-BR", { numeric: true, sensitivity: "base" });
+    });
+
+    const toastId = "apply-location-order";
+    toast.loading("Aplicando ordenação e recodificando...", { id: toastId });
+
+    try {
+      // 1) display_order sequencial no nível superior
+      const pieceUpdates: Array<{ id: string; display_order: number; code: number }> = [];
+      const kitUpdates: Array<{ id: string; display_order: number; code: number }> = [];
+      const kitChildUpdates: Array<{ id: string; code: number }> = [];
+
+      let nextCode = 1;
+      entries.forEach((entry, index) => {
+        if (entry.type === "piece") {
+          pieceUpdates.push({ id: entry.item.id, display_order: index, code: nextCode++ });
+        } else {
+          kitUpdates.push({ id: entry.item.id, display_order: index, code: nextCode++ });
+          // peças componentes recebem códigos logo após o kit
+          const children = kitPieces
+            .filter((kp: any) => kp.kit_id === entry.item.id)
+            .sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0));
+          for (const kp of children) {
+            const child = pieces.find((p: any) => p.id === kp.piece_id && p.kit_only);
+            if (child) kitChildUpdates.push({ id: child.id, code: nextCode++ });
+          }
+        }
+      });
+
+      // 2) Persistência em lotes
+      const chunk = <T,>(arr: T[], size: number) =>
+        Array.from({ length: Math.ceil(arr.length / size) }, (_, i) => arr.slice(i * size, i * size + size));
+
+      for (const batch of chunk(pieceUpdates, 25)) {
+        const results = await Promise.all(
+          batch.map(u =>
+            supabase.from("campaign_pieces").update({ display_order: u.display_order, code: u.code }).eq("id", u.id)
+          )
+        );
+        const err = results.find(r => r.error)?.error;
+        if (err) throw err;
+      }
+
+      for (const batch of chunk(kitChildUpdates, 25)) {
+        const results = await Promise.all(
+          batch.map(u => supabase.from("campaign_pieces").update({ code: u.code }).eq("id", u.id))
+        );
+        const err = results.find(r => r.error)?.error;
+        if (err) throw err;
+      }
+
+      for (const batch of chunk(kitUpdates, 25)) {
+        const results = await Promise.all(
+          batch.map(u =>
+            supabase.from("campaign_kits").update({ display_order: u.display_order, code: u.code }).eq("id", u.id)
+          )
+        );
+        const err = results.find(r => r.error)?.error;
+        if (err) throw err;
+      }
+
+      toast.success(`Ordenação aplicada a ${entries.length} item(ns) e códigos recodificados.`, { id: toastId });
+
+      qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
+      qc.invalidateQueries({ queryKey: ["campaign_kits", campaignId] });
+      qc.invalidateQueries({ queryKey: ["campaign_kit_pieces", campaignId] });
+      if (refetch) await refetch();
+    } catch (error: any) {
+      toast.error("Erro ao aplicar ordenação: " + (error?.message ?? "desconhecido"), { id: toastId });
+    }
+  };
+
 
   const handleReorder = async (rows: UnifiedRow[]) => {
     // 1. ATUALIZAÇÃO OTIMISTA — reflita a nova ordem na UI imediatamente
