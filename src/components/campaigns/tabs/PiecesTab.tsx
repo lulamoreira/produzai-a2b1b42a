@@ -524,9 +524,17 @@ export default function PiecesTab({
     toast.success(`Importação concluída: ${importedCount} peças importadas${kitsCreated > 0 ? ` e ${kitsCreated} kits criados` : ""}.${renamedCount > 0 ? ` ${renamedCount} nome(s) desambiguado(s).` : ""}${skippedCount > 0 ? ` ${skippedCount} linhas ignoradas (sem nome).` : ""}`);
     
     
+    // Registra no dialog "Gerenciar Localizações" toda localização nova vinda da planilha
+    try {
+      await ensureCampaignLocations(campaignId);
+    } catch (err) {
+      console.error("Falha ao registrar localizações da campanha:", err);
+    }
+
     qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
     qc.invalidateQueries({ queryKey: ["campaign_kits", campaignId] });
     qc.invalidateQueries({ queryKey: ["campaign_kit_pieces", campaignId] });
+    qc.invalidateQueries({ queryKey: ["campaign_piece_locations"] });
     if (refetch) {
       await refetch();
     }

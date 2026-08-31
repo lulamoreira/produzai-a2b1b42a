@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import ImportSpecFromCampaign from "./ImportSpecFromCampaign";
 import { useQueryClient } from "@tanstack/react-query";
 import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
+import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
 
 interface AddPieceDialogProps {
   existingPieces: any[];

@@ -13,6 +13,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
+import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
 import type { OneNoteParsedPiece } from "@/lib/parseOneNoteSheet";
 
 interface OneNoteImportDialogProps {
@@ -136,11 +137,15 @@ export function OneNoteImportDialog({
       // 4) desambiguação de nomes de peças de kit
       await disambiguateKitPieceNames(campaignId);
 
+      // 4.1) registrar localizações novas usadas pelas peças
+      await ensureCampaignLocations(campaignId);
+
       // 5) refresh
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] }),
         queryClient.invalidateQueries({ queryKey: ["campaign_kits"] }),
         queryClient.invalidateQueries({ queryKey: ["campaign_kit_pieces"] }),
+        queryClient.invalidateQueries({ queryKey: ["campaign_piece_locations"] }),
       ]);
 
       toast.success(`Importadas ${parsed.length} peças e ${kitNames.length} kits do OneNote`, {
