@@ -176,7 +176,7 @@ export function OneNoteImportDialog({
         queryClient.invalidateQueries({ queryKey: ["campaign_piece_locations"] }),
       ]);
 
-      toast.success(`Importadas ${parsed.length} peças e ${kitNames.length} kits do OneNote`, {
+      toast.success(`Importadas ${parsed.length} peças e ${kitGroups.length} kits do OneNote`, {
         id: toastId,
       });
       onOpenChange(false);
@@ -193,7 +193,7 @@ export function OneNoteImportDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>Importar do OneNote</AlertDialogTitle>
           <AlertDialogDescription>
-            {parsed.length} peças e {kitNames.length} kits serão importados para a campanha{" "}
+            {parsed.length} peças e {kitGroups.length} kits serão importados para a campanha{" "}
             {campaignName}. Continuar?
           </AlertDialogDescription>
         </AlertDialogHeader>
