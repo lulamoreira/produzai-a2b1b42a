@@ -144,7 +144,31 @@ export function OrderByLocationDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex items-center gap-2 pb-2">
+          <Button
+            type="button"
+            size="sm"
+            variant={mode === "manual" ? "default" : "outline"}
+            onClick={() => setMode("manual")}
+            className="flex-1"
+          >
+            <GripVertical className="w-4 h-4 mr-1.5" />
+            Manual
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={mode === "alpha" ? "default" : "outline"}
+            onClick={sortAlphabetically}
+            className="flex-1"
+          >
+            <ArrowDownAZ className="w-4 h-4 mr-1.5" />
+            Alfabética (A–Z)
+          </Button>
+        </div>
+
         <div className="flex-1 overflow-y-auto -mx-1 px-1">
+
           {order.length === 0 ? (
             <div className="text-center text-sm text-muted-foreground py-8">
               Nenhuma localização disponível.
