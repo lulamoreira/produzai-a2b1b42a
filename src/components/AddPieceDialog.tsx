@@ -272,6 +272,15 @@ const AddPieceDialog = ({
           is_new: form.is_new,
         });
       }
+      // Desambiguação automática de nomes de peças de kit (idempotente).
+      if (campaignId) {
+        try {
+          await disambiguateKitPieceNames(campaignId);
+          qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
+        } catch (err) {
+          console.error("Falha na desambiguação de nomes de peças de kit:", err);
+        }
+      }
       setOpen(false);
     } catch (error) {
       // toast.error is already handled by mutations
