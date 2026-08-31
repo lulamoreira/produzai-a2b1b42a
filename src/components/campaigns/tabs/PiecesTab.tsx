@@ -126,6 +126,8 @@ export default function PiecesTab({
   const [selectedPieceIds, setSelectedPieceIds] = useState<string[]>([]);
   const [convertSelectionDialogOpen, setConvertSelectionDialogOpen] = useState(false);
   const [preSelectedForKit, setPreSelectedForKit] = useState<string[]>([]);
+  const [bulkLocationDialogOpen, setBulkLocationDialogOpen] = useState(false);
+  const [bulkLocationValue, setBulkLocationValue] = useState("");
   const [editingPiece, setEditingPiece] = useState<any>(null);
   const editScrollSnapshotRef = useRef<Array<{ element: Element | Window; top: number; left: number }> | null>(null);
   const restoreTimersRef = useRef<number[]>([]);
