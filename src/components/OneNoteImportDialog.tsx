@@ -38,9 +38,38 @@ export function OneNoteImportDialog({
   const [importing, setImporting] = useState(false);
   const queryClient = useQueryClient();
 
-  const kitNames = Array.from(
-    new Set(parsed.map((p) => p.kitName).filter((n) => n && n.trim() !== "")),
-  );
+  /**
+   * Agrupamento de kits por (nome do kit + localização do componente).
+   * Cada par distinto vira um kit próprio; o nome só recebe o sufixo da
+   * localização quando o mesmo nome aparece em mais de uma localização.
+   */
+  const kitGroups = (() => {
+    const groups: Array<{ kitName: string; category: string; indexes: number[] }> = [];
+    const byKey = new Map<string, number>();
+    parsed.forEach((p, idx) => {
+      const kitName = (p.kitName ?? "").trim();
+      if (!kitName) return;
+      const category = ((p.category ?? "").toString()).trim().toUpperCase();
+      const key = `${kitName}||${category}`;
+      let pos = byKey.get(key);
+      if (pos === undefined) {
+        pos = groups.length;
+        byKey.set(key, pos);
+        groups.push({ kitName, category, indexes: [] });
+      }
+      groups[pos].indexes.push(idx);
+    });
+    const nameCount = new Map<string, number>();
+    for (const g of groups) nameCount.set(g.kitName, (nameCount.get(g.kitName) ?? 0) + 1);
+    return groups.map((g) => ({
+      ...g,
+      displayName:
+        (nameCount.get(g.kitName) ?? 0) > 1 && g.category
+          ? `${g.kitName} - ${g.category}`
+          : g.kitName,
+    }));
+  })();
+
 
   const handleConfirm = async () => {
     if (importing) return;
