@@ -1038,6 +1038,71 @@ export default function PiecesTab({
         updatePiece={updatePiece}
       />
 
+      <Dialog open={bulkLocationDialogOpen} onOpenChange={setBulkLocationDialogOpen}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Localização na Loja</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="bulk-location-input">Localização na Loja</Label>
+              <Input
+                id="bulk-location-input"
+                list="bulk-location-categories"
+                value={bulkLocationValue}
+                onChange={(e) => setBulkLocationValue(e.target.value.toUpperCase())}
+                placeholder="Ex: STANDARD P, PAREDE"
+                autoFocus
+              />
+              <datalist id="bulk-location-categories">
+                {Array.from(
+                  new Set(
+                    pieces
+                      .map((p: any) => (p.category || "").toString().trim().toUpperCase())
+                      .filter(Boolean)
+                  )
+                )
+                  .sort()
+                  .map((cat) => (
+                    <option key={cat} value={cat} />
+                  ))}
+              </datalist>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setBulkLocationDialogOpen(false)}>
+              {t("common.cancel")}
+            </Button>
+            <Button
+              onClick={async () => {
+                const value = bulkLocationValue.trim().toUpperCase();
+                if (!value) {
+                  toast.error("Digite a localização");
+                  return;
+                }
+                const { error } = await supabase
+                  .from("campaign_pieces")
+                  .update({ category: value })
+                  .in("id", selectedPieceIds)
+                  .eq("campaign_id", campaignId);
+                if (error) {
+                  toast.error("Erro: " + error.message);
+                  return;
+                }
+                toast.success(`Localização "${value}" aplicada a ${selectedPieceIds.length} peça(s).`);
+                qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
+                if (refetch) refetch();
+                setSelectedPieceIds([]);
+                setBulkLocationValue("");
+                setBulkLocationDialogOpen(false);
+              }}
+            >
+              Aplicar a {selectedPieceIds.length} peça(s)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <CreateKitDialog
         open={createKitDialogOpen}
         onOpenChange={(open) => {
