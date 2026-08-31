@@ -71,9 +71,9 @@ export function OneNoteImportDialog({
           .insert({
             campaign_id: campaignId,
             code,
-            name: p.name,
-            category: (p.category || "").toUpperCase(),
-            size: p.size || null,
+            name: (p.name ?? "").toString(),
+            category: ((p.category ?? "").toString()).toUpperCase(),
+            size: (p.size ?? "").toString(),
             kit_only: p.kit_only,
             is_mockup: p.is_mockup,
             sub_location: null,
