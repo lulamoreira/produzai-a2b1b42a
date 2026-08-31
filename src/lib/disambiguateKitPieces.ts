@@ -13,71 +13,86 @@ import { supabase } from "@/integrations/supabase/client";
 export async function disambiguateKitPieceNames(campaignId: string): Promise<number> {
   if (!campaignId) return 0;
 
+  const { data: pieces, error: piecesError } = await supabase
+    .from("campaign_pieces")
+    .select("id,name,category,kit_only")
+    .eq("campaign_id", campaignId)
+    .eq("is_deleted", false);
+
+  if (piecesError) {
+    console.error("disambiguateKitPieceNames: erro ao buscar peças", piecesError);
+    return 0;
+  }
+  if (!pieces || pieces.length === 0) return 0;
+
   const { data: kits, error: kitsError } = await supabase
     .from("campaign_kits")
     .select("id,name")
     .eq("campaign_id", campaignId)
-    .eq("is_deleted", false)
-    .order("id");
+    .eq("is_deleted", false);
 
   if (kitsError) {
     console.error("disambiguateKitPieceNames: erro ao buscar kits", kitsError);
     return 0;
   }
-  if (!kits || kits.length === 0) return 0;
 
   const kitById = new Map<string, string>(
-    kits.map((k) => [k.id as string, (k.name ?? "") as string]),
+    (kits ?? []).map((k) => [k.id as string, (k.name ?? "") as string]),
   );
 
   const { data: links, error: linksError } = await supabase
     .from("campaign_kit_pieces")
-    .select("piece_id, kit_id, campaign_pieces(id,name)")
-    .in("kit_id", kits.map((k) => k.id as string))
-    .order("id");
+    .select("piece_id,kit_id")
+    .in("kit_id", (kits ?? []).map((k) => k.id as string));
 
   if (linksError) {
     console.error("disambiguateKitPieceNames: erro ao buscar vínculos", linksError);
     return 0;
   }
 
-  // Agrupa por peça: nome atual + conjunto de kits aos quais pertence
-  const byPiece = new Map<string, { name: string; kits: Set<string> }>();
-  for (const link of (links ?? []) as Array<{
-    piece_id: string;
-    kit_id: string;
-    campaign_pieces: { id: string; name: string | null } | null;
-  }>) {
-    const piece = link.campaign_pieces;
-    if (!piece) continue;
-    const kitName = kitById.get(link.kit_id);
-    if (!kitName) continue;
-    const entry = byPiece.get(piece.id) ?? { name: (piece.name ?? "") as string, kits: new Set<string>() };
-    entry.kits.add(kitName);
-    byPiece.set(piece.id, entry);
+  const kitByPiece = new Map<string, Set<string>>();
+  for (const l of (links ?? []) as Array<{ piece_id: string; kit_id: string }>) {
+    const s = kitByPiece.get(l.piece_id) ?? new Set<string>();
+    const kitName = kitById.get(l.kit_id);
+    if (kitName) s.add(kitName);
+    kitByPiece.set(l.piece_id, s);
   }
 
-  // Conta quantas peças de kit compartilham o mesmo nome
   const nameCount = new Map<string, number>();
-  for (const entry of byPiece.values()) {
-    nameCount.set(entry.name, (nameCount.get(entry.name) ?? 0) + 1);
+  for (const p of pieces as Array<{
+    id: string;
+    name: string | null;
+    category: string | null;
+    kit_only: boolean | null;
+  }>) {
+    nameCount.set(p.name ?? "", (nameCount.get(p.name ?? "") ?? 0) + 1);
   }
 
   let renamed = 0;
-  for (const [pieceId, entry] of byPiece) {
-    if ((nameCount.get(entry.name) ?? 0) <= 1) continue;
-    const kitLabel = [...entry.kits].join(" + ");
-    if (!kitLabel) continue;
-    const suffix = ` - ${kitLabel}`;
-    if (entry.name.endsWith(suffix)) continue;
+  for (const p of pieces as Array<{
+    id: string;
+    name: string | null;
+    category: string | null;
+    kit_only: boolean | null;
+  }>) {
+    const name = p.name ?? "";
+    if ((nameCount.get(name) ?? 0) <= 1) continue;
+
+    const kn = kitByPiece.get(p.id);
+    const suffixSrc =
+      kn && kn.size > 0 ? [...kn].join(" + ") : (p.category ?? "");
+    if (!suffixSrc) continue;
+
+    const suffix = ` - ${suffixSrc}`;
+    if (name.endsWith(suffix)) continue;
 
     const { error } = await supabase
       .from("campaign_pieces")
-      .update({ name: entry.name + suffix })
-      .eq("id", pieceId);
+      .update({ name: name + suffix })
+      .eq("id", p.id);
 
     if (error) {
-      console.error("disambiguateKitPieceNames: erro ao renomear peça", pieceId, error);
+      console.error("disambiguateKitPieceNames: erro ao renomear peça", p.id, error);
       continue;
     }
     renamed++;
