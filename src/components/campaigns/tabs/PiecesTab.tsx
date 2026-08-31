@@ -802,25 +802,26 @@ export default function PiecesTab({
 
   return (
     <div className="space-y-4">
-      <div className="sticky top-0 z-30 bg-background -mx-4 sm:-mx-6 px-4 sm:px-6 pt-2 pb-2 border-b border-border/40">
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-4">
-          <span className="px-2 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-accent/15 text-accent-foreground">
+      <div className="sticky top-0 z-30 bg-background -mx-4 sm:-mx-6 px-4 sm:px-6 pt-3 pb-3 border-b border-border/40 space-y-3">
+        {/* Linha de filtros e contadores */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+          <span className="shrink-0 px-2.5 sm:px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold bg-accent/15 text-accent-foreground">
             {visiblePieces.length + filteredKits.length} {t("pieces.pieceCountShort")}
           </span>
-          <div className="relative flex-1 min-w-[140px] max-w-xs">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <div className="relative flex-1 min-w-0 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder={t("common.search") + " peça/kit"}
               value={pieceSearch}
               onChange={(e) => setPieceSearch(e.target.value)}
-              className="h-8 pl-8 pr-7 text-xs"
+              className="h-9 w-full pl-9 pr-8 text-sm"
             />
             {pieceSearch && (
               <button
                 onClick={() => setPieceSearch("")}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             )}
           </div>
@@ -829,13 +830,16 @@ export default function PiecesTab({
               size="sm"
               variant={showKitPieces ? "default" : "outline"}
               onClick={() => setShowKitPieces(v => !v)}
-              className="text-[10px] sm:text-xs gap-1"
+              className="shrink-0 text-[10px] sm:text-xs gap-1 h-9"
               title="Mostra as peças que existem somente dentro de kits, para permitir selecioná-las (o kit pai é incluído automaticamente na recotação)."
             >
               {showKitPieces ? "✓ " : ""}Mostrar peças de kits ({kitOnlyPieces.length})
             </Button>
           )}
-          <div className="flex-1" />
+        </div>
+
+        {/* Linha de ações */}
+        <div className="flex flex-wrap items-center gap-2">
           {canEditPieces && (
             <>
               {isAdminOrMaster && (
@@ -1039,6 +1043,8 @@ export default function PiecesTab({
                 </DropdownMenuContent>
               </DropdownMenu>
               
+              <div className="flex-1" />
+
               <AddPieceDialog 
                 open={pieceDialogOpen}
                 onOpenChange={setPieceDialogOpen}
