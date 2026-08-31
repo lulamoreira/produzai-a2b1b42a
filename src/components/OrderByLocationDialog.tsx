@@ -84,11 +84,27 @@ export function OrderByLocationDialog({
   }, [locations]);
 
   const [order, setOrder] = useState<string[]>(initialOrder);
+  const [mode, setMode] = useState<"manual" | "alpha">("manual");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) setOrder(initialOrder);
+    if (open) {
+      setOrder(initialOrder);
+      setMode("manual");
+    }
   }, [open, initialOrder]);
+
+  const sortAlphabetically = () => {
+    setMode("alpha");
+    setOrder((prev) =>
+      [...prev].sort((a, b) => {
+        // "Sem localização" sempre por último
+        if (a === NONE_KEY) return 1;
+        if (b === NONE_KEY) return -1;
+        return a.localeCompare(b, "pt-BR", { numeric: true, sensitivity: "base" });
+      }),
+    );
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -101,8 +117,10 @@ export function OrderByLocationDialog({
     const oldIndex = order.indexOf(String(active.id));
     const newIndex = order.indexOf(String(over.id));
     if (oldIndex === -1 || newIndex === -1) return;
+    setMode("manual");
     setOrder(arrayMove(order, oldIndex, newIndex));
   };
+
 
   const handleApply = async () => {
     setSaving(true);
