@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import ImportSpecFromCampaign from "./ImportSpecFromCampaign";
+import { useQueryClient } from "@tanstack/react-query";
+import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
 
 interface AddPieceDialogProps {
   existingPieces: any[];
