@@ -694,6 +694,37 @@ export default function PiecesTab({
                 </Popover>
               )}
 
+              {/* ===== TEMPORÁRIO - remover após usar ===== */}
+              {isAdminOrMaster && (
+                <AlertDialog open={independentPhotosOpen} onOpenChange={setIndependentPhotosOpen}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-[10px] sm:text-xs gap-1"
+                    onClick={() => setIndependentPhotosOpen(true)}
+                    disabled={makingPhotosIndependent}
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    {"Tornar fotos independentes"}
+                  </Button>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Tornar fotos independentes</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Isso vai criar cópias próprias das fotos desta campanha. As outras campanhas não são afetadas. Continuar?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={(e) => { e.preventDefault(); makePhotosIndependent(); }}>
+                        Continuar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              {/* ===== FIM TEMPORÁRIO ===== */}
+
               <Popover>
                 <PopoverTrigger asChild>
                   <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1">
