@@ -1080,7 +1080,7 @@ export default function PiecesTab({
 
       <SortablePiecesTable
         pieces={visiblePieces}
-        kits={kits}
+        kits={filteredKits}
         kitPieces={kitPieces}
         allPieces={pieces}
         stores={stores}
