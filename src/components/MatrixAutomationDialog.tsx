@@ -420,6 +420,41 @@ export default function MatrixAutomationDialog({
     setItemSearch("");
   };
 
+  /* ── Seleção por Localização na Loja ── */
+  const locationOptions = useMemo(() => {
+    const map = new Map<string, number>();
+    pieces.forEach(p => {
+      const cat = (p.category || "").trim();
+      if (!cat) return;
+      map.set(cat, (map.get(cat) ?? 0) + 1);
+    });
+    return Array.from(map.entries())
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
+  }, [pieces]);
+
+  const [locationValue, setLocationValue] = useState<string>("");
+  const [locationQty, setLocationQty] = useState<number>(1);
+
+  const addItemsByLocation = () => {
+    if (!locationValue) return;
+    const qty = Math.max(1, locationQty || 1);
+    setSelectedItems(prev => {
+      const used = new Set(prev.map(i => `${i.type}-${i.id}`));
+      const toAdd = pieces
+        .filter(p => (p.category || "").trim() === locationValue)
+        .filter(p => !used.has(`piece-${p.id}`))
+        .map(p => ({ id: p.id, type: "piece" as const, code: p.code, name: p.name, quantity: qty }));
+      if (toAdd.length === 0) {
+        toast.info("Todas as peças dessa localização já estão selecionadas.");
+        return prev;
+      }
+      toast.success(`${toAdd.length} peça(s) de "${locationValue}" adicionada(s).`);
+      return [...prev, ...toAdd];
+    });
+  };
+
+
   const removeItem = (idx: number) => {
     setSelectedItems(prev => prev.filter((_, i) => i !== idx));
   };
@@ -1682,7 +1717,50 @@ export default function MatrixAutomationDialog({
                     )}
                   </p>
                 )}
+
+                {/* Adicionar em lote por Localização na Loja */}
+                {locationOptions.length > 0 && (
+                  <div className="mt-2 p-2 rounded-lg border bg-muted/30 space-y-1.5">
+                    <p className="text-[11px] font-medium text-muted-foreground">
+                      Adicionar todas as peças de uma Localização na Loja
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                      <Select value={locationValue} onValueChange={setLocationValue}>
+                        <SelectTrigger className="h-8 text-xs flex-1 min-w-0">
+                          <SelectValue placeholder="Selecione a localização..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {locationOptions.map(opt => (
+                            <SelectItem key={opt.name} value={opt.name} className="text-xs">
+                              {opt.name} ({opt.count})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Input
+                        type="number"
+                        min={1}
+                        value={locationQty}
+                        onChange={e => setLocationQty(Math.max(1, parseInt(e.target.value) || 1))}
+                        className="h-8 text-xs w-full sm:w-24"
+                        title={kind === "by_field" ? "Fator" : "Quantidade por loja"}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 shrink-0"
+                        disabled={!locationValue}
+                        onClick={addItemsByLocation}
+                      >
+                        <PlusCircle className="w-3.5 h-3.5 mr-1" /> Adicionar
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 <div className="relative mt-1">
+
                   <Input
                     placeholder={t("automation.searchByCode")}
                     value={itemSearch}
