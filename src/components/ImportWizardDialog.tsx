@@ -90,6 +90,7 @@ const PIECE_FIELDS: SystemField[] = [
   { key: "instructions", label: "Instruções" },
   { key: "sub_location", label: "Sublocalização" },
   { key: "kit_only", label: "Apenas em Kit" },
+  { key: "kit", label: "Kit" },
 ];
 
 const IGNORE = "__ignore__";
