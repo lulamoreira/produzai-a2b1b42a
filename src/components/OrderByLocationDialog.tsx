@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { GripVertical, MapPin } from "lucide-react";
+import { ArrowDownAZ, GripVertical, MapPin } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -84,11 +84,27 @@ export function OrderByLocationDialog({
   }, [locations]);
 
   const [order, setOrder] = useState<string[]>(initialOrder);
+  const [mode, setMode] = useState<"manual" | "alpha">("manual");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) setOrder(initialOrder);
+    if (open) {
+      setOrder(initialOrder);
+      setMode("manual");
+    }
   }, [open, initialOrder]);
+
+  const sortAlphabetically = () => {
+    setMode("alpha");
+    setOrder((prev) =>
+      [...prev].sort((a, b) => {
+        // "Sem localização" sempre por último
+        if (a === NONE_KEY) return 1;
+        if (b === NONE_KEY) return -1;
+        return a.localeCompare(b, "pt-BR", { numeric: true, sensitivity: "base" });
+      }),
+    );
+  };
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
@@ -101,8 +117,10 @@ export function OrderByLocationDialog({
     const oldIndex = order.indexOf(String(active.id));
     const newIndex = order.indexOf(String(over.id));
     if (oldIndex === -1 || newIndex === -1) return;
+    setMode("manual");
     setOrder(arrayMove(order, oldIndex, newIndex));
   };
+
 
   const handleApply = async () => {
     setSaving(true);
@@ -126,7 +144,31 @@ export function OrderByLocationDialog({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex items-center gap-2 pb-2">
+          <Button
+            type="button"
+            size="sm"
+            variant={mode === "manual" ? "default" : "outline"}
+            onClick={() => setMode("manual")}
+            className="flex-1"
+          >
+            <GripVertical className="w-4 h-4 mr-1.5" />
+            Manual
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant={mode === "alpha" ? "default" : "outline"}
+            onClick={sortAlphabetically}
+            className="flex-1"
+          >
+            <ArrowDownAZ className="w-4 h-4 mr-1.5" />
+            Alfabética (A–Z)
+          </Button>
+        </div>
+
         <div className="flex-1 overflow-y-auto -mx-1 px-1">
+
           {order.length === 0 ? (
             <div className="text-center text-sm text-muted-foreground py-8">
               Nenhuma localização disponível.
