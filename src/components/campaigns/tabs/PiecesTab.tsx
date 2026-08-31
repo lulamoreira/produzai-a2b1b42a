@@ -346,6 +346,10 @@ export default function PiecesTab({
 
     const maxCode = existingMax?.code ?? 0;
 
+    // (b) Registro kit-aware: guarda { kitName, code } de cada peça e a ordem dos kitNames
+    const kitMembers: { kitName: string; code: number }[] = [];
+    const kitNameOrder: string[] = [];
+
     for (let i = 0; i < total; i++) {
       const row = rows[i];
       const name = (row.name ?? "").trim();
@@ -361,6 +365,10 @@ export default function PiecesTab({
         const parsedCode = parseInt(String(row.code ?? ""), 10);
         const finalCode = isNaN(parsedCode) ? maxCode + i + 1 : parsedCode;
 
+        // (a) Coluna "Kit" preenchida => componente de kit (kit_only forçado)
+        const kitName = (row.kit ?? "").trim();
+        const kitOnlyFromColumn = ["true", "1", "sim", "yes"].includes(String(row.kit_only ?? "").toLowerCase());
+
         const pieceData = {
           campaign_id: campaignId,
           name: name,
@@ -371,7 +379,7 @@ export default function PiecesTab({
           store_category: row.store_category ?? null,
           installation_instructions: row.installation_instructions ?? "Sem informações específicas",
           sub_location: row.sub_location ?? null,
-          kit_only: ["true", "1", "sim", "yes"].includes(String(row.kit_only ?? "").toLowerCase()),
+          kit_only: kitName ? true : kitOnlyFromColumn,
           is_deleted: false,
           display_order: i,
           is_mockup: false,
@@ -383,6 +391,11 @@ export default function PiecesTab({
           custom_field_5: row.custom_field_5 ?? null,
         };
         
+        if (kitName) {
+          kitMembers.push({ kitName, code: finalCode });
+          if (!kitNameOrder.includes(kitName)) kitNameOrder.push(kitName);
+        }
+
         if (options.updateExisting && !isNaN(parsedCode)) {
           const existing = pieces.find(p => p.code === finalCode);
           if (existing && updatePiece?.mutateAsync) {
@@ -399,9 +412,66 @@ export default function PiecesTab({
       }
     }
     
-    toast.success(`Importação concluída: ${importedCount} peças importadas.${skippedCount > 0 ? ` ${skippedCount} linhas ignoradas (sem nome).` : ""}`);
+    // (c) Criar kits e ligar componentes
+    let kitsCreated = 0;
+    if (kitNameOrder.length > 0) {
+      options.onProgress?.(total, total, "Criando kits...");
+
+      // 1. Mapa code→id das peças da campanha
+      const { data: allPieces } = await supabase
+        .from("campaign_pieces")
+        .select("id, code")
+        .eq("campaign_id", campaignId)
+        .eq("is_deleted", false);
+      const codeToId = new Map((allPieces || []).map(p => [p.code, p.id]));
+
+      // 2. Próximo código de kit
+      const { data: existingKits } = await supabase
+        .from("campaign_kits")
+        .select("id, name, code")
+        .eq("campaign_id", campaignId)
+        .eq("is_deleted", false);
+      const kitByName = new Map((existingKits || []).map(k => [k.name, k.id]));
+      const maxKitCode = (existingKits || []).reduce((max, k) => Math.max(max, k.code ?? 0), 0);
+      let nextKitCode = maxKitCode + 1;
+
+      // 3. Para cada kitName distinto, na ordem de aparição
+      for (const kitName of kitNameOrder) {
+        let kitId = kitByName.get(kitName) as string | undefined;
+
+        if (!kitId) {
+          const { data: newKit, error: kitError } = await supabase
+            .from("campaign_kits")
+            .insert({ campaign_id: campaignId, name: kitName, code: nextKitCode++ })
+            .select()
+            .single();
+          if (kitError) {
+            console.error(`Erro ao criar kit "${kitName}":`, kitError);
+            continue;
+          }
+          kitId = newKit.id;
+          kitByName.set(kitName, kitId);
+          kitsCreated++;
+        }
+
+        // Ligar componentes (quantity sempre 1)
+        let displayOrder = 0;
+        for (const member of kitMembers.filter(m => m.kitName === kitName)) {
+          const pieceId = codeToId.get(member.code);
+          if (!pieceId) continue;
+          const { error: kpError } = await supabase
+            .from("campaign_kit_pieces")
+            .insert({ kit_id: kitId, piece_id: pieceId, quantity: 1, display_order: displayOrder++ });
+          if (kpError) console.error(`Erro ao ligar peça ${member.code} ao kit "${kitName}":`, kpError);
+        }
+      }
+    }
+
+    toast.success(`Importação concluída: ${importedCount} peças importadas${kitsCreated > 0 ? ` e ${kitsCreated} kits criados` : ""}.${skippedCount > 0 ? ` ${skippedCount} linhas ignoradas (sem nome).` : ""}`);
     
     qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
+    qc.invalidateQueries({ queryKey: ["campaign_kits", campaignId] });
+    qc.invalidateQueries({ queryKey: ["campaign_kit_pieces", campaignId] });
     if (refetch) {
       await refetch();
     }
