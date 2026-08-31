@@ -17,6 +17,10 @@ import {
 import { 
   Popover, PopoverContent, PopoverTrigger 
 } from "@/components/ui/popover";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -104,6 +108,68 @@ export default function PiecesTab({
   const { t } = useTranslation();
   const qc = useQueryClient();
   const { isAdminOrMaster } = useUserRole();
+
+  /* ===== TEMPORÁRIO - remover após usar ===== */
+  const [independentPhotosOpen, setIndependentPhotosOpen] = useState(false);
+  const [makingPhotosIndependent, setMakingPhotosIndependent] = useState(false);
+
+  const makePhotosIndependent = async () => {
+    const marker = "/piece-images/";
+    const copyOne = async (url: string | null, idx: number): Promise<string | null> => {
+      if (!url) return null;
+      const at = url.indexOf(marker);
+      if (at < 0) return url;
+      const fromPath = decodeURIComponent(url.substring(at + marker.length).split("?")[0]);
+      const toPath = `piece-copy-${campaignId}-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+      const { error } = await supabase.storage.from("piece-images").copy(fromPath, toPath);
+      if (error) {
+        console.warn("copy falhou, mantendo original:", error.message);
+        return url;
+      }
+      const { data } = supabase.storage.from("piece-images").getPublicUrl(toPath);
+      return data.publicUrl;
+    };
+
+    const tId = "make-photos-independent";
+    setMakingPhotosIndependent(true);
+    toast.loading("Copiando fotos...", { id: tId });
+    try {
+      const { data: pcs, error: pErr } = await supabase
+        .from("campaign_pieces").select("id, image_url").eq("campaign_id", campaignId).not("image_url", "is", null);
+      if (pErr) throw pErr;
+      const { data: kts, error: kErr } = await supabase
+        .from("campaign_kits").select("id, image_url").eq("campaign_id", campaignId).not("image_url", "is", null);
+      if (kErr) throw kErr;
+
+      let i = 0, done = 0;
+      for (const p of (pcs ?? [])) {
+        const nu = await copyOne(p.image_url as string, i++);
+        if (nu && nu !== p.image_url) {
+          await supabase.from("campaign_pieces").update({ image_url: nu }).eq("id", p.id);
+          done++;
+        }
+      }
+      for (const k of (kts ?? [])) {
+        const nu = await copyOne(k.image_url as string, i++);
+        if (nu && nu !== k.image_url) {
+          await supabase.from("campaign_kits").update({ image_url: nu }).eq("id", k.id);
+          done++;
+        }
+      }
+      const total = (pcs?.length ?? 0) + (kts?.length ?? 0);
+      toast.success(`Fotos agora independentes: ${done} de ${total} copiadas`, { id: tId });
+      qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
+      qc.invalidateQueries({ queryKey: ["campaign_kits", campaignId] });
+      refetch?.();
+    } catch (e: any) {
+      toast.error(`Erro ao copiar fotos: ${e?.message || e}`, { id: tId });
+    } finally {
+      setMakingPhotosIndependent(false);
+      setIndependentPhotosOpen(false);
+    }
+  };
+  /* ===== FIM TEMPORÁRIO ===== */
+
   const [pieceSearch, setPieceSearch] = useState("");
   const [newFilter, setNewFilter] = useState<"all" | "new" | "not_new">("all");
   const [pieceDialogOpen, setPieceDialogOpen] = useState(false);
@@ -627,6 +693,37 @@ export default function PiecesTab({
                   </PopoverContent>
                 </Popover>
               )}
+
+              {/* ===== TEMPORÁRIO - remover após usar ===== */}
+              {isAdminOrMaster && (
+                <AlertDialog open={independentPhotosOpen} onOpenChange={setIndependentPhotosOpen}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="text-[10px] sm:text-xs gap-1"
+                    onClick={() => setIndependentPhotosOpen(true)}
+                    disabled={makingPhotosIndependent}
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    {"Tornar fotos independentes"}
+                  </Button>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Tornar fotos independentes</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Isso vai criar cópias próprias das fotos desta campanha. As outras campanhas não são afetadas. Continuar?
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={(e) => { e.preventDefault(); makePhotosIndependent(); }}>
+                        Continuar
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              {/* ===== FIM TEMPORÁRIO ===== */}
 
               <Popover>
                 <PopoverTrigger asChild>
