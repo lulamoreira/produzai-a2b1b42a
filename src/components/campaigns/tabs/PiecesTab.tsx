@@ -39,6 +39,7 @@ import KitOnlyPiecesDialog from "@/components/KitOnlyPiecesDialog";
 import CustomExportDialog from "@/components/CustomExportDialog";
 import ChangeCaseDialog from "@/components/ChangeCaseDialog";
 import { exportRequoteSheet } from "@/lib/exportRequoteSheet";
+import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
 
 interface PiecesTabProps {
   campaignId: string;
@@ -469,7 +470,16 @@ export default function PiecesTab({
       }
     }
 
-    toast.success(`Importação concluída: ${importedCount} peças importadas${kitsCreated > 0 ? ` e ${kitsCreated} kits criados` : ""}.${skippedCount > 0 ? ` ${skippedCount} linhas ignoradas (sem nome).` : ""}`);
+    // Desambiguação automática de nomes duplicados entre peças de kits
+    let renamedCount = 0;
+    try {
+      renamedCount = await disambiguateKitPieceNames(campaignId);
+    } catch (err) {
+      console.error("Falha na desambiguação de nomes de peças de kit:", err);
+    }
+
+    toast.success(`Importação concluída: ${importedCount} peças importadas${kitsCreated > 0 ? ` e ${kitsCreated} kits criados` : ""}.${renamedCount > 0 ? ` ${renamedCount} nome(s) desambiguado(s).` : ""}${skippedCount > 0 ? ` ${skippedCount} linhas ignoradas (sem nome).` : ""}`);
+    
     
     qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
     qc.invalidateQueries({ queryKey: ["campaign_kits", campaignId] });
@@ -1124,8 +1134,13 @@ export default function PiecesTab({
         kits={kits}
         kitPieces={kitPieces}
         pieces={pieces}
-        onSuccess={() => {
+        onSuccess={async () => {
           setSelectedPieceIds([]);
+          try {
+            await disambiguateKitPieceNames(campaignId);
+          } catch (err) {
+            console.error("Falha na desambiguação de nomes de peças de kit:", err);
+          }
           qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
           qc.invalidateQueries({ queryKey: ["campaign_kits", campaignId] });
           qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] });
@@ -1221,7 +1236,16 @@ export default function PiecesTab({
         existingPieces={pieces}
         allKitPieces={kitPieces}
         onCreateKit={(k: any) => addKit?.mutateAsync?.(k)}
-        onAddKitPiece={(kp: any) => addKitPiece?.mutateAsync?.(kp)}
+        onAddKitPiece={async (kp: any) => {
+          await addKitPiece?.mutateAsync?.(kp);
+          try {
+            await disambiguateKitPieceNames(campaignId);
+          } catch (err) {
+            console.error("Falha na desambiguação de nomes de peças de kit:", err);
+          }
+          qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
+          qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] });
+        }}
         onUpdateKit={(k: any) => updateKit?.mutateAsync?.(k)}
         onUpdatePiece={(p: any) => updatePiece?.mutateAsync?.(p)}
         preSelectedPieceIds={preSelectedForKit}
@@ -1336,7 +1360,16 @@ export default function PiecesTab({
           allPieces={pieces}
           canEdit={canEditPieces}
           onDeleteKitPiece={(id) => deleteKitPiece?.mutate?.(id)}
-          onAddKitPiece={(kp) => addKitPiece?.mutateAsync?.(kp)}
+          onAddKitPiece={async (kp) => {
+            await addKitPiece?.mutateAsync?.(kp);
+            try {
+              await disambiguateKitPieceNames(campaignId);
+            } catch (err) {
+              console.error("Falha na desambiguação de nomes de peças de kit:", err);
+            }
+            qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
+            qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] });
+          }}
           onUpdateKit={(k) => updateKit?.mutateAsync?.(k)}
           onUpdateKitPiece={(kp) => updateKitPiece?.mutateAsync?.(kp)}
           onReorderKitPieces={(updates) => reorderKitPieces?.mutateAsync?.(updates)}
