@@ -239,8 +239,31 @@ const ImportPiecesFromCampaignDialog = ({
 
   const totalSelected = selectedPieceIds.size + selectedKitIds.size;
 
+  /**
+   * Copia o arquivo de foto dentro do próprio bucket (server-side, sem download)
+   * e devolve a nova URL pública, tornando a campanha importada independente.
+   */
+  async function copyImportedPhoto(sourceUrl: string | null, idx: number): Promise<string | null> {
+    if (!sourceUrl) return null;
+    const marker = "/piece-images/";
+    const at = sourceUrl.indexOf(marker);
+    if (at < 0) return sourceUrl; // formato inesperado: mantém como está (não quebra a importação)
+    const fromPath = decodeURIComponent(sourceUrl.substring(at + marker.length).split("?")[0]);
+    const toPath = `piece-import-${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+    const { error } = await supabase.storage.from("piece-images").copy(fromPath, toPath);
+    if (error) {
+      console.warn("Falha ao copiar foto importada, mantendo original:", error.message);
+      return sourceUrl;
+    }
+    const { data } = supabase.storage.from("piece-images").getPublicUrl(toPath);
+    return data.publicUrl;
+  }
+
   const handleImport = async () => {
     if (totalSelected === 0) return;
+
+    // Índice global único para nomear cada cópia de foto
+    let photoIdx = 0;
 
     // Calculate next available codes for pieces
     const usedCodes = new Set(existingPieces.map((p) => p.code));
@@ -252,21 +275,23 @@ const ImportPiecesFromCampaignDialog = ({
     };
 
     // Pieces to import (non-kit)
-    const piecesToImport = remotePieces
-      .filter((p) => selectedPieceIds.has(p.id))
-      .map((p) => ({
-        campaign_id: currentCampaignId,
-        code: getNextCode(),
-        category: p.category,
-        name: p.name,
-        size: p.size,
-        store_category: p.store_category || undefined,
-        specification: p.specification,
-        installation_instructions: p.installation_instructions,
-        kit_only: false,
-        image_url: keepPhotoMap[p.id] !== false ? p.image_url : null,
-        _originalId: p.id,
-      }));
+    const piecesToImport = await Promise.all(
+      remotePieces
+        .filter((p) => selectedPieceIds.has(p.id))
+        .map(async (p) => ({
+          campaign_id: currentCampaignId,
+          code: getNextCode(),
+          category: p.category,
+          name: p.name,
+          size: p.size,
+          store_category: p.store_category || undefined,
+          specification: p.specification,
+          installation_instructions: p.installation_instructions,
+          kit_only: false,
+          image_url: keepPhotoMap[p.id] !== false ? await copyImportedPhoto(p.image_url, photoIdx++) : null,
+          _originalId: p.id,
+        })),
+    );
 
     // Kit pieces to import (kit_only pieces that belong to selected kits)
     const selectedKitPieceIds = new Set<string>();
@@ -276,21 +301,23 @@ const ImportPiecesFromCampaignDialog = ({
       });
     });
 
-    const kitPiecesToImport = remotePieces
-      .filter(p => selectedKitPieceIds.has(p.id))
-      .map(p => ({
-        campaign_id: currentCampaignId,
-        code: getNextCode(),
-        category: p.category,
-        name: p.name,
-        size: p.size,
-        store_category: p.store_category || undefined,
-        specification: p.specification,
-        installation_instructions: p.installation_instructions,
-        kit_only: true,
-        image_url: keepPhotoMap[p.id] !== false ? p.image_url : null,
-        _originalId: p.id,
-      }));
+    const kitPiecesToImport = await Promise.all(
+      remotePieces
+        .filter(p => selectedKitPieceIds.has(p.id))
+        .map(async p => ({
+          campaign_id: currentCampaignId,
+          code: getNextCode(),
+          category: p.category,
+          name: p.name,
+          size: p.size,
+          store_category: p.store_category || undefined,
+          specification: p.specification,
+          installation_instructions: p.installation_instructions,
+          kit_only: true,
+          image_url: keepPhotoMap[p.id] !== false ? await copyImportedPhoto(p.image_url, photoIdx++) : null,
+          _originalId: p.id,
+        })),
+    );
 
     // Calculate next available kit codes
     const usedKitCodes = new Set(existingKitCodes);
@@ -302,19 +329,22 @@ const ImportPiecesFromCampaignDialog = ({
     };
 
     // Kits to import
-    const kitsToImport = remoteKits
-      .filter(k => selectedKitIds.has(k.id))
-      .map(k => ({
-        name: k.name,
-        code: getNextKitCode(),
-        image_url: keepKitPhotoMap[k.id] !== false ? k.image_url : null,
-        pieces: remoteKitPieces
-          .filter(kp => kp.kit_id === k.id)
-          .map(kp => ({
-            originalPieceId: kp.piece_id,
-            quantity: kp.quantity,
-          })),
-      }));
+    const kitsToImport = await Promise.all(
+      remoteKits
+        .filter(k => selectedKitIds.has(k.id))
+        .map(async k => ({
+          name: k.name,
+          code: getNextKitCode(),
+          image_url: keepKitPhotoMap[k.id] !== false ? await copyImportedPhoto(k.image_url, photoIdx++) : null,
+          pieces: remoteKitPieces
+            .filter(kp => kp.kit_id === k.id)
+            .map(kp => ({
+              originalPieceId: kp.piece_id,
+              quantity: kp.quantity,
+            })),
+        })),
+    );
+
 
     // Combine non-kit pieces + kit pieces (keep _originalId for mapping)
     const allPieces = [...piecesToImport, ...kitPiecesToImport];
