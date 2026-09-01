@@ -14,7 +14,7 @@ import { SkeletonCard } from "@/components/v2/ui/SkeletonCard";
 import { EmptyStateV2 } from "@/components/v2/ui/EmptyStateV2";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
