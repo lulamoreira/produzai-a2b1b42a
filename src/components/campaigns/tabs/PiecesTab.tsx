@@ -1019,6 +1019,15 @@ export default function PiecesTab({
                 </PopoverContent>
               </Popover>
 
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-[10px] sm:text-xs gap-1"
+                onClick={() => setOrganizeOpen(true)}
+              >
+                <ListOrdered className="w-3.5 h-3.5" /> Organizar peças
+              </Button>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1">
