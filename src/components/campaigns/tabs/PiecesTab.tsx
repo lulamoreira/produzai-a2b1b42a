@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { 
   Plus, Download, Upload, Sparkles, RefreshCw, ArrowDownAZ, MapPin, Copy, 
   Trash2, Search, X, Package, MoreHorizontal, Presentation, Settings2, Columns, CaseSensitive,
-  FileSpreadsheet
+  FileSpreadsheet, ListOrdered
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,7 @@ import { splitKitByVariant, normalizeBareKitName } from "@/lib/splitKitPrimarySe
 
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
 import { OneNoteImportDialog } from "@/components/OneNoteImportDialog";
+import OrganizePiecesDialog from "@/components/campaigns/OrganizePiecesDialog";
 import { parseOneNoteFile, type OneNoteParsedPiece } from "@/lib/parseOneNoteSheet";
 
 
@@ -125,6 +126,7 @@ export default function PiecesTab({
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [orderByLocationOpen, setOrderByLocationOpen] = useState(false);
+  const [organizeOpen, setOrganizeOpen] = useState(false);
   const [pptExportOpen, setPptExportOpen] = useState(false);
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
   const [oneNoteOpen, setOneNoteOpen] = useState(false);
@@ -1019,6 +1021,15 @@ export default function PiecesTab({
                 </PopoverContent>
               </Popover>
 
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-[10px] sm:text-xs gap-1"
+                onClick={() => setOrganizeOpen(true)}
+              >
+                <ListOrdered className="w-3.5 h-3.5" /> Organizar peças
+              </Button>
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1">
@@ -1163,6 +1174,15 @@ export default function PiecesTab({
         selectedPieceIds={selectedPieceIds}
         onToggleSelection={handleToggleSelection}
         onToggleSelectAll={handleToggleSelectAll}
+      />
+
+      <OrganizePiecesDialog
+        open={organizeOpen}
+        onOpenChange={setOrganizeOpen}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        onReorder={handleReorder}
       />
 
       <AddPieceDialog
