@@ -188,19 +188,35 @@ export default function ClientsV2({ onAddClick }: { onAddClick: () => void }) {
                       {agencyInfo?.name || "..."}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleClientFavorite.mutate({ clientId: client.id });
-                    }}
-                    disabled={toggleClientFavorite.isPending}
-                    className="p-1 rounded hover:bg-stone-100 transition-colors shrink-0"
-                    aria-label={favoriteIds?.has(client.id) ? t("favorites.remove", "Remover dos favoritos") : t("favorites.add", "Adicionar aos favoritos")}
-                    title={favoriteIds?.has(client.id) ? t("favorites.remove", "Remover dos favoritos") : t("favorites.add", "Adicionar aos favoritos")}
-                  >
-                    <Star className={favoriteIds?.has(client.id) ? "w-4 h-4 text-amber-400 fill-amber-400" : "w-4 h-4 text-stone-300"} />
-                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleClientFavorite.mutate({ clientId: client.id });
+                      }}
+                      disabled={toggleClientFavorite.isPending}
+                      className="p-1 rounded hover:bg-stone-100 transition-colors"
+                      aria-label={favoriteIds?.has(client.id) ? t("favorites.remove", "Remover dos favoritos") : t("favorites.add", "Adicionar aos favoritos")}
+                      title={favoriteIds?.has(client.id) ? t("favorites.remove", "Remover dos favoritos") : t("favorites.add", "Adicionar aos favoritos")}
+                    >
+                      <Star className={favoriteIds?.has(client.id) ? "w-4 h-4 text-amber-400 fill-amber-400" : "w-4 h-4 text-stone-300"} />
+                    </button>
+                    {isAdminOrMaster && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeletingClient(client);
+                        }}
+                        className="p-1 rounded hover:bg-stone-100 transition-colors text-stone-400 hover:text-destructive"
+                        aria-label={t("clientDashboard.deleteClientTitle", "Excluir cliente")}
+                        title={t("clientDashboard.deleteClientTitle", "Excluir cliente")}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
 
