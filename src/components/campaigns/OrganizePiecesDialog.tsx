@@ -54,7 +54,8 @@ export default function OrganizePiecesDialog({
 
   const buildItems = (): Item[] => {
     const rows: Array<Item & { display_order: number }> = [
-      ...pieces.map((p) => ({
+      // Only standalone pieces (kit components are hidden, exactly like the main table)
+      ...pieces.filter((p) => !p.kit_only).map((p) => ({
         id: p.id,
         row: { type: "piece" as const, data: p },
         type: "piece" as const,
@@ -63,6 +64,7 @@ export default function OrganizePiecesDialog({
         location: (p.category ?? "").trim(),
         display_order: p.display_order ?? 0,
       })),
+
       ...kits.map((k) => ({
         id: `kit-${k.id}`,
         row: {
