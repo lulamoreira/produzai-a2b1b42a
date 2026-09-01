@@ -106,6 +106,8 @@ export default function OrganizePiecesDialog({
   };
 
   useEffect(() => {
+    // Do not clobber the optimistic order while a background save is in flight.
+    if (pendingRef.current) return;
     if (open) {
       setItems(buildItems());
       setSelected([]);
@@ -113,6 +115,7 @@ export default function OrganizePiecesDialog({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, pieces, kits, kitPieces]);
+
 
   const locations = useMemo(() => {
     const set = new Set<string>();
