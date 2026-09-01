@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
+import { splitKitByVariant } from "@/lib/splitKitPrimarySecondary";
+
 import type { OneNoteParsedPiece } from "@/lib/parseOneNoteSheet";
 
 interface OneNoteImportDialogProps {
@@ -134,32 +136,43 @@ export function OneNoteImportDialog({
       for (const group of kitGroups) {
         const kitIsMockup = group.indexes.some((idx) => parsed[idx].is_mockup);
 
-        const { data: kit, error: kitError } = await supabase
-          .from("campaign_kits")
-          .insert({
-            campaign_id: campaignId,
-            name: group.displayName,
-            category: group.category || null,
-            code: nextKitCode++,
-            is_deleted: false,
-            is_mockup: kitIsMockup,
-          })
-          .select("id")
-          .single();
-        if (kitError) throw kitError;
+        // Primária x Secundária nunca no mesmo kit (neutras entram nos dois).
+        const variants = splitKitByVariant(
+          group.displayName,
+          group.category || null,
+          group.indexes,
+          (idx) => parsed[idx].name ?? "",
+        );
 
-        for (let order = 0; order < group.indexes.length; order++) {
-          const pieceId = codeToId.get(rowCodes[group.indexes[order]]);
-          if (!pieceId) continue;
-          const { error: linkError } = await supabase.from("campaign_kit_pieces").insert({
-            kit_id: kit.id,
-            piece_id: pieceId,
-            quantity: 1,
-            display_order: order,
-          });
-          if (linkError) throw linkError;
+        for (const variant of variants) {
+          const { data: kit, error: kitError } = await supabase
+            .from("campaign_kits")
+            .insert({
+              campaign_id: campaignId,
+              name: variant.name,
+              category: group.category || null,
+              code: nextKitCode++,
+              is_deleted: false,
+              is_mockup: kitIsMockup,
+            })
+            .select("id")
+            .single();
+          if (kitError) throw kitError;
+
+          for (let order = 0; order < variant.members.length; order++) {
+            const pieceId = codeToId.get(rowCodes[variant.members[order]]);
+            if (!pieceId) continue;
+            const { error: linkError } = await supabase.from("campaign_kit_pieces").insert({
+              kit_id: kit.id,
+              piece_id: pieceId,
+              quantity: 1,
+              display_order: order,
+            });
+            if (linkError) throw linkError;
+          }
         }
       }
+
 
 
       // 4) desambiguação de nomes de peças de kit
