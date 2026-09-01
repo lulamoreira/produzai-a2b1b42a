@@ -1,0 +1,318 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+} from "@/components/ui/command";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ArrowDownToLine, ArrowUpToLine, Layers, Package, X } from "lucide-react";
+import { cn } from "@/lib/utils";
+import type { UnifiedRow } from "@/components/SortablePiecesTable";
+import type { CampaignPiece, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
+
+interface Props {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  pieces: CampaignPiece[];
+  kits: CampaignKit[];
+  kitPieces: CampaignKitPiece[];
+  /** Same persistence routine used by the drag-and-drop table. */
+  onReorder: (rows: UnifiedRow[]) => Promise<void> | void;
+}
+
+type Item = {
+  id: string;
+  row: UnifiedRow;
+  type: "piece" | "kit";
+  code: string;
+  name: string;
+  location: string;
+};
+
+const NO_LOCATION = "__none__";
+
+export default function OrganizePiecesDialog({
+  open, onOpenChange, pieces, kits, kitPieces, onReorder,
+}: Props) {
+  const [items, setItems] = useState<Item[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
+  const [saving, setSaving] = useState(false);
+  const lastClickedIndex = useRef<number | null>(null);
+
+  const getKitLocation = (kit: CampaignKit) => {
+    const cat = (kit.category ?? "").trim();
+    if (cat) return cat;
+    const kp = kitPieces.filter((k) => k.kit_id === kit.id);
+    if (kp.length === 0) return "";
+    const firstPiece = pieces.find((p) => p.id === kp[0].piece_id);
+    return (firstPiece?.category ?? "").trim();
+  };
+
+  const buildItems = (): Item[] => {
+    const rows: Array<Item & { display_order: number }> = [
+      ...pieces.map((p) => ({
+        id: p.id,
+        row: { type: "piece" as const, data: p },
+        type: "piece" as const,
+        code: String(p.code ?? ""),
+        name: p.name ?? "",
+        location: (p.category ?? "").trim(),
+        display_order: p.display_order ?? 0,
+      })),
+      ...kits.map((k) => ({
+        id: `kit-${k.id}`,
+        row: {
+          type: "kit" as const,
+          data: k,
+          kitPieces: kitPieces.filter((kp) => kp.kit_id === k.id),
+          allPieces: pieces,
+        },
+        type: "kit" as const,
+        code: String(k.code ?? ""),
+        name: k.name ?? "",
+        location: getKitLocation(k),
+        display_order: k.display_order ?? 0,
+      })),
+    ];
+    rows.sort((a, b) => a.display_order - b.display_order);
+    return rows.map(({ display_order, ...rest }) => rest);
+  };
+
+  useEffect(() => {
+    if (open) {
+      setItems(buildItems());
+      setSelected([]);
+      lastClickedIndex.current = null;
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, pieces, kits, kitPieces]);
+
+  const locations = useMemo(() => {
+    const set = new Set<string>();
+    items.forEach((i) => set.add(i.location));
+    return Array.from(set).sort((a, b) => {
+      if (!a) return 1;
+      if (!b) return -1;
+      return a.localeCompare(b, "pt-BR", { numeric: true, sensitivity: "base" });
+    });
+  }, [items]);
+
+  const selectedSet = useMemo(() => new Set(selected), [selected]);
+
+  const toggleRow = (index: number, shiftKey: boolean) => {
+    const id = items[index].id;
+    if (shiftKey && lastClickedIndex.current !== null) {
+      const start = Math.min(lastClickedIndex.current, index);
+      const end = Math.max(lastClickedIndex.current, index);
+      const rangeIds = items.slice(start, end + 1).map((i) => i.id);
+      setSelected((prev) => Array.from(new Set([...prev, ...rangeIds])));
+    } else {
+      setSelected((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    }
+    lastClickedIndex.current = index;
+  };
+
+  const selectByLocation = (loc: string) => {
+    const value = loc === NO_LOCATION ? "" : loc;
+    const ids = items.filter((i) => i.location === value).map((i) => i.id);
+    setSelected((prev) => Array.from(new Set([...prev, ...ids])));
+  };
+
+  /** Move the selected block (relative order preserved) to a target position. */
+  const buildMoved = (target: "top" | "bottom" | { refId: string; where: "before" | "after" }) => {
+    const block = items.filter((i) => selectedSet.has(i.id));
+    const rest = items.filter((i) => !selectedSet.has(i.id));
+    if (block.length === 0) return null;
+
+    if (target === "top") return [...block, ...rest];
+    if (target === "bottom") return [...rest, ...block];
+
+    const idx = rest.findIndex((i) => i.id === target.refId);
+    if (idx === -1) return null;
+    const insertAt = target.where === "before" ? idx : idx + 1;
+    return [...rest.slice(0, insertAt), ...block, ...rest.slice(insertAt)];
+  };
+
+  const persist = async (next: Item[]) => {
+    setSaving(true);
+    try {
+      setItems(next);
+      await onReorder(next.map((i) => i.row));
+      setSelected([]);
+      lastClickedIndex.current = null;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const applyMove = async (target: Parameters<typeof buildMoved>[0]) => {
+    const next = buildMoved(target);
+    if (!next) return;
+    await persist(next);
+  };
+
+  const groupByLocation = async () => {
+    const groups = new Map<string, Item[]>();
+    items.forEach((i) => {
+      const arr = groups.get(i.location) ?? [];
+      arr.push(i);
+      groups.set(i.location, arr);
+    });
+    const keys = Array.from(groups.keys()).sort((a, b) => {
+      if (!a) return 1;
+      if (!b) return -1;
+      return a.localeCompare(b, "pt-BR", { numeric: true, sensitivity: "base" });
+    });
+    await persist(keys.flatMap((k) => groups.get(k)!));
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl h-[85vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle>Organizar peças e kits</DialogTitle>
+          <DialogDescription>
+            Selecione várias linhas (use shift para intervalos) e mova-as em bloco. A ordem é gravada imediatamente.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-wrap items-center gap-2 pb-2 border-b">
+          <Button size="sm" variant="outline" onClick={() => setSelected(items.map((i) => i.id))} disabled={saving}>
+            Selecionar tudo
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setSelected([])} disabled={saving || selected.length === 0}>
+            Limpar seleção
+          </Button>
+          <Select value="" onValueChange={selectByLocation}>
+            <SelectTrigger className="h-8 w-[220px] text-xs">
+              <SelectValue placeholder="Selecionar por Localização" />
+            </SelectTrigger>
+            <SelectContent>
+              {locations.map((loc) => (
+                <SelectItem key={loc || NO_LOCATION} value={loc || NO_LOCATION} className="text-xs">
+                  {loc || "Sem localização"}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button size="sm" variant="outline" onClick={groupByLocation} disabled={saving}>
+            <Layers className="w-3.5 h-3.5 mr-1.5" /> Agrupar por Localização
+          </Button>
+        </div>
+
+        <div className="flex-1 overflow-y-auto -mx-1 px-1">
+          {items.length === 0 ? (
+            <div className="text-center text-sm text-muted-foreground py-8">Nenhuma peça ou kit.</div>
+          ) : (
+            <div className="flex flex-col divide-y">
+              {items.map((item, index) => {
+                const isSel = selectedSet.has(item.id);
+                return (
+                  <div
+                    key={item.id}
+                    className={cn(
+                      "flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50",
+                      isSel && "bg-accent/50",
+                    )}
+                    onClick={(e) => toggleRow(index, e.shiftKey)}
+                  >
+                    <Checkbox checked={isSel} className="pointer-events-none" />
+                    <span
+                      className={cn(
+                        "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
+                        item.type === "kit"
+                          ? "bg-primary/15 text-primary"
+                          : "bg-muted text-muted-foreground",
+                      )}
+                    >
+                      {item.type === "kit" ? "KIT" : "PEÇA"}
+                    </span>
+                    <span className="font-mono text-xs text-primary w-16 shrink-0 truncate">{item.code || "—"}</span>
+                    <span className="flex-1 truncate">{item.name}</span>
+                    <span className="text-xs text-muted-foreground w-40 truncate hidden sm:block">
+                      {item.location || "—"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {selected.length > 0 && (
+          <div className="border-t pt-3 flex flex-wrap items-center gap-2">
+            <span className="text-sm font-medium mr-1">{selected.length} selecionado(s)</span>
+            <Button size="sm" variant="outline" onClick={() => applyMove("top")} disabled={saving}>
+              <ArrowUpToLine className="w-3.5 h-3.5 mr-1.5" /> Mover para o topo
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => applyMove("bottom")} disabled={saving}>
+              <ArrowDownToLine className="w-3.5 h-3.5 mr-1.5" /> Mover para o fim
+            </Button>
+            <MoveRelativeButton
+              label="Mover para antes de…"
+              items={items.filter((i) => !selectedSet.has(i.id))}
+              disabled={saving}
+              onPick={(refId) => applyMove({ refId, where: "before" })}
+            />
+            <MoveRelativeButton
+              label="Mover para depois de…"
+              items={items.filter((i) => !selectedSet.has(i.id))}
+              disabled={saving}
+              onPick={(refId) => applyMove({ refId, where: "after" })}
+            />
+            <Button size="sm" variant="ghost" onClick={() => setSelected([])} disabled={saving}>
+              <X className="w-3.5 h-3.5 mr-1.5" /> Cancelar seleção
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function MoveRelativeButton({
+  label, items, disabled, onPick,
+}: {
+  label: string;
+  items: Item[];
+  disabled?: boolean;
+  onPick: (refId: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button size="sm" variant="outline" disabled={disabled}>
+          <Package className="w-3.5 h-3.5 mr-1.5" /> {label}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-0" align="start">
+        <Command>
+          <CommandInput placeholder="Buscar por código ou nome..." />
+          <CommandList>
+            <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
+            <CommandGroup>
+              {items.map((i) => (
+                <CommandItem
+                  key={i.id}
+                  value={`${i.code} ${i.name}`}
+                  onSelect={() => {
+                    setOpen(false);
+                    onPick(i.id);
+                  }}
+                >
+                  <span className="font-mono text-xs text-primary mr-2">{i.code || "—"}</span>
+                  <span className="truncate">{i.name}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
