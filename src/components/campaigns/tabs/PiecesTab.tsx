@@ -517,7 +517,7 @@ export default function PiecesTab({
         );
 
         for (const variant of variants) {
-          const finalName = variant.name;
+          const finalName = normalizeBareKitName(variant.name, key.category);
           let kitId = kitByName.get(finalName) as string | undefined;
 
           if (!kitId) {

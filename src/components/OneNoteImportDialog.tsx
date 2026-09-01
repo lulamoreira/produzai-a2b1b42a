@@ -145,11 +145,12 @@ export function OneNoteImportDialog({
         );
 
         for (const variant of variants) {
+          const finalName = normalizeBareKitName(variant.name, group.category);
           const { data: kit, error: kitError } = await supabase
             .from("campaign_kits")
             .insert({
               campaign_id: campaignId,
-              name: variant.name,
+              name: finalName,
               category: group.category || null,
               code: nextKitCode++,
               is_deleted: false,
