@@ -42,6 +42,8 @@ import CustomExportDialog from "@/components/CustomExportDialog";
 import ChangeCaseDialog from "@/components/ChangeCaseDialog";
 import { exportRequoteSheet } from "@/lib/exportRequoteSheet";
 import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
+import { splitKitByVariant } from "@/lib/splitKitPrimarySecondary";
+
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
 import { OneNoteImportDialog } from "@/components/OneNoteImportDialog";
 import { parseOneNoteFile, type OneNoteParsedPiece } from "@/lib/parseOneNoteSheet";
