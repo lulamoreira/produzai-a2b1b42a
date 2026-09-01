@@ -3,15 +3,20 @@ import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
 import { useMyAccessibleClientIds } from "@/hooks/useMyAccessibleClientIds";
 import { useClients, type Client } from "@/hooks/useMultiClientData";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Plus, Search, Users, ArrowRight, Star } from "lucide-react";
+import { Plus, Search, Users, ArrowRight, Star, Trash2 } from "lucide-react";
 import { useClientFavoriteIds, useToggleClientFavorite } from "@/hooks/useClientFavorites";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SkeletonCard } from "@/components/v2/ui/SkeletonCard";
 import { EmptyStateV2 } from "@/components/v2/ui/EmptyStateV2";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const TERRACOTTA = "#C2714F";
 
@@ -35,12 +40,14 @@ export default function ClientsV2({ onAddClick }: { onAddClick: () => void }) {
   const { t } = useTranslation();
   const { agencyId } = useParams<{ agencyId: string }>();
   const navigate = useNavigate();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isAdminOrMaster } = useUserRole();
+  const queryClient = useQueryClient();
   const { data: clients = [], isLoading } = useClients(agencyId);
   const [search, setSearch] = useState("");
   const { clientIds, isLoading: loadingAccess } = useMyAccessibleClientIds();
   const { data: favoriteIds } = useClientFavoriteIds();
   const toggleClientFavorite = useToggleClientFavorite();
+  const [deletingClient, setDeletingClient] = useState<Client | null>(null);
 
 
   const { data: agencyInfo } = useQuery({
@@ -79,6 +86,20 @@ export default function ClientsV2({ onAddClick }: { onAddClick: () => void }) {
   const filtered = accessFiltered.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase())
   );
+
+  async function handleDelete(client: Client) {
+    if (!client?.id) return;
+    const { error } = await supabase.from("clients").delete().eq("id", client.id);
+    if (error) {
+      toast.error(t("clientDashboard.deleteError", "Erro ao excluir cliente"));
+      console.error(error);
+      return;
+    }
+    toast.success(t("clientDashboard.deleteSuccess", "Cliente excluído"));
+    queryClient.invalidateQueries({ queryKey: ["clients", agencyId] });
+    queryClient.invalidateQueries({ queryKey: ["global-clients"] });
+    setDeletingClient(null);
+  }
 
   if (isLoading) {
     return (
@@ -167,19 +188,35 @@ export default function ClientsV2({ onAddClick }: { onAddClick: () => void }) {
                       {agencyInfo?.name || "..."}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleClientFavorite.mutate({ clientId: client.id });
-                    }}
-                    disabled={toggleClientFavorite.isPending}
-                    className="p-1 rounded hover:bg-stone-100 transition-colors shrink-0"
-                    aria-label={favoriteIds?.has(client.id) ? t("favorites.remove", "Remover dos favoritos") : t("favorites.add", "Adicionar aos favoritos")}
-                    title={favoriteIds?.has(client.id) ? t("favorites.remove", "Remover dos favoritos") : t("favorites.add", "Adicionar aos favoritos")}
-                  >
-                    <Star className={favoriteIds?.has(client.id) ? "w-4 h-4 text-amber-400 fill-amber-400" : "w-4 h-4 text-stone-300"} />
-                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleClientFavorite.mutate({ clientId: client.id });
+                      }}
+                      disabled={toggleClientFavorite.isPending}
+                      className="p-1 rounded hover:bg-stone-100 transition-colors"
+                      aria-label={favoriteIds?.has(client.id) ? t("favorites.remove", "Remover dos favoritos") : t("favorites.add", "Adicionar aos favoritos")}
+                      title={favoriteIds?.has(client.id) ? t("favorites.remove", "Remover dos favoritos") : t("favorites.add", "Adicionar aos favoritos")}
+                    >
+                      <Star className={favoriteIds?.has(client.id) ? "w-4 h-4 text-amber-400 fill-amber-400" : "w-4 h-4 text-stone-300"} />
+                    </button>
+                    {isAdminOrMaster && (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setDeletingClient(client);
+                        }}
+                        className="p-1 rounded hover:bg-stone-100 transition-colors text-stone-400 hover:text-destructive"
+                        aria-label={t("clientDashboard.deleteClientTitle", "Excluir cliente")}
+                        title={t("clientDashboard.deleteClientTitle", "Excluir cliente")}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
 
@@ -201,6 +238,28 @@ export default function ClientsV2({ onAddClick }: { onAddClick: () => void }) {
           })}
         </div>
       )}
+
+      <AlertDialog open={!!deletingClient} onOpenChange={(open) => !open && setDeletingClient(null)}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("clientDashboard.deleteClientTitle", "Excluir cliente")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("clientDashboard.deleteClientDesc", "Tem certeza que deseja excluir este cliente? Todos os dados vinculados serão removidos.")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeletingClient(null)}>
+              {t("common.cancel", "Cancelar")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingClient && handleDelete(deletingClient)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t("common.yes", "Sim").toUpperCase()}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
