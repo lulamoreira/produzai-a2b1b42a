@@ -463,7 +463,8 @@ export function KitDetailDialog({
   const piecesInKit = kit ? kitPieces
     .filter(kp => kp.kit_id === kit.id)
     .map(kp => ({ ...kp, piece: allPieces.find(p => p.id === kp.piece_id) }))
-    .filter(kp => kp.piece) : [];
+    .filter(kp => kp.piece)
+    .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)) : [];
 
   // Exclude only pieces already in THIS kit (allow same piece in multiple kits)
   const piecesAlreadyInThisKit = new Set(kitPieces.filter(kp => kp.kit_id === kit?.id).map(kp => kp.piece_id));
@@ -880,7 +881,7 @@ export function KitDetailDialog({
         {(() => {
           const canReorder = !!canEdit && !!onReorderKitPieces && piecesInKit.length > 1;
 
-          const handleDragEnd = async (e: DragEndEvent) => {
+          const handleDragEnd = (e: DragEndEvent) => {
             const { active, over } = e;
             if (!over || active.id === over.id) return;
             const oldIndex = piecesInKit.findIndex(kp => kp.id === active.id);
@@ -888,7 +889,9 @@ export function KitDetailDialog({
             if (oldIndex < 0 || newIndex < 0) return;
             const reordered = arrayMove(piecesInKit, oldIndex, newIndex);
             const updates = reordered.map((kp, i) => ({ id: kp.id, display_order: i }));
-            await onReorderKitPieces?.(updates);
+            // Fire-and-forget: the mutation applies an optimistic cache update
+            // (onMutate) so the UI re-sorts instantly; errors roll back + toast.
+            void onReorderKitPieces?.(updates);
           };
 
           if (piecesInKit.length === 0) {
