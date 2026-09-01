@@ -19,7 +19,7 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { UnifiedRow } from "@/components/SortablePiecesTable";
