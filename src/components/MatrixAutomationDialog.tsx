@@ -28,6 +28,7 @@ import { GroupRunErrorDialog, type GroupRunResult } from "@/components/Matrix/Gr
 import { applyRateioBulk } from "@/lib/applyRateioBulk";
 import ImportAutomationsFromCampaignDialog from "@/components/ImportAutomationsFromCampaignDialog";
 
+// Publication marker: location bulk-add shortcut included in the production artifact.
 /* ─── Types ──────────────────────────────────────────────── */
 
 type CustomFieldDef = { key: string; label: string; index: number };
