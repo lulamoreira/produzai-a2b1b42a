@@ -205,6 +205,10 @@ export default function MatrixAutomationDialog({
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [itemSearch, setItemSearch] = useState("");
 
+  // Bulk-add by piece location (kind === "fixed" only)
+  const [bulkLoc, setBulkLoc] = useState("");
+  const [bulkQty, setBulkQty] = useState(1);
+
   // Automation kind: 'fixed' = quantity per item; 'by_field' = computed from store_field
   const [kind, setKind] = useState<AutomationKind>("fixed");
   const [baseField, setBaseField] = useState<string>("");
@@ -297,6 +301,8 @@ export default function MatrixAutomationDialog({
       setReplaceAnyNonZero(false);
       setReplacementPieceSearch("");
       setEditingId(null);
+      setBulkLoc("");
+      setBulkQty(1);
     }
   }, [open]);
 
@@ -415,9 +421,36 @@ export default function MatrixAutomationDialog({
     });
   }, [pieces, kits, selectedItems, itemSearch]);
 
+  // Distinct piece locations for bulk-add shortcut
+  const pieceLocations = useMemo(() => (
+    [...new Set(pieces.map(p => String(p.category ?? "").trim().toUpperCase()).filter(Boolean))].sort()
+  ), [pieces]);
+
   const addItem = (item: typeof availableItems[0]) => {
     setSelectedItems(prev => [...prev, { ...item, quantity: 1 }]);
     setItemSearch("");
+  };
+
+  const addAllByLocation = () => {
+    if (!bulkLoc) { toast.error("Escolha uma Localização na Loja."); return; }
+    const target = bulkLoc.trim().toUpperCase();
+    const used = new Set(selectedItems.map(i => `${i.type}-${i.id}`));
+    const newItems = pieces
+      .filter(p => String(p.category ?? "").trim().toUpperCase() === target)
+      .filter(p => !used.has(`piece-${p.id}`))
+      .map(p => ({
+        id: p.id,
+        type: "piece" as const,
+        code: p.code,
+        name: p.name,
+        quantity: Math.max(1, Number(bulkQty) || 1),
+      }));
+    if (newItems.length === 0) {
+      toast.info("Nenhuma peça nova nessa localização (podem já estar na lista).");
+      return;
+    }
+    setSelectedItems(prev => [...prev, ...newItems]);
+    toast.success(`${newItems.length} peça(s) de "${target}" adicionada(s) com ${Math.max(1, Number(bulkQty) || 1)} un.`);
   };
 
   const removeItem = (idx: number) => {
@@ -1680,6 +1713,43 @@ export default function MatrixAutomationDialog({
                     ) : (
                       <><span className="font-semibold text-foreground">{getNumericFieldLabel(baseField)}</span> × fator do item (abaixo)</>
                     )}
+                  </p>
+                )}
+                {kind === "fixed" && pieceLocations.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 mt-2 p-2 bg-muted/40 rounded-md">
+                    <Select value={bulkLoc} onValueChange={setBulkLoc}>
+                      <SelectTrigger className="flex-1 min-w-[180px] h-8 text-xs">
+                        <SelectValue placeholder="Adicionar por Localização na Loja…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {pieceLocations.map(loc => (
+                          <SelectItem key={loc} value={loc} className="text-xs">{loc}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={bulkQty}
+                      onChange={e => setBulkQty(parseInt(e.target.value) || 1)}
+                      className="w-20 h-8 text-xs"
+                      title="Quantidade por loja"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={!bulkLoc}
+                      onClick={addAllByLocation}
+                      className="h-8 gap-1 text-xs"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Adicionar todas
+                    </Button>
+                  </div>
+                )}
+                {kind === "fixed" && pieceLocations.length > 0 && (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Adiciona todas as peças dessa localização à lista abaixo. A quantidade é aplicada em cada loja do filtro.
                   </p>
                 )}
                 <div className="relative mt-1">
