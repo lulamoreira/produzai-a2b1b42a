@@ -3,15 +3,20 @@ import { useTranslation } from "react-i18next";
 import { useParams, useNavigate } from "react-router-dom";
 import { useMyAccessibleClientIds } from "@/hooks/useMyAccessibleClientIds";
 import { useClients, type Client } from "@/hooks/useMultiClientData";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
-import { Plus, Search, Users, ArrowRight, Star } from "lucide-react";
+import { Plus, Search, Users, ArrowRight, Star, Trash2 } from "lucide-react";
 import { useClientFavoriteIds, useToggleClientFavorite } from "@/hooks/useClientFavorites";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SkeletonCard } from "@/components/v2/ui/SkeletonCard";
 import { EmptyStateV2 } from "@/components/v2/ui/EmptyStateV2";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
 
 const TERRACOTTA = "#C2714F";
 
