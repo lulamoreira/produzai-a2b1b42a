@@ -446,10 +446,21 @@ function MoveRelativeButton({
           <Package className="w-3.5 h-3.5 mr-1.5" /> {label}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="start">
+      <PopoverContent
+        className="w-80 p-0"
+        align="start"
+        // Stop the outer Dialog's scroll-lock (react-remove-scroll) from
+        // swallowing wheel/touch events so the list scrolls normally.
+        onWheel={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
+      >
         <Command>
           <CommandInput placeholder="Buscar por código ou nome..." />
-          <CommandList>
+          <CommandList
+            className="max-h-[300px] overflow-y-auto [overscroll-behavior:contain]"
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+          >
             <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
             <CommandGroup>
               {items.map((i) => (
