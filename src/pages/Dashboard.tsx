@@ -65,6 +65,7 @@ function SortableClientCard({
   campaignCount,
   userCount,
   isAdmin,
+  isAdminOrMaster,
   onNavigate,
   onDelete,
   onColorChange,
@@ -74,6 +75,7 @@ function SortableClientCard({
   campaignCount: number;
   userCount: number;
   isAdmin: boolean;
+  isAdminOrMaster: boolean;
   onNavigate: () => void;
   onDelete: () => void;
   onColorChange: (color: string) => void;
@@ -132,36 +134,40 @@ function SortableClientCard({
       </div>
 
       {/* Admin actions */}
-      {isAdmin && (
+      {isAdminOrMaster && (
         <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
-                <Palette className="w-3.5 h-3.5" style={{ color }} />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-52 p-3" onClick={(e) => e.stopPropagation()}>
-              <p className="text-xs font-medium text-muted-foreground mb-2">{t("clientDashboard.clientColor")}</p>
-              <div className="grid grid-cols-6 gap-1.5">
-                {CLIENT_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${color === c ? "border-foreground scale-110" : "border-transparent"}`}
-                    style={{ backgroundColor: c }}
-                    onClick={(e) => { e.stopPropagation(); onColorChange(c); }}
-                  />
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-          <button
-            className="cursor-grab active:cursor-grabbing touch-none p-1 text-muted-foreground hover:text-foreground transition-colors"
-            {...attributes}
-            {...listeners}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <GripVertical className="w-3.5 h-3.5" />
-          </button>
+          {isAdmin && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
+                  <Palette className="w-3.5 h-3.5" style={{ color }} />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-52 p-3" onClick={(e) => e.stopPropagation()}>
+                <p className="text-xs font-medium text-muted-foreground mb-2">{t("clientDashboard.clientColor")}</p>
+                <div className="grid grid-cols-6 gap-1.5">
+                  {CLIENT_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      className={`w-7 h-7 rounded-lg border-2 transition-all hover:scale-110 ${color === c ? "border-foreground scale-110" : "border-transparent"}`}
+                      style={{ backgroundColor: c }}
+                      onClick={(e) => { e.stopPropagation(); onColorChange(c); }}
+                    />
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
+          {isAdmin && (
+            <button
+              className="cursor-grab active:cursor-grabbing touch-none p-1 text-muted-foreground hover:text-foreground transition-colors"
+              {...attributes}
+              {...listeners}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="w-3.5 h-3.5" />
+            </button>
+          )}
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => e.stopPropagation()}>
@@ -434,17 +440,18 @@ const Dashboard = () => {
             <SortableContext items={filtered.map((c) => c.id)} strategy={rectSortingStrategy}>
               <div className="grid gap-3 grid-cols-1 md:grid-cols-2">
                 {filtered.map((client) => (
-                  <SortableClientCard
-                    key={client.id}
-                    client={client}
-                    campaignCount={campaignCounts[client.id] || 0}
-                    userCount={userCounts[client.id] || 0}
-                    isAdmin={isAdmin}
-                    onNavigate={() => navigate(`/agency/${agencyId}/clients/${client.id}`)}
-                    onDelete={() => deleteClient.mutate(client.id)}
-                    onColorChange={(color) => handleColorChange(client.id, color)}
-                    t={t}
-                  />
+                <SortableClientCard
+                  key={client.id}
+                  client={client}
+                  campaignCount={campaignCounts[client.id] || 0}
+                  userCount={userCounts[client.id] || 0}
+                  isAdmin={isAdmin}
+                  isAdminOrMaster={isAdminOrMaster}
+                  onNavigate={() => navigate(`/agency/${agencyId}/clients/${client.id}`)}
+                  onDelete={() => deleteClient.mutate(client.id)}
+                  onColorChange={(color) => handleColorChange(client.id, color)}
+                  t={t}
+                />
                 ))}
               </div>
             </SortableContext>
