@@ -14,6 +14,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
+import { splitKitByVariant } from "@/lib/splitKitPrimarySecondary";
+
 import type { OneNoteParsedPiece } from "@/lib/parseOneNoteSheet";
 
 interface OneNoteImportDialogProps {
