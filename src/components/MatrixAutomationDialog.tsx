@@ -205,6 +205,10 @@ export default function MatrixAutomationDialog({
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [itemSearch, setItemSearch] = useState("");
 
+  // Bulk-add by piece location (kind === "fixed" only)
+  const [bulkLoc, setBulkLoc] = useState("");
+  const [bulkQty, setBulkQty] = useState(1);
+
   // Automation kind: 'fixed' = quantity per item; 'by_field' = computed from store_field
   const [kind, setKind] = useState<AutomationKind>("fixed");
   const [baseField, setBaseField] = useState<string>("");
@@ -297,6 +301,8 @@ export default function MatrixAutomationDialog({
       setReplaceAnyNonZero(false);
       setReplacementPieceSearch("");
       setEditingId(null);
+      setBulkLoc("");
+      setBulkQty(1);
     }
   }, [open]);
 
@@ -415,9 +421,36 @@ export default function MatrixAutomationDialog({
     });
   }, [pieces, kits, selectedItems, itemSearch]);
 
+  // Distinct piece locations for bulk-add shortcut
+  const pieceLocations = useMemo(() => (
+    [...new Set(pieces.map(p => String(p.category ?? "").trim().toUpperCase()).filter(Boolean))].sort()
+  ), [pieces]);
+
   const addItem = (item: typeof availableItems[0]) => {
     setSelectedItems(prev => [...prev, { ...item, quantity: 1 }]);
     setItemSearch("");
+  };
+
+  const addAllByLocation = () => {
+    if (!bulkLoc) { toast.error("Escolha uma Localização na Loja."); return; }
+    const target = bulkLoc.trim().toUpperCase();
+    const used = new Set(selectedItems.map(i => `${i.type}-${i.id}`));
+    const newItems = pieces
+      .filter(p => String(p.category ?? "").trim().toUpperCase() === target)
+      .filter(p => !used.has(`piece-${p.id}`))
+      .map(p => ({
+        id: p.id,
+        type: "piece" as const,
+        code: p.code,
+        name: p.name,
+        quantity: Math.max(1, Number(bulkQty) || 1),
+      }));
+    if (newItems.length === 0) {
+      toast.info("Nenhuma peça nova nessa localização (podem já estar na lista).");
+      return;
+    }
+    setSelectedItems(prev => [...prev, ...newItems]);
+    toast.success(`${newItems.length} peça(s) de "${target}" adicionada(s) com ${Math.max(1, Number(bulkQty) || 1)} un.`);
   };
 
   const removeItem = (idx: number) => {
