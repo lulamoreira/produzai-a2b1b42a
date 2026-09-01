@@ -42,7 +42,7 @@ import CustomExportDialog from "@/components/CustomExportDialog";
 import ChangeCaseDialog from "@/components/ChangeCaseDialog";
 import { exportRequoteSheet } from "@/lib/exportRequoteSheet";
 import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
-import { splitKitByVariant } from "@/lib/splitKitPrimarySecondary";
+import { splitKitByVariant, normalizeBareKitName } from "@/lib/splitKitPrimarySecondary";
 
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
 import { OneNoteImportDialog } from "@/components/OneNoteImportDialog";
@@ -517,7 +517,7 @@ export default function PiecesTab({
         );
 
         for (const variant of variants) {
-          const finalName = variant.name;
+          const finalName = normalizeBareKitName(variant.name, key.category);
           let kitId = kitByName.get(finalName) as string | undefined;
 
           if (!kitId) {
