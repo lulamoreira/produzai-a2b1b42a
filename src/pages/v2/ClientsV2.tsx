@@ -238,6 +238,28 @@ export default function ClientsV2({ onAddClick }: { onAddClick: () => void }) {
           })}
         </div>
       )}
+
+      <AlertDialog open={!!deletingClient} onOpenChange={(open) => !open && setDeletingClient(null)}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("clientDashboard.deleteClientTitle", "Excluir cliente")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("clientDashboard.deleteClientDesc", "Tem certeza que deseja excluir este cliente? Todos os dados vinculados serão removidos.")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeletingClient(null)}>
+              {t("common.cancel", "Cancelar")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deletingClient && handleDelete(deletingClient)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {t("common.yes", "Sim").toUpperCase()}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
