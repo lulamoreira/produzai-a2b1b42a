@@ -139,17 +139,41 @@ export default function OrganizePiecesDialog({
     return [...rest.slice(0, insertAt), ...block, ...rest.slice(insertAt)];
   };
 
+  /**
+   * Expands the top-level order (kits + standalone pieces) into the full sequence
+   * that is persisted: right after each kit come its own components (kit_only pieces).
+   * A component linked to several kits is placed only once (after the first kit).
+   */
+  const expandRows = (top: Item[]): UnifiedRow[] => {
+    const placed = new Set<string>();
+    const out: UnifiedRow[] = [];
+    for (const item of top) {
+      out.push(item.row);
+      if (item.type !== "kit") continue;
+      const kitId = item.id.replace(/^kit-/, "");
+      for (const kp of kitPieces.filter((k) => k.kit_id === kitId)) {
+        if (placed.has(kp.piece_id)) continue;
+        const child = pieces.find((p) => p.id === kp.piece_id && p.kit_only);
+        if (!child) continue;
+        placed.add(child.id);
+        out.push({ type: "piece", data: child });
+      }
+    }
+    return out;
+  };
+
   const persist = async (next: Item[]) => {
     setSaving(true);
     try {
       setItems(next);
-      await onReorder(next.map((i) => i.row));
+      await onReorder(expandRows(next));
       setSelected([]);
       lastClickedIndex.current = null;
     } finally {
       setSaving(false);
     }
   };
+
 
   const applyMove = async (target: Parameters<typeof buildMoved>[0]) => {
     const next = buildMoved(target);
