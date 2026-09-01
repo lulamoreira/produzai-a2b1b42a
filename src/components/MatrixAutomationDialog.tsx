@@ -1715,6 +1715,43 @@ export default function MatrixAutomationDialog({
                     )}
                   </p>
                 )}
+                {kind === "fixed" && pieceLocations.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-2 mt-2 p-2 bg-muted/40 rounded-md">
+                    <Select value={bulkLoc} onValueChange={setBulkLoc}>
+                      <SelectTrigger className="flex-1 min-w-[180px] h-8 text-xs">
+                        <SelectValue placeholder="Adicionar por Localização na Loja…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {pieceLocations.map(loc => (
+                          <SelectItem key={loc} value={loc} className="text-xs">{loc}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={bulkQty}
+                      onChange={e => setBulkQty(parseInt(e.target.value) || 1)}
+                      className="w-20 h-8 text-xs"
+                      title="Quantidade por loja"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={!bulkLoc}
+                      onClick={addAllByLocation}
+                      className="h-8 gap-1 text-xs"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Adicionar todas
+                    </Button>
+                  </div>
+                )}
+                {kind === "fixed" && pieceLocations.length > 0 && (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Adiciona todas as peças dessa localização à lista abaixo. A quantidade é aplicada em cada loja do filtro.
+                  </p>
+                )}
                 <div className="relative mt-1">
                   <Input
                     placeholder={t("automation.searchByCode")}
