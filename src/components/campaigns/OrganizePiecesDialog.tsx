@@ -186,12 +186,65 @@ export default function OrganizePiecesDialog({
     }
   };
 
+  /** Optimistic reorder: UI updates instantly, persistence runs in background. */
+  const persistOptimistic = (next: Item[]) => {
+    const prev = items;
+    setItems(next);
+    pendingRef.current = true;
+    Promise.resolve(onReorder(expandRows(next)))
+      .catch((err) => {
+        console.error("Falha ao gravar a nova ordem:", err);
+        setItems(prev);
+        toast.error("Não foi possível salvar a nova ordem.");
+      })
+      .finally(() => {
+        pendingRef.current = false;
+      });
+  };
+
+  const handleDragStart = (e: DragStartEvent) => {
+    setActiveId(String(e.active.id));
+  };
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    setActiveId(null);
+    if (!over || active.id === over.id) return;
+
+    const activeIdStr = String(active.id);
+    const overIdStr = String(over.id);
+    const isBlock = selectedSet.has(activeIdStr) && selected.length > 1;
+
+    if (!isBlock) {
+      const from = items.findIndex((i) => i.id === activeIdStr);
+      const to = items.findIndex((i) => i.id === overIdStr);
+      if (from === -1 || to === -1) return;
+      if (selectedSet.has(activeIdStr) === false && selected.length > 0) {
+        setSelected([]);
+        lastClickedIndex.current = null;
+      }
+      persistOptimistic(arrayMove(items, from, to));
+      return;
+    }
+
+    // Move the whole selected block, preserving relative order, to the drop position.
+    if (selectedSet.has(overIdStr)) return;
+    const block = items.filter((i) => selectedSet.has(i.id));
+    const rest = items.filter((i) => !selectedSet.has(i.id));
+    const overIdx = rest.findIndex((i) => i.id === overIdStr);
+    if (overIdx === -1) return;
+    const activeIdx = items.findIndex((i) => i.id === activeIdStr);
+    const overOriginalIdx = items.findIndex((i) => i.id === overIdStr);
+    const insertAt = overOriginalIdx > activeIdx ? overIdx + 1 : overIdx;
+    persistOptimistic([...rest.slice(0, insertAt), ...block, ...rest.slice(insertAt)]);
+  };
 
   const applyMove = async (target: Parameters<typeof buildMoved>[0]) => {
     const next = buildMoved(target);
     if (!next) return;
     await persist(next);
   };
+
 
   const groupByLocation = async () => {
     const groups = new Map<string, Item[]>();
