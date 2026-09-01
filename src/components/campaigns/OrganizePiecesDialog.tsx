@@ -370,6 +370,66 @@ export default function OrganizePiecesDialog({
   );
 }
 
+function SortableItemRow({
+  item, selected, dragging, blockDrag, onToggle,
+}: {
+  item: Item;
+  selected: boolean;
+  dragging: boolean;
+  blockDrag: boolean;
+  onToggle: (shiftKey: boolean) => void;
+}) {
+  const {
+    attributes, listeners, setNodeRef, transform, transition, isDragging, isOver,
+  } = useSortable({ id: item.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50 bg-background",
+        selected && "bg-accent/50",
+        (isDragging || dragging) && "opacity-40",
+        blockDrag && !isDragging && "opacity-60",
+        isOver && !isDragging && "border-t-2 border-primary",
+      )}
+      onClick={(e) => onToggle(e.shiftKey)}
+    >
+      <button
+        type="button"
+        aria-label="Arrastar para reordenar"
+        className="shrink-0 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
+        onClick={(e) => e.stopPropagation()}
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+      <Checkbox checked={selected} className="pointer-events-none" />
+      <span
+        className={cn(
+          "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
+          item.type === "kit" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
+        )}
+      >
+        {item.type === "kit" ? "KIT" : "PEÇA"}
+      </span>
+      <span className="font-mono text-xs text-primary w-16 shrink-0 truncate">{item.code || "—"}</span>
+      <span className="flex-1 truncate">{item.name}</span>
+      <span className="text-xs text-muted-foreground w-40 truncate hidden sm:block">
+        {item.location || "—"}
+      </span>
+    </div>
+  );
+}
+
+
 function MoveRelativeButton({
   label, items, disabled, onPick,
 }: {
