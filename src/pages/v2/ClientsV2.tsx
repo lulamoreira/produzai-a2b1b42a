@@ -40,12 +40,14 @@ export default function ClientsV2({ onAddClick }: { onAddClick: () => void }) {
   const { t } = useTranslation();
   const { agencyId } = useParams<{ agencyId: string }>();
   const navigate = useNavigate();
-  const { isAdmin } = useUserRole();
+  const { isAdmin, isAdminOrMaster } = useUserRole();
+  const queryClient = useQueryClient();
   const { data: clients = [], isLoading } = useClients(agencyId);
   const [search, setSearch] = useState("");
   const { clientIds, isLoading: loadingAccess } = useMyAccessibleClientIds();
   const { data: favoriteIds } = useClientFavoriteIds();
   const toggleClientFavorite = useToggleClientFavorite();
+  const [deletingClient, setDeletingClient] = useState<Client | null>(null);
 
 
   const { data: agencyInfo } = useQuery({
