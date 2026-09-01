@@ -87,6 +87,20 @@ export default function ClientsV2({ onAddClick }: { onAddClick: () => void }) {
     c.name.toLowerCase().includes(search.toLowerCase())
   );
 
+  async function handleDelete(client: Client) {
+    if (!client?.id) return;
+    const { error } = await supabase.from("clients").delete().eq("id", client.id);
+    if (error) {
+      toast.error(t("clientDashboard.deleteError", "Erro ao excluir cliente"));
+      console.error(error);
+      return;
+    }
+    toast.success(t("clientDashboard.deleteSuccess", "Cliente excluído"));
+    queryClient.invalidateQueries({ queryKey: ["clients", agencyId] });
+    queryClient.invalidateQueries({ queryKey: ["global-clients"] });
+    setDeletingClient(null);
+  }
+
   if (isLoading) {
     return (
       <div className="space-y-6">
