@@ -307,44 +307,37 @@ export default function OrganizePiecesDialog({
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto -mx-1 px-1">
+        <div ref={listRef} className="flex-1 overflow-y-auto -mx-1 px-1">
           {items.length === 0 ? (
             <div className="text-center text-sm text-muted-foreground py-8">Nenhuma peça ou kit.</div>
           ) : (
-            <div className="flex flex-col divide-y">
-              {items.map((item, index) => {
-                const isSel = selectedSet.has(item.id);
-                return (
-                  <div
-                    key={item.id}
-                    className={cn(
-                      "flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50",
-                      isSel && "bg-accent/50",
-                    )}
-                    onClick={(e) => toggleRow(index, e.shiftKey)}
-                  >
-                    <Checkbox checked={isSel} className="pointer-events-none" />
-                    <span
-                      className={cn(
-                        "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
-                        item.type === "kit"
-                          ? "bg-primary/15 text-primary"
-                          : "bg-muted text-muted-foreground",
-                      )}
-                    >
-                      {item.type === "kit" ? "KIT" : "PEÇA"}
-                    </span>
-                    <span className="font-mono text-xs text-primary w-16 shrink-0 truncate">{item.code || "—"}</span>
-                    <span className="flex-1 truncate">{item.name}</span>
-                    <span className="text-xs text-muted-foreground w-40 truncate hidden sm:block">
-                      {item.location || "—"}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              modifiers={[restrictToVerticalAxis]}
+              autoScroll={{ enabled: true }}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onDragCancel={() => setActiveId(null)}
+            >
+              <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+                <div className="flex flex-col divide-y">
+                  {items.map((item, index) => (
+                    <SortableItemRow
+                      key={item.id}
+                      item={item}
+                      selected={selectedSet.has(item.id)}
+                      dragging={activeId === item.id}
+                      blockDrag={activeId !== null && selectedSet.has(activeId) && selected.length > 1 && selectedSet.has(item.id)}
+                      onToggle={(shiftKey) => toggleRow(index, shiftKey)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </div>
+
 
         {selected.length > 0 && (
           <div className="border-t pt-3 flex flex-wrap items-center gap-2">
