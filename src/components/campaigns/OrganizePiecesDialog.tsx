@@ -53,7 +53,16 @@ export default function OrganizePiecesDialog({
   const [items, setItems] = useState<Item[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const lastClickedIndex = useRef<number | null>(null);
+  const pendingRef = useRef(false);
+  const listRef = useRef<HTMLDivElement | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
 
   const getKitLocation = (kit: CampaignKit) => {
     const cat = (kit.category ?? "").trim();
