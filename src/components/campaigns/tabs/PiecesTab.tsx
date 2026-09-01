@@ -497,46 +497,60 @@ export default function PiecesTab({
 
       // 3. Para cada par (nome, localização) distinto, na ordem de aparição
       for (const key of kitKeyOrder) {
-        const finalName =
+        const baseName =
           (nameCollisions.get(key.kitName) ?? 0) > 1 && key.category
             ? `${key.kitName} - ${key.category}`
             : key.kitName;
 
-        let kitId = kitByName.get(finalName) as string | undefined;
-
-        if (!kitId) {
-          const { data: newKit, error: kitError } = await supabase
-            .from("campaign_kits")
-            .insert({
-              campaign_id: campaignId,
-              name: finalName,
-              category: key.category || null,
-              code: nextKitCode++,
-            })
-            .select()
-            .single();
-          if (kitError) {
-            console.error(`Erro ao criar kit "${finalName}":`, kitError);
-            continue;
-          }
-          kitId = newKit.id;
-          kitByName.set(finalName, kitId);
-          kitsCreated++;
-        }
-
-        // Ligar componentes (quantity sempre 1)
-        let displayOrder = 0;
-        for (const member of kitMembers.filter(
+        const groupMembers = kitMembers.filter(
           m => m.kitName === key.kitName && m.category === key.category,
-        )) {
-          const pieceId = codeToId.get(member.code);
-          if (!pieceId) continue;
-          const { error: kpError } = await supabase
-            .from("campaign_kit_pieces")
-            .insert({ kit_id: kitId, piece_id: pieceId, quantity: 1, display_order: displayOrder++ });
-          if (kpError) console.error(`Erro ao ligar peça ${member.code} ao kit "${finalName}":`, kpError);
+        );
+
+        // Primária x Secundária nunca no mesmo kit (neutras entram nos dois).
+        const variants = splitKitByVariant(
+          baseName,
+          key.category || null,
+          groupMembers,
+          m => m.name,
+        );
+
+        for (const variant of variants) {
+          const finalName = variant.name;
+          let kitId = kitByName.get(finalName) as string | undefined;
+
+          if (!kitId) {
+            const { data: newKit, error: kitError } = await supabase
+              .from("campaign_kits")
+              .insert({
+                campaign_id: campaignId,
+                name: finalName,
+                category: key.category || null,
+                code: nextKitCode++,
+              })
+              .select()
+              .single();
+            if (kitError) {
+              console.error(`Erro ao criar kit "${finalName}":`, kitError);
+              continue;
+            }
+            kitId = newKit.id;
+            kitByName.set(finalName, kitId);
+            kitsCreated++;
+          }
+
+          // Ligar componentes (quantity sempre 1)
+          let displayOrder = 0;
+          for (const member of variant.members) {
+            const pieceId = codeToId.get(member.code);
+            if (!pieceId) continue;
+            const { error: kpError } = await supabase
+              .from("campaign_kit_pieces")
+              .insert({ kit_id: kitId, piece_id: pieceId, quantity: 1, display_order: displayOrder++ });
+            if (kpError) console.error(`Erro ao ligar peça ${member.code} ao kit "${finalName}":`, kpError);
+          }
         }
       }
+
 
     }
 
