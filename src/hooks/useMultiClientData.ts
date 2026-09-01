@@ -1680,17 +1680,45 @@ export function useReorderCampaignKitPieces() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (updates: { id: string; display_order: number }[]) => {
-      // Update sequentially in small batches
-      for (const u of updates) {
-        const { error } = await supabase
-          .from("campaign_kit_pieces")
-          .update({ display_order: u.display_order })
-          .eq("id", u.id);
-        if (error) throw error;
-      }
+      // Write in parallel (single round-trip latency instead of N sequential ones)
+      const results = await Promise.all(
+        updates.map((u) =>
+          supabase
+            .from("campaign_kit_pieces")
+            .update({ display_order: u.display_order })
+            .eq("id", u.id)
+        )
+      );
+      const failed = results.find((r) => r.error);
+      if (failed?.error) throw failed.error;
     },
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] }); },
-    onError: (e: any) => toast.error("Erro ao reordenar: " + e.message),
+    onMutate: async (updates) => {
+      await qc.cancelQueries({ queryKey: ["campaign_kit_pieces"] });
+      // Snapshot all cached kit-piece lists for rollback
+      const snapshot = qc.getQueriesData<CampaignKitPiece[]>({ queryKey: ["campaign_kit_pieces"] });
+      const orderById = new Map(updates.map((u) => [u.id, u.display_order]));
+      // Optimistically apply the new order so the UI re-sorts instantly
+      qc.setQueriesData<CampaignKitPiece[]>({ queryKey: ["campaign_kit_pieces"] }, (old) => {
+        if (!old) return old;
+        const next = old.map((kp) =>
+          orderById.has(kp.id) ? { ...kp, display_order: orderById.get(kp.id)! } : kp
+        );
+        next.sort((a, b) => {
+          const d = (a.display_order ?? 0) - (b.display_order ?? 0);
+          if (d !== 0) return d;
+          return String(a.created_at ?? "").localeCompare(String(b.created_at ?? ""));
+        });
+        return next;
+      });
+      return { snapshot };
+    },
+    onError: (e: any, _updates, context) => {
+      if (context?.snapshot) {
+        for (const [key, data] of context.snapshot) qc.setQueryData(key, data);
+      }
+      toast.error("Erro ao reordenar: " + e.message);
+    },
+    onSettled: () => { qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] }); },
   });
 }
 
