@@ -9,6 +9,42 @@ export type KitVariant = "primaria" | "secundaria" | null;
 const PRIMARY_RE = /prim[aá]ri/i;
 const SECONDARY_RE = /secund[aá]ri/i;
 
+const BARE_KIT_NAMES = new Set([
+  "primaria",
+  "primario",
+  "secundaria",
+  "secundario",
+]);
+
+/** Title Case simples: "PAREDE" → "Parede", "TODAS AS LOJAS" → "Todas As Lojas". */
+function toTitleCase(value: string): string {
+  return value
+    .toLowerCase()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+/**
+ * Evita nomes de kit cru como "Primária" ou "Secundária" sem base.
+ * Se o nome final for EXATAMENTE uma dessas palavras, prefixa com a
+ * Localização na Loja em Title Case: "Parede Primária", "Todas As Lojas Secundária".
+ */
+export function normalizeBareKitName(
+  name: string,
+  category: string | null | undefined,
+): string {
+  const trimmed = (name ?? "").trim();
+  const normalized = trimmed
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+  if (!BARE_KIT_NAMES.has(normalized)) return trimmed;
+  const location = toTitleCase((category ?? "").trim());
+  if (!location) return trimmed;
+  return `${location} ${trimmed}`;
+}
+
 /** Classifica o componente pelo nome (tolerante a acento). */
 export function classifyPieceVariant(name: string | null | undefined): KitVariant {
   const n = (name ?? "").toString();
