@@ -442,7 +442,7 @@ export default function PiecesTab({
         
         if (kitName) {
           const kitCategory = String(pieceData.category ?? "").trim();
-          kitMembers.push({ kitName, category: kitCategory, code: finalCode });
+          kitMembers.push({ kitName, category: kitCategory, code: finalCode, name });
           if (!kitKeyOrder.some((k) => k.kitName === kitName && k.category === kitCategory)) {
             kitKeyOrder.push({ kitName, category: kitCategory });
           }
