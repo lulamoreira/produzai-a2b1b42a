@@ -9,10 +9,22 @@ import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
 } from "@/components/ui/command";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowDownToLine, ArrowUpToLine, Layers, Package, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpToLine, GripVertical, Layers, Package, X } from "lucide-react";
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
+  type DragEndEvent, type DragStartEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { UnifiedRow } from "@/components/SortablePiecesTable";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
+
 
 interface Props {
   open: boolean;
@@ -41,7 +53,16 @@ export default function OrganizePiecesDialog({
   const [items, setItems] = useState<Item[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const lastClickedIndex = useRef<number | null>(null);
+  const pendingRef = useRef(false);
+  const listRef = useRef<HTMLDivElement | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
 
   const getKitLocation = (kit: CampaignKit) => {
     const cat = (kit.category ?? "").trim();
@@ -85,6 +106,8 @@ export default function OrganizePiecesDialog({
   };
 
   useEffect(() => {
+    // Do not clobber the optimistic order while a background save is in flight.
+    if (pendingRef.current) return;
     if (open) {
       setItems(buildItems());
       setSelected([]);
@@ -92,6 +115,7 @@ export default function OrganizePiecesDialog({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, pieces, kits, kitPieces]);
+
 
   const locations = useMemo(() => {
     const set = new Set<string>();
@@ -174,12 +198,65 @@ export default function OrganizePiecesDialog({
     }
   };
 
+  /** Optimistic reorder: UI updates instantly, persistence runs in background. */
+  const persistOptimistic = (next: Item[]) => {
+    const prev = items;
+    setItems(next);
+    pendingRef.current = true;
+    Promise.resolve(onReorder(expandRows(next)))
+      .catch((err) => {
+        console.error("Falha ao gravar a nova ordem:", err);
+        setItems(prev);
+        toast.error("Não foi possível salvar a nova ordem.");
+      })
+      .finally(() => {
+        pendingRef.current = false;
+      });
+  };
+
+  const handleDragStart = (e: DragStartEvent) => {
+    setActiveId(String(e.active.id));
+  };
+
+  const handleDragEnd = (e: DragEndEvent) => {
+    const { active, over } = e;
+    setActiveId(null);
+    if (!over || active.id === over.id) return;
+
+    const activeIdStr = String(active.id);
+    const overIdStr = String(over.id);
+    const isBlock = selectedSet.has(activeIdStr) && selected.length > 1;
+
+    if (!isBlock) {
+      const from = items.findIndex((i) => i.id === activeIdStr);
+      const to = items.findIndex((i) => i.id === overIdStr);
+      if (from === -1 || to === -1) return;
+      if (selectedSet.has(activeIdStr) === false && selected.length > 0) {
+        setSelected([]);
+        lastClickedIndex.current = null;
+      }
+      persistOptimistic(arrayMove(items, from, to));
+      return;
+    }
+
+    // Move the whole selected block, preserving relative order, to the drop position.
+    if (selectedSet.has(overIdStr)) return;
+    const block = items.filter((i) => selectedSet.has(i.id));
+    const rest = items.filter((i) => !selectedSet.has(i.id));
+    const overIdx = rest.findIndex((i) => i.id === overIdStr);
+    if (overIdx === -1) return;
+    const activeIdx = items.findIndex((i) => i.id === activeIdStr);
+    const overOriginalIdx = items.findIndex((i) => i.id === overIdStr);
+    const insertAt = overOriginalIdx > activeIdx ? overIdx + 1 : overIdx;
+    persistOptimistic([...rest.slice(0, insertAt), ...block, ...rest.slice(insertAt)]);
+  };
 
   const applyMove = async (target: Parameters<typeof buildMoved>[0]) => {
     const next = buildMoved(target);
     if (!next) return;
     await persist(next);
   };
+
 
   const groupByLocation = async () => {
     const groups = new Map<string, Item[]>();
@@ -230,44 +307,37 @@ export default function OrganizePiecesDialog({
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto -mx-1 px-1">
+        <div ref={listRef} className="flex-1 overflow-y-auto -mx-1 px-1">
           {items.length === 0 ? (
             <div className="text-center text-sm text-muted-foreground py-8">Nenhuma peça ou kit.</div>
           ) : (
-            <div className="flex flex-col divide-y">
-              {items.map((item, index) => {
-                const isSel = selectedSet.has(item.id);
-                return (
-                  <div
-                    key={item.id}
-                    className={cn(
-                      "flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50",
-                      isSel && "bg-accent/50",
-                    )}
-                    onClick={(e) => toggleRow(index, e.shiftKey)}
-                  >
-                    <Checkbox checked={isSel} className="pointer-events-none" />
-                    <span
-                      className={cn(
-                        "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
-                        item.type === "kit"
-                          ? "bg-primary/15 text-primary"
-                          : "bg-muted text-muted-foreground",
-                      )}
-                    >
-                      {item.type === "kit" ? "KIT" : "PEÇA"}
-                    </span>
-                    <span className="font-mono text-xs text-primary w-16 shrink-0 truncate">{item.code || "—"}</span>
-                    <span className="flex-1 truncate">{item.name}</span>
-                    <span className="text-xs text-muted-foreground w-40 truncate hidden sm:block">
-                      {item.location || "—"}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              modifiers={[restrictToVerticalAxis]}
+              autoScroll={{ enabled: true }}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+              onDragCancel={() => setActiveId(null)}
+            >
+              <SortableContext items={items.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+                <div className="flex flex-col divide-y">
+                  {items.map((item, index) => (
+                    <SortableItemRow
+                      key={item.id}
+                      item={item}
+                      selected={selectedSet.has(item.id)}
+                      dragging={activeId === item.id}
+                      blockDrag={activeId !== null && selectedSet.has(activeId) && selected.length > 1 && selectedSet.has(item.id)}
+                      onToggle={(shiftKey) => toggleRow(index, shiftKey)}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </div>
+
 
         {selected.length > 0 && (
           <div className="border-t pt-3 flex flex-wrap items-center gap-2">
@@ -299,6 +369,66 @@ export default function OrganizePiecesDialog({
     </Dialog>
   );
 }
+
+function SortableItemRow({
+  item, selected, dragging, blockDrag, onToggle,
+}: {
+  item: Item;
+  selected: boolean;
+  dragging: boolean;
+  blockDrag: boolean;
+  onToggle: (shiftKey: boolean) => void;
+}) {
+  const {
+    attributes, listeners, setNodeRef, transform, transition, isDragging, isOver,
+  } = useSortable({ id: item.id });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "flex items-center gap-2 px-2 py-1.5 text-sm cursor-pointer hover:bg-muted/50 bg-background",
+        selected && "bg-accent/50",
+        (isDragging || dragging) && "opacity-40",
+        blockDrag && !isDragging && "opacity-60",
+        isOver && !isDragging && "border-t-2 border-primary",
+      )}
+      onClick={(e) => onToggle(e.shiftKey)}
+    >
+      <button
+        type="button"
+        aria-label="Arrastar para reordenar"
+        className="shrink-0 text-muted-foreground hover:text-foreground cursor-grab active:cursor-grabbing touch-none"
+        onClick={(e) => e.stopPropagation()}
+        {...attributes}
+        {...listeners}
+      >
+        <GripVertical className="w-4 h-4" />
+      </button>
+      <Checkbox checked={selected} className="pointer-events-none" />
+      <span
+        className={cn(
+          "text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0",
+          item.type === "kit" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground",
+        )}
+      >
+        {item.type === "kit" ? "KIT" : "PEÇA"}
+      </span>
+      <span className="font-mono text-xs text-primary w-16 shrink-0 truncate">{item.code || "—"}</span>
+      <span className="flex-1 truncate">{item.name}</span>
+      <span className="text-xs text-muted-foreground w-40 truncate hidden sm:block">
+        {item.location || "—"}
+      </span>
+    </div>
+  );
+}
+
 
 function MoveRelativeButton({
   label, items, disabled, onPick,
