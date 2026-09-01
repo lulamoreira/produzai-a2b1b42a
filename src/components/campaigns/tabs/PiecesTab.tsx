@@ -46,6 +46,7 @@ import { splitKitByVariant, normalizeBareKitName } from "@/lib/splitKitPrimarySe
 
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
 import { OneNoteImportDialog } from "@/components/OneNoteImportDialog";
+import OrganizePiecesDialog from "@/components/campaigns/OrganizePiecesDialog";
 import { parseOneNoteFile, type OneNoteParsedPiece } from "@/lib/parseOneNoteSheet";
 
 
@@ -125,6 +126,7 @@ export default function PiecesTab({
   const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [orderByLocationOpen, setOrderByLocationOpen] = useState(false);
+  const [organizeOpen, setOrganizeOpen] = useState(false);
   const [pptExportOpen, setPptExportOpen] = useState(false);
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
   const [oneNoteOpen, setOneNoteOpen] = useState(false);
@@ -1172,6 +1174,15 @@ export default function PiecesTab({
         selectedPieceIds={selectedPieceIds}
         onToggleSelection={handleToggleSelection}
         onToggleSelectAll={handleToggleSelectAll}
+      />
+
+      <OrganizePiecesDialog
+        open={organizeOpen}
+        onOpenChange={setOrganizeOpen}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        onReorder={handleReorder}
       />
 
       <AddPieceDialog
