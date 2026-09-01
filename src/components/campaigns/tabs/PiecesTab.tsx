@@ -395,7 +395,7 @@ export default function PiecesTab({
 
     // (b) Registro kit-aware: guarda { kitName, category, code } de cada peça
     //     Kits são agrupados por (nome + localização), nunca só pelo nome.
-    const kitMembers: { kitName: string; category: string; code: number }[] = [];
+    const kitMembers: { kitName: string; category: string; code: number; name: string }[] = [];
     const kitKeyOrder: Array<{ kitName: string; category: string }> = [];
 
 
