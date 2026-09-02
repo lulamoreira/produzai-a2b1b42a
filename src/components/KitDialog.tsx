@@ -23,6 +23,7 @@ import { compressImage } from "@/lib/compressImage";
 import { toast } from "sonner";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
 import { findDuplicateName, duplicateNameMessage } from "@/lib/duplicateName";
+import CopySpecFromPiece from "./CopySpecFromPiece";
 
 // ─── Kit Image Upload (inline) ───────────────────────────
 
@@ -945,9 +946,18 @@ export function KitDetailDialog({
                       <Input value={editForm.store_category} onChange={(e) => setEditForm(f => ({ ...f, store_category: e.target.value }))} className="h-7 text-xs" />
                     </div>
                     <div>
-                      <label className="text-[10px] text-muted-foreground">Especificação</label>
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <label className="text-[10px] text-muted-foreground">Especificação</label>
+                        <CopySpecFromPiece
+                          pieces={allPieces}
+                          campaignId={kit?.campaign_id ?? undefined}
+                          excludePieceId={editingPieceId ?? undefined}
+                          onSelect={(specification) => setEditForm(f => ({ ...f, specification }))}
+                        />
+                      </div>
                       <Textarea value={editForm.specification} onChange={(e) => setEditForm(f => ({ ...f, specification: e.target.value }))} className="min-h-[60px] text-xs" />
                     </div>
+
                     <div>
                       <label className="text-[10px] text-muted-foreground">Instruções de Instalação</label>
                       <Textarea value={editForm.installation_instructions} onChange={(e) => setEditForm(f => ({ ...f, installation_instructions: e.target.value }))} className="min-h-[60px] text-xs" />

@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import ImportSpecFromCampaign from "./ImportSpecFromCampaign";
+import CopySpecFromPiece from "./CopySpecFromPiece";
+
 import { useQueryClient } from "@tanstack/react-query";
 import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
@@ -458,18 +460,27 @@ const AddPieceDialog = ({
             })}
 
             <div className="space-y-2">
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
                 <label className="text-xs font-medium text-muted-foreground">{t("pieces.specification")}</label>
-                {clientId && campaignId && (
-                  <ImportSpecFromCampaign
-                    clientId={clientId}
-                    currentCampaignId={campaignId}
-                    onImport={({ specification }) =>
-                      setForm((f) => ({ ...f, specification }))
-                    }
+                <div className="flex items-center gap-1">
+                  <CopySpecFromPiece
+                    pieces={Array.isArray(existingPieces) ? existingPieces : []}
+                    campaignId={campaignId}
+                    excludePieceId={initialPiece?.id}
+                    onSelect={(specification) => setForm((f) => ({ ...f, specification }))}
                   />
-                )}
+                  {clientId && campaignId && (
+                    <ImportSpecFromCampaign
+                      clientId={clientId}
+                      currentCampaignId={campaignId}
+                      onImport={({ specification }) =>
+                        setForm((f) => ({ ...f, specification }))
+                      }
+                    />
+                  )}
+                </div>
               </div>
+
               <Textarea
                 value={form.specification}
                 onChange={(e) => setForm({ ...form, specification: e.target.value })}
