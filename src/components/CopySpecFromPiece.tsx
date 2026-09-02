@@ -17,6 +17,7 @@ export interface SpecSourcePiece {
   code?: number | string | null;
   name?: string | null;
   specification?: string | null;
+  category?: string | null;
 }
 
 interface CopySpecFromPieceProps {
@@ -54,7 +55,7 @@ const CopySpecFromPiece = ({
       try {
         const { data, error } = await supabase
           .from("campaign_pieces")
-          .select("id, code, name, specification")
+          .select("id, code, name, specification, category")
           .eq("campaign_id", campaignId as string)
           .order("id");
         if (error) throw error;
@@ -115,10 +116,11 @@ const CopySpecFromPiece = ({
             <CommandGroup>
               {options.map((p) => {
                 const spec = (p.specification || "").trim();
+                const category = (p.category || "").trim();
                 return (
                   <CommandItem
                     key={p.id}
-                    value={`${p.code ?? ""} ${p.name ?? ""}`}
+                    value={`${p.code ?? ""} ${p.name ?? ""} ${category}`}
                     onSelect={() => {
                       onSelect(p.specification || "");
                       setOpen(false);
@@ -127,6 +129,9 @@ const CopySpecFromPiece = ({
                   >
                     <span className="text-xs font-medium">
                       {p.code ?? "—"} — {p.name || "(sem nome)"}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {category ? `📍 ${category}` : "📍 —"}
                     </span>
                     <span className="text-[10px] text-muted-foreground line-clamp-2">
                       {spec ? truncate(spec) : "(sem especificação)"}
