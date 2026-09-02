@@ -17,6 +17,7 @@ export interface SpecSourcePiece {
   code?: number | string | null;
   name?: string | null;
   specification?: string | null;
+  category?: string | null;
 }
 
 interface CopySpecFromPieceProps {
