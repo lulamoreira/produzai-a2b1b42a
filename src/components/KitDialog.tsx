@@ -952,8 +952,20 @@ export function KitDetailDialog({
                           pieces={allPieces}
                           campaignId={kit?.campaign_id ?? undefined}
                           excludePieceId={editingPieceId ?? undefined}
-                          onSelect={(specification) => setEditForm(f => ({ ...f, specification }))}
+                          onSelect={async (specification, imageUrl) => {
+                            setEditForm(f => ({ ...f, specification }));
+                            // A imagem copiada é um arquivo próprio; persiste igual ao upload manual.
+                            if (imageUrl && onUpdatePiece) {
+                              try {
+                                await onUpdatePiece({ id: p.id, image_url: imageUrl });
+                                toast.success("Imagem copiada!");
+                              } catch (err: any) {
+                                toast.error("Erro ao copiar imagem: " + (err?.message ?? ""));
+                              }
+                            }
+                          }}
                         />
+
                       </div>
                       <Textarea value={editForm.specification} onChange={(e) => setEditForm(f => ({ ...f, specification: e.target.value }))} className="min-h-[60px] text-xs" />
                     </div>

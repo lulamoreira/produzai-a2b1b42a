@@ -467,8 +467,16 @@ const AddPieceDialog = ({
                     pieces={Array.isArray(existingPieces) ? existingPieces : []}
                     campaignId={campaignId}
                     excludePieceId={initialPiece?.id}
-                    onSelect={(specification) => setForm((f) => ({ ...f, specification }))}
+                    onSelect={(specification, imageUrl) => {
+                      setForm((f) => ({
+                        ...f,
+                        specification,
+                        ...(imageUrl ? { image_url: imageUrl } : {}),
+                      }));
+                      if (imageUrl) setPreviewUrl(imageUrl);
+                    }}
                   />
+
                   {clientId && campaignId && (
                     <ImportSpecFromCampaign
                       clientId={clientId}
