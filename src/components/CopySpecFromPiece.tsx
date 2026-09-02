@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ClipboardCopy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Command,
@@ -11,6 +12,7 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export interface SpecSourcePiece {
   id: string;
@@ -18,6 +20,7 @@ export interface SpecSourcePiece {
   name?: string | null;
   specification?: string | null;
   category?: string | null;
+  image_url?: string | null;
 }
 
 interface CopySpecFromPieceProps {
@@ -27,15 +30,40 @@ interface CopySpecFromPieceProps {
   campaignId?: string;
   /** Piece currently being edited (excluded from the list). */
   excludePieceId?: string;
-  onSelect: (specification: string) => void;
+  /**
+   * Called with the copied specification and, when the "include image" toggle is
+   * ON and the source piece has an image, the public URL of a freshly copied
+   * INDEPENDENT file in the `piece-images` bucket (never the source file itself).
+   */
+  onSelect: (specification: string, imageUrl?: string | null) => void;
 }
 
 const truncate = (value: string, max = 90) =>
   value.length > max ? `${value.slice(0, max)}…` : value;
 
 /**
+ * Copies a source image into a brand new object inside the `piece-images`
+ * bucket, so the current piece owns its own file (same pattern used by the
+ * campaign import flow). Returns null when the copy is not possible.
+ */
+async function copySpecPhoto(sourceUrl: string): Promise<string | null> {
+  const marker = "/piece-images/";
+  const at = sourceUrl.indexOf(marker);
+  if (at < 0) return null;
+  const fromPath = decodeURIComponent(sourceUrl.substring(at + marker.length).split("?")[0]);
+  const toPath = `piece-copyspec-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+  const { error } = await supabase.storage.from("piece-images").copy(fromPath, toPath);
+  if (error) {
+    console.warn("Falha ao copiar imagem da peça de origem:", error.message);
+    return null;
+  }
+  const { data } = supabase.storage.from("piece-images").getPublicUrl(toPath);
+  return data.publicUrl;
+}
+
+/**
  * Searchable combobox that copies the `specification` field from another piece
- * of the same campaign into the current form. Only the specification is copied.
+ * of the same campaign into the current form. Optionally also copies the image.
  */
 const CopySpecFromPiece = ({
   pieces,
@@ -44,6 +72,8 @@ const CopySpecFromPiece = ({
   onSelect,
 }: CopySpecFromPieceProps) => {
   const [open, setOpen] = useState(false);
+  const [includeImage, setIncludeImage] = useState(false);
+  const [copying, setCopying] = useState(false);
   const [fetched, setFetched] = useState<SpecSourcePiece[] | null>(null);
 
   const needsFetch = (!pieces || pieces.length === 0) && !!campaignId;
@@ -55,7 +85,7 @@ const CopySpecFromPiece = ({
       try {
         const { data, error } = await supabase
           .from("campaign_pieces")
-          .select("id, code, name, specification, category")
+          .select("id, code, name, specification, category, image_url")
           .eq("campaign_id", campaignId as string)
           .order("id");
         if (error) throw error;
@@ -82,6 +112,32 @@ const CopySpecFromPiece = ({
     });
   }, [pieces, fetched, needsFetch, excludePieceId]);
 
+  const handleChoose = async (piece: SpecSourcePiece) => {
+    const spec = piece.specification || "";
+    const sourceImage = (piece.image_url || "").trim();
+
+    // The specification is ALWAYS copied, regardless of the image outcome.
+    if (!includeImage || !sourceImage) {
+      onSelect(spec);
+      setOpen(false);
+      return;
+    }
+
+    setCopying(true);
+    try {
+      const newUrl = await copySpecPhoto(sourceImage);
+      if (!newUrl) {
+        toast.warning("Especificação copiada, mas não foi possível copiar a imagem.");
+        onSelect(spec);
+      } else {
+        onSelect(spec, newUrl);
+      }
+    } finally {
+      setCopying(false);
+      setOpen(false);
+    }
+  };
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -101,6 +157,10 @@ const CopySpecFromPiece = ({
         onWheel={(e) => e.stopPropagation()}
         onTouchMove={(e) => e.stopPropagation()}
       >
+        <div className="flex items-center justify-between gap-2 px-3 py-2 border-b">
+          <label className="text-[11px] text-muted-foreground">Incluir imagem da peça</label>
+          <Switch checked={includeImage} onCheckedChange={setIncludeImage} disabled={copying} />
+        </div>
         <Command
           filter={(value, search) =>
             value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
@@ -117,18 +177,24 @@ const CopySpecFromPiece = ({
               {options.map((p) => {
                 const spec = (p.specification || "").trim();
                 const category = (p.category || "").trim();
+                const hasImage = !!(p.image_url || "").trim();
                 return (
                   <CommandItem
                     key={p.id}
                     value={`${p.code ?? ""} ${p.name ?? ""} ${category}`}
+                    disabled={copying}
                     onSelect={() => {
-                      onSelect(p.specification || "");
-                      setOpen(false);
+                      void handleChoose(p);
                     }}
                     className="flex-col items-start gap-0.5"
                   >
                     <span className="text-xs font-medium">
                       {p.code ?? "—"} — {p.name || "(sem nome)"}
+                      {includeImage && !hasImage && (
+                        <span className="ml-1 text-[10px] font-normal text-muted-foreground">
+                          (sem imagem)
+                        </span>
+                      )}
                     </span>
                     <span className="text-[10px] text-muted-foreground">
                       {category ? `📍 ${category}` : "📍 —"}
