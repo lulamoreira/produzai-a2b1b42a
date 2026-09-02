@@ -55,7 +55,7 @@ const CopySpecFromPiece = ({
       try {
         const { data, error } = await supabase
           .from("campaign_pieces")
-          .select("id, code, name, specification")
+          .select("id, code, name, specification, category")
           .eq("campaign_id", campaignId as string)
           .order("id");
         if (error) throw error;
