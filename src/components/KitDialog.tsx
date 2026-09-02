@@ -949,8 +949,8 @@ export function KitDetailDialog({
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <label className="text-[10px] text-muted-foreground">Especificação</label>
                         <CopySpecFromPiece
-                          pieces={existingPieces}
-                          campaignId={campaignId}
+                          pieces={allPieces}
+                          campaignId={kit?.campaign_id ?? undefined}
                           excludePieceId={editingPieceId ?? undefined}
                           onSelect={(specification) => setEditForm(f => ({ ...f, specification }))}
                         />
