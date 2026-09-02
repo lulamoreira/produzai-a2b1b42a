@@ -23,6 +23,7 @@ import { compressImage } from "@/lib/compressImage";
 import { toast } from "sonner";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
 import { findDuplicateName, duplicateNameMessage } from "@/lib/duplicateName";
+import CopySpecFromPiece from "./CopySpecFromPiece";
 
 // ─── Kit Image Upload (inline) ───────────────────────────
 
