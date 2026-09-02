@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import ImportSpecFromCampaign from "./ImportSpecFromCampaign";
+import CopySpecFromPiece from "./CopySpecFromPiece";
+
 import { useQueryClient } from "@tanstack/react-query";
 import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
