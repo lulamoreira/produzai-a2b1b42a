@@ -1,0 +1,2 @@
+ALTER TABLE public.automation_templates DROP CONSTRAINT IF EXISTS automation_templates_kind_check;
+ALTER TABLE public.automation_templates ADD CONSTRAINT automation_templates_kind_check CHECK (kind = ANY (ARRAY['fixed'::text,'by_field'::text,'replacement'::text,'copy_from'::text]));
