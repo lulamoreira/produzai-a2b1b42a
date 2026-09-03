@@ -2113,27 +2113,45 @@ export default function RateioTabV2({
               </div>
 
               {/* Filters Row */}
-              <div className="px-3 md:px-6 py-1 border-b border-stone-100 bg-white flex items-center gap-3 overflow-x-auto no-scrollbar flex-nowrap [&>*]:shrink-0">
-                <div className="relative flex-1 max-w-xs">
+              <div className="px-3 lg:px-6 py-1.5 lg:py-1 border-b border-stone-100 bg-white flex items-center gap-2 lg:gap-3 max-w-full lg:flex-nowrap lg:[&>*]:shrink-0">
+                <div className="relative flex-1 min-w-0 lg:max-w-xs">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
                   <Input 
                     value={storeSearch} 
                     onChange={(e) => setStoreSearch(e.target.value)} 
                     placeholder={t("stores.searchAll")} 
-                    className="pl-8 h-8 text-xs bg-stone-50 border-none rounded-md"
+                    className="pl-8 h-11 lg:h-8 text-xs bg-stone-50 border-none rounded-md"
                   />
                 </div>
-                
+
+                {/* MOBILE / TABLET (< lg): um único botão de Filtros que abre a gaveta */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="lg:hidden h-11 px-3 text-xs font-bold gap-2 rounded-lg border-stone-200 shrink-0"
+                  onClick={() => setMobileFiltersOpen(true)}
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  {t("common.filters", "Filtros")}
+                  {activeStoreFilterCount > 0 && (
+                    <span className="bg-[#C2714F] text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+                      {activeStoreFilterCount}
+                    </span>
+                  )}
+                </Button>
+
+                {/* DESKTOP (lg+): layout original inalterado */}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className={cn("h-8 text-[11px] font-bold uppercase tracking-wider gap-2 px-3", !filterSidebarCollapsed && "bg-stone-100")}
+                  className={cn("hidden lg:inline-flex h-8 text-[11px] font-bold uppercase tracking-wider gap-2 px-3", !filterSidebarCollapsed && "bg-stone-100")}
                   onClick={() => setFilterSidebarCollapsed(!filterSidebarCollapsed)}
                 >
                   <Filter className="w-3 h-3" />
                   {t("common.filters", "Filtros")}
                 </Button>
 
+                <div className="hidden lg:flex items-center gap-3">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -2248,13 +2266,140 @@ export default function RateioTabV2({
                     </>
                   );
                 })()}
+                </div>
                 
-                <div className="flex-1" />
+                <div className="hidden lg:block flex-1" />
                 
-                <div className="text-[11px] text-stone-500 font-bold">
+                <div className="hidden lg:block text-[11px] text-stone-500 font-bold">
                   {filteredStores.length} {t("rateio.stores", "loja(s)")}
                 </div>
               </div>
+
+              {/* Contador de lojas — segunda linha no mobile/tablet */}
+              <div className="lg:hidden px-3 py-1 border-b border-stone-100 bg-white text-[11px] text-stone-500 font-bold">
+                {filteredStores.length} {t("rateio.stores", "loja(s)")}
+              </div>
+
+              {/* Gaveta de filtros — MOBILE / TABLET (< lg) */}
+              <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+                <SheetContent side="right" className="w-[88vw] sm:w-[420px] flex flex-col p-0">
+                  <SheetHeader className="px-4 py-3 border-b border-stone-200">
+                    <SheetTitle className="text-base">{t("common.filters", "Filtros")}</SheetTitle>
+                  </SheetHeader>
+
+                  <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+                    {/* Ordenar por */}
+                    <div className="space-y-2">
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                        {t("common.sortBy", "Ordenar por")}
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="w-full h-11 justify-between text-xs">
+                            <span className="truncate">{currentSortLabel}</span>
+                            <ChevronDown className="w-4 h-4 opacity-60" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-[70vw] sm:w-[380px] max-h-72 overflow-y-auto">
+                          {sortFieldOptions.map((opt) => (
+                            <DropdownMenuItem
+                              key={opt.value}
+                              onSelect={(e) => { e.preventDefault(); handleSortFieldChange(opt.value); }}
+                              className="text-xs min-h-[44px] cursor-pointer flex items-center justify-between gap-2"
+                            >
+                              <span className="truncate">{opt.label}</span>
+                              {storeSortField === opt.value && <Check className="w-3.5 h-3.5 text-[#C2714F]" />}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {(() => {
+                      const uniqueStates = Array.from(new Set(stores.map((s: any) => s.state?.trim()).filter(Boolean))).sort() as string[];
+                      const uniqueCities = Array.from(new Set(stores.map((s: any) => s.city).filter(Boolean))).sort() as string[];
+                      const uniqueModels = Array.from(new Set(stores.map((s: any) => s.store_model).filter(Boolean))).sort() as string[];
+
+                      const renderGroup = (
+                        label: string,
+                        field: "state" | "city" | "store_model",
+                        options: string[]
+                      ) => {
+                        const selected = storeFilters[field];
+                        return (
+                          <div key={field} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                                {label}
+                              </div>
+                              {selected.size > 0 && (
+                                <button
+                                  className="text-[11px] font-medium text-[#C2714F]"
+                                  onClick={() => setStoreFilters(prev => ({ ...prev, [field]: new Set() }))}
+                                >
+                                  {t("common.clearFilter", "Limpar filtro")}
+                                </button>
+                              )}
+                            </div>
+                            <div className="max-h-52 overflow-y-auto rounded-lg border border-stone-200 divide-y divide-stone-100">
+                              {options.length === 0 && (
+                                <div className="px-3 py-3 text-xs text-stone-400">
+                                  {t("common.noOptions", "Sem opções")}
+                                </div>
+                              )}
+                              {options.map((opt) => {
+                                const isSelected = selected.has(opt);
+                                return (
+                                  <button
+                                    key={opt}
+                                    type="button"
+                                    className="w-full min-h-[44px] px-3 flex items-center gap-3 text-left text-xs active:bg-stone-50"
+                                    onClick={() => setStoreFilters(prev => {
+                                      const next = new Set(prev[field]);
+                                      if (next.has(opt)) next.delete(opt); else next.add(opt);
+                                      return { ...prev, [field]: next };
+                                    })}
+                                  >
+                                    <span className={cn(
+                                      "w-4 h-4 rounded border flex items-center justify-center shrink-0",
+                                      isSelected ? "bg-[#C2714F] border-[#C2714F]" : "border-stone-300"
+                                    )}>
+                                      {isSelected && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                    </span>
+                                    <span className="truncate">{opt}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      };
+
+                      return (
+                        <>
+                          {renderGroup(t("filters.state", "Estado"), "state", uniqueStates)}
+                          {renderGroup(t("filters.city", "Cidade"), "city", uniqueCities)}
+                          {renderGroup(t("filters.storeCategory", "Categoria de Loja"), "store_model", uniqueModels)}
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  <SheetFooter className="px-4 py-3 border-t border-stone-200 flex-row gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1 h-11 text-xs"
+                      onClick={() => setStoreFilters(EMPTY_STORE_FILTERS)}
+                    >
+                      {t("common.clearAll", "Limpar tudo")}
+                    </Button>
+                    <Button className="flex-1 h-11 text-xs" onClick={() => setMobileFiltersOpen(false)}>
+                      {t("common.apply", "Aplicar")}
+                    </Button>
+                  </SheetFooter>
+                </SheetContent>
+              </Sheet>
+
 
               {/* Spreadsheet Table */}
               <div ref={gridContainerRef} className="flex-1 min-h-0 overflow-auto relative custom-scrollbar">
