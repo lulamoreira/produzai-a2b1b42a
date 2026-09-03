@@ -1520,12 +1520,13 @@ export default function RateioTabV2({
 
     <div
       className={cn(
-        "flex flex-col h-full bg-white overflow-hidden",
+        "flex flex-col h-full bg-white overflow-hidden max-w-full",
         isFullscreen && "fixed inset-0 z-[100] h-screen w-screen"
       )}
     >
       {/* Top Navigation for Spreadsheet/Dashboard */}
-      <div className="flex items-center justify-between px-6 py-1 border-b border-stone-200">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 lg:px-6 py-1.5 lg:py-1 border-b border-stone-200">
+
         {isFullscreen && (
           <Button
             variant="ghost"
