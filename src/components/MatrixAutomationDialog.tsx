@@ -287,6 +287,7 @@ export default function MatrixAutomationDialog({
       setFilterGroup({ filtros: [createEmptyFilter()], condicoes: [] });
       setSelectedItems([]);
       setItemSearch("");
+      setExcludedSearch("");
       setPreview([]);
       setOutsideActions({});
       setShowSaveInput(false);
