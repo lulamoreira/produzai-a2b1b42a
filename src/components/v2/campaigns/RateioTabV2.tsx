@@ -1624,12 +1624,13 @@ export default function RateioTabV2({
             variant="outline"
             size="sm"
             onClick={() => setIsFullscreen((v) => !v)}
-            className="text-xs gap-2 h-8"
+            className="hidden lg:inline-flex text-xs gap-2 h-8"
             title={isFullscreen ? "Sair da tela cheia (Esc)" : "Editar em tela cheia"}
           >
             {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             {isFullscreen ? "Sair tela cheia" : "Tela cheia"}
           </Button>
+
         </div>
       </div>
 
