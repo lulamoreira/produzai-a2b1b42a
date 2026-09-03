@@ -705,6 +705,15 @@ export default function MatrixAutomationDialog({
   const uniqueUpdateStores = new Set(updateRows.map(r => r.storeId)).size;
   const uniqueOutsideStores = new Set(outsideRows.map(r => r.storeId)).size;
 
+  // Excluded rows (ignored + outside_with_value) for the review-only section
+  const excludedRows = useMemo(() => {
+    const search = excludedSearch.trim().toLowerCase();
+    return preview
+      .filter(r => r.group === "ignored" || r.group === "outside_with_value")
+      .filter(r => !search || r.storeName.toLowerCase().includes(search));
+  }, [preview, excludedSearch]);
+  const excludedCount = excludedRows.length;
+
   const setAllOutside = (action: OutsideFilterAction) => {
     const updated = { ...outsideActions };
     outsideRows.forEach(r => { updated[`${r.storeId}-${r.pieceId}`] = action; });
