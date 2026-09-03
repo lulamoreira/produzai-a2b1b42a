@@ -21,6 +21,10 @@ import { toast } from "sonner";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+} from "@/components/ui/command";
 import type { ClientStore, CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 import { useAutomationTemplates, type AutomationTemplateItem, type AutomationKind } from "@/hooks/useAutomationTemplates";
 import { GroupRunReviewDialog, buildValidations, type TemplateValidation } from "@/components/Matrix/GroupRunReviewDialog";
@@ -223,9 +227,18 @@ export default function MatrixAutomationDialog({
   const [replaceAnyNonZero, setReplaceAnyNonZero] = useState<boolean>(false);
   const [replacementPieceSearch, setReplacementPieceSearch] = useState<string>("");
 
+  // Copy-from mode state (source column: one piece OR one kit)
+  const [copySourceType, setCopySourceType] = useState<"piece" | "kit">("piece");
+  const [copySourceId, setCopySourceId] = useState<string>("");
+  const [copySourceOpen, setCopySourceOpen] = useState(false);
+
   // Reset operation when leaving by_field mode
   useEffect(() => {
     if (kind !== "by_field") setOperation("multiply");
+    if (kind !== "copy_from") {
+      setCopySourceId("");
+      setCopySourceType("piece");
+    }
     if (kind !== "replacement") {
       setReplacementPieceId("");
       setReplacementSourceQtys([]);
@@ -303,6 +316,9 @@ export default function MatrixAutomationDialog({
       setReplacementTargetQty(1);
       setReplaceAnyNonZero(false);
       setReplacementPieceSearch("");
+      setCopySourceId("");
+      setCopySourceType("piece");
+      setCopySourceOpen(false);
       setEditingId(null);
       setBulkLoc("");
       setBulkQty(1);
@@ -529,16 +545,85 @@ export default function MatrixAutomationDialog({
     [resolveItemsToPieces],
   );
 
+  /**
+   * Kit quantity for a store — SAME formula used by RateioTabV2's kitQtyMap:
+   * the minimum, across kit components, of floor(pieceQty / componentQty).
+   */
+  const kitQtyForStore = useCallback((kitId: string, storeId: string): number => {
+    const comps = kitPieces.filter(kp => kp.kit_id === kitId);
+    if (comps.length === 0) return 0;
+    let min = Infinity;
+    for (const kp of comps) {
+      const base = qtyMap[`${storeId}-${kp.piece_id}`] || 0;
+      const q = Math.floor(base / (kp.quantity || 1));
+      if (q < min) min = q;
+    }
+    return min === Infinity ? 0 : min;
+  }, [kitPieces, qtyMap]);
+
+  /** Read the numeric value of the SOURCE column (piece or kit) for one store. */
+  const readCopySourceValue = useCallback(
+    (storeId: string, srcType: "piece" | "kit", srcId: string): number => {
+      if (!srcId) return 0;
+      return srcType === "kit"
+        ? kitQtyForStore(srcId, storeId)
+        : (qtyMap[`${storeId}-${srcId}`] || 0);
+    },
+    [kitQtyForStore, qtyMap],
+  );
+
+  /**
+   * COPY_FROM mode: write the source value V into each destination item.
+   * Destination piece → V. Destination kit → each component gets V * componentQty.
+   * Zeros are preserved (they become deletes / zeroing downstream).
+   */
+  const resolveItemsForCopy = useCallback(
+    (items: SelectedItem[], store: ClientStore, srcType: "piece" | "kit", srcId: string) => {
+      if (!srcId) return [] as { pieceId: string; pieceName: string; quantity: number }[];
+      const v = readCopySourceValue(store.id, srcType, srcId);
+      const map = new Map<string, { pieceId: string; pieceName: string; quantity: number }>();
+      const push = (pieceId: string, pieceName: string, quantity: number) => {
+        const cur = map.get(pieceId);
+        if (cur) cur.quantity += quantity;
+        else map.set(pieceId, { pieceId, pieceName, quantity });
+      };
+      for (const item of items) {
+        if (item.type === "piece") {
+          push(item.id, item.name, v);
+        } else {
+          const comps = kitPieces.filter(kp => kp.kit_id === item.id);
+          for (const kp of comps) {
+            const piece = pieces.find(p => p.id === kp.piece_id);
+            push(kp.piece_id, piece?.name || `Peça ${kp.piece_id.slice(0, 6)}`, v * (kp.quantity || 1));
+          }
+        }
+      }
+      return Array.from(map.values()).map(r => ({ ...r, quantity: Math.max(0, Math.ceil(r.quantity)) }));
+    },
+    [readCopySourceValue, kitPieces, pieces],
+  );
+
   // Compute resolved pieces for a single store, respecting current `kind`/`baseField`/`operation`.
   const resolveForStore = useCallback(
-    (store: ClientStore, items: SelectedItem[], k: AutomationKind, bf: string, op: Operation = "multiply") => {
+    (
+      store: ClientStore,
+      items: SelectedItem[],
+      k: AutomationKind,
+      bf: string,
+      op: Operation = "multiply",
+      srcType: "piece" | "kit" = copySourceType,
+      srcId: string = copySourceId,
+    ) => {
       if (k === "by_field") {
         if (!bf) return [];
         return resolveItemsForStore(items, store, bf, op);
       }
+      if (k === "copy_from") {
+        return resolveItemsForCopy(items, store, srcType, srcId);
+      }
       return resolveItemsToPieces(items);
     },
-    [resolveItemsForStore, resolveItemsToPieces],
+    [resolveItemsForStore, resolveItemsToPieces, resolveItemsForCopy, copySourceType, copySourceId],
   );
 
   // Check for overwrite before preview
@@ -582,6 +667,11 @@ export default function MatrixAutomationDialog({
 
     if (kind === "by_field" && !baseField) {
       toast.error("Selecione o campo base para o cálculo.");
+      return;
+    }
+
+    if (kind === "copy_from" && !copySourceId) {
+      toast.error("Selecione a peça/kit de ORIGEM.");
       return;
     }
 
@@ -753,6 +843,8 @@ export default function MatrixAutomationDialog({
     k: AutomationKind = "fixed",
     bf: string | null = null,
     op: Operation = "multiply",
+    srcType: "piece" | "kit" = "piece",
+    srcId: string = "",
   ): Promise<{ updated: number; kept: number; zeroed: number }> => {
     const matching = filtrarLojas(stores, fg);
     const matchingIds = new Set(matching.map(s => s.id));
@@ -765,7 +857,9 @@ export default function MatrixAutomationDialog({
     for (const store of matching) {
       const resolvedPieces = k === "by_field" && bf
         ? resolveItemsForStore(items, store, bf, op)
-        : resolveItemsToPieces(items);
+        : k === "copy_from"
+          ? resolveItemsForCopy(items, store, srcType, srcId)
+          : resolveItemsToPieces(items);
       if (resolvedPieces.length === 0) continue;
       touchedStores++;
       for (const rp of resolvedPieces) {
@@ -897,6 +991,9 @@ export default function MatrixAutomationDialog({
         toast.error("Selecione ao menos uma quantidade de origem."); return;
       }
     }
+    if (kind === "copy_from" && !copySourceId) {
+      toast.error("Selecione a peça/kit de ORIGEM."); return;
+    }
     try {
       const filterValue = kind === "replacement"
         ? JSON.stringify({
@@ -906,7 +1003,12 @@ export default function MatrixAutomationDialog({
             replacementTargetQty,
             replaceAnyNonZero,
           })
-        : JSON.stringify({ filtros: filterGroup.filtros, condicoes: filterGroup.condicoes, operation });
+        : JSON.stringify({
+            filtros: filterGroup.filtros,
+            condicoes: filterGroup.condicoes,
+            operation,
+            ...(kind === "copy_from" ? { copySourceType, copySourceId } : {}),
+          });
 
       const payload = {
         name: saveName.trim(),
@@ -947,6 +1049,19 @@ export default function MatrixAutomationDialog({
     }
   };
 
+  // Helper: parse copy_from payload from template filter_value
+  const parseCopyFromTpl = (tpl: typeof templates[0]) => {
+    try {
+      const parsed = JSON.parse(tpl.filter_value);
+      return {
+        copySourceType: parsed.copySourceType === "kit" ? ("kit" as const) : ("piece" as const),
+        copySourceId: parsed.copySourceId || "",
+      };
+    } catch {
+      return { copySourceType: "piece" as const, copySourceId: "" };
+    }
+  };
+
   // Load template into form (read-only "carregar" — não entra em modo edição)
   const loadTemplate = (tpl: typeof templates[0]) => {
     const tplKind = tpl.kind ?? "fixed";
@@ -963,6 +1078,11 @@ export default function MatrixAutomationDialog({
       setFilterGroup({ filtros: migrated.filtros, condicoes: migrated.condicoes });
       setSelectedItems(tpl.items);
       setOperation(migrated.operation);
+      if (tplKind === "copy_from") {
+        const c = parseCopyFromTpl(tpl);
+        setCopySourceType(c.copySourceType);
+        setCopySourceId(c.copySourceId);
+      }
     }
     setKind(tplKind);
     setBaseField(tpl.base_field ?? "");
@@ -987,6 +1107,11 @@ export default function MatrixAutomationDialog({
       setFilterGroup({ filtros: migrated.filtros, condicoes: migrated.condicoes });
       setSelectedItems(tpl.items);
       setOperation(migrated.operation);
+      if (tplKind === "copy_from") {
+        const c = parseCopyFromTpl(tpl);
+        setCopySourceType(c.copySourceType);
+        setCopySourceId(c.copySourceId);
+      }
     }
     setKind(tplKind);
     setBaseField(tpl.base_field ?? "");
@@ -1088,12 +1213,15 @@ export default function MatrixAutomationDialog({
           );
         } else {
           const migrated = migrateTemplate(tpl);
+          const c = tplKind === "copy_from" ? parseCopyFromTpl(tpl) : { copySourceType: "piece" as const, copySourceId: "" };
           result = await executeAutomationMulti(
             { filtros: migrated.filtros, condicoes: migrated.condicoes },
             tpl.items,
             tplKind,
             tpl.base_field ?? null,
             migrated.operation,
+            c.copySourceType,
+            c.copySourceId,
           );
         }
         results.push({
@@ -1216,7 +1344,9 @@ export default function MatrixAutomationDialog({
   const canProceed =
     kind === "replacement"
       ? !!replacementPieceId && (replaceAnyNonZero || replacementSourceQtys.length > 0)
-      : selectedItems.length > 0 && (kind === "fixed" || !!baseField);
+      : kind === "copy_from"
+        ? selectedItems.length > 0 && !!copySourceId
+        : selectedItems.length > 0 && (kind === "fixed" || !!baseField);
   const applyingToAll = !hasValidFilters;
 
   // Stores within filter that have a valid numeric value in baseField
