@@ -1446,7 +1446,78 @@ export default function RateioTabV2({
     }
   };
 
+  // ---------- Responsividade (< lg) : estado e ações compartilhadas ----------
+  const isCompact = useIsCompactViewport();
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [showScrollHint, setShowScrollHint] = useState(true);
+
+  const activeStoreFilterCount =
+    storeFilters.state.size + storeFilters.city.size + storeFilters.store_model.size;
+
+  const handleExportRateioXlsx = async () => {
+    const toastId = toast.loading('Gerando exportação de rateio...');
+    try {
+      await exportMatrixExcelJS(
+        filteredStores, filteredPieces, visibleQtyMap, campaign.name, filteredKits,
+        activeKitPieces, undefined, [], [], pieces, agency?.name, client?.name,
+        undefined, undefined, activeTabData?.label
+      );
+      toast.success('Rateio exportado com sucesso', { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao exportar rateio', { id: toastId });
+    }
+  };
+
+  const handleExportRateioByStore = async () => {
+    const toastId = toast.loading('Iniciando exportação por loja...');
+    try {
+      await exportRateioGrid(
+        filteredPieces, filteredKits, activeKitPieces, filteredStores, visibleQtyMap,
+        campaign.name, client.name, agency.name, "pieces_and_kits",
+        (current: number, total: number, storeName: string) => {
+          toast.loading(`Exportando loja ${current} de ${total}: ${storeName}`, { id: toastId });
+        },
+        activeTabData?.label
+      );
+      toast.success('Exportação por loja concluída', { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao exportar rateio por loja', { id: toastId });
+    }
+  };
+
+  const handleClearWholeRateio = async () => {
+    if (!confirm("Deseja realmente zerar todas as células do rateio desta versão?")) return;
+    const deletes: { campaignId: string; storeId: string; pieceId: string }[] = [];
+    const seen = new Set<string>();
+    stores.forEach((s: any) => {
+      pieces.forEach((p: any) => {
+        const key = `${s.id}-${p.id}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        deletes.push({ campaignId, storeId: s.id, pieceId: p.id });
+      });
+    });
+    setLocalQtyOverrides({});
+    await applyWithHistory([], deletes, "Rateio zerado com sucesso");
+  };
+
+  const handleFillEmptyWithOne = async () => {
+    if (!confirm("Deseja preencher com 1 em todas as células vazias?")) return;
+    const upserts: RateioUpsert[] = [];
+    stores.forEach((s: any) => {
+      pieces.forEach((p: any) => {
+        if (!p.kit_only && !qtyMap[`${s.id}-${p.id}`]) {
+          upserts.push({ campaignId, storeId: s.id, pieceId: p.id, quantity: 1 });
+        }
+      });
+    });
+    await applyWithHistory(upserts, [], "Rateio preenchido");
+  };
+
   return (
+
     <div
       className={cn(
         "flex flex-col h-full bg-white overflow-hidden",
