@@ -1759,8 +1759,138 @@ export default function RateioTabV2({
                 </div>
 
 
-                {/* Action Buttons */}
-                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar flex-nowrap md:flex-wrap -mx-3 px-3 md:mx-0 md:px-0 [&>*]:shrink-0">
+                {/* Input oculto para upload (compartilhado desktop/mobile) */}
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept=".xlsx"
+                  className="hidden"
+                  onChange={handleImportFile}
+                />
+
+                {/* Action Buttons — MOBILE / TABLET (< lg): tudo agrupado em "Ações" */}
+                <div className="flex lg:hidden items-center justify-between gap-2 w-full">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {isTabEditable && (
+                      <div className="flex items-center bg-stone-100 rounded-lg p-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn("h-11 w-11", historyIndex < 0 ? "text-stone-300" : "text-stone-600")}
+                          onClick={handleUndo}
+                          disabled={historyIndex < 0}
+                          aria-label="Desfazer"
+                        >
+                          <Undo2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn("h-11 w-11", historyIndex >= history.length - 1 ? "text-stone-300" : "text-stone-600")}
+                          onClick={handleRedo}
+                          disabled={historyIndex >= history.length - 1}
+                          aria-label="Refazer"
+                        >
+                          <Redo2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                    {isTabEditable && (
+                      <Badge variant="secondary" className="bg-stone-100 text-stone-500 border-none text-[10px] px-2 py-1 font-bold uppercase rounded-lg">
+                        {activeTabData?.type === "adjustment" ? "AJUSTE" : activeTabData?.type === "negotiation" ? "NEGOCIAÇÃO" : "ORIGINAL"}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-11 px-4 text-xs font-bold gap-2 rounded-lg border-stone-200 shadow-sm">
+                        <MoreVertical className="w-4 h-4" />
+                        Ações
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-64">
+                      {isTabEditable && (
+                        <>
+                          <DropdownMenuItem
+                            className="text-xs min-h-[44px] cursor-pointer"
+                            onClick={() => setIsAutomationOpen(true)}
+                            disabled={isExecutingAutomation}
+                          >
+                            <Sparkles className="w-4 h-4 mr-2 text-[#C2714F]" />
+                            {t("rateio.matrixAutomation", "AUTOMAÇÃO DE MATRIZ")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-xs min-h-[44px] cursor-pointer"
+                            onClick={() => setCopyQtyOpen(true)}
+                          >
+                            <Copy className="w-4 h-4 mr-2" />
+                            {t("rateio.copyQuantities", "COPIAR QUANTIDADES")}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
+                      <DropdownMenuItem
+                        className="text-xs min-h-[44px] cursor-pointer"
+                        onClick={handleExport}
+                        disabled={isExporting}
+                      >
+                        <FileDown className="w-4 h-4 mr-2" />
+                        {isExporting ? 'Exportando...' : 'Exportar Modelo'}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-xs min-h-[44px] cursor-pointer"
+                        onClick={() => importInputRef.current?.click()}
+                        disabled={isImporting || !isTabEditable}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {isImporting ? 'Importando...' : 'Importar Planilha'}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-xs min-h-[44px] cursor-pointer" onClick={handleExportRateioXlsx}>
+                        <Download className="w-4 h-4 mr-2" />
+                        {t("rateio.exportRateio", "EXPORTAR RATEIO")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-xs min-h-[44px] cursor-pointer" onClick={handleExportRateioByStore}>
+                        <Download className="w-4 h-4 mr-2" />
+                        {t("rateio.exportByStore", "EXPORTAR RATEIO POR LOJA")}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-xs min-h-[44px] cursor-pointer"
+                        onClick={() => setIsFullscreen((v) => !v)}
+                      >
+                        {isFullscreen ? <Minimize2 className="w-4 h-4 mr-2" /> : <Maximize2 className="w-4 h-4 mr-2" />}
+                        {isFullscreen ? "Sair tela cheia" : "Tela cheia"}
+                      </DropdownMenuItem>
+                      {isTabEditable && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-xs min-h-[44px] cursor-pointer" onClick={handleClearWholeRateio}>
+                            <X className="w-4 h-4 mr-2" />
+                            Limpar todo o rateio
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs min-h-[44px] cursor-pointer" onClick={handleFillEmptyWithOne}>
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Preencher vazios com 1
+                          </DropdownMenuItem>
+                          {rateioSource === 'negotiation' && (
+                            <DropdownMenuItem
+                              className="text-xs min-h-[44px] cursor-pointer text-amber-600 focus:text-amber-600"
+                              onClick={handleResetNegotiationRateio}
+                            >
+                              <RefreshCw className="w-4 h-4 mr-2" />
+                              Restaurar original
+                            </DropdownMenuItem>
+                          )}
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Action Buttons — DESKTOP (lg+): layout original inalterado */}
+                <div className="hidden lg:flex items-center gap-2 flex-wrap [&>*]:shrink-0">
+
 
                   {isTabEditable && (
                     <>
