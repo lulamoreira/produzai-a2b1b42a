@@ -107,7 +107,7 @@ const RateioRow = memo(({
   return (
     <tr className="group even:bg-stone-100/80 odd:bg-white hover:bg-[#C2714F]/[0.08] transition-colors">
       <td 
-        className="bg-white group-hover:bg-stone-50/50 border-r border-b border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)]" 
+        className="bg-white group-hover:bg-stone-50/50 border-r border-b border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)] w-[300px]" 
         style={{ position: 'sticky', left: 0, zIndex: 20 }}
       >
         <div className="flex items-center gap-3">
@@ -148,7 +148,7 @@ const RateioRow = memo(({
           <td 
             key={`${col._type}-${col.id}`} 
             className={cn(
-              "border-r border-b border-stone-200 text-center transition-all relative",
+              "border-r border-b border-stone-200 text-center transition-colors relative",
               !isTabEditable ? "cursor-default" : "cursor-cell",
               isKit && "bg-[#C2714F]/[0.03]",
               val > 0 && !isKit && "bg-stone-50/30",
@@ -183,7 +183,7 @@ const RateioRow = memo(({
               />
             ) : (
               <div className={cn(
-                "w-full h-full min-h-[48px] flex items-center justify-center text-xs transition-all",
+                "w-full h-full min-h-[48px] flex items-center justify-center text-xs transition-colors",
                 val > 0 
                   ? (isKit ? "text-[#C2714F] font-black" : "text-stone-900 font-black scale-110") 
                   : "text-stone-200 font-medium"
@@ -2069,7 +2069,13 @@ export default function RateioTabV2({
                     </Button>
                   )}
                 </div>
-                <table className="min-w-full" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+                <table className="min-w-full table-fixed" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
+                  <colgroup>
+                    <col style={{ width: 300, minWidth: 300 }} />
+                    {columns.map((col) => (
+                      <col key={`col-${col._type}-${col.id}`} style={{ width: 140, minWidth: 140 }} />
+                    ))}
+                  </colgroup>
                   <thead 
                     className="bg-white shadow-[0_1px_0_0_rgba(0,0,0,0.05)]"
                     style={{ position: 'sticky', top: 0, zIndex: 30 }}
