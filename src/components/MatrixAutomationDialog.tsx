@@ -440,6 +440,19 @@ export default function MatrixAutomationDialog({
     });
   }, [pieces, kits, selectedItems, itemSearch]);
 
+  // Copy-from: all pieces + kits available as SOURCE column
+  const copySourceOptions = useMemo(() => ([
+    ...pieces.map(p => ({ id: p.id, type: "piece" as const, code: p.code, name: p.name })),
+    ...kits.map(k => ({ id: k.id, type: "kit" as const, code: k.code, name: k.name })),
+  ]), [pieces, kits]);
+
+  const copySourceLabel = useMemo(() => {
+    if (!copySourceId) return "";
+    const opt = copySourceOptions.find(o => o.id === copySourceId && o.type === copySourceType);
+    if (!opt) return "";
+    return `${opt.type === "kit" ? "Kit" : "Peça"} ${opt.code} — ${opt.name}`;
+  }, [copySourceOptions, copySourceId, copySourceType]);
+
   // Distinct piece locations for bulk-add shortcut
   const pieceLocations = useMemo(() => (
     [...new Set(pieces.map(p => String(p.category ?? "").trim().toUpperCase()).filter(Boolean))].sort()
@@ -1472,6 +1485,8 @@ export default function MatrixAutomationDialog({
                       setSelectedItems([]);
                       setKind("fixed");
                       setBaseField("");
+                      setCopySourceId("");
+                      setCopySourceType("piece");
                     }}
                   >
                     Cancelar edição
@@ -1481,7 +1496,7 @@ export default function MatrixAutomationDialog({
               {/* ── Tipo de automação ── */}
               <div>
                 <Label className="text-sm font-semibold mb-2 block">Tipo de automação</Label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <button
                     type="button"
                     onClick={() => setKind("fixed")}
@@ -1526,8 +1541,78 @@ export default function MatrixAutomationDialog({
                       Substituir valores existentes
                     </p>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setKind("copy_from")}
+                    className={`text-left p-3 rounded-lg border transition-all ${
+                      kind === "copy_from"
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border bg-background hover:border-primary/40"
+                    }`}
+                  >
+                    <p className="text-sm font-medium">Copiar de outra peça/kit</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Copia, loja a loja, o valor de uma coluna de origem
+                    </p>
+                  </button>
                 </div>
               </div>
+
+              {/* ── Origem (apenas no modo copy_from) ── */}
+              {kind === "copy_from" && (
+                <div className="p-3 border rounded-lg bg-muted/20 space-y-1">
+                  <Label className="text-sm font-semibold block">Origem (coluna de onde copiar)</Label>
+                  <Popover open={copySourceOpen} onOpenChange={setCopySourceOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className="w-full justify-between h-9 text-xs font-normal">
+                        {copySourceLabel || "Selecionar peça ou kit de origem…"}
+                        <Copy className="w-3.5 h-3.5 opacity-60" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent
+                      className="w-[min(420px,90vw)] p-0"
+                      align="start"
+                      onWheel={e => e.stopPropagation()}
+                      onTouchMove={e => e.stopPropagation()}
+                    >
+                      <Command filter={(value, search) => (value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0)}>
+                        <CommandInput placeholder="Buscar por código ou nome..." className="h-9" />
+                        <CommandList
+                          className="max-h-[300px] overflow-y-auto [overscroll-behavior:contain]"
+                          onWheel={e => e.stopPropagation()}
+                          onTouchMove={e => e.stopPropagation()}
+                        >
+                          <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
+                          <CommandGroup>
+                            {copySourceOptions.map(opt => (
+                              <CommandItem
+                                key={`${opt.type}-${opt.id}`}
+                                value={`${opt.code} ${opt.name} ${opt.type === "kit" ? "kit" : "peça"}`}
+                                onSelect={() => {
+                                  setCopySourceType(opt.type);
+                                  setCopySourceId(opt.id);
+                                  setCopySourceOpen(false);
+                                }}
+                                className="gap-2"
+                              >
+                                <Badge variant="outline" className="text-[10px]">
+                                  {opt.type === "kit" ? "Kit" : t("automation.piece")}
+                                </Badge>
+                                <span className="font-mono text-xs">{opt.code}</span>
+                                <span className="truncate text-xs">{opt.name}</span>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-[11px] text-muted-foreground">
+                    O valor de cada loja nessa coluna será copiado para as peças/kits selecionados abaixo (destino).
+                    Em kits, a quantidade do kit = menor múltiplo completo entre os componentes.
+                  </p>
+                </div>
+              )}
 
               {/* ── Substituição UI (apenas no modo replacement) ── */}
               {kind === "replacement" && (
@@ -1935,8 +2020,12 @@ export default function MatrixAutomationDialog({
                         {kind === "by_field" && (
                           <span className="text-xs text-muted-foreground font-semibold">{operation === "divide" ? "÷" : "×"}</span>
                         )}
+                        {kind === "copy_from" && (
+                          <span className="text-[10px] text-muted-foreground">= valor da origem</span>
+                        )}
                         <Input
                           type="number" min={1} value={item.quantity}
+                          disabled={kind === "copy_from"}
                           onChange={e => updateItemQty(idx, parseInt(e.target.value) || 1)}
                           className="w-20 h-7 text-xs"
                           title={kind === "by_field" ? (operation === "divide" ? "Fator (será dividido pelo valor do campo)" : "Fator multiplicador") : "Quantidade"}
