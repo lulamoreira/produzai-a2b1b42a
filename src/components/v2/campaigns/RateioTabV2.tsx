@@ -6,8 +6,9 @@ import {
   Search, Filter, Download, Sparkles, Copy, MoreHorizontal, Lock, CheckCircle2,
   Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw, X,
   ArrowUpDown, Check, Loader2, Upload, FileDown, Maximize2, Minimize2, Mail,
-  FileEdit, Trash2
+  FileEdit, Trash2, MoreVertical, SlidersHorizontal, ArrowLeftRight
 } from "lucide-react";
+
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateAdjustment, useDeleteAdjustment, fetchVigenteRateio } from "@/hooks/useAdjustments";
