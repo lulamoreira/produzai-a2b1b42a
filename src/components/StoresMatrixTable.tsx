@@ -124,7 +124,7 @@ function DraggableHeaderCell({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: col.key });
   const style: React.CSSProperties = {
     transform: CSS.Translate.toString(transform),
-    transition,
+    transition: isDragging ? transition : undefined,
     opacity: isDragging ? 0.5 : 1,
     zIndex: isDragging ? 50 : "auto",
     whiteSpace: "nowrap",
@@ -723,7 +723,17 @@ export default function StoresMatrixTable({
     <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden isolate relative">
       <div className="overflow-x-auto">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <Table className="min-w-[1200px] border-collapse">
+          <Table className="min-w-[1200px] border-collapse table-fixed">
+            <colgroup>
+              {orderedColumns.map((col) => (
+                <col
+                  key={col.key}
+                  className={cn(
+                    col.storeField === "name" ? "w-[240px]" : "w-[140px]"
+                  )}
+                />
+              ))}
+            </colgroup>
             <TableHeader className="sticky top-0 z-10 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
               <TableRow className="hover:bg-transparent border-gray-200 dark:border-gray-700">
                 <SortableContext items={columnOrder} strategy={horizontalListSortingStrategy}>
@@ -810,9 +820,9 @@ export default function StoresMatrixTable({
                       <TableCell 
                         key={col.key} 
                         className={cn(
-                          "p-1 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 cursor-cell transition-all", 
+                          "p-1 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 cursor-cell transition-colors", 
                           isAnchor && "ring-2 ring-inset ring-blue-500 z-[6]"
-                        )} 
+                        )}
                         onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}
                       >
                         <div className="flex items-center justify-center gap-1.5 px-1 py-0.5 min-h-[28px]">
@@ -844,9 +854,9 @@ export default function StoresMatrixTable({
                       <TableCell 
                         key={col.key} 
                         className={cn(
-                          "p-1 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 cursor-cell transition-all", 
+                          "p-1 border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 cursor-cell transition-colors", 
                           isAnchor && "ring-2 ring-inset ring-blue-500 z-[6]"
-                        )} 
+                        )}
                         onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}
                       >
                         <div className="flex items-center justify-center gap-1.5 px-1 py-0.5 min-h-[28px]">
@@ -874,7 +884,7 @@ export default function StoresMatrixTable({
 
                   if (!canEdit) {
                     return (
-                      <TableCell key={col.key} className={cn("text-xs text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 cursor-cell transition-all px-2", isAnchor && "ring-2 ring-inset ring-blue-500 z-[6]")} onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}>
+                      <TableCell key={col.key} className={cn("text-xs text-gray-900 dark:text-gray-100 border-gray-200 dark:border-gray-700 cursor-cell transition-colors px-2", isAnchor && "ring-2 ring-inset ring-blue-500 z-[6]")} onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}>
                         <div className="flex items-center justify-between gap-2">
                           <span>{displayVal || "—"}</span>
                         </div>
@@ -887,7 +897,7 @@ export default function StoresMatrixTable({
                     <TableCell 
                       key={col.key} 
                       className={cn(
-                        "p-1 border-gray-200 dark:border-gray-700 transition-all cursor-cell relative",
+                        "p-1 border-gray-200 dark:border-gray-700 transition-colors cursor-cell relative",
                         isAnchor && "ring-2 ring-inset ring-blue-500 z-[6]"
                       )}
                       onClick={() => setAnchorCell({ rowIndex, colKey: col.storeField })}
