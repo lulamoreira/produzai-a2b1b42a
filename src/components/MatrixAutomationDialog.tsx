@@ -611,7 +611,11 @@ export default function MatrixAutomationDialog({
           }
         }
       }
-      return Array.from(map.values()).map(r => ({ ...r, quantity: Math.max(0, Math.ceil(r.quantity)) }));
+      return Array.from(map.values()).map(r => ({
+        ...r,
+        pieceName: `${r.pieceName} ← origem: ${v}`,
+        quantity: Math.max(0, Math.ceil(r.quantity)),
+      }));
     },
     [readCopySourceValue, kitPieces, pieces],
   );
