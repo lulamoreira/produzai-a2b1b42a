@@ -1551,7 +1551,8 @@ export default function RateioTabV2({
           </TabsList>
         </Tabs>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2 min-w-0">
+
           {rateioSource === "negotiation" && hasCampaignNegRateio && (
             <>
               {existingPendingRequote ? (
