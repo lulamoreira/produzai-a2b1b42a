@@ -1451,6 +1451,20 @@ export default function RateioTabV2({
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [showScrollHint, setShowScrollHint] = useState(true);
 
+  // Some a dica "arraste para ver mais" após o primeiro scroll horizontal da matriz.
+  useEffect(() => {
+    if (!isCompact) return;
+    const el = gridContainerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      if (el.scrollLeft > 8) setShowScrollHint(false);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [isCompact]);
+
+
+
   const activeStoreFilterCount =
     storeFilters.state.size + storeFilters.city.size + storeFilters.store_model.size;
 
