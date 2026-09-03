@@ -2415,8 +2415,17 @@ export default function RateioTabV2({
               </Sheet>
 
 
+              {/* Dica de scroll horizontal — apenas mobile/tablet */}
+              {isCompact && showScrollHint && (
+                <div className="lg:hidden px-3 py-1 bg-stone-50 border-b border-stone-100 text-[11px] text-stone-400 flex items-center justify-center gap-1.5">
+                  <ArrowLeftRight className="w-3 h-3" />
+                  arraste para ver mais
+                </div>
+              )}
+
               {/* Spreadsheet Table */}
-              <div ref={gridContainerRef} className="flex-1 min-h-0 overflow-auto relative custom-scrollbar">
+              <div ref={gridContainerRef} className="flex-1 min-h-0 overflow-auto relative custom-scrollbar overscroll-x-contain">
+
                 {/* Loading overlay for quantities */}
                 {isLoadingQuantities && (
                   <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/70 dark:bg-stone-900/70 backdrop-blur-sm pointer-events-none animate-in fade-in">
