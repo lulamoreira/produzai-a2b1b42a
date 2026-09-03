@@ -2444,7 +2444,7 @@ export default function RateioTabV2({
                 </div>
                 <table className="min-w-full table-fixed" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
                   <colgroup>
-                    <col style={{ width: 300, minWidth: 300 }} />
+                    <col style={{ width: isCompact ? 180 : 300, minWidth: isCompact ? 180 : 300 }} />
                     {columns.map((col) => (
                       <col key={`col-${col._type}-${col.id}`} style={{ width: 140, minWidth: 140 }} />
                     ))}
