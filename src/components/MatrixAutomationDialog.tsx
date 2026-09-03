@@ -205,6 +205,7 @@ export default function MatrixAutomationDialog({
 
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [itemSearch, setItemSearch] = useState("");
+  const [excludedSearch, setExcludedSearch] = useState("");
 
   // Bulk-add by piece location (kind === "fixed" only)
   const [bulkLoc, setBulkLoc] = useState("");
@@ -286,6 +287,7 @@ export default function MatrixAutomationDialog({
       setFilterGroup({ filtros: [createEmptyFilter()], condicoes: [] });
       setSelectedItems([]);
       setItemSearch("");
+      setExcludedSearch("");
       setPreview([]);
       setOutsideActions({});
       setShowSaveInput(false);
@@ -702,6 +704,15 @@ export default function MatrixAutomationDialog({
   const ignoredCount = preview.filter(r => r.group === "ignored").length;
   const uniqueUpdateStores = new Set(updateRows.map(r => r.storeId)).size;
   const uniqueOutsideStores = new Set(outsideRows.map(r => r.storeId)).size;
+
+  // Excluded rows (ignored + outside_with_value) for the review-only section
+  const excludedRows = useMemo(() => {
+    const search = excludedSearch.trim().toLowerCase();
+    return preview
+      .filter(r => r.group === "ignored" || r.group === "outside_with_value")
+      .filter(r => !search || r.storeName.toLowerCase().includes(search));
+  }, [preview, excludedSearch]);
+  const excludedCount = excludedRows.length;
 
   const setAllOutside = (action: OutsideFilterAction) => {
     const updated = { ...outsideActions };
@@ -2146,11 +2157,47 @@ export default function MatrixAutomationDialog({
               </div>
             )}
 
-            {/* Group ⏭️ */}
-            {ignoredCount > 0 && (
-              <p className="text-xs text-muted-foreground">
-                ⏭️ {t("automation.ignoredStores", { count: ignoredCount })}
-              </p>
+            {/* Group 🚫 Fora do filtro — NÃO recebem */}
+            {excludedCount > 0 && (
+              <div className="space-y-2">
+                <h3 className="text-sm font-semibold flex items-center gap-1.5 text-muted-foreground">
+                  <X className="w-4 h-4" />
+                  🚫 Fora do filtro — NÃO recebem ({excludedCount} {excludedCount === 1 ? "loja" : "lojas"})
+                </h3>
+                <Input
+                  placeholder="Buscar loja..."
+                  value={excludedSearch}
+                  onChange={(e) => setExcludedSearch(e.target.value)}
+                  className="h-8 text-xs"
+                />
+                <div className="max-h-40 overflow-auto border rounded bg-muted/30">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-xs">{t("automation.store")}</TableHead>
+                        <TableHead className="text-xs">{t("automation.item")}</TableHead>
+                        <TableHead className="text-xs text-right">Permanece</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {excludedRows.map((row, i) => {
+                        const key = `${row.storeId}-${row.pieceId}`;
+                        const action = row.group === "outside_with_value" ? (outsideActions[key] || "keep") : "keep";
+                        const finalQty = action === "zero" ? 0 : row.currentQty;
+                        return (
+                          <TableRow key={i}>
+                            <TableCell className="text-xs py-1">{row.storeName}</TableCell>
+                            <TableCell className="text-xs py-1">{row.pieceName}</TableCell>
+                            <TableCell className="text-xs py-1 text-right text-muted-foreground">
+                              {row.currentQty} → {finalQty} (não muda)
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
             )}
 
             <div className="flex gap-2">
