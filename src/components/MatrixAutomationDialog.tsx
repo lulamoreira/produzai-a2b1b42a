@@ -205,6 +205,7 @@ export default function MatrixAutomationDialog({
 
   const [selectedItems, setSelectedItems] = useState<SelectedItem[]>([]);
   const [itemSearch, setItemSearch] = useState("");
+  const [excludedSearch, setExcludedSearch] = useState("");
 
   // Bulk-add by piece location (kind === "fixed" only)
   const [bulkLoc, setBulkLoc] = useState("");
