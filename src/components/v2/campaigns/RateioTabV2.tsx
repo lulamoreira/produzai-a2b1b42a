@@ -1942,14 +1942,8 @@ export default function RateioTabV2({
                     </>
                   )}
 
-                  {/* Input oculto para upload */}
-                  <input
-                    ref={importInputRef}
-                    type="file"
-                    accept=".xlsx"
-                    className="hidden"
-                    onChange={handleImportFile}
-                  />
+
+
 
                   <Button
                     variant="outline"
