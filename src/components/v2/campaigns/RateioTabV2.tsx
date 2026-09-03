@@ -56,6 +56,30 @@ import { useBudgetPhase } from "@/hooks/useBudgetPhase";
 import RateioComparisonDialog from "./RateioComparisonDialog";
 import { GitCompare } from "lucide-react";
 
+/**
+ * Retorna true abaixo do breakpoint `lg` (1024px) — celulares e tablets em retrato.
+ * Usado APENAS para ajustes de apresentação (larguras da matriz); o layout
+ * desktop (lg+) permanece inalterado.
+ */
+function useIsCompactViewport(): boolean {
+  const [isCompact, setIsCompact] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 1023px)").matches : false
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(max-width: 1023px)");
+    const onChange = () => setIsCompact(mql.matches);
+    mql.addEventListener("change", onChange);
+    onChange();
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+
+  return isCompact;
+}
+
+
+
 interface RateioTabV2Props {
   campaignId: string;
   clientId: string;
