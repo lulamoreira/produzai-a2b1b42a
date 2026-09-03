@@ -6,8 +6,9 @@ import {
   Search, Filter, Download, Sparkles, Copy, MoreHorizontal, Lock, CheckCircle2,
   Undo2, Redo2, Store as StoreIcon, MapPin, Tag, Layers, RefreshCw, X,
   ArrowUpDown, Check, Loader2, Upload, FileDown, Maximize2, Minimize2, Mail,
-  FileEdit, Trash2
+  FileEdit, Trash2, MoreVertical, SlidersHorizontal, ArrowLeftRight
 } from "lucide-react";
+
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCreateAdjustment, useDeleteAdjustment, fetchVigenteRateio } from "@/hooks/useAdjustments";
@@ -17,12 +18,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { 
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger 
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel
 } from "@/components/ui/dropdown-menu";
+import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter,
+} from "@/components/ui/sheet";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+
 import { 
   Table, 
   TableBody, 
@@ -50,6 +55,30 @@ import { supabase } from "@/integrations/supabase/client";
 import { useBudgetPhase } from "@/hooks/useBudgetPhase";
 import RateioComparisonDialog from "./RateioComparisonDialog";
 import { GitCompare } from "lucide-react";
+
+/**
+ * Retorna true abaixo do breakpoint `lg` (1024px) — celulares e tablets em retrato.
+ * Usado APENAS para ajustes de apresentação (larguras da matriz); o layout
+ * desktop (lg+) permanece inalterado.
+ */
+function useIsCompactViewport(): boolean {
+  const [isCompact, setIsCompact] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.matchMedia("(max-width: 1023px)").matches : false
+  );
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mql = window.matchMedia("(max-width: 1023px)");
+    const onChange = () => setIsCompact(mql.matches);
+    mql.addEventListener("change", onChange);
+    onChange();
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+
+  return isCompact;
+}
+
+
 
 interface RateioTabV2Props {
   campaignId: string;
@@ -107,7 +136,7 @@ const RateioRow = memo(({
   return (
     <tr className="group even:bg-stone-100/80 odd:bg-white hover:bg-[#C2714F]/[0.08] transition-colors">
       <td 
-        className="bg-white group-hover:bg-stone-50 border-r border-b border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)] w-[300px]" 
+        className="bg-white group-hover:bg-stone-50 border-r border-b border-stone-200 p-2 lg:p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)] w-[180px] lg:w-[300px]" 
         style={{ position: 'sticky', left: 0, zIndex: 20 }}
       >
         <div className="flex items-center gap-3">
@@ -1417,15 +1446,101 @@ export default function RateioTabV2({
     }
   };
 
+  // ---------- Responsividade (< lg) : estado e ações compartilhadas ----------
+  const isCompact = useIsCompactViewport();
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [showScrollHint, setShowScrollHint] = useState(true);
+
+  // Some a dica "arraste para ver mais" após o primeiro scroll horizontal da matriz.
+  useEffect(() => {
+    if (!isCompact) return;
+    const el = gridContainerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      if (el.scrollLeft > 8) setShowScrollHint(false);
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, [isCompact]);
+
+
+
+  const activeStoreFilterCount =
+    storeFilters.state.size + storeFilters.city.size + storeFilters.store_model.size;
+
+  const handleExportRateioXlsx = async () => {
+    const toastId = toast.loading('Gerando exportação de rateio...');
+    try {
+      await exportMatrixExcelJS(
+        filteredStores, filteredPieces, visibleQtyMap, campaign.name, filteredKits,
+        activeKitPieces, undefined, [], [], pieces, agency?.name, client?.name,
+        undefined, undefined, activeTabData?.label
+      );
+      toast.success('Rateio exportado com sucesso', { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao exportar rateio', { id: toastId });
+    }
+  };
+
+  const handleExportRateioByStore = async () => {
+    const toastId = toast.loading('Iniciando exportação por loja...');
+    try {
+      await exportRateioGrid(
+        filteredPieces, filteredKits, activeKitPieces, filteredStores, visibleQtyMap,
+        campaign.name, client.name, agency.name, "pieces_and_kits",
+        (current: number, total: number, storeName: string) => {
+          toast.loading(`Exportando loja ${current} de ${total}: ${storeName}`, { id: toastId });
+        },
+        activeTabData?.label
+      );
+      toast.success('Exportação por loja concluída', { id: toastId });
+    } catch (err) {
+      console.error(err);
+      toast.error('Erro ao exportar rateio por loja', { id: toastId });
+    }
+  };
+
+  const handleClearWholeRateio = async () => {
+    if (!confirm("Deseja realmente zerar todas as células do rateio desta versão?")) return;
+    const deletes: { campaignId: string; storeId: string; pieceId: string }[] = [];
+    const seen = new Set<string>();
+    stores.forEach((s: any) => {
+      pieces.forEach((p: any) => {
+        const key = `${s.id}-${p.id}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        deletes.push({ campaignId, storeId: s.id, pieceId: p.id });
+      });
+    });
+    setLocalQtyOverrides({});
+    await applyWithHistory([], deletes, "Rateio zerado com sucesso");
+  };
+
+  const handleFillEmptyWithOne = async () => {
+    if (!confirm("Deseja preencher com 1 em todas as células vazias?")) return;
+    const upserts: RateioUpsert[] = [];
+    stores.forEach((s: any) => {
+      pieces.forEach((p: any) => {
+        if (!p.kit_only && !qtyMap[`${s.id}-${p.id}`]) {
+          upserts.push({ campaignId, storeId: s.id, pieceId: p.id, quantity: 1 });
+        }
+      });
+    });
+    await applyWithHistory(upserts, [], "Rateio preenchido");
+  };
+
   return (
+
     <div
       className={cn(
-        "flex flex-col h-full bg-white overflow-hidden",
+        "flex flex-col h-full bg-white overflow-hidden max-w-full",
         isFullscreen && "fixed inset-0 z-[100] h-screen w-screen"
       )}
     >
       {/* Top Navigation for Spreadsheet/Dashboard */}
-      <div className="flex items-center justify-between px-6 py-1 border-b border-stone-200">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3 lg:px-6 py-1.5 lg:py-1 border-b border-stone-200">
+
         {isFullscreen && (
           <Button
             variant="ghost"
@@ -1450,7 +1565,8 @@ export default function RateioTabV2({
           </TabsList>
         </Tabs>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2 min-w-0">
+
           {rateioSource === "negotiation" && hasCampaignNegRateio && (
             <>
               {existingPendingRequote ? (
@@ -1522,12 +1638,13 @@ export default function RateioTabV2({
             variant="outline"
             size="sm"
             onClick={() => setIsFullscreen((v) => !v)}
-            className="text-xs gap-2 h-8"
+            className="hidden lg:inline-flex text-xs gap-2 h-8"
             title={isFullscreen ? "Sair da tela cheia (Esc)" : "Editar em tela cheia"}
           >
             {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             {isFullscreen ? "Sair tela cheia" : "Tela cheia"}
           </Button>
+
         </div>
       </div>
 
@@ -1628,7 +1745,8 @@ export default function RateioTabV2({
 
               {/* Rateio Header Banner */}
               <div className={cn(
-                "px-3 md:px-6 py-1.5 border-b flex flex-col md:flex-row md:items-center justify-between gap-2",
+                "px-3 lg:px-6 py-1.5 border-b flex flex-col lg:flex-row lg:items-center justify-between gap-2",
+
                 isTabEditable 
                   ? "bg-emerald-50/60 border-emerald-100" 
                   : "bg-amber-50/50 border-amber-100"
@@ -1655,8 +1773,138 @@ export default function RateioTabV2({
                 </div>
 
 
-                {/* Action Buttons */}
-                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar flex-nowrap md:flex-wrap -mx-3 px-3 md:mx-0 md:px-0 [&>*]:shrink-0">
+                {/* Input oculto para upload (compartilhado desktop/mobile) */}
+                <input
+                  ref={importInputRef}
+                  type="file"
+                  accept=".xlsx"
+                  className="hidden"
+                  onChange={handleImportFile}
+                />
+
+                {/* Action Buttons — MOBILE / TABLET (< lg): tudo agrupado em "Ações" */}
+                <div className="flex lg:hidden items-center justify-between gap-2 w-full">
+                  <div className="flex items-center gap-2 min-w-0">
+                    {isTabEditable && (
+                      <div className="flex items-center bg-stone-100 rounded-lg p-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn("h-11 w-11", historyIndex < 0 ? "text-stone-300" : "text-stone-600")}
+                          onClick={handleUndo}
+                          disabled={historyIndex < 0}
+                          aria-label="Desfazer"
+                        >
+                          <Undo2 className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn("h-11 w-11", historyIndex >= history.length - 1 ? "text-stone-300" : "text-stone-600")}
+                          onClick={handleRedo}
+                          disabled={historyIndex >= history.length - 1}
+                          aria-label="Refazer"
+                        >
+                          <Redo2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    )}
+                    {isTabEditable && (
+                      <Badge variant="secondary" className="bg-stone-100 text-stone-500 border-none text-[10px] px-2 py-1 font-bold uppercase rounded-lg">
+                        {activeTabData?.type === "adjustment" ? "AJUSTE" : activeTabData?.type === "negotiation" ? "NEGOCIAÇÃO" : "ORIGINAL"}
+                      </Badge>
+                    )}
+                  </div>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" className="h-11 px-4 text-xs font-bold gap-2 rounded-lg border-stone-200 shadow-sm">
+                        <MoreVertical className="w-4 h-4" />
+                        Ações
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-64">
+                      {isTabEditable && (
+                        <>
+                          <DropdownMenuItem
+                            className="text-xs min-h-[44px] cursor-pointer"
+                            onClick={() => setIsAutomationOpen(true)}
+                            disabled={isExecutingAutomation}
+                          >
+                            <Sparkles className="w-4 h-4 mr-2 text-[#C2714F]" />
+                            {t("rateio.matrixAutomation", "AUTOMAÇÃO DE MATRIZ")}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-xs min-h-[44px] cursor-pointer"
+                            onClick={() => setCopyQtyOpen(true)}
+                          >
+                            <Copy className="w-4 h-4 mr-2" />
+                            {t("rateio.copyQuantities", "COPIAR QUANTIDADES")}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                        </>
+                      )}
+                      <DropdownMenuItem
+                        className="text-xs min-h-[44px] cursor-pointer"
+                        onClick={handleExport}
+                        disabled={isExporting}
+                      >
+                        <FileDown className="w-4 h-4 mr-2" />
+                        {isExporting ? 'Exportando...' : 'Exportar Modelo'}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-xs min-h-[44px] cursor-pointer"
+                        onClick={() => importInputRef.current?.click()}
+                        disabled={isImporting || !isTabEditable}
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        {isImporting ? 'Importando...' : 'Importar Planilha'}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-xs min-h-[44px] cursor-pointer" onClick={handleExportRateioXlsx}>
+                        <Download className="w-4 h-4 mr-2" />
+                        {t("rateio.exportRateio", "EXPORTAR RATEIO")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="text-xs min-h-[44px] cursor-pointer" onClick={handleExportRateioByStore}>
+                        <Download className="w-4 h-4 mr-2" />
+                        {t("rateio.exportByStore", "EXPORTAR RATEIO POR LOJA")}
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-xs min-h-[44px] cursor-pointer"
+                        onClick={() => setIsFullscreen((v) => !v)}
+                      >
+                        {isFullscreen ? <Minimize2 className="w-4 h-4 mr-2" /> : <Maximize2 className="w-4 h-4 mr-2" />}
+                        {isFullscreen ? "Sair tela cheia" : "Tela cheia"}
+                      </DropdownMenuItem>
+                      {isTabEditable && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-xs min-h-[44px] cursor-pointer" onClick={handleClearWholeRateio}>
+                            <X className="w-4 h-4 mr-2" />
+                            Limpar todo o rateio
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="text-xs min-h-[44px] cursor-pointer" onClick={handleFillEmptyWithOne}>
+                            <CheckCircle2 className="w-4 h-4 mr-2" />
+                            Preencher vazios com 1
+                          </DropdownMenuItem>
+                          {rateioSource === 'negotiation' && (
+                            <DropdownMenuItem
+                              className="text-xs min-h-[44px] cursor-pointer text-amber-600 focus:text-amber-600"
+                              onClick={handleResetNegotiationRateio}
+                            >
+                              <RefreshCw className="w-4 h-4 mr-2" />
+                              Restaurar original
+                            </DropdownMenuItem>
+                          )}
+                        </>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Action Buttons — DESKTOP (lg+): layout original inalterado */}
+                <div className="hidden lg:flex items-center gap-2 flex-wrap [&>*]:shrink-0">
+
 
                   {isTabEditable && (
                     <>
@@ -1708,14 +1956,8 @@ export default function RateioTabV2({
                     </>
                   )}
 
-                  {/* Input oculto para upload */}
-                  <input
-                    ref={importInputRef}
-                    type="file"
-                    accept=".xlsx"
-                    className="hidden"
-                    onChange={handleImportFile}
-                  />
+
+
 
                   <Button
                     variant="outline"
@@ -1885,27 +2127,45 @@ export default function RateioTabV2({
               </div>
 
               {/* Filters Row */}
-              <div className="px-3 md:px-6 py-1 border-b border-stone-100 bg-white flex items-center gap-3 overflow-x-auto no-scrollbar flex-nowrap [&>*]:shrink-0">
-                <div className="relative flex-1 max-w-xs">
+              <div className="px-3 lg:px-6 py-1.5 lg:py-1 border-b border-stone-100 bg-white flex items-center gap-2 lg:gap-3 max-w-full lg:flex-nowrap lg:[&>*]:shrink-0">
+                <div className="relative flex-1 min-w-0 lg:max-w-xs">
                   <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-stone-400" />
                   <Input 
                     value={storeSearch} 
                     onChange={(e) => setStoreSearch(e.target.value)} 
                     placeholder={t("stores.searchAll")} 
-                    className="pl-8 h-8 text-xs bg-stone-50 border-none rounded-md"
+                    className="pl-8 h-11 lg:h-8 text-xs bg-stone-50 border-none rounded-md"
                   />
                 </div>
-                
+
+                {/* MOBILE / TABLET (< lg): um único botão de Filtros que abre a gaveta */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="lg:hidden h-11 px-3 text-xs font-bold gap-2 rounded-lg border-stone-200 shrink-0"
+                  onClick={() => setMobileFiltersOpen(true)}
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  {t("common.filters", "Filtros")}
+                  {activeStoreFilterCount > 0 && (
+                    <span className="bg-[#C2714F] text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] px-1 flex items-center justify-center">
+                      {activeStoreFilterCount}
+                    </span>
+                  )}
+                </Button>
+
+                {/* DESKTOP (lg+): layout original inalterado */}
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className={cn("h-8 text-[11px] font-bold uppercase tracking-wider gap-2 px-3", !filterSidebarCollapsed && "bg-stone-100")}
+                  className={cn("hidden lg:inline-flex h-8 text-[11px] font-bold uppercase tracking-wider gap-2 px-3", !filterSidebarCollapsed && "bg-stone-100")}
                   onClick={() => setFilterSidebarCollapsed(!filterSidebarCollapsed)}
                 >
                   <Filter className="w-3 h-3" />
                   {t("common.filters", "Filtros")}
                 </Button>
 
+                <div className="hidden lg:flex items-center gap-3">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -2020,16 +2280,152 @@ export default function RateioTabV2({
                     </>
                   );
                 })()}
+                </div>
                 
-                <div className="flex-1" />
+                <div className="hidden lg:block flex-1" />
                 
-                <div className="text-[11px] text-stone-500 font-bold">
+                <div className="hidden lg:block text-[11px] text-stone-500 font-bold">
                   {filteredStores.length} {t("rateio.stores", "loja(s)")}
                 </div>
               </div>
 
+              {/* Contador de lojas — segunda linha no mobile/tablet */}
+              <div className="lg:hidden px-3 py-1 border-b border-stone-100 bg-white text-[11px] text-stone-500 font-bold">
+                {filteredStores.length} {t("rateio.stores", "loja(s)")}
+              </div>
+
+              {/* Gaveta de filtros — MOBILE / TABLET (< lg) */}
+              <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+                <SheetContent side="right" className="w-[88vw] sm:w-[420px] flex flex-col p-0">
+                  <SheetHeader className="px-4 py-3 border-b border-stone-200">
+                    <SheetTitle className="text-base">{t("common.filters", "Filtros")}</SheetTitle>
+                  </SheetHeader>
+
+                  <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6">
+                    {/* Ordenar por */}
+                    <div className="space-y-2">
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                        {t("common.sortBy", "Ordenar por")}
+                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="w-full h-11 justify-between text-xs">
+                            <span className="truncate">{currentSortLabel}</span>
+                            <ChevronDown className="w-4 h-4 opacity-60" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start" className="w-[70vw] sm:w-[380px] max-h-72 overflow-y-auto">
+                          {sortFieldOptions.map((opt) => (
+                            <DropdownMenuItem
+                              key={opt.value}
+                              onSelect={(e) => { e.preventDefault(); handleSortFieldChange(opt.value); }}
+                              className="text-xs min-h-[44px] cursor-pointer flex items-center justify-between gap-2"
+                            >
+                              <span className="truncate">{opt.label}</span>
+                              {storeSortField === opt.value && <Check className="w-3.5 h-3.5 text-[#C2714F]" />}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {(() => {
+                      const uniqueStates = Array.from(new Set(stores.map((s: any) => s.state?.trim()).filter(Boolean))).sort() as string[];
+                      const uniqueCities = Array.from(new Set(stores.map((s: any) => s.city).filter(Boolean))).sort() as string[];
+                      const uniqueModels = Array.from(new Set(stores.map((s: any) => s.store_model).filter(Boolean))).sort() as string[];
+
+                      const renderGroup = (
+                        label: string,
+                        field: "state" | "city" | "store_model",
+                        options: string[]
+                      ) => {
+                        const selected = storeFilters[field];
+                        return (
+                          <div key={field} className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="text-[11px] font-bold uppercase tracking-wider text-stone-500">
+                                {label}
+                              </div>
+                              {selected.size > 0 && (
+                                <button
+                                  className="text-[11px] font-medium text-[#C2714F]"
+                                  onClick={() => setStoreFilters(prev => ({ ...prev, [field]: new Set() }))}
+                                >
+                                  {t("common.clearFilter", "Limpar filtro")}
+                                </button>
+                              )}
+                            </div>
+                            <div className="max-h-52 overflow-y-auto rounded-lg border border-stone-200 divide-y divide-stone-100">
+                              {options.length === 0 && (
+                                <div className="px-3 py-3 text-xs text-stone-400">
+                                  {t("common.noOptions", "Sem opções")}
+                                </div>
+                              )}
+                              {options.map((opt) => {
+                                const isSelected = selected.has(opt);
+                                return (
+                                  <button
+                                    key={opt}
+                                    type="button"
+                                    className="w-full min-h-[44px] px-3 flex items-center gap-3 text-left text-xs active:bg-stone-50"
+                                    onClick={() => setStoreFilters(prev => {
+                                      const next = new Set(prev[field]);
+                                      if (next.has(opt)) next.delete(opt); else next.add(opt);
+                                      return { ...prev, [field]: next };
+                                    })}
+                                  >
+                                    <span className={cn(
+                                      "w-4 h-4 rounded border flex items-center justify-center shrink-0",
+                                      isSelected ? "bg-[#C2714F] border-[#C2714F]" : "border-stone-300"
+                                    )}>
+                                      {isSelected && <CheckCircle2 className="w-3 h-3 text-white" />}
+                                    </span>
+                                    <span className="truncate">{opt}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        );
+                      };
+
+                      return (
+                        <>
+                          {renderGroup(t("filters.state", "Estado"), "state", uniqueStates)}
+                          {renderGroup(t("filters.city", "Cidade"), "city", uniqueCities)}
+                          {renderGroup(t("filters.storeCategory", "Categoria de Loja"), "store_model", uniqueModels)}
+                        </>
+                      );
+                    })()}
+                  </div>
+
+                  <SheetFooter className="px-4 py-3 border-t border-stone-200 flex-row gap-2">
+                    <Button
+                      variant="outline"
+                      className="flex-1 h-11 text-xs"
+                      onClick={() => setStoreFilters(EMPTY_STORE_FILTERS)}
+                    >
+                      {t("common.clearAll", "Limpar tudo")}
+                    </Button>
+                    <Button className="flex-1 h-11 text-xs" onClick={() => setMobileFiltersOpen(false)}>
+                      {t("common.apply", "Aplicar")}
+                    </Button>
+                  </SheetFooter>
+                </SheetContent>
+              </Sheet>
+
+
+              {/* Dica de scroll horizontal — apenas mobile/tablet */}
+              {isCompact && showScrollHint && (
+                <div className="lg:hidden px-3 py-1 bg-stone-50 border-b border-stone-100 text-[11px] text-stone-400 flex items-center justify-center gap-1.5">
+                  <ArrowLeftRight className="w-3 h-3" />
+                  arraste para ver mais
+                </div>
+              )}
+
               {/* Spreadsheet Table */}
-              <div ref={gridContainerRef} className="flex-1 min-h-0 overflow-auto relative custom-scrollbar">
+              <div ref={gridContainerRef} className="flex-1 min-h-0 overflow-auto relative custom-scrollbar overscroll-x-contain">
+
                 {/* Loading overlay for quantities */}
                 {isLoadingQuantities && (
                   <div className="absolute inset-0 z-40 flex items-center justify-center bg-white/70 dark:bg-stone-900/70 backdrop-blur-sm pointer-events-none animate-in fade-in">
@@ -2071,7 +2467,7 @@ export default function RateioTabV2({
                 </div>
                 <table className="min-w-full table-fixed" style={{ borderCollapse: 'separate', borderSpacing: 0 }}>
                   <colgroup>
-                    <col style={{ width: 300, minWidth: 300 }} />
+                    <col style={{ width: isCompact ? 180 : 300, minWidth: isCompact ? 180 : 300 }} />
                     {columns.map((col) => (
                       <col key={`col-${col._type}-${col.id}`} style={{ width: 140, minWidth: 140 }} />
                     ))}
@@ -2083,7 +2479,7 @@ export default function RateioTabV2({
                     {/* Category Sub-Labels Row (store_category: PAREDE PRIMÁRIA, PICK&MIX, QUIOSQUE...) */}
                     <tr>
                       <th
-                        className="w-[160px] md:w-[300px] bg-white border-r border-stone-200"
+                        className="w-[180px] lg:w-[300px] bg-white border-r border-stone-200"
                         style={{ position: 'sticky', left: 0, top: 0, zIndex: 50 }}
 
                       />
@@ -2124,7 +2520,7 @@ export default function RateioTabV2({
                     {/* Piece Headers Row */}
                     <tr>
                       <th 
-                        className="w-[160px] md:w-[300px] bg-white px-3 py-2 border-r border-b border-stone-200 text-left align-top" 
+                        className="w-[180px] lg:w-[300px] bg-white px-3 py-2 border-r border-b border-stone-200 text-left align-top" 
                         style={{ position: 'sticky', left: 0, top: 22, zIndex: 50 }}
 
                       >
