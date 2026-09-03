@@ -107,7 +107,7 @@ const RateioRow = memo(({
   return (
     <tr className="group even:bg-stone-100/80 odd:bg-white hover:bg-[#C2714F]/[0.08] transition-colors">
       <td 
-        className="bg-white group-hover:bg-stone-50/50 border-r border-b border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)] w-[300px]" 
+        className="bg-white group-hover:bg-stone-50 border-r border-b border-stone-200 p-3 shadow-[1px_0_0_0_rgba(0,0,0,0.05)] w-[300px]" 
         style={{ position: 'sticky', left: 0, zIndex: 20 }}
       >
         <div className="flex items-center gap-3">
