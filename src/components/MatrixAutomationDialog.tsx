@@ -1631,7 +1631,141 @@ export default function MatrixAutomationDialog({
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-auto px-6 py-4 [scrollbar-gutter:stable]">
           <div className="min-w-[720px] sm:min-w-0">
 
-        {step === 1 && (
+        {/* ──── CONFERÊNCIA DE LOJAS (modo lista de lojas) ──── */}
+        {step === 1 && slReview && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">
+                Conferência dos nomes colados ({slMatches.length})
+              </h3>
+              <Button size="sm" variant="ghost" className="text-xs" onClick={() => setSlReview(false)}>
+                Voltar
+              </Button>
+            </div>
+            {slConflicts.size > 0 && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                Há linhas diferentes apontando para a mesma loja. Ajuste antes de continuar.
+              </div>
+            )}
+            {slUnresolved > 0 && (
+              <div className="rounded-md border border-amber-400/50 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                {slUnresolved} nome(s) ainda sem correspondência definida.
+              </div>
+            )}
+            <div className="max-h-[420px] overflow-y-auto border rounded divide-y">
+              {slMatches.map((m, i) => {
+                const chosen = slChoices[i];
+                const chosenStore = chosen && chosen !== "__ignore__" ? stores.find(s => s.id === chosen) : null;
+                const conflict = !!chosen && chosen !== "__ignore__" && slConflicts.has(chosen);
+                const needsAttention = !chosen || conflict;
+                return (
+                  <div
+                    key={`${m.line}-${i}`}
+                    className={`p-2.5 space-y-1.5 ${needsAttention ? "bg-amber-50/70 dark:bg-amber-950/20" : ""}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium truncate">{m.line}</span>
+                      {m.auto && chosen && chosen !== "__ignore__" && !conflict && (
+                        <Badge variant="outline" className="text-[10px] shrink-0">automático</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Popover
+                        open={slOpenPicker === i}
+                        onOpenChange={o => setSlOpenPicker(o ? i : null)}
+                      >
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="flex-1 justify-start h-8 text-xs font-normal">
+                            {chosen === "__ignore__"
+                              ? "Ignorar esta linha"
+                              : chosenStore
+                                ? `${chosenStore.name}${chosenStore.city ? ` — ${chosenStore.city}/${chosenStore.state ?? ""}` : ""}`
+                                : "Escolher loja…"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="w-[min(460px,90vw)] p-0"
+                          align="start"
+                          onWheel={e => e.stopPropagation()}
+                          onTouchMove={e => e.stopPropagation()}
+                        >
+                          <Command filter={(value, search) => (value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0)}>
+                            <CommandInput placeholder="Buscar loja..." className="h-9" />
+                            <CommandList
+                              className="max-h-[300px] overflow-y-auto [overscroll-behavior:contain]"
+                              onWheel={e => e.stopPropagation()}
+                              onTouchMove={e => e.stopPropagation()}
+                            >
+                              <CommandEmpty>Nenhuma loja encontrada.</CommandEmpty>
+                              <CommandGroup>
+                                <CommandItem
+                                  value="ignorar esta linha"
+                                  onSelect={() => {
+                                    setSlChoices(prev => ({ ...prev, [i]: "__ignore__" }));
+                                    setSlOpenPicker(null);
+                                  }}
+                                >
+                                  <span className="text-xs">🚫 Ignorar esta linha</span>
+                                </CommandItem>
+                                {stores.map(s => (
+                                  <CommandItem
+                                    key={s.id}
+                                    value={`${s.name} ${(s as any).nickname ?? ""} ${s.city ?? ""} ${s.state ?? ""}`}
+                                    onSelect={() => {
+                                      setSlChoices(prev => ({ ...prev, [i]: s.id }));
+                                      setSlOpenPicker(null);
+                                    }}
+                                  >
+                                    <span className="text-xs truncate">
+                                      {s.name}
+                                      {s.city ? ` — ${s.city}/${s.state ?? ""}` : ""}
+                                    </span>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      {conflict && (
+                        <span className="text-[11px] text-destructive shrink-0">duplicada</span>
+                      )}
+                    </div>
+                    {!m.auto && m.candidates.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {m.candidates.slice(0, 4).map(c => (
+                          <button
+                            key={c.store.id}
+                            type="button"
+                            onClick={() => setSlChoices(prev => ({ ...prev, [i]: c.store.id }))}
+                            className="text-[11px] px-2 py-0.5 rounded-full border hover:border-primary hover:text-primary"
+                          >
+                            {c.store.name}
+                            {c.store.city ? ` — ${c.store.city}/${c.store.state ?? ""}` : ""}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {!m.auto && m.candidates.length === 0 && (
+                      <p className="text-[11px] text-muted-foreground">
+                        Nenhum candidato encontrado — escolha manualmente ou ignore.
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <Button
+              className="w-full"
+              disabled={slUnresolved > 0 || slConflicts.size > 0}
+              onClick={buildStoreListPreview}
+            >
+              <Eye className="w-4 h-4 mr-1" /> Continuar para preview
+            </Button>
+          </div>
+        )}
+
+        {step === 1 && !slReview && (
           <Tabs value={mainTab} onValueChange={setMainTab}>
             <TabsList className="w-full">
               <TabsTrigger value="new" className="flex-1 gap-1 text-xs">
