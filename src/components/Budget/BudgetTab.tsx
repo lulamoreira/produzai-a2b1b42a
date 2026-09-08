@@ -2606,9 +2606,6 @@ ${msgLabels.winnerWaFooter}
                             sup.status === "enviado" ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
                           )}>
                             {fmtCurrency(displayTotal)}
-                            {isFrozen && (
-                              <span className="text-xs text-muted-foreground ml-1" title="Valor congelado no momento da declaração do vencedor">🔒</span>
-                            )}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-0.5 border-t border-border/40">
