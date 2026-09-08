@@ -707,6 +707,18 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
     return (suppliers as any[]).find((s) => s.is_winner === true) || null;
   }, [suppliers]);
 
+  // Fornecedores apenas CONSULTADOS (trazidos de uma cotação anterior numa
+  // renegociação): somente registro/valor final, não participam nem concorrem.
+  const activeSuppliers = useMemo(
+    () => (suppliers as any[]).filter((s) => !s.consulted_only),
+    [suppliers]
+  );
+  const consultedSuppliers = useMemo(
+    () => (suppliers as any[]).filter((s) => !!s.consulted_only),
+    [suppliers]
+  );
+
+
   // ─── Phase awareness ──────────────────────────────────
   const {
     currentPhase,
