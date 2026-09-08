@@ -830,8 +830,10 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   // ─── Winner KPI helpers ────────────────────────────────
   const winnerNegotiationStatus: string | null = (winnerSupplier as any)?.negotiation_status ?? null;
   const winnerInNegotiation = winnerNegotiationStatus === "pending" || winnerNegotiationStatus === "submitted" || winnerNegotiationStatus === "approved";
+  // Valor da vencedora SEMPRE ao vivo (rateio/preços atuais). O
+  // winner_locked_total continua gravado no banco para referência histórica.
   const winnerOriginalTotal = winnerSupplier
-    ? ((winnerSupplier as any).winner_locked_total ?? supplierPartialTotals[(winnerSupplier as any).id]?.total ?? 0)
+    ? (supplierPartialTotals[(winnerSupplier as any).id]?.total ?? 0)
     : 0;
   const winnerNegotiatedTotal = useMemo(() => {
     if (currentTotal) return currentTotal.total;
@@ -1772,7 +1774,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                 )}
               </div>
 
-              {/* Valor vencedor — sempre fixo (frozen no momento da declaração) */}
+              {/* Valor vencedor — sempre AO VIVO (rateio/preços atuais) */}
               <div className="mt-auto">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Valor vencedor</p>
@@ -3066,16 +3068,9 @@ ${msgLabels.winnerWaFooter}
                             isBest && "text-emerald-600 dark:text-emerald-400"
                           )}>
                             {(() => {
-                              const frozen = !!winnerSupplier && (sup as any).winner_locked_total != null;
-                              const compTotal = frozen ? Number((sup as any).winner_locked_total) : p.total;
-                              return compTotal > 0 ? (
-                                <>
-                                  {fmtCurrency(compTotal)}
-                                  {frozen && (
-                                    <span className="text-xs text-muted-foreground ml-1" title="Valor congelado">🔒</span>
-                                  )}
-                                </>
-                              ) : "—";
+                              // Sempre valor AO VIVO (rateio/preços atuais).
+                              const compTotal = p.total;
+                              return compTotal > 0 ? fmtCurrency(compTotal) : "—";
                             })()}
                           </TableCell>
                         </TableRow>
