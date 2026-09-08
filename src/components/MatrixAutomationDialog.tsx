@@ -712,7 +712,114 @@ export default function MatrixAutomationDialog({
     [resolveItemsForStore, resolveItemsToPieces, resolveItemsForCopy, copySourceType, copySourceId],
   );
 
+  /* ─── STORE_LIST: matching, conferência e preview ─── */
+
+  const slTargetLabel = useMemo(() => {
+    if (!slTargetId) return "";
+    const opt = copySourceOptions.find(o => o.id === slTargetId && o.type === slTargetType);
+    return opt ? `${opt.type === "kit" ? "Kit" : "Peça"} ${opt.code} — ${opt.name}` : "";
+  }, [copySourceOptions, slTargetId, slTargetType]);
+
+  const slLines = useMemo(
+    () => slText.split("\n").map(l => l.trim()).filter(Boolean),
+    [slText],
+  );
+
+  const slMatches = useMemo(() => (
+    slLines.map(line => {
+      const candidates = rankStores(line, stores).slice(0, 8);
+      const top = candidates[0];
+      const second = candidates[1];
+      const auto = !!top && top.score >= 1 && (!second || second.score < 0.75);
+      return { line, candidates, auto, suggestion: top?.store.id ?? "" };
+    })
+  ), [slLines, stores]);
+
+  const slConflicts = useMemo(() => {
+    const counts = new Map<string, number>();
+    Object.values(slChoices).forEach(v => {
+      if (v && v !== "__ignore__") counts.set(v, (counts.get(v) ?? 0) + 1);
+    });
+    return new Set(Array.from(counts.entries()).filter(([, n]) => n > 1).map(([id]) => id));
+  }, [slChoices]);
+
+  const slUnresolved = useMemo(
+    () => slMatches.filter((_, i) => !slChoices[i]).length,
+    [slMatches, slChoices],
+  );
+
+  const openStoreListReview = () => {
+    if (!slTargetId) { toast.error("Selecione a peça ou kit de destino."); return; }
+    if (!Number.isFinite(slQty) || slQty < 1) { toast.error("Informe uma quantidade >= 1."); return; }
+    if (slLines.length === 0) { toast.error("Cole ao menos um nome de loja."); return; }
+    const initial: Record<number, string> = {};
+    slMatches.forEach((m, i) => { if (m.auto) initial[i] = m.suggestion; });
+    setSlChoices(initial);
+    setSlReview(true);
+  };
+
+  const buildStoreListPreview = () => {
+    if (slUnresolved > 0) { toast.error("Resolva todas as linhas antes de continuar."); return; }
+    if (slConflicts.size > 0) { toast.error("Há duas linhas apontando para a mesma loja."); return; }
+
+    const opt = copySourceOptions.find(o => o.id === slTargetId && o.type === slTargetType);
+    if (!opt) { toast.error("Peça/kit de destino inválido."); return; }
+
+    const resolved = resolveItemsToPieces([
+      { id: opt.id, type: opt.type, code: opt.code, name: opt.name, quantity: slQty },
+    ]);
+    if (resolved.length === 0) { toast.error("O destino não possui peças para aplicar."); return; }
+
+    const matchedIds = new Set(
+      Object.values(slChoices).filter(v => v && v !== "__ignore__"),
+    );
+    const ignored = slMatches
+      .filter((_, i) => slChoices[i] === "__ignore__")
+      .map(m => m.line);
+
+    const rows: PreviewRow[] = [];
+    const actions: Record<string, OutsideFilterAction> = {};
+
+    for (const store of stores) {
+      const isMatched = matchedIds.has(store.id);
+      for (const rp of resolved) {
+        const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
+        if (isMatched) {
+          let newQty = rp.quantity;
+          if (slStrategy === "keep" && currentQty > 0) newQty = currentQty;
+          if (slStrategy === "sum") newQty = currentQty + rp.quantity;
+          rows.push({
+            storeId: store.id, storeName: store.name, group: "update",
+            pieceId: rp.pieceId, pieceName: rp.pieceName,
+            currentQty, newQty, action: "keep",
+          });
+        } else if (currentQty > 0) {
+          const action: OutsideFilterAction = slOthers === "empty" ? "zero" : "keep";
+          actions[`${store.id}-${rp.pieceId}`] = action;
+          rows.push({
+            storeId: store.id, storeName: store.name, group: "outside_with_value",
+            pieceId: rp.pieceId, pieceName: rp.pieceName,
+            currentQty, newQty: 0, action,
+          });
+        } else {
+          rows.push({
+            storeId: store.id, storeName: store.name, group: "ignored",
+            pieceId: rp.pieceId, pieceName: rp.pieceName,
+            currentQty: 0, newQty: 0, action: "keep",
+          });
+        }
+      }
+    }
+
+    setSlIgnoredNames(ignored);
+    setPreview(rows);
+    setOutsideActions(actions);
+    setSlReview(false);
+    setStep(2);
+  };
+
   // Check for overwrite before preview
+
   const handlePreviewClick = async () => {
     // Replacement mode → build preview rows and go to step 2
     if (kind === "replacement") {
