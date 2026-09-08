@@ -294,6 +294,8 @@ export default function MatrixAutomationDialog({
   const [slChoices, setSlChoices] = useState<Record<number, string>>({});
   const [slIgnoredNames, setSlIgnoredNames] = useState<string[]>([]);
   const [slOpenPicker, setSlOpenPicker] = useState<number | null>(null);
+  /** chaves dos campos exibidos ao escolher/conferir lojas (só apresentação) */
+  const [slDisplayFields, setSlDisplayFields] = useState<string[]>(["city", "state"]);
 
   // Reset operation when leaving by_field mode
   useEffect(() => {
@@ -725,12 +727,53 @@ export default function MatrixAutomationDialog({
     [slText],
   );
 
+  /** Campos disponíveis para exibição na conferência/preview (padrão + personalizados). */
+  const slDisplayOptions = useMemo(() => {
+    const standard = [
+      { key: "city", label: "Cidade" },
+      { key: "state", label: "Estado" },
+      { key: "neighborhood", label: "Bairro" },
+      { key: "cnpj", label: "CNPJ" },
+      { key: "store_code", label: "Código" },
+      { key: "store_model", label: "Modelo" },
+      { key: "manager_name", label: "Gerente" },
+      { key: "nickname", label: "Apelido" },
+    ];
+    const custom = customFieldLabels.map(f => ({
+      key: f.key,
+      label: parseCustomFieldLabel(f.label).name || f.label,
+    }));
+    return [...standard, ...custom];
+  }, [customFieldLabels]);
+
+  /** "Cidade: Campinas · Estado: SP · Campo X: valor" (omite vazios). */
+  const slFieldsText = useCallback((store: ClientStore): string => {
+    const parts: string[] = [];
+    for (const key of slDisplayFields) {
+      const def = slDisplayOptions.find(o => o.key === key);
+      if (!def) continue;
+      const raw = (store as any)[key];
+      const val = raw == null ? "" : String(raw).trim();
+      if (!val) continue;
+      parts.push(`${def.label}: ${val}`);
+    }
+    return parts.join(" · ");
+  }, [slDisplayFields, slDisplayOptions]);
+
+  /** Nome da loja + campos escolhidos. */
+  const slStoreLabel = useCallback((store: ClientStore): string => {
+    const extra = slFieldsText(store);
+    return extra ? `${store.name} — ${extra}` : store.name;
+  }, [slFieldsText]);
+
   const slMatches = useMemo(() => (
     slLines.map(line => {
       const candidates = rankStores(line, stores).slice(0, 8);
       const top = candidates[0];
       const second = candidates[1];
-      const auto = !!top && top.score >= 1 && (!second || second.score < 0.75);
+      // Nunca escolher automaticamente quando há empate no topo (ex.: lojas homônimas)
+      const tiedTop = !!top && !!second && second.score >= Math.min(top.score, 0.999);
+      const auto = !!top && top.score >= 1 && !tiedTop && (!second || second.score < 0.75);
       return { line, candidates, auto, suggestion: top?.store.id ?? "" };
     })
   ), [slLines, stores]);
@@ -789,7 +832,7 @@ export default function MatrixAutomationDialog({
           if (slStrategy === "keep" && currentQty > 0) newQty = currentQty;
           if (slStrategy === "sum") newQty = currentQty + rp.quantity;
           rows.push({
-            storeId: store.id, storeName: store.name, group: "update",
+            storeId: store.id, storeName: slStoreLabel(store), group: "update",
             pieceId: rp.pieceId, pieceName: rp.pieceName,
             currentQty, newQty, action: "keep",
           });
@@ -797,13 +840,13 @@ export default function MatrixAutomationDialog({
           const action: OutsideFilterAction = slOthers === "empty" ? "zero" : "keep";
           actions[`${store.id}-${rp.pieceId}`] = action;
           rows.push({
-            storeId: store.id, storeName: store.name, group: "outside_with_value",
+            storeId: store.id, storeName: slStoreLabel(store), group: "outside_with_value",
             pieceId: rp.pieceId, pieceName: rp.pieceName,
             currentQty, newQty: 0, action,
           });
         } else {
           rows.push({
-            storeId: store.id, storeName: store.name, group: "ignored",
+            storeId: store.id, storeName: slStoreLabel(store), group: "ignored",
             pieceId: rp.pieceId, pieceName: rp.pieceName,
             currentQty: 0, newQty: 0, action: "keep",
           });
@@ -1676,11 +1719,13 @@ export default function MatrixAutomationDialog({
                       >
                         <PopoverTrigger asChild>
                           <Button variant="outline" className="flex-1 justify-start h-8 text-xs font-normal">
-                            {chosen === "__ignore__"
-                              ? "Ignorar esta linha"
-                              : chosenStore
-                                ? `${chosenStore.name}${chosenStore.city ? ` — ${chosenStore.city}/${chosenStore.state ?? ""}` : ""}`
-                                : "Escolher loja…"}
+                            <span className="truncate">
+                              {chosen === "__ignore__"
+                                ? "Ignorar esta linha"
+                                : chosenStore
+                                  ? slStoreLabel(chosenStore)
+                                  : "Escolher loja…"}
+                            </span>
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent
@@ -1710,16 +1755,18 @@ export default function MatrixAutomationDialog({
                                 {stores.map(s => (
                                   <CommandItem
                                     key={s.id}
-                                    value={`${s.name} ${(s as any).nickname ?? ""} ${s.city ?? ""} ${s.state ?? ""}`}
+                                    value={`${s.name} ${(s as any).nickname ?? ""} ${slFieldsText(s)}`}
                                     onSelect={() => {
                                       setSlChoices(prev => ({ ...prev, [i]: s.id }));
                                       setSlOpenPicker(null);
                                     }}
                                   >
-                                    <span className="text-xs truncate">
-                                      {s.name}
-                                      {s.city ? ` — ${s.city}/${s.state ?? ""}` : ""}
-                                    </span>
+                                    <div className="min-w-0">
+                                      <p className="text-xs truncate">{s.name}</p>
+                                      {slFieldsText(s) && (
+                                        <p className="text-[11px] text-muted-foreground truncate">{slFieldsText(s)}</p>
+                                      )}
+                                    </div>
                                   </CommandItem>
                                 ))}
                               </CommandGroup>
@@ -1732,16 +1779,15 @@ export default function MatrixAutomationDialog({
                       )}
                     </div>
                     {!m.auto && m.candidates.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-col gap-1">
                         {m.candidates.slice(0, 4).map(c => (
                           <button
                             key={c.store.id}
                             type="button"
                             onClick={() => setSlChoices(prev => ({ ...prev, [i]: c.store.id }))}
-                            className="text-[11px] px-2 py-0.5 rounded-full border hover:border-primary hover:text-primary"
+                            className="text-left text-[11px] px-2 py-1 rounded-md border hover:border-primary hover:text-primary"
                           >
-                            {c.store.name}
-                            {c.store.city ? ` — ${c.store.city}/${c.store.state ?? ""}` : ""}
+                            {slStoreLabel(c.store)}
                           </button>
                         ))}
                       </div>
@@ -1967,6 +2013,36 @@ export default function MatrixAutomationDialog({
                     />
                     <p className="text-[11px] text-muted-foreground mt-1">
                       {slLines.length} nome(s) detectado(s) — de {stores.length} lojas da campanha.
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs font-semibold mb-1 block">
+                      Campos a exibir ao escolher a loja
+                    </Label>
+                    <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto">
+                      {slDisplayOptions.map(opt => {
+                        const active = slDisplayFields.includes(opt.key);
+                        return (
+                          <button
+                            key={opt.key}
+                            type="button"
+                            onClick={() => setSlDisplayFields(prev =>
+                              prev.includes(opt.key) ? prev.filter(k => k !== opt.key) : [...prev, opt.key]
+                            )}
+                            className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors ${
+                              active
+                                ? "border-primary bg-primary/10 text-primary"
+                                : "border-border text-muted-foreground hover:border-primary/50"
+                            }`}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Ajuda a distinguir lojas de mesmo nome. Não afeta o cálculo.
                     </p>
                   </div>
 
