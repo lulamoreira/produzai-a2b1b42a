@@ -132,6 +132,55 @@ function filtrarLojas(stores: ClientStore[], grupo: FilterGroup): ClientStore[] 
 
 type Operation = "multiply" | "divide";
 
+/* ─── STORE_LIST: matching de nomes colados ──────────────── */
+
+/** Normaliza um texto de loja: minúsculas, sem acento/pontuação, sem "shopping". */
+function normStoreText(raw: string | null | undefined): string {
+  return (raw ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\bshopping\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Pontuação de similaridade entre a query normalizada e um alvo normalizado. */
+function similarity(query: string, target: string): number {
+  if (!query || !target) return 0;
+  if (query === target) return 1;
+  const qTokens = query.split(" ").filter(Boolean);
+  const covered = qTokens.filter(tk => target.includes(tk)).length;
+  const coverage = qTokens.length > 0 ? (covered / qTokens.length) * 0.85 : 0;
+  const sub = target.includes(query) || query.includes(target) ? 0.85 : 0;
+  return Math.min(0.9, Math.max(coverage, sub));
+}
+
+type StoreCandidate = { store: ClientStore; score: number };
+
+/** Ranqueia as lojas da campanha para um nome colado. */
+function rankStores(rawQuery: string, stores: ClientStore[]): StoreCandidate[] {
+  const q = normStoreText(rawQuery);
+  if (!q) return [];
+  const scored = stores.map(store => {
+    const name = normStoreText(store.name);
+    const nick = normStoreText((store as any).nickname);
+    let score = Math.max(similarity(q, name), similarity(q, nick));
+    // Desempate leve por cidade/UF citada na query
+    const city = normStoreText(store.city);
+    const state = normStoreText(store.state);
+    if (score > 0 && score < 1) {
+      if (city && q.includes(city)) score = Math.min(0.95, score + 0.05);
+      if (state && q.split(" ").includes(state)) score = Math.min(0.95, score + 0.02);
+    }
+    const rawCombined = `${store.name ?? ""} ${(store as any).nickname ?? ""}`.toLowerCase();
+    if (rawCombined.includes("quiosque") || rawCombined.includes("maxi")) score -= 0.15;
+    return { store, score };
+  });
+  return scored.filter(c => c.score > 0.2).sort((a, b) => b.score - a.score);
+}
+
 /** Migrate legacy single-filter template to multi-filter format */
 function migrateTemplate(tpl: any): { filtros: AutomationFilter[]; condicoes: FilterCondition[]; operation: Operation } {
   if (tpl.filter_field === "__multi_v2__") {
@@ -232,6 +281,20 @@ export default function MatrixAutomationDialog({
   const [copySourceId, setCopySourceId] = useState<string>("");
   const [copySourceOpen, setCopySourceOpen] = useState(false);
 
+  // Store-list mode state
+  const [slTargetType, setSlTargetType] = useState<"piece" | "kit">("piece");
+  const [slTargetId, setSlTargetId] = useState<string>("");
+  const [slTargetOpen, setSlTargetOpen] = useState(false);
+  const [slQty, setSlQty] = useState<number>(1);
+  const [slText, setSlText] = useState<string>("");
+  const [slOthers, setSlOthers] = useState<"empty" | "keep">("empty");
+  const [slStrategy, setSlStrategy] = useState<"replace" | "keep" | "sum">("replace");
+  const [slReview, setSlReview] = useState(false);
+  /** índice da linha colada -> storeId escolhido, ou "__ignore__" */
+  const [slChoices, setSlChoices] = useState<Record<number, string>>({});
+  const [slIgnoredNames, setSlIgnoredNames] = useState<string[]>([]);
+  const [slOpenPicker, setSlOpenPicker] = useState<number | null>(null);
+
   // Reset operation when leaving by_field mode
   useEffect(() => {
     if (kind !== "by_field") setOperation("multiply");
@@ -245,6 +308,12 @@ export default function MatrixAutomationDialog({
       setReplacementTargetQty(1);
       setReplaceAnyNonZero(false);
       setReplacementPieceSearch("");
+    }
+    if (kind !== "store_list") {
+      setSlReview(false);
+      setSlChoices({});
+      setSlIgnoredNames([]);
+      setSlOpenPicker(null);
     }
   }, [kind]);
 
@@ -643,7 +712,114 @@ export default function MatrixAutomationDialog({
     [resolveItemsForStore, resolveItemsToPieces, resolveItemsForCopy, copySourceType, copySourceId],
   );
 
+  /* ─── STORE_LIST: matching, conferência e preview ─── */
+
+  const slTargetLabel = useMemo(() => {
+    if (!slTargetId) return "";
+    const opt = copySourceOptions.find(o => o.id === slTargetId && o.type === slTargetType);
+    return opt ? `${opt.type === "kit" ? "Kit" : "Peça"} ${opt.code} — ${opt.name}` : "";
+  }, [copySourceOptions, slTargetId, slTargetType]);
+
+  const slLines = useMemo(
+    () => slText.split("\n").map(l => l.trim()).filter(Boolean),
+    [slText],
+  );
+
+  const slMatches = useMemo(() => (
+    slLines.map(line => {
+      const candidates = rankStores(line, stores).slice(0, 8);
+      const top = candidates[0];
+      const second = candidates[1];
+      const auto = !!top && top.score >= 1 && (!second || second.score < 0.75);
+      return { line, candidates, auto, suggestion: top?.store.id ?? "" };
+    })
+  ), [slLines, stores]);
+
+  const slConflicts = useMemo(() => {
+    const counts = new Map<string, number>();
+    Object.values(slChoices).forEach(v => {
+      if (v && v !== "__ignore__") counts.set(v, (counts.get(v) ?? 0) + 1);
+    });
+    return new Set(Array.from(counts.entries()).filter(([, n]) => n > 1).map(([id]) => id));
+  }, [slChoices]);
+
+  const slUnresolved = useMemo(
+    () => slMatches.filter((_, i) => !slChoices[i]).length,
+    [slMatches, slChoices],
+  );
+
+  const openStoreListReview = () => {
+    if (!slTargetId) { toast.error("Selecione a peça ou kit de destino."); return; }
+    if (!Number.isFinite(slQty) || slQty < 1) { toast.error("Informe uma quantidade >= 1."); return; }
+    if (slLines.length === 0) { toast.error("Cole ao menos um nome de loja."); return; }
+    const initial: Record<number, string> = {};
+    slMatches.forEach((m, i) => { if (m.auto) initial[i] = m.suggestion; });
+    setSlChoices(initial);
+    setSlReview(true);
+  };
+
+  const buildStoreListPreview = () => {
+    if (slUnresolved > 0) { toast.error("Resolva todas as linhas antes de continuar."); return; }
+    if (slConflicts.size > 0) { toast.error("Há duas linhas apontando para a mesma loja."); return; }
+
+    const opt = copySourceOptions.find(o => o.id === slTargetId && o.type === slTargetType);
+    if (!opt) { toast.error("Peça/kit de destino inválido."); return; }
+
+    const resolved = resolveItemsToPieces([
+      { id: opt.id, type: opt.type, code: opt.code, name: opt.name, quantity: slQty },
+    ]);
+    if (resolved.length === 0) { toast.error("O destino não possui peças para aplicar."); return; }
+
+    const matchedIds = new Set(
+      Object.values(slChoices).filter(v => v && v !== "__ignore__"),
+    );
+    const ignored = slMatches
+      .filter((_, i) => slChoices[i] === "__ignore__")
+      .map(m => m.line);
+
+    const rows: PreviewRow[] = [];
+    const actions: Record<string, OutsideFilterAction> = {};
+
+    for (const store of stores) {
+      const isMatched = matchedIds.has(store.id);
+      for (const rp of resolved) {
+        const currentQty = qtyMap[`${store.id}-${rp.pieceId}`] || 0;
+        if (isMatched) {
+          let newQty = rp.quantity;
+          if (slStrategy === "keep" && currentQty > 0) newQty = currentQty;
+          if (slStrategy === "sum") newQty = currentQty + rp.quantity;
+          rows.push({
+            storeId: store.id, storeName: store.name, group: "update",
+            pieceId: rp.pieceId, pieceName: rp.pieceName,
+            currentQty, newQty, action: "keep",
+          });
+        } else if (currentQty > 0) {
+          const action: OutsideFilterAction = slOthers === "empty" ? "zero" : "keep";
+          actions[`${store.id}-${rp.pieceId}`] = action;
+          rows.push({
+            storeId: store.id, storeName: store.name, group: "outside_with_value",
+            pieceId: rp.pieceId, pieceName: rp.pieceName,
+            currentQty, newQty: 0, action,
+          });
+        } else {
+          rows.push({
+            storeId: store.id, storeName: store.name, group: "ignored",
+            pieceId: rp.pieceId, pieceName: rp.pieceName,
+            currentQty: 0, newQty: 0, action: "keep",
+          });
+        }
+      }
+    }
+
+    setSlIgnoredNames(ignored);
+    setPreview(rows);
+    setOutsideActions(actions);
+    setSlReview(false);
+    setStep(2);
+  };
+
   // Check for overwrite before preview
+
   const handlePreviewClick = async () => {
     // Replacement mode → build preview rows and go to step 2
     if (kind === "replacement") {
@@ -1455,7 +1631,141 @@ export default function MatrixAutomationDialog({
         <div className="min-h-0 flex-1 overflow-y-auto overflow-x-auto px-6 py-4 [scrollbar-gutter:stable]">
           <div className="min-w-[720px] sm:min-w-0">
 
-        {step === 1 && (
+        {/* ──── CONFERÊNCIA DE LOJAS (modo lista de lojas) ──── */}
+        {step === 1 && slReview && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-sm font-semibold">
+                Conferência dos nomes colados ({slMatches.length})
+              </h3>
+              <Button size="sm" variant="ghost" className="text-xs" onClick={() => setSlReview(false)}>
+                Voltar
+              </Button>
+            </div>
+            {slConflicts.size > 0 && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                Há linhas diferentes apontando para a mesma loja. Ajuste antes de continuar.
+              </div>
+            )}
+            {slUnresolved > 0 && (
+              <div className="rounded-md border border-amber-400/50 bg-amber-50 dark:bg-amber-950/20 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                {slUnresolved} nome(s) ainda sem correspondência definida.
+              </div>
+            )}
+            <div className="max-h-[420px] overflow-y-auto border rounded divide-y">
+              {slMatches.map((m, i) => {
+                const chosen = slChoices[i];
+                const chosenStore = chosen && chosen !== "__ignore__" ? stores.find(s => s.id === chosen) : null;
+                const conflict = !!chosen && chosen !== "__ignore__" && slConflicts.has(chosen);
+                const needsAttention = !chosen || conflict;
+                return (
+                  <div
+                    key={`${m.line}-${i}`}
+                    className={`p-2.5 space-y-1.5 ${needsAttention ? "bg-amber-50/70 dark:bg-amber-950/20" : ""}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-medium truncate">{m.line}</span>
+                      {m.auto && chosen && chosen !== "__ignore__" && !conflict && (
+                        <Badge variant="outline" className="text-[10px] shrink-0">automático</Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Popover
+                        open={slOpenPicker === i}
+                        onOpenChange={o => setSlOpenPicker(o ? i : null)}
+                      >
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" className="flex-1 justify-start h-8 text-xs font-normal">
+                            {chosen === "__ignore__"
+                              ? "Ignorar esta linha"
+                              : chosenStore
+                                ? `${chosenStore.name}${chosenStore.city ? ` — ${chosenStore.city}/${chosenStore.state ?? ""}` : ""}`
+                                : "Escolher loja…"}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="w-[min(460px,90vw)] p-0"
+                          align="start"
+                          onWheel={e => e.stopPropagation()}
+                          onTouchMove={e => e.stopPropagation()}
+                        >
+                          <Command filter={(value, search) => (value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0)}>
+                            <CommandInput placeholder="Buscar loja..." className="h-9" />
+                            <CommandList
+                              className="max-h-[300px] overflow-y-auto [overscroll-behavior:contain]"
+                              onWheel={e => e.stopPropagation()}
+                              onTouchMove={e => e.stopPropagation()}
+                            >
+                              <CommandEmpty>Nenhuma loja encontrada.</CommandEmpty>
+                              <CommandGroup>
+                                <CommandItem
+                                  value="ignorar esta linha"
+                                  onSelect={() => {
+                                    setSlChoices(prev => ({ ...prev, [i]: "__ignore__" }));
+                                    setSlOpenPicker(null);
+                                  }}
+                                >
+                                  <span className="text-xs">🚫 Ignorar esta linha</span>
+                                </CommandItem>
+                                {stores.map(s => (
+                                  <CommandItem
+                                    key={s.id}
+                                    value={`${s.name} ${(s as any).nickname ?? ""} ${s.city ?? ""} ${s.state ?? ""}`}
+                                    onSelect={() => {
+                                      setSlChoices(prev => ({ ...prev, [i]: s.id }));
+                                      setSlOpenPicker(null);
+                                    }}
+                                  >
+                                    <span className="text-xs truncate">
+                                      {s.name}
+                                      {s.city ? ` — ${s.city}/${s.state ?? ""}` : ""}
+                                    </span>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                      {conflict && (
+                        <span className="text-[11px] text-destructive shrink-0">duplicada</span>
+                      )}
+                    </div>
+                    {!m.auto && m.candidates.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {m.candidates.slice(0, 4).map(c => (
+                          <button
+                            key={c.store.id}
+                            type="button"
+                            onClick={() => setSlChoices(prev => ({ ...prev, [i]: c.store.id }))}
+                            className="text-[11px] px-2 py-0.5 rounded-full border hover:border-primary hover:text-primary"
+                          >
+                            {c.store.name}
+                            {c.store.city ? ` — ${c.store.city}/${c.store.state ?? ""}` : ""}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {!m.auto && m.candidates.length === 0 && (
+                      <p className="text-[11px] text-muted-foreground">
+                        Nenhum candidato encontrado — escolha manualmente ou ignore.
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            <Button
+              className="w-full"
+              disabled={slUnresolved > 0 || slConflicts.size > 0}
+              onClick={buildStoreListPreview}
+            >
+              <Eye className="w-4 h-4 mr-1" /> Continuar para preview
+            </Button>
+          </div>
+        )}
+
+        {step === 1 && !slReview && (
           <Tabs value={mainTab} onValueChange={setMainTab}>
             <TabsList className="w-full">
               <TabsTrigger value="new" className="flex-1 gap-1 text-xs">
@@ -1559,8 +1869,142 @@ export default function MatrixAutomationDialog({
                       Copia, loja a loja, o valor de uma coluna de origem
                     </p>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setKind("store_list")}
+                    className={`text-left p-3 rounded-lg border transition-all ${
+                      kind === "store_list"
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border bg-background hover:border-primary/40"
+                    }`}
+                  >
+                    <p className="text-sm font-medium">Aplicar por lista de lojas</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Cole os nomes das lojas e aplique só nelas
+                    </p>
+                  </button>
                 </div>
               </div>
+
+              {/* ── Configuração do modo "Aplicar por lista de lojas" ── */}
+              {kind === "store_list" && (
+                <div className="space-y-3 p-3 border rounded-lg bg-muted/20">
+                  <div>
+                    <Label className="text-sm font-semibold mb-1 block">Peça ou kit de destino</Label>
+                    <Popover open={slTargetOpen} onOpenChange={setSlTargetOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between h-9 text-xs font-normal">
+                          {slTargetLabel || "Selecionar peça ou kit…"}
+                          <Copy className="w-3.5 h-3.5 opacity-60" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-[min(420px,90vw)] p-0"
+                        align="start"
+                        onWheel={e => e.stopPropagation()}
+                        onTouchMove={e => e.stopPropagation()}
+                      >
+                        <Command filter={(value, search) => (value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0)}>
+                          <CommandInput placeholder="Buscar por código ou nome..." className="h-9" />
+                          <CommandList
+                            className="max-h-[300px] overflow-y-auto [overscroll-behavior:contain]"
+                            onWheel={e => e.stopPropagation()}
+                            onTouchMove={e => e.stopPropagation()}
+                          >
+                            <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
+                            <CommandGroup>
+                              {copySourceOptions.map(opt => (
+                                <CommandItem
+                                  key={`sl-${opt.type}-${opt.id}`}
+                                  value={`${opt.code} ${opt.name} ${opt.type === "kit" ? "kit" : "peça"}`}
+                                  onSelect={() => {
+                                    setSlTargetType(opt.type);
+                                    setSlTargetId(opt.id);
+                                    setSlTargetOpen(false);
+                                  }}
+                                  className="gap-2"
+                                >
+                                  <Badge variant="outline" className="text-[10px]">
+                                    {opt.type === "kit" ? "Kit" : t("automation.piece")}
+                                  </Badge>
+                                  <span className="font-mono text-xs">{opt.code}</span>
+                                  <span className="truncate text-xs">{opt.name}</span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    {slTargetType === "kit" && slTargetId && (
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        Kit: cada componente recebe quantidade × quantidade do componente no kit.
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-semibold mb-1 block">Quantidade</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={slQty}
+                      onChange={e => setSlQty(Math.max(1, Number(e.target.value) || 1))}
+                      className="h-9 w-32 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-semibold mb-1 block">
+                      Cole os nomes das lojas (um por linha)
+                    </Label>
+                    <textarea
+                      value={slText}
+                      onChange={e => setSlText(e.target.value)}
+                      rows={6}
+                      placeholder={"Shopping Iguatemi\nLoja Centro\n..."}
+                      className="w-full rounded-md border bg-background p-2 text-xs"
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {slLines.length} nome(s) detectado(s) — de {stores.length} lojas da campanha.
+                    </p>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs font-semibold mb-1 block">Demais lojas (fora da lista)</Label>
+                      <RadioGroup value={slOthers} onValueChange={v => setSlOthers(v as any)} className="gap-1">
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="empty" id="sl-others-empty" />
+                          <Label htmlFor="sl-others-empty" className="text-xs font-normal">Esvaziar (deixar em branco)</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="keep" id="sl-others-keep" />
+                          <Label htmlFor="sl-others-keep" className="text-xs font-normal">Não mexer</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold mb-1 block">Nas lojas da lista, se já houver valor</Label>
+                      <RadioGroup value={slStrategy} onValueChange={v => setSlStrategy(v as any)} className="gap-1">
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="replace" id="sl-st-replace" />
+                          <Label htmlFor="sl-st-replace" className="text-xs font-normal">Substituir</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="keep" id="sl-st-keep" />
+                          <Label htmlFor="sl-st-keep" className="text-xs font-normal">Manter</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="sum" id="sl-st-sum" />
+                          <Label htmlFor="sl-st-sum" className="text-xs font-normal">Somar</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  </div>
+                </div>
+              )}
+
 
               {/* ── Origem (apenas no modo copy_from) ── */}
               {kind === "copy_from" && (
@@ -1792,8 +2236,8 @@ export default function MatrixAutomationDialog({
                 </div>
               )}
 
-              {/* Multi-filter + Items selection (hidden in replacement mode) */}
-              {kind !== "replacement" && (
+              {/* Multi-filter + Items selection (hidden in replacement/store_list modes) */}
+              {kind !== "replacement" && kind !== "store_list" && (
               <>
               <div>
                 <Label className="text-sm font-semibold mb-1 block">Filtros de Lojas</Label>
@@ -2048,12 +2492,21 @@ export default function MatrixAutomationDialog({
               <div className="flex gap-2">
                 <Button
                   className="flex-1"
-                  disabled={!canProceed || (kind !== "replacement" && selectedItems.length === 0)}
-                  onClick={handlePreviewClick}
+                  disabled={
+                    kind === "store_list"
+                      ? (!slTargetId || slLines.length === 0)
+                      : (!canProceed || (kind !== "replacement" && selectedItems.length === 0))
+                  }
+                  onClick={kind === "store_list" ? openStoreListReview : handlePreviewClick}
                 >
-                  <Eye className="w-4 h-4 mr-1" /> {kind === "replacement" ? "Aplicar substituição" : t("automation.preview")}
+                  <Eye className="w-4 h-4 mr-1" />
+                  {kind === "replacement"
+                    ? "Aplicar substituição"
+                    : kind === "store_list"
+                      ? "Conferir lojas"
+                      : t("automation.preview")}
                 </Button>
-                {canProceed && (kind === "replacement" || selectedItems.length > 0) && (
+                {kind !== "store_list" && canProceed && (kind === "replacement" || selectedItems.length > 0) && (
                   <>
                     {!showSaveInput ? (
                       <Button variant="outline" size="icon" onClick={() => setShowSaveInput(true)} title={editingId ? "Atualizar automação" : t("automation.saveTemplate")}>
@@ -2290,6 +2743,24 @@ export default function MatrixAutomationDialog({
         {/* ──── STEP 2: Preview ──── */}
         {step === 2 && (
           <div className="space-y-4">
+            {kind === "store_list" && (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-1">
+                <p>
+                  Aplicando <span className="font-semibold">{slQty}</span> em{" "}
+                  <span className="font-semibold">{slTargetLabel}</span>
+                  {slTargetType === "kit" && " (cada componente recebe quantidade × quantidade no kit)"}.
+                </p>
+                <p className="text-muted-foreground">
+                  Demais lojas da campanha:{" "}
+                  {slOthers === "empty" ? "serão esvaziadas" : "não serão alteradas"}.
+                </p>
+                {slIgnoredNames.length > 0 && (
+                  <p className="text-amber-700 dark:text-amber-400">
+                    Ignoradas / sem correspondência ({slIgnoredNames.length}): {slIgnoredNames.join(", ")}
+                  </p>
+                )}
+              </div>
+            )}
             {/* Group ✅ */}
             <div>
               <h3 className="text-sm font-semibold flex items-center gap-1.5 text-green-700 dark:text-green-400">

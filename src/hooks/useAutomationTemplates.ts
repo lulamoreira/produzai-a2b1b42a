@@ -11,7 +11,7 @@ export type AutomationTemplateItem = {
   quantity: number;
 };
 
-export type AutomationKind = "fixed" | "by_field" | "replacement" | "copy_from";
+export type AutomationKind = "fixed" | "by_field" | "replacement" | "copy_from" | "store_list";
 
 export type AutomationTemplate = {
   id: string;
