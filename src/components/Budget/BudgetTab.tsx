@@ -2505,10 +2505,9 @@ ${msgLabels.winnerWaFooter}
 
               const st = getDisplayStatus(sup, deadlineDate);
               const partial = supplierPartialTotals[sup.id];
-              const isFrozen = !!winnerSupplier && (sup as any).winner_locked_total != null;
-              const displayTotal = isFrozen
-                ? Number((sup as any).winner_locked_total)
-                : partial?.total ?? 0;
+              // Total do card sempre ao vivo (rateio/preços/instalação/frete/desconto atuais),
+              // independentemente de haver vencedora declarada.
+              const displayTotal = partial?.total ?? 0;
               const inProgress = partial && partial.pricedPieces > 0 && sup.status !== "enviado";
               return (
                 <Card key={sup.id} className="relative">
@@ -2607,9 +2606,6 @@ ${msgLabels.winnerWaFooter}
                             sup.status === "enviado" ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"
                           )}>
                             {fmtCurrency(displayTotal)}
-                            {isFrozen && (
-                              <span className="text-xs text-muted-foreground ml-1" title="Valor congelado no momento da declaração do vencedor">🔒</span>
-                            )}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-[10px] text-muted-foreground pt-0.5 border-t border-border/40">
