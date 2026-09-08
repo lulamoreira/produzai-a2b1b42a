@@ -2961,7 +2961,7 @@ ${msgLabels.winnerWaFooter}
 
               {/* Gráficos de Pizza Lado a Lado */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {suppliers.filter(s => s.status === "enviado" || supplierPartialTotals[s.id]?.total > 0).map((sup) => {
+                {activeSuppliers.filter(s => s.status === "enviado" || supplierPartialTotals[s.id]?.total > 0).map((sup) => {
                   const p = supplierPartialTotals[sup.id];
                   const prod = p.total - p.installation - p.freight;
                   const data = [
@@ -3028,7 +3028,7 @@ ${msgLabels.winnerWaFooter}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {suppliers.map((sup) => {
+                    {activeSuppliers.map((sup) => {
                       const st = getDisplayStatus(sup, deadlineDate);
                       const p = supplierPartialTotals[sup.id];
                       if (!p) return null;
