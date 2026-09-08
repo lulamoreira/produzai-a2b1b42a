@@ -1735,8 +1735,142 @@ export default function MatrixAutomationDialog({
                       Copia, loja a loja, o valor de uma coluna de origem
                     </p>
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => setKind("store_list")}
+                    className={`text-left p-3 rounded-lg border transition-all ${
+                      kind === "store_list"
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border bg-background hover:border-primary/40"
+                    }`}
+                  >
+                    <p className="text-sm font-medium">Aplicar por lista de lojas</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Cole os nomes das lojas e aplique só nelas
+                    </p>
+                  </button>
                 </div>
               </div>
+
+              {/* ── Configuração do modo "Aplicar por lista de lojas" ── */}
+              {kind === "store_list" && (
+                <div className="space-y-3 p-3 border rounded-lg bg-muted/20">
+                  <div>
+                    <Label className="text-sm font-semibold mb-1 block">Peça ou kit de destino</Label>
+                    <Popover open={slTargetOpen} onOpenChange={setSlTargetOpen}>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" className="w-full justify-between h-9 text-xs font-normal">
+                          {slTargetLabel || "Selecionar peça ou kit…"}
+                          <Copy className="w-3.5 h-3.5 opacity-60" />
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent
+                        className="w-[min(420px,90vw)] p-0"
+                        align="start"
+                        onWheel={e => e.stopPropagation()}
+                        onTouchMove={e => e.stopPropagation()}
+                      >
+                        <Command filter={(value, search) => (value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0)}>
+                          <CommandInput placeholder="Buscar por código ou nome..." className="h-9" />
+                          <CommandList
+                            className="max-h-[300px] overflow-y-auto [overscroll-behavior:contain]"
+                            onWheel={e => e.stopPropagation()}
+                            onTouchMove={e => e.stopPropagation()}
+                          >
+                            <CommandEmpty>Nenhum item encontrado.</CommandEmpty>
+                            <CommandGroup>
+                              {copySourceOptions.map(opt => (
+                                <CommandItem
+                                  key={`sl-${opt.type}-${opt.id}`}
+                                  value={`${opt.code} ${opt.name} ${opt.type === "kit" ? "kit" : "peça"}`}
+                                  onSelect={() => {
+                                    setSlTargetType(opt.type);
+                                    setSlTargetId(opt.id);
+                                    setSlTargetOpen(false);
+                                  }}
+                                  className="gap-2"
+                                >
+                                  <Badge variant="outline" className="text-[10px]">
+                                    {opt.type === "kit" ? "Kit" : t("automation.piece")}
+                                  </Badge>
+                                  <span className="font-mono text-xs">{opt.code}</span>
+                                  <span className="truncate text-xs">{opt.name}</span>
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </CommandList>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
+                    {slTargetType === "kit" && slTargetId && (
+                      <p className="text-[11px] text-muted-foreground mt-1">
+                        Kit: cada componente recebe quantidade × quantidade do componente no kit.
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-semibold mb-1 block">Quantidade</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      value={slQty}
+                      onChange={e => setSlQty(Math.max(1, Number(e.target.value) || 1))}
+                      className="h-9 w-32 text-xs"
+                    />
+                  </div>
+
+                  <div>
+                    <Label className="text-sm font-semibold mb-1 block">
+                      Cole os nomes das lojas (um por linha)
+                    </Label>
+                    <textarea
+                      value={slText}
+                      onChange={e => setSlText(e.target.value)}
+                      rows={6}
+                      placeholder={"Shopping Iguatemi\nLoja Centro\n..."}
+                      className="w-full rounded-md border bg-background p-2 text-xs"
+                    />
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      {slLines.length} nome(s) detectado(s) — de {stores.length} lojas da campanha.
+                    </p>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs font-semibold mb-1 block">Demais lojas (fora da lista)</Label>
+                      <RadioGroup value={slOthers} onValueChange={v => setSlOthers(v as any)} className="gap-1">
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="empty" id="sl-others-empty" />
+                          <Label htmlFor="sl-others-empty" className="text-xs font-normal">Esvaziar (deixar em branco)</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="keep" id="sl-others-keep" />
+                          <Label htmlFor="sl-others-keep" className="text-xs font-normal">Não mexer</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                    <div>
+                      <Label className="text-xs font-semibold mb-1 block">Nas lojas da lista, se já houver valor</Label>
+                      <RadioGroup value={slStrategy} onValueChange={v => setSlStrategy(v as any)} className="gap-1">
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="replace" id="sl-st-replace" />
+                          <Label htmlFor="sl-st-replace" className="text-xs font-normal">Substituir</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="keep" id="sl-st-keep" />
+                          <Label htmlFor="sl-st-keep" className="text-xs font-normal">Manter</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="sum" id="sl-st-sum" />
+                          <Label htmlFor="sl-st-sum" className="text-xs font-normal">Somar</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                  </div>
+                </div>
+              )}
+
 
               {/* ── Origem (apenas no modo copy_from) ── */}
               {kind === "copy_from" && (
