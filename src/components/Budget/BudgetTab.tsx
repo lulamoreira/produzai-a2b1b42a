@@ -1774,7 +1774,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
                 )}
               </div>
 
-              {/* Valor vencedor — sempre fixo (frozen no momento da declaração) */}
+              {/* Valor vencedor — sempre AO VIVO (rateio/preços atuais) */}
               <div className="mt-auto">
                 <div className="flex items-center justify-between gap-2">
                   <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Valor vencedor</p>
