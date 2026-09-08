@@ -744,11 +744,13 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
 
 
   // Totais por fornecedor:
-  // - Se houver vencedor declarado, usa o valor congelado (winner_locked_total) de cada um.
-  // - Caso contrário, usa o rateio atual (supplierPartialTotals) — refletindo edições recentes.
+  // Sempre usa o rateio/preços atuais (supplierPartialTotals) para que o card
+  // "Melhor Proposta", a tabela "Fornecedores Participantes" e o e-mail de
+  // resultado mostrem o mesmo valor ao vivo. O winner_locked_total continua
+  // sendo gravado na declaração, mas não é mais usado para exibição da melhor
+  // proposta.
   const supplierTotals = useMemo(() => {
     const result: Record<string, number> = {};
-    const hasWinner = !!winnerSupplier;
     suppliers.forEach((sup) => {
       // Fornecedores apenas consultados são registro informativo: nunca concorrem.
       if ((sup as any).consulted_only) return;
@@ -757,14 +759,10 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
 
       if (!eligivel || sup.status === "declinado") return;
 
-
-      const locked = (sup as any).winner_locked_total;
-      result[sup.id] = hasWinner && locked != null
-        ? Number(locked)
-        : (supplierPartialTotals[sup.id]?.total ?? 0);
+      result[sup.id] = supplierPartialTotals[sup.id]?.total ?? 0;
     });
     return result;
-  }, [suppliers, supplierPartialTotals, winnerSupplier]);
+  }, [suppliers, supplierPartialTotals]);
 
   const bestSupplier = useMemo(() => {
     let best: { id: string; total: number; name: string } | null = null;
