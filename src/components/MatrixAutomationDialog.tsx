@@ -281,6 +281,20 @@ export default function MatrixAutomationDialog({
   const [copySourceId, setCopySourceId] = useState<string>("");
   const [copySourceOpen, setCopySourceOpen] = useState(false);
 
+  // Store-list mode state
+  const [slTargetType, setSlTargetType] = useState<"piece" | "kit">("piece");
+  const [slTargetId, setSlTargetId] = useState<string>("");
+  const [slTargetOpen, setSlTargetOpen] = useState(false);
+  const [slQty, setSlQty] = useState<number>(1);
+  const [slText, setSlText] = useState<string>("");
+  const [slOthers, setSlOthers] = useState<"empty" | "keep">("empty");
+  const [slStrategy, setSlStrategy] = useState<"replace" | "keep" | "sum">("replace");
+  const [slReview, setSlReview] = useState(false);
+  /** índice da linha colada -> storeId escolhido, ou "__ignore__" */
+  const [slChoices, setSlChoices] = useState<Record<number, string>>({});
+  const [slIgnoredNames, setSlIgnoredNames] = useState<string[]>([]);
+  const [slOpenPicker, setSlOpenPicker] = useState<number | null>(null);
+
   // Reset operation when leaving by_field mode
   useEffect(() => {
     if (kind !== "by_field") setOperation("multiply");
