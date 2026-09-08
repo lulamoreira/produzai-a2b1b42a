@@ -309,6 +309,12 @@ export default function MatrixAutomationDialog({
       setReplaceAnyNonZero(false);
       setReplacementPieceSearch("");
     }
+    if (kind !== "store_list") {
+      setSlReview(false);
+      setSlChoices({});
+      setSlIgnoredNames([]);
+      setSlOpenPicker(null);
+    }
   }, [kind]);
 
   // Step 2 state
