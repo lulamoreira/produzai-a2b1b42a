@@ -132,6 +132,55 @@ function filtrarLojas(stores: ClientStore[], grupo: FilterGroup): ClientStore[] 
 
 type Operation = "multiply" | "divide";
 
+/* ─── STORE_LIST: matching de nomes colados ──────────────── */
+
+/** Normaliza um texto de loja: minúsculas, sem acento/pontuação, sem "shopping". */
+function normStoreText(raw: string | null | undefined): string {
+  return (raw ?? "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\bshopping\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Pontuação de similaridade entre a query normalizada e um alvo normalizado. */
+function similarity(query: string, target: string): number {
+  if (!query || !target) return 0;
+  if (query === target) return 1;
+  const qTokens = query.split(" ").filter(Boolean);
+  const covered = qTokens.filter(tk => target.includes(tk)).length;
+  const coverage = qTokens.length > 0 ? (covered / qTokens.length) * 0.85 : 0;
+  const sub = target.includes(query) || query.includes(target) ? 0.85 : 0;
+  return Math.min(0.9, Math.max(coverage, sub));
+}
+
+type StoreCandidate = { store: ClientStore; score: number };
+
+/** Ranqueia as lojas da campanha para um nome colado. */
+function rankStores(rawQuery: string, stores: ClientStore[]): StoreCandidate[] {
+  const q = normStoreText(rawQuery);
+  if (!q) return [];
+  const scored = stores.map(store => {
+    const name = normStoreText(store.name);
+    const nick = normStoreText((store as any).nickname);
+    let score = Math.max(similarity(q, name), similarity(q, nick));
+    // Desempate leve por cidade/UF citada na query
+    const city = normStoreText(store.city);
+    const state = normStoreText(store.state);
+    if (score > 0 && score < 1) {
+      if (city && q.includes(city)) score = Math.min(0.95, score + 0.05);
+      if (state && q.split(" ").includes(state)) score = Math.min(0.95, score + 0.02);
+    }
+    const rawCombined = `${store.name ?? ""} ${(store as any).nickname ?? ""}`.toLowerCase();
+    if (rawCombined.includes("quiosque") || rawCombined.includes("maxi")) score -= 0.15;
+    return { store, score };
+  });
+  return scored.filter(c => c.score > 0.2).sort((a, b) => b.score - a.score);
+}
+
 /** Migrate legacy single-filter template to multi-filter format */
 function migrateTemplate(tpl: any): { filtros: AutomationFilter[]; condicoes: FilterCondition[]; operation: Operation } {
   if (tpl.filter_field === "__multi_v2__") {
