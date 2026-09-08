@@ -3066,16 +3066,9 @@ ${msgLabels.winnerWaFooter}
                             isBest && "text-emerald-600 dark:text-emerald-400"
                           )}>
                             {(() => {
-                              const frozen = !!winnerSupplier && (sup as any).winner_locked_total != null;
-                              const compTotal = frozen ? Number((sup as any).winner_locked_total) : p.total;
-                              return compTotal > 0 ? (
-                                <>
-                                  {fmtCurrency(compTotal)}
-                                  {frozen && (
-                                    <span className="text-xs text-muted-foreground ml-1" title="Valor congelado">🔒</span>
-                                  )}
-                                </>
-                              ) : "—";
+                              // Sempre valor AO VIVO (rateio/preços atuais).
+                              const compTotal = p.total;
+                              return compTotal > 0 ? fmtCurrency(compTotal) : "—";
                             })()}
                           </TableCell>
                         </TableRow>
