@@ -803,6 +803,7 @@ export type Database = {
           access_token: string
           campaign_id: string
           company_name: string
+          consulted_only: boolean
           contact_name: string
           created_at: string | null
           decline_reason: string | null
@@ -825,6 +826,7 @@ export type Database = {
           access_token?: string
           campaign_id: string
           company_name: string
+          consulted_only?: boolean
           contact_name: string
           created_at?: string | null
           decline_reason?: string | null
@@ -847,6 +849,7 @@ export type Database = {
           access_token?: string
           campaign_id?: string
           company_name?: string
+          consulted_only?: boolean
           contact_name?: string
           created_at?: string | null
           decline_reason?: string | null
