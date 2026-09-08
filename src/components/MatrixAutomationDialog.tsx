@@ -2743,6 +2743,24 @@ export default function MatrixAutomationDialog({
         {/* ──── STEP 2: Preview ──── */}
         {step === 2 && (
           <div className="space-y-4">
+            {kind === "store_list" && (
+              <div className="rounded-md border bg-muted/30 px-3 py-2 text-xs space-y-1">
+                <p>
+                  Aplicando <span className="font-semibold">{slQty}</span> em{" "}
+                  <span className="font-semibold">{slTargetLabel}</span>
+                  {slTargetType === "kit" && " (cada componente recebe quantidade × quantidade no kit)"}.
+                </p>
+                <p className="text-muted-foreground">
+                  Demais lojas da campanha:{" "}
+                  {slOthers === "empty" ? "serão esvaziadas" : "não serão alteradas"}.
+                </p>
+                {slIgnoredNames.length > 0 && (
+                  <p className="text-amber-700 dark:text-amber-400">
+                    Ignoradas / sem correspondência ({slIgnoredNames.length}): {slIgnoredNames.join(", ")}
+                  </p>
+                )}
+              </div>
+            )}
             {/* Group ✅ */}
             <div>
               <h3 className="text-sm font-semibold flex items-center gap-1.5 text-green-700 dark:text-green-400">
