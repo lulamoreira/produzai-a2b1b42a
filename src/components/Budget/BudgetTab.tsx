@@ -2499,11 +2499,12 @@ ${msgLabels.winnerWaFooter}
           })()}
         </div>
 
-        {suppliers.length === 0 ? (
+        {activeSuppliers.length === 0 ? (
           <Card><CardContent className="py-8 text-center text-muted-foreground text-sm">Nenhum fornecedor cadastrado.</CardContent></Card>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {suppliers.map((sup) => {
+            {activeSuppliers.map((sup) => {
+
               const st = getDisplayStatus(sup, deadlineDate);
               const partial = supplierPartialTotals[sup.id];
               const isFrozen = !!winnerSupplier && (sup as any).winner_locked_total != null;
