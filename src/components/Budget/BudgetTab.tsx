@@ -830,8 +830,10 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   // ─── Winner KPI helpers ────────────────────────────────
   const winnerNegotiationStatus: string | null = (winnerSupplier as any)?.negotiation_status ?? null;
   const winnerInNegotiation = winnerNegotiationStatus === "pending" || winnerNegotiationStatus === "submitted" || winnerNegotiationStatus === "approved";
+  // Valor da vencedora SEMPRE ao vivo (rateio/preços atuais). O
+  // winner_locked_total continua gravado no banco para referência histórica.
   const winnerOriginalTotal = winnerSupplier
-    ? ((winnerSupplier as any).winner_locked_total ?? supplierPartialTotals[(winnerSupplier as any).id]?.total ?? 0)
+    ? (supplierPartialTotals[(winnerSupplier as any).id]?.total ?? 0)
     : 0;
   const winnerNegotiatedTotal = useMemo(() => {
     if (currentTotal) return currentTotal.total;
