@@ -2102,8 +2102,8 @@ export default function MatrixAutomationDialog({
                 </div>
               )}
 
-              {/* Multi-filter + Items selection (hidden in replacement mode) */}
-              {kind !== "replacement" && (
+              {/* Multi-filter + Items selection (hidden in replacement/store_list modes) */}
+              {kind !== "replacement" && kind !== "store_list" && (
               <>
               <div>
                 <Label className="text-sm font-semibold mb-1 block">Filtros de Lojas</Label>
