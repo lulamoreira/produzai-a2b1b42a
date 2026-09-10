@@ -977,7 +977,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         return (
           <>
             <div
-              className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1 rounded-md"
+              className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 gap-1 rounded-md"
               style={{
                 padding: "8px",
                 background: "var(--bg-surface)",
@@ -1013,6 +1013,26 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                   </span>
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setViewTeamsOpen(true)}
+                className="flex flex-col items-center justify-center text-center gap-0.5 rounded-md py-2 px-1 min-w-0 transition-colors hover:bg-[var(--bg-muted)]"
+                style={{ cursor: "pointer" }}
+              >
+                <span
+                  className="font-bold leading-none"
+                  style={{ fontSize: 18, color: "var(--text-primary)" }}
+                >
+                  {teams.length}
+                </span>
+                <span
+                  className="leading-tight truncate max-w-full"
+                  style={{ fontSize: 10, color: "var(--text-secondary)", fontWeight: 500 }}
+                  title={t("scheduling.teams", "Equipes")}
+                >
+                  {t("scheduling.teams", "Equipes")}
+                </span>
+              </button>
             </div>
 
             {summaryFilter && summaryFilter !== "total" && (
