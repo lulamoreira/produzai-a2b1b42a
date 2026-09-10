@@ -83,6 +83,7 @@ export function useInstallationTeams(campaignId: string) {
       return data as InstallationTeam[];
     },
     enabled: !!campaignId,
+    refetchOnWindowFocus: true,
   });
 }
 
