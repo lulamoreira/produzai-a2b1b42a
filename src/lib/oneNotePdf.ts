@@ -95,16 +95,30 @@ interface ExtractResponse {
   error?: string;
 }
 
+export interface OneNoteAiContext {
+  /** Cliente da campanha: usado para aprender com os nomes de peças já usados antes. */
+  clientId?: string;
+  /** Campanha atual, excluída do aprendizado para não reforçar dados em construção. */
+  excludeCampaignId?: string;
+}
+
 export async function extractOneNoteRowsWithAi(
   text: string,
   onProgress?: (completed: number, total: number) => void,
+  context?: OneNoteAiContext,
 ): Promise<OneNoteSourceRow[]> {
   const chunks = splitOneNotePdfText(text);
   const rows: OneNoteSourceRow[] = [];
 
   for (let index = 0; index < chunks.length; index += 1) {
     const { data, error } = await supabase.functions.invoke<ExtractResponse>("onenote-pdf-extract", {
-      body: { text: chunks[index], chunkIndex: index, chunkCount: chunks.length },
+      body: {
+        text: chunks[index],
+        chunkIndex: index,
+        chunkCount: chunks.length,
+        ...(context?.clientId ? { clientId: context.clientId } : {}),
+        ...(context?.excludeCampaignId ? { excludeCampaignId: context.excludeCampaignId } : {}),
+      },
     });
     if (error) throw new Error(error.message || "Falha ao analisar o PDF com IA.");
     if (data?.error) throw new Error(data.error);
