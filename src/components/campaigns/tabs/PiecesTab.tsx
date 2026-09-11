@@ -45,9 +45,10 @@ import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
 import { splitKitByVariant, normalizeBareKitName } from "@/lib/splitKitPrimarySecondary";
 
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
-import { OneNoteImportDialog } from "@/components/OneNoteImportDialog";
+import { OneNoteImportDialog, OneNoteSourceDialog } from "@/components/OneNoteImportDialog";
 import OrganizePiecesDialog from "@/components/campaigns/OrganizePiecesDialog";
-import { parseOneNoteFile, type OneNoteParsedPiece } from "@/lib/parseOneNoteSheet";
+import { parseOneNoteWorkbookRows, type OneNoteSourceRow } from "@/lib/parseOneNoteSheet";
+import { extractOneNoteRowsWithAi, extractTextFromOneNotePdf } from "@/lib/oneNotePdf";
 
 
 interface PiecesTabProps {
@@ -129,26 +130,65 @@ export default function PiecesTab({
   const [organizeOpen, setOrganizeOpen] = useState(false);
   const [pptExportOpen, setPptExportOpen] = useState(false);
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
+  const [oneNoteSourceOpen, setOneNoteSourceOpen] = useState(false);
   const [oneNoteOpen, setOneNoteOpen] = useState(false);
-  const [oneNoteParsed, setOneNoteParsed] = useState<OneNoteParsedPiece[]>([]);
-  const oneNoteInputRef = useRef<HTMLInputElement>(null);
+  const [oneNoteRows, setOneNoteRows] = useState<OneNoteSourceRow[]>([]);
+  const [oneNotePdfProcessing, setOneNotePdfProcessing] = useState(false);
+  const oneNoteExcelInputRef = useRef<HTMLInputElement>(null);
+  const oneNotePdfInputRef = useRef<HTMLInputElement>(null);
 
-  /** Lê o arquivo cru do OneNote e abre o diálogo de confirmação. */
-  const handleOneNoteFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  /** Lê a planilha do OneNote e abre a mesma conferência usada pelo PDF. */
+  const handleOneNoteExcelFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
     try {
-      const parsed = await parseOneNoteFile(file);
-      if (parsed.length === 0) {
+      const rows = await parseOneNoteWorkbookRows(file);
+      if (rows.length === 0) {
         toast.error("Nenhuma peça encontrada na planilha.");
         return;
       }
-      setOneNoteParsed(parsed);
+      setOneNoteRows(rows);
       setOneNoteOpen(true);
-    } catch (err: any) {
-      toast.error(`Erro ao ler planilha: ${err?.message || err}`);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(`Erro ao ler planilha: ${message}`);
     }
+  };
+
+  const processOneNotePdf = async (file: File) => {
+    if (oneNotePdfProcessing) return;
+    setOneNotePdfProcessing(true);
+    const toastId = "onenote-pdf-extraction";
+    toast.loading("Lendo o texto do PDF...", { id: toastId });
+    try {
+      const text = await extractTextFromOneNotePdf(file);
+      const rows = await extractOneNoteRowsWithAi(text, (completed, total) => {
+        toast.loading(`Organizando PDF com IA (${completed}/${total})...`, { id: toastId });
+      });
+      if (rows.length === 0) throw new Error("Nenhuma peça ou kit foi encontrado no PDF.");
+      setOneNoteRows(rows);
+      setOneNoteOpen(true);
+      toast.success(`${rows.length} linhas extraídas. Revise antes de importar.`, { id: toastId });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(message, {
+        id: toastId,
+        duration: 12_000,
+        action: {
+          label: "Tentar novamente",
+          onClick: () => void processOneNotePdf(file),
+        },
+      });
+    } finally {
+      setOneNotePdfProcessing(false);
+    }
+  };
+
+  const handleOneNotePdfFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) void processOneNotePdf(file);
   };
 
   const [findReplaceOpen, setFindReplaceOpen] = useState(false);
@@ -1063,7 +1103,7 @@ export default function PiecesTab({
                   <DropdownMenuItem onClick={() => setPieceImportOpen(true)}>
                     <Upload className="w-4 h-4 mr-2" /> {t("common.import")}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => oneNoteInputRef.current?.click()}>
+                  <DropdownMenuItem onClick={() => setOneNoteSourceOpen(true)} disabled={oneNotePdfProcessing}>
                     <FileSpreadsheet className="w-4 h-4 mr-2" /> Importar do OneNote
                   </DropdownMenuItem>
 
@@ -1519,18 +1559,31 @@ export default function PiecesTab({
       )}
       
       <input
-        ref={oneNoteInputRef}
+        ref={oneNoteExcelInputRef}
         type="file"
         accept=".xlsx,.xls"
         className="hidden"
-        onChange={handleOneNoteFile}
+        onChange={handleOneNoteExcelFile}
+      />
+      <input
+        ref={oneNotePdfInputRef}
+        type="file"
+        accept=".pdf,application/pdf"
+        className="hidden"
+        onChange={handleOneNotePdfFile}
+      />
+      <OneNoteSourceDialog
+        open={oneNoteSourceOpen}
+        onOpenChange={setOneNoteSourceOpen}
+        onExcel={() => oneNoteExcelInputRef.current?.click()}
+        onPdf={() => oneNotePdfInputRef.current?.click()}
       />
       <OneNoteImportDialog
         open={oneNoteOpen}
         onOpenChange={setOneNoteOpen}
         campaignId={campaignId}
         campaignName={campaign?.name || "campanha atual"}
-        parsed={oneNoteParsed}
+        rows={oneNoteRows}
       />
 
 

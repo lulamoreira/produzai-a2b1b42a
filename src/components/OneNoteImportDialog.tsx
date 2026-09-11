@@ -1,86 +1,158 @@
-import { useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { FileSpreadsheet, FileText, Plus, Trash2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
-import { splitKitByVariant, normalizeBareKitName } from "@/lib/splitKitPrimarySecondary";
+import {
+  createEmptyOneNoteRow,
+  ONE_NOTE_COLUMNS,
+  transformOneNoteRows,
+  type OneNoteColumn,
+  type OneNoteSourceRow,
+} from "@/lib/parseOneNoteSheet";
+import { normalizeBareKitName, splitKitByVariant } from "@/lib/splitKitPrimarySecondary";
 
-import type { OneNoteParsedPiece } from "@/lib/parseOneNoteSheet";
+interface OneNoteSourceDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  onExcel: () => void;
+  onPdf: () => void;
+}
+
+export function OneNoteSourceDialog({ open, onOpenChange, onExcel, onPdf }: OneNoteSourceDialogProps) {
+  useTranslation();
+  const choose = (callback: () => void) => {
+    onOpenChange(false);
+    callback();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Importar do OneNote</DialogTitle>
+          <DialogDescription>Escolha o tipo de arquivo que será conferido antes da importação.</DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Button variant="outline" className="h-auto justify-start gap-3 p-4" onClick={() => choose(onExcel)}>
+            <FileSpreadsheet className="h-6 w-6 text-primary" />
+            <span className="text-left">
+              <span className="block font-medium">Arquivo Excel</span>
+              <span className="block text-xs font-normal text-muted-foreground">Formato atual .xlsx ou .xls</span>
+            </span>
+          </Button>
+          <Button variant="outline" className="h-auto justify-start gap-3 p-4" onClick={() => choose(onPdf)}>
+            <FileText className="h-6 w-6 text-primary" />
+            <span className="text-left">
+              <span className="block font-medium">PDF do OneNote</span>
+              <span className="block text-xs font-normal text-muted-foreground">Texto extraído e organizado com IA</span>
+            </span>
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 interface OneNoteImportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   campaignId: string;
   campaignName: string;
-  parsed: OneNoteParsedPiece[];
+  rows: OneNoteSourceRow[];
 }
 
-/**
- * Confirmação + aplicação da importação nativa da planilha do OneNote.
- * Toda a escrita é sequencial (await) para manter os códigos consistentes.
- */
+interface EditableRow {
+  id: string;
+  value: OneNoteSourceRow;
+}
+
+function editableRow(value: OneNoteSourceRow): EditableRow {
+  return { id: crypto.randomUUID(), value: { ...value } };
+}
+
 export function OneNoteImportDialog({
   open,
   onOpenChange,
   campaignId,
   campaignName,
-  parsed,
+  rows,
 }: OneNoteImportDialogProps) {
+  useTranslation();
+  const [editableRows, setEditableRows] = useState<EditableRow[]>([]);
   const [importing, setImporting] = useState(false);
   const queryClient = useQueryClient();
 
-  /**
-   * Agrupamento de kits por (nome do kit + localização do componente).
-   * Cada par distinto vira um kit próprio; o nome só recebe o sufixo da
-   * localização quando o mesmo nome aparece em mais de uma localização.
-   */
-  const kitGroups = (() => {
+  useEffect(() => {
+    if (open) setEditableRows(rows.map(editableRow));
+  }, [open, rows]);
+
+  const parsed = useMemo(
+    () => transformOneNoteRows(editableRows.map((row) => row.value)),
+    [editableRows],
+  );
+
+  const kitGroups = useMemo(() => {
     const groups: Array<{ kitName: string; category: string; indexes: number[] }> = [];
     const byKey = new Map<string, number>();
-    parsed.forEach((p, idx) => {
-      const kitName = (p.kitName ?? "").trim();
+    parsed.forEach((piece, index) => {
+      const kitName = (piece.kitName ?? "").trim();
       if (!kitName) return;
-      const category = ((p.category ?? "").toString()).trim().toUpperCase();
+      const category = (piece.category ?? "").trim().toUpperCase();
       const key = `${kitName}||${category}`;
-      let pos = byKey.get(key);
-      if (pos === undefined) {
-        pos = groups.length;
-        byKey.set(key, pos);
+      let position = byKey.get(key);
+      if (position === undefined) {
+        position = groups.length;
+        byKey.set(key, position);
         groups.push({ kitName, category, indexes: [] });
       }
-      groups[pos].indexes.push(idx);
+      groups[position].indexes.push(index);
     });
     const nameCount = new Map<string, number>();
-    for (const g of groups) nameCount.set(g.kitName, (nameCount.get(g.kitName) ?? 0) + 1);
-    return groups.map((g) => ({
-      ...g,
-      displayName:
-        (nameCount.get(g.kitName) ?? 0) > 1 && g.category
-          ? `${g.kitName} - ${g.category}`
-          : g.kitName,
+    groups.forEach((group) => nameCount.set(group.kitName, (nameCount.get(group.kitName) ?? 0) + 1));
+    return groups.map((group) => ({
+      ...group,
+      displayName: (nameCount.get(group.kitName) ?? 0) > 1 && group.category
+        ? `${group.kitName} - ${group.category}`
+        : group.kitName,
     }));
-  })();
+  }, [parsed]);
 
+  const updateCell = (id: string, column: OneNoteColumn, value: string) => {
+    setEditableRows((current) => current.map((row) => (
+      row.id === id ? { ...row, value: { ...row.value, [column]: value } } : row
+    )));
+  };
 
   const handleConfirm = async () => {
-    if (importing) return;
+    if (importing || parsed.length === 0) return;
     setImporting(true);
     const toastId = "onenote-import";
-    toast.loading("Importando planilha do OneNote...", { id: toastId });
+    toast.loading("Importando dados revisados do OneNote...", { id: toastId });
 
     try {
-      // 1) próximo code de peça
       const { data: lastPiece, error: lastPieceError } = await supabase
         .from("campaign_pieces")
         .select("code")
@@ -90,30 +162,28 @@ export function OneNoteImportDialog({
         .limit(1);
       if (lastPieceError) throw lastPieceError;
       let nextPieceCode = (lastPiece?.[0]?.code ?? 0) + 1;
-
-      // 2) inserir peças sequencialmente, guardando code -> id
       const codeToId = new Map<number, string>();
       const rowCodes: number[] = [];
 
-      for (let i = 0; i < parsed.length; i++) {
-        const p = parsed[i];
+      for (let index = 0; index < parsed.length; index += 1) {
+        const piece = parsed[index];
         const code = nextPieceCode++;
         const { data: inserted, error: insertError } = await supabase
           .from("campaign_pieces")
           .insert({
             campaign_id: campaignId,
             code,
-            name: (p.name ?? "").toString(),
-            category: ((p.category ?? "").toString()).toUpperCase(),
-            size: (p.size ?? "").toString(),
-            kit_only: p.kit_only,
-            is_mockup: p.is_mockup,
+            name: piece.name,
+            category: piece.category.toUpperCase(),
+            size: piece.size,
+            kit_only: piece.kit_only,
+            is_mockup: piece.is_mockup,
             sub_location: null,
             specification: "Vide Book/Manual",
             installation_instructions: "Sem informações específicas",
             is_deleted: false,
             is_new: false,
-            display_order: i,
+            display_order: index,
           })
           .select("id, code")
           .single();
@@ -122,7 +192,6 @@ export function OneNoteImportDialog({
         rowCodes.push(code);
       }
 
-      // 3) criar kits e vínculos
       const { data: lastKit, error: lastKitError } = await supabase
         .from("campaign_kits")
         .select("code")
@@ -134,33 +203,27 @@ export function OneNoteImportDialog({
       let nextKitCode = (lastKit?.[0]?.code ?? 0) + 1;
 
       for (const group of kitGroups) {
-        const kitIsMockup = group.indexes.some((idx) => parsed[idx].is_mockup);
-
-        // Primária x Secundária nunca no mesmo kit (neutras entram nos dois).
         const variants = splitKitByVariant(
           group.displayName,
           group.category || null,
           group.indexes,
-          (idx) => parsed[idx].name ?? "",
+          (index) => parsed[index].name,
         );
-
         for (const variant of variants) {
-          const finalName = normalizeBareKitName(variant.name, group.category);
           const { data: kit, error: kitError } = await supabase
             .from("campaign_kits")
             .insert({
               campaign_id: campaignId,
-              name: finalName,
+              name: normalizeBareKitName(variant.name, group.category),
               category: group.category || null,
               code: nextKitCode++,
               is_deleted: false,
-              is_mockup: kitIsMockup,
+              is_mockup: group.indexes.some((index) => parsed[index].is_mockup),
             })
             .select("id")
             .single();
           if (kitError) throw kitError;
-
-          for (let order = 0; order < variant.members.length; order++) {
+          for (let order = 0; order < variant.members.length; order += 1) {
             const pieceId = codeToId.get(rowCodes[variant.members[order]]);
             if (!pieceId) continue;
             const { error: linkError } = await supabase.from("campaign_kit_pieces").insert({
@@ -174,56 +237,104 @@ export function OneNoteImportDialog({
         }
       }
 
-
-
-      // 4) desambiguação de nomes de peças de kit
       await disambiguateKitPieceNames(campaignId);
-
-      // 4.1) registrar localizações novas usadas pelas peças
       await ensureCampaignLocations(campaignId);
-
-      // 5) refresh
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] }),
         queryClient.invalidateQueries({ queryKey: ["campaign_kits"] }),
         queryClient.invalidateQueries({ queryKey: ["campaign_kit_pieces"] }),
         queryClient.invalidateQueries({ queryKey: ["campaign_piece_locations"] }),
       ]);
-
-      toast.success(`Importadas ${parsed.length} peças e ${kitGroups.length} kits do OneNote`, {
-        id: toastId,
-      });
+      toast.success(`Importadas ${parsed.length} peças e ${kitGroups.length} kits do OneNote`, { id: toastId });
       onOpenChange(false);
-    } catch (e: any) {
-      toast.error(`Erro ao importar: ${e?.message || e}`, { id: toastId });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : String(error);
+      toast.error(`Erro ao importar: ${message}`, { id: toastId });
     } finally {
       setImporting(false);
     }
   };
 
   return (
-    <AlertDialog open={open} onOpenChange={(v) => !importing && onOpenChange(v)}>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Importar do OneNote</AlertDialogTitle>
-          <AlertDialogDescription>
-            {parsed.length} peças e {kitGroups.length} kits serão importados para a campanha{" "}
-            {campaignName}. Continuar?
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel disabled={importing}>Cancelar</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={(e) => {
-              e.preventDefault();
-              void handleConfirm();
-            }}
-            disabled={importing || parsed.length === 0}
-          >
-            {importing ? "Importando..." : "Importar"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <Dialog open={open} onOpenChange={(nextOpen) => !importing && onOpenChange(nextOpen)}>
+      <DialogContent className="flex max-h-[90dvh] max-w-[calc(100vw-2rem)] flex-col overflow-hidden p-0 lg:max-w-7xl">
+        <DialogHeader className="border-b px-6 py-5 pr-12">
+          <DialogTitle>Conferir importação do OneNote</DialogTitle>
+          <DialogDescription>
+            Revise os dados antes de importar para {campaignName}. Nada será gravado até a confirmação.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="flex flex-wrap gap-2 px-6">
+          <span className="rounded-md border bg-muted px-3 py-1 text-sm font-medium">{parsed.length} peças</span>
+          <span className="rounded-md border bg-muted px-3 py-1 text-sm font-medium">{kitGroups.length} kits</span>
+          {kitGroups.map((group) => (
+            <span key={`${group.kitName}-${group.category}`} className="rounded-md border px-2 py-1 text-xs text-muted-foreground">
+              {group.displayName}: {group.indexes.length}
+            </span>
+          ))}
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-auto border-y">
+          <Table className="min-w-[1280px] table-fixed">
+            <TableHeader className="sticky top-0 z-10 bg-background">
+              <TableRow>
+                <TableHead className="w-12">#</TableHead>
+                {ONE_NOTE_COLUMNS.map((column) => (
+                  <TableHead key={column} className={column === "Nome da Peça" ? "w-72" : "w-52"}>{column}</TableHead>
+                ))}
+                <TableHead className="w-14" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {editableRows.map((row, index) => (
+                <TableRow key={row.id}>
+                  <TableCell className="p-2 text-center text-xs text-muted-foreground">{index + 1}</TableCell>
+                  {ONE_NOTE_COLUMNS.map((column) => (
+                    <TableCell key={column} className="p-1.5">
+                      {column === "O que compõe o Kit" ? (
+                        <Textarea
+                          aria-label={`${column} da linha ${index + 1}`}
+                          className="min-h-16 resize-y"
+                          value={row.value[column]}
+                          onChange={(event) => updateCell(row.id, column, event.target.value)}
+                        />
+                      ) : (
+                        <Input
+                          aria-label={`${column} da linha ${index + 1}`}
+                          value={row.value[column]}
+                          onChange={(event) => updateCell(row.id, column, event.target.value)}
+                        />
+                      )}
+                    </TableCell>
+                  ))}
+                  <TableCell className="p-1.5">
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      aria-label={`Remover linha ${index + 1}`}
+                      onClick={() => setEditableRows((current) => current.filter((item) => item.id !== row.id))}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+
+        <DialogFooter className="px-6 pb-5">
+          <Button type="button" variant="outline" className="mr-auto" onClick={() => setEditableRows((current) => [...current, editableRow(createEmptyOneNoteRow())])}>
+            <Plus className="mr-2 h-4 w-4" /> Adicionar linha
+          </Button>
+          <Button type="button" variant="outline" disabled={importing} onClick={() => onOpenChange(false)}>Cancelar</Button>
+          <Button type="button" disabled={importing || parsed.length === 0} onClick={() => void handleConfirm()}>
+            {importing ? "Importando..." : "Confirmar importação"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

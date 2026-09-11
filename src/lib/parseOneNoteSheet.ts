@@ -10,6 +10,38 @@ export interface OneNoteParsedPiece {
   is_mockup: boolean;
 }
 
+export const ONE_NOTE_COLUMNS = [
+  "Nome da Peça",
+  "Localização",
+  "Tamanho da Peça",
+  "Subgrupo",
+  "O que compõe o Kit",
+  "Mockup",
+] as const;
+
+export type OneNoteColumn = (typeof ONE_NOTE_COLUMNS)[number];
+export type OneNoteSourceRow = Record<OneNoteColumn, string>;
+
+export function createEmptyOneNoteRow(): OneNoteSourceRow {
+  return {
+    "Nome da Peça": "",
+    Localização: "",
+    "Tamanho da Peça": "",
+    Subgrupo: "",
+    "O que compõe o Kit": "",
+    Mockup: "",
+  };
+}
+
+export function normalizeOneNoteSourceRow(row: Record<string, unknown>): OneNoteSourceRow {
+  const normalized = createEmptyOneNoteRow();
+  for (const column of ONE_NOTE_COLUMNS) {
+    const value = row[column];
+    normalized[column] = value === null || value === undefined ? "" : String(value).trim();
+  }
+  return normalized;
+}
+
 const COL = {
   location: "Localização",
   subgroup: "Subgrupo",
@@ -107,11 +139,17 @@ export function transformOneNoteRows(rows: Record<string, unknown>[]): OneNotePa
 
 /** Lê o arquivo .xlsx/.xls do OneNote (1ª planilha, cabeçalho na 1ª linha). */
 export async function parseOneNoteFile(file: File): Promise<OneNoteParsedPiece[]> {
+  const rows = await parseOneNoteWorkbookRows(file);
+  return transformOneNoteRows(rows);
+}
+
+/** Lê as seis colunas originais para permitir conferência antes da transformação. */
+export async function parseOneNoteWorkbookRows(file: File): Promise<OneNoteSourceRow[]> {
   const buffer = await file.arrayBuffer();
   const workbook = XLSX.read(buffer, { type: "array" });
   const sheetName = workbook.SheetNames[0];
   if (!sheetName) throw new Error("A planilha está vazia.");
   const sheet = workbook.Sheets[sheetName];
   const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
-  return transformOneNoteRows(rows);
+  return rows.map(normalizeOneNoteSourceRow).filter((row) => Object.values(row).some(Boolean));
 }
