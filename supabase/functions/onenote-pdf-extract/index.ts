@@ -53,7 +53,54 @@ Deno.serve(async (req: Request) => {
     if (!parsedBody.success) {
       return response({ error: "O texto do PDF é inválido ou excede o limite por bloco." }, 400);
     }
-    const { text, chunkIndex, chunkCount } = parsedBody.data;
+    const { text, chunkIndex, chunkCount, clientId, excludeCampaignId } = parsedBody.data;
+
+    // Aprendizado leve: nomes/localizações já usados em campanhas anteriores do MESMO cliente.
+    // Lido com o token do usuário, portanto respeita as políticas de acesso existentes.
+    let learningBlock = "";
+    if (clientId) {
+      try {
+        const { data: clientCampaigns } = await authClient
+          .from("campaigns")
+          .select("id")
+          .eq("client_id", clientId)
+          .order("id")
+          .limit(40);
+        const campaignIds = (clientCampaigns ?? [])
+          .map((row: { id: string }) => row.id)
+          .filter((id: string) => id !== excludeCampaignId);
+        if (campaignIds.length > 0) {
+          const { data: previousPieces } = await authClient
+            .from("campaign_pieces")
+            .select("name, category")
+            .in("campaign_id", campaignIds)
+            .order("id")
+            .limit(1000);
+          const names = new Set<string>();
+          const locations = new Set<string>();
+          for (const piece of previousPieces ?? []) {
+            const name = typeof piece?.name === "string" ? piece.name.trim() : "";
+            const category = typeof piece?.category === "string" ? piece.category.trim() : "";
+            if (name && name.length <= 80) names.add(name);
+            if (category) locations.add(category.toUpperCase());
+          }
+          const nameList = Array.from(names).slice(0, 250);
+          const locationList = Array.from(locations).slice(0, 40);
+          if (nameList.length > 0) {
+            learningBlock = `
+
+APRENDIZADO COM CAMPANHAS ANTERIORES DESTE MESMO CLIENTE (referência de estilo, não de conteúdo):
+- Nomes de peças já usados pelo cliente (siga este estilo de escrita, idioma, acentuação, abreviações e uso de sufixos G/M/P):
+${nameList.map((name) => `  • ${name}`).join("\n")}
+${locationList.length > 0 ? `- Localizações já usadas pelo cliente (prefira reutilizar exatamente uma destas quando o PDF indicar a mesma área):\n${locationList.map((location) => `  • ${location}`).join("\n")}` : ""}
+- Se um item do PDF corresponder claramente a uma peça já nomeada acima, REUTILIZE o nome anterior exatamente (a menos que a medida ou variação seja outra).
+- Nunca invente peças a partir desta lista: ela serve apenas como referência de estilo e nomenclatura para os itens realmente presentes no PDF.`;
+          }
+        }
+      } catch (learningError) {
+        console.error("onenote-pdf-extract learning lookup failed", learningError);
+      }
+    }
 
     const systemPrompt = `Você extrai peças de campanhas de visual merchandising de texto obtido de um PDF do OneNote.
 Retorne SOMENTE JSON estrito no formato {"rows":[...]}, sem markdown ou explicações.
