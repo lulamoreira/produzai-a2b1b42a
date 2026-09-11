@@ -54,6 +54,8 @@ import ViewTeamsDialog from "@/components/ViewTeamsDialog";
 
 export type SchedulingInitialFilter = { type: "summary"; value: "scheduled" };
 
+const PREFERENCE_EDITOR_USER_ID = "830298f6-782e-40be-8138-67fba82e96a2";
+
 interface SchedulingTabProps {
   campaignId: string;
   stores: ClientStore[];
@@ -143,7 +145,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [logOpen, setLogOpen] = useState(false);
   const [logStoreId, setLogStoreId] = useState("");
   const [logStoreName, setLogStoreName] = useState("");
+  const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
+  const canEditPreference = isAdminOrMaster || user?.id === PREFERENCE_EDITOR_USER_ID;
 
   // Apply pre-set filter from external navigation (e.g. Status dashboard)
   useEffect(() => {
@@ -220,11 +224,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     return schedules.some(s => s.installation_preference && s.installation_preference !== "not_informed");
   }, [schedules]);
 
-  const showInheritanceBanner = !!inheritanceData?.hasPreferences && !hasCurrentPreferences && !inheritanceDismissed;
+  const showInheritanceBanner = canEditPreference && !!inheritanceData?.hasPreferences && !hasCurrentPreferences && !inheritanceDismissed;
 
   // Apply inherited preferences when banner is shown (or automatically if requested)
   const applyInheritedPreferences = () => {
-    if (!inheritanceData?.preferencesMap) return;
+    if (!canEditPreference || !inheritanceData?.preferencesMap) return;
     
     // We only apply for stores that don't have a preference yet
     Object.entries(inheritanceData.preferencesMap).forEach(([storeId, preference]) => {
@@ -242,6 +246,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   };
 
   const clearInheritedPreferences = () => {
+    if (!canEditPreference) return;
     schedules.forEach(s => {
       if (s.installation_preference && s.installation_preference !== "not_informed") {
         upsertSchedule.mutate({
@@ -1342,13 +1347,13 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                             <CopyOsButton value={schedule?.reschedule_os} />
                           </div>
                         </div>
-                        <div className="space-y-1">
-                          <label className="text-xs font-medium text-foreground flex items-center gap-1"><Sun className="w-3 h-3" /> {t("scheduling.preferenceLabel")}</label>
+                        <div className="space-y-2 rounded-md border border-primary bg-primary/10 p-3 sm:col-span-2">
+                          <label className="text-xs font-bold text-primary flex items-center gap-1.5 uppercase"><Sun className="w-4 h-4" /> O CLIENTE PREFERE A INSTALAÇÃO NO PERÍODO DA:</label>
                           <select
-                            disabled={!cardCanEdit}
+                            disabled={!cardCanEdit || !canEditPreference}
                             value={schedule?.reschedule_preference || schedule?.installation_preference || "not_informed"}
                             onChange={(e) => handleFieldChange(store.id, "reschedule_preference", e.target.value)}
-                            className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2"
+                            className="w-full h-9 text-sm font-semibold rounded-md border border-primary bg-card text-foreground px-2 disabled:cursor-not-allowed disabled:opacity-70"
                           >
                             {PREFERENCE_OPTIONS.map((opt) => (
                               <option key={opt.value} value={opt.value}>
@@ -1399,9 +1404,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                           <CopyOsButton value={schedule?.installation_os} />
                         </div>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-xs font-medium text-foreground flex items-center gap-1"><Sun className="w-3 h-3" /> {t("scheduling.preferenceLabel")}</label>
-                        <select disabled={!cardCanEdit} value={schedule?.installation_preference || "not_informed"} onChange={(e) => handleFieldChange(store.id, "installation_preference", e.target.value)} className="w-full h-8 text-xs rounded-md border border-border bg-card text-foreground px-2">
+                      <div className="space-y-2 rounded-md border border-primary bg-primary/10 p-3 sm:col-span-2">
+                        <label className="text-xs font-bold text-primary flex items-center gap-1.5 uppercase"><Sun className="w-4 h-4" /> O CLIENTE PREFERE A INSTALAÇÃO NO PERÍODO DA:</label>
+                        <select disabled={!cardCanEdit || !canEditPreference} value={schedule?.installation_preference || "not_informed"} onChange={(e) => handleFieldChange(store.id, "installation_preference", e.target.value)} className="w-full h-9 text-sm font-semibold rounded-md border border-primary bg-card text-foreground px-2 disabled:cursor-not-allowed disabled:opacity-70">
                           {PREFERENCE_OPTIONS.map((opt) => (
                             <option key={opt.value} value={opt.value}>
                               {opt.label}
