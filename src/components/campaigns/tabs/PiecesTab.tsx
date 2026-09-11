@@ -163,9 +163,13 @@ export default function PiecesTab({
     toast.loading("Lendo o texto do PDF...", { id: toastId });
     try {
       const text = await extractTextFromOneNotePdf(file);
-      const rows = await extractOneNoteRowsWithAi(text, (completed, total) => {
-        toast.loading(`Organizando PDF com IA (${completed}/${total})...`, { id: toastId });
-      });
+      const rows = await extractOneNoteRowsWithAi(
+        text,
+        (completed, total) => {
+          toast.loading(`Organizando PDF com IA (${completed}/${total})...`, { id: toastId });
+        },
+        { clientId, excludeCampaignId: campaignId },
+      );
       if (rows.length === 0) throw new Error("Nenhuma peça ou kit foi encontrado no PDF.");
       setOneNoteRows(rows);
       setOneNoteOpen(true);
