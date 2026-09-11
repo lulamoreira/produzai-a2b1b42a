@@ -58,14 +58,13 @@ Retorne SOMENTE JSON estrito no formato {"rows":[...]}, sem markdown ou explica�
 Cada row deve ter EXATAMENTE estas seis chaves de texto: "Nome da Peça", "Localização", "Tamanho da Peça", "Subgrupo", "O que compõe o Kit", "Mockup".
 
 REGRAS:
-- Ignore títulos decorativos, observações soltas, datas e textos de apoio que não sejam peças ou kits.
-- Cada peça costuma ser um código como LINDT_xxx_VIT_STANDARD_PRIM_KIT_SHELFTALK_175x10,4cm. Use o código completo como "Nome da Peça".
-- Extraia a medida embutida, como 175x10,4cm, 80x140cm ou 219x39cm, para "Tamanho da Peça". Sem medida, use "".
-- Use a seção/agrupamento do item como "Localização", sempre em MAIÚSCULO.
-- Para KIT, PRIM/PRIMÁRIA e SEC/SECUNDÁRIA, preencha "Subgrupo" com o kit correspondente. Primária e Secundária NUNCA pertencem ao mesmo kit: o nome deve conter "Primário" ou "Secundário" conforme o caso.
-- Quando um kit trouxer componentes listados, coloque um componente por linha em "O que compõe o Kit"; caso contrário use "".
-- "Mockup" é "Sim" somente quando o texto marcar explicitamente o item como mockup; caso contrário use "".
-- Remova notas entre parênteses do nome, como (superior e inferior) ou (pode aumentar na largura).
+- Ignore títulos decorativos, observações soltas, datas e textos de apoio que não sejam peças.
+- Cada peça costuma ser um código como LINDT_CH_NAVIDAD_VIT_TDS_DISPLAY_CONTEO_DÍAS_35,5x37,63cm. Use o código completo como "Nome da Peça".
+- Extraia a medida embutida, como 35,5x37,63cm, 340x5cm, 219x39cm, para "Tamanho da Peça". Sem medida, use "".
+- "Localização" deve ser a SEÇÃO PRINCIPAL (banner de topo da página), por exemplo VITRINES, STANDARDS, PDV, CHECKOUT, etc., sempre em MAIÚSCULO. NUNCA use agrupamentos de tipo como SHELFTALKS, CUBOS, CANTONEIRA/CANTONEIRAS, MOLDURA, REVESTIMENTO TAPETE, LETRA CAIXA, LAÇO, SACOLA, MÓBILE, etc. como localização. Se houver subtítulos como "STANDARD G PRIMÁRIA E SECUNDÁRIA", "STANDARD G EGAÑA" ou "STANDARD M ...", a seção principal continua sendo STANDARDS.
+- "Subgrupo" e "O que compõe o Kit" devem ficar SEMPRE vazios (""). Não monte kits, não agrupe componentes e não separe Primária/Secundária. Mesmo que o código contenha KIT, PRIM, SEC, PRIMÁRIA ou SECUNDÁRIA, essas informações permanecem apenas dentro de "Nome da Peça". Cada linha é uma peça avulsa.
+- "Mockup" é "Sim" somente quando o texto marcar explicitamente o item como MOCKUP; caso contrário use "".
+- Remova notas entre parênteses do nome, como (superior e inferior), (Egaña, Vespucio), (PLANIFICADO), (NOVO), (3cm de profundidade), (DIAMETRO: 25cm), e sufixos soltos como "ok", "book", "2X", "descrever em book".
 - Não invente linhas, nomes, medidas, localizações ou componentes.
 - Este pode ser um bloco de um PDF maior. Extraia apenas itens presentes neste bloco.`;
 
