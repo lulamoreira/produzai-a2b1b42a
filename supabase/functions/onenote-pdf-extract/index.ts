@@ -6,6 +6,8 @@ const BodySchema = z.object({
   text: z.string().min(30).max(30_000),
   chunkIndex: z.number().int().min(0).default(0),
   chunkCount: z.number().int().min(1).max(50).default(1),
+  clientId: z.string().uuid().optional(),
+  excludeCampaignId: z.string().uuid().optional(),
 });
 
 const COLUMNS = [
