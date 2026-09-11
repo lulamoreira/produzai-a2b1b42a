@@ -121,7 +121,7 @@ REGRAS:
 - "Mockup" é "Sim" somente quando o texto marcar explicitamente o item como MOCKUP; caso contrário use "".
 - Remova notas entre parênteses do nome, como (superior e inferior), (Egaña, Vespucio), (PLANIFICADO), (NOVO), (3cm de profundidade), (DIAMETRO: 25cm), e sufixos soltos como "ok", "book", "2X", "descrever em book".
 - Não invente linhas, nomes, medidas, localizações ou componentes.
-- Este pode ser um bloco de um PDF maior. Extraia apenas itens presentes neste bloco.`;
+- Este pode ser um bloco de um PDF maior. Extraia apenas itens presentes neste bloco.${learningBlock}`;
 
     const userPrompt = `BLOCO ${chunkIndex + 1} DE ${chunkCount}\n\nTEXTO DO PDF:\n${text}`;
     let gatewayResponse: Response | undefined;
