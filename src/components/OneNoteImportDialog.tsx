@@ -146,15 +146,17 @@ export function OneNoteImportDialog({
   const [editableRows, setEditableRows] = useState<EditableRow[]>([]);
   const [importing, setImporting] = useState(false);
   const [matching, setMatching] = useState(false);
-  /** Garante uma única rodada de casamento por IA a cada abertura do diálogo. */
-  const matchedSessionRef = useRef<string | null>(null);
+  /** Rodada de casamento por IA em andamento/concluída nesta abertura (null = ainda não rodou). */
+  const matchRunRef = useRef<symbol | null>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     if (open) {
       setEditableRows(rows.map(editableRow));
-      matchedSessionRef.current = null;
     }
+    // Ao abrir ou fechar, qualquer rodada anterior é descartada.
+    matchRunRef.current = null;
+    setMatching(false);
   }, [open, rows]);
 
   // Catálogo de especificações já escritas em outras campanhas do mesmo cliente (deduplicado por nome).
@@ -182,9 +184,11 @@ export function OneNoteImportDialog({
   // Preenche somente especificações vazias; nunca sobrescreve o que o usuário digitou.
   useEffect(() => {
     if (!open || !specsFetched || editableRows.length === 0 || specByName.size === 0) return;
-    const sessionKey = `${campaignId}:${rows.length}`;
-    if (matchedSessionRef.current === sessionKey) return;
-    matchedSessionRef.current = sessionKey;
+    if (matchRunRef.current) return;
+    const run = Symbol("match-piece-specs");
+    matchRunRef.current = run;
+    // A rodada só continua válida enquanto for a atual (o diálogo não foi fechado/reaberto).
+    const isCurrent = () => matchRunRef.current === run;
 
     // Captura os ids no momento do envio: as linhas podem ser editadas/removidas enquanto a IA responde.
     const snapshot = editableRows
@@ -192,7 +196,6 @@ export function OneNoteImportDialog({
       .filter((row) => row.value["Nome da Peça"].trim());
     if (snapshot.length === 0) return;
 
-    let cancelled = false;
     setMatching(true);
     (async () => {
       try {
