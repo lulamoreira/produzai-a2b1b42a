@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FileSpreadsheet, FileText, Plus, Trash2 } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { FileSpreadsheet, FileText, Plus, Sparkles, Trash2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ import {
   type OneNoteColumn,
   type OneNoteSourceRow,
 } from "@/lib/parseOneNoteSheet";
+import { pieceTypeKey } from "@/lib/pieceTypeKey";
 import { normalizeBareKitName, splitKitByVariant } from "@/lib/splitKitPrimarySecondary";
 
 interface OneNoteSourceDialogProps {
