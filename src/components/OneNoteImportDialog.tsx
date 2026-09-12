@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FileSpreadsheet, FileText, Plus, Trash2 } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { FileSpreadsheet, FileText, Plus, Sparkles, Trash2 } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -32,6 +32,7 @@ import {
   type OneNoteColumn,
   type OneNoteSourceRow,
 } from "@/lib/parseOneNoteSheet";
+import { pieceTypeKey } from "@/lib/pieceTypeKey";
 import { normalizeBareKitName, splitKitByVariant } from "@/lib/splitKitPrimarySecondary";
 
 interface OneNoteSourceDialogProps {
@@ -82,15 +83,31 @@ interface OneNoteImportDialogProps {
   campaignId: string;
   campaignName: string;
   rows: OneNoteSourceRow[];
+  /** Cliente da campanha: habilita a sugestão de especificação de campanhas anteriores. */
+  clientId?: string;
 }
 
 interface EditableRow {
   id: string;
   value: OneNoteSourceRow;
+  /** Especificação conferida pelo usuário (não faz parte das colunas extraídas). */
+  specification: string;
+  /** Campanha de origem quando a especificação foi preenchida automaticamente. */
+  specSource: string | null;
 }
 
 function editableRow(value: OneNoteSourceRow): EditableRow {
-  return { id: crypto.randomUUID(), value: { ...value } };
+  return { id: crypto.randomUUID(), value: { ...value }, specification: "", specSource: null };
+}
+
+const DEFAULT_SPECIFICATION = "Vide Book/Manual";
+
+interface ClientPieceSpec {
+  name: string;
+  specification: string;
+  campaign_id: string;
+  campaign_name: string;
+  campaign_created_at: string;
 }
 
 export function OneNoteImportDialog({
@@ -99,6 +116,7 @@ export function OneNoteImportDialog({
   campaignId,
   campaignName,
   rows,
+  clientId,
 }: OneNoteImportDialogProps) {
   useTranslation();
   const [editableRows, setEditableRows] = useState<EditableRow[]>([]);
@@ -109,10 +127,72 @@ export function OneNoteImportDialog({
     if (open) setEditableRows(rows.map(editableRow));
   }, [open, rows]);
 
-  const parsed = useMemo(
-    () => transformOneNoteRows(editableRows.map((row) => row.value)),
+  // Especificações já escritas em outras campanhas do mesmo cliente.
+  const { data: clientSpecs = [] } = useQuery({
+    queryKey: ["onenote-client-piece-specs", clientId, campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_client_piece_specs", {
+        p_client_id: clientId!,
+      });
+      if (error) throw error;
+      return ((data ?? []) as ClientPieceSpec[]).filter((item) => item.campaign_id !== campaignId);
+    },
+    enabled: open && !!clientId,
+  });
+
+  /** Melhor especificação por chave de tipo (campanha mais recente vence). */
+  const specByTypeKey = useMemo(() => {
+    const map = new Map<string, ClientPieceSpec>();
+    for (const item of clientSpecs) {
+      const key = pieceTypeKey(item.name);
+      if (!key || !item.specification?.trim()) continue;
+      const current = map.get(key);
+      if (!current || new Date(item.campaign_created_at) > new Date(current.campaign_created_at)) {
+        map.set(key, item);
+      }
+    }
+    return map;
+  }, [clientSpecs]);
+
+  // Pré-preenche apenas linhas ainda vazias; nunca sobrescreve o que o usuário digitou.
+  useEffect(() => {
+    if (specByTypeKey.size === 0) return;
+    setEditableRows((current) => {
+      let changed = false;
+      const next = current.map((row) => {
+        if (row.specification.trim()) return row;
+        const match = specByTypeKey.get(pieceTypeKey(row.value["Nome da Peça"]));
+        if (!match) return row;
+        changed = true;
+        return { ...row, specification: match.specification, specSource: match.campaign_name };
+      });
+      return changed ? next : current;
+    });
+  }, [specByTypeKey]);
+
+  /** Peças geradas por linha, para levar a especificação conferida até a inserção. */
+  const parsedByRow = useMemo(
+    () => editableRows.map((row) => ({ rowId: row.id, pieces: transformOneNoteRows([row.value]) })),
     [editableRows],
   );
+
+  const parsed = useMemo(() => parsedByRow.flatMap((entry) => entry.pieces), [parsedByRow]);
+
+  const specByPieceIndex = useMemo(() => {
+    const specs: string[] = [];
+    const byRowId = new Map(editableRows.map((row) => [row.id, row.specification]));
+    for (const entry of parsedByRow) {
+      const spec = (byRowId.get(entry.rowId) ?? "").trim();
+      for (let i = 0; i < entry.pieces.length; i += 1) specs.push(spec || DEFAULT_SPECIFICATION);
+    }
+    return specs;
+  }, [parsedByRow, editableRows]);
+
+  const autoFilledCount = useMemo(
+    () => editableRows.filter((row) => row.specSource && row.specification.trim()).length,
+    [editableRows],
+  );
+
 
   const kitGroups = useMemo(() => {
     const groups: Array<{ kitName: string; category: string; indexes: number[] }> = [];
@@ -143,6 +223,13 @@ export function OneNoteImportDialog({
   const updateCell = (id: string, column: OneNoteColumn, value: string) => {
     setEditableRows((current) => current.map((row) => (
       row.id === id ? { ...row, value: { ...row.value, [column]: value } } : row
+    )));
+  };
+
+  /** Edição manual da especificação: remove o selo de preenchimento automático. */
+  const updateSpecification = (id: string, value: string) => {
+    setEditableRows((current) => current.map((row) => (
+      row.id === id ? { ...row, specification: value, specSource: null } : row
     )));
   };
 
@@ -179,7 +266,7 @@ export function OneNoteImportDialog({
             kit_only: piece.kit_only,
             is_mockup: piece.is_mockup,
             sub_location: null,
-            specification: "Vide Book/Manual",
+            specification: specByPieceIndex[index] ?? DEFAULT_SPECIFICATION,
             installation_instructions: "Sem informações específicas",
             is_deleted: false,
             is_new: false,
@@ -268,6 +355,11 @@ export function OneNoteImportDialog({
         <div className="flex flex-wrap gap-2 px-6">
           <span className="rounded-md border bg-muted px-3 py-1 text-sm font-medium">{parsed.length} peças</span>
           <span className="rounded-md border bg-muted px-3 py-1 text-sm font-medium">{kitGroups.length} kits</span>
+          {autoFilledCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+              <Sparkles className="h-3.5 w-3.5" /> {autoFilledCount} com spec de campanha anterior
+            </span>
+          )}
           {kitGroups.map((group) => (
             <span key={`${group.kitName}-${group.category}`} className="rounded-md border px-2 py-1 text-xs text-muted-foreground">
               {group.displayName}: {group.indexes.length}
@@ -276,13 +368,14 @@ export function OneNoteImportDialog({
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto border-y">
-          <Table className="min-w-[1280px] table-fixed">
+          <Table className="min-w-[1520px] table-fixed">
             <TableHeader className="sticky top-0 z-10 bg-background">
               <TableRow>
                 <TableHead className="w-12">#</TableHead>
                 {ONE_NOTE_COLUMNS.map((column) => (
                   <TableHead key={column} className={column === "Nome da Peça" ? "w-72" : "w-52"}>{column}</TableHead>
                 ))}
+                <TableHead className="w-64">Especificação</TableHead>
                 <TableHead className="w-14" />
               </TableRow>
             </TableHeader>
@@ -308,6 +401,20 @@ export function OneNoteImportDialog({
                       )}
                     </TableCell>
                   ))}
+                  <TableCell className="p-1.5 align-top">
+                    <Textarea
+                      aria-label={`Especificação da linha ${index + 1}`}
+                      className="min-h-16 resize-y"
+                      placeholder={DEFAULT_SPECIFICATION}
+                      value={row.specification}
+                      onChange={(event) => updateSpecification(row.id, event.target.value)}
+                    />
+                    {row.specSource && row.specification.trim() && (
+                      <span className="mt-1 inline-flex items-center gap-1 rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
+                        <Sparkles className="h-3 w-3" /> spec de {row.specSource}
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell className="p-1.5">
                     <Button
                       type="button"

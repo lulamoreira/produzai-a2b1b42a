@@ -6285,6 +6285,16 @@ export type Database = {
         Args: { p_token: string }
         Returns: Json
       }
+      get_client_piece_specs: {
+        Args: { p_client_id: string }
+        Returns: {
+          campaign_created_at: string
+          campaign_id: string
+          campaign_name: string
+          name: string
+          specification: string
+        }[]
+      }
       get_client_teams_for_import: {
         Args: { p_client_id: string }
         Returns: Json
