@@ -109,26 +109,22 @@ Cada row deve ter EXATAMENTE estas seis chaves de texto: "Nome da Peça", "Local
 REGRAS:
 - Ignore títulos decorativos, observações soltas, datas e textos de apoio que não sejam peças.
 - Cada peça costuma vir como um CÓDIGO DE ARQUIVO no formato LINDT_<PAÍS>_<CAMPANHA>_<LOCALIZAÇÃO>_<SUBGRUPO>_<TIPO...>_<TAMANHO>. O "Nome da Peça" deve ser o PRÓPRIO CÓDIGO original (não traduza, não remova prefixos).
-- CLASSIFICAÇÃO PELO CÓDIGO (não use títulos de seção como VITRINES/STANDARDS). Identifique os tokens de LOCALIZAÇÃO e SUBGRUPO pelo VALOR exato, porque o país às vezes vem como "CH" e às vezes como "CHILE", o que desloca a posição dos tokens.
-  • "Localização" = expanda o token de LOCALIZAÇÃO, que é o primeiro token logo após o nome da campanha:
+- CLASSIFICAÇÃO PELO CÓDIGO (não use os títulos de seção). O formato do código é LINDT_<PAÍS>_<CAMPANHA>_<LOCALIZAÇÃO>_<SUBGRUPO>_<TIPO...>_<TAMANHO>. Identifique os tokens pelo VALOR (não por posição fixa), porque o país às vezes é "CH" e às vezes "CHILE".
+  • "Localização" = expanda SOMENTE estas siglas do token de LOCALIZAÇÃO:
       VIT → "Vitrine"
       INT → "Interno"
-      (qualquer outro token de localização, expanda de forma sensata e capitalizado)
-  • "Subgrupo" = expanda o token SEGUINTE (o subgrupo):
+      Qualquer outro token de localização deve ser mantido EXATAMENTE como está escrito no código (sem expandir, sem traduzir, sem mudar a grafia).
+  • "Subgrupo" = o token seguinte. Expanda SOMENTE a sigla:
       TDS → "Todas"
-      STANDARD → "Standard"
-      QUIOSCO → "Quiosque"
-      PICKMIX → "Pick Mix"
-      WALLBAY → "Wallbay"
-      PROMOTABLE → "Promotable"
-      PICK → "Pick"
+      TODOS os demais subgrupos devem ser mantidos EXATAMENTE como escritos no código, SEM traduzir para português e SEM mudar a grafia (é Chile/espanhol): STANDARD → "STANDARD"; QUIOSCO → "QUIOSCO"; PICKMIX → "PICKMIX"; WALLBAY → "WALLBAY"; PROMOTABLE → "PROMOTABLE"; PICK → "PICK"; qualquer outro subgrupo novo, mantenha idêntico.
+  • IMPORTANTE: somente VIT, INT e TDS são expandidos. NENHUM outro token pode ter a escrita alterada ou traduzida.
   • Tokens como PRIM, SEC, G, M, P e o tipo descritivo da peça permanecem APENAS dentro do "Nome da Peça" (código original). Não os mova para Localização nem Subgrupo.
   Exemplos obrigatórios:
     LINDT_CH_NAVIDAD_VIT_TDS_APLIQUE_LAZO_52,5x37cm -> Nome da Peça: "LINDT_CH_NAVIDAD_VIT_TDS_APLIQUE_LAZO_52,5x37cm", Localização: "Vitrine", Subgrupo: "Todas", Tamanho: "52,5x37"
-    LINDT_CHILE_NAVIDAD_INT_STANDARD_REVESTIMIENTO_MESA_G_120x48cm -> Nome da Peça: "LINDT_CHILE_NAVIDAD_INT_STANDARD_REVESTIMIENTO_MESA_G_120x48cm", Localização: "Interno", Subgrupo: "Standard", Tamanho: "120x48"
+    LINDT_CHILE_NAVIDAD_INT_STANDARD_REVESTIMIENTO_MESA_G_120x48cm -> Nome da Peça: "LINDT_CHILE_NAVIDAD_INT_STANDARD_REVESTIMIENTO_MESA_G_120x48cm", Localização: "Interno", Subgrupo: "STANDARD", Tamanho: "120x48"
     LINDT_CH_NAVIDAD_VIT_TDS_DISPLAY_CONTEO_DIAS_35,5x37,63cm -> Nome da Peça: "LINDT_CH_NAVIDAD_VIT_TDS_DISPLAY_CONTEO_DIAS_35,5x37,63cm", Localização: "Vitrine", Subgrupo: "Todas", Tamanho: "35,5x37,63"
 - "Tamanho da Peça": extraia a medida embutida no final do código (ex.: 35,5x37,63cm, 340x5cm, 21X29,7cm) e REMOVA o sufixo "cm" e espaços antes dele. Mantenha o "x"/"X" e as vírgulas decimais como estão. Ex.: "340x5cm" → "340x5"; "35,5x37,63cm" → "35,5x37,63"; "21X29,7cm" → "21X29,7". Se não houver medida no código, deixe vazio ("").
-- "Subgrupo" e "O que compõe o Kit" devem ficar SEMPRE vazios (""). Não monte kits, não agrupe componentes e não separe Primária/Secundária. Mesmo que o código contenha KIT, PRIM, SEC, PRIMÁRIA ou SECUNDÁRIA, essas informações permanecem apenas dentro de "Nome da Peça". Cada linha é uma peça avulsa.
+- "O que compõe o Kit" deve ficar SEMPRE vazio (""). Não monte kits, não agrupe componentes e não separe Primária/Secundária. Mesmo que o código contenha KIT, PRIM, SEC, PRIMÁRIA ou SECUNDÁRIA, essas informações permanecem apenas dentro de "Nome da Peça". Cada linha é uma peça avulsa.
 - "Mockup" é "Sim" somente quando o texto marcar explicitamente o item como MOCKUP; caso contrário use "".
 - Remova notas entre parênteses do nome, como (superior e inferior), (Egaña, Vespucio), (PLANIFICADO), (NOVO), (3cm de profundidade), (DIAMETRO: 25cm), e sufixos soltos como "ok", "book", "2X", "descrever em book".
 - Não invente linhas, nomes, medidas, localizações ou componentes.
