@@ -438,6 +438,11 @@ export function OneNoteImportDialog({
         <div className="flex flex-wrap gap-2 px-6">
           <span className="rounded-md border bg-muted px-3 py-1 text-sm font-medium">{parsed.length} peças</span>
           <span className="rounded-md border bg-muted px-3 py-1 text-sm font-medium">{kitGroups.length} kits</span>
+          {matching && (
+            <span className="inline-flex items-center gap-1 rounded-md border px-3 py-1 text-sm font-medium text-muted-foreground" aria-live="polite">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Buscando especificações com IA...
+            </span>
+          )}
           {autoFilledCount > 0 && (
             <span className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
               <Sparkles className="h-3.5 w-3.5" /> {autoFilledCount} com spec de campanha anterior
