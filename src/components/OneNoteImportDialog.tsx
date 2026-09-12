@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FileSpreadsheet, FileText, Plus, Sparkles, Trash2 } from "lucide-react";
+import { FileSpreadsheet, FileText, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -32,7 +32,7 @@ import {
   type OneNoteColumn,
   type OneNoteSourceRow,
 } from "@/lib/parseOneNoteSheet";
-import { pieceTypeKey } from "@/lib/pieceTypeKey";
+
 import { normalizeBareKitName, splitKitByVariant } from "@/lib/splitKitPrimarySecondary";
 
 interface OneNoteSourceDialogProps {
@@ -102,12 +102,36 @@ function editableRow(value: OneNoteSourceRow): EditableRow {
 
 const DEFAULT_SPECIFICATION = "Vide Book/Manual";
 
+/** Item do catálogo do cliente: nome legível + especificação da campanha mais recente. */
 interface ClientPieceSpec {
   name: string;
   specification: string;
-  campaign_id: string;
   campaign_name: string;
-  campaign_created_at: string;
+}
+
+interface SpecMatch {
+  index: number;
+  matchName: string | null;
+  confidence: number;
+}
+
+/** Normaliza nomes para casar o retorno da IA com o catálogo sem depender de acento/caixa. */
+function normalizeName(value: string) {
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function parseClientSpecs(data: unknown): ClientPieceSpec[] {
+  if (!Array.isArray(data)) return [];
+  const items: ClientPieceSpec[] = [];
+  for (const raw of data) {
+    if (!raw || typeof raw !== "object") continue;
+    const record = raw as Record<string, unknown>;
+    const name = typeof record.name === "string" ? record.name.trim() : "";
+    const specification = typeof record.specification === "string" ? record.specification.trim() : "";
+    const campaignName = typeof record.campaign_name === "string" ? record.campaign_name : "";
+    if (name && specification) items.push({ name, specification, campaign_name: campaignName });
+  }
+  return items;
 }
 
 export function OneNoteImportDialog({
@@ -121,54 +145,113 @@ export function OneNoteImportDialog({
   useTranslation();
   const [editableRows, setEditableRows] = useState<EditableRow[]>([]);
   const [importing, setImporting] = useState(false);
+  const [matching, setMatching] = useState(false);
+  /** Rodada de casamento por IA em andamento/concluída nesta abertura (null = ainda não rodou). */
+  const matchRunRef = useRef<symbol | null>(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (open) setEditableRows(rows.map(editableRow));
+    if (open) {
+      setEditableRows(rows.map(editableRow));
+    }
+    // Ao abrir ou fechar, qualquer rodada anterior é descartada.
+    matchRunRef.current = null;
+    setMatching(false);
   }, [open, rows]);
 
-  // Especificações já escritas em outras campanhas do mesmo cliente.
-  const { data: clientSpecs = [] } = useQuery({
+  // Catálogo de especificações já escritas em outras campanhas do mesmo cliente (deduplicado por nome).
+  const { data: clientSpecs = [], isFetched: specsFetched } = useQuery({
     queryKey: ["onenote-client-piece-specs", clientId, campaignId],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_client_piece_specs", {
         p_client_id: clientId!,
+        p_exclude_campaign_id: campaignId,
       });
       if (error) throw error;
-      return ((data ?? []) as ClientPieceSpec[]).filter((item) => item.campaign_id !== campaignId);
+      return parseClientSpecs(data);
     },
     enabled: open && !!clientId,
   });
 
-  /** Melhor especificação por chave de tipo (campanha mais recente vence). */
-  const specByTypeKey = useMemo(() => {
+  /** Mapa nome normalizado → { especificação, campanha }. */
+  const specByName = useMemo(() => {
     const map = new Map<string, ClientPieceSpec>();
-    for (const item of clientSpecs) {
-      const key = pieceTypeKey(item.name);
-      if (!key || !item.specification?.trim()) continue;
-      const current = map.get(key);
-      if (!current || new Date(item.campaign_created_at) > new Date(current.campaign_created_at)) {
-        map.set(key, item);
-      }
-    }
+    for (const item of clientSpecs) map.set(normalizeName(item.name), item);
     return map;
   }, [clientSpecs]);
 
-  // Pré-preenche apenas linhas ainda vazias; nunca sobrescreve o que o usuário digitou.
+  // Casamento semântico por IA: roda uma vez por abertura, depois que as linhas e o catálogo existem.
+  // Preenche somente especificações vazias; nunca sobrescreve o que o usuário digitou.
   useEffect(() => {
-    if (specByTypeKey.size === 0) return;
-    setEditableRows((current) => {
-      let changed = false;
-      const next = current.map((row) => {
-        if (row.specification.trim()) return row;
-        const match = specByTypeKey.get(pieceTypeKey(row.value["Nome da Peça"]));
-        if (!match) return row;
-        changed = true;
-        return { ...row, specification: match.specification, specSource: match.campaign_name };
-      });
-      return changed ? next : current;
-    });
-  }, [specByTypeKey]);
+    if (!open || !specsFetched || editableRows.length === 0 || specByName.size === 0) return;
+    if (matchRunRef.current) return;
+    const run = Symbol("match-piece-specs");
+    matchRunRef.current = run;
+    // A rodada só continua válida enquanto for a atual (o diálogo não foi fechado/reaberto).
+    const isCurrent = () => matchRunRef.current === run;
+
+    // Captura os ids no momento do envio: as linhas podem ser editadas/removidas enquanto a IA responde.
+    const snapshot = editableRows
+      .map((row) => ({ id: row.id, value: row.value }))
+      .filter((row) => row.value["Nome da Peça"].trim());
+    if (snapshot.length === 0) return;
+
+    setMatching(true);
+    (async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke<{ matches?: SpecMatch[]; error?: string }>(
+          "match-piece-specs",
+          {
+            body: {
+              pieces: snapshot.map((row, index) => ({
+                index,
+                name: row.value["Nome da Peça"].trim(),
+                localizacao: row.value["Localização"].trim(),
+                subgrupo: row.value["Subgrupo"].trim(),
+              })),
+              catalog: clientSpecs.map((item) => ({ name: item.name })),
+            },
+          },
+        );
+        if (!isCurrent()) return;
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        const matches = Array.isArray(data?.matches) ? data.matches : [];
+
+        const specByRowId = new Map<string, ClientPieceSpec>();
+        for (const match of matches) {
+          if (!match?.matchName) continue;
+          const row = snapshot[match.index];
+          const spec = specByName.get(normalizeName(match.matchName));
+          if (row && spec) specByRowId.set(row.id, spec);
+        }
+        if (specByRowId.size === 0) return;
+
+        setEditableRows((current) => {
+          let changed = false;
+          const next = current.map((row) => {
+            if (row.specification.trim()) return row;
+            const spec = specByRowId.get(row.id);
+            if (!spec) return row;
+            changed = true;
+            return { ...row, specification: spec.specification, specSource: spec.campaign_name };
+          });
+          return changed ? next : current;
+        });
+      } catch (matchError: unknown) {
+        // Falha da IA não bloqueia o fluxo: o usuário segue preenchendo manualmente.
+        console.error("match-piece-specs failed", matchError);
+        if (isCurrent()) {
+          toast.message("Não foi possível sugerir especificações com IA.", {
+            description: "Você pode preencher manualmente ou usar \"Importar especificação\" depois.",
+          });
+        }
+      } finally {
+        if (isCurrent()) setMatching(false);
+      }
+    })();
+    // editableRows entra só para disparar quando as linhas são semeadas; o ref evita repetição.
+  }, [open, specsFetched, specByName, clientSpecs, editableRows]);
 
   /** Peças geradas por linha, para levar a especificação conferida até a inserção. */
   const parsedByRow = useMemo(
@@ -355,6 +438,11 @@ export function OneNoteImportDialog({
         <div className="flex flex-wrap gap-2 px-6">
           <span className="rounded-md border bg-muted px-3 py-1 text-sm font-medium">{parsed.length} peças</span>
           <span className="rounded-md border bg-muted px-3 py-1 text-sm font-medium">{kitGroups.length} kits</span>
+          {matching && (
+            <span className="inline-flex items-center gap-1 rounded-md border px-3 py-1 text-sm font-medium text-muted-foreground" aria-live="polite">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Buscando especificações com IA...
+            </span>
+          )}
           {autoFilledCount > 0 && (
             <span className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
               <Sparkles className="h-3.5 w-3.5" /> {autoFilledCount} com spec de campanha anterior
