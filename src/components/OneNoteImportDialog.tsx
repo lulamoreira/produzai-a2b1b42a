@@ -213,7 +213,7 @@ export function OneNoteImportDialog({
             },
           },
         );
-        if (cancelled) return;
+        if (!isCurrent()) return;
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
         const matches = Array.isArray(data?.matches) ? data.matches : [];
@@ -241,21 +241,17 @@ export function OneNoteImportDialog({
       } catch (matchError: unknown) {
         // Falha da IA não bloqueia o fluxo: o usuário segue preenchendo manualmente.
         console.error("match-piece-specs failed", matchError);
-        if (!cancelled) {
+        if (isCurrent()) {
           toast.message("Não foi possível sugerir especificações com IA.", {
             description: "Você pode preencher manualmente ou usar \"Importar especificação\" depois.",
           });
         }
       } finally {
-        if (!cancelled) setMatching(false);
+        if (isCurrent()) setMatching(false);
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
     // editableRows entra só para disparar quando as linhas são semeadas; o ref evita repetição.
-  }, [open, specsFetched, specByName, clientSpecs, editableRows, campaignId, rows.length]);
+  }, [open, specsFetched, specByName, clientSpecs, editableRows]);
 
   /** Peças geradas por linha, para levar a especificação conferida até a inserção. */
   const parsedByRow = useMemo(
