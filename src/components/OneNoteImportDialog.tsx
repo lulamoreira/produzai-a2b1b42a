@@ -401,6 +401,20 @@ export function OneNoteImportDialog({
                       )}
                     </TableCell>
                   ))}
+                  <TableCell className="p-1.5 align-top">
+                    <Textarea
+                      aria-label={`Especificação da linha ${index + 1}`}
+                      className="min-h-16 resize-y"
+                      placeholder={DEFAULT_SPECIFICATION}
+                      value={row.specification}
+                      onChange={(event) => updateSpecification(row.id, event.target.value)}
+                    />
+                    {row.specSource && row.specification.trim() && (
+                      <span className="mt-1 inline-flex items-center gap-1 rounded border border-primary/40 bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
+                        <Sparkles className="h-3 w-3" /> spec de {row.specSource}
+                      </span>
+                    )}
+                  </TableCell>
                   <TableCell className="p-1.5">
                     <Button
                       type="button"

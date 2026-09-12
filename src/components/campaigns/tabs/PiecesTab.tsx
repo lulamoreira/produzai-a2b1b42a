@@ -1588,6 +1588,7 @@ export default function PiecesTab({
         campaignId={campaignId}
         campaignName={campaign?.name || "campanha atual"}
         rows={oneNoteRows}
+        clientId={clientId}
       />
 
 
