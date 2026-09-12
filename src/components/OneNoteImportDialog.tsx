@@ -226,6 +226,13 @@ export function OneNoteImportDialog({
     )));
   };
 
+  /** Edição manual da especificação: remove o selo de preenchimento automático. */
+  const updateSpecification = (id: string, value: string) => {
+    setEditableRows((current) => current.map((row) => (
+      row.id === id ? { ...row, specification: value, specSource: null } : row
+    )));
+  };
+
   const handleConfirm = async () => {
     if (importing || parsed.length === 0) return;
     setImporting(true);
@@ -259,7 +266,7 @@ export function OneNoteImportDialog({
             kit_only: piece.kit_only,
             is_mockup: piece.is_mockup,
             sub_location: null,
-            specification: "Vide Book/Manual",
+            specification: specByPieceIndex[index] ?? DEFAULT_SPECIFICATION,
             installation_instructions: "Sem informações específicas",
             is_deleted: false,
             is_new: false,
@@ -348,6 +355,11 @@ export function OneNoteImportDialog({
         <div className="flex flex-wrap gap-2 px-6">
           <span className="rounded-md border bg-muted px-3 py-1 text-sm font-medium">{parsed.length} peças</span>
           <span className="rounded-md border bg-muted px-3 py-1 text-sm font-medium">{kitGroups.length} kits</span>
+          {autoFilledCount > 0 && (
+            <span className="inline-flex items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-3 py-1 text-sm font-medium text-primary">
+              <Sparkles className="h-3.5 w-3.5" /> {autoFilledCount} com spec de campanha anterior
+            </span>
+          )}
           {kitGroups.map((group) => (
             <span key={`${group.kitName}-${group.category}`} className="rounded-md border px-2 py-1 text-xs text-muted-foreground">
               {group.displayName}: {group.indexes.length}
@@ -356,13 +368,14 @@ export function OneNoteImportDialog({
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto border-y">
-          <Table className="min-w-[1280px] table-fixed">
+          <Table className="min-w-[1520px] table-fixed">
             <TableHeader className="sticky top-0 z-10 bg-background">
               <TableRow>
                 <TableHead className="w-12">#</TableHead>
                 {ONE_NOTE_COLUMNS.map((column) => (
                   <TableHead key={column} className={column === "Nome da Peça" ? "w-72" : "w-52"}>{column}</TableHead>
                 ))}
+                <TableHead className="w-64">Especificação</TableHead>
                 <TableHead className="w-14" />
               </TableRow>
             </TableHeader>
