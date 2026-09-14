@@ -410,7 +410,7 @@ async function buildTransposedSheet(
     }
 
     if (mi === IMAGE_ROW_INDEX) row.height = IMAGE_ROW_HEIGHT;
-    else if (mi === 5 || mi === 6) row.height = 80;
+    else if (mi === 4 || mi === 5 || mi === 6) row.height = 80;
     else row.height = 25;
   }
 
