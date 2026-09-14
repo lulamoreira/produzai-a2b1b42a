@@ -757,7 +757,8 @@ const SupplierPortal = () => {
         installation: extraCosts.installation_value,
         freight: extraCosts.freight_value,
         discount: extraCosts.discount_value,
-        grandTotal,
+        // Gross total — exportSupplierBudget subtracts the discount itself.
+        grandTotal: grandTotal + (extraCosts.discount_value || 0),
         labels: excelLabels,
         rateio: {
           pieces: allPieces as any,
