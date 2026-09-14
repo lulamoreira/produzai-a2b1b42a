@@ -72,6 +72,34 @@ function formatLocation(
   return "";
 }
 
+function getKitComponentField(
+  kitId: string,
+  field: "size" | "specification" | "installation_instructions",
+  kitPieces: CampaignKitPiece[],
+  piecePool: CampaignPiece[],
+): string {
+  const components = kitPieces
+    .filter((kp) => kp.kit_id === kitId)
+    .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+  if (components.length === 0) return "";
+
+  const lines: string[] = [];
+  for (const kp of components) {
+    const piece = piecePool.find((p) => p.id === kp.piece_id);
+    if (!piece) continue;
+    let value = "";
+    if (field === "size") {
+      value = piece.size || "";
+    } else if (field === "specification") {
+      value = piece.specification || "";
+    } else {
+      value = piece.installation_instructions || "Sem informações específicas";
+    }
+    lines.push(`${piece.name}: ${value}`);
+  }
+  return lines.join("\n");
+}
+
 // ─── Color helpers ───────────────────────────────────────
 
 function makeColors(palette?: ColorPalette) {
@@ -382,7 +410,7 @@ async function buildTransposedSheet(
     }
 
     if (mi === IMAGE_ROW_INDEX) row.height = IMAGE_ROW_HEIGHT;
-    else if (mi === 5 || mi === 6) row.height = 80;
+    else if (mi === 4 || mi === 5 || mi === 6) row.height = 80;
     else row.height = 25;
   }
 
@@ -605,20 +633,23 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
       installation_instructions: p.installation_instructions || "",
       is_new: (p as any).is_new || false,
     })),
-    ...kits.map((k) => ({
-      id: k.id,
-      code: k.code,
-      name: k.name,
-      size: "",
-      store_category: k.category,
-      sub_location: k.sub_location,
-      specification: "",
-      installation_instructions: "",
-      image_url: (k as any).image_report_url || k.image_url,
-      is_new: (k as any).is_new || false,
-      _type: "kit" as const,
-      display_order: k.display_order,
-    })),
+    ...kits.map((k) => {
+      const piecePool = allPieces && allPieces.length > 0 ? allPieces : pieces;
+      return {
+        id: k.id,
+        code: k.code,
+        name: k.name,
+        size: getKitComponentField(k.id, "size", kitPieces, piecePool),
+        store_category: k.category,
+        sub_location: k.sub_location,
+        specification: getKitComponentField(k.id, "specification", kitPieces, piecePool),
+        installation_instructions: getKitComponentField(k.id, "installation_instructions", kitPieces, piecePool),
+        image_url: (k as any).image_report_url || k.image_url,
+        is_new: (k as any).is_new || false,
+        _type: "kit" as const,
+        display_order: k.display_order,
+      };
+    }),
   ].sort((a, b) => {
     if (sortByCode) {
       return (Number(a.code ?? Number.MAX_SAFE_INTEGER) - Number(b.code ?? Number.MAX_SAFE_INTEGER))
