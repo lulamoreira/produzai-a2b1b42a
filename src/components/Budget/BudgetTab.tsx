@@ -1515,7 +1515,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       const freight = ec?.freight_value != null ? Number(ec.freight_value) : null;
       const discount = ec?.discount_value != null ? Number(ec.discount_value) : 0;
       const itemsTotal = rows.reduce((s, r) => s + (r.type === "kit_header" ? 0 : r.lineTotal), 0);
-      const grandTotal = itemsTotal + (installation || 0) + (freight || 0) - discount;
+      // Gross total — exportSupplierBudget subtracts the discount itself.
+      const grandTotal = itemsTotal + (installation || 0) + (freight || 0);
 
       // ─── Build Rateio (Matriz Lojas x Peças) using the negotiation rateio
       //     for this supplier. Falls back to the original campaign qtyMap when
