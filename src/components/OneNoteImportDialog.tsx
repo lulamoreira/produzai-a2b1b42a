@@ -335,6 +335,27 @@ export function OneNoteImportDialog({
       const codeToId = new Map<number, string>();
       const rowCodes: number[] = [];
 
+      const [{ data: maxPieceOrder }, { data: maxKitOrder }] = await Promise.all([
+        supabase
+          .from("campaign_pieces")
+          .select("display_order")
+          .eq("campaign_id", campaignId)
+          .eq("is_deleted", false)
+          .order("display_order", { ascending: false })
+          .limit(1),
+        supabase
+          .from("campaign_kits")
+          .select("display_order")
+          .eq("campaign_id", campaignId)
+          .eq("is_deleted", false)
+          .order("display_order", { ascending: false })
+          .limit(1),
+      ]);
+      let nextOrder = Math.max(
+        (maxPieceOrder?.[0]?.display_order ?? -1),
+        (maxKitOrder?.[0]?.display_order ?? -1),
+      ) + 1;
+
       for (let index = 0; index < parsed.length; index += 1) {
         const piece = parsed[index];
         const code = nextPieceCode++;
@@ -353,7 +374,7 @@ export function OneNoteImportDialog({
             installation_instructions: "Sem informações específicas",
             is_deleted: false,
             is_new: false,
-            display_order: index,
+            display_order: nextOrder++,
           })
           .select("id, code")
           .single();
