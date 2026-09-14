@@ -180,10 +180,13 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       }
     });
 
-    const ec = extraCosts.find((e) => e.supplier_id === sup.id);
+    const ec = extraCosts.find((e) => e.supplier_id === sup.id) as any;
     const installation = ec?.installation_value != null ? Number(ec.installation_value) : null;
     const freight = ec?.freight_value != null ? Number(ec.freight_value) : null;
+    // Same discount the app applies to the supplier total / "Melhor Proposta" card.
+    const discount = Number(ec?.adjusted_discount_value ?? ec?.discount_value ?? 0) || 0;
     const itemsTotal = rows.reduce((s, r) => s + (r.type === "kit_header" ? 0 : r.lineTotal), 0);
+    // Gross total — exportSupplierBudget subtracts the discount itself.
     const grandTotal = itemsTotal + (installation || 0) + (freight || 0);
 
     return buildSupplierBudgetWorkbook({
@@ -195,6 +198,7 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
       rows,
       installation,
       freight,
+      discount,
       grandTotal,
       rateio: {
         pieces,
