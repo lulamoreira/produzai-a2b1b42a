@@ -410,6 +410,7 @@ export function OneNoteImportDialog({
               code: nextKitCode++,
               is_deleted: false,
               is_mockup: group.indexes.some((index) => parsed[index].is_mockup),
+              display_order: nextOrder++,
             })
             .select("id")
             .single();
