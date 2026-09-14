@@ -72,6 +72,34 @@ function formatLocation(
   return "";
 }
 
+function getKitComponentField(
+  kitId: string,
+  field: "size" | "specification" | "installation_instructions",
+  kitPieces: CampaignKitPiece[],
+  piecePool: CampaignPiece[],
+): string {
+  const components = kitPieces
+    .filter((kp) => kp.kit_id === kitId)
+    .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0));
+  if (components.length === 0) return "";
+
+  const lines: string[] = [];
+  for (const kp of components) {
+    const piece = piecePool.find((p) => p.id === kp.piece_id);
+    if (!piece) continue;
+    let value = "";
+    if (field === "size") {
+      value = piece.size || "";
+    } else if (field === "specification") {
+      value = piece.specification || "";
+    } else {
+      value = piece.installation_instructions || "Sem informações específicas";
+    }
+    lines.push(`${piece.name}: ${value}`);
+  }
+  return lines.join("\n");
+}
+
 // ─── Color helpers ───────────────────────────────────────
 
 function makeColors(palette?: ColorPalette) {
