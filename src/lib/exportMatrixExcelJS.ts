@@ -633,20 +633,23 @@ export async function appendMatrixSheets(wb: ExcelJS.Workbook, params: AppendMat
       installation_instructions: p.installation_instructions || "",
       is_new: (p as any).is_new || false,
     })),
-    ...kits.map((k) => ({
-      id: k.id,
-      code: k.code,
-      name: k.name,
-      size: "",
-      store_category: k.category,
-      sub_location: k.sub_location,
-      specification: "",
-      installation_instructions: "",
-      image_url: (k as any).image_report_url || k.image_url,
-      is_new: (k as any).is_new || false,
-      _type: "kit" as const,
-      display_order: k.display_order,
-    })),
+    ...kits.map((k) => {
+      const piecePool = allPieces && allPieces.length > 0 ? allPieces : pieces;
+      return {
+        id: k.id,
+        code: k.code,
+        name: k.name,
+        size: getKitComponentField(k.id, "size", kitPieces, piecePool),
+        store_category: k.category,
+        sub_location: k.sub_location,
+        specification: getKitComponentField(k.id, "specification", kitPieces, piecePool),
+        installation_instructions: getKitComponentField(k.id, "installation_instructions", kitPieces, piecePool),
+        image_url: (k as any).image_report_url || k.image_url,
+        is_new: (k as any).is_new || false,
+        _type: "kit" as const,
+        display_order: k.display_order,
+      };
+    }),
   ].sort((a, b) => {
     if (sortByCode) {
       return (Number(a.code ?? Number.MAX_SAFE_INTEGER) - Number(b.code ?? Number.MAX_SAFE_INTEGER))
