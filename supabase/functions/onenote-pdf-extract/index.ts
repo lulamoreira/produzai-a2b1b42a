@@ -107,22 +107,15 @@ Retorne SOMENTE JSON estrito no formato {"rows":[...]}, sem markdown ou explica�
 Cada row deve ter EXATAMENTE estas seis chaves de texto: "Nome da Peça", "Localização", "Tamanho da Peça", "Subgrupo", "O que compõe o Kit", "Mockup".
 
 REGRAS:
-- Ignore títulos decorativos, observações soltas, datas e textos de apoio que não sejam peças.
-- Cada peça costuma vir como um CÓDIGO DE ARQUIVO no formato LINDT_<PAÍS>_<CAMPANHA>_<LOCALIZAÇÃO>_<SUBGRUPO>_<TIPO...>_<TAMANHO>. O "Nome da Peça" deve ser o PRÓPRIO CÓDIGO original (não traduza, não remova prefixos).
-- CLASSIFICAÇÃO PELO CÓDIGO (não use os títulos de seção). O formato do código é LINDT_<PAÍS>_<CAMPANHA>_<LOCALIZAÇÃO>_<SUBGRUPO>_<TIPO...>_<TAMANHO>. Identifique os tokens pelo VALOR (não por posição fixa), porque o país às vezes é "CH" e às vezes "CHILE".
-  • "Localização" = expanda SOMENTE estas siglas do token de LOCALIZAÇÃO:
-      VIT → "Vitrine"
-      INT → "Interno"
-      Qualquer outro token de localização deve ser mantido EXATAMENTE como está escrito no código (sem expandir, sem traduzir, sem mudar a grafia).
-  • "Subgrupo" = o token seguinte. Expanda SOMENTE a sigla:
-      TDS → "Todas"
-      TODOS os demais subgrupos devem ser mantidos EXATAMENTE como escritos no código, SEM traduzir para português e SEM mudar a grafia (é Chile/espanhol): STANDARD → "STANDARD"; QUIOSCO → "QUIOSCO"; PICKMIX → "PICKMIX"; WALLBAY → "WALLBAY"; PROMOTABLE → "PROMOTABLE"; PICK → "PICK"; qualquer outro subgrupo novo, mantenha idêntico.
-  • IMPORTANTE: somente VIT, INT e TDS são expandidos. NENHUM outro token pode ter a escrita alterada ou traduzida.
-  • Tokens como PRIM, SEC, G, M, P e o tipo descritivo da peça permanecem APENAS dentro do "Nome da Peça" (código original). Não os mova para Localização nem Subgrupo.
-  Exemplos obrigatórios:
-    LINDT_CH_NAVIDAD_VIT_TDS_APLIQUE_LAZO_52,5x37cm -> Nome da Peça: "LINDT_CH_NAVIDAD_VIT_TDS_APLIQUE_LAZO_52,5x37cm", Localização: "Vitrine", Subgrupo: "Todas", Tamanho: "52,5x37"
-    LINDT_CHILE_NAVIDAD_INT_STANDARD_REVESTIMIENTO_MESA_G_120x48cm -> Nome da Peça: "LINDT_CHILE_NAVIDAD_INT_STANDARD_REVESTIMIENTO_MESA_G_120x48cm", Localização: "Interno", Subgrupo: "STANDARD", Tamanho: "120x48"
-    LINDT_CH_NAVIDAD_VIT_TDS_DISPLAY_CONTEO_DIAS_35,5x37,63cm -> Nome da Peça: "LINDT_CH_NAVIDAD_VIT_TDS_DISPLAY_CONTEO_DIAS_35,5x37,63cm", Localização: "Vitrine", Subgrupo: "Todas", Tamanho: "35,5x37,63"
+- Ignore títulos decorativos soltos, observações, datas e textos de apoio que não sejam peças — mas USE os títulos de seção/subseção para classificar (veja abaixo).
+- Cada peça é um CÓDIGO DE ARQUIVO no formato LINDT_<PAÍS>_<CAMPANHA>_<LOCALIZAÇÃO>_<SUBGRUPO>_<TIPO...>_<TAMANHO>. O "Nome da Peça" deve ser o PRÓPRIO CÓDIGO original (não traduza, não remova prefixos).
+- CLASSIFICAÇÃO PELOS TÍTULOS DO PDF (hierarquia de seções), NÃO pelos tokens do código:
+  O PDF é organizado em SEÇÕES (título de nível 1, ex.: PAPELARIA, VITRINES, STANDARDS, INTERNOS, QUIOSCO) e, dentro delas, SUBSEÇÕES (título de nível 2 logo acima das listas de peças, ex.: "TAGS SELL OFF", "TAGS BLACK WEEK", "TAGS WALLBAY", "TODAS AS LOJAS", "SHELFTALKS", "CUBOS", "CANTONEIRAS").
+  • "Localização" = o título da SEÇÃO (nível 1) vigente acima da peça, VERBATIM como está no PDF, SEM traduzir nem mudar a grafia (é Chile/espanhol). Ex.: peças sob "PAPELARIA" → Localização "PAPELARIA"; sob "VITRINES" → "VITRINES"; sob "STANDARDS" → "STANDARDS".
+  • "Subgrupo" = o título da SUBSEÇÃO (nível 2) imediatamente acima da peça, VERBATIM, removendo apenas um prefixo genérico "TAGS " quando existir. Ex.: sob "TAGS SELL OFF" → "SELL OFF"; "TAGS WALLBAY" → "WALLBAY"; "TAGS BLACK WEEK" → "BLACK WEEK"; "TODAS AS LOJAS" → "TODAS AS LOJAS"; "SHELFTALKS" → "SHELFTALKS". Se a peça não tiver subseção (ficar direto sob a seção), deixe "Subgrupo" vazio ("").
+  • NÃO use os tokens do código (VIT, INT, TAG, TDS, SELL, PRODUCTO, BF, WALLBAY, QUIOSCO...) para Localização/Subgrupo — esses permanecem SOMENTE dentro do "Nome da Peça".
+  • Como o texto extraído perde a formatação, infira a hierarquia assim: a SEÇÃO costuma ser uma linha curta, isolada, em MAIÚSCULAS (PAPELARIA, VITRINES, STANDARDS...); a SUBSEÇÃO é o título logo acima de um bloco de códigos (TAGS ..., TODAS AS LOJAS, SHELFTALKS, CUBOS...). Acompanhe a SEÇÃO e a SUBSEÇÃO "correntes" conforme percorre o texto e atribua a cada peça a seção/subseção vigentes.
+  • Marcadores "--- PÁGINA N ---" NÃO são seções nem subseções: ignore-os e mantenha a seção/subseção correntes ao atravessar páginas.
 - "Tamanho da Peça": extraia a medida embutida no final do código (ex.: 35,5x37,63cm, 340x5cm, 21X29,7cm) e REMOVA o sufixo "cm" e espaços antes dele. Mantenha o "x"/"X" e as vírgulas decimais como estão. Ex.: "340x5cm" → "340x5"; "35,5x37,63cm" → "35,5x37,63"; "21X29,7cm" → "21X29,7". Se não houver medida no código, deixe vazio ("").
 - "O que compõe o Kit" deve ficar SEMPRE vazio (""). Não monte kits, não agrupe componentes e não separe Primária/Secundária. Mesmo que o código contenha KIT, PRIM, SEC, PRIMÁRIA ou SECUNDÁRIA, essas informações permanecem apenas dentro de "Nome da Peça". Cada linha é uma peça avulsa.
 - "Mockup" é "Sim" somente quando o texto marcar explicitamente o item como MOCKUP; caso contrário use "".
