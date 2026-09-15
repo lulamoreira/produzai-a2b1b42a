@@ -389,6 +389,14 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
               </div>
               {selectedTeamId === team.id && (
                 <div className="border-t p-3 space-y-4 bg-card">
+                  <TeamCoverageSection
+                    team={team}
+                    canEdit={canEdit}
+                    campaignId={campaignId}
+                    availableCities={availableCities}
+                    availableStates={availableStates}
+                  />
+                  <hr className="border-border" />
                   <TeamVehiclesSection teamId={team.id} canEdit={canEdit} campaignId={campaignId} />
                   <hr className="border-border" />
                   <TeamMembersSection 
