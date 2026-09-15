@@ -168,9 +168,19 @@ REGRAS:
     const extracted = JSON.parse(cleaned) as { rows?: unknown };
     if (!Array.isArray(extracted.rows)) return response({ error: "A IA retornou dados em formato inválido." }, 422);
 
+    const QUOTE_CHARS = /["'"""''']/g;
+    const MULTI_SPACE = /\s{2,}/g;
+    const QUOTE_COLUMNS = new Set(["Localização", "Subgrupo"]);
+
     const rows = extracted.rows.map((item: unknown) => {
       const source = item && typeof item === "object" ? item as Record<string, unknown> : {};
-      return Object.fromEntries(COLUMNS.map((column) => [column, typeof source[column] === "string" ? source[column].trim() : ""]));
+      return Object.fromEntries(COLUMNS.map((column) => {
+        let value = typeof source[column] === "string" ? source[column].trim() : "";
+        if (QUOTE_COLUMNS.has(column)) {
+          value = value.replace(QUOTE_CHARS, "").replace(MULTI_SPACE, " ").trim();
+        }
+        return [column, value];
+      }));
     });
     return response({ rows });
   } catch (error: unknown) {
