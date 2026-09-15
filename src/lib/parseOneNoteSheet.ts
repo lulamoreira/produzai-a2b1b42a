@@ -111,12 +111,7 @@ export function transformOneNoteRows(rows: Record<string, unknown>[]): OneNotePa
     const comp = cell(row, COL.kitContent).trim();
     const isMockup = cell(row, COL.mockup).trim().toLowerCase() === "sim";
 
-    if (sub) {
-      if (!nome) continue;
-      result.push({ name: nome, kitName: sub, category: loc, size: tam, kit_only: true, is_mockup: isMockup });
-      continue;
-    }
-
+    // "O que compõe o Kit" é a ÚNICA forma de criar kit: o Subgrupo vira sub-localização.
     if (comp) {
       if (!nome) continue;
       for (const component of expandKitContent(comp)) {
@@ -124,6 +119,7 @@ export function transformOneNoteRows(rows: Record<string, unknown>[]): OneNotePa
           name: component.name,
           kitName: nome,
           category: loc,
+          subLocation: sub,
           size: component.size,
           kit_only: true,
           is_mockup: isMockup,
@@ -133,7 +129,15 @@ export function transformOneNoteRows(rows: Record<string, unknown>[]): OneNotePa
     }
 
     if (!nome) continue;
-    result.push({ name: nome, kitName: "", category: loc, size: tam, kit_only: false, is_mockup: isMockup });
+    result.push({
+      name: nome,
+      kitName: "",
+      category: loc,
+      subLocation: sub,
+      size: tam,
+      kit_only: false,
+      is_mockup: isMockup,
+    });
   }
 
   return result;
