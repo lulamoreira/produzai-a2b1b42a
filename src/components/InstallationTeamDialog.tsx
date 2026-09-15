@@ -202,11 +202,22 @@ interface InstallationTeamDialogProps {
   canEdit: boolean;
   initialTeamId?: string | null;
   clientId?: string;
+  /** Campaign stores, used to offer the available cities / states for support coverage. */
+  stores?: Array<{ city?: string | null; state?: string | null }>;
 }
 
-export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit, initialTeamId, clientId }: InstallationTeamDialogProps) {
+export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit, initialTeamId, clientId, stores = [] }: InstallationTeamDialogProps) {
   const queryClient = useQueryClient();
   const { data: teams = [] } = useInstallationTeams(campaignId);
+
+  const availableCities = useMemo(
+    () => [...new Set(stores.map((s) => (s.city ?? "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [stores]
+  );
+  const availableStates = useMemo(
+    () => [...new Set(stores.map((s) => (s.state ?? "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [stores]
+  );
   const { data: teamStoreCounts = {} } = useQuery({
     queryKey: ["team_store_counts", campaignId],
     queryFn: async () => {
