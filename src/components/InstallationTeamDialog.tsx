@@ -20,6 +20,10 @@ export type InstallationTeam = {
   campaign_id: string;
   name: string;
   created_at: string;
+  /** Support ("coringa") presence scope: 'none' | 'all' | 'city' | 'state'. */
+  coverage_scope: CoverageScope;
+  /** City names when scope='city', UFs when scope='state'; ignored otherwise. */
+  coverage_values: string[];
 };
 
 export type TeamVehicle = {
