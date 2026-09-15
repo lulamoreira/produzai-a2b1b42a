@@ -232,11 +232,19 @@ export function OneNoteImportDialog({
         setEditableRows((current) => {
           let changed = false;
           const next = current.map((row) => {
-            if (row.specification.trim()) return row;
             const spec = specByRowId.get(row.id);
             if (!spec) return row;
-            changed = true;
-            return { ...row, specification: spec.specification, specSource: spec.campaign_name };
+            let updated = row;
+            // Nome do catálogo do cliente, salvo quando o usuário já editou o nome à mão.
+            if (!row.nameEdited && spec.name && row.value["Nome da Peça"].trim() !== spec.name) {
+              updated = { ...updated, value: { ...updated.value, "Nome da Peça": spec.name } };
+              changed = true;
+            }
+            if (!row.specification.trim()) {
+              updated = { ...updated, specification: spec.specification, specSource: spec.campaign_name };
+              changed = true;
+            }
+            return changed ? updated : row;
           });
           return changed ? next : current;
         });
