@@ -94,10 +94,12 @@ interface EditableRow {
   specification: string;
   /** Campanha de origem quando a especificação foi preenchida automaticamente. */
   specSource: string | null;
+  /** True quando o usuário editou o nome à mão: a IA não pode sobrescrever. */
+  nameEdited: boolean;
 }
 
 function editableRow(value: OneNoteSourceRow): EditableRow {
-  return { id: crypto.randomUUID(), value: { ...value }, specification: "", specSource: null };
+  return { id: crypto.randomUUID(), value: { ...value }, specification: "", specSource: null, nameEdited: false };
 }
 
 const DEFAULT_SPECIFICATION = "Vide Book/Manual";
