@@ -368,6 +368,11 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
                           <MapPin className="w-3 h-3" /> {teamStoreCounts[team.id]} {teamStoreCounts[team.id] === 1 ? "loja" : "lojas"}
                         </Badge>
                       )}
+                      {getCoverageBadgeLabel(team) && (
+                        <Badge className="ml-1 text-xs shrink-0 bg-[var(--s-warning,theme(colors.amber.500))] text-primary-foreground">
+                          {getCoverageBadgeLabel(team)}
+                        </Badge>
+                      )}
                     </>
                   )}
                 </div>
