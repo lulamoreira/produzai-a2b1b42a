@@ -416,6 +416,110 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
   );
 }
 
+// ─── Support Coverage Section ("equipe de apoio") ────────
+
+function TeamCoverageSection({
+  team,
+  canEdit,
+  campaignId,
+  availableCities,
+  availableStates,
+}: {
+  team: InstallationTeam;
+  canEdit: boolean;
+  campaignId: string;
+  availableCities: string[];
+  availableStates: string[];
+}) {
+  const queryClient = useQueryClient();
+  const [scope, setScope] = useState<CoverageScope>((team.coverage_scope ?? "none") as CoverageScope);
+  const [values, setValues] = useState<string[]>(team.coverage_values ?? []);
+
+  // Keep local draft in sync when the team record changes (e.g. after refetch).
+  useEffect(() => {
+    setScope((team.coverage_scope ?? "none") as CoverageScope);
+    setValues(team.coverage_values ?? []);
+  }, [team.id, team.coverage_scope, team.coverage_values]);
+
+  const options = scope === "city" ? availableCities : scope === "state" ? availableStates : [];
+  const dirty =
+    scope !== ((team.coverage_scope ?? "none") as CoverageScope) ||
+    JSON.stringify([...values].sort()) !== JSON.stringify([...(team.coverage_values ?? [])].sort());
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        coverage_scope: scope,
+        coverage_values: scope === "city" || scope === "state" ? values : [],
+      };
+      const { error } = await supabase.from("installation_teams").update(payload as any).eq("id", team.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["installation_teams", campaignId] });
+      toast.success("Presença adicional atualizada!");
+    },
+    onError: () => toast.error("Erro ao salvar presença adicional"),
+  });
+
+  const toggleValue = (value: string) => {
+    setValues((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
+  };
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold text-foreground">Presença adicional (APOIO)</p>
+      <p className="text-xs text-muted-foreground">
+        A equipe de apoio é sempre um acréscimo — nunca substitui a equipe atribuída à loja.
+      </p>
+
+      <select
+        value={scope}
+        disabled={!canEdit}
+        onChange={(e) => {
+          const next = e.target.value as CoverageScope;
+          setScope(next);
+          if (next === "none" || next === "all") setValues([]);
+        }}
+        className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground disabled:opacity-60"
+      >
+        <option value="none">Nenhuma</option>
+        <option value="all">Todas as lojas</option>
+        <option value="city">Cidades específicas</option>
+        <option value="state">Estados específicos</option>
+      </select>
+
+      {(scope === "city" || scope === "state") && (
+        <div className="max-h-40 overflow-y-auto rounded-md border border-border p-2 space-y-1 bg-card">
+          {options.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              {scope === "city" ? "Nenhuma cidade cadastrada nas lojas." : "Nenhuma UF cadastrada nas lojas."}
+            </p>
+          )}
+          {options.map((opt) => (
+            <label key={opt} className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                disabled={!canEdit}
+                checked={values.includes(opt)}
+                onChange={() => toggleValue(opt)}
+                className="accent-[hsl(var(--primary))]"
+              />
+              {opt}
+            </label>
+          ))}
+        </div>
+      )}
+
+      {canEdit && (
+        <Button size="sm" className="h-7 text-xs" disabled={!dirty || save.isPending} onClick={() => save.mutate()}>
+          <Check className="w-3 h-3 mr-1" /> Salvar presença adicional
+        </Button>
+      )}
+    </div>
+  );
+}
+
 // ─── Vehicles Section ────────────────────────────────────
 
 function TeamVehiclesSection({ teamId, canEdit, campaignId }: { teamId: string; canEdit: boolean; campaignId: string }) {
