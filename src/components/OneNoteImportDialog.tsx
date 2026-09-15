@@ -385,7 +385,7 @@ export function OneNoteImportDialog({
             size: piece.size,
             kit_only: piece.kit_only,
             is_mockup: piece.is_mockup,
-            sub_location: null,
+            sub_location: piece.subLocation || null,
             specification: specByPieceIndex[index] ?? DEFAULT_SPECIFICATION,
             installation_instructions: "Sem informações específicas",
             is_deleted: false,
