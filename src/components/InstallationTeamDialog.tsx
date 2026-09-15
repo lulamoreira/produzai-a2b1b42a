@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { cn, normalizeTeamName, normalizeMemberName } from "@/lib/utils";
 import { useBlockedInstallers } from "@/hooks/useBlockedInstallers";
 import { normCpf, normRg } from "@/lib/normalizeDoc";
+import { getCoverageBadgeLabel, type CoverageScope } from "@/lib/teamCoverage";
 
 // ─── Types ───────────────────────────────────────────────
 
