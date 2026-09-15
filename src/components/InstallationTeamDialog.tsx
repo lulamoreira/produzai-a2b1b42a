@@ -369,7 +369,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
                         </Badge>
                       )}
                       {getCoverageBadgeLabel(team) && (
-                        <Badge className="ml-1 text-xs shrink-0 bg-[var(--s-warning,theme(colors.amber.500))] text-primary-foreground">
+                        <Badge variant="outline" className="ml-1 text-xs shrink-0 border-primary/50 text-primary">
                           {getCoverageBadgeLabel(team)}
                         </Badge>
                       )}
