@@ -315,7 +315,13 @@ export function OneNoteImportDialog({
 
   const updateCell = (id: string, column: OneNoteColumn, value: string) => {
     setEditableRows((current) => current.map((row) => (
-      row.id === id ? { ...row, value: { ...row.value, [column]: value } } : row
+      row.id === id
+        ? {
+            ...row,
+            value: { ...row.value, [column]: value },
+            nameEdited: column === "Nome da Peça" ? true : row.nameEdited,
+          }
+        : row
     )));
   };
 
