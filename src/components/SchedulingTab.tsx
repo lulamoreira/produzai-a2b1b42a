@@ -907,6 +907,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 <DropdownMenuItem onClick={handleExportTeams}>
                   <Users className="w-3.5 h-3.5 mr-2" /> {t("scheduling.exportTeams")}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportTeamsByStore}>
+                  <Users className="w-3.5 h-3.5 mr-2" /> Exportar Por Loja
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleExport}>
                   <Download className="w-3.5 h-3.5 mr-2" /> {t("common.export")}
                 </DropdownMenuItem>
