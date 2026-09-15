@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { cn, normalizeTeamName, normalizeMemberName } from "@/lib/utils";
 import { useBlockedInstallers } from "@/hooks/useBlockedInstallers";
 import { normCpf, normRg } from "@/lib/normalizeDoc";
+import { getCoverageBadgeLabel, type CoverageScope } from "@/lib/teamCoverage";
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -20,6 +21,10 @@ export type InstallationTeam = {
   campaign_id: string;
   name: string;
   created_at: string;
+  /** Support ("coringa") presence scope: 'none' | 'all' | 'city' | 'state'. */
+  coverage_scope: CoverageScope;
+  /** City names when scope='city', UFs when scope='state'; ignored otherwise. */
+  coverage_values: string[];
 };
 
 export type TeamVehicle = {
@@ -197,11 +202,22 @@ interface InstallationTeamDialogProps {
   canEdit: boolean;
   initialTeamId?: string | null;
   clientId?: string;
+  /** Campaign stores, used to offer the available cities / states for support coverage. */
+  stores?: Array<{ city?: string | null; state?: string | null }>;
 }
 
-export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit, initialTeamId, clientId }: InstallationTeamDialogProps) {
+export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit, initialTeamId, clientId, stores = [] }: InstallationTeamDialogProps) {
   const queryClient = useQueryClient();
   const { data: teams = [] } = useInstallationTeams(campaignId);
+
+  const availableCities = useMemo(
+    () => [...new Set(stores.map((s) => (s.city ?? "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [stores]
+  );
+  const availableStates = useMemo(
+    () => [...new Set(stores.map((s) => (s.state ?? "").trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b)),
+    [stores]
+  );
   const { data: teamStoreCounts = {} } = useQuery({
     queryKey: ["team_store_counts", campaignId],
     queryFn: async () => {
@@ -352,6 +368,11 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
                           <MapPin className="w-3 h-3" /> {teamStoreCounts[team.id]} {teamStoreCounts[team.id] === 1 ? "loja" : "lojas"}
                         </Badge>
                       )}
+                      {getCoverageBadgeLabel(team) && (
+                        <Badge variant="outline" className="ml-1 text-xs shrink-0 border-primary/50 text-primary">
+                          {getCoverageBadgeLabel(team)}
+                        </Badge>
+                      )}
                     </>
                   )}
                 </div>
@@ -368,6 +389,14 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
               </div>
               {selectedTeamId === team.id && (
                 <div className="border-t p-3 space-y-4 bg-card">
+                  <TeamCoverageSection
+                    team={team}
+                    canEdit={canEdit}
+                    campaignId={campaignId}
+                    availableCities={availableCities}
+                    availableStates={availableStates}
+                  />
+                  <hr className="border-border" />
                   <TeamVehiclesSection teamId={team.id} canEdit={canEdit} campaignId={campaignId} />
                   <hr className="border-border" />
                   <TeamMembersSection 
@@ -384,6 +413,110 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
         </div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ─── Support Coverage Section ("equipe de apoio") ────────
+
+function TeamCoverageSection({
+  team,
+  canEdit,
+  campaignId,
+  availableCities,
+  availableStates,
+}: {
+  team: InstallationTeam;
+  canEdit: boolean;
+  campaignId: string;
+  availableCities: string[];
+  availableStates: string[];
+}) {
+  const queryClient = useQueryClient();
+  const [scope, setScope] = useState<CoverageScope>((team.coverage_scope ?? "none") as CoverageScope);
+  const [values, setValues] = useState<string[]>(team.coverage_values ?? []);
+
+  // Keep local draft in sync when the team record changes (e.g. after refetch).
+  useEffect(() => {
+    setScope((team.coverage_scope ?? "none") as CoverageScope);
+    setValues(team.coverage_values ?? []);
+  }, [team.id, team.coverage_scope, team.coverage_values]);
+
+  const options = scope === "city" ? availableCities : scope === "state" ? availableStates : [];
+  const dirty =
+    scope !== ((team.coverage_scope ?? "none") as CoverageScope) ||
+    JSON.stringify([...values].sort()) !== JSON.stringify([...(team.coverage_values ?? [])].sort());
+
+  const save = useMutation({
+    mutationFn: async () => {
+      const payload = {
+        coverage_scope: scope,
+        coverage_values: scope === "city" || scope === "state" ? values : [],
+      };
+      const { error } = await supabase.from("installation_teams").update(payload as any).eq("id", team.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["installation_teams", campaignId] });
+      toast.success("Presença adicional atualizada!");
+    },
+    onError: () => toast.error("Erro ao salvar presença adicional"),
+  });
+
+  const toggleValue = (value: string) => {
+    setValues((prev) => (prev.includes(value) ? prev.filter((v) => v !== value) : [...prev, value]));
+  };
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-semibold text-foreground">Presença adicional (APOIO)</p>
+      <p className="text-xs text-muted-foreground">
+        A equipe de apoio é sempre um acréscimo — nunca substitui a equipe atribuída à loja.
+      </p>
+
+      <select
+        value={scope}
+        disabled={!canEdit}
+        onChange={(e) => {
+          const next = e.target.value as CoverageScope;
+          setScope(next);
+          if (next === "none" || next === "all") setValues([]);
+        }}
+        className="w-full px-2 py-1.5 text-xs rounded-md border border-border bg-card text-foreground disabled:opacity-60"
+      >
+        <option value="none">Nenhuma</option>
+        <option value="all">Todas as lojas</option>
+        <option value="city">Cidades específicas</option>
+        <option value="state">Estados específicos</option>
+      </select>
+
+      {(scope === "city" || scope === "state") && (
+        <div className="max-h-40 overflow-y-auto rounded-md border border-border p-2 space-y-1 bg-card">
+          {options.length === 0 && (
+            <p className="text-xs text-muted-foreground">
+              {scope === "city" ? "Nenhuma cidade cadastrada nas lojas." : "Nenhuma UF cadastrada nas lojas."}
+            </p>
+          )}
+          {options.map((opt) => (
+            <label key={opt} className="flex items-center gap-2 text-xs text-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                disabled={!canEdit}
+                checked={values.includes(opt)}
+                onChange={() => toggleValue(opt)}
+                className="accent-[hsl(var(--primary))]"
+              />
+              {opt}
+            </label>
+          ))}
+        </div>
+      )}
+
+      {canEdit && (
+        <Button size="sm" className="h-7 text-xs" disabled={!dirty || save.isPending} onClick={() => save.mutate()}>
+          <Check className="w-3 h-3 mr-1" /> Salvar presença adicional
+        </Button>
+      )}
+    </div>
   );
 }
 

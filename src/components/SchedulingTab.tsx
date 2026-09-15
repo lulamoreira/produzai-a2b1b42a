@@ -40,6 +40,7 @@ import { useAuth } from "@/hooks/useAuth";
 import * as XLSX from "xlsx";
 import { downloadWorkbook } from "@/lib/downloadWorkbook";
 import { buildExportFileName } from "@/lib/exportFileName";
+import { exportTeamsByStore } from "@/lib/exportTeamsByStore";
 import InstallationTeamDialog, {
   useInstallationTeams,
   useAllTeamMembers,
@@ -725,6 +726,26 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     toast.success(t("scheduling.teamsExported"));
   };
 
+  // New sheet: one block per store with the assigned team + support ("apoio") teams
+  const handleExportTeamsByStore = async () => {
+    if (stores.length === 0) {
+      toast.error(t("scheduling.noTeamsToExport"));
+      return;
+    }
+    try {
+      await exportTeamsByStore({
+        fileName: buildExportFileName(`Equipes_Por_Loja_${campaignName}`, { agencyName, clientName }),
+        stores,
+        scheduleMap,
+        teams,
+        membersByTeam: allMembersMap,
+      });
+      toast.success(t("common.spreadsheetExported"));
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao exportar planilha");
+    }
+  };
+
   // Count active filters (all filters live inside the Filtros popover, except search)
   const secondaryFilterCount = [filterState, filterApproval, filterResponsibility, filterDate, filterCity, filterPeriod, filterTeam, filterPreference, filterLocked, filterReschedule, filterModel].filter(Boolean).length;
 
@@ -906,6 +927,9 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleExportTeams}>
                   <Users className="w-3.5 h-3.5 mr-2" /> {t("scheduling.exportTeams")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExportTeamsByStore}>
+                  <Users className="w-3.5 h-3.5 mr-2" /> Exportar Por Loja
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleExport}>
                   <Download className="w-3.5 h-3.5 mr-2" /> {t("common.export")}
@@ -1670,6 +1694,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         clientId={clientId}
         canEdit={canEdit}
         initialTeamId={teamDialogInitialId}
+        stores={stores}
       />
 
       {/* Read-only Teams Consultation Dialog */}

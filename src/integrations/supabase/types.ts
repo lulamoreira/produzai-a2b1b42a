@@ -3387,18 +3387,24 @@ export type Database = {
       installation_teams: {
         Row: {
           campaign_id: string
+          coverage_scope: string
+          coverage_values: string[]
           created_at: string
           id: string
           name: string
         }
         Insert: {
           campaign_id: string
+          coverage_scope?: string
+          coverage_values?: string[]
           created_at?: string
           id?: string
           name: string
         }
         Update: {
           campaign_id?: string
+          coverage_scope?: string
+          coverage_values?: string[]
           created_at?: string
           id?: string
           name?: string
