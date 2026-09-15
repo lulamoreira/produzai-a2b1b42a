@@ -5,6 +5,8 @@ export interface OneNoteParsedPiece {
   name: string;
   kitName: string;
   category: string;
+  /** Subgrupo do PDF: vira sub-localização da peça (não kit). */
+  subLocation: string;
   size: string;
   kit_only: boolean;
   is_mockup: boolean;
