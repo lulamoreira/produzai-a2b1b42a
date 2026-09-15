@@ -94,10 +94,12 @@ interface EditableRow {
   specification: string;
   /** Campanha de origem quando a especificação foi preenchida automaticamente. */
   specSource: string | null;
+  /** True quando o usuário editou o nome à mão: a IA não pode sobrescrever. */
+  nameEdited: boolean;
 }
 
 function editableRow(value: OneNoteSourceRow): EditableRow {
-  return { id: crypto.randomUUID(), value: { ...value }, specification: "", specSource: null };
+  return { id: crypto.randomUUID(), value: { ...value }, specification: "", specSource: null, nameEdited: false };
 }
 
 const DEFAULT_SPECIFICATION = "Vide Book/Manual";
@@ -230,11 +232,19 @@ export function OneNoteImportDialog({
         setEditableRows((current) => {
           let changed = false;
           const next = current.map((row) => {
-            if (row.specification.trim()) return row;
             const spec = specByRowId.get(row.id);
             if (!spec) return row;
-            changed = true;
-            return { ...row, specification: spec.specification, specSource: spec.campaign_name };
+            let updated = row;
+            // Nome do catálogo do cliente, salvo quando o usuário já editou o nome à mão.
+            if (!row.nameEdited && spec.name && row.value["Nome da Peça"].trim() !== spec.name) {
+              updated = { ...updated, value: { ...updated.value, "Nome da Peça": spec.name } };
+              changed = true;
+            }
+            if (!row.specification.trim()) {
+              updated = { ...updated, specification: spec.specification, specSource: spec.campaign_name };
+              changed = true;
+            }
+            return changed ? updated : row;
           });
           return changed ? next : current;
         });
@@ -305,7 +315,13 @@ export function OneNoteImportDialog({
 
   const updateCell = (id: string, column: OneNoteColumn, value: string) => {
     setEditableRows((current) => current.map((row) => (
-      row.id === id ? { ...row, value: { ...row.value, [column]: value } } : row
+      row.id === id
+        ? {
+            ...row,
+            value: { ...row.value, [column]: value },
+            nameEdited: column === "Nome da Peça" ? true : row.nameEdited,
+          }
+        : row
     )));
   };
 
@@ -369,7 +385,7 @@ export function OneNoteImportDialog({
             size: piece.size,
             kit_only: piece.kit_only,
             is_mockup: piece.is_mockup,
-            sub_location: null,
+            sub_location: piece.subLocation || null,
             specification: specByPieceIndex[index] ?? DEFAULT_SPECIFICATION,
             installation_instructions: "Sem informações específicas",
             is_deleted: false,
