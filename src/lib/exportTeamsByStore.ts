@@ -1,3 +1,4 @@
+// redeploy matriz-kits v2 2026-09-14
 import ExcelJS from "exceljs";
 import { saveBlobAs } from "./saveBlobAs";
 import { getCoverageMatch, getCoverageScope, type CoverageTeamLike } from "./teamCoverage";
@@ -53,16 +54,47 @@ function docCells(member: TeamMember) {
   };
 }
 
+/** Robust SP detection: trim + uppercase + strip accents → "SP" or "SAO PAULO". */
+function isSaoPauloState(state?: string | null): boolean {
+  const norm = (state ?? "")
+    .trim()
+    .toUpperCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+  return norm === "SP" || norm === "SAO PAULO";
+}
+
+const COLLATOR_OPTS = { numeric: true, sensitivity: "base" } as const;
+const cityKey = (s: ClientStore) => s.city?.trim() ?? "";
+const stateKey = (s: ClientStore) => s.state?.trim() ?? "";
+
+/** Compare with empty values always last within the group. */
+function compareWithEmptyLast(aKey: string, bKey: string): number {
+  const aEmpty = aKey === "";
+  const bEmpty = bKey === "";
+  if (aEmpty && bEmpty) return 0;
+  if (aEmpty) return 1;
+  if (bEmpty) return -1;
+  return aKey.localeCompare(bKey, "pt-BR", COLLATOR_OPTS);
+}
+
 export async function exportTeamsByStore(data: ExportTeamsByStoreData) {
   const { fileName, stores, scheduleMap, teams, membersByTeam } = data;
 
   const wb = new ExcelJS.Workbook();
-  const ws = wb.addWorksheet("Por Loja");
-  ws.columns = COLUMN_WIDTHS.map((width) => ({ width }));
+  const wsSP = wb.addWorksheet("São Paulo");
+  const wsOthers = wb.addWorksheet("Outros Estados");
+  [wsSP, wsOthers].forEach((ws) => {
+    ws.columns = COLUMN_WIDTHS.map((width) => ({ width }));
+  });
 
   const supportTeams = teams.filter((tm) => getCoverageScope(tm as CoverageTeamLike) !== "none");
 
-  stores.forEach((store) => {
+  /**
+   * Renders one store block: header, scheduling line, column sub-header,
+   * assigned team members and support teams (orange rows).
+   */
+  const renderStoreBlock = (ws: ExcelJS.Worksheet, store: ClientStore) => {
     // Store header
     const headerRow = ws.addRow([storeHeaderText(store)]);
     ws.mergeCells(headerRow.number, 1, headerRow.number, COLUMN_WIDTHS.length);
@@ -129,7 +161,31 @@ export async function exportTeamsByStore(data: ExportTeamsByStoreData) {
     });
 
     ws.addRow([]);
+  };
+
+  const renderStores = (ws: ExcelJS.Worksheet, groupStores: ClientStore[]) => {
+    if (groupStores.length === 0) {
+      ws.addRow(["Nenhuma loja neste grupo"]);
+      return;
+    }
+    groupStores.forEach((store) => renderStoreBlock(ws, store));
+  };
+
+  const spStores = stores.filter((s) => isSaoPauloState(s.state));
+  const otherStores = stores.filter((s) => !isSaoPauloState(s.state));
+
+  // "São Paulo": sorted by city
+  const spSorted = [...spStores].sort((a, b) => compareWithEmptyLast(cityKey(a), cityKey(b)));
+
+  // "Outros Estados": state first, then city within each state
+  const othersSorted = [...otherStores].sort((a, b) => {
+    const byState = compareWithEmptyLast(stateKey(a), stateKey(b));
+    if (byState !== 0) return byState;
+    return compareWithEmptyLast(cityKey(a), cityKey(b));
   });
+
+  renderStores(wsSP, spSorted);
+  renderStores(wsOthers, othersSorted);
 
   const buffer = await wb.xlsx.writeBuffer();
   const xlsxMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
