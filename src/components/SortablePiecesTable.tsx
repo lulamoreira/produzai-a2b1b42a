@@ -95,9 +95,11 @@ function SortableRow({
         </TableCell>
         {canEditPieces && (
           <TableCell className="w-8 p-1">
-            <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground">
-              <GripVertical className="w-4 h-4" />
-            </button>
+            {!disableDrag && (
+              <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground">
+                <GripVertical className="w-4 h-4" />
+              </button>
+            )}
           </TableCell>
         )}
         {(!visibleColumns || visibleColumns.code) && (
@@ -221,9 +223,11 @@ function SortableRow({
       </TableCell>
       {canEditPieces && (
         <TableCell className="w-8 p-1">
-          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground">
-            <GripVertical className="w-4 h-4" />
-          </button>
+          {!disableDrag && (
+            <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground">
+              <GripVertical className="w-4 h-4" />
+            </button>
+          )}
         </TableCell>
       )}
       {(!visibleColumns || visibleColumns.code) && (
