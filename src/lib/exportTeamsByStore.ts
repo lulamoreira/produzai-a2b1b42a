@@ -4,6 +4,7 @@ import { getCoverageMatch, getCoverageScope, type CoverageTeamLike } from "./tea
 import type { Schedule } from "@/types/schedule";
 import type { ClientStore } from "@/hooks/useMultiClientData";
 import type { InstallationTeam, TeamMember } from "@/components/InstallationTeamDialog";
+import { format } from "date-fns";
 
 interface ExportTeamsByStoreData {
   fileName: string;
@@ -19,6 +20,22 @@ const SUBHEADER_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid",
 const SUPPORT_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFE0B2" } };
 
 const COLUMN_WIDTHS = [34, 30, 18, 18, 18, 18];
+
+/** Effective scheduling values, mirroring exportInstallCodes.ts rules. */
+function getEffective(schedule: Schedule | undefined) {
+  if (!schedule) return { date: null, time: null, os: null };
+  const r = !!schedule.reschedule_enabled;
+  return {
+    date: r ? schedule.reschedule_date : schedule.scheduled_date,
+    time: r ? schedule.reschedule_time : schedule.scheduled_time,
+    os: r ? schedule.reschedule_os : schedule.installation_os,
+  };
+}
+
+function formatDateShort(d: string | null) {
+  if (!d) return "";
+  try { return format(new Date(d + "T12:00:00"), "dd/MM/yyyy"); } catch { return d; }
+}
 
 function storeHeaderText(store: ClientStore) {
   const place = [store.city, store.state].filter(Boolean).join("/");
