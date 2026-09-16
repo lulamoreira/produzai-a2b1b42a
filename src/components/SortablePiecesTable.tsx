@@ -63,19 +63,21 @@ interface SortableRowProps {
   visibleColumns?: Record<string, boolean>;
   selectedPieceIds?: string[];
   onToggleSelection?: (id: string) => void;
+  /** When true the order is fixed by code and dragging is disabled. */
+  disableDrag?: boolean;
 }
 
 function SortableRow({
   row, pieceTotal, canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit,
   isDistributed, kitCategory, customFieldLabels, visibleColumns,
-  selectedPieceIds, onToggleSelection
+  selectedPieceIds, onToggleSelection, disableDrag
 }: SortableRowProps) {
   const { t } = useTranslation();
   const id = row.type === "piece" ? row.data.id : `kit-${row.data.id}`;
   const {
     attributes, listeners, setNodeRef, transform, transition, isDragging,
-  } = useSortable({ id });
+  } = useSortable({ id, disabled: disableDrag });
 
   const style = {
     transform: CSS.Transform.toString(transform),
