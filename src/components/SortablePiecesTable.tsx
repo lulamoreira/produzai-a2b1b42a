@@ -374,6 +374,8 @@ interface SortablePiecesTableProps {
   selectedPieceIds?: string[];
   onToggleSelection?: (id: string) => void;
   onToggleSelectAll?: (checked: boolean) => void;
+  /** When true, rows are sorted by code (ascending) and drag-to-reorder is disabled. */
+  sortByCode?: boolean;
 }
 
 export default function SortablePiecesTable({
@@ -381,7 +383,7 @@ export default function SortablePiecesTable({
   canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit, onReorder,
   customFieldLabels, visibleColumns,
-  selectedPieceIds, onToggleSelection, onToggleSelectAll
+  selectedPieceIds, onToggleSelection, onToggleSelectAll, sortByCode = false
 }: SortablePiecesTableProps) {
   const { t } = useTranslation();
   const sensors = useSensors(
@@ -401,9 +403,17 @@ export default function SortablePiecesTable({
         display_order: k.display_order,
       })),
     ];
-    rows.sort((a, b) => a.display_order - b.display_order);
+    if (sortByCode) {
+      // Fixed order by code (ascending); display_order only breaks ties.
+      rows.sort((a, b) =>
+        (Number(a.data.code ?? 0) - Number(b.data.code ?? 0)) ||
+        (a.display_order - b.display_order)
+      );
+    } else {
+      rows.sort((a, b) => a.display_order - b.display_order);
+    }
     return rows;
-  }, [pieces, kits, kitPiecesList, allPieces]);
+  }, [pieces, kits, kitPiecesList, allPieces, sortByCode]);
 
   const rowIds = useMemo(() => unifiedRows.map(r => r.type === "piece" ? r.data.id : `kit-${r.data.id}`), [unifiedRows]);
 
@@ -531,6 +541,7 @@ export default function SortablePiecesTable({
                     visibleColumns={visibleColumns}
                     selectedPieceIds={selectedPieceIds}
                     onToggleSelection={onToggleSelection}
+                    disableDrag={sortByCode}
                   />
                 );
               })}
