@@ -9,7 +9,7 @@ import {
   Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
 } from "@/components/ui/command";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowDownToLine, ArrowUpToLine, GripVertical, Layers, Package, X } from "lucide-react";
+import { ArrowDownToLine, ArrowUpToLine, GripVertical, Layers, ListOrdered, Package, X } from "lucide-react";
 import {
   DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors,
   type DragEndEvent, type DragStartEvent,
@@ -273,6 +273,11 @@ export default function OrganizePiecesDialog({
     await persist(keys.flatMap((k) => groups.get(k)!));
   };
 
+  const sortByCode = async () => {
+    const sorted = [...items].sort((a, b) => (Number(a.code) || 0) - (Number(b.code) || 0));
+    await persist(sorted);
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl h-[85vh] flex flex-col">
@@ -304,6 +309,9 @@ export default function OrganizePiecesDialog({
           </Select>
           <Button size="sm" variant="outline" onClick={groupByLocation} disabled={saving}>
             <Layers className="w-3.5 h-3.5 mr-1.5" /> Agrupar por Localização
+          </Button>
+          <Button size="sm" variant="outline" onClick={sortByCode} disabled={saving}>
+            <ListOrdered className="w-3.5 h-3.5 mr-1.5" /> Ordenar por código
           </Button>
         </div>
 
