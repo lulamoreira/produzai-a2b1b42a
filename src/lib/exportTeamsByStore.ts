@@ -70,6 +70,20 @@ export async function exportTeamsByStore(data: ExportTeamsByStoreData) {
     headerRow.getCell(1).fill = STORE_FILL;
     headerRow.height = 22;
 
+    // Scheduling line (effective values: reschedule_* when reschedule_enabled)
+    const eff = getEffective(scheduleMap[store.id]);
+    const schedRow = ws.addRow([
+      "Agendamento",
+      "Data: " + (formatDateShort(eff.date) || "—"),
+      "Horário: " + (eff.time || "—"),
+      "OS: " + (eff.os || "—"),
+      "",
+      "",
+    ]);
+    schedRow.eachCell((cell) => {
+      cell.fill = SUBHEADER_FILL;
+    });
+
     // Column sub-header
     const subRow = ws.addRow(["Equipe", "Nome", "RG", "CPF", "RU", "Telefone"]);
     subRow.eachCell((cell) => {
