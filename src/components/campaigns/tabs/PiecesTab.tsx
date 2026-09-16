@@ -1197,6 +1197,7 @@ export default function PiecesTab({
         allPieces={pieces}
         stores={stores}
         qtyMap={qtyMap}
+        sortByCode={showKitPieces}
         canEditPieces={canEditPieces}
         canDeletePieces={canDeletePieces}
         onEdit={(p: any) => { captureScrollSnapshot(); setEditingPiece(p); }}
