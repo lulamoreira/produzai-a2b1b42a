@@ -63,19 +63,21 @@ interface SortableRowProps {
   visibleColumns?: Record<string, boolean>;
   selectedPieceIds?: string[];
   onToggleSelection?: (id: string) => void;
+  /** When true the order is fixed by code and dragging is disabled. */
+  disableDrag?: boolean;
 }
 
 function SortableRow({
   row, pieceTotal, canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit,
   isDistributed, kitCategory, customFieldLabels, visibleColumns,
-  selectedPieceIds, onToggleSelection
+  selectedPieceIds, onToggleSelection, disableDrag
 }: SortableRowProps) {
   const { t } = useTranslation();
   const id = row.type === "piece" ? row.data.id : `kit-${row.data.id}`;
   const {
     attributes, listeners, setNodeRef, transform, transition, isDragging,
-  } = useSortable({ id });
+  } = useSortable({ id, disabled: disableDrag });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -93,9 +95,11 @@ function SortableRow({
         </TableCell>
         {canEditPieces && (
           <TableCell className="w-8 p-1">
-            <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground">
-              <GripVertical className="w-4 h-4" />
-            </button>
+            {!disableDrag && (
+              <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground">
+                <GripVertical className="w-4 h-4" />
+              </button>
+            )}
           </TableCell>
         )}
         {(!visibleColumns || visibleColumns.code) && (
@@ -219,9 +223,11 @@ function SortableRow({
       </TableCell>
       {canEditPieces && (
         <TableCell className="w-8 p-1">
-          <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground">
-            <GripVertical className="w-4 h-4" />
-          </button>
+          {!disableDrag && (
+            <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 text-muted-foreground hover:text-foreground">
+              <GripVertical className="w-4 h-4" />
+            </button>
+          )}
         </TableCell>
       )}
       {(!visibleColumns || visibleColumns.code) && (
@@ -368,6 +374,8 @@ interface SortablePiecesTableProps {
   selectedPieceIds?: string[];
   onToggleSelection?: (id: string) => void;
   onToggleSelectAll?: (checked: boolean) => void;
+  /** When true, rows are sorted by code (ascending) and drag-to-reorder is disabled. */
+  sortByCode?: boolean;
 }
 
 export default function SortablePiecesTable({
@@ -375,7 +383,7 @@ export default function SortablePiecesTable({
   canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit, onReorder,
   customFieldLabels, visibleColumns,
-  selectedPieceIds, onToggleSelection, onToggleSelectAll
+  selectedPieceIds, onToggleSelection, onToggleSelectAll, sortByCode = false
 }: SortablePiecesTableProps) {
   const { t } = useTranslation();
   const sensors = useSensors(
@@ -395,9 +403,17 @@ export default function SortablePiecesTable({
         display_order: k.display_order,
       })),
     ];
-    rows.sort((a, b) => a.display_order - b.display_order);
+    if (sortByCode) {
+      // Fixed order by code (ascending); display_order only breaks ties.
+      rows.sort((a, b) =>
+        (Number(a.data.code ?? 0) - Number(b.data.code ?? 0)) ||
+        (a.display_order - b.display_order)
+      );
+    } else {
+      rows.sort((a, b) => a.display_order - b.display_order);
+    }
     return rows;
-  }, [pieces, kits, kitPiecesList, allPieces]);
+  }, [pieces, kits, kitPiecesList, allPieces, sortByCode]);
 
   const rowIds = useMemo(() => unifiedRows.map(r => r.type === "piece" ? r.data.id : `kit-${r.data.id}`), [unifiedRows]);
 
@@ -525,6 +541,7 @@ export default function SortablePiecesTable({
                     visibleColumns={visibleColumns}
                     selectedPieceIds={selectedPieceIds}
                     onToggleSelection={onToggleSelection}
+                    disableDrag={sortByCode}
                   />
                 );
               })}
