@@ -417,7 +417,7 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
 
               {/* Download + Delete buttons */}
               <div className="flex justify-center gap-2">
-                <Button variant="outline" size="sm" className="text-xs gap-1 text-white border-white/30 hover:bg-white/10" onClick={() => handleDownload(currentLightbox)}>
+                <Button variant="outline" size="sm" className="text-xs gap-1 bg-white text-black hover:bg-white/90 border border-white" onClick={() => handleDownload(currentLightbox)}>
                   <Download className="w-3.5 h-3.5" /> Baixar
                 </Button>
                 <Button variant="destructive" size="sm" className="text-xs gap-1" onClick={() => handleDelete(currentLightbox)}>
