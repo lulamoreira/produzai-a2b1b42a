@@ -27,6 +27,7 @@ interface ResilientImageProps {
   src: string;
   alt: string;
   className?: string;
+  draggable?: boolean;
   onClick?: (e: React.MouseEvent<HTMLImageElement>) => void;
   onGiveUp?: () => void;
 }
@@ -35,7 +36,7 @@ interface ResilientImageProps {
  * <img> com retry automático: falhas transitórias de carregamento são
  * recuperadas com cache-buster (até 3 tentativas, com backoff crescente).
  */
-const ResilientImage = ({ src, alt, className, onClick, onGiveUp }: ResilientImageProps) => {
+const ResilientImage = ({ src, alt, className, draggable, onClick, onGiveUp }: ResilientImageProps) => {
   const [attempt, setAttempt] = useState(0);
 
   // Reset ao trocar de foto (mesmo componente reutilizado em navegação).
@@ -60,6 +61,7 @@ const ResilientImage = ({ src, alt, className, onClick, onGiveUp }: ResilientIma
       src={displaySrc}
       alt={alt}
       className={className}
+      draggable={draggable}
       onClick={onClick}
       loading="lazy"
       decoding="async"
