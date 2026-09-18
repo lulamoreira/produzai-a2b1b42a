@@ -1,9 +1,9 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Trash2, Edit3, X, ChevronLeft, ChevronRight, Camera, Video, ZoomIn, ZoomOut, RefreshCcw } from "lucide-react";
+import { Trash2, Edit3, X, ChevronLeft, ChevronRight, Camera, Video, ZoomIn, ZoomOut, RefreshCcw, Download } from "lucide-react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { type ClientStore } from "@/hooks/useMultiClientData";
 import { type InstallationPhoto, useUpdateInstallationPhoto, useDeleteInstallationPhoto, isVideo } from "@/hooks/useInstallationPhotos";
@@ -19,6 +19,56 @@ const CATEGORIES = [
   { value: "during", label: "Durante" },
   { value: "after", label: "Depois" },
 ];
+
+const MAX_RETRIES = 3;
+const RETRY_BACKOFF_MS = [500, 1000, 2000];
+
+interface ResilientImageProps {
+  src: string;
+  alt: string;
+  className?: string;
+  draggable?: boolean;
+  onClick?: (e: React.MouseEvent<HTMLImageElement>) => void;
+  onGiveUp?: () => void;
+}
+
+/**
+ * <img> com retry automático: falhas transitórias de carregamento são
+ * recuperadas com cache-buster (até 3 tentativas, com backoff crescente).
+ */
+const ResilientImage = ({ src, alt, className, draggable, onClick, onGiveUp }: ResilientImageProps) => {
+  const [attempt, setAttempt] = useState(0);
+
+  // Reset ao trocar de foto (mesmo componente reutilizado em navegação).
+  useEffect(() => {
+    setAttempt(0);
+  }, [src]);
+
+  const displaySrc = attempt === 0
+    ? src
+    : `${src}${src.includes("?") ? "&" : "?"}retry=${attempt}`;
+
+  const handleError = () => {
+    if (attempt < MAX_RETRIES) {
+      window.setTimeout(() => setAttempt((a) => a + 1), RETRY_BACKOFF_MS[attempt] ?? 2000);
+    } else {
+      onGiveUp?.();
+    }
+  };
+
+  return (
+    <img
+      src={displaySrc}
+      alt={alt}
+      className={className}
+      draggable={draggable}
+      onClick={onClick}
+      loading="lazy"
+      decoding="async"
+      onError={handleError}
+    />
+  );
+};
 
 interface Props {
   open: boolean;
@@ -68,6 +118,26 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
   const handleChangeCategory = async (photo: InstallationPhoto, newCategory: string) => {
     await updatePhoto.mutateAsync({ id: photo.id, category: newCategory });
     toast.success("Categoria atualizada!");
+  };
+
+  const handleDownload = async (media: InstallationPhoto) => {
+    const ext = (media.photo_url.split("?")[0].split(".").pop() || "jpg").toLowerCase();
+    const nome = `${store.store_code || "loja"}_${media.category}_${media.id.slice(0, 8)}.${ext}`;
+    try {
+      const res = await fetch(media.photo_url);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = nome;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      // fallback: força download pelo próprio storage
+      window.open(media.photo_url + (media.photo_url.includes("?") ? "&" : "?") + "download=" + encodeURIComponent(nome), "_blank");
+    }
   };
 
   const lightboxPhotos = filteredPhotos;
@@ -146,12 +216,12 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
                       </div>
                     </div>
                   ) : (
-                    <img
+                    <ResilientImage
                       src={photo.photo_url}
                       alt={photo.caption || `Foto ${i + 1}`}
                       className="w-full aspect-square object-cover cursor-pointer transition-transform hover:scale-105"
                       onClick={() => setLightboxIndex(i)}
-                      onError={() => handleMediaError(photo.id, photo.campaign_id, photo.photo_url)}
+                      onGiveUp={() => handleMediaError(photo.id, photo.campaign_id, photo.photo_url)}
                     />
                   )}
                   {/* Category badge - clickable dropdown for Admin/Master */}
@@ -276,12 +346,12 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
                         wrapperClass="!w-full !h-full flex items-center justify-center"
                         contentClass="flex items-center justify-center"
                       >
-                        <img
+                        <ResilientImage
                           src={currentLightbox.photo_url}
                           alt={currentLightbox.caption || "Foto"}
                           draggable={false}
                           className="max-w-[90vw] max-h-[75vh] object-contain rounded-lg select-none"
-                          onError={() => handleMediaError(currentLightbox.id, currentLightbox.campaign_id, currentLightbox.photo_url)}
+                          onGiveUp={() => handleMediaError(currentLightbox.id, currentLightbox.campaign_id, currentLightbox.photo_url)}
                         />
                       </TransformComponent>
                       {/* Floating Zoom Controls */}
@@ -345,8 +415,11 @@ export default function PhotoCheckinDialog({ open, onOpenChange, store, photos }
                 )}
               </div>
 
-              {/* Delete button */}
-              <div className="flex justify-center">
+              {/* Download + Delete buttons */}
+              <div className="flex justify-center gap-2">
+                <Button variant="outline" size="sm" className="text-xs gap-1 text-white border-white/30 hover:bg-white/10" onClick={() => handleDownload(currentLightbox)}>
+                  <Download className="w-3.5 h-3.5" /> Baixar
+                </Button>
                 <Button variant="destructive" size="sm" className="text-xs gap-1" onClick={() => handleDelete(currentLightbox)}>
                   <Trash2 className="w-3.5 h-3.5" /> Excluir foto
                 </Button>
