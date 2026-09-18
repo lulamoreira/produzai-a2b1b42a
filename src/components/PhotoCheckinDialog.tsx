@@ -1,9 +1,9 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Trash2, Edit3, X, ChevronLeft, ChevronRight, Camera, Video, ZoomIn, ZoomOut, RefreshCcw } from "lucide-react";
+import { Trash2, Edit3, X, ChevronLeft, ChevronRight, Camera, Video, ZoomIn, ZoomOut, RefreshCcw, Download } from "lucide-react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { type ClientStore } from "@/hooks/useMultiClientData";
 import { type InstallationPhoto, useUpdateInstallationPhoto, useDeleteInstallationPhoto, isVideo } from "@/hooks/useInstallationPhotos";
@@ -19,6 +19,54 @@ const CATEGORIES = [
   { value: "during", label: "Durante" },
   { value: "after", label: "Depois" },
 ];
+
+const MAX_RETRIES = 3;
+const RETRY_BACKOFF_MS = [500, 1000, 2000];
+
+interface ResilientImageProps {
+  src: string;
+  alt: string;
+  className?: string;
+  onClick?: (e: React.MouseEvent<HTMLImageElement>) => void;
+  onGiveUp?: () => void;
+}
+
+/**
+ * <img> com retry automático: falhas transitórias de carregamento são
+ * recuperadas com cache-buster (até 3 tentativas, com backoff crescente).
+ */
+const ResilientImage = ({ src, alt, className, onClick, onGiveUp }: ResilientImageProps) => {
+  const [attempt, setAttempt] = useState(0);
+
+  // Reset ao trocar de foto (mesmo componente reutilizado em navegação).
+  useEffect(() => {
+    setAttempt(0);
+  }, [src]);
+
+  const displaySrc = attempt === 0
+    ? src
+    : `${src}${src.includes("?") ? "&" : "?"}retry=${attempt}`;
+
+  const handleError = () => {
+    if (attempt < MAX_RETRIES) {
+      window.setTimeout(() => setAttempt((a) => a + 1), RETRY_BACKOFF_MS[attempt] ?? 2000);
+    } else {
+      onGiveUp?.();
+    }
+  };
+
+  return (
+    <img
+      src={displaySrc}
+      alt={alt}
+      className={className}
+      onClick={onClick}
+      loading="lazy"
+      decoding="async"
+      onError={handleError}
+    />
+  );
+};
 
 interface Props {
   open: boolean;
