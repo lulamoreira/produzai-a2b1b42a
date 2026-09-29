@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1790694202473,
+      "tag": "0000_dedup_loja_a_loja_lojas_nulls_not_distinct",
+      "breakpoints": true
+    }
+  ]
+}
