@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useLojaALojaTipos, useLojaALojaLojas, useToggleLojaAssignment, type LojaALojaTipo } from "@/hooks/useLojaALoja";
+import { useLojaALojaTipos, useLojaALojaLojas, useToggleLojaAssignment, saveLojaAssignments, type LojaALojaTipo } from "@/hooks/useLojaALoja";
 import { useClientStores } from "@/hooks/useMultiClientData";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -139,7 +139,9 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
   // Build lookup: `storeId-tipoId-subdivisaoId` → ativo
   const assignmentMap = useMemo(() => {
     const map = new Map<string, boolean>();
-    for (const l of lojas) {
+    // Se houver linhas duplicadas antigas, a mais recente vence
+    const ordered = [...lojas].sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? ""));
+    for (const l of ordered) {
       const key = `${l.store_id}-${l.tipo_id ?? ""}-${l.subdivisao_id ?? ""}`;
       map.set(key, l.ativo ?? false);
     }
@@ -184,12 +186,7 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
           rows.push({ campaign_id: campaignId, store_id: storeId, tipo_id: tipo.id, subdivisao_id: null, ativo });
         }
       }
-      if (rows.length > 0) {
-        const { error } = await supabase
-          .from("loja_a_loja_lojas")
-          .upsert(rows, { onConflict: "campaign_id,store_id,tipo_id,subdivisao_id", ignoreDuplicates: false });
-        if (error) throw error;
-      }
+      await saveLojaAssignments(campaignId, rows);
       qc.invalidateQueries({ queryKey: ["loja-a-loja-lojas", campaignId] });
     } catch (err: any) {
       toast.error("Erro: " + err.message);
@@ -300,10 +297,7 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
         return;
       }
 
-      const { error: upsertErr } = await supabase
-        .from("loja_a_loja_lojas")
-        .upsert(rows, { onConflict: "campaign_id,store_id,tipo_id,subdivisao_id", ignoreDuplicates: false });
-      if (upsertErr) throw upsertErr;
+      await saveLojaAssignments(campaignId, rows);
 
       qc.invalidateQueries({ queryKey: ["loja-a-loja-lojas", campaignId] });
       toast.success(`${rows.length} atribuições copiadas com sucesso!`);

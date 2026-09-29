@@ -22,6 +22,7 @@ import {
   useReorderTipos,
   useReorderSubdivisoes,
   useReorderPecas,
+  saveLojaAssignments,
   type LojaALojaTipo,
   type LojaALojaSubdivisao,
   type LojaALojaPeca,
@@ -969,12 +970,7 @@ const TiposManager = ({ campaignId, clientId, permissions }: TiposManagerProps) 
           ativo: a.ativo ?? false,
         });
       }
-      if (assignmentRows.length > 0) {
-        const { error } = await supabase
-          .from("loja_a_loja_lojas")
-          .upsert(assignmentRows, { onConflict: "campaign_id,store_id,tipo_id,subdivisao_id", ignoreDuplicates: false });
-        if (error) throw error;
-      }
+      await saveLojaAssignments(campaignId, assignmentRows);
 
       // 6) Build store discrepancy report
       const srcStoreIds = new Set((srcStoresRes.data ?? []).map((r: any) => r.store_id));

@@ -45,6 +45,71 @@ export interface LojaALojaLoja {
   created_at: string;
 }
 
+/* ───── Assignment writes ───── */
+
+export interface LojaAssignmentRow {
+  campaign_id: string;
+  store_id: string;
+  tipo_id: string;
+  subdivisao_id: string | null;
+  ativo: boolean;
+}
+
+const assignmentKey = (r: { store_id: string; tipo_id: string | null; subdivisao_id: string | null }) =>
+  `${r.store_id}-${r.tipo_id ?? ""}-${r.subdivisao_id ?? ""}`;
+
+const CHUNK = 200;
+const chunks = <T,>(arr: T[]) =>
+  Array.from({ length: Math.ceil(arr.length / CHUNK) }, (_, i) => arr.slice(i * CHUNK, (i + 1) * CHUNK));
+
+/**
+ * Grava atribuições loja × tipo × subdivisão de forma idempotente.
+ *
+ * Não usamos `upsert(onConflict)` porque a UNIQUE(campaign_id, store_id, tipo_id, subdivisao_id)
+ * trata NULL como distinto: toda vitrine (subdivisao_id = NULL) virava uma linha nova duplicada,
+ * e a tela passava a ler uma linha enquanto o clique alterava outra. Aqui apagamos as linhas
+ * existentes (inclusive duplicatas) das chaves afetadas e inserimos uma única linha por chave.
+ */
+export async function saveLojaAssignments(campaignId: string, rows: LojaAssignmentRow[]) {
+  if (rows.length === 0) return;
+
+  // Última ocorrência vence caso a entrada tenha chaves repetidas
+  const byKey = new Map<string, LojaAssignmentRow>();
+  for (const r of rows) byKey.set(assignmentKey(r), r);
+  const finalRows = [...byKey.values()];
+
+  const storeIds = [...new Set(finalRows.map((r) => r.store_id))];
+  const existing: { id: string; store_id: string; tipo_id: string | null; subdivisao_id: string | null }[] = [];
+  for (const ids of chunks(storeIds)) {
+    const page = await supabasePaginate<{ id: string; store_id: string; tipo_id: string | null; subdivisao_id: string | null }>(
+      (from, to) =>
+        supabase
+          .from("loja_a_loja_lojas")
+          .select("id, store_id, tipo_id, subdivisao_id", { count: "exact" })
+          .eq("campaign_id", campaignId)
+          .in("store_id", ids)
+          .order("id")
+          .range(from, to) as any
+    );
+    existing.push(...page);
+  }
+
+  const idsToDelete = existing.filter((e) => byKey.has(assignmentKey(e))).map((e) => e.id);
+  for (const ids of chunks(idsToDelete)) {
+    const { data, error } = await supabase.from("loja_a_loja_lojas").delete().in("id", ids).select("id");
+    if (error) throw error;
+    // RLS bloqueia em silêncio (0 linhas afetadas, sem erro)
+    if ((data ?? []).length === 0) {
+      throw new Error("Sem permissão para alterar a classificação das lojas (apenas administradores).");
+    }
+  }
+
+  for (const part of chunks(finalRows)) {
+    const { error } = await supabase.from("loja_a_loja_lojas").insert(part);
+    if (error) throw error;
+  }
+}
+
 /* ───── Queries ───── */
 
 export function useLojaALojaTipos(campaignId: string | undefined) {
@@ -397,36 +462,7 @@ export function useToggleLojaAssignment() {
       subdivisao_id: string | null;
       ativo: boolean;
     }) => {
-      const { campaign_id, store_id, tipo_id, subdivisao_id, ativo } = params;
-
-      // Try to find existing row
-      let query = supabase
-        .from("loja_a_loja_lojas")
-        .select("id, ativo")
-        .eq("campaign_id", campaign_id)
-        .eq("store_id", store_id)
-        .eq("tipo_id", tipo_id);
-
-      if (subdivisao_id) {
-        query = query.eq("subdivisao_id", subdivisao_id);
-      } else {
-        query = query.is("subdivisao_id", null);
-      }
-
-      const { data: existing } = await query.maybeSingle();
-
-      if (existing) {
-        const { error } = await supabase
-          .from("loja_a_loja_lojas")
-          .update({ ativo })
-          .eq("id", existing.id);
-        if (error) throw error;
-      } else {
-        const row: any = { campaign_id, store_id, tipo_id, ativo };
-        if (subdivisao_id) row.subdivisao_id = subdivisao_id;
-        const { error } = await supabase.from("loja_a_loja_lojas").insert(row);
-        if (error) throw error;
-      }
+      await saveLojaAssignments(params.campaign_id, [{ ...params, subdivisao_id: params.subdivisao_id ?? null }]);
     },
     onMutate: async (params) => {
       const key = ["loja-a-loja-lojas", params.campaign_id];
@@ -434,19 +470,10 @@ export function useToggleLojaAssignment() {
       const previous = qc.getQueryData<LojaALojaLoja[]>(key);
 
       qc.setQueryData<LojaALojaLoja[]>(key, (old = []) => {
-        const idx = old.findIndex(
-          (r) =>
-            r.store_id === params.store_id &&
-            r.tipo_id === params.tipo_id &&
-            (r.subdivisao_id ?? null) === (params.subdivisao_id ?? null)
-        );
-        if (idx >= 0) {
-          const updated = [...old];
-          updated[idx] = { ...updated[idx], ativo: params.ativo };
-          return updated;
-        }
+        // Descarta todas as linhas da chave (inclusive duplicatas) e deixa só a nova
+        const k = assignmentKey(params);
         return [
-          ...old,
+          ...old.filter((r) => assignmentKey(r) !== k),
           {
             id: crypto.randomUUID(),
             campaign_id: params.campaign_id,
