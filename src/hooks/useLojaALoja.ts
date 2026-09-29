@@ -104,12 +104,17 @@ export function useLojaALojaLojas(campaignId: string | undefined) {
     queryKey: ["loja-a-loja-lojas", campaignId],
     enabled: !!campaignId,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("loja_a_loja_lojas")
-        .select("*")
-        .eq("campaign_id", campaignId!);
-      if (error) throw error;
-      return (data ?? []) as LojaALojaLoja[];
+      // Campaigns can exceed PostgREST's 1000-row cap (e.g. 104 stores × ~28 tipos),
+      // which previously truncated results → random marks and "unclassified" stores.
+      const rows = await supabasePaginate<LojaALojaLoja>((from, to) =>
+        supabase
+          .from("loja_a_loja_lojas")
+          .select("*", { count: "exact" })
+          .eq("campaign_id", campaignId!)
+          .order("id")
+          .range(from, to) as any
+      );
+      return rows;
     },
   });
 }
