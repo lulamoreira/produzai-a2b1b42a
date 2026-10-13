@@ -118,3 +118,49 @@ export async function exportTeamDetail(data: ExportTeamDetailData) {
     extension: ".xlsx",
   });
 }
+
+export interface TeamClipboardData {
+  team: InstallationTeam;
+  members: TeamMember[];
+  vehicles: TeamVehicle[];
+  campaignName: string;
+  clientName?: string;
+  agencyName?: string;
+}
+
+/**
+ * Monta a versão em texto da mesma equipe exportada em Excel.
+ * Usa TAB entre colunas para que a colagem venha em células separadas
+ * no Excel/Sheets e continue legível em WhatsApp/e-mail.
+ */
+export function buildTeamClipboardText(data: TeamClipboardData): string {
+  const { team, members, vehicles, campaignName, clientName, agencyName } = data;
+  const lines: string[] = [];
+
+  lines.push(`EQUIPE: ${team.name}`);
+  lines.push(`Campanha: ${campaignName}`);
+  if (agencyName) lines.push(`Agência: ${agencyName}`);
+  if (clientName) lines.push(`Cliente: ${clientName}`);
+  lines.push(`Exportado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}`);
+  lines.push("");
+
+  lines.push(`INSTALADORES (${members.length}):`);
+  lines.push(["Nome", "Telefone", "RG", "CPF", "RU", "Líder"].join("\t"));
+  members.forEach((m) => {
+    const rg = m.is_unified_doc ? "" : m.rg || "";
+    const cpf = m.is_unified_doc ? "" : m.cpf || "";
+    const ru = m.is_unified_doc ? m.cpf || m.rg || "" : "";
+    lines.push([m.name || "", m.phone || "", rg, cpf, ru, m.is_leader ? "Sim" : ""].join("\t"));
+  });
+
+  if (vehicles.length > 0) {
+    lines.push("");
+    lines.push(`VEÍCULOS (${vehicles.length}):`);
+    lines.push(["Nome", "Marca", "Cor", "Placa"].join("\t"));
+    vehicles.forEach((v) => {
+      lines.push([v.name || "", v.brand || "", v.color || "", v.plate || ""].join("\t"));
+    });
+  }
+
+  return lines.join("\n");
+}
