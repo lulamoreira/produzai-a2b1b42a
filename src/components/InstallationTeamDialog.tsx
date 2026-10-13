@@ -13,6 +13,7 @@ import { cn, normalizeTeamName, normalizeMemberName } from "@/lib/utils";
 import { useBlockedInstallers } from "@/hooks/useBlockedInstallers";
 import { normCpf, normRg } from "@/lib/normalizeDoc";
 import { getCoverageBadgeLabel, type CoverageScope } from "@/lib/teamCoverage";
+import { mergeInstallers } from "@/lib/mergeTeamInstallers";
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -243,6 +244,13 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [editingTeamName, setEditingTeamName] = useState("");
   const teamRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  // Unsaved installer changes: ask before closing the dialog or switching teams.
+  const [membersDirty, setMembersDirty] = useState(false);
+  const guard = (action: () => void) => {
+    if (membersDirty && !window.confirm("Há alterações nos instaladores que não foram salvas. Deseja sair sem salvar? As alterações serão descartadas.")) return;
+    setMembersDirty(false);
+    action();
+  };
 
   // When opened with a target team, auto-expand it and scroll into view
   useEffect(() => {
@@ -299,7 +307,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(o) => { if (o) onOpenChange(o); else guard(() => onOpenChange(false)); }}>
       <DialogContent className="max-w-2xl max-h-[90dvh] flex flex-col gap-0 p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2">
@@ -340,7 +348,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
                   "flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-muted/50 transition-colors",
                   selectedTeamId === team.id && "bg-muted"
                 )}
-                onClick={() => setSelectedTeamId(selectedTeamId === team.id ? null : team.id)}
+                onClick={() => guard(() => setSelectedTeamId(selectedTeamId === team.id ? null : team.id))}
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   {selectedTeamId === team.id ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
@@ -404,7 +412,9 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
                     canEdit={canEdit} 
                     campaignId={campaignId} 
                     clientId={clientId} 
-                    onNavigateToTeam={setSelectedTeamId}
+                    onNavigateToTeam={(id) => guard(() => setSelectedTeamId(id))}
+                    otherTeams={teams.filter((t) => t.id !== team.id)}
+                    onDirtyChange={setMembersDirty}
                   />
                 </div>
               )}
