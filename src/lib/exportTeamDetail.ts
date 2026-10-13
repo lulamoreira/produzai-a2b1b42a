@@ -65,7 +65,7 @@ export async function exportTeamDetail(data: ExportTeamDetailData): Promise<void
   ws.columns = [{ width: 23 }, { width: 28 }, { width: 24 }, { width: 20 }];
   ws.properties.defaultRowHeight = 24;
   ws.pageSetup = { paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
-  ws.pageMargins = { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 };
+  ws.pageSetup.margins = { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 };
   const title = ws.addRow(["ProduzAI — Ficha da equipe"]);
   ws.mergeCells(title.number, 1, title.number, 4);
   title.font = { name: "Arial", bold: true, size: 18, color: { argb: "FF3B4A6B" } };
