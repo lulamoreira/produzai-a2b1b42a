@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { buildTeamClipboardText, type TeamClipboardData } from "@/lib/exportTeamDetail";
+import { buildTeamClipboardHtml, buildTeamClipboardText, type TeamClipboardData } from "@/lib/exportTeamDetail";
 
 export interface CopyTeamButtonProps extends TeamClipboardData {
   className?: string;
@@ -22,7 +22,17 @@ const CopyTeamButton = ({ className, title = "Copiar esta equipe", ...data }: Co
     e.stopPropagation();
     try {
       const text = buildTeamClipboardText(data);
-      if (navigator.clipboard?.writeText) {
+      if (navigator.clipboard?.write && typeof ClipboardItem !== "undefined") {
+        try {
+          await navigator.clipboard.write([new ClipboardItem({
+            "text/plain": new Blob([text], { type: "text/plain" }),
+            "text/html": new Blob([buildTeamClipboardHtml(data)], { type: "text/html" }),
+          })]);
+        } catch {
+          // Some browsers accept plain text but reject HTML clipboard items.
+          await navigator.clipboard.writeText(text);
+        }
+      } else if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
       } else {
         const ta = document.createElement("textarea");
@@ -31,8 +41,11 @@ const CopyTeamButton = ({ className, title = "Copiar esta equipe", ...data }: Co
         ta.style.opacity = "0";
         document.body.appendChild(ta);
         ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
+        try {
+          if (!document.execCommand("copy")) throw new Error("Clipboard unavailable");
+        } finally {
+          document.body.removeChild(ta);
+        }
       }
       setCopied(true);
       toast.success("Equipe copiada!");
@@ -54,7 +67,7 @@ const CopyTeamButton = ({ className, title = "Copiar esta equipe", ...data }: Co
       onClick={handleCopy}
     >
       {copied ? (
-        <Check className="w-3 h-3 text-emerald-600" />
+        <Check className="w-3 h-3 text-success" />
       ) : (
         <Copy className="w-3 h-3" />
       )}
