@@ -1862,8 +1862,11 @@ const ClientDetail = () => {
                 <Dialog open={storeDialogOpen} onOpenChange={(open) => {
                   setStoreDialogOpen(open);
                   if (!open) {
-                    setStoreForm({ ...emptyStoreForm });
+                    setStoreForm({ ...emptyStoreForm, country: clientCountryName });
                     nicknameTouchedRef.current = false;
+                  } else if (!storeForm.country.trim()) {
+                    // Pré-preenche o País com o país do cliente ao abrir o formulário.
+                    setStoreForm((f) => ({ ...f, country: clientCountryName }));
                   }
                 }}>
                   <DialogTrigger asChild>
