@@ -665,7 +665,7 @@ function TeamVehiclesSection({ teamId, canEdit, campaignId }: { teamId: string; 
 
 // ─── Members Section ─────────────────────────────────────
 
-function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateToTeam }: { teamId: string; canEdit: boolean; campaignId: string; clientId?: string; onNavigateToTeam?: (id: string) => void }) {
+function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateToTeam, otherTeams = [], onDirtyChange }: { teamId: string; canEdit: boolean; campaignId: string; clientId?: string; onNavigateToTeam?: (id: string) => void; otherTeams?: { id: string; name: string }[]; onDirtyChange?: (dirty: boolean) => void }) {
   const queryClient = useQueryClient();
   const { data: members = [] } = useTeamMembers(teamId);
   const { data: blockedData } = useBlockedInstallers(clientId);
@@ -829,24 +829,59 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateT
     onError: (e) => toast.error(e.message || "Erro ao atualizar"),
   });
 
-  const deleteMember = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("installation_team_members").delete().eq("id", id);
+  // ─── Staged changes (removals + copies) — only persisted on "Salvar alterações" ───
+  const [pendingDeletes, setPendingDeletes] = useState<Set<string>>(new Set());
+  const [pendingAdds, setPendingAdds] = useState<TeamMember[]>([]);
+  const [copying, setCopying] = useState(false);
+  const dirty = pendingDeletes.size > 0 || pendingAdds.length > 0;
+  const visibleMembers = [...members.filter((m) => !pendingDeletes.has(m.id)), ...pendingAdds];
+
+  useEffect(() => { onDirtyChange?.(dirty); }, [dirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
+
+  const removeLocally = (id: string) => {
+    if (id.startsWith("pending-")) setPendingAdds((list) => list.filter((m) => m.id !== id));
+    else setPendingDeletes((set) => new Set(set).add(id));
+  };
+  const discardChanges = () => { setPendingDeletes(new Set()); setPendingAdds([]); };
+
+  const copyFromTeam = async (sourceId: string) => {
+    setCopying(true);
+    try {
+      const { data, error } = await supabase.from("installation_team_members").select("*").eq("team_id", sourceId).order("created_at");
       if (error) throw error;
-      return id;
+      const source = (data || []) as TeamMember[];
+      const allowed = source.filter((m) => {
+        const c = normCpf(m.cpf || ""), r = normRg(m.rg || "");
+        return !((c && blockedData?.cpfs.has(c)) || (r && blockedData?.rgs.has(r)));
+      });
+      const { toAdd, skipped } = mergeInstallers(visibleMembers, allowed);
+      setPendingAdds((list) => [...list, ...toAdd.map((m, i) => ({ ...m, id: `pending-${Date.now()}-${i}`, team_id: teamId }) as TeamMember)]);
+      const blocked = source.length - allowed.length;
+      toast.info(`${toAdd.length} instalador(es) acrescentado(s), ${skipped} já existia(m)${blocked ? `, ${blocked} bloqueado(s) ignorado(s)` : ""}. Clique em "Salvar alterações" para confirmar.`);
+    } catch (e) {
+      toast.error((e as Error).message || "Erro ao copiar instaladores");
+    } finally {
+      setCopying(false);
+    }
+  };
+
+  const saveChanges = useMutation({
+    mutationFn: async () => {
+      if (pendingDeletes.size) {
+        const { error } = await supabase.from("installation_team_members").delete().in("id", [...pendingDeletes]);
+        if (error) throw error;
+      }
+      if (pendingAdds.length) {
+        const { error } = await supabase.from("installation_team_members").insert(
+          pendingAdds.map((m) => ({ team_id: teamId, name: m.name, phone: m.phone, cpf: m.cpf, rg: m.rg, is_leader: !!m.is_leader, is_unified_doc: !!m.is_unified_doc })),
+        );
+        if (error) throw error;
+      }
     },
-    onMutate: async (id: string) => {
-      await queryClient.cancelQueries({ queryKey: ["team_members", teamId] });
-      const previous = queryClient.getQueryData<TeamMember[]>(["team_members", teamId]);
-      queryClient.setQueryData<TeamMember[]>(["team_members", teamId], (old) => (old || []).filter(m => m.id !== id));
-      return { previous };
-    },
-    onError: (_err, _id, context) => {
-      if (context?.previous) queryClient.setQueryData(["team_members", teamId], context.previous);
-      toast.error("Erro ao remover instalador");
-    },
-    onSettled: () => { invalidate(); },
-    onSuccess: () => { toast.success("Instalador removido!"); },
+    onSuccess: () => { discardChanges(); toast.success("Alterações dos instaladores salvas!"); },
+    onError: (e: Error) => toast.error(e.message || "Erro ao salvar alterações"),
+    onSettled: () => invalidate(),
   });
 
   const handleCpfChange = (value: string) => {
@@ -926,7 +961,7 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateT
       <div className="flex items-center gap-2">
         <Users className="w-4 h-4 text-muted-foreground" />
         <span className="text-sm font-medium">Instaladores</span>
-        <span className="text-xs text-muted-foreground">({members.length})</span>
+        <span className="text-xs text-muted-foreground">({visibleMembers.length})</span>
       </div>
 
       <div className="space-y-2 pl-6">
