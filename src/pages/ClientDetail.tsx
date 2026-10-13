@@ -596,6 +596,8 @@ const ClientDetail = () => {
   const [currencyCode, setCurrencyCode] = useState(client?.currency_code || "BRL");
   const [clientLanguage, setClientLanguage] = useState((client as any)?.language || "pt-BR");
   const countryConfig = getCountryConfig(client?.country_code);
+  // País do cliente (ex.: CL → "Chile") — base para o prefixo do código de loja.
+  const clientCountryName = client?.country_code ? getCountryConfig(client.country_code).name : "";
 
   const handleNameChange = (value: string) => {
     setStoreForm((f) => ({
@@ -661,7 +663,7 @@ const ClientDetail = () => {
     if (!clientId) return;
     const formData = capitalizeStoreFields({ ...storeForm });
     if (!formData.store_code && client) {
-      formData.store_code = generateStoreCode(client.name, formData.country, stores);
+      formData.store_code = generateStoreCode(client.name, formData.country, stores, clientCountryName);
     }
     // Set boolean custom fields to "false" if empty
     customFieldsParsed.forEach((cf, i) => {
@@ -672,7 +674,7 @@ const ClientDetail = () => {
     });
     const { showcase_count: sc, ...rest } = formData as any;
     await addStore.mutateAsync({ client_id: clientId, ...rest, showcase_count: parseInt(sc, 10) || 0 });
-    setStoreForm({ ...emptyStoreForm });
+    setStoreForm({ ...emptyStoreForm, country: clientCountryName });
     nicknameTouchedRef.current = false;
     setStoreDialogOpen(false);
   };
@@ -715,7 +717,7 @@ const ClientDetail = () => {
     if (!editStoreId) return;
     const formData = capitalizeStoreFields({ ...editStoreForm });
     if (!formData.store_code && client) {
-      formData.store_code = generateStoreCode(client.name, formData.country, stores);
+      formData.store_code = generateStoreCode(client.name, formData.country, stores, clientCountryName);
     }
     const { showcase_count: sc2, ...rest2 } = formData as any;
     await updateStore.mutateAsync({ id: editStoreId, ...rest2, showcase_count: parseInt(sc2, 10) || 0 });
