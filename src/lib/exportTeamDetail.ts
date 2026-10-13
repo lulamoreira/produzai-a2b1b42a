@@ -3,122 +3,6 @@ import { saveBlobAs } from "./saveBlobAs";
 import { format } from "date-fns";
 import type { InstallationTeam, TeamMember, TeamVehicle } from "@/components/InstallationTeamDialog";
 
-interface ExportTeamDetailData {
-  team: InstallationTeam;
-  members: TeamMember[];
-  vehicles: TeamVehicle[];
-  campaignName: string;
-  clientName?: string;
-  agencyName?: string;
-  fileName: string;
-}
-
-const PRIMARY_COLOR = "3B4A6B";
-const HEADER_FONT: Partial<ExcelJS.Font> = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
-const HEADER_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: `FF${PRIMARY_COLOR}` } };
-const ALT_ROW_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF8F8F8" } };
-
-export async function exportTeamDetail(data: ExportTeamDetailData) {
-  const { team, members, vehicles, campaignName, clientName, agencyName, fileName } = data;
-
-  const wb = new ExcelJS.Workbook();
-
-  // ─── Aba "Equipe": ficha da equipe + instaladores ────────
-  const ws = wb.addWorksheet("Equipe");
-  ws.columns = [
-    { width: 5 },
-    { width: 32 },
-    { width: 16 },
-    { width: 14 },
-    { width: 16 },
-    { width: 18 },
-    { width: 10 },
-  ];
-
-  // Ficha da equipe
-  const infoRows: Array<[string, string]> = [
-    ["ProduzAI", ""],
-    ["", ""],
-    ["Equipe", team.name],
-    ["Campanha", campaignName],
-    ...(agencyName ? [["Agência", agencyName] as [string, string]] : []),
-    ...(clientName ? [["Cliente", clientName] as [string, string]] : []),
-    ["Data de exportação", format(new Date(), "dd/MM/yyyy 'às' HH:mm")],
-    ["Instaladores", String(members.length)],
-  ];
-  infoRows.forEach(([label, value], i) => {
-    const row = ws.addRow([label, value]);
-    if (i === 0) {
-      row.getCell(1).font = { bold: true, size: 16 };
-    } else if (label) {
-      row.getCell(1).font = { bold: true };
-    }
-  });
-
-  ws.addRow([]);
-
-  // Cabeçalho da tabela de instaladores
-  const headerRow = ws.addRow(["#", "Nome", "Telefone", "RG", "CPF", "RU", "Líder"]);
-  headerRow.height = 26;
-  headerRow.eachCell((c) => {
-    c.font = HEADER_FONT;
-    c.fill = HEADER_FILL;
-    c.alignment = { vertical: "middle", horizontal: "center" };
-  });
-
-  members.forEach((m, i) => {
-    const rg = m.is_unified_doc ? "" : m.rg || "";
-    const cpf = m.is_unified_doc ? "" : m.cpf || "";
-    const ru = m.is_unified_doc ? m.cpf || m.rg || "" : "";
-    const row = ws.addRow([
-      i + 1,
-      m.name,
-      m.phone || "",
-      rg,
-      cpf,
-      ru,
-      m.is_leader ? "Sim" : "",
-    ]);
-    if (i % 2 === 1) row.eachCell((c) => { c.fill = ALT_ROW_FILL; });
-    row.getCell(2).font = { bold: m.is_leader };
-    row.getCell(7).alignment = { horizontal: "center" };
-  });
-
-  // ─── Veículos (quando houver) ────────────────────────────
-  if (vehicles.length > 0) {
-    ws.addRow([]);
-    const vehHeader = ws.addRow(["Veículo", "Marca", "Cor", "Placa"]);
-    vehHeader.height = 24;
-    // Label na primeira célula com o estilo de cabeçalho
-    vehHeader.getCell(1).font = HEADER_FONT;
-    vehHeader.getCell(1).fill = HEADER_FILL;
-    vehHeader.getCell(1).alignment = { vertical: "middle" };
-    vehHeader.getCell(2).font = HEADER_FONT;
-    vehHeader.getCell(2).fill = HEADER_FILL;
-    vehHeader.getCell(2).alignment = { vertical: "middle" };
-    vehHeader.getCell(3).font = HEADER_FONT;
-    vehHeader.getCell(3).fill = HEADER_FILL;
-    vehHeader.getCell(3).alignment = { vertical: "middle" };
-    vehHeader.getCell(4).font = HEADER_FONT;
-    vehHeader.getCell(4).fill = HEADER_FILL;
-    vehHeader.getCell(4).alignment = { vertical: "middle" };
-
-    vehicles.forEach((v, i) => {
-      const row = ws.addRow([v.name || "", v.brand || "", v.color || "", v.plate || ""]);
-      if (i % 2 === 1) row.eachCell((c) => { c.fill = ALT_ROW_FILL; });
-    });
-  }
-
-  // ─── Download ────────────────────────────────────────────
-  const buffer = await wb.xlsx.writeBuffer();
-  const xlsxMime = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-  await saveBlobAs(new Blob([buffer], { type: xlsxMime }), fileName, {
-    mimeType: xlsxMime,
-    description: "Planilha Excel (.xlsx)",
-    extension: ".xlsx",
-  });
-}
-
 export interface TeamClipboardData {
   team: InstallationTeam;
   members: TeamMember[];
@@ -128,39 +12,114 @@ export interface TeamClipboardData {
   agencyName?: string;
 }
 
-/**
- * Monta a versão em texto da mesma equipe exportada em Excel.
- * Usa TAB entre colunas para que a colagem venha em células separadas
- * no Excel/Sheets e continue legível em WhatsApp/e-mail.
- */
-export function buildTeamClipboardText(data: TeamClipboardData): string {
-  const { team, members, vehicles, campaignName, clientName, agencyName } = data;
-  const lines: string[] = [];
+interface ExportTeamDetailData extends TeamClipboardData {
+  fileName: string;
+}
 
-  lines.push(`EQUIPE: ${team.name}`);
-  lines.push(`Campanha: ${campaignName}`);
-  if (agencyName) lines.push(`Agência: ${agencyName}`);
-  if (clientName) lines.push(`Cliente: ${clientName}`);
-  lines.push(`Exportado em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm")}`);
-  lines.push("");
+interface TeamSection {
+  title: string;
+  fields: Array<[string, string]>;
+}
 
-  lines.push(`INSTALADORES (${members.length}):`);
-  lines.push(["Nome", "Telefone", "RG", "CPF", "RU", "Líder"].join("\t"));
-  members.forEach((m) => {
-    const rg = m.is_unified_doc ? "" : m.rg || "";
-    const cpf = m.is_unified_doc ? "" : m.cpf || "";
-    const ru = m.is_unified_doc ? m.cpf || m.rg || "" : "";
-    lines.push([m.name || "", m.phone || "", rg, cpf, ru, m.is_leader ? "Sim" : ""].join("\t"));
-  });
-
-  if (vehicles.length > 0) {
-    lines.push("");
-    lines.push(`VEÍCULOS (${vehicles.length}):`);
-    lines.push(["Nome", "Marca", "Cor", "Placa"].join("\t"));
-    vehicles.forEach((v) => {
-      lines.push([v.name || "", v.brand || "", v.color || "", v.plate || ""].join("\t"));
+// One data model keeps the Excel, rich clipboard and plain clipboard in sync.
+function buildSections(data: TeamClipboardData): TeamSection[] {
+  const sections: TeamSection[] = [{
+    title: `Equipe: ${data.team.name}`,
+    fields: [
+      ["Campanha", data.campaignName],
+      ...(data.agencyName ? [["Agência", data.agencyName] as [string, string]] : []),
+      ...(data.clientName ? [["Cliente", data.clientName] as [string, string]] : []),
+      ["Exportado em", format(new Date(), "dd/MM/yyyy 'às' HH:mm")],
+      ["Instaladores", String(data.members.length)],
+    ],
+  }];
+  data.members.forEach((member, index) => {
+    sections.push({
+      title: `Instalador ${index + 1}${member.is_leader ? " — Líder da equipe" : ""}`,
+      fields: [
+        ["Nome", member.name],
+        ["Telefone", member.phone],
+        ...(member.is_unified_doc
+          ? [["RU", member.cpf || member.rg] as [string, string]]
+          : [["RG", member.rg], ["CPF", member.cpf]] as Array<[string, string]>),
+        ["Líder", member.is_leader ? "Sim" : "Não"],
+      ],
     });
-  }
+  });
+  data.vehicles.forEach((vehicle, index) => {
+    sections.push({
+      title: `Veículo ${index + 1}`,
+      fields: [["Nome", vehicle.name], ["Marca", vehicle.brand], ["Cor", vehicle.color], ["Placa", vehicle.plate]],
+    });
+  });
+  return sections;
+}
 
-  return lines.join("\n");
+const HEADER_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FF3B4A6B" } };
+const LABEL_FILL: ExcelJS.FillPattern = { type: "pattern", pattern: "solid", fgColor: { argb: "FFF2F4F7" } };
+
+export async function exportTeamDetail(data: ExportTeamDetailData): Promise<void> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = "ProduzAI";
+  const ws = wb.addWorksheet("Equipe");
+  ws.columns = [{ width: 23 }, { width: 28 }, { width: 24 }, { width: 20 }];
+  ws.properties.defaultRowHeight = 24;
+  ws.pageSetup = { paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0 };
+  ws.pageMargins = { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 };
+  const title = ws.addRow(["ProduzAI — Ficha da equipe"]);
+  ws.mergeCells(title.number, 1, title.number, 4);
+  title.font = { name: "Arial", bold: true, size: 18, color: { argb: "FF3B4A6B" } };
+  title.height = 34;
+  const hierarchy = ws.addRow([[data.agencyName, data.clientName, data.campaignName].filter(Boolean).join(" / ")]);
+  ws.mergeCells(hierarchy.number, 1, hierarchy.number, 4);
+  hierarchy.font = { name: "Arial", italic: true, size: 11 };
+  hierarchy.alignment = { vertical: "middle", wrapText: true };
+  hierarchy.height = 32;
+
+  for (const section of buildSections(data)) {
+    ws.addRow([]);
+    const heading = ws.addRow([section.title]);
+    ws.mergeCells(heading.number, 1, heading.number, 4);
+    heading.height = 30;
+    heading.getCell(1).fill = HEADER_FILL;
+    heading.font = { name: "Arial", bold: true, size: 12, color: { argb: "FFFFFFFF" } };
+    heading.alignment = { vertical: "middle", wrapText: true };
+    for (const [label, value] of section.fields) {
+      const row = ws.addRow([`${label}:`, value || "Não informado"]);
+      ws.mergeCells(row.number, 2, row.number, 4);
+      row.getCell(1).font = { name: "Arial", bold: true, size: 11 };
+      row.getCell(1).fill = LABEL_FILL;
+      row.getCell(2).font = { name: "Arial", size: 11, bold: label === "Nome", italic: !value || label === "Exportado em" };
+      row.alignment = { vertical: "middle", wrapText: true };
+      row.height = Math.max(24, Math.ceil((value || "Não informado").length / 72) * 16 + 8);
+    }
+  }
+  const buffer = await wb.xlsx.writeBuffer();
+  const mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  await saveBlobAs(new Blob([buffer], { type: mimeType }), data.fileName, {
+    mimeType, description: "Planilha Excel (.xlsx)", extension: ".xlsx",
+  });
+}
+
+/** Plain fallback uses WhatsApp-compatible emphasis; rich editors receive actual formatting. */
+export function buildTeamClipboardText(data: TeamClipboardData): string {
+  return buildSections(data).map((section) => [
+    `*${section.title}*`,
+    ...section.fields.map(([label, value]) => `*${label}:* ${value || "_Não informado_"}`),
+  ].join("\n")).join("\n\n");
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (char) => {
+    const entities: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+    return entities[char] ?? char;
+  });
+}
+
+export function buildTeamClipboardHtml(data: TeamClipboardData): string {
+  return buildSections(data).map((section) =>
+    `<section><h3><strong>${escapeHtml(section.title)}</strong></h3><p>${section.fields.map(([label, value]) =>
+      `<strong>${escapeHtml(label)}:</strong> ${value ? escapeHtml(value) : "<em>Não informado</em>"}`,
+    ).join("<br>")}</p></section>`,
+  ).join("");
 }
