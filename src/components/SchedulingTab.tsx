@@ -1331,6 +1331,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         >
                           <FileSpreadsheet className="w-3 h-3" /> Excel
                         </Button>
+                        </>
                       )}
                     </div>
                     {assignedTeam && teamIncomplete && (
