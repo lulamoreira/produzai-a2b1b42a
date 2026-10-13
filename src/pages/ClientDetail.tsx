@@ -741,7 +741,7 @@ const ClientDetail = () => {
     let count = 0;
     for (let i = 0; i < storesWithoutCode.length; i++) {
       const store = storesWithoutCode[i];
-      const code = generateStoreCode(client.name, store.country || "", allStores);
+      const code = generateStoreCode(client.name, store.country || "", allStores, clientCountryName);
       await updateStore.mutateAsync({ id: store.id, store_code: code });
       const idx = allStores.findIndex((s) => s.id === store.id);
       if (idx >= 0) allStores[idx] = { ...allStores[idx], store_code: code };
