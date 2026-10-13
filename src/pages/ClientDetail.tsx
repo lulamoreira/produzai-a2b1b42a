@@ -142,9 +142,14 @@ const emptyStoreForm = {
   tipo_entrega: 'frete_instalacao' as const,
 };
 
-function generateStoreCode(clientName: string, country: string, existingStores: { store_code: string | null }[]): string {
+function generateStoreCode(clientName: string, country: string, existingStores: { store_code: string | null }[], fallbackCountry = ""): string {
   const clientPart = (clientName || "XXX").replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X");
-  const countryPart = (country || "BRA").replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X");
+  // O país vem SEMPRE do campo informado ou, em último caso, do país do cliente.
+  // Nunca defaultar silenciosamente para "BRA" (bug: lojas chilenas viravam LINBRA).
+  const effectiveCountry = (country || fallbackCountry).trim();
+  const countryPart = effectiveCountry
+    ? effectiveCountry.replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X")
+    : "XXX";
   const prefix = `${clientPart}${countryPart}`;
   // Collect all existing sequential numbers for this prefix
   const usedNumbers = new Set<number>();
