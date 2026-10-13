@@ -142,9 +142,14 @@ const emptyStoreForm = {
   tipo_entrega: 'frete_instalacao' as const,
 };
 
-function generateStoreCode(clientName: string, country: string, existingStores: { store_code: string | null }[]): string {
+function generateStoreCode(clientName: string, country: string, existingStores: { store_code: string | null }[], fallbackCountry = ""): string {
   const clientPart = (clientName || "XXX").replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X");
-  const countryPart = (country || "BRA").replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X");
+  // O país vem SEMPRE do campo informado ou, em último caso, do país do cliente.
+  // Nunca defaultar silenciosamente para "BRA" (bug: lojas chilenas viravam LINBRA).
+  const effectiveCountry = (country || fallbackCountry).trim();
+  const countryPart = effectiveCountry
+    ? effectiveCountry.replace(/[^a-zA-Z0-9]/g, "").substring(0, 3).toUpperCase().padEnd(3, "X")
+    : "XXX";
   const prefix = `${clientPart}${countryPart}`;
   // Collect all existing sequential numbers for this prefix
   const usedNumbers = new Set<number>();
@@ -591,6 +596,8 @@ const ClientDetail = () => {
   const [currencyCode, setCurrencyCode] = useState(client?.currency_code || "BRL");
   const [clientLanguage, setClientLanguage] = useState((client as any)?.language || "pt-BR");
   const countryConfig = getCountryConfig(client?.country_code);
+  // País do cliente (ex.: CL → "Chile") — base para o prefixo do código de loja.
+  const clientCountryName = client?.country_code ? getCountryConfig(client.country_code).name : "";
 
   const handleNameChange = (value: string) => {
     setStoreForm((f) => ({
@@ -656,7 +663,7 @@ const ClientDetail = () => {
     if (!clientId) return;
     const formData = capitalizeStoreFields({ ...storeForm });
     if (!formData.store_code && client) {
-      formData.store_code = generateStoreCode(client.name, formData.country, stores);
+      formData.store_code = generateStoreCode(client.name, formData.country, stores, clientCountryName);
     }
     // Set boolean custom fields to "false" if empty
     customFieldsParsed.forEach((cf, i) => {
@@ -667,7 +674,7 @@ const ClientDetail = () => {
     });
     const { showcase_count: sc, ...rest } = formData as any;
     await addStore.mutateAsync({ client_id: clientId, ...rest, showcase_count: parseInt(sc, 10) || 0 });
-    setStoreForm({ ...emptyStoreForm });
+    setStoreForm({ ...emptyStoreForm, country: clientCountryName });
     nicknameTouchedRef.current = false;
     setStoreDialogOpen(false);
   };
@@ -710,7 +717,7 @@ const ClientDetail = () => {
     if (!editStoreId) return;
     const formData = capitalizeStoreFields({ ...editStoreForm });
     if (!formData.store_code && client) {
-      formData.store_code = generateStoreCode(client.name, formData.country, stores);
+      formData.store_code = generateStoreCode(client.name, formData.country, stores, clientCountryName);
     }
     const { showcase_count: sc2, ...rest2 } = formData as any;
     await updateStore.mutateAsync({ id: editStoreId, ...rest2, showcase_count: parseInt(sc2, 10) || 0 });
@@ -734,7 +741,7 @@ const ClientDetail = () => {
     let count = 0;
     for (let i = 0; i < storesWithoutCode.length; i++) {
       const store = storesWithoutCode[i];
-      const code = generateStoreCode(client.name, store.country || "", allStores);
+      const code = generateStoreCode(client.name, store.country || "", allStores, clientCountryName);
       await updateStore.mutateAsync({ id: store.id, store_code: code });
       const idx = allStores.findIndex((s) => s.id === store.id);
       if (idx >= 0) allStores[idx] = { ...allStores[idx], store_code: code };
@@ -1855,8 +1862,11 @@ const ClientDetail = () => {
                 <Dialog open={storeDialogOpen} onOpenChange={(open) => {
                   setStoreDialogOpen(open);
                   if (!open) {
-                    setStoreForm({ ...emptyStoreForm });
+                    setStoreForm({ ...emptyStoreForm, country: clientCountryName });
                     nicknameTouchedRef.current = false;
+                  } else if (!storeForm.country.trim()) {
+                    // Pré-preenche o País com o país do cliente ao abrir o formulário.
+                    setStoreForm((f) => ({ ...f, country: clientCountryName }));
                   }
                 }}>
                   <DialogTrigger asChild>
