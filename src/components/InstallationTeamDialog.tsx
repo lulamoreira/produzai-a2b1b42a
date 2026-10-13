@@ -13,6 +13,7 @@ import { cn, normalizeTeamName, normalizeMemberName } from "@/lib/utils";
 import { useBlockedInstallers } from "@/hooks/useBlockedInstallers";
 import { normCpf, normRg } from "@/lib/normalizeDoc";
 import { getCoverageBadgeLabel, type CoverageScope } from "@/lib/teamCoverage";
+import { mergeInstallers } from "@/lib/mergeTeamInstallers";
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -243,6 +244,13 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [editingTeamName, setEditingTeamName] = useState("");
   const teamRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  // Unsaved installer changes: ask before closing the dialog or switching teams.
+  const [membersDirty, setMembersDirty] = useState(false);
+  const guard = (action: () => void) => {
+    if (membersDirty && !window.confirm("Há alterações nos instaladores que não foram salvas. Deseja sair sem salvar? As alterações serão descartadas.")) return;
+    setMembersDirty(false);
+    action();
+  };
 
   // When opened with a target team, auto-expand it and scroll into view
   useEffect(() => {
@@ -299,7 +307,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
   });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(o) => { if (o) onOpenChange(o); else guard(() => onOpenChange(false)); }}>
       <DialogContent className="max-w-2xl max-h-[90dvh] flex flex-col gap-0 p-0 overflow-hidden">
         <DialogHeader className="px-6 pt-6 pb-4 border-b shrink-0">
           <DialogTitle className="flex items-center gap-2">
@@ -340,7 +348,7 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
                   "flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-muted/50 transition-colors",
                   selectedTeamId === team.id && "bg-muted"
                 )}
-                onClick={() => setSelectedTeamId(selectedTeamId === team.id ? null : team.id)}
+                onClick={() => guard(() => setSelectedTeamId(selectedTeamId === team.id ? null : team.id))}
               >
                 <div className="flex items-center gap-2 flex-1 min-w-0">
                   {selectedTeamId === team.id ? <ChevronDown className="w-4 h-4 shrink-0" /> : <ChevronRight className="w-4 h-4 shrink-0" />}
@@ -404,7 +412,9 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
                     canEdit={canEdit} 
                     campaignId={campaignId} 
                     clientId={clientId} 
-                    onNavigateToTeam={setSelectedTeamId}
+                    onNavigateToTeam={(id) => guard(() => setSelectedTeamId(id))}
+                    otherTeams={teams.filter((t) => t.id !== team.id)}
+                    onDirtyChange={setMembersDirty}
                   />
                 </div>
               )}
@@ -665,7 +675,7 @@ function TeamVehiclesSection({ teamId, canEdit, campaignId }: { teamId: string; 
 
 // ─── Members Section ─────────────────────────────────────
 
-function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateToTeam }: { teamId: string; canEdit: boolean; campaignId: string; clientId?: string; onNavigateToTeam?: (id: string) => void }) {
+function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateToTeam, otherTeams = [], onDirtyChange }: { teamId: string; canEdit: boolean; campaignId: string; clientId?: string; onNavigateToTeam?: (id: string) => void; otherTeams?: { id: string; name: string }[]; onDirtyChange?: (dirty: boolean) => void }) {
   const queryClient = useQueryClient();
   const { data: members = [] } = useTeamMembers(teamId);
   const { data: blockedData } = useBlockedInstallers(clientId);
@@ -829,24 +839,59 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateT
     onError: (e) => toast.error(e.message || "Erro ao atualizar"),
   });
 
-  const deleteMember = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("installation_team_members").delete().eq("id", id);
+  // ─── Staged changes (removals + copies) — only persisted on "Salvar alterações" ───
+  const [pendingDeletes, setPendingDeletes] = useState<Set<string>>(new Set());
+  const [pendingAdds, setPendingAdds] = useState<TeamMember[]>([]);
+  const [copying, setCopying] = useState(false);
+  const dirty = pendingDeletes.size > 0 || pendingAdds.length > 0;
+  const visibleMembers = [...members.filter((m) => !pendingDeletes.has(m.id)), ...pendingAdds];
+
+  useEffect(() => { onDirtyChange?.(dirty); }, [dirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
+
+  const removeLocally = (id: string) => {
+    if (id.startsWith("pending-")) setPendingAdds((list) => list.filter((m) => m.id !== id));
+    else setPendingDeletes((set) => new Set(set).add(id));
+  };
+  const discardChanges = () => { setPendingDeletes(new Set()); setPendingAdds([]); };
+
+  const copyFromTeam = async (sourceId: string) => {
+    setCopying(true);
+    try {
+      const { data, error } = await supabase.from("installation_team_members").select("*").eq("team_id", sourceId).order("created_at");
       if (error) throw error;
-      return id;
+      const source = (data || []) as TeamMember[];
+      const allowed = source.filter((m) => {
+        const c = normCpf(m.cpf || ""), r = normRg(m.rg || "");
+        return !((c && blockedData?.cpfs.has(c)) || (r && blockedData?.rgs.has(r)));
+      });
+      const { toAdd, skipped } = mergeInstallers(visibleMembers, allowed);
+      setPendingAdds((list) => [...list, ...toAdd.map((m, i) => ({ ...m, id: `pending-${Date.now()}-${i}`, team_id: teamId }) as TeamMember)]);
+      const blocked = source.length - allowed.length;
+      toast.info(`${toAdd.length} instalador(es) acrescentado(s), ${skipped} já existia(m)${blocked ? `, ${blocked} bloqueado(s) ignorado(s)` : ""}. Clique em "Salvar alterações" para confirmar.`);
+    } catch (e) {
+      toast.error((e as Error).message || "Erro ao copiar instaladores");
+    } finally {
+      setCopying(false);
+    }
+  };
+
+  const saveChanges = useMutation({
+    mutationFn: async () => {
+      if (pendingDeletes.size) {
+        const { error } = await supabase.from("installation_team_members").delete().in("id", [...pendingDeletes]);
+        if (error) throw error;
+      }
+      if (pendingAdds.length) {
+        const { error } = await supabase.from("installation_team_members").insert(
+          pendingAdds.map((m) => ({ team_id: teamId, name: m.name, phone: m.phone, cpf: m.cpf, rg: m.rg, is_leader: !!m.is_leader, is_unified_doc: !!m.is_unified_doc })),
+        );
+        if (error) throw error;
+      }
     },
-    onMutate: async (id: string) => {
-      await queryClient.cancelQueries({ queryKey: ["team_members", teamId] });
-      const previous = queryClient.getQueryData<TeamMember[]>(["team_members", teamId]);
-      queryClient.setQueryData<TeamMember[]>(["team_members", teamId], (old) => (old || []).filter(m => m.id !== id));
-      return { previous };
-    },
-    onError: (_err, _id, context) => {
-      if (context?.previous) queryClient.setQueryData(["team_members", teamId], context.previous);
-      toast.error("Erro ao remover instalador");
-    },
-    onSettled: () => { invalidate(); },
-    onSuccess: () => { toast.success("Instalador removido!"); },
+    onSuccess: () => { discardChanges(); toast.success("Alterações dos instaladores salvas!"); },
+    onError: (e: Error) => toast.error(e.message || "Erro ao salvar alterações"),
+    onSettled: () => invalidate(),
   });
 
   const handleCpfChange = (value: string) => {
@@ -926,18 +971,35 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateT
       <div className="flex items-center gap-2">
         <Users className="w-4 h-4 text-muted-foreground" />
         <span className="text-sm font-medium">Instaladores</span>
-        <span className="text-xs text-muted-foreground">({members.length})</span>
+        <span className="text-xs text-muted-foreground">({visibleMembers.length})</span>
       </div>
 
       <div className="space-y-2 pl-6">
-        {members.map((m) => {
+        {canEdit && otherTeams.length > 0 && (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-muted-foreground shrink-0">Copiar instaladores de:</span>
+            <select
+              className="flex-1 h-7 rounded-md border border-input bg-background px-2 text-xs"
+              value=""
+              disabled={copying}
+              onChange={(e) => { if (e.target.value) copyFromTeam(e.target.value); }}
+            >
+              <option value="">Selecione uma equipe…</option>
+              {otherTeams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
+        )}
+
+        {visibleMembers.map((m) => {
           const missingFields = getMemberMissingFields(m);
+          const isPendingAdd = m.id.startsWith("pending-");
           if (editingId === m.id) {
             return <div key={m.id} className="bg-muted/50 rounded p-2">{memberFormFields(false)}</div>;
           }
           return (
-            <div key={m.id} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1.5 flex-wrap">
+            <div key={m.id} className={cn("flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1.5 flex-wrap", isPendingAdd && "ring-1 ring-primary/50 bg-primary/5")}>
               <span className="font-medium">{m.name}</span>
+              {isPendingAdd && <span className="text-[10px] text-primary font-medium">novo (não salvo)</span>}
               {m.is_leader && <span className="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full font-medium">⭐ Líder</span>}
               {m.is_unified_doc ? (
                 m.cpf && <span className="text-muted-foreground">RU: {formatCpf(m.cpf)}</span>
@@ -956,10 +1018,12 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateT
               )}
               {canEdit && (
                 <div className="flex items-center gap-1 ml-auto">
-                  <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => startEditing(m)}>
-                    <Edit3 className="w-3 h-3" />
-                  </Button>
-                  <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive" onClick={() => deleteMember.mutate(m.id)}>
+                  {!isPendingAdd && (
+                    <Button size="icon" variant="ghost" className="h-5 w-5" disabled={dirty} title={dirty ? "Salve as alterações antes de editar" : undefined} onClick={() => startEditing(m)}>
+                      <Edit3 className="w-3 h-3" />
+                    </Button>
+                  )}
+                  <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive" onClick={() => removeLocally(m.id)}>
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>
@@ -968,7 +1032,20 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateT
           );
         })}
 
-        {canEdit && !adding && !editingId && (
+        {dirty && (
+          <div className="sticky bottom-0 flex items-center gap-2 rounded-md border border-primary/40 bg-background/95 backdrop-blur p-2 text-xs">
+            <AlertTriangle className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="flex-1">
+              Alterações não salvas: {pendingDeletes.size > 0 && `${pendingDeletes.size} removido(s)`}{pendingDeletes.size > 0 && pendingAdds.length > 0 && ", "}{pendingAdds.length > 0 && `${pendingAdds.length} adicionado(s)`}
+            </span>
+            <Button size="sm" variant="ghost" className="h-7 text-xs" disabled={saveChanges.isPending} onClick={discardChanges}>Descartar</Button>
+            <Button size="sm" className="h-7 text-xs" disabled={saveChanges.isPending} onClick={() => saveChanges.mutate()}>
+              <Check className="w-3 h-3 mr-1" />{saveChanges.isPending ? "Salvando..." : "Salvar alterações"}
+            </Button>
+          </div>
+        )}
+
+        {canEdit && !adding && !editingId && !dirty && (
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => { setAdding(true); setForm({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false, isLeader: false }); }}>
             <Plus className="w-3 h-3" /> Adicionar instalador
           </Button>
