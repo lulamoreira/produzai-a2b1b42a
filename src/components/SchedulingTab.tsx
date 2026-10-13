@@ -1310,6 +1310,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         ))}
                       </select>
                       {assignedTeam && (
+                        <>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button variant="ghost" size="sm" className={cn("h-7 text-xs gap-1 px-2", teamIncomplete && "text-amber-500")}>
