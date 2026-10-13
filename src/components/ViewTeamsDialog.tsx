@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { 
   Search, Users, Car, Crown, Phone, AlertTriangle, ChevronUp, ChevronDown, 
-  Download, Pencil, Trash2, UserPlus, ShieldBan, ShieldCheck, XCircle 
+  Download, Pencil, Trash2, UserPlus, ShieldBan, ShieldCheck, XCircle, Copy
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -32,6 +32,7 @@ import {
   type TeamVehicle,
 } from "@/components/InstallationTeamDialog";
 import ImportTeamsDialog from "@/components/ImportTeamsDialog";
+import DuplicateTeamDialog from "@/components/DuplicateTeamDialog";
 import { useBlockedInstallers } from "@/hooks/useBlockedInstallers";
 import { normCpf, normRg } from "@/lib/normalizeDoc";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -57,6 +58,7 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
   const [activeIdx, setActiveIdx] = useState(0);
   const [importOpen, setImportOpen] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<InstallationTeam | null>(null);
+  const [teamToDuplicate, setTeamToDuplicate] = useState<InstallationTeam | null>(null);
   const [selectedIds, setSelectedIds] = useState<Record<string, boolean>>({});
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
@@ -326,6 +328,7 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
               onFocus={() => setActiveIdx(idx)}
               onSelect={onEditTeam ? () => onEditTeam(team.id) : undefined}
               onDelete={canEdit ? () => setTeamToDelete(team) : undefined}
+              onDuplicate={canEdit ? () => setTeamToDuplicate(team) : undefined}
               clientId={clientId}
               ref={(el) => (itemRefs.current[idx] = el)}
             />
@@ -341,6 +344,8 @@ export default function ViewTeamsDialog({ open, onOpenChange, campaignId, client
         campaignId={campaignId}
         clientId={clientId}
       />
+
+      {teamToDuplicate && <DuplicateTeamDialog team={teamToDuplicate} campaignId={campaignId} onClose={() => setTeamToDuplicate(null)} />}
 
       <AlertDialog open={!!teamToDelete} onOpenChange={(o) => !o && setTeamToDelete(null)}>
         <AlertDialogContent>
@@ -411,11 +416,12 @@ interface TeamViewCardProps {
   onFocus: () => void;
   onSelect?: () => void;
   onDelete?: () => void;
+  onDuplicate?: () => void;
   clientId?: string;
 }
 
 const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function TeamViewCard(
-  { team, members, vehicles, active, canEdit, selected, onToggleSelected, onFocus, onSelect, onDelete, clientId },
+  { team, members, vehicles, active, canEdit, selected, onToggleSelected, onFocus, onSelect, onDelete, onDuplicate, clientId },
   ref,
 ) {
   const incomplete = isTeamIncomplete(members);
@@ -466,7 +472,7 @@ const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function Team
         </div>
       </div>
 
-      {canEdit && (onSelect || onDelete) && (
+      {canEdit && (onSelect || onDelete || onDuplicate) && (
         <div className="flex flex-wrap items-center gap-1.5 px-3 sm:px-4 py-2 border-b bg-background">
           {onSelect && (
             <Button
@@ -489,6 +495,11 @@ const TeamViewCard = forwardRef<HTMLDivElement, TeamViewCardProps>(function Team
               title="Abrir editor para adicionar instaladores"
             >
               <UserPlus className="w-3 h-3" /> Adicionar instalador
+            </Button>
+          )}
+          {onDuplicate && (
+            <Button type="button" variant="outline" size="sm" className="h-7 text-xs gap-1.5" onClick={(event) => { event.stopPropagation(); onDuplicate(); }}>
+              <Copy className="w-3 h-3" /> Duplicar
             </Button>
           )}
           {onDelete && (
