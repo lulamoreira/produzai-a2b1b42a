@@ -27,7 +27,7 @@ import { useLogCampaignActivity } from "@/hooks/useCampaignActivityLog";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList, Lock, LockOpen, ChevronDown, ChevronUp, SlidersHorizontal, MoreHorizontal, RefreshCw, LayoutGrid, List as ListIcon, ArrowUp, ArrowDown } from "lucide-react";
+import { Search, CalendarIcon, Clock, FileText, Sun, Moon, HelpCircle, Download, Users, MessageCircle, Phone, Mail, AlertTriangle, Wrench, CheckCircle2, AlertCircle, History, ClipboardList, Lock, LockOpen, ChevronDown, ChevronUp, SlidersHorizontal, MoreHorizontal, RefreshCw, LayoutGrid, List as ListIcon, ArrowUp, ArrowDown, FileSpreadsheet } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
@@ -41,6 +41,7 @@ import * as XLSX from "xlsx";
 import { downloadWorkbook } from "@/lib/downloadWorkbook";
 import { buildExportFileName } from "@/lib/exportFileName";
 import { exportTeamsByStore } from "@/lib/exportTeamsByStore";
+import { exportTeamDetail } from "@/lib/exportTeamDetail";
 import InstallationTeamDialog, {
   useInstallationTeams,
   useAllTeamMembers,
@@ -739,6 +740,24 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         scheduleMap,
         teams,
         membersByTeam: allMembersMap,
+      });
+      toast.success(t("common.spreadsheetExported"));
+    } catch (e: any) {
+      toast.error(e?.message || "Erro ao exportar planilha");
+    }
+  };
+
+  const handleExportTeam = async (team: InstallationTeam, members: TeamMember[], vehicles: TeamVehicle[]) => {
+    if (!team) return;
+    try {
+      await exportTeamDetail({
+        team,
+        members,
+        vehicles,
+        campaignName,
+        clientName,
+        agencyName,
+        fileName: buildExportFileName(`Equipe_${team.name}`, { agencyName, clientName }),
       });
       toast.success(t("common.spreadsheetExported"));
     } catch (e: any) {
