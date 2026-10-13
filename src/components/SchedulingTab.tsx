@@ -17,6 +17,7 @@ import { useClientPermission } from "@/hooks/useClientPermission";
 import { Input } from "@/components/ui/input";
 import DebouncedInput from "@/components/DebouncedInput";
 import CopyOsButton from "@/components/CopyOsButton";
+import CopyTeamButton from "@/components/CopyTeamButton";
 
 import ScheduleHistorySheet from "@/components/ScheduleHistorySheet";
 import ActivityLogPanel from "@/components/ActivityLogPanel";
@@ -1331,6 +1332,15 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         >
                           <FileSpreadsheet className="w-3 h-3" /> Excel
                         </Button>
+                        <CopyTeamButton
+                          className="h-7 text-xs gap-1 px-2"
+                          team={assignedTeam}
+                          members={teamMembers}
+                          vehicles={teamVehicles}
+                          campaignName={campaignName}
+                          clientName={clientName}
+                          agencyName={agencyName}
+                        />
                         </>
                       )}
                     </div>
