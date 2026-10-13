@@ -1321,6 +1321,15 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                             <TeamCardContent team={assignedTeam} members={teamMembers} vehicles={teamVehicles} />
                           </PopoverContent>
                         </Popover>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-7 text-xs gap-1 px-2"
+                          title="Exportar esta equipe para Excel"
+                          onClick={() => handleExportTeam(assignedTeam, teamMembers, teamVehicles)}
+                        >
+                          <FileSpreadsheet className="w-3 h-3" /> Excel
+                        </Button>
                       )}
                     </div>
                     {assignedTeam && teamIncomplete && (
