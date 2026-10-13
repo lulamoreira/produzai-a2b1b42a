@@ -930,14 +930,31 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateT
       </div>
 
       <div className="space-y-2 pl-6">
-        {members.map((m) => {
+        {canEdit && otherTeams.length > 0 && (
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-muted-foreground shrink-0">Copiar instaladores de:</span>
+            <select
+              className="flex-1 h-7 rounded-md border border-input bg-background px-2 text-xs"
+              value=""
+              disabled={copying}
+              onChange={(e) => { if (e.target.value) copyFromTeam(e.target.value); }}
+            >
+              <option value="">Selecione uma equipe…</option>
+              {otherTeams.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+            </select>
+          </div>
+        )}
+
+        {visibleMembers.map((m) => {
           const missingFields = getMemberMissingFields(m);
+          const isPendingAdd = m.id.startsWith("pending-");
           if (editingId === m.id) {
             return <div key={m.id} className="bg-muted/50 rounded p-2">{memberFormFields(false)}</div>;
           }
           return (
-            <div key={m.id} className="flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1.5 flex-wrap">
+            <div key={m.id} className={cn("flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1.5 flex-wrap", isPendingAdd && "ring-1 ring-primary/50 bg-primary/5")}>
               <span className="font-medium">{m.name}</span>
+              {isPendingAdd && <span className="text-[10px] text-primary font-medium">novo (não salvo)</span>}
               {m.is_leader && <span className="text-[10px] bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-full font-medium">⭐ Líder</span>}
               {m.is_unified_doc ? (
                 m.cpf && <span className="text-muted-foreground">RU: {formatCpf(m.cpf)}</span>
@@ -956,10 +973,12 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateT
               )}
               {canEdit && (
                 <div className="flex items-center gap-1 ml-auto">
-                  <Button size="icon" variant="ghost" className="h-5 w-5" onClick={() => startEditing(m)}>
-                    <Edit3 className="w-3 h-3" />
-                  </Button>
-                  <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive" onClick={() => deleteMember.mutate(m.id)}>
+                  {!isPendingAdd && (
+                    <Button size="icon" variant="ghost" className="h-5 w-5" disabled={dirty} title={dirty ? "Salve as alterações antes de editar" : undefined} onClick={() => startEditing(m)}>
+                      <Edit3 className="w-3 h-3" />
+                    </Button>
+                  )}
+                  <Button size="icon" variant="ghost" className="h-5 w-5 text-destructive" onClick={() => removeLocally(m.id)}>
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>
@@ -968,7 +987,20 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateT
           );
         })}
 
-        {canEdit && !adding && !editingId && (
+        {dirty && (
+          <div className="sticky bottom-0 flex items-center gap-2 rounded-md border border-primary/40 bg-background/95 backdrop-blur p-2 text-xs">
+            <AlertTriangle className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="flex-1">
+              Alterações não salvas: {pendingDeletes.size > 0 && `${pendingDeletes.size} removido(s)`}{pendingDeletes.size > 0 && pendingAdds.length > 0 && ", "}{pendingAdds.length > 0 && `${pendingAdds.length} adicionado(s)`}
+            </span>
+            <Button size="sm" variant="ghost" className="h-7 text-xs" disabled={saveChanges.isPending} onClick={discardChanges}>Descartar</Button>
+            <Button size="sm" className="h-7 text-xs" disabled={saveChanges.isPending} onClick={() => saveChanges.mutate()}>
+              <Check className="w-3 h-3 mr-1" />{saveChanges.isPending ? "Salvando..." : "Salvar alterações"}
+            </Button>
+          </div>
+        )}
+
+        {canEdit && !adding && !editingId && !dirty && (
           <Button variant="outline" size="sm" className="h-7 text-xs gap-1" onClick={() => { setAdding(true); setForm({ name: "", rg: "", cpf: "", phone: "", isUnifiedDoc: false, isLeader: false }); }}>
             <Plus className="w-3 h-3" /> Adicionar instalador
           </Button>
