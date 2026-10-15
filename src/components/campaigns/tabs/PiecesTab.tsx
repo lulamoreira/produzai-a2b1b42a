@@ -1126,7 +1126,7 @@ export default function PiecesTab({
                     <ListOrdered className="w-4 h-4 mr-2" /> Organizar peças
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setTimeout(() => setPptExportOpen(true), 10)}>
-                    <Presentation className="w-4 h-4 mr-2" /> {t("common.exportPPT")}
+                    <Download className="w-4 h-4 mr-2" /> Exportar relatórios e catálogos
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={async () => {
