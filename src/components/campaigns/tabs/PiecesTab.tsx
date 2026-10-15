@@ -843,6 +843,67 @@ export default function PiecesTab({
     toast.success(t("pieces.pieceDuplicated"));
   };
 
+  // Duplica uma peça DENTRO do mesmo kit: cria uma cópia independente da peça
+  // (kit_only) e a vincula ao kit atual, posicionada logo após a original.
+  const handleDuplicateKitPiece = async (piece: any, kp: any) => {
+    if (!viewKitDetail) return;
+    const maxCode = Math.max(...pieces.map(p => p.code ?? 0), 0);
+    const novaPeca: any = await addPiece?.mutateAsync?.({
+      campaign_id: piece.campaign_id,
+      name: `${piece.name} (cópia)`,
+      code: maxCode + 1,
+      category: piece.category,
+      size: piece.size,
+      store_category: piece.store_category,
+      sub_location: piece.sub_location,
+      specification: piece.specification,
+      installation_instructions: piece.installation_instructions,
+      kit_only: true,
+      is_deleted: false,
+      is_mockup: piece.is_mockup ?? false,
+      is_new: piece.is_new,
+      display_order: (piece.display_order ?? 0) + 1,
+      custom_field_1: piece.custom_field_1,
+      custom_field_2: piece.custom_field_2,
+      custom_field_3: piece.custom_field_3,
+      custom_field_4: piece.custom_field_4,
+      custom_field_5: piece.custom_field_5,
+      image_url: piece.image_url,
+      image_thumb_url: piece.image_thumb_url,
+      image_full_url: piece.image_full_url,
+      image_report_url: piece.image_report_url,
+    });
+    if (!novaPeca?.id) return;
+
+    const novoKp: any = await addKitPiece?.mutateAsync?.({
+      kit_id: viewKitDetail.id,
+      piece_id: novaPeca.id,
+      quantity: kp.quantity ?? 1,
+    });
+
+    // Posiciona a cópia logo após a peça original dentro do kit
+    if (novoKp?.id) {
+      const atuais = kitPieces
+        .filter(x => x.kit_id === viewKitDetail.id)
+        .sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0))
+        .map(x => x.id);
+      const fromIdx = atuais.indexOf(kp.id);
+      if (fromIdx >= 0) {
+        atuais.splice(fromIdx + 1, 0, novoKp.id);
+        await reorderKitPieces?.mutateAsync?.(atuais.map((id, i) => ({ id, display_order: i })));
+      }
+    }
+
+    try {
+      await disambiguateKitPieceNames(campaignId);
+    } catch (err) {
+      console.error("Falha na desambiguação de nomes de peças de kit:", err);
+    }
+    qc.invalidateQueries({ queryKey: ["campaign_pieces", campaignId] });
+    qc.invalidateQueries({ queryKey: ["campaign_kit_pieces"] });
+    toast.success(t("pieces.pieceDuplicated"));
+  };
+
   const handleDuplicateKit = async (kit: any) => {
     const maxKitCode = Math.max(...kits.map(k => k.code ?? 0), 0);
     let maxPieceCode = Math.max(...pieces.map(p => p.code ?? 0), 0);
@@ -1560,6 +1621,7 @@ export default function PiecesTab({
           onUpdateKitPiece={(kp) => updateKitPiece?.mutateAsync?.(kp)}
           onReorderKitPieces={(updates) => reorderKitPieces?.mutateAsync?.(updates)}
           onUpdatePiece={(p) => updatePiece?.mutateAsync?.(p)}
+          onDuplicateKitPiece={handleDuplicateKitPiece}
         />
       )}
       
