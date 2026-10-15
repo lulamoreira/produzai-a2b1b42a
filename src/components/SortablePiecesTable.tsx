@@ -297,10 +297,14 @@ function SortableRow({
         </TableCell>
       )}
       {(!visibleColumns || visibleColumns.specification) && (
-        <TableCell className="text-sm text-muted-foreground hidden lg:table-cell whitespace-pre-wrap min-w-[420px] max-w-[720px]">{piece.specification}</TableCell>
+        <TableCell className="text-sm text-muted-foreground hidden lg:table-cell min-w-[420px] max-w-[720px]">
+          <ExpandableText text={piece.specification ?? ""} />
+        </TableCell>
       )}
       {(!visibleColumns || visibleColumns.installation_instructions) && (
-        <TableCell className="text-sm text-muted-foreground hidden xl:table-cell whitespace-pre-wrap min-w-[250px] max-w-[400px]">{piece.installation_instructions}</TableCell>
+        <TableCell className="text-sm text-muted-foreground hidden xl:table-cell min-w-[250px] max-w-[400px]">
+          <ExpandableText text={piece.installation_instructions ?? ""} />
+        </TableCell>
       )}
       
       {customFieldLabels?.map((label, i) => {
