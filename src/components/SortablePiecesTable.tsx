@@ -89,6 +89,8 @@ interface SortableRowProps {
   onToggleSelection?: (id: string) => void;
   /** When true the order is fixed by code and dragging is disabled. */
   disableDrag?: boolean;
+  /** Name of the parent kit when this piece is a kit component (kit_only). */
+  parentKitName?: string;
   /** When false, the Modelo (store_category) column is hidden because no piece uses it. */
   hasStoreCategory?: boolean;
 }
