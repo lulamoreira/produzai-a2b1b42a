@@ -5,15 +5,18 @@ import { Image, Upload, Link, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import type { CampaignPiece } from "@/hooks/useMultiClientData";
 
 interface Props {
   piece: CampaignPiece;
   canEdit?: boolean;
+  /** Renders as a labeled dropdown menu item instead of a standalone icon button. */
+  asMenuItem?: boolean;
 }
 
-const CampaignPieceImageUpload = ({ piece, canEdit = false }: Props) => {
+const CampaignPieceImageUpload = ({ piece, canEdit = false, asMenuItem = false }: Props) => {
   const [open, setOpen] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [uploading, setUploading] = useState(false);
