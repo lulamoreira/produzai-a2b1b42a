@@ -231,8 +231,9 @@ function SortableRow({
 
   // Regular piece row
   const piece = row.data;
+  const isSelected = selectedPieceIds?.includes(piece.id) ?? false;
   return (
-    <TableRow ref={setNodeRef} style={style}>
+    <TableRow ref={setNodeRef} style={style} className={isSelected ? "bg-primary/5 hover:bg-primary/10" : undefined}>
       <TableCell className="w-10 p-2">
         <div className="flex justify-center">
           <TooltipProvider>
@@ -528,7 +529,7 @@ export default function SortablePiecesTable({
               {(!visibleColumns || visibleColumns.size) && (
                 <TableHead className="hidden md:table-cell w-[140px] min-w-[140px]">{t("pieces.measures")}</TableHead>
               )}
-              {(!visibleColumns || visibleColumns.store_category) && (
+              {hasStoreCategory && (!visibleColumns || visibleColumns.store_category) && (
                 <TableHead className="hidden lg:table-cell">{t("common.model")}</TableHead>
               )}
               {(!visibleColumns || visibleColumns.specification) && (
@@ -544,7 +545,7 @@ export default function SortablePiecesTable({
                 return <TableHead key={`custom-head-${i}`} className="hidden xl:table-cell">{label}</TableHead>;
               })}
 
-              <TableHead className="text-center w-[60px]">{t("common.total")}</TableHead>
+              <TableHead className="text-center w-[60px]">{t("pieces.qtyDistributed")}</TableHead>
               {(canEditPieces || canDeletePieces) && <TableHead className="w-[56px]">{t("common.actions")}</TableHead>}
             </TableRow>
           </TableHeader>
