@@ -292,68 +292,69 @@ function SortableRow({
       <TableCell className="text-center font-semibold">{pieceTotal}</TableCell>
       {(canEditPieces || canDeletePieces) && (
         <TableCell>
-          <div className="flex items-center gap-1">
+          <DropdownMenu>
             {(() => { const isOptimistic = piece.id.startsWith("optimistic-"); return <>
-            {canEditPieces && (
-              <CampaignPieceImageUpload piece={piece} canEdit={canEditPieces && !isOptimistic} />
-            )}
-            {canEditPieces && (
-              <Button variant="ghost" size="icon" className="h-7 w-7"
-                title={isDistributed ? t("pieces.removeFromAllStores") : t("pieces.distributeToCompatible")}
-                onClick={() => onDistribute(piece)}
-                disabled={isOptimistic}
-              >
-                <CheckSquare className={`w-3.5 h-3.5 ${isDistributed ? "text-primary" : "text-muted-foreground"}`} />
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={t("common.actions")} disabled={isOptimistic}>
+                <MoreVertical className="w-4 h-4" />
               </Button>
-            )}
-            {canEditPieces && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" title={t("pieces.markKitOnly")}
-                onClick={() => onMarkKitOnly(piece)}
-                disabled={isOptimistic}
-              >
-                <Package className="w-3.5 h-3.5 text-muted-foreground" />
-              </Button>
-            )}
-            {canEditPieces && (
-              <Button variant="ghost" size="icon" className="h-7 w-7"
-                title={piece.is_mockup ? t("pieces.removeMockup") : t("pieces.markMockup")}
-                onClick={() => onToggleMockup(piece)}
-                disabled={isOptimistic}
-              >
-                <Palette className={`w-3.5 h-3.5 ${piece.is_mockup ? "text-amber-600" : "text-muted-foreground"}`} />
-              </Button>
-            )}
-            {canEditPieces && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" title={t("pieces.duplicatePiece")} onClick={() => onDuplicate(piece)} disabled={isOptimistic}>
-                <Copy className="w-3.5 h-3.5" />
-              </Button>
-            )}
-            {canEditPieces && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(piece)} disabled={isOptimistic}>
-                <Edit3 className="w-3.5 h-3.5" />
-              </Button>
-            )}
-            {canDeletePieces && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" disabled={isOptimistic}>
-                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>{t("pieces.deletePieceQuestion")}</AlertDialogTitle>
-                    <AlertDialogDescription>{t("pieces.deletePieceDesc")}</AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onDelete(piece.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.delete")}</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[240px]">
+              {canEditPieces && (
+                <CampaignPieceImageUpload piece={piece} canEdit asMenuItem />
+              )}
+              {canEditPieces && (
+                <DropdownMenuItem onClick={() => onDistribute(piece)} disabled={isOptimistic}>
+                  <CheckSquare className={`w-4 h-4 mr-2 ${isDistributed ? "text-primary" : ""}`} />
+                  {isDistributed ? t("pieces.removeFromAllStores") : t("pieces.distributeToCompatible")}
+                </DropdownMenuItem>
+              )}
+              {canEditPieces && (
+                <DropdownMenuItem onClick={() => onMarkKitOnly(piece)} disabled={isOptimistic}>
+                  <Package className="w-4 h-4 mr-2" /> {t("pieces.markKitOnly")}
+                </DropdownMenuItem>
+              )}
+              {canEditPieces && (
+                <DropdownMenuItem onClick={() => onToggleMockup(piece)} disabled={isOptimistic}>
+                  <Palette className={`w-4 h-4 mr-2 ${piece.is_mockup ? "text-amber-600" : ""}`} />
+                  {piece.is_mockup ? t("pieces.removeMockup") : t("pieces.markMockup")}
+                </DropdownMenuItem>
+              )}
+              {canEditPieces && (
+                <DropdownMenuItem onClick={() => onDuplicate(piece)} disabled={isOptimistic}>
+                  <Copy className="w-4 h-4 mr-2" /> {t("pieces.duplicatePiece")}
+                </DropdownMenuItem>
+              )}
+              {canEditPieces && (
+                <DropdownMenuItem onClick={() => onEdit(piece)} disabled={isOptimistic}>
+                  <Edit3 className="w-4 h-4 mr-2" /> {t("pieces.editPiece")}
+                </DropdownMenuItem>
+              )}
+              {canDeletePieces && (
+                <>
+                  <DropdownMenuSeparator />
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} disabled={isOptimistic} className="text-destructive focus:text-destructive">
+                        <Trash2 className="w-4 h-4 mr-2" /> {t("pieces.deletePiece")}
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t("pieces.deletePieceQuestion")}</AlertDialogTitle>
+                        <AlertDialogDescription>{t("pieces.deletePieceDesc")}</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onDelete(piece.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.delete")}</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              )}
+            </DropdownMenuContent>
             </>; })()}
-          </div>
+          </DropdownMenu>
         </TableCell>
       )}
     </TableRow>
