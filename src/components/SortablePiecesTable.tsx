@@ -89,6 +89,8 @@ interface SortableRowProps {
   onToggleSelection?: (id: string) => void;
   /** When true the order is fixed by code and dragging is disabled. */
   disableDrag?: boolean;
+  /** Name of the parent kit when this piece is a kit component (kit_only). */
+  parentKitName?: string;
   /** When false, the Modelo (store_category) column is hidden because no piece uses it. */
   hasStoreCategory?: boolean;
 }
@@ -97,7 +99,7 @@ function SortableRow({
   row, pieceTotal, canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit,
   isDistributed, kitCategory, customFieldLabels, visibleColumns,
-  selectedPieceIds, onToggleSelection, disableDrag, hasStoreCategory = true
+  selectedPieceIds, onToggleSelection, disableDrag, hasStoreCategory = true, parentKitName
 }: SortableRowProps) {
   const { t } = useTranslation();
   const id = row.type === "piece" ? row.data.id : `kit-${row.data.id}`;
@@ -232,8 +234,19 @@ function SortableRow({
   // Regular piece row
   const piece = row.data;
   const isSelected = selectedPieceIds?.includes(piece.id) ?? false;
+  const isKitPiece = !!piece.kit_only;
   return (
-    <TableRow ref={setNodeRef} style={style} className={isSelected ? "bg-primary/5 hover:bg-primary/10" : undefined}>
+    <TableRow
+      ref={setNodeRef}
+      style={style}
+      className={
+        isSelected
+          ? "bg-primary/5 hover:bg-primary/10"
+          : isKitPiece
+            ? "bg-muted/40 hover:bg-muted/60"
+            : undefined
+      }
+    >
       <TableCell className="w-10 p-2">
         <div className="flex justify-center">
           <TooltipProvider>
@@ -267,7 +280,7 @@ function SortableRow({
       )}
       {(!visibleColumns || visibleColumns.code) && (
         <TableCell>
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${isKitPiece ? "ml-4" : ""}`}>
             <PieceImageDropZone piece={piece} canEdit={canEditPieces} />
             <span className="font-bold text-primary">{piece.code}</span>
           </div>
@@ -282,11 +295,20 @@ function SortableRow({
           onClick={() => onEdit(piece)}
           disabled={piece.id.startsWith("optimistic-")}
         >
-          <span className="flex items-center gap-1.5 flex-wrap">
+          <span className={`flex items-center gap-1.5 flex-wrap ${isKitPiece ? "ml-4" : ""}`}>
             {piece.name}
+            {isKitPiece && (
+              <span className="inline-flex items-center gap-1 text-[10px] bg-primary/10 text-primary font-semibold px-1.5 py-0.5 rounded whitespace-nowrap">
+                <Package className="w-3 h-3" />
+                {t("pieces.kitPieceBadge")}
+              </span>
+            )}
             {piece.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">{t("common.mockup")}</span>}
             {(piece as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold">{t("common.new")}</span>}
           </span>
+          {isKitPiece && parentKitName && (
+            <span className="block text-xs text-muted-foreground italic">↳ Kit: {parentKitName}</span>
+          )}
         </button>
       </TableCell>
       {(!visibleColumns || visibleColumns.size) && (
@@ -460,6 +482,17 @@ export default function SortablePiecesTable({
   // Hide the Modelo column entirely when no piece in this campaign uses it.
   const hasStoreCategory = useMemo(() => pieces.some(p => !!p.store_category), [pieces]);
 
+  // Parent kit name for kit component pieces (kit_only), shown as visual differentiation.
+  const parentKitNameByPieceId = useMemo(() => {
+    const map = new Map<string, string>();
+    const kitNameById = new Map(kits.map(k => [k.id, k.name]));
+    for (const kp of kitPiecesList) {
+      const kitName = kitNameById.get(kp.kit_id);
+      if (kitName) map.set(kp.piece_id, kitName);
+    }
+    return map;
+  }, [kits, kitPiecesList]);
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -586,6 +619,7 @@ export default function SortablePiecesTable({
                     onToggleSelection={onToggleSelection}
                     disableDrag={sortByCode}
                     hasStoreCategory={hasStoreCategory}
+                    parentKitName={row.type === "piece" ? parentKitNameByPieceId.get(row.data.id) : undefined}
                   />
                 );
               })}
