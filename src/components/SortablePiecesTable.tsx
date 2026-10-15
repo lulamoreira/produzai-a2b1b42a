@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import {
@@ -37,6 +37,27 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+
+/** Long text clamped to a few lines with an expand/collapse toggle. */
+function ExpandableText({ text, className }: { text: string; className?: string }) {
+  const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
+  if (!text) return <span className={className}>—</span>;
+  const isLong = text.length > 180 || text.split("\n").length > 3;
+  if (!isLong) return <span className={`whitespace-pre-wrap ${className ?? ""}`}>{text}</span>;
+  return (
+    <span className={className}>
+      <span className={`whitespace-pre-wrap ${expanded ? "" : "line-clamp-3"}`}>{text}</span>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="block text-xs font-medium text-primary hover:underline mt-0.5"
+      >
+        {expanded ? t("pieces.showLess") : t("pieces.showMore")}
+      </button>
+    </span>
+  );
+}
 
 // Unified row type
 export type UnifiedRow = 
