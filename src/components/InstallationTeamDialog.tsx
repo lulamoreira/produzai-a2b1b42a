@@ -1034,6 +1034,11 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateT
                   </Button>
                 </div>
               )}
+              {isPendingAdd ? (
+                <p className="w-full text-[11px] text-muted-foreground italic">Salve o instalador para anexar documentos</p>
+              ) : (
+                <InstallerDocumentsSection teamId={teamId} memberId={m.id} canEdit={canEdit} />
+              )}
             </div>
           );
         })}
