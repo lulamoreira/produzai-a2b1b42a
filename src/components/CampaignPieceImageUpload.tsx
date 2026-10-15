@@ -82,13 +82,23 @@ const CampaignPieceImageUpload = ({ piece, canEdit = false, asMenuItem = false }
 
   if (!canEdit) return null;
 
+  const menuTrigger = (
+    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setOpen(true); }}>
+      <Image className="w-4 h-4 mr-2" /> Gerenciar imagem
+    </DropdownMenuItem>
+  );
+
+  const buttonTrigger = (
+    <DialogTrigger asChild>
+      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Gerenciar imagem">
+        <Image className="w-3.5 h-3.5 text-muted-foreground" />
+      </Button>
+    </DialogTrigger>
+  );
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Gerenciar imagem">
-          <Image className="w-3.5 h-3.5 text-muted-foreground" />
-        </Button>
-      </DialogTrigger>
+      {asMenuItem ? menuTrigger : buttonTrigger}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-display">Imagem - {piece.name}</DialogTitle>
