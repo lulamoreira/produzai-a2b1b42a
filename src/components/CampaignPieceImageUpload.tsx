@@ -5,15 +5,18 @@ import { Image, Upload, Link, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import type { CampaignPiece } from "@/hooks/useMultiClientData";
 
 interface Props {
   piece: CampaignPiece;
   canEdit?: boolean;
+  /** Renders as a labeled dropdown menu item instead of a standalone icon button. */
+  asMenuItem?: boolean;
 }
 
-const CampaignPieceImageUpload = ({ piece, canEdit = false }: Props) => {
+const CampaignPieceImageUpload = ({ piece, canEdit = false, asMenuItem = false }: Props) => {
   const [open, setOpen] = useState(false);
   const [urlInput, setUrlInput] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -79,13 +82,23 @@ const CampaignPieceImageUpload = ({ piece, canEdit = false }: Props) => {
 
   if (!canEdit) return null;
 
+  const menuTrigger = (
+    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setOpen(true); }}>
+      <Image className="w-4 h-4 mr-2" /> Gerenciar imagem
+    </DropdownMenuItem>
+  );
+
+  const buttonTrigger = (
+    <DialogTrigger asChild>
+      <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Gerenciar imagem">
+        <Image className="w-3.5 h-3.5 text-muted-foreground" />
+      </Button>
+    </DialogTrigger>
+  );
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button size="sm" variant="ghost" className="h-7 w-7 p-0" title="Gerenciar imagem">
-          <Image className="w-3.5 h-3.5 text-muted-foreground" />
-        </Button>
-      </DialogTrigger>
+      {asMenuItem ? menuTrigger : buttonTrigger}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="font-display">Imagem - {piece.name}</DialogTitle>

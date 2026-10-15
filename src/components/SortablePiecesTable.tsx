@@ -25,7 +25,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { GripVertical, Edit3, Trash2, CheckSquare, Package, Palette, Copy } from "lucide-react";
+import { GripVertical, Edit3, Trash2, CheckSquare, Package, Palette, Copy, MoreVertical } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import PieceImageDropZone from "@/components/PieceImageDropZone";
 import KitImageDropZone from "@/components/KitImageDropZone";
@@ -34,6 +34,9 @@ import CampaignPieceImageUpload from "@/components/CampaignPieceImageUpload";
 import type { CampaignPiece, ClientStore, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 // Unified row type
 export type UnifiedRow = 
@@ -150,45 +153,53 @@ function SortableRow({
         <TableCell className="text-center font-semibold">{pieceTotal}</TableCell>
         {(canEditPieces || canDeletePieces) && (
           <TableCell>
-            <div className="flex items-center gap-1">
-              {canEditPieces && (
-                <Button variant="ghost" size="icon" className="h-7 w-7"
-                  title={kit.is_mockup ? t("pieces.removeMockup") : t("pieces.markMockup")}
-                  onClick={() => onToggleKitMockup(kit)}
-                >
-                  <Palette className={`w-3.5 h-3.5 ${kit.is_mockup ? "text-amber-600" : "text-muted-foreground"}`} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={t("common.actions")}>
+                  <MoreVertical className="w-4 h-4" />
                 </Button>
-              )}
-              {canEditPieces && (
-                <Button variant="ghost" size="icon" className="h-7 w-7" title={t("pieces.duplicateKit")} onClick={() => onDuplicateKit(kit)}>
-                  <Copy className="w-3.5 h-3.5" />
-                </Button>
-              )}
-              {canEditPieces && (
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onKitClick(kit)}>
-                  <Edit3 className="w-3.5 h-3.5" />
-                </Button>
-              )}
-              {canDeletePieces && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>{t("pieces.deleteKitQuestion")}</AlertDialogTitle>
-                      <AlertDialogDescription>{t("pieces.deleteKitDesc")}</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => onDeleteKit(kit.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.delete")}</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-            </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[200px]">
+                {canEditPieces && (
+                  <DropdownMenuItem onClick={() => onKitClick(kit)}>
+                    <Edit3 className="w-4 h-4 mr-2" /> {t("pieces.editKit")}
+                  </DropdownMenuItem>
+                )}
+                {canEditPieces && (
+                  <DropdownMenuItem onClick={() => onDuplicateKit(kit)}>
+                    <Copy className="w-4 h-4 mr-2" /> {t("pieces.duplicateKit")}
+                  </DropdownMenuItem>
+                )}
+                {canEditPieces && (
+                  <DropdownMenuItem onClick={() => onToggleKitMockup(kit)}>
+                    <Palette className={`w-4 h-4 mr-2 ${kit.is_mockup ? "text-amber-600" : ""}`} />
+                    {kit.is_mockup ? t("pieces.removeMockup") : t("pieces.markMockup")}
+                  </DropdownMenuItem>
+                )}
+                {canDeletePieces && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                          <Trash2 className="w-4 h-4 mr-2" /> {t("pieces.deleteKit")}
+                        </DropdownMenuItem>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>{t("pieces.deleteKitQuestion")}</AlertDialogTitle>
+                          <AlertDialogDescription>{t("pieces.deleteKitDesc")}</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => onDeleteKit(kit.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.delete")}</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </TableCell>
         )}
       </TableRow>
@@ -265,7 +276,7 @@ function SortableRow({
         </TableCell>
       )}
       {(!visibleColumns || visibleColumns.specification) && (
-        <TableCell className="text-sm text-muted-foreground hidden lg:table-cell whitespace-pre-wrap min-w-[300px] max-w-[500px]">{piece.specification}</TableCell>
+        <TableCell className="text-sm text-muted-foreground hidden lg:table-cell whitespace-pre-wrap min-w-[420px] max-w-[720px]">{piece.specification}</TableCell>
       )}
       {(!visibleColumns || visibleColumns.installation_instructions) && (
         <TableCell className="text-sm text-muted-foreground hidden xl:table-cell whitespace-pre-wrap min-w-[250px] max-w-[400px]">{piece.installation_instructions}</TableCell>
@@ -281,68 +292,69 @@ function SortableRow({
       <TableCell className="text-center font-semibold">{pieceTotal}</TableCell>
       {(canEditPieces || canDeletePieces) && (
         <TableCell>
-          <div className="flex items-center gap-1">
+          <DropdownMenu>
             {(() => { const isOptimistic = piece.id.startsWith("optimistic-"); return <>
-            {canEditPieces && (
-              <CampaignPieceImageUpload piece={piece} canEdit={canEditPieces && !isOptimistic} />
-            )}
-            {canEditPieces && (
-              <Button variant="ghost" size="icon" className="h-7 w-7"
-                title={isDistributed ? t("pieces.removeFromAllStores") : t("pieces.distributeToCompatible")}
-                onClick={() => onDistribute(piece)}
-                disabled={isOptimistic}
-              >
-                <CheckSquare className={`w-3.5 h-3.5 ${isDistributed ? "text-primary" : "text-muted-foreground"}`} />
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={t("common.actions")} disabled={isOptimistic}>
+                <MoreVertical className="w-4 h-4" />
               </Button>
-            )}
-            {canEditPieces && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" title={t("pieces.markKitOnly")}
-                onClick={() => onMarkKitOnly(piece)}
-                disabled={isOptimistic}
-              >
-                <Package className="w-3.5 h-3.5 text-muted-foreground" />
-              </Button>
-            )}
-            {canEditPieces && (
-              <Button variant="ghost" size="icon" className="h-7 w-7"
-                title={piece.is_mockup ? t("pieces.removeMockup") : t("pieces.markMockup")}
-                onClick={() => onToggleMockup(piece)}
-                disabled={isOptimistic}
-              >
-                <Palette className={`w-3.5 h-3.5 ${piece.is_mockup ? "text-amber-600" : "text-muted-foreground"}`} />
-              </Button>
-            )}
-            {canEditPieces && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" title={t("pieces.duplicatePiece")} onClick={() => onDuplicate(piece)} disabled={isOptimistic}>
-                <Copy className="w-3.5 h-3.5" />
-              </Button>
-            )}
-            {canEditPieces && (
-              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onEdit(piece)} disabled={isOptimistic}>
-                <Edit3 className="w-3.5 h-3.5" />
-              </Button>
-            )}
-            {canDeletePieces && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" disabled={isOptimistic}>
-                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>{t("pieces.deletePieceQuestion")}</AlertDialogTitle>
-                    <AlertDialogDescription>{t("pieces.deletePieceDesc")}</AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => onDelete(piece.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.delete")}</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-            )}
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="min-w-[240px]">
+              {canEditPieces && (
+                <CampaignPieceImageUpload piece={piece} canEdit asMenuItem />
+              )}
+              {canEditPieces && (
+                <DropdownMenuItem onClick={() => onDistribute(piece)} disabled={isOptimistic}>
+                  <CheckSquare className={`w-4 h-4 mr-2 ${isDistributed ? "text-primary" : ""}`} />
+                  {isDistributed ? t("pieces.removeFromAllStores") : t("pieces.distributeToCompatible")}
+                </DropdownMenuItem>
+              )}
+              {canEditPieces && (
+                <DropdownMenuItem onClick={() => onMarkKitOnly(piece)} disabled={isOptimistic}>
+                  <Package className="w-4 h-4 mr-2" /> {t("pieces.markKitOnly")}
+                </DropdownMenuItem>
+              )}
+              {canEditPieces && (
+                <DropdownMenuItem onClick={() => onToggleMockup(piece)} disabled={isOptimistic}>
+                  <Palette className={`w-4 h-4 mr-2 ${piece.is_mockup ? "text-amber-600" : ""}`} />
+                  {piece.is_mockup ? t("pieces.removeMockup") : t("pieces.markMockup")}
+                </DropdownMenuItem>
+              )}
+              {canEditPieces && (
+                <DropdownMenuItem onClick={() => onDuplicate(piece)} disabled={isOptimistic}>
+                  <Copy className="w-4 h-4 mr-2" /> {t("pieces.duplicatePiece")}
+                </DropdownMenuItem>
+              )}
+              {canEditPieces && (
+                <DropdownMenuItem onClick={() => onEdit(piece)} disabled={isOptimistic}>
+                  <Edit3 className="w-4 h-4 mr-2" /> {t("pieces.editPiece")}
+                </DropdownMenuItem>
+              )}
+              {canDeletePieces && (
+                <>
+                  <DropdownMenuSeparator />
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} disabled={isOptimistic} className="text-destructive focus:text-destructive">
+                        <Trash2 className="w-4 h-4 mr-2" /> {t("pieces.deletePiece")}
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>{t("pieces.deletePieceQuestion")}</AlertDialogTitle>
+                        <AlertDialogDescription>{t("pieces.deletePieceDesc")}</AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => onDelete(piece.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.delete")}</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              )}
+            </DropdownMenuContent>
             </>; })()}
-          </div>
+          </DropdownMenu>
         </TableCell>
       )}
     </TableRow>
@@ -506,7 +518,7 @@ export default function SortablePiecesTable({
               })}
 
               <TableHead className="text-center w-[60px]">{t("common.total")}</TableHead>
-              {(canEditPieces || canDeletePieces) && <TableHead className="w-[80px]">{t("common.actions")}</TableHead>}
+              {(canEditPieces || canDeletePieces) && <TableHead className="w-[56px]">{t("common.actions")}</TableHead>}
             </TableRow>
           </TableHeader>
           <SortableContext items={rowIds} strategy={verticalListSortingStrategy}>
