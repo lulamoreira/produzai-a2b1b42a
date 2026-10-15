@@ -984,15 +984,19 @@ export default function PiecesTab({
             )}
           </div>
           {kitOnlyPieces.length > 0 && (
-            <Button
-              size="sm"
-              variant={showKitPieces ? "default" : "outline"}
-              onClick={() => setShowKitPieces(v => !v)}
-              className="shrink-0 text-[10px] sm:text-xs gap-1 h-9"
+            <div
+              className="flex items-center gap-2 shrink-0"
               title="Mostra as peças que existem somente dentro de kits, para permitir selecioná-las (o kit pai é incluído automaticamente na recotação)."
             >
-              {showKitPieces ? "✓ " : ""}Mostrar peças de kits ({kitOnlyPieces.length})
-            </Button>
+              <Switch
+                id="show-kit-pieces-toggle"
+                checked={showKitPieces}
+                onCheckedChange={(v) => setShowKitPieces(v)}
+              />
+              <Label htmlFor="show-kit-pieces-toggle" className="text-[10px] sm:text-xs cursor-pointer whitespace-nowrap">
+                Mostrar peças de kits ({kitOnlyPieces.length})
+              </Label>
+            </div>
           )}
         </div>
 
@@ -1000,42 +1004,21 @@ export default function PiecesTab({
         <div className="flex flex-wrap items-center gap-2">
           {canEditPieces && (
             <>
-              {isAdminOrMaster && (
-                <Popover open={customFieldsOpen} onOpenChange={setCustomFieldsOpen}>
-                  <PopoverTrigger asChild>
-                    <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1">
-                      <Settings2 className="w-3.5 h-3.5" />
-                      {"⚙ Campos Personalizados"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80">
-                    <div className="grid gap-4">
-                      <div className="space-y-2">
-                        <h4 className="font-medium leading-none">Campos Personalizados</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Configure os nomes dos campos extras para esta campanha.
-                        </p>
-                      </div>
-                      <div className="grid gap-2">
-                        {[1, 2, 3, 4, 5].map((i) => (
-                          <div key={i} className="grid grid-cols-3 items-center gap-4">
-                            <label className="text-sm">Campo {i}</label>
-                            <Input
-                              value={(configLabels as any)[`field${i}`]}
-                              onChange={(e) => setConfigLabels({ ...configLabels, [`field${i}`]: e.target.value })}
-                              className="col-span-2 h-8"
-                              placeholder="Ex: Material, Fornecedor..."
-                            />
-                          </div>
-                        ))}
-                      </div>
-                      <Button size="sm" onClick={handleSaveCustomLabels} disabled={isSavingLabels}>
-                        {isSavingLabels ? t("common.saving") : t("common.save")}
-                      </Button>
-                    </div>
-                  </PopoverContent>
-                </Popover>
-              )}
+              <AddPieceDialog 
+                open={pieceDialogOpen}
+                onOpenChange={setPieceDialogOpen}
+                existingPieces={pieces} 
+                existingKits={kits}
+                customFieldLabels={customFieldLabels} 
+                campaignId={campaignId} 
+                clientId={clientId} 
+                addPieceMutation={addPiece}
+                updatePieceMutation={updatePiece}
+              />
+
+              <Button size="sm" variant="outline" className="text-[10px] sm:text-xs gap-1" onClick={() => setCreateKitDialogOpen(true)}>
+                <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.newKit")}
+              </Button>
 
 
               <Popover>
@@ -1126,14 +1109,6 @@ export default function PiecesTab({
                 </PopoverContent>
               </Popover>
 
-              <Button
-                size="sm"
-                variant="outline"
-                className="text-[10px] sm:text-xs gap-1"
-                onClick={() => setOrganizeOpen(true)}
-              >
-                <ListOrdered className="w-3.5 h-3.5" /> Organizar peças
-              </Button>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -1142,6 +1117,18 @@ export default function PiecesTab({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
+                  {isAdminOrMaster && (
+                    <DropdownMenuItem onClick={() => setCustomFieldsOpen(true)}>
+                      <Settings2 className="w-4 h-4 mr-2" /> Campos Personalizados
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem onClick={() => setOrganizeOpen(true)}>
+                    <ListOrdered className="w-4 h-4 mr-2" /> Organizar peças
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setTimeout(() => setPptExportOpen(true), 10)}>
+                    <Presentation className="w-4 h-4 mr-2" /> {t("common.exportPPT")}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={async () => {
                     const toastId = "export-pieces";
                     toast.loading("Gerando planilha de peças...", { id: toastId });
@@ -1212,22 +1199,7 @@ export default function PiecesTab({
               
               <div className="flex-1" />
 
-              <AddPieceDialog 
-                open={pieceDialogOpen}
-                onOpenChange={setPieceDialogOpen}
-                existingPieces={pieces} 
-                existingKits={kits}
-                customFieldLabels={customFieldLabels} 
-                campaignId={campaignId} 
-                clientId={clientId} 
-                addPieceMutation={addPiece}
-                updatePieceMutation={updatePiece}
-              />
-
-              <Button size="sm" className="text-[10px] sm:text-xs gap-1 bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setCreateKitDialogOpen(true)}>
-                <Package className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> {t("pieces.newKit")}
-              </Button>
-              
+              {/* Exportação PPT: aberta pelo item "Relatório PPT" no menu Mais ações (gatilho invisível) */}
               <ExportReportDropdown
                 campaignId={campaignId}
                 clientId={clientId}
@@ -1240,12 +1212,40 @@ export default function PiecesTab({
                 isOpen={pptExportOpen}
                 onOpenChange={setPptExportOpen}
                 trigger={
-                  <Button variant="outline" size="sm" className="text-[10px] sm:text-xs gap-1">
-                    <Presentation className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    {t("common.exportPPT")}
-                  </Button>
+                  <span aria-hidden="true" className="absolute w-px h-px overflow-hidden opacity-0 pointer-events-none" />
                 }
               />
+
+              {isAdminOrMaster && (
+                <Dialog open={customFieldsOpen} onOpenChange={setCustomFieldsOpen}>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="font-display">Campos Personalizados</DialogTitle>
+                      <DialogDescription>
+                        Configure os nomes dos campos extras para esta campanha.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-2">
+                      {[1, 2, 3, 4, 5].map((i) => (
+                        <div key={i} className="grid grid-cols-3 items-center gap-4">
+                          <Label className="text-sm">Campo {i}</Label>
+                          <Input
+                            value={(configLabels as any)[`field${i}`]}
+                            onChange={(e) => setConfigLabels({ ...configLabels, [`field${i}`]: e.target.value })}
+                            className="col-span-2 h-8"
+                            placeholder="Ex: Material, Fornecedor..."
+                          />
+                        </div>
+                      ))}
+                    </div>
+                    <DialogFooter>
+                      <Button size="sm" onClick={handleSaveCustomLabels} disabled={isSavingLabels}>
+                        {isSavingLabels ? t("common.saving") : t("common.save")}
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              )}
             </>
           )}
         </div>
