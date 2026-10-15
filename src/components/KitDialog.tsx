@@ -1043,12 +1043,21 @@ export function KitDetailDialog({
                           <Minus className="w-3 h-3" />
                         </Button>
                         <Input
+                          key={`${kp.id}-${kp.quantity}`}
                           type="number"
                           min={1}
-                          value={kp.quantity}
-                          onChange={(e) => {
-                            const val = parseInt(e.target.value) || 1;
-                            onUpdateKitPiece({ id: kp.id, quantity: Math.max(1, val) });
+                          defaultValue={kp.quantity}
+                          onFocus={(e) => e.currentTarget.select()}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') e.currentTarget.blur();
+                          }}
+                          onBlur={(e) => {
+                            const val = parseInt(e.currentTarget.value, 10);
+                            if (isNaN(val) || val < 1) {
+                              e.currentTarget.value = String(kp.quantity);
+                              return;
+                            }
+                            if (val !== kp.quantity) onUpdateKitPiece({ id: kp.id, quantity: val });
                           }}
                           onPaste={(e) => {
                             e.preventDefault();
