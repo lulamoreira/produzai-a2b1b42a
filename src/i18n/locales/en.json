@@ -681,9 +681,10 @@
     "secondaryDisplay": "Secondary Display",
     "storeModelLabel": "Store Model",
     "kitPiece": "Is Kit",
-    "qtyDistributed": "Qty. distributed",
+"qtyDistributed": "Qty. distributed",
     "showMore": "Show full",
-    "showLess": "Collapse"
+    "showLess": "Collapse",
+    "kitPieceBadge": "Kit piece"
   },
   "occurrences": {
     "portal": {
