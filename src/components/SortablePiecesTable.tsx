@@ -234,8 +234,19 @@ function SortableRow({
   // Regular piece row
   const piece = row.data;
   const isSelected = selectedPieceIds?.includes(piece.id) ?? false;
+  const isKitPiece = !!piece.kit_only;
   return (
-    <TableRow ref={setNodeRef} style={style} className={isSelected ? "bg-primary/5 hover:bg-primary/10" : undefined}>
+    <TableRow
+      ref={setNodeRef}
+      style={style}
+      className={
+        isSelected
+          ? "bg-primary/5 hover:bg-primary/10"
+          : isKitPiece
+            ? "bg-muted/40 hover:bg-muted/60"
+            : undefined
+      }
+    >
       <TableCell className="w-10 p-2">
         <div className="flex justify-center">
           <TooltipProvider>
