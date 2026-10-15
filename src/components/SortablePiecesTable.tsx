@@ -89,13 +89,15 @@ interface SortableRowProps {
   onToggleSelection?: (id: string) => void;
   /** When true the order is fixed by code and dragging is disabled. */
   disableDrag?: boolean;
+  /** When false, the Modelo (store_category) column is hidden because no piece uses it. */
+  hasStoreCategory?: boolean;
 }
 
 function SortableRow({
   row, pieceTotal, canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit,
   isDistributed, kitCategory, customFieldLabels, visibleColumns,
-  selectedPieceIds, onToggleSelection, disableDrag
+  selectedPieceIds, onToggleSelection, disableDrag, hasStoreCategory = true
 }: SortableRowProps) {
   const { t } = useTranslation();
   const id = row.type === "piece" ? row.data.id : `kit-${row.data.id}`;
