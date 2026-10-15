@@ -482,6 +482,17 @@ export default function SortablePiecesTable({
   // Hide the Modelo column entirely when no piece in this campaign uses it.
   const hasStoreCategory = useMemo(() => pieces.some(p => !!p.store_category), [pieces]);
 
+  // Parent kit name for kit component pieces (kit_only), shown as visual differentiation.
+  const parentKitNameByPieceId = useMemo(() => {
+    const map = new Map<string, string>();
+    const kitNameById = new Map(kits.map(k => [k.id, k.name]));
+    for (const kp of kitPiecesList) {
+      const kitName = kitNameById.get(kp.kit_id);
+      if (kitName) map.set(kp.piece_id, kitName);
+    }
+    return map;
+  }, [kits, kitPiecesList]);
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
