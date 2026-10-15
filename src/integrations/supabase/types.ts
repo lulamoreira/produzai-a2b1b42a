@@ -3419,6 +3419,47 @@ export type Database = {
           },
         ]
       }
+      installer_documents: {
+        Row: {
+          created_at: string | null
+          file_name: string | null
+          file_path: string
+          id: string
+          label: string
+          member_id: string
+          mime_type: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          file_name?: string | null
+          file_path: string
+          id?: string
+          label: string
+          member_id: string
+          mime_type?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          file_name?: string | null
+          file_path?: string
+          id?: string
+          label?: string
+          member_id?: string
+          mime_type?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "installer_documents_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "installation_team_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invites: {
         Row: {
           agency_id: string | null

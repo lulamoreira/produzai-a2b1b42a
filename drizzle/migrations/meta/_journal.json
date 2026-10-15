@@ -15,6 +15,13 @@
       "when": 1791921745919,
       "tag": "0001_copy_support_materials_on_renegotiation",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792074263395,
+      "tag": "0002_installer_documents",
+      "breakpoints": true
     }
   ]
 }

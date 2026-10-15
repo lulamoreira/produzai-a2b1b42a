@@ -14,6 +14,7 @@ import { useBlockedInstallers } from "@/hooks/useBlockedInstallers";
 import { normCpf, normRg } from "@/lib/normalizeDoc";
 import { getCoverageBadgeLabel, type CoverageScope } from "@/lib/teamCoverage";
 import { mergeInstallers } from "@/lib/mergeTeamInstallers";
+import { InstallerDocumentsSection } from "@/components/InstallerDocumentsSection";
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -994,7 +995,12 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateT
           const missingFields = getMemberMissingFields(m);
           const isPendingAdd = m.id.startsWith("pending-");
           if (editingId === m.id) {
-            return <div key={m.id} className="bg-muted/50 rounded p-2">{memberFormFields(false)}</div>;
+            return (
+              <div key={m.id} className="bg-muted/50 rounded p-2 space-y-2">
+                {memberFormFields(false)}
+                <InstallerDocumentsSection teamId={teamId} memberId={m.id} canEdit={canEdit} />
+              </div>
+            );
           }
           return (
             <div key={m.id} className={cn("flex items-center gap-2 text-xs bg-muted/50 rounded px-2 py-1.5 flex-wrap", isPendingAdd && "ring-1 ring-primary/50 bg-primary/5")}>
@@ -1027,6 +1033,11 @@ function TeamMembersSection({ teamId, canEdit, campaignId, clientId, onNavigateT
                     <Trash2 className="w-3 h-3" />
                   </Button>
                 </div>
+              )}
+              {isPendingAdd ? (
+                <p className="w-full text-[11px] text-muted-foreground italic">Salve o instalador para anexar documentos</p>
+              ) : (
+                <InstallerDocumentsSection teamId={teamId} memberId={m.id} canEdit={canEdit} />
               )}
             </div>
           );
