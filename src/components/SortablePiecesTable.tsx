@@ -619,6 +619,7 @@ export default function SortablePiecesTable({
                     onToggleSelection={onToggleSelection}
                     disableDrag={sortByCode}
                     hasStoreCategory={hasStoreCategory}
+                    parentKitName={row.type === "piece" ? parentKitNameByPieceId.get(row.data.id) : undefined}
                   />
                 );
               })}
