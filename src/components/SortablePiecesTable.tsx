@@ -295,11 +295,20 @@ function SortableRow({
           onClick={() => onEdit(piece)}
           disabled={piece.id.startsWith("optimistic-")}
         >
-          <span className="flex items-center gap-1.5 flex-wrap">
+          <span className={`flex items-center gap-1.5 flex-wrap ${isKitPiece ? "ml-4" : ""}`}>
             {piece.name}
+            {isKitPiece && (
+              <span className="inline-flex items-center gap-1 text-[10px] bg-primary/10 text-primary font-semibold px-1.5 py-0.5 rounded whitespace-nowrap">
+                <Package className="w-3 h-3" />
+                {t("pieces.kitPieceBadge")}
+              </span>
+            )}
             {piece.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">{t("common.mockup")}</span>}
             {(piece as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold">{t("common.new")}</span>}
           </span>
+          {isKitPiece && parentKitName && (
+            <span className="block text-xs text-muted-foreground italic">↳ Kit: {parentKitName}</span>
+          )}
         </button>
       </TableCell>
       {(!visibleColumns || visibleColumns.size) && (
