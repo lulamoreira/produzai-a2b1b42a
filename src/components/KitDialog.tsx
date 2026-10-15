@@ -426,6 +426,7 @@ interface KitDetailDialogProps {
   onUpdateKitPiece?: (update: { id: string; quantity: number }) => Promise<void>;
   onReorderKitPieces?: (updates: { id: string; display_order: number }[]) => Promise<void>;
   onDuplicatePiece?: (piece: CampaignPiece) => Promise<void>;
+  onDuplicateKitPiece?: (piece: CampaignPiece, kitPiece: CampaignKitPiece) => Promise<void>;
 }
 
 const parseExcelTSV = (text: string): string[][] => {
@@ -437,7 +438,7 @@ const parseExcelTSV = (text: string): string[][] => {
 export function KitDetailDialog({
   open, onOpenChange, kit, kitPieces, allPieces, existingKits = [], canEdit,
   pieceLocations = [], pieceSubLocations = [],
-  onDeleteKitPiece, onDeleteKit, onAddKitPiece, onUpdateKit, onUpdatePiece, onDeletePiece, onUpdateKitPiece, onReorderKitPieces, onDuplicatePiece,
+  onDeleteKitPiece, onDeleteKit, onAddKitPiece, onUpdateKit, onUpdatePiece, onDeletePiece, onUpdateKitPiece, onReorderKitPieces, onDuplicatePiece, onDuplicateKitPiece,
 }: KitDetailDialogProps) {
   const { t } = useTranslation();
   const [editingPieceId, setEditingPieceId] = useState<string | null>(null);
@@ -1085,6 +1086,11 @@ export function KitDetailDialog({
                   </div>
                   {canEdit && (
                     <div className="flex items-center gap-1">
+                      {onDuplicateKitPiece && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDuplicateKitPiece(p, kp)} title="Duplicar peça dentro do kit">
+                          <Copy className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
                       {onDuplicatePiece && (
                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onDuplicatePiece(p)} title="Duplicar peça">
                           <Copy className="w-3.5 h-3.5" />
