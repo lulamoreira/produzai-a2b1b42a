@@ -457,6 +457,9 @@ export default function SortablePiecesTable({
 
   const rowIds = useMemo(() => unifiedRows.map(r => r.type === "piece" ? r.data.id : `kit-${r.data.id}`), [unifiedRows]);
 
+  // Hide the Modelo column entirely when no piece in this campaign uses it.
+  const hasStoreCategory = useMemo(() => pieces.some(p => !!p.store_category), [pieces]);
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -582,6 +585,7 @@ export default function SortablePiecesTable({
                     selectedPieceIds={selectedPieceIds}
                     onToggleSelection={onToggleSelection}
                     disableDrag={sortByCode}
+                    hasStoreCategory={hasStoreCategory}
                   />
                 );
               })}
