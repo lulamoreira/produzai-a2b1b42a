@@ -280,7 +280,7 @@ function SortableRow({
       )}
       {(!visibleColumns || visibleColumns.code) && (
         <TableCell>
-          <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-2 ${isKitPiece ? "ml-4" : ""}`}>
             <PieceImageDropZone piece={piece} canEdit={canEditPieces} />
             <span className="font-bold text-primary">{piece.code}</span>
           </div>
