@@ -680,7 +680,10 @@
     "primaryDisplay": "Primary Display",
     "secondaryDisplay": "Secondary Display",
     "storeModelLabel": "Store Model",
-    "kitPiece": "Is Kit"
+    "kitPiece": "Is Kit",
+    "qtyDistributed": "Qty. distributed",
+    "showMore": "Show full",
+    "showLess": "Collapse"
   },
   "occurrences": {
     "portal": {
