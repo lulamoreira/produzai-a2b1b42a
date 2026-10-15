@@ -99,7 +99,7 @@ function SortableRow({
   row, pieceTotal, canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit,
   isDistributed, kitCategory, customFieldLabels, visibleColumns,
-  selectedPieceIds, onToggleSelection, disableDrag, hasStoreCategory = true
+  selectedPieceIds, onToggleSelection, disableDrag, hasStoreCategory = true, parentKitName
 }: SortableRowProps) {
   const { t } = useTranslation();
   const id = row.type === "piece" ? row.data.id : `kit-${row.data.id}`;
