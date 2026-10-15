@@ -276,7 +276,7 @@ function SortableRow({
         </TableCell>
       )}
       {(!visibleColumns || visibleColumns.specification) && (
-        <TableCell className="text-sm text-muted-foreground hidden lg:table-cell whitespace-pre-wrap min-w-[300px] max-w-[500px]">{piece.specification}</TableCell>
+        <TableCell className="text-sm text-muted-foreground hidden lg:table-cell whitespace-pre-wrap min-w-[420px] max-w-[720px]">{piece.specification}</TableCell>
       )}
       {(!visibleColumns || visibleColumns.installation_instructions) && (
         <TableCell className="text-sm text-muted-foreground hidden xl:table-cell whitespace-pre-wrap min-w-[250px] max-w-[400px]">{piece.installation_instructions}</TableCell>
@@ -518,7 +518,7 @@ export default function SortablePiecesTable({
               })}
 
               <TableHead className="text-center w-[60px]">{t("common.total")}</TableHead>
-              {(canEditPieces || canDeletePieces) && <TableHead className="w-[80px]">{t("common.actions")}</TableHead>}
+              {(canEditPieces || canDeletePieces) && <TableHead className="w-[56px]">{t("common.actions")}</TableHead>}
             </TableRow>
           </TableHeader>
           <SortableContext items={rowIds} strategy={verticalListSortingStrategy}>
