@@ -7,6 +7,7 @@ import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { useSidebarPermissions } from "@/hooks/useSidebarPermissions";
 import { useCampaignFavorites } from "@/hooks/useCampaignFavorites";
 import { useClientFavorites } from "@/hooks/useClientFavorites";
+import { useAgencyFavorites } from "@/hooks/useAgencyFavorites";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -92,7 +93,8 @@ export function SidebarV2() {
   // Favorites in sidebar
   const { data: favorites = [] } = useCampaignFavorites();
   const { data: clientFavorites = [] } = useClientFavorites();
-  const totalFavorites = favorites.length + clientFavorites.length;
+  const { data: agencyFavorites = [] } = useAgencyFavorites();
+  const totalFavorites = favorites.length + clientFavorites.length + agencyFavorites.length;
   const [favoritesExpanded, setFavoritesExpanded] = useState(() => {
     return localStorage.getItem("sidebar-v2-favorites-expanded") !== "false";
   });
@@ -554,6 +556,34 @@ export function SidebarV2() {
               </button>
               {favoritesExpanded && (
                 <div className="space-y-0.5">
+                  {/* Agency favorites (clients screen) */}
+                  {agencyFavorites.length > 0 && (
+                    <>
+                      <div className="px-3 py-0.5 text-[10px] uppercase tracking-wider opacity-60" style={{ color: 'var(--v2-sidebar-section-label)' }}>
+                        {t("sidebar.agencies", "Agências")}
+                      </div>
+                      {agencyFavorites.map((fav) => {
+                        const route = `/agency/${fav.agency_id}/clients`;
+                        const isActive = agencyId === fav.agency_id && !clientId && !campaignId;
+                        return (
+                          <NavLink
+                            key={fav.id}
+                            to={route}
+                            className="group flex items-center gap-2 pl-[1.875rem] pr-3 py-1.5 rounded-lg transition-colors text-xs"
+                            style={{
+                              background: isActive ? 'var(--v2-sidebar-active)' : 'transparent',
+                              color: isActive ? 'var(--v2-sidebar-active-text)' : 'var(--v2-sidebar-muted)',
+                            }}
+                            title={fav.agency_name}
+                          >
+                            <Building2 className="w-3 h-3 flex-shrink-0 opacity-80" />
+                            <span className="truncate font-medium">{fav.agency_name}</span>
+                          </NavLink>
+                        );
+                      })}
+                    </>
+                  )}
+
                   {/* Client favorites */}
                   {clientFavorites.length > 0 && (
                     <>
