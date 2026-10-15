@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import {
@@ -38,6 +38,27 @@ import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 
+/** Long text clamped to a few lines with an expand/collapse toggle. */
+function ExpandableText({ text, className }: { text: string; className?: string }) {
+  const { t } = useTranslation();
+  const [expanded, setExpanded] = useState(false);
+  if (!text) return <span className={className}>—</span>;
+  const isLong = text.length > 180 || text.split("\n").length > 3;
+  if (!isLong) return <span className={`whitespace-pre-wrap ${className ?? ""}`}>{text}</span>;
+  return (
+    <span className={className}>
+      <span className={`whitespace-pre-wrap ${expanded ? "" : "line-clamp-3"}`}>{text}</span>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="block text-xs font-medium text-primary hover:underline mt-0.5"
+      >
+        {expanded ? t("pieces.showLess") : t("pieces.showMore")}
+      </button>
+    </span>
+  );
+}
+
 // Unified row type
 export type UnifiedRow = 
   | { type: "piece"; data: CampaignPiece }
@@ -68,13 +89,15 @@ interface SortableRowProps {
   onToggleSelection?: (id: string) => void;
   /** When true the order is fixed by code and dragging is disabled. */
   disableDrag?: boolean;
+  /** When false, the Modelo (store_category) column is hidden because no piece uses it. */
+  hasStoreCategory?: boolean;
 }
 
 function SortableRow({
   row, pieceTotal, canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit,
   isDistributed, kitCategory, customFieldLabels, visibleColumns,
-  selectedPieceIds, onToggleSelection, disableDrag
+  selectedPieceIds, onToggleSelection, disableDrag, hasStoreCategory = true
 }: SortableRowProps) {
   const { t } = useTranslation();
   const id = row.type === "piece" ? row.data.id : `kit-${row.data.id}`;
@@ -134,7 +157,7 @@ function SortableRow({
         {(!visibleColumns || visibleColumns.size) && (
           <TableCell className="text-sm text-muted-foreground hidden md:table-cell">—</TableCell>
         )}
-        {(!visibleColumns || visibleColumns.store_category) && (
+        {hasStoreCategory && (!visibleColumns || visibleColumns.store_category) && (
           <TableCell className="hidden lg:table-cell">—</TableCell>
         )}
         {(!visibleColumns || visibleColumns.specification) && (
@@ -208,8 +231,9 @@ function SortableRow({
 
   // Regular piece row
   const piece = row.data;
+  const isSelected = selectedPieceIds?.includes(piece.id) ?? false;
   return (
-    <TableRow ref={setNodeRef} style={style}>
+    <TableRow ref={setNodeRef} style={style} className={isSelected ? "bg-primary/5 hover:bg-primary/10" : undefined}>
       <TableCell className="w-10 p-2">
         <div className="flex justify-center">
           <TooltipProvider>
@@ -268,7 +292,7 @@ function SortableRow({
       {(!visibleColumns || visibleColumns.size) && (
         <TableCell className="text-sm text-muted-foreground hidden md:table-cell w-[140px] min-w-[140px] whitespace-nowrap">{piece.size || "—"}</TableCell>
       )}
-      {(!visibleColumns || visibleColumns.store_category) && (
+      {hasStoreCategory && (!visibleColumns || visibleColumns.store_category) && (
         <TableCell className="hidden lg:table-cell">
           {piece.store_category ? (
             <span className="text-xs bg-accent text-accent-foreground px-2 py-0.5 rounded">{piece.store_category}</span>
@@ -276,10 +300,14 @@ function SortableRow({
         </TableCell>
       )}
       {(!visibleColumns || visibleColumns.specification) && (
-        <TableCell className="text-sm text-muted-foreground hidden lg:table-cell whitespace-pre-wrap min-w-[420px] max-w-[720px]">{piece.specification}</TableCell>
+        <TableCell className="text-sm text-muted-foreground hidden lg:table-cell min-w-[420px] max-w-[720px]">
+          <ExpandableText text={piece.specification ?? ""} />
+        </TableCell>
       )}
       {(!visibleColumns || visibleColumns.installation_instructions) && (
-        <TableCell className="text-sm text-muted-foreground hidden xl:table-cell whitespace-pre-wrap min-w-[250px] max-w-[400px]">{piece.installation_instructions}</TableCell>
+        <TableCell className="text-sm text-muted-foreground hidden xl:table-cell min-w-[250px] max-w-[400px]">
+          <ExpandableText text={piece.installation_instructions ?? ""} />
+        </TableCell>
       )}
       
       {customFieldLabels?.map((label, i) => {
@@ -429,6 +457,9 @@ export default function SortablePiecesTable({
 
   const rowIds = useMemo(() => unifiedRows.map(r => r.type === "piece" ? r.data.id : `kit-${r.data.id}`), [unifiedRows]);
 
+  // Hide the Modelo column entirely when no piece in this campaign uses it.
+  const hasStoreCategory = useMemo(() => pieces.some(p => !!p.store_category), [pieces]);
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -501,7 +532,7 @@ export default function SortablePiecesTable({
               {(!visibleColumns || visibleColumns.size) && (
                 <TableHead className="hidden md:table-cell w-[140px] min-w-[140px]">{t("pieces.measures")}</TableHead>
               )}
-              {(!visibleColumns || visibleColumns.store_category) && (
+              {hasStoreCategory && (!visibleColumns || visibleColumns.store_category) && (
                 <TableHead className="hidden lg:table-cell">{t("common.model")}</TableHead>
               )}
               {(!visibleColumns || visibleColumns.specification) && (
@@ -517,7 +548,7 @@ export default function SortablePiecesTable({
                 return <TableHead key={`custom-head-${i}`} className="hidden xl:table-cell">{label}</TableHead>;
               })}
 
-              <TableHead className="text-center w-[60px]">{t("common.total")}</TableHead>
+              <TableHead className="text-center w-[60px]">{t("pieces.qtyDistributed")}</TableHead>
               {(canEditPieces || canDeletePieces) && <TableHead className="w-[56px]">{t("common.actions")}</TableHead>}
             </TableRow>
           </TableHeader>
@@ -554,6 +585,7 @@ export default function SortablePiecesTable({
                     selectedPieceIds={selectedPieceIds}
                     onToggleSelection={onToggleSelection}
                     disableDrag={sortByCode}
+                    hasStoreCategory={hasStoreCategory}
                   />
                 );
               })}

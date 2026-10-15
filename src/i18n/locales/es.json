@@ -695,7 +695,10 @@
     "primaryDisplay": "Vitrina Primaria",
     "secondaryDisplay": "Vitrina Secundaria",
     "storeModelLabel": "Modelo de Tienda",
-    "kitPiece": "Es Kit"
+    "kitPiece": "Es Kit",
+    "qtyDistributed": "Cant. distribuida",
+    "showMore": "Ver completo",
+    "showLess": "Contraer"
   },
   "occurrences": {
     "actionsTaken": "Acciones tomadas",
