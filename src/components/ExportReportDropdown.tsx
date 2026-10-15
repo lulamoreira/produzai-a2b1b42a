@@ -435,21 +435,21 @@ export default function ExportReportDropdown({
         <DropdownMenuContent align="end">
           <DropdownMenuItem onClick={() => handleExport("excel")} className="gap-2 cursor-pointer">
             <FileSpreadsheet className="w-4 h-4" />
-            Relatorio Excel (.xlsx)
+            Relatório Excel (.xlsx)
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleExport("pdf")} className="gap-2 cursor-pointer">
             <FileText className="w-4 h-4" />
-            Relatorio PDF (.pdf)
+            Relatório PDF (.pdf)
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground px-2">Catalogo de Pecas</DropdownMenuLabel>
+          <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground px-2">Catálogo de Peças</DropdownMenuLabel>
           <DropdownMenuItem onClick={handleCatalogPDFExport} className="gap-2 cursor-pointer">
             <FileText className="w-4 h-4" />
-            Catalogo PDF com Imagens (.pdf)
+            Catálogo PDF com imagens (.pdf)
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => setPptDialogOpen(true)} className="gap-2 cursor-pointer">
             <Presentation className="w-4 h-4" />
-            Catalogo PPT com Imagens (.pptx)
+            Catálogo PowerPoint com imagens (.pptx)
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
