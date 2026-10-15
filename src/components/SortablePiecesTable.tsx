@@ -153,45 +153,53 @@ function SortableRow({
         <TableCell className="text-center font-semibold">{pieceTotal}</TableCell>
         {(canEditPieces || canDeletePieces) && (
           <TableCell>
-            <div className="flex items-center gap-1">
-              {canEditPieces && (
-                <Button variant="ghost" size="icon" className="h-7 w-7"
-                  title={kit.is_mockup ? t("pieces.removeMockup") : t("pieces.markMockup")}
-                  onClick={() => onToggleKitMockup(kit)}
-                >
-                  <Palette className={`w-3.5 h-3.5 ${kit.is_mockup ? "text-amber-600" : "text-muted-foreground"}`} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-7 w-7" aria-label={t("common.actions")}>
+                  <MoreVertical className="w-4 h-4" />
                 </Button>
-              )}
-              {canEditPieces && (
-                <Button variant="ghost" size="icon" className="h-7 w-7" title={t("pieces.duplicateKit")} onClick={() => onDuplicateKit(kit)}>
-                  <Copy className="w-3.5 h-3.5" />
-                </Button>
-              )}
-              {canEditPieces && (
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onKitClick(kit)}>
-                  <Edit3 className="w-3.5 h-3.5" />
-                </Button>
-              )}
-              {canDeletePieces && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                      <Trash2 className="w-3.5 h-3.5 text-destructive" />
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>{t("pieces.deleteKitQuestion")}</AlertDialogTitle>
-                      <AlertDialogDescription>{t("pieces.deleteKitDesc")}</AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
-                      <AlertDialogAction onClick={() => onDeleteKit(kit.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.delete")}</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              )}
-            </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-[200px]">
+                {canEditPieces && (
+                  <DropdownMenuItem onClick={() => onKitClick(kit)}>
+                    <Edit3 className="w-4 h-4 mr-2" /> {t("pieces.editKit")}
+                  </DropdownMenuItem>
+                )}
+                {canEditPieces && (
+                  <DropdownMenuItem onClick={() => onDuplicateKit(kit)}>
+                    <Copy className="w-4 h-4 mr-2" /> {t("pieces.duplicateKit")}
+                  </DropdownMenuItem>
+                )}
+                {canEditPieces && (
+                  <DropdownMenuItem onClick={() => onToggleKitMockup(kit)}>
+                    <Palette className={`w-4 h-4 mr-2 ${kit.is_mockup ? "text-amber-600" : ""}`} />
+                    {kit.is_mockup ? t("pieces.removeMockup") : t("pieces.markMockup")}
+                  </DropdownMenuItem>
+                )}
+                {canDeletePieces && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                          <Trash2 className="w-4 h-4 mr-2" /> {t("pieces.deleteKit")}
+                        </DropdownMenuItem>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>{t("pieces.deleteKitQuestion")}</AlertDialogTitle>
+                          <AlertDialogDescription>{t("pieces.deleteKitDesc")}</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => onDeleteKit(kit.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">{t("common.delete")}</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </TableCell>
         )}
       </TableRow>
