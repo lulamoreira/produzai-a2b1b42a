@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUserRole } from "@/hooks/useUserRole";
 import { Plus, Search, Users, ArrowRight, Star, Trash2 } from "lucide-react";
 import { useClientFavoriteIds, useToggleClientFavorite } from "@/hooks/useClientFavorites";
+import { useAgencyFavoriteIds, useToggleAgencyFavorite } from "@/hooks/useAgencyFavorites";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { SkeletonCard } from "@/components/v2/ui/SkeletonCard";
@@ -47,6 +48,9 @@ export default function ClientsV2({ onAddClick }: { onAddClick: () => void }) {
   const { clientIds, isLoading: loadingAccess } = useMyAccessibleClientIds();
   const { data: favoriteIds } = useClientFavoriteIds();
   const toggleClientFavorite = useToggleClientFavorite();
+  const { data: agencyFavoriteIds } = useAgencyFavoriteIds();
+  const toggleAgencyFavorite = useToggleAgencyFavorite();
+  const isAgencyFavorited = !!agencyId && !!agencyFavoriteIds?.has(agencyId);
   const [deletingClient, setDeletingClient] = useState<Client | null>(null);
 
 
@@ -119,9 +123,23 @@ export default function ClientsV2({ onAddClick }: { onAddClick: () => void }) {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-stone-900 tracking-tight">
-            {t("clients.title")}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold text-stone-900 tracking-tight">
+              {t("clients.title")}
+            </h1>
+            {agencyId && (
+              <button
+                type="button"
+                onClick={() => toggleAgencyFavorite.mutate({ agencyId })}
+                disabled={toggleAgencyFavorite.isPending}
+                className="p-1.5 rounded-lg hover:bg-stone-100 transition-colors"
+                aria-label={isAgencyFavorited ? t("favorites.remove", "Remover dos favoritos") : t("favorites.add", "Adicionar aos favoritos")}
+                title={isAgencyFavorited ? t("favorites.remove", "Remover dos favoritos") : t("favorites.add", "Adicionar aos favoritos")}
+              >
+                <Star className={isAgencyFavorited ? "w-5 h-5 text-amber-400 fill-amber-400" : "w-5 h-5 text-stone-300"} />
+              </button>
+            )}
+          </div>
           <p className="text-sm text-stone-500">
             {t("clients.subtitle")}
           </p>
