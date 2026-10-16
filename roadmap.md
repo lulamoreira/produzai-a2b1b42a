@@ -3,3 +3,7 @@
 - [x] Format individual Excel and clipboard exports as labeled person and vehicle blocks.
 - [x] Support rich clipboard with a plain-text fallback.
 - [x] Verify the real team export and clipboard flow.
+
+# Duplicate occurrence KPI correction
+- [ ] Exclude duplicate statuses consistently from overdue KPI, drill-down, and highlighting.
+- [ ] Test the rule and verify the current screen without changing saved occurrences.
