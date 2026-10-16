@@ -30,6 +30,7 @@ import SortableHeader from "./SortableHeader";
 import { useStorePortalConfig } from "@/hooks/useStorePortalConfig";
 import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
 import { useEffectiveTratativaStatuses } from "@/hooks/useLalTratativaStatuses";
+import { isLalOccurrenceOverdue, type LalOverdueOccurrence } from "@/lib/lalOccurrenceOverdue";
 
 interface CollapsibleCardProps {
   title: string;
@@ -272,12 +273,8 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
   const countsAsOccurrence = (status: string | null | undefined) =>
     tratativaStatuses.find((s) => s.value === (status ?? "aberta"))?.conta_como_ocorrencia !== false;
 
-  const isOverdue = (o: any) =>
-    countsAsOccurrence(o.tratativa_status) &&
-    !!o.expected_resolution_date &&
-    new Date(o.expected_resolution_date).getTime() < Date.now() &&
-    (o.tratativa_status ?? "aberta") !== "resolvida" &&
-    (o.tratativa_status ?? "aberta") !== "nao_procede";
+  const isOverdue = (o: LalOverdueOccurrence) =>
+    isLalOccurrenceOverdue(o, tratativaStatuses);
 
   const rawTotal = occList.length;
   const validOccList = occList.filter((o) => countsAsOccurrence(o.tratativa_status));
@@ -759,7 +756,7 @@ _Relatório gerado pelo ProduzAI_ 🚀`;
                   )}
                   {occSort.sortedItems.map((o: any) => {
                     const ts = o.tratativa_status ?? "aberta";
-                    const overdue = o.expected_resolution_date && new Date(o.expected_resolution_date).getTime() < Date.now() && ts !== "resolvida";
+                    const overdue = isOverdue(o);
                     return (
                       <TableRow key={o.id} className="cursor-pointer hover:bg-muted/40" onClick={() => setSelectedOccurrence(o)}>
                         <TableCell className="font-medium">{(o.client_stores as any)?.name ?? "—"}</TableCell>
@@ -807,7 +804,7 @@ _Relatório gerado pelo ProduzAI_ 🚀`;
               )}
               {filteredOccurrences.map((o: any) => {
                 const ts = o.tratativa_status ?? "aberta";
-                const overdue = o.expected_resolution_date && new Date(o.expected_resolution_date).getTime() < Date.now() && ts !== "resolvida";
+                const overdue = isOverdue(o);
                 const photos: string[] = Array.isArray(o.photo_urls) ? o.photo_urls : [];
                 const resolutionPhotos: string[] = Array.isArray(o.resolution_photo_urls) ? o.resolution_photo_urls : [];
                 const store = (o.client_stores as any) ?? {};
