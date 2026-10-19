@@ -152,6 +152,16 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [logStoreName, setLogStoreName] = useState("");
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
+  const { data: canImportExecution = false } = useQuery({
+    queryKey: ["can-import-execution", user?.id, campaignId],
+    enabled: !!user?.id && !!campaignId,
+    queryFn: async () => {
+      if (!user?.id) return false;
+      const { data, error } = await supabase.rpc("has_campaign_category_permission", { _user_id: user.id, _campaign_id: campaignId, _permission: "edit_schedules" });
+      if (error) throw error;
+      return data === true;
+    },
+  });
   const canEditPreference = isAdminOrMaster || user?.id === PREFERENCE_EDITOR_USER_ID;
 
   // Apply pre-set filter from external navigation (e.g. Status dashboard)
@@ -937,7 +947,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             >
               <Users className="w-3.5 h-3.5" /> Consultar Equipes
             </Button>
-            {canEdit && (
+            {canEdit && canImportExecution && (
               <Button variant="outline" size="sm" className="h-auto min-h-9 text-xs gap-1 whitespace-normal text-left" onClick={() => setImportExecutionOpen(true)}>
                 <Download className="w-3.5 h-3.5 shrink-0" /> {t("scheduling.importExecution", "Importar agendamento/instalações de outra campanha")}
               </Button>

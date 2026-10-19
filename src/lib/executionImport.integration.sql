@@ -45,4 +45,24 @@ BEGIN
  IF (result->>'remove_file')::boolean THEN RAISE EXCEPTION 'Shared original file would be removed'; END IF;
  IF NOT EXISTS(SELECT 1 FROM installation_photos WHERE campaign_id='00000000-0000-0000-0000-000000000001') THEN RAISE EXCEPTION 'Source photo deleted'; END IF;
 END $$;
+-- Photos-only creates execution records but no teams or scheduled dates.
+INSERT INTO campaigns VALUES ('00000000-0000-0000-0000-000000000004','00000000-0000-0000-0000-000000000010');
+DO $$ DECLARE result jsonb;
+BEGIN
+ result:=import_campaign_execution('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000004',false,true);
+ IF (result->>'teams_created')::int<>0 OR (result->>'photos_imported')::int<>1 THEN RAISE EXCEPTION 'Photos-only imported teams or missed media'; END IF;
+ IF EXISTS(SELECT 1 FROM campaign_schedules WHERE campaign_id='00000000-0000-0000-0000-000000000004' AND (scheduled_date IS NOT NULL OR team_id IS NOT NULL OR installation_os IS NOT NULL)) THEN RAISE EXCEPTION 'Photos-only imported scheduling fields'; END IF;
+ IF NOT EXISTS(SELECT 1 FROM campaign_schedules WHERE campaign_id='00000000-0000-0000-0000-000000000004' AND photo_checkin AND checkin_lat=12.3) THEN RAISE EXCEPTION 'Photos-only lost check-in'; END IF;
+END $$;
+-- A failure after creating teams rolls back the entire RPC.
+INSERT INTO campaigns VALUES ('00000000-0000-0000-0000-000000000005','00000000-0000-0000-0000-000000000010');
+CREATE FUNCTION test_reject_import() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN
+ IF NEW.campaign_id='00000000-0000-0000-0000-000000000005' THEN RAISE EXCEPTION 'Injected failure'; END IF; RETURN NEW;
+END $$;
+CREATE TRIGGER test_reject_import BEFORE INSERT ON campaign_schedules FOR EACH ROW EXECUTE FUNCTION test_reject_import();
+DO $$ BEGIN
+ BEGIN PERFORM import_campaign_execution('00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000005',true,true); RAISE EXCEPTION 'Failure not triggered';
+ EXCEPTION WHEN OTHERS THEN IF SQLERRM<>'Injected failure' THEN RAISE; END IF; END;
+ IF EXISTS(SELECT 1 FROM installation_teams WHERE campaign_id='00000000-0000-0000-0000-000000000005') OR EXISTS(SELECT 1 FROM campaign_schedules WHERE campaign_id='00000000-0000-0000-0000-000000000005') OR EXISTS(SELECT 1 FROM installation_photos WHERE campaign_id='00000000-0000-0000-0000-000000000005') THEN RAISE EXCEPTION 'Partial import survived'; END IF;
+END $$;
 ROLLBACK;
