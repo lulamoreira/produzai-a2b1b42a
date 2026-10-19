@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
 
     // Bind the photo to the authorized campaign/store; never trust a supplied URL.
     const { data: photo, error: photoError } = await supabase
-      .from("installation_photos").select("id,campaign_id,store_id,photo_url").eq("id", photo_id).single();
+      .from("installation_photos").select("id,campaign_id,store_id,photo_url,reinstall_seq").eq("id", photo_id).single();
     if (photoError || !photo) return new Response(JSON.stringify({ error: "Foto não encontrada." }), {
       status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -40,13 +40,14 @@ Deno.serve(async (req) => {
     if (install_code && store_id) {
       const { data: sched, error: schedErr } = await supabase
         .from("campaign_schedules")
-        .select("id")
+        .select("id,install_code_expires_at,reinstall_seq")
         .eq("install_code", install_code.toLowerCase())
         .eq("store_id", store_id)
         .eq("campaign_id", photo.campaign_id)
         .maybeSingle();
 
-      if (schedErr || !sched || photo.store_id !== store_id) {
+      const expired = sched?.install_code_expires_at && new Date(sched.install_code_expires_at).getTime() < Date.now();
+      if (schedErr || !sched || expired || photo.store_id !== store_id || (photo.reinstall_seq ?? 0) !== (sched.reinstall_seq ?? 0)) {
         return new Response(
           JSON.stringify({ error: "Código de instalação inválido." }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
