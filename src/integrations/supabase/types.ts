@@ -6469,6 +6469,10 @@ export type Database = {
         }
         Returns: Json
       }
+      installation_media_is_referenced: {
+        Args: { p_path: string }
+        Returns: boolean
+      }
       is_admin_or_master: { Args: { _user_id: string }; Returns: boolean }
       is_supplier_unlocked: {
         Args: { p_supplier_id: string }
