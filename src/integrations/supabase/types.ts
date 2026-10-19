@@ -6413,6 +6413,10 @@ export type Database = {
       }
       get_user_email: { Args: { _user_id: string }; Returns: string }
       get_user_email_admin: { Args: { _user_id: string }; Returns: string }
+      grant_campaign_access_latest: {
+        Args: { _campaign_id: string; _category_id?: string; _user_id: string }
+        Returns: string
+      }
       has_campaign_access: {
         Args: { _campaign_id: string; _user_id: string }
         Returns: boolean

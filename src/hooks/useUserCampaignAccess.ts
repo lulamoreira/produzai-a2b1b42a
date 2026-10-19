@@ -28,7 +28,13 @@ export function useAddUserCampaignAccess() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (access: { user_id: string; campaign_id: string; category_id?: string }) => {
-      const { error } = await supabase.from("user_campaign_access").insert(access);
+      // Sempre grava na campanha vigente (mais recente) da cadeia de renegociação
+      // e remove o acesso do usuário nas demais campanhas da mesma cadeia.
+      const { error } = await supabase.rpc("grant_campaign_access_latest", {
+        _user_id: access.user_id,
+        _campaign_id: access.campaign_id,
+        _category_id: access.category_id ?? undefined,
+      });
       if (error) throw error;
     },
     onSuccess: () => {

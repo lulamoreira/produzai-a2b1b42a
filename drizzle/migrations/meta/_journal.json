@@ -50,6 +50,13 @@
       "when": 1792446092951,
       "tag": "0006_protect_referenced_installation_media",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792448242506,
+      "tag": "0007_grant_campaign_access_latest",
+      "breakpoints": true
     }
   ]
 }
