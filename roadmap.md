@@ -9,6 +9,6 @@
 - [x] Test the rule and verify the current screen without changing saved occurrences.
 
 # Import campaign scheduling and installations
-- [ ] Add transactional, permission-checked execution import preserving source and existing target records.
-- [ ] Add scheduling dialog with root default, options and import summary.
-- [ ] Verify import rules and authenticated UI flow.
+- [x] Add transactional, permission-checked execution import preserving source and existing target records.
+- [x] Add scheduling dialog with root default, options and import summary.
+- [x] Verify rules in isolated PostgreSQL (including rollback); check authenticated dialog and UI summary with isolated writes, leaving real campaigns unchanged.
