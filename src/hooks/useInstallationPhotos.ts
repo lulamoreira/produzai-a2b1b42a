@@ -123,15 +123,16 @@ export function useDeleteInstallationPhoto() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, photo_url }: { id: string; photo_url: string }) => {
-      // Delete from storage
-      const url = new URL(photo_url);
+      // Delete only this authorized record; never remove a file used by another campaign.
+      const { data, error } = await supabase.rpc("delete_installation_photo_record", { p_photo_id: id });
+      if (error) throw error;
+      if (!data || typeof data !== "object" || Array.isArray(data) || data.remove_file !== true) return;
+      const storedUrl = typeof data.photo_url === "string" ? data.photo_url : photo_url;
+      const url = new URL(storedUrl);
       const pathMatch = url.pathname.match(/\/storage\/v1\/object\/public\/installation-photos\/(.+)/);
       if (pathMatch) {
         await supabase.storage.from("installation-photos").remove([pathMatch[1]]);
       }
-      // Delete from DB
-      const { error } = await supabase.from("installation_photos").delete().eq("id", id);
-      if (error) throw error;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["installation_photos"] });
