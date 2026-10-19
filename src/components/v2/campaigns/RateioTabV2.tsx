@@ -592,6 +592,7 @@ export default function RateioTabV2({
   const sortFieldOptions = useMemo(() => {
     const base = [
       { value: "name", label: t("stores.name", "Nome") },
+      { value: "store_code", label: t("stores.code", "Código da Loja") },
       { value: "city", label: t("stores.city", "Cidade") },
       { value: "state", label: t("stores.state", "Estado") },
       { value: "store_model", label: t("filters.storeCategory", "Categoria de Loja") },
