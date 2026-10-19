@@ -947,11 +947,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             >
               <Users className="w-3.5 h-3.5" /> Consultar Equipes
             </Button>
-            {canEdit && canImportExecution && (
-              <Button variant="outline" size="sm" className="h-auto min-h-9 text-xs gap-1 whitespace-normal text-left" onClick={() => setImportExecutionOpen(true)}>
-                <Download className="w-3.5 h-3.5 shrink-0" /> {t("scheduling.importExecution", "Importar agendamento/instalações de outra campanha")}
-              </Button>
-            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9 text-xs gap-1 shrink-0">
