@@ -971,8 +971,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                     <Download className="w-3.5 h-3.5 mr-2" /> {t("scheduling.importFromOtherCampaign", "Importar de outra campanha")}
                   </DropdownMenuItem>
                 )}
-
                 {canLockCards && (
+
                   <>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
