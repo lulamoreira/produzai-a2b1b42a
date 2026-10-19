@@ -4,3 +4,4 @@
 - Copy team details as HTML plus plain text, falling back to plain text when rich clipboard is unavailable, because destination applications support different formatting.
 - Team duplication reads fresh source records, preserves all member/vehicle fields and support coverage, and removes incomplete copies on failure; original teams and schedule assignments stay untouched.
 - Loja a Loja overdue KPIs, drill-downs, and list/card highlights use one shared predicate honoring configured status closure and local-day deadlines, so visual counts stay consistent.
+- Execution imports use one transactional, permission-checked RPC with same-client validation, name-based team remapping and skip-existing schedules; copied media rows share immutable files, so deletion must check all references before removing storage objects.

@@ -54,6 +54,7 @@ import InstallationTeamDialog, {
   type TeamVehicle,
 } from "@/components/InstallationTeamDialog";
 import ViewTeamsDialog from "@/components/ViewTeamsDialog";
+import ImportExecutionDialog from "@/components/ImportExecutionDialog";
 
 export type SchedulingInitialFilter = { type: "summary"; value: "scheduled" };
 
@@ -129,6 +130,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [teamDialogOpen, setTeamDialogOpen] = useState(false);
   const [teamDialogInitialId, setTeamDialogInitialId] = useState<string | null>(null);
   const [viewTeamsOpen, setViewTeamsOpen] = useState(false);
+  const [importExecutionOpen, setImportExecutionOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card');
   const [listSort, setListSort] = useState<{ key: 'name' | 'state' | 'city' | 'date' | 'team'; dir: 'asc' | 'desc' }>({ key: 'name', dir: 'asc' });
   const [filterApproval, setFilterApproval] = useState("");
@@ -150,6 +152,16 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [logStoreName, setLogStoreName] = useState("");
   const { user } = useAuth();
   const { isAdminOrMaster } = useUserRole();
+  const { data: canImportExecution = false } = useQuery({
+    queryKey: ["can-import-execution", user?.id, campaignId],
+    enabled: !!user?.id && !!campaignId,
+    queryFn: async () => {
+      if (!user?.id) return false;
+      const { data, error } = await supabase.rpc("has_campaign_category_permission", { _user_id: user.id, _campaign_id: campaignId, _permission: "edit_schedules" });
+      if (error) throw error;
+      return data === true;
+    },
+  });
   const canEditPreference = isAdminOrMaster || user?.id === PREFERENCE_EDITOR_USER_ID;
 
   // Apply pre-set filter from external navigation (e.g. Status dashboard)
@@ -935,6 +947,11 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             >
               <Users className="w-3.5 h-3.5" /> Consultar Equipes
             </Button>
+            {canEdit && canImportExecution && (
+              <Button variant="outline" size="sm" className="h-auto min-h-9 text-xs gap-1 whitespace-normal text-left" onClick={() => setImportExecutionOpen(true)}>
+                <Download className="w-3.5 h-3.5 shrink-0" /> {t("scheduling.importExecution", "Importar agendamento/instalações de outra campanha")}
+              </Button>
+            )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9 text-xs gap-1 shrink-0">
@@ -1724,6 +1741,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       )}
 
       {/* Team Management Dialog */}
+      {importExecutionOpen && <ImportExecutionDialog campaignId={campaignId} clientId={clientId} onClose={() => setImportExecutionOpen(false)} />}
       <InstallationTeamDialog
         open={teamDialogOpen}
         onOpenChange={(o) => {
