@@ -6307,6 +6307,10 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      delete_installation_photo_record: {
+        Args: { p_photo_id: string }
+        Returns: Json
+      }
       delete_kit_piece_with_cleanup: {
         Args: { p_kit_piece_id: string }
         Returns: number
@@ -6455,6 +6459,15 @@ export type Database = {
       has_valid_supplier_invitation_for_supplier: {
         Args: { _supplier_id: string }
         Returns: boolean
+      }
+      import_campaign_execution: {
+        Args: {
+          p_photos?: boolean
+          p_schedules?: boolean
+          p_source_campaign_id: string
+          p_target_campaign_id: string
+        }
+        Returns: Json
       }
       is_admin_or_master: { Args: { _user_id: string }; Returns: boolean }
       is_supplier_unlocked: {
