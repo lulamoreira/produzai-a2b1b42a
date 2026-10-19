@@ -779,6 +779,7 @@
     "both": "Both",
     "teams": "Teams",
     "exportTeams": "Export Teams",
+    "importFromOtherCampaign": "Import from another campaign",
     "scheduled": "📅 Scheduled",
     "noDate": "⏳ No date",
     "withTeam": "🔧 With team",
