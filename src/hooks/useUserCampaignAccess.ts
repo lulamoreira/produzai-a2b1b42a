@@ -33,7 +33,7 @@ export function useAddUserCampaignAccess() {
       const { error } = await supabase.rpc("grant_campaign_access_latest", {
         _user_id: access.user_id,
         _campaign_id: access.campaign_id,
-        _category_id: access.category_id ?? null,
+        _category_id: access.category_id ?? undefined,
       });
       if (error) throw error;
     },
