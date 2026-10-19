@@ -140,15 +140,6 @@ const RateioRow = memo(({
         style={{ position: 'sticky', left: 0, zIndex: 20 }}
       >
         <div className="flex items-center gap-3">
-          <div 
-            className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black shrink-0"
-            style={{ 
-              backgroundColor: getStateColor(store.state).bg, 
-              color: getStateColor(store.state).text 
-            }}
-          >
-            {store.state}
-          </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5">
               <span className="font-semibold text-stone-900 text-xs truncate">{store.name}</span>
