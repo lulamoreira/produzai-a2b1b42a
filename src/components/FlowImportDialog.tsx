@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { compressImage } from "@/lib/compressImage";
-import { buildFlowImportRecords, flowNameWithoutKit, isFlowKit } from "@/lib/flowKitImport";
+import { buildFlowImportRecords, flowNameWithoutKit, isFlowKit, parseKitComponents } from "@/lib/flowKitImport";
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
 import { combineImagesVertically, fetchImageBlob, runInBatches } from "@/lib/flowImages";
 import type { FlowParsedPiece } from "@/lib/parseFlowWorkbook";
@@ -300,24 +300,26 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
         if (records.kit) {
           // IDs are known in advance; cleanup is limited to this new, incomplete kit.
           const kitId = crypto.randomUUID();
-          const pieceId = crypto.randomUUID();
+          const pieceIds = records.pieces.map(() => crypto.randomUUID());
           const { error: kitError } = await supabase.from("campaign_kits").insert({ ...records.kit, id: kitId });
           if (kitError) throw kitError;
           try {
-            const { error: pieceError } = await supabase.from("campaign_pieces").insert({ ...records.piece, id: pieceId });
-            if (pieceError) throw pieceError;
-            const { error: linkError } = await supabase.from("campaign_kit_pieces").insert({ kit_id: kitId, piece_id: pieceId, quantity: 1, display_order: 0 });
-            if (linkError) throw linkError;
+            for (let p = 0; p < records.pieces.length; p += 1) {
+              const { error: pieceError } = await supabase.from("campaign_pieces").insert({ ...records.pieces[p], id: pieceIds[p] });
+              if (pieceError) throw pieceError;
+              const { error: linkError } = await supabase.from("campaign_kit_pieces").insert({ kit_id: kitId, piece_id: pieceIds[p], quantity: 1, display_order: p });
+              if (linkError) throw linkError;
+            }
           } catch (error: unknown) {
             const cleanup = await Promise.all([
-              supabase.from("campaign_pieces").delete().eq("id", pieceId).eq("campaign_id", campaignId),
+              ...pieceIds.map((pieceId) => supabase.from("campaign_pieces").delete().eq("id", pieceId).eq("campaign_id", campaignId)),
               supabase.from("campaign_kits").delete().eq("id", kitId).eq("campaign_id", campaignId),
             ]);
             if (cleanup.some((result) => result.error)) toast.error("Não foi possível remover o kit incompleto; confira a lista antes de tentar novamente.");
             throw error;
           }
         } else {
-          const { error } = await supabase.from("campaign_pieces").insert(records.piece);
+          const { error } = await supabase.from("campaign_pieces").insert(records.pieces[0]);
           if (error) throw error;
         }
         nextCode = records.nextCode;
@@ -428,7 +430,12 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
                         onChange={(e) => updateField(row.id, f.key, e.target.value)}
                       />
                       {f.key === "name" && mode === "create" && isFlowKit(row.piece.sourceName) && (
-                        <span className="mt-1 inline-block rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">KIT — 1 componente (complete os demais)</span>
+                        <span className="mt-1 inline-block rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                          {(() => {
+                            const count = parseKitComponents(row.piece.sourceName)?.length ?? 1;
+                            return count > 1 ? `KIT — ${count} componentes` : "KIT — 1 componente (complete os demais)";
+                          })()}
+                        </span>
                       )}
                     </TableCell>
                   ))}
