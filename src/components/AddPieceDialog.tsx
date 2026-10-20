@@ -1,3 +1,4 @@
+import { assertStoredImage } from "@/lib/assertStoredImage";
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useAddCampaignPiece, useUpdateCampaignPiece } from "@/hooks/useMultiClientData";
@@ -214,6 +215,7 @@ const AddPieceDialog = ({
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
+      await assertStoredImage(urlData.publicUrl);
       setForm((f) => ({ ...f, image_url: urlData.publicUrl }));
       setPreviewUrl(urlData.publicUrl);
       toast.success(t("imageUpload.uploadSuccess"));
