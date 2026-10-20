@@ -7,8 +7,18 @@ class TabErrorBoundary extends Component<{ children: ReactNode }, { error: Error
     return { error };
   }
 
-  componentDidCatch(error: Error, errorInfo: any) {
+  componentDidCatch(error: Error, errorInfo: unknown) {
     console.error("TabErrorBoundary caught an error:", error, errorInfo);
+    // After a new publish, old chunk files no longer exist: reload once to get the new version.
+    const msg = error?.message ?? "";
+    if (/dynamically imported module|Importing a module script failed|Loading chunk/i.test(msg)) {
+      const key = "chunk_reload_at";
+      const last = Number(sessionStorage.getItem(key) || 0);
+      if (Date.now() - last > 30000) {
+        sessionStorage.setItem(key, String(Date.now()));
+        window.location.reload();
+      }
+    }
   }
 
   render() {
