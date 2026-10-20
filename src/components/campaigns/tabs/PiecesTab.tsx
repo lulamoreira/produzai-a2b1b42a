@@ -46,6 +46,8 @@ import { splitKitByVariant, normalizeBareKitName } from "@/lib/splitKitPrimarySe
 
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
 import { OneNoteImportDialog, OneNoteSourceDialog } from "@/components/OneNoteImportDialog";
+import { FlowImportDialog } from "@/components/FlowImportDialog";
+import { parseFlowFile, type FlowParsedPiece } from "@/lib/parseFlowWorkbook";
 import OrganizePiecesDialog from "@/components/campaigns/OrganizePiecesDialog";
 import { parseOneNoteWorkbookRows, type OneNoteSourceRow } from "@/lib/parseOneNoteSheet";
 import { extractOneNoteRowsWithAi, extractTextFromOneNotePdf } from "@/lib/oneNotePdf";
@@ -135,6 +137,26 @@ export default function PiecesTab({
   const [oneNoteRows, setOneNoteRows] = useState<OneNoteSourceRow[]>([]);
   const [oneNotePdfProcessing, setOneNotePdfProcessing] = useState(false);
   const oneNoteExcelInputRef = useRef<HTMLInputElement>(null);
+  const flowInputRef = useRef<HTMLInputElement>(null);
+  const [flowOpen, setFlowOpen] = useState(false);
+  const [flowPieces, setFlowPieces] = useState<FlowParsedPiece[]>([]);
+  /** Lê o XLS do Flow e abre a conferência com download das imagens. */
+  const handleFlowFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const parsedFlow = await parseFlowFile(file);
+      if (parsedFlow.length === 0) {
+        toast.error("Nenhuma peça encontrada na aba \"Todas as Peças\".");
+        return;
+      }
+      setFlowPieces(parsedFlow);
+      setFlowOpen(true);
+    } catch (err: unknown) {
+      toast.error(`Erro ao ler arquivo do Flow: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
   const oneNotePdfInputRef = useRef<HTMLInputElement>(null);
 
   /** Lê a planilha do OneNote e abre a mesma conferência usada pelo PDF. */
@@ -1158,6 +1180,9 @@ export default function PiecesTab({
                   <DropdownMenuItem onClick={() => setOneNoteSourceOpen(true)} disabled={oneNotePdfProcessing}>
                     <FileSpreadsheet className="w-4 h-4 mr-2" /> Importar do OneNote
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => flowInputRef.current?.click()}>
+                    <FileSpreadsheet className="w-4 h-4 mr-2" /> Importar do Flow
+                  </DropdownMenuItem>
 
                   <DropdownMenuItem onClick={handleReviewPieceCodes}>
                     <Sparkles className="w-4 h-4 mr-2" /> {t("pieces.reviewCodes")}
@@ -1638,6 +1663,20 @@ export default function PiecesTab({
         accept=".pdf,application/pdf"
         className="hidden"
         onChange={handleOneNotePdfFile}
+      />
+      <input
+        ref={flowInputRef}
+        type="file"
+        accept=".xlsx,.xls"
+        className="hidden"
+        onChange={(e) => void handleFlowFile(e)}
+      />
+      <FlowImportDialog
+        open={flowOpen}
+        onOpenChange={setFlowOpen}
+        campaignId={campaignId}
+        campaignName={campaign?.name || "campanha atual"}
+        pieces={flowPieces}
       />
       <OneNoteSourceDialog
         open={oneNoteSourceOpen}
