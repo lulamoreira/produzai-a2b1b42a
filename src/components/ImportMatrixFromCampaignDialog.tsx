@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -8,7 +8,10 @@ import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Copy, Package, ArrowRight, Store, Loader2, X, Boxes } from "lucide-react";
+import { Copy, Package, ArrowRight, Store, Loader2, X, Boxes, AlertTriangle } from "lucide-react";
+import { supabasePaginate } from "@/lib/supabasePaginate";
+import { cn } from "@/lib/utils";
+import { autoMapMatrixItems, filterEmptyMatrixCells, storesWithoutMatrixReference, type MatrixImportQuantity } from "@/lib/matrixImportPrefill";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import { toast } from "sonner";
 import type { CampaignPiece, ClientStore, CampaignKit } from "@/hooks/useMultiClientData";
@@ -53,6 +56,28 @@ const ImportMatrixFromCampaignDialog = ({
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>("");
   const [mapping, setMapping] = useState<ItemMapping>({});
   const [importing, setImporting] = useState(false);
+  const autoMappedCampaign = useRef<string | null>(null);
+
+  const loadCurrentQuantities = () => supabasePaginate<MatrixImportQuantity>((from, to) =>
+    supabase.from("campaign_store_pieces")
+      .select("store_id,piece_id,quantity", { count: "exact" })
+      .eq("campaign_id", currentCampaignId).order("id").range(from, to)
+  );
+  const currentQuantitiesQuery = useQuery({
+    queryKey: ["import-matrix-current-quantities", currentCampaignId],
+    queryFn: loadCurrentQuantities,
+    enabled: open && !!currentCampaignId,
+  });
+  // Some callers may provide only standalone pieces; keep component targets available.
+  const componentsQuery = useQuery({
+    queryKey: ["import-matrix-current-components", currentCampaignId],
+    queryFn: () => supabasePaginate<Pick<CampaignPiece, "id" | "name" | "code">>((from, to) =>
+      supabase.from("campaign_pieces").select("id,name,code", { count: "exact" })
+        .eq("campaign_id", currentCampaignId).eq("is_deleted", false).eq("kit_only", true)
+        .order("id").range(from, to)
+    ),
+    enabled: open && !!currentCampaignId,
+  });
 
   const { data: campaigns = [] } = useQuery<RemoteCampaign[]>({
     queryKey: ["import-matrix-campaigns-rpc", clientId, currentCampaignId],
@@ -66,7 +91,7 @@ const ImportMatrixFromCampaignDialog = ({
     enabled: open && !!clientId,
   });
 
-  const { data: campaignData } = useQuery({
+  const { data: campaignData, isPending: sourceLoading, isError: sourceError } = useQuery({
     queryKey: ["import-matrix-data-rpc", selectedCampaignId],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_campaign_data_for_import", {
@@ -80,15 +105,15 @@ const ImportMatrixFromCampaignDialog = ({
         store_pieces: { store_id: string; piece_id: string; quantity: number }[];
       } | null);
     },
-    enabled: !!selectedCampaignId,
+    enabled: open && !!selectedCampaignId,
   });
 
   const remotePieces: CampaignPiece[] = useMemo(
-    () => (campaignData?.pieces || []).slice().sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0)),
+    () => (campaignData?.pieces || []).slice().sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)),
     [campaignData],
   );
   const remoteKits: CampaignKit[] = useMemo(
-    () => (campaignData?.kits || []).slice().sort((a: any, b: any) => (a.display_order ?? 0) - (b.display_order ?? 0)),
+    () => (campaignData?.kits || []).slice().sort((a, b) => (a.display_order ?? 0) - (b.display_order ?? 0)),
     [campaignData],
   );
   const remoteKitPieceLinks = useMemo(
@@ -178,9 +203,24 @@ const ImportMatrixFromCampaignDialog = ({
   const currentTargetOptions = useMemo(() => {
     const options: { id: string; label: string; code: number; type: "piece" | "kit" }[] = [];
     currentPieces.forEach((p) => options.push({ id: p.id, label: p.name, code: p.code, type: "piece" }));
+    const suppliedIds = new Set(currentPieces.map((piece) => piece.id));
+    componentsQuery.data?.filter((piece) => !suppliedIds.has(piece.id))
+      .forEach((piece) => options.push({ id: piece.id, label: piece.name, code: piece.code, type: "piece" }));
     currentKits.forEach((k) => options.push({ id: k.id, label: `KIT ${k.name}`, code: k.code, type: "kit" }));
     return options.sort((a, b) => a.code - b.code);
-  }, [currentPieces, currentKits]);
+  }, [currentPieces, currentKits, componentsQuery.data]);
+
+  useEffect(() => {
+    if (!selectedCampaignId || !campaignData || !componentsQuery.isSuccess ||
+      autoMappedCampaign.current === selectedCampaignId) return;
+    autoMappedCampaign.current = selectedCampaignId;
+    setMapping(autoMapMatrixItems(remoteItemsWithStats.map(({ item }) => item), currentTargetOptions));
+  }, [selectedCampaignId, remoteItemsWithStats, currentTargetOptions, campaignData, componentsQuery.isSuccess]);
+
+  const storesWithoutReference = useMemo(
+    () => storesWithoutMatrixReference(currentStores, remoteStorePieces),
+    [currentStores, remoteStorePieces],
+  );
 
   const usedTargetIds = useMemo(() => new Set(Object.values(mapping).map((m) => m.targetId)), [mapping]);
   const mappedCount = Object.keys(mapping).length;
@@ -201,9 +241,8 @@ const ImportMatrixFromCampaignDialog = ({
   // Resolve actual piece ID from remote item ID
   const getRemotePieceId = (itemId: string): string | null => {
     if (itemId.startsWith("kitpiece-")) {
-      // kitpiece-{kitId}-{pieceId}
-      const parts = itemId.split("-");
-      return parts[parts.length - 1] || null;
+      // UUIDs contain hyphens; resolve from the link rather than truncating the ID.
+      return remoteKitPieceLinks.find((link) => `kitpiece-${link.kit_id}-${link.piece_id}` === itemId)?.piece_id || null;
     }
     if (itemId.startsWith("kit-")) return null; // kit itself, not a piece
     return itemId; // standalone piece
@@ -234,9 +273,17 @@ const ImportMatrixFromCampaignDialog = ({
 
     setImporting(true);
     try {
-      await onImport(changes);
-      toast.success(`${changes.length} quantidade(s) importada(s) de ${mappedCount} item(ns)!`);
+      // Reread at confirmation so manual edits made since opening are protected too.
+      const current = await loadCurrentQuantities();
+      const result = filterEmptyMatrixCells(changes, current);
+      if (result.changes.length === 0) {
+        toast.info(`0 célula(s) preenchida(s); ${result.skipped} pulada(s) por já ter valor.`);
+        return;
+      }
+      await onImport(result.changes);
+      toast.success(`${result.changes.length} célula(s) preenchida(s); ${result.skipped} pulada(s) por já ter valor.`);
       onOpenChange(false);
+      autoMappedCampaign.current = null;
       setSelectedCampaignId("");
       setMapping({});
     } catch {
@@ -248,6 +295,7 @@ const ImportMatrixFromCampaignDialog = ({
 
   const handleClose = (v: boolean) => {
     if (!v) {
+      autoMappedCampaign.current = null;
       setSelectedCampaignId("");
       setMapping({});
     }
@@ -260,16 +308,16 @@ const ImportMatrixFromCampaignDialog = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Copy className="w-5 h-5 text-primary" />
-            Importar Quantidades de Outra Campanha
+            Pré-preencher rateio de outra campanha
           </DialogTitle>
           <DialogDescription>
-            Selecione a campanha de origem e associe cada peça/kit à correspondente na campanha atual.
+            As peças são pré-associadas por semelhança de nome. Revise as associações: somente células vazias serão preenchidas.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Campanha de origem</label>
-          <Select value={selectedCampaignId} onValueChange={(v) => { setSelectedCampaignId(v); setMapping({}); }}>
+          <Select value={selectedCampaignId} onValueChange={(v) => { autoMappedCampaign.current = null; setSelectedCampaignId(v); setMapping({}); }}>
             <SelectTrigger>
               <SelectValue placeholder="Selecione uma campanha..." />
             </SelectTrigger>
@@ -283,7 +331,17 @@ const ImportMatrixFromCampaignDialog = ({
 
         {selectedCampaignId && (
           <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
-            {remoteItemsWithStats.length === 0 ? (
+            {campaignData && storesWithoutReference.length > 0 && (
+              <div role="alert" className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-sm text-foreground">
+                <AlertTriangle className="h-4 w-4 shrink-0 text-warning mt-0.5" />
+                <p>{storesWithoutReference.length} loja(s) sem referência — preencher à mão: {storesWithoutReference.map((store) => store.nickname || store.name).join(", ")}</p>
+              </div>
+            )}
+            {sourceLoading || componentsQuery.isPending || currentQuantitiesQuery.isPending ? (
+              <div role="status" className="flex items-center justify-center gap-2 py-8 text-muted-foreground"><Loader2 className="h-4 w-4 animate-spin" /> Carregando dados...</div>
+            ) : sourceError || componentsQuery.isError || currentQuantitiesQuery.isError ? (
+              <p role="alert" className="py-4 text-sm text-destructive">Não foi possível carregar os dados. Feche e tente novamente; nenhuma quantidade será alterada.</p>
+            ) : remoteItemsWithStats.length === 0 ? (
               <div className="text-center py-8">
                 <Package className="w-10 h-10 text-muted-foreground/30 mx-auto mb-2" />
                 <p className="text-sm text-muted-foreground">Nenhuma peça encontrada na campanha selecionada.</p>
@@ -292,6 +350,7 @@ const ImportMatrixFromCampaignDialog = ({
               <>
                 <p className="text-xs text-muted-foreground py-1">
                   {remoteItemsWithStats.length} item(ns) na campanha de origem · {mappedCount} associado(s)
+                  <span className="block">Associações preenchidas automaticamente — revise se quiser.</span>
                 </p>
 
                 {remoteItemsWithStats.map(({ item, totalQty, storeCount }) => {
@@ -302,20 +361,16 @@ const ImportMatrixFromCampaignDialog = ({
                   return (
                     <div
                       key={item.id}
-                      className={`flex items-start gap-3 p-3 rounded-lg border transition-colors ${
-                        currentMappedTarget
-                          ? "border-primary bg-primary/5"
-                          : "border-border"
-                      } ${isKit ? "bg-[#1e3a5f]/5 border-[#1e3a5f]/30" : ""} ${isKitPiece ? "ml-6 border-l-2 border-l-[#1e3a5f]/30" : ""}`}
+                      className={cn("flex items-start gap-3 p-3 rounded-lg border transition-colors", currentMappedTarget ? "border-primary bg-primary/5" : "border-border", isKit && "bg-muted border-primary/30", isKitPiece && "ml-6 border-l-2 border-l-primary/30")}
                     >
                       <PieceThumbnail imageUrl={item.image_url} name={item.name} size="sm" />
                       <div className="flex-1 min-w-0 space-y-1.5">
                         <div>
                           <p className="text-sm font-medium truncate flex items-center gap-1.5">
-                            {isKit && <Boxes className="w-3.5 h-3.5 text-[#1e3a5f] shrink-0" />}
+                            {isKit && <Boxes className="w-3.5 h-3.5 text-primary shrink-0" />}
                             {item.name}
                             {isKit && (
-                              <span className="text-[9px] font-bold bg-[#1e3a5f] text-white px-1.5 py-0.5 rounded uppercase">Kit</span>
+                              <span className="text-[9px] font-bold bg-primary text-primary-foreground px-1.5 py-0.5 rounded uppercase">Kit</span>
                             )}
                           </p>
                           <p className="text-[10px] text-muted-foreground">
@@ -354,11 +409,11 @@ const ImportMatrixFromCampaignDialog = ({
                                   disabled={usedTargetIds.has(opt.id) && currentMappedTarget?.targetId !== opt.id}
                                 >
                                   <span className="flex items-center gap-1.5">
-                                    {opt.type === "kit" && <Boxes className="w-3 h-3 text-[#1e3a5f]" />}
+                                    {opt.type === "kit" && <Boxes className="w-3 h-3 text-primary" />}
                                     <span className="text-muted-foreground text-[10px]">{opt.code}</span>
                                     <span>{opt.label}</span>
                                     {opt.type === "kit" && (
-                                      <span className="text-[8px] font-bold bg-[#1e3a5f] text-white px-1 py-0.5 rounded">KIT</span>
+                                      <span className="text-[8px] font-bold bg-primary text-primary-foreground px-1 py-0.5 rounded">KIT</span>
                                     )}
                                   </span>
                                 </SelectItem>
@@ -366,7 +421,7 @@ const ImportMatrixFromCampaignDialog = ({
                             </SelectContent>
                           </Select>
                           {currentMappedTarget && (
-                            <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setMappingForItem(item.id, null)}>
+                            <Button aria-label={`Limpar associação de ${item.name}`} variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => setMappingForItem(item.id, null)}>
                               <X className="w-3.5 h-3.5" />
                             </Button>
                           )}
@@ -383,11 +438,11 @@ const ImportMatrixFromCampaignDialog = ({
         {selectedCampaignId && remoteItemsWithStats.length > 0 && (
           <div className="flex justify-end gap-2 pt-2 border-t border-border">
             <Button variant="outline" size="sm" onClick={() => handleClose(false)} disabled={importing}>Cancelar</Button>
-            <Button size="sm" onClick={handleImport} disabled={importing || mappedCount === 0} className="gap-1.5">
+            <Button size="sm" onClick={handleImport} disabled={importing || mappedCount === 0 || !currentQuantitiesQuery.isSuccess || !componentsQuery.isSuccess || sourceError} className="gap-1.5">
               {importing ? (
                 <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Importando...</>
               ) : (
-                <><Copy className="w-3.5 h-3.5" /> Importar {mappedCount} item(ns)</>
+                <><Copy className="w-3.5 h-3.5" /> Pré-preencher rateio</>
               )}
             </Button>
           </div>
