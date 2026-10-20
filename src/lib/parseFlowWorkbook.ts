@@ -64,8 +64,8 @@ export function parseFlowPieceName(
 
   text = text
     .replace(/^LINDT_SUMMER_?/i, "")
-    .replace(/\bK\s+IT\b/gi, "KIT")
     .replace(/_/g, " ")
+    .replace(/\bK\s+IT\b/gi, "KIT")
     .replace(/\s+/g, " ")
     .trim();
 
