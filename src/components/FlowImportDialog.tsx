@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { compressImage } from "@/lib/compressImage";
-import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
+import { buildFlowImportRecords, flowNameWithoutKit, isFlowKit } from "@/lib/flowKitImport";
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
 import { combineImagesVertically, fetchImageBlob, runInBatches } from "@/lib/flowImages";
 import type { FlowParsedPiece } from "@/lib/parseFlowWorkbook";
@@ -210,7 +210,7 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
     runRef.current = run;
     const seeded: FlowRow[] = pieces.map((piece) => ({
       id: crypto.randomUUID(),
-      piece: { ...piece },
+      piece: { ...piece, name: mode === "create" && isFlowKit(piece.sourceName) ? flowNameWithoutKit(piece.name) : piece.name },
       image: piece.imageUrls.length && !specsOnly ? { status: "loading" } : { status: "none" },
       specSuggested: false,
       enriched: false,
@@ -236,7 +236,7 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
         if (runRef.current === run) setDownloaded((n) => n + 1);
       }
     });
-  }, [open, pieces, specsOnly]);
+  }, [open, pieces, specsOnly, mode]);
 
   const stillLoading = rows.some((r) => r.image.status === "loading");
   const failedCount = rows.filter((r) => r.image.status === "failed").length;
@@ -273,48 +273,62 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
     const toastId = "flow-import";
     toast.loading("Importando peças do Flow...", { id: toastId });
     try {
-      const [{ data: lastPiece, error: codeError }, { data: maxPieceOrder }, { data: maxKitOrder }] = await Promise.all([
-        supabase.from("campaign_pieces").select("code").eq("campaign_id", campaignId).eq("is_deleted", false)
+      const [lastPieceResult, lastKitResult, pieceOrderResult, kitOrderResult] = await Promise.all([
+        supabase.from("campaign_pieces").select("code").eq("campaign_id", campaignId)
+          .order("code", { ascending: false }).limit(1),
+        supabase.from("campaign_kits").select("code").eq("campaign_id", campaignId)
           .order("code", { ascending: false }).limit(1),
         supabase.from("campaign_pieces").select("display_order").eq("campaign_id", campaignId).eq("is_deleted", false)
           .order("display_order", { ascending: false }).limit(1),
         supabase.from("campaign_kits").select("display_order").eq("campaign_id", campaignId).eq("is_deleted", false)
           .order("display_order", { ascending: false }).limit(1),
       ]);
-      if (codeError) throw codeError;
-      let nextCode = (lastPiece?.[0]?.code ?? 0) + 1;
-      let nextOrder = Math.max(maxPieceOrder?.[0]?.display_order ?? -1, maxKitOrder?.[0]?.display_order ?? -1) + 1;
+      for (const result of [lastPieceResult, lastKitResult, pieceOrderResult, kitOrderResult]) {
+        if (result.error) throw result.error;
+      }
+      let nextCode = Math.max(lastPieceResult.data?.[0]?.code ?? 0, lastKitResult.data?.[0]?.code ?? 0) + 1;
+      let nextOrder = Math.max(pieceOrderResult.data?.[0]?.display_order ?? -1, kitOrderResult.data?.[0]?.display_order ?? -1) + 1;
       let imageFailures = 0;
 
       for (let i = 0; i < valid.length; i += 1) {
         const { piece, image } = valid[i];
-        const code = nextCode++;
+        const code = nextCode;
         toast.loading(`Importando peças do Flow... ${i + 1}/${valid.length}`, { id: toastId });
         const imageUrl = image.status === "ready" ? await uploadImage(image.blob, code) : null;
         if (image.status === "ready" && !imageUrl) imageFailures += 1;
-        const { error } = await supabase.from("campaign_pieces").insert({
-          campaign_id: campaignId,
-          code,
-          name: piece.name.trim(),
-          category: piece.category.trim().toUpperCase(),
-          size: piece.size.trim(),
-          kit_only: false,
-          is_mockup: false,
-          sub_location: piece.subLocation.trim() || null,
-          specification: piece.specification.trim() || DEFAULT_SPECIFICATION,
-          installation_instructions: "Sem informações específicas",
-          image_url: imageUrl,
-          is_deleted: false,
-          is_new: false,
-          display_order: nextOrder++,
-        });
-        if (error) throw error;
+        const records = buildFlowImportRecords(piece, campaignId, nextCode, nextOrder, imageUrl);
+        if (records.kit) {
+          // IDs are known in advance; cleanup is limited to this new, incomplete kit.
+          const kitId = crypto.randomUUID();
+          const pieceId = crypto.randomUUID();
+          const { error: kitError } = await supabase.from("campaign_kits").insert({ ...records.kit, id: kitId });
+          if (kitError) throw kitError;
+          try {
+            const { error: pieceError } = await supabase.from("campaign_pieces").insert({ ...records.piece, id: pieceId });
+            if (pieceError) throw pieceError;
+            const { error: linkError } = await supabase.from("campaign_kit_pieces").insert({ kit_id: kitId, piece_id: pieceId, quantity: 1, display_order: 0 });
+            if (linkError) throw linkError;
+          } catch (error: unknown) {
+            const cleanup = await Promise.all([
+              supabase.from("campaign_pieces").delete().eq("id", pieceId).eq("campaign_id", campaignId),
+              supabase.from("campaign_kits").delete().eq("id", kitId).eq("campaign_id", campaignId),
+            ]);
+            if (cleanup.some((result) => result.error)) toast.error("Não foi possível remover o kit incompleto; confira a lista antes de tentar novamente.");
+            throw error;
+          }
+        } else {
+          const { error } = await supabase.from("campaign_pieces").insert(records.piece);
+          if (error) throw error;
+        }
+        nextCode = records.nextCode;
+        nextOrder = records.nextOrder;
       }
 
-      await disambiguateKitPieceNames(campaignId);
       await ensureCampaignLocations(campaignId);
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] }),
+        queryClient.invalidateQueries({ queryKey: ["campaign_kits"] }),
+        queryClient.invalidateQueries({ queryKey: ["campaign_kit_pieces"] }),
         queryClient.invalidateQueries({ queryKey: ["campaign_piece_locations"] }),
       ]);
       toast.success(`Importadas ${valid.length} peças do Flow`, {
@@ -413,6 +427,9 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
                         value={row.piece[f.key]}
                         onChange={(e) => updateField(row.id, f.key, e.target.value)}
                       />
+                      {f.key === "name" && mode === "create" && isFlowKit(row.piece.sourceName) && (
+                        <span className="mt-1 inline-block rounded border border-primary/20 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">KIT — 1 componente (complete os demais)</span>
+                      )}
                     </TableCell>
                   ))}
                   <TableCell className="p-1.5">
