@@ -1,4 +1,5 @@
 import { assertStoredImage } from "@/lib/assertStoredImage";
+import { ensureKitPrefix } from "@/lib/kitName";
 import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { getThumbnailUrl } from "@/lib/imageUrl";
@@ -194,11 +195,6 @@ export function CreateKitDialog({
       String(p.code).includes(q)
     );
   }, [availablePieces, createSearch]);
-
-  const ensureKitPrefix = (name: string) => {
-    const trimmed = name.trim();
-    return trimmed.startsWith("KIT ") ? trimmed : `KIT ${trimmed}`;
-  };
 
   const handleCreateKit = async () => {
     if (!kitName.trim()) return;
