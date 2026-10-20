@@ -94,11 +94,16 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
       const file = new File([blob], `flow-${code}.jpg`, { type: blob.type || "image/jpeg" });
       const compressed = await compressImage(file, 1200, 0.7);
       const path = `flow-piece-${code}-${Date.now()}.jpg`;
-      const { error } = await supabase.storage
+      const { data, error } = await supabase.storage
         .from("piece-images")
         .upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
       if (error) throw error;
-      return supabase.storage.from("piece-images").getPublicUrl(path).data.publicUrl;
+      if (!data?.path) throw new Error("Upload sem confirmação do servidor");
+      const publicUrl = supabase.storage.from("piece-images").getPublicUrl(data.path).data.publicUrl;
+      // Confirma que o arquivo realmente existe antes de gravar o link na peça.
+      const check = await fetch(publicUrl, { method: "HEAD", cache: "no-store" });
+      if (!check.ok) throw new Error(`Arquivo não encontrado após envio (HTTP ${check.status})`);
+      return publicUrl;
     } catch (error: unknown) {
       console.warn("flow image upload failed", code, error);
       return null;
