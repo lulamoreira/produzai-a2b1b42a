@@ -140,6 +140,7 @@ export default function PiecesTab({
   const flowInputRef = useRef<HTMLInputElement>(null);
   const [flowOpen, setFlowOpen] = useState(false);
   const [flowPieces, setFlowPieces] = useState<FlowParsedPiece[]>([]);
+  const [flowMode, setFlowMode] = useState<"create" | "images">("create");
   /** Lê o XLS do Flow e abre a conferência com download das imagens. */
   const handleFlowFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1180,8 +1181,11 @@ export default function PiecesTab({
                   <DropdownMenuItem onClick={() => setOneNoteSourceOpen(true)} disabled={oneNotePdfProcessing}>
                     <FileSpreadsheet className="w-4 h-4 mr-2" /> Importar do OneNote
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => flowInputRef.current?.click()}>
+                  <DropdownMenuItem onClick={() => { setFlowMode("create"); flowInputRef.current?.click(); }}>
                     <FileSpreadsheet className="w-4 h-4 mr-2" /> Importar do Flow
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setFlowMode("images"); flowInputRef.current?.click(); }}>
+                    <FileSpreadsheet className="w-4 h-4 mr-2" /> Reaplicar imagens do Flow
                   </DropdownMenuItem>
 
                   <DropdownMenuItem onClick={handleReviewPieceCodes}>
@@ -1677,6 +1681,7 @@ export default function PiecesTab({
         campaignId={campaignId}
         campaignName={campaign?.name || "campanha atual"}
         pieces={flowPieces}
+        mode={flowMode}
       />
       <OneNoteSourceDialog
         open={oneNoteSourceOpen}

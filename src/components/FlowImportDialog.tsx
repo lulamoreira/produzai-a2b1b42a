@@ -257,9 +257,11 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
     <Dialog open={open} onOpenChange={(next) => !importing && onOpenChange(next)}>
       <DialogContent className="flex max-h-[90dvh] max-w-[calc(100vw-2rem)] flex-col overflow-hidden p-0 lg:max-w-6xl">
         <DialogHeader className="border-b px-6 py-5 pr-12">
-          <DialogTitle>Conferir importação do Flow</DialogTitle>
+          <DialogTitle>{imagesOnly ? "Reaplicar imagens do Flow" : "Conferir importação do Flow"}</DialogTitle>
           <DialogDescription>
-            Revise os dados antes de importar para {campaignName}. Nada será gravado até a confirmação.
+            {imagesOnly
+              ? `Nenhuma peça será criada. As imagens vão para as peças já existentes em ${campaignName} com o mesmo nome; imagens enviadas manualmente são mantidas.`
+              : `Revise os dados antes de importar para ${campaignName}. Nada será gravado até a confirmação.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -289,6 +291,7 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
                 {fields.map((f) => <TableHead key={f.key} className={f.width}>{f.label}</TableHead>)}
                 <TableHead className="w-56">Especificação</TableHead>
                 <TableHead className="w-40">Imagem</TableHead>
+                {imagesOnly && <TableHead className="w-48">Peça na campanha</TableHead>}
                 <TableHead className="w-14" />
               </TableRow>
             </TableHeader>
@@ -307,6 +310,13 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
                   ))}
                   <TableCell className="p-1.5 text-xs text-muted-foreground">{row.piece.specification || DEFAULT_SPECIFICATION}</TableCell>
                   <TableCell className="p-1.5">{renderImage(row.image)}</TableCell>
+                  {imagesOnly && (
+                    <TableCell className="p-1.5 text-xs">
+                      {matches[index]
+                        ? <span className="text-foreground">#{matches[index]!.code} {matches[index]!.name}{!canReplaceImage(matches[index]!.image_url) && <span className="block text-muted-foreground">já tem imagem — mantida</span>}</span>
+                        : <span className="text-destructive">não encontrada</span>}
+                    </TableCell>
+                  )}
                   <TableCell className="p-1.5">
                     <Button
                       type="button"
@@ -326,8 +336,8 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
 
         <DialogFooter className="px-6 pb-5">
           <Button type="button" variant="outline" disabled={importing} onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button type="button" disabled={importing || stillLoading || rows.length === 0} onClick={() => void handleConfirm()}>
-            {importing ? "Importando..." : stillLoading ? "Baixando imagens..." : "Importar"}
+          <Button type="button" disabled={importing || stillLoading || rows.length === 0} onClick={() => void (imagesOnly ? handleApplyImages() : handleConfirm())}>
+            {importing ? "Enviando..." : stillLoading ? "Baixando imagens..." : imagesOnly ? "Aplicar imagens" : "Importar"}
           </Button>
         </DialogFooter>
       </DialogContent>
