@@ -53,21 +53,29 @@ describe("Flow kit import rules", () => {
     expect(records.nextOrder).toBe(19);
   });
 
-  it("creates one component per sized part, image only on the first, parenthesis out of the specification", () => {
+  it("creates one component per sized part named '<TIPO> <RÓTULO> - <LOCAL>', image only on the first", () => {
     const raw = "LINDT_SUMMER_INT_PICK&MIX K IT_MOBILES_DESCONTOS_30x30cm (10% - 24x24cm / 15% 26x26cm / 20% 28x28cm)";
-    const parsed: FlowParsedPiece = { ...parseFlowPieceName(raw), sourceName: raw, category: "PAREDE", subLocation: "Mobile", imageUrls: [] };
+    const parsed: FlowParsedPiece = { ...parseFlowPieceName(raw), sourceName: raw, category: "PICK & MIX", subLocation: "", imageUrls: [] };
     const records = buildFlowImportRecords(parsed, "campaign", 41, 17, "saved-image");
     expect(records.kit).toMatchObject({ name: "KIT PICK&MIX Mobiles Descontos", code: 41, display_order: 17, image_url: "saved-image" });
     expect(records.pieces).toHaveLength(3);
-    expect(records.pieces[0]).toMatchObject({ name: "PICK&MIX Mobiles Descontos - 10%", size: "24×24", kit_only: true, image_url: "saved-image", code: 42, display_order: 18 });
-    expect(records.pieces[1]).toMatchObject({ name: "PICK&MIX Mobiles Descontos - 15%", size: "26×26", image_url: null, code: 43, display_order: 19 });
-    expect(records.pieces[2]).toMatchObject({ name: "PICK&MIX Mobiles Descontos - 20%", size: "28×28", image_url: null, code: 44, display_order: 20 });
+    expect(records.pieces[0]).toMatchObject({ name: "Mobiles 10% - Pick&Mix", size: "24×24", kit_only: true, image_url: "saved-image", code: 42, display_order: 18 });
+    expect(records.pieces[1]).toMatchObject({ name: "Mobiles 15% - Pick&Mix", size: "26×26", image_url: null, code: 43, display_order: 19 });
+    expect(records.pieces[2]).toMatchObject({ name: "Mobiles 20% - Pick&Mix", size: "28×28", image_url: null, code: 44, display_order: 20 });
     for (const component of records.pieces) {
       expect(component.specification).not.toContain("(");
       expect(component.specification).toBe("Vide Book/Manual");
     }
     expect(records.nextCode).toBe(45);
     expect(records.nextOrder).toBe(21);
+  });
+
+  it("uses the kit sub-location as TIPO when it exists", () => {
+    const raw = "LINDT_SUMMER_VIT_KIT_SHELFTALK_100x10cm (SUPERIOR 175x7,5cm / INFERIOR 110x7,5cm)";
+    const parsed: FlowParsedPiece = { ...parseFlowPieceName(raw), sourceName: raw, category: "PAREDE", subLocation: "Shelftalk", imageUrls: [] };
+    const records = buildFlowImportRecords(parsed, "campaign", 41, 17, null);
+    expect(records.pieces.map((p) => p.name)).toEqual(["Shelftalk Superior - Parede", "Shelftalk Inferior - Parede"]);
+    expect(records.pieces.map((p) => p.size)).toEqual(["175×7,5", "110×7,5"]);
   });
 
   it("keeps single component and parenthesis in specification when no part has a size", () => {
