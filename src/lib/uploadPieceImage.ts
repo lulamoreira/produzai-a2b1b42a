@@ -11,6 +11,7 @@
  * Returns the 4 fields to persist on the piece row.
  */
 import { supabase } from "@/integrations/supabase/client";
+import { assertStoredImage } from "@/lib/assertStoredImage";
 import { generatePieceImageVariants } from "@/lib/pieceImageVariants";
 
 export interface UploadedPieceImage {
@@ -34,6 +35,7 @@ async function uploadVariant(path: string, blob: Blob): Promise<string> {
   });
   if (error) throw error;
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+  await assertStoredImage(data.publicUrl);
   return data.publicUrl;
 }
 

@@ -1,3 +1,4 @@
+import { assertStoredImage } from "@/lib/assertStoredImage";
 import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { getThumbnailUrl } from "@/lib/imageUrl";
@@ -60,6 +61,7 @@ function KitImageSection({
         .upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
+      await assertStoredImage(urlData.publicUrl);
       onImageUpdated(urlData.publicUrl);
       toast.success(t("pieces.kitImageUpdated"));
     } catch (err: any) {
@@ -606,6 +608,7 @@ export function KitDetailDialog({
       const { error } = await supabase.storage.from("piece-images").upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
       if (error) throw error;
       const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
+      await assertStoredImage(urlData.publicUrl);
       await onUpdatePiece({ id: pieceId, image_url: urlData.publicUrl });
       toast.success("Imagem atualizada!");
     } catch (err: any) {

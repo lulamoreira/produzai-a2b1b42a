@@ -1,3 +1,4 @@
+import { assertStoredImage } from "@/lib/assertStoredImage";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Package } from "lucide-react";
@@ -37,6 +38,7 @@ const KitImageDropZone = ({ kit, canEdit = false }: Props) => {
       const { error } = await supabase.storage.from("piece-images").upload(path, compressed, { upsert: true, contentType: "image/jpeg" });
       if (error) throw error;
       const { data: urlData } = supabase.storage.from("piece-images").getPublicUrl(path);
+      await assertStoredImage(urlData.publicUrl);
       await updateKit.mutateAsync({ id: kit.id, image_url: urlData.publicUrl });
       toast.success("Imagem do kit atualizada!", { id: toastId });
     } catch (err: any) {

@@ -1,3 +1,4 @@
+import { assertStoredImage } from "@/lib/assertStoredImage";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ImageOff, Images, Loader2, Trash2 } from "lucide-react";
@@ -156,8 +157,7 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
       if (!data?.path) throw new Error("Upload sem confirmação do servidor");
       const publicUrl = supabase.storage.from("piece-images").getPublicUrl(data.path).data.publicUrl;
       // Confirma que o arquivo realmente existe antes de gravar o link na peça.
-      const check = await fetch(publicUrl, { method: "HEAD", cache: "no-store" });
-      if (!check.ok) throw new Error(`Arquivo não encontrado após envio (HTTP ${check.status})`);
+      await assertStoredImage(publicUrl);
       return publicUrl;
     } catch (error: unknown) {
       console.warn("flow image upload failed", code, error);
