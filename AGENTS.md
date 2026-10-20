@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Matrix quantity prefill reuses Flow name tokens and shared pure matching/filter helpers; reread paginated current quantities before confirmation so existing positive cells are preserved without changing the parent importer.
+
 - Flow creation uses a shared record builder for kit/component payloads and one code/order counter; kit naming is shared with New Kit to prevent convention drift.
 
 - Individual team exports use a shared labeled-field model for Excel and both clipboard formats so installer documents and vehicle details stay consistent.

@@ -1,4 +1,5 @@
 # Team export formatting
+- [ ] Add automatic matrix associations, missing-reference warning and empty-cell-only import; verify component coverage and tests.
 - [x] Import Flow KIT rows as kits with one component, preserve enrichment/images, and verify shared numbering with tests and authenticated review; no real campaign records changed.
 
 - [x] Format individual Excel and clipboard exports as labeled person and vehicle blocks.
