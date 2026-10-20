@@ -57,11 +57,11 @@ describe("Flow kit import rules", () => {
     const raw = "LINDT_SUMMER_INT_PICK&MIX K IT_MOBILES_DESCONTOS_30x30cm (10% - 24x24cm / 15% 26x26cm / 20% 28x28cm)";
     const parsed: FlowParsedPiece = { ...parseFlowPieceName(raw), sourceName: raw, category: "PAREDE", subLocation: "Mobile", imageUrls: [] };
     const records = buildFlowImportRecords(parsed, "campaign", 41, 17, "saved-image");
-    expect(records.kit).toMatchObject({ name: "KIT Pick&Mix Mobiles Descontos", code: 41, display_order: 17, image_url: "saved-image" });
+    expect(records.kit).toMatchObject({ name: "KIT PICK&MIX Mobiles Descontos", code: 41, display_order: 17, image_url: "saved-image" });
     expect(records.pieces).toHaveLength(3);
-    expect(records.pieces[0]).toMatchObject({ name: "Pick&Mix Mobiles Descontos - 10%", size: "24×24", kit_only: true, image_url: "saved-image", code: 42, display_order: 18 });
-    expect(records.pieces[1]).toMatchObject({ name: "Pick&Mix Mobiles Descontos - 15%", size: "26×26", image_url: null, code: 43, display_order: 19 });
-    expect(records.pieces[2]).toMatchObject({ name: "Pick&Mix Mobiles Descontos - 20%", size: "28×28", image_url: null, code: 44, display_order: 20 });
+    expect(records.pieces[0]).toMatchObject({ name: "PICK&MIX Mobiles Descontos - 10%", size: "24×24", kit_only: true, image_url: "saved-image", code: 42, display_order: 18 });
+    expect(records.pieces[1]).toMatchObject({ name: "PICK&MIX Mobiles Descontos - 15%", size: "26×26", image_url: null, code: 43, display_order: 19 });
+    expect(records.pieces[2]).toMatchObject({ name: "PICK&MIX Mobiles Descontos - 20%", size: "28×28", image_url: null, code: 44, display_order: 20 });
     for (const component of records.pieces) {
       expect(component.specification).not.toContain("(");
       expect(component.specification).toBe("Vide Book/Manual");
