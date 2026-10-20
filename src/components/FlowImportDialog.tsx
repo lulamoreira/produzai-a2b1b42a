@@ -14,6 +14,7 @@ import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
 import { combineImagesVertically, fetchImageBlob, runInBatches } from "@/lib/flowImages";
 import type { FlowParsedPiece } from "@/lib/parseFlowWorkbook";
+import { canReplaceImage, matchFlowRows, type ExistingPieceRef } from "@/lib/flowImageMatch";
 
 interface FlowImportDialogProps {
   open: boolean;
@@ -21,6 +22,8 @@ interface FlowImportDialogProps {
   campaignId: string;
   campaignName: string;
   pieces: FlowParsedPiece[];
+  /** "images": não cria peças; só reaplica imagens nas peças já existentes. */
+  mode?: "create" | "images";
 }
 
 type ImageState =
@@ -38,15 +41,67 @@ interface FlowRow {
 const DEFAULT_SPECIFICATION = "Vide Book/Manual";
 type EditableField = "name" | "category" | "subLocation" | "size";
 
-export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName, pieces }: FlowImportDialogProps) {
+export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName, pieces, mode = "create" }: FlowImportDialogProps) {
   useTranslation();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<FlowRow[]>([]);
   const [downloaded, setDownloaded] = useState(0);
   const [importing, setImporting] = useState(false);
+  const [existing, setExisting] = useState<ExistingPieceRef[]>([]);
   const runRef = useRef<symbol | null>(null);
+  const imagesOnly = mode === "images";
 
   const withImages = useMemo(() => pieces.filter((p) => p.imageUrls.length > 0).length, [pieces]);
+
+  useEffect(() => {
+    if (!open || !imagesOnly) return;
+    void supabase
+      .from("campaign_pieces")
+      .select("id, code, name, category, image_url")
+      .eq("campaign_id", campaignId)
+      .eq("is_deleted", false)
+      .order("code")
+      .then(({ data, error }) => {
+        if (error) toast.error(`Erro ao ler peças: ${error.message}`);
+        setExisting((data || []) as ExistingPieceRef[]);
+      });
+  }, [open, imagesOnly, campaignId]);
+
+  const matches = useMemo(
+    () => (imagesOnly ? matchFlowRows(rows.map((r) => ({ name: r.piece.name, category: r.piece.category })), existing) : []),
+    [imagesOnly, rows, existing],
+  );
+
+  const handleApplyImages = async () => {
+    if (importing) return;
+    setImporting(true);
+    const toastId = "flow-images";
+    let ok = 0, failed = 0, skipped = 0;
+    try {
+      for (let i = 0; i < rows.length; i += 1) {
+        const target = matches[i];
+        const image = rows[i].image;
+        if (!target || image.status !== "ready") continue;
+        if (!canReplaceImage(target.image_url)) { skipped += 1; continue; }
+        toast.loading(`Enviando imagens... ${i + 1}/${rows.length}`, { id: toastId });
+        const url = await uploadImage(image.blob, target.code);
+        if (!url) { failed += 1; continue; }
+        const { error } = await supabase.from("campaign_pieces").update({ image_url: url }).eq("id", target.id);
+        if (error) { failed += 1; continue; }
+        ok += 1;
+      }
+      await queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+      toast.success(`${ok} imagem(ns) aplicada(s)`, {
+        id: toastId,
+        description: [failed && `${failed} falharam`, skipped && `${skipped} já tinham imagem própria (mantidas)`].filter(Boolean).join(" · ") || undefined,
+      });
+      onOpenChange(false);
+    } catch (error: unknown) {
+      toast.error(`Erro: ${error instanceof Error ? error.message : String(error)}`, { id: toastId });
+    } finally {
+      setImporting(false);
+    }
+  };
 
   // Semeia linhas e baixa imagens (3 por vez) a cada abertura.
   useEffect(() => {
