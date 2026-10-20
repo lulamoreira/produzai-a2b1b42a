@@ -88,6 +88,21 @@ const CampaignDetail = () => {
 
   const lalPerms = useLojaALojaPermissions(campaignId, clientId);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
+
+  // Old links to a superseded campaign of a renegotiation chain always go to the
+  // newest campaign, with a full page reload so every module loads fresh data.
+  useEffect(() => {
+    if (!campaignId) return;
+    let cancelled = false;
+    supabase.rpc("get_latest_campaign_in_chain", { p_campaign_id: campaignId }).then(({ data, error }) => {
+      if (cancelled || error || !data || data === campaignId) return;
+      const newPath = window.location.pathname.replace(`/campaigns/${campaignId}`, `/campaigns/${data}`);
+      if (newPath !== window.location.pathname) {
+        window.location.replace(`${newPath}${window.location.search}${window.location.hash}`);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [campaignId]);
   const { data: client } = useClient(clientId);
   const { data: agency } = useQuery({
     queryKey: ["agency", agencyId],
