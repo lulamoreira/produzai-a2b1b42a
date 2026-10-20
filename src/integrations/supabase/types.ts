@@ -6374,6 +6374,10 @@ export type Database = {
         Returns: Json
       }
       get_invite_by_token: { Args: { p_token: string }; Returns: Json }
+      get_latest_campaign_in_chain: {
+        Args: { p_campaign_id: string }
+        Returns: string
+      }
       get_portal_directory_by_token: {
         Args: { p_token: string }
         Returns: Json
