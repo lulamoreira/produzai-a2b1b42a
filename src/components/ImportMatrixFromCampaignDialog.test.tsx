@@ -12,7 +12,7 @@ vi.mock("@/components/ui/select", () => ({
   SelectTrigger: () => <option value="">Selecionar</option>,
   SelectValue: () => null,
   SelectContent: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  SelectItem: ({ children, value, disabled }: { children: React.ReactNode; value: string; disabled?: boolean }) => <option value={value} disabled={disabled}>{children}</option>,
+  SelectItem: ({ children, value, disabled }: { children: React.ReactNode; value: string; disabled?: boolean }) => <option value={value} disabled={disabled}>{typeof children === "string" ? children : value}</option>,
 }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
   rpc: async (name: string) => ({ error: null, data: name === "get_client_campaigns_for_import" ? [{ id: "source", name: "Origem" }] : {
