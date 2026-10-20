@@ -41,6 +41,7 @@ import { useAuth } from "@/hooks/useAuth";
 import * as XLSX from "xlsx";
 import { downloadWorkbook } from "@/lib/downloadWorkbook";
 import { buildExportFileName } from "@/lib/exportFileName";
+import { exportSchedulePdf } from "@/lib/exportSchedulePdf";
 import { exportTeamsByStore } from "@/lib/exportTeamsByStore";
 import { exportTeamDetail } from "@/lib/exportTeamDetail";
 import InstallationTeamDialog, {
@@ -689,6 +690,17 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
     XLSX.utils.book_append_sheet(wb, ws, t("scheduling.title"));
     XLSX.writeFile(wb, buildExportFileName(`Agendamento_${campaignName}`, { agencyName, clientName }));
     toast.success(t("common.spreadsheetExported"));
+  };
+
+  const handleExportCronogramaPdf = () => {
+    const n = exportSchedulePdf({
+      stores: displayedStores,
+      scheduleMap,
+      fileName: buildExportFileName(`Cronograma_${campaignName}`, { agencyName, clientName, extension: "pdf" }),
+      clientName, campaignName, agencyName,
+    });
+    if (n === 0) { toast.error("Nenhum agendamento com data para exportar."); return; }
+    toast.success("Cronograma (PDF) gerado.");
   };
 
   const handleExportTeams = () => {
