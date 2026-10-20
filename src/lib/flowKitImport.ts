@@ -60,6 +60,35 @@ function withoutFinalParenthesis(text: string): string {
   return text.replace(/\([^()]*\)(?![\s\S]*\([^()]*\))/, " ").replace(/\s+/g, " ").trim();
 }
 
+const GENERIC_TIPO_WORDS = new Set(["descontos", "desconto", "kit"]);
+
+function titleCaseWords(text: string): string {
+  return text
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => (/[\d%&]/.test(word) ? word.toUpperCase() : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()))
+    .join(" ");
+}
+
+/** LOCAL: Title Case da categoria do kit, sem espaços ao redor de "&" ("PICK & MIX" → "Pick&Mix"). */
+function flowComponentLocal(category: string): string {
+  return titleCaseWords(category.trim()).replace(/\s*&\s*/g, "&");
+}
+
+/** TIPO: subgrupo do kit; senão o que sobra do nome-base sem as palavras do LOCAL e as genéricas. */
+function flowComponentTipo(baseName: string, local: string, subLocation: string): string {
+  const sub = subLocation.trim();
+  if (sub) return sub;
+  const localWords = new Set(local.toLowerCase().split(/[\s&]+/).filter(Boolean));
+  const joined = local.toLowerCase().replace(/[\s&]+/g, "");
+  if (joined) localWords.add(joined);
+  const remaining = baseName.split(/\s+/).filter((word) => {
+    const key = word.toLowerCase().replace(/&/g, "");
+    return key && !localWords.has(key) && !GENERIC_TIPO_WORDS.has(key);
+  });
+  return remaining.length ? remaining.join(" ") : baseName;
+}
+
 export function buildFlowImportRecords(piece: FlowParsedPiece, campaignId: string, nextCode: number, nextOrder: number, imageUrl: string | null) {
   const kit = isFlowKit(piece.sourceName);
   const name = kit ? flowNameWithoutKit(piece.name) : piece.name.trim();
@@ -79,11 +108,14 @@ export function buildFlowImportRecords(piece: FlowParsedPiece, campaignId: strin
     installation_instructions: "Sem informações específicas",
   };
   if (kit && components) {
+    const local = flowComponentLocal(piece.category);
+    const tipo = flowComponentTipo(name, local, piece.subLocation);
     return {
       kit: { ...common, name: ensureKitPrefix(name), image_url: imageUrl, code: nextCode, display_order: nextOrder },
       pieces: components.map((component, index) => ({
         ...basePiece,
-        name: component.label ? `${name} - ${component.label}` : name,
+        // "<TIPO> <RÓTULO> - <LOCAL>" (ex.: "Mobiles 10% - Pick&Mix").
+        name: `${[tipo, component.label].filter(Boolean).join(" ")}${local ? ` - ${local}` : ""}`.replace(/\s+/g, " ").trim(),
         size: component.size,
         // A imagem do Flow fica só no 1º componente; os demais são completados depois.
         image_url: index === 0 ? imageUrl : null,
