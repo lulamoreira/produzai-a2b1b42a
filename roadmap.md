@@ -1,4 +1,5 @@
 # Team export formatting
+- [ ] Import Flow KIT rows as kits with one component, preserve enrichment/images, and verify shared numbering.
 
 - [x] Format individual Excel and clipboard exports as labeled person and vehicle blocks.
 - [x] Support rich clipboard with a plain-text fallback.
