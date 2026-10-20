@@ -5,6 +5,7 @@ export interface ExistingPieceRef {
   name: string;
   category: string | null;
   image_url: string | null;
+  specification?: string | null;
 }
 
 const norm = (s: string | null | undefined) =>

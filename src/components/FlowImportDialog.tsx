@@ -15,6 +15,8 @@ import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
 import { combineImagesVertically, fetchImageBlob, runInBatches } from "@/lib/flowImages";
 import type { FlowParsedPiece } from "@/lib/parseFlowWorkbook";
+import { supabasePaginate } from "@/lib/supabasePaginate";
+import { buildSpecMatcher, canReplaceSpec, normCat, type SpecMatcher } from "@/lib/flowCategorySpec";
 import { canReplaceImage, matchFlowRows, type ExistingPieceRef } from "@/lib/flowImageMatch";
 
 interface FlowImportDialogProps {
@@ -24,7 +26,14 @@ interface FlowImportDialogProps {
   campaignName: string;
   pieces: FlowParsedPiece[];
   /** "images": não cria peças; só reaplica imagens nas peças já existentes. */
-  mode?: "create" | "images";
+  mode?: "create" | "images" | "specs";
+  /** Cliente da campanha: base de categorias e especificações de outras campanhas. */
+  clientId?: string;
+}
+
+interface ClientCatalog {
+  categories: string[];
+  matchSpec: SpecMatcher;
 }
 
 type ImageState =
@@ -37,12 +46,14 @@ interface FlowRow {
   id: string;
   piece: FlowParsedPiece;
   image: ImageState;
+  specSuggested: boolean;
+  enriched: boolean;
 }
 
 const DEFAULT_SPECIFICATION = "Vide Book/Manual";
-type EditableField = "name" | "category" | "subLocation" | "size";
+type EditableField = "name" | "category" | "subLocation" | "size" | "specification";
 
-export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName, pieces, mode = "create" }: FlowImportDialogProps) {
+export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName, pieces, mode = "create", clientId }: FlowImportDialogProps) {
   useTranslation();
   const queryClient = useQueryClient();
   const [rows, setRows] = useState<FlowRow[]>([]);
@@ -51,14 +62,64 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
   const [existing, setExisting] = useState<ExistingPieceRef[]>([]);
   const runRef = useRef<symbol | null>(null);
   const imagesOnly = mode === "images";
+  const specsOnly = mode === "specs";
+  const matchExisting = imagesOnly || specsOnly;
+  const [catalog, setCatalog] = useState<ClientCatalog | null>(null);
+  const [progress, setProgress] = useState(0);
+
+  /** Aplica Localização padronizada (Demanda) e Especificação sugerida às linhas ainda não tratadas. */
+  const enrich = (row: FlowRow, cat: ClientCatalog): FlowRow => {
+    if (row.enriched) return row;
+    const category = row.piece.demanda ? normCat(row.piece.demanda, cat.categories) || row.piece.category : row.piece.category;
+    const suggested = canReplaceSpec(row.piece.specification) ? cat.matchSpec(row.piece.name) : null;
+    return {
+      ...row,
+      enriched: true,
+      specSuggested: Boolean(suggested),
+      piece: { ...row.piece, category, specification: suggested ?? row.piece.specification },
+    };
+  };
+
+  // Carrega uma vez as peças das OUTRAS campanhas do mesmo cliente (paginado).
+  useEffect(() => {
+    if (!open) { setCatalog(null); return; }
+    if (!clientId) { setCatalog({ categories: [], matchSpec: () => null }); return; }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const data = await supabasePaginate<{ id: string; name: string; category: string | null; specification: string | null }>((from, to) =>
+          supabase
+            .from("campaign_pieces")
+            .select("id, name, category, specification, campaigns!inner(client_id)", { count: "exact" })
+            .eq("campaigns.client_id", clientId)
+            .neq("campaign_id", campaignId)
+            .eq("is_deleted", false)
+            .order("id")
+            .range(from, to) as never,
+        );
+        if (cancelled) return;
+        const categories = [...new Set(data.map((p) => (p.category || "").trim()).filter(Boolean))];
+        setCatalog({ categories, matchSpec: buildSpecMatcher(data.map((p) => ({ name: p.name, specification: p.specification }))) });
+      } catch (error: unknown) {
+        console.warn("flow client catalog failed", error);
+        if (!cancelled) setCatalog({ categories: [], matchSpec: () => null });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [open, clientId, campaignId]);
+
+  useEffect(() => {
+    if (catalog) setRows((current) => current.map((r) => enrich(r, catalog)));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [catalog, rows.length]);
 
   const withImages = useMemo(() => pieces.filter((p) => p.imageUrls.length > 0).length, [pieces]);
 
   useEffect(() => {
-    if (!open || !imagesOnly) return;
+    if (!open || !matchExisting) return;
     void supabase
       .from("campaign_pieces")
-      .select("id, code, name, category, image_url")
+      .select("id, code, name, category, image_url, specification")
       .eq("campaign_id", campaignId)
       .eq("is_deleted", false)
       .order("code")
@@ -66,11 +127,11 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
         if (error) toast.error(`Erro ao ler peças: ${error.message}`);
         setExisting((data || []) as ExistingPieceRef[]);
       });
-  }, [open, imagesOnly, campaignId]);
+  }, [open, matchExisting, campaignId]);
 
   const matches = useMemo(
-    () => (imagesOnly ? matchFlowRows(rows.map((r) => ({ name: r.piece.name, category: r.piece.category })), existing) : []),
-    [imagesOnly, rows, existing],
+    () => (matchExisting ? matchFlowRows(rows.map((r) => ({ name: r.piece.name, category: r.piece.category })), existing) : []),
+    [matchExisting, rows, existing],
   );
 
   const handleApplyImages = async () => {
@@ -104,6 +165,41 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
     }
   };
 
+  const handleApplySpecs = async () => {
+    if (importing) return;
+    setImporting(true);
+    setProgress(0);
+    let ok = 0, failed = 0;
+    try {
+      for (let i = 0; i < rows.length; i += 1) {
+        setProgress(((i + 1) / rows.length) * 100);
+        const target = matches[i];
+        if (!target) continue;
+        const piece = rows[i].piece;
+        const update: { category?: string; specification?: string } = {};
+        const category = piece.category.trim().toUpperCase();
+        if (category && category !== (target.category || "")) update.category = category;
+        const spec = piece.specification.trim();
+        if (rows[i].specSuggested && spec && canReplaceSpec(target.specification) && spec !== target.specification) update.specification = spec;
+        if (!Object.keys(update).length) continue;
+        const { error } = await supabase.from("campaign_pieces").update(update).eq("id", target.id);
+        if (error) { failed += 1; continue; }
+        ok += 1;
+      }
+      await ensureCampaignLocations(campaignId);
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] }),
+        queryClient.invalidateQueries({ queryKey: ["campaign_piece_locations"] }),
+      ]);
+      toast.success(`${ok} peças atualizadas`, { description: failed ? `${failed} falharam` : undefined });
+      onOpenChange(false);
+    } catch (error: unknown) {
+      toast.error(`Erro: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      setImporting(false);
+    }
+  };
+
   // Semeia linhas e baixa imagens (3 por vez) a cada abertura.
   useEffect(() => {
     if (!open) {
@@ -115,7 +211,9 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
     const seeded: FlowRow[] = pieces.map((piece) => ({
       id: crypto.randomUUID(),
       piece: { ...piece },
-      image: piece.imageUrls.length ? { status: "loading" } : { status: "none" },
+      image: piece.imageUrls.length && !specsOnly ? { status: "loading" } : { status: "none" },
+      specSuggested: false,
+      enriched: false,
     }));
     setRows(seeded);
     setDownloaded(0);
@@ -123,6 +221,7 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
     const setImage = (id: string, image: ImageState) =>
       setRows((current) => current.map((r) => (r.id === id ? { ...r, image } : r)));
 
+    if (specsOnly) return;
     void runInBatches(seeded.filter((r) => r.piece.imageUrls.length), 3, async (row) => {
       try {
         const blobs: Blob[] = [];
@@ -137,13 +236,15 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
         if (runRef.current === run) setDownloaded((n) => n + 1);
       }
     });
-  }, [open, pieces]);
+  }, [open, pieces, specsOnly]);
 
   const stillLoading = rows.some((r) => r.image.status === "loading");
   const failedCount = rows.filter((r) => r.image.status === "failed").length;
 
   const updateField = (id: string, field: EditableField, value: string) =>
-    setRows((current) => current.map((r) => (r.id === id ? { ...r, piece: { ...r.piece, [field]: value } } : r)));
+    setRows((current) => current.map((r) => (r.id === id
+      ? { ...r, specSuggested: field === "specification" ? false : r.specSuggested, piece: { ...r.piece, [field]: value } }
+      : r)));
 
   const uploadImage = async (blob: Blob, code: number): Promise<string | null> => {
     try {
@@ -257,9 +358,11 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
     <Dialog open={open} onOpenChange={(next) => !importing && onOpenChange(next)}>
       <DialogContent className="flex max-h-[90dvh] max-w-[calc(100vw-2rem)] flex-col overflow-hidden p-0 lg:max-w-6xl">
         <DialogHeader className="border-b px-6 py-5 pr-12">
-          <DialogTitle>{imagesOnly ? "Reaplicar imagens do Flow" : "Conferir importação do Flow"}</DialogTitle>
+          <DialogTitle>{specsOnly ? "Reaplicar especificações do Flow" : imagesOnly ? "Reaplicar imagens do Flow" : "Conferir importação do Flow"}</DialogTitle>
           <DialogDescription>
-            {imagesOnly
+            {specsOnly
+              ? `Nenhuma peça será criada. Localização vem da Demanda; a especificação sugerida só entra em peças de ${campaignName} sem especificação ou com "${DEFAULT_SPECIFICATION}".`
+              : imagesOnly
               ? `Nenhuma peça será criada. As imagens vão para as peças já existentes em ${campaignName} com o mesmo nome; imagens enviadas manualmente são mantidas.`
               : `Revise os dados antes de importar para ${campaignName}. Nada será gravado até a confirmação.`}
           </DialogDescription>
@@ -275,6 +378,10 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
               </span>
             )}
           </div>
+          {!catalog && (
+            <span className="inline-flex items-center gap-2 text-xs text-muted-foreground"><Loader2 className="h-3 w-3 animate-spin" /> Buscando localizações e especificações de outras campanhas do cliente...</span>
+          )}
+          {importing && specsOnly && <Progress value={progress} className="h-2" aria-label="Atualizando peças" />}
           {withImages > 0 && stillLoading && (
             <div className="flex items-center gap-3" aria-live="polite">
               <Progress value={(downloaded / withImages) * 100} className="h-2 flex-1" />
@@ -291,7 +398,7 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
                 {fields.map((f) => <TableHead key={f.key} className={f.width}>{f.label}</TableHead>)}
                 <TableHead className="w-56">Especificação</TableHead>
                 <TableHead className="w-40">Imagem</TableHead>
-                {imagesOnly && <TableHead className="w-48">Peça na campanha</TableHead>}
+                {matchExisting && <TableHead className="w-48">Peça na campanha</TableHead>}
                 <TableHead className="w-14" />
               </TableRow>
             </TableHeader>
@@ -308,12 +415,20 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
                       />
                     </TableCell>
                   ))}
-                  <TableCell className="p-1.5 text-xs text-muted-foreground">{row.piece.specification || DEFAULT_SPECIFICATION}</TableCell>
+                  <TableCell className="p-1.5">
+                    <Input
+                      aria-label={`Especificação da linha ${index + 1}`}
+                      value={row.piece.specification}
+                      placeholder={DEFAULT_SPECIFICATION}
+                      onChange={(e) => updateField(row.id, "specification", e.target.value)}
+                    />
+                    {row.specSuggested && <span className="mt-1 inline-block rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">sugerida</span>}
+                  </TableCell>
                   <TableCell className="p-1.5">{renderImage(row.image)}</TableCell>
-                  {imagesOnly && (
+                  {matchExisting && (
                     <TableCell className="p-1.5 text-xs">
                       {matches[index]
-                        ? <span className="text-foreground">#{matches[index]!.code} {matches[index]!.name}{!canReplaceImage(matches[index]!.image_url) && <span className="block text-muted-foreground">já tem imagem — mantida</span>}</span>
+                        ? <span className="text-foreground">#{matches[index]!.code} {matches[index]!.name}{imagesOnly && !canReplaceImage(matches[index]!.image_url) && <span className="block text-muted-foreground">já tem imagem — mantida</span>}</span>
                         : <span className="text-destructive">não encontrada</span>}
                     </TableCell>
                   )}
@@ -336,8 +451,8 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
 
         <DialogFooter className="px-6 pb-5">
           <Button type="button" variant="outline" disabled={importing} onClick={() => onOpenChange(false)}>Cancelar</Button>
-          <Button type="button" disabled={importing || stillLoading || rows.length === 0} onClick={() => void (imagesOnly ? handleApplyImages() : handleConfirm())}>
-            {importing ? "Enviando..." : stillLoading ? "Baixando imagens..." : imagesOnly ? "Aplicar imagens" : "Importar"}
+          <Button type="button" disabled={importing || stillLoading || !catalog || rows.length === 0} onClick={() => void (specsOnly ? handleApplySpecs() : imagesOnly ? handleApplyImages() : handleConfirm())}>
+            {importing ? "Enviando..." : !catalog ? "Carregando..." : stillLoading ? "Baixando imagens..." : specsOnly ? "Aplicar especificações" : imagesOnly ? "Aplicar imagens" : "Importar"}
           </Button>
         </DialogFooter>
       </DialogContent>

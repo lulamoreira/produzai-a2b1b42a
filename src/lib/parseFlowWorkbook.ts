@@ -15,6 +15,8 @@ export interface FlowParsedPiece {
   size: string;
   specification: string;
   imageUrls: string[];
+  /** Texto bruto da coluna Demanda (fonte da Localização padronizada). */
+  demanda?: string;
 }
 
 const LOCATION_TOKENS: Record<string, string> = { VIT: "Vitrine", INT: "Interno", TDS: "Todas as Lojas" };
@@ -164,6 +166,7 @@ export function parseFlowWorkbook(workbook: XLSX.WorkBook): FlowParsedPiece[] {
       ...parsed,
       specification: [parsed.specification, extra].filter(Boolean).join(" "),
       sourceName,
+      demanda: get(row, "Demanda"),
       imageUrls: attachments.get(sourceName) ?? [],
     });
   }
