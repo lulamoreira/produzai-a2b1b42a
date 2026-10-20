@@ -9,6 +9,19 @@ import { bootstrapColorTheme } from "@/hooks/useColorTheme";
 
 bootstrapColorTheme();
 
+// "ResizeObserver loop ..." is a benign browser notice (layout settled in the
+// next frame). Swallow it so error overlays/handlers don't treat it as a crash.
+window.addEventListener(
+  "error",
+  (e) => {
+    if (typeof e.message === "string" && e.message.startsWith("ResizeObserver loop")) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+    }
+  },
+  true,
+);
+
 // Auto-select content on focus for all inputs and textareas
 document.addEventListener('focusin', (e) => {
   const target = e.target as HTMLElement;
