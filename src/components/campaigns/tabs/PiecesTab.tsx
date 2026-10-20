@@ -140,7 +140,7 @@ export default function PiecesTab({
   const flowInputRef = useRef<HTMLInputElement>(null);
   const [flowOpen, setFlowOpen] = useState(false);
   const [flowPieces, setFlowPieces] = useState<FlowParsedPiece[]>([]);
-  const [flowMode, setFlowMode] = useState<"create" | "images">("create");
+  const [flowMode, setFlowMode] = useState<"create" | "images" | "specs">("create");
   /** Lê o XLS do Flow e abre a conferência com download das imagens. */
   const handleFlowFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1187,6 +1187,9 @@ export default function PiecesTab({
                   <DropdownMenuItem onClick={() => { setFlowMode("images"); flowInputRef.current?.click(); }}>
                     <FileSpreadsheet className="w-4 h-4 mr-2" /> Reaplicar imagens do Flow
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setFlowMode("specs"); flowInputRef.current?.click(); }}>
+                    <FileSpreadsheet className="w-4 h-4 mr-2" /> Reaplicar especificações do Flow
+                  </DropdownMenuItem>
 
                   <DropdownMenuItem onClick={handleReviewPieceCodes}>
                     <Sparkles className="w-4 h-4 mr-2" /> {t("pieces.reviewCodes")}
@@ -1682,6 +1685,7 @@ export default function PiecesTab({
         campaignName={campaign?.name || "campanha atual"}
         pieces={flowPieces}
         mode={flowMode}
+        clientId={clientId}
       />
       <OneNoteSourceDialog
         open={oneNoteSourceOpen}
