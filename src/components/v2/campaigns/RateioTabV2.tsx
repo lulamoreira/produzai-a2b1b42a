@@ -42,6 +42,7 @@ import { MAX_CUSTOM_FIELDS } from "@/lib/customFields";
 import MatrixDistributionDashboard from "@/components/Matrix/MatrixDistributionDashboard";
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
 import CopyQuantitiesDialog from "@/components/Matrix/CopyQuantitiesDialog";
+import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { exportRateioGrid } from "@/lib/exportRateioGrid";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -482,6 +483,7 @@ export default function RateioTabV2({
   const [isAutomationOpen, setIsAutomationOpen] = useState(false);
   const [isExecutingAutomation, setIsExecutingAutomation] = useState(false);
   const [copyQtyOpen, setCopyQtyOpen] = useState(false);
+  const [showImportMatrix, setShowImportMatrix] = useState(false);
   
   // Excel Paste Modal state
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
@@ -1057,6 +1059,19 @@ export default function RateioTabV2({
       toast.error("Erro ao aplicar alterações");
       throw err;
     }
+  };
+
+  // Pré-preencher a matriz a partir de outra campanha do mesmo cliente.
+  // Grava pelo MESMO caminho das demais escritas do Rateio (applyWithHistory
+  // → applyRateioBulk), respeitando a visão atual (original/negociação/ajuste).
+  const handleImportMatrix = async (changes: { storeId: string; pieceId: string; quantity: number }[]) => {
+    const upserts: RateioUpsert[] = changes.map((c) => ({
+      campaignId,
+      storeId: c.storeId,
+      pieceId: c.pieceId,
+      quantity: c.quantity,
+    }));
+    await applyWithHistory(upserts, [], t("rateio.prefillDone", "Quantidades pré-preenchidas"));
   };
 
   const handleUndo = async () => {
@@ -1833,6 +1848,13 @@ export default function RateioTabV2({
                             <Copy className="w-4 h-4 mr-2" />
                             {t("rateio.copyQuantities", "COPIAR QUANTIDADES")}
                           </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-xs min-h-[44px] cursor-pointer"
+                            onClick={() => setShowImportMatrix(true)}
+                          >
+                            <Download className="w-4 h-4 mr-2" />
+                            {t("rateio.prefillFromCampaign", "PRÉ-PREENCHER DE OUTRA CAMPANHA")}
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
                         </>
                       )}
@@ -1944,6 +1966,16 @@ export default function RateioTabV2({
                       >
                         <Copy className="w-3.5 h-3.5" />
                         {t("rateio.copyQuantities", "COPIAR QUANTIDADES")}
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-8 text-xs gap-2 rounded-lg border-stone-200 shadow-sm hover:bg-stone-50"
+                        onClick={() => setShowImportMatrix(true)}
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        {t("rateio.prefillFromCampaign", "PRÉ-PREENCHER DE OUTRA CAMPANHA")}
                       </Button>
                     </>
                   )}
@@ -2726,6 +2758,16 @@ export default function RateioTabV2({
         runBulkWithHistory={async (label, upserts, deletes) => {
           await applyWithHistory(upserts, deletes, label);
         }}
+      />
+      <ImportMatrixFromCampaignDialog
+        open={showImportMatrix}
+        onOpenChange={setShowImportMatrix}
+        clientId={clientId}
+        currentCampaignId={campaignId}
+        currentPieces={pieces}
+        currentKits={kits}
+        currentStores={stores}
+        onImport={handleImportMatrix}
       />
 
       <Dialog open={isPasteModalOpen} onOpenChange={setIsPasteModalOpen}>
