@@ -241,6 +241,9 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
     enabled: !!campaignId,
   });
   const [newTeamName, setNewTeamName] = useState("");
+  // Clicking "Adicionar" without a name opens a prompt instead of staying disabled.
+  const [askNameOpen, setAskNameOpen] = useState(false);
+  const [askNameValue, setAskNameValue] = useState("");
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [editingTeamId, setEditingTeamId] = useState<string | null>(null);
   const [editingTeamName, setEditingTeamName] = useState("");
@@ -326,7 +329,14 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
               className="flex-1"
               onKeyDown={(e) => { if (e.key === "Enter" && newTeamName.trim()) addTeam.mutate(newTeamName.trim()); }}
             />
-            <Button size="sm" disabled={!newTeamName.trim()} onClick={() => addTeam.mutate(newTeamName.trim())}>
+            <Button
+              size="sm"
+              onClick={() => {
+                if (newTeamName.trim()) { addTeam.mutate(newTeamName.trim()); return; }
+                setAskNameValue("");
+                setAskNameOpen(true);
+              }}
+            >
               <Plus className="w-4 h-4 mr-1" /> Adicionar
             </Button>
           </div>
@@ -422,6 +432,41 @@ export function InstallationTeamDialog({ open, onOpenChange, campaignId, canEdit
             </div>
           ))}
         </div>
+        {/* Ask-for-name prompt when "Adicionar" is clicked with the field empty */}
+        <Dialog open={askNameOpen} onOpenChange={setAskNameOpen}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Nome da equipe</DialogTitle>
+              <DialogDescription>Digite o nome da nova equipe de instalação.</DialogDescription>
+            </DialogHeader>
+            <Input
+              autoFocus
+              placeholder="Nome da equipe de instalação"
+              value={askNameValue}
+              onChange={(e) => setAskNameValue(normalizeTeamName(e.target.value))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && askNameValue.trim()) {
+                  addTeam.mutate(askNameValue.trim());
+                  setAskNameOpen(false);
+                }
+              }}
+              className="mt-2"
+            />
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" size="sm" onClick={() => setAskNameOpen(false)}>Cancelar</Button>
+              <Button
+                size="sm"
+                disabled={!askNameValue.trim()}
+                onClick={() => {
+                  addTeam.mutate(askNameValue.trim());
+                  setAskNameOpen(false);
+                }}
+              >
+                <Plus className="w-4 h-4 mr-1" /> Criar equipe
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );
