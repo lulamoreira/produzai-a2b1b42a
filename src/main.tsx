@@ -22,6 +22,16 @@ window.addEventListener(
   true,
 );
 
+// After a new publish, stale chunks fail to load: reload once to fetch the new version.
+window.addEventListener("vite:preloadError", () => {
+  const key = "chunk_reload_at";
+  const last = Number(sessionStorage.getItem(key) || 0);
+  if (Date.now() - last > 30000) {
+    sessionStorage.setItem(key, String(Date.now()));
+    window.location.reload();
+  }
+});
+
 // Auto-select content on focus for all inputs and textareas
 document.addEventListener('focusin', (e) => {
   const target = e.target as HTMLElement;
