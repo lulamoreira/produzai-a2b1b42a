@@ -36,7 +36,7 @@ describe("Flow confirmation writes", () => {
       { ...parseFlowPieceName(kitSource), sourceName: kitSource, imageUrls: [] },
       { ...parseFlowPieceName(normalSource), sourceName: normalSource, imageUrls: [] },
     ]} />);
-    const confirm = screen.getByRole("button", { name: "Importar", exact: true });
+    const confirm = screen.getByRole("button", { name: /^Importar$/ });
     await waitFor(() => expect(confirm).toBeEnabled());
     fireEvent.click(confirm);
     await waitFor(() => expect(mocks.close).toHaveBeenCalledWith(false));
