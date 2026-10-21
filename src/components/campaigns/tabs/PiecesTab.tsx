@@ -1372,9 +1372,7 @@ export default function PiecesTab({
               <Button 
                 size="sm" 
                 className="gap-2 rounded-full h-8 px-4"
-                disabled={selectedPieceIds.length < 2}
                 onClick={() => setConvertSelectionDialogOpen(true)}
-                title={selectedPieceIds.length < 2 ? t("pieces.minPiecesForKit") : ""}
               >
                 <Package className="w-3.5 h-3.5" />
                 {t("pieces.groupInKit")}
