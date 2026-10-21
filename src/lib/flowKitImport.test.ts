@@ -28,6 +28,14 @@ describe("Flow kit import rules", () => {
   });
 
   it.each([
+    ["Promotable KIT Lateral", "KIT Promotable Lateral"],
+    ["Pick&Mix K IT Mobiles", "KIT Pick&Mix Mobiles"],
+    ["KIT Shelftalk 2020", "KIT Shelftalk 2020"],
+  ])("builds the stored kit name for matching: %s", (name, expected) => {
+    expect(flowKitMatchName(name)).toBe(expected);
+  });
+
+  it.each([
     ["LINDT_SUMMER_INT_PROMOTABLE_KIT_LATERAL_50x88cm (10% - 24x24cm / 15% 26x26cm / 20% 28x28cm)",
       [{ label: "10%", size: "24×24" }, { label: "15%", size: "26×26" }, { label: "20%", size: "28×28" }]],
     ["LINDT_SUMMER_VIT_KIT_FAIXA_100x10cm (SUPERIOR 175x7,5cm / INFERIOR 110x7,5cm)",
