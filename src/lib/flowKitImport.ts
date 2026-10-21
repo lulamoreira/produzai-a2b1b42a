@@ -18,6 +18,11 @@ export function flowNameWithoutKit(name: string): string {
   return name.replace(KIT_TOKEN_RE_GLOBAL, " ").replace(/\s+/g, " ").trim();
 }
 
+/** Nome do kit como gravado na campanha (com prefixo "KIT "), para casar linhas do Flow com kits existentes. */
+export function flowKitMatchName(parsedName: string): string {
+  return ensureKitPrefix(flowNameWithoutKit(parsedName));
+}
+
 export interface FlowKitComponent {
   label: string;
   size: string;

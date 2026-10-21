@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildFlowImportRecords, flowNameWithoutKit, isFlowKit, parseKitComponents } from "./flowKitImport";
+import { buildFlowImportRecords, flowKitMatchName, flowNameWithoutKit, isFlowKit, parseKitComponents } from "./flowKitImport";
 import { parseFlowPieceName, type FlowParsedPiece } from "./parseFlowWorkbook";
 
 const sourceName = "LINDT_SUMMER_INT_PROMOTABLE_KIT_LATERAL_50x88cm";
