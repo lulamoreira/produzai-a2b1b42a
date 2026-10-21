@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { compressImage } from "@/lib/compressImage";
-import { buildFlowImportRecords, flowNameWithoutKit, isFlowKit, parseKitComponents } from "@/lib/flowKitImport";
+import { buildFlowImportRecords, flowKitMatchName, flowNameWithoutKit, isFlowKit, parseKitComponents } from "@/lib/flowKitImport";
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
 import { combineImagesVertically, fetchImageBlob, runInBatches } from "@/lib/flowImages";
 import type { FlowParsedPiece } from "@/lib/parseFlowWorkbook";
@@ -60,6 +60,7 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
   const [downloaded, setDownloaded] = useState(0);
   const [importing, setImporting] = useState(false);
   const [existing, setExisting] = useState<ExistingPieceRef[]>([]);
+  const [existingKits, setExistingKits] = useState<ExistingPieceRef[]>([]);
   const runRef = useRef<symbol | null>(null);
   const imagesOnly = mode === "images";
   const specsOnly = mode === "specs";
