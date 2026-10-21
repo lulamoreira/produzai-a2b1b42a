@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { autoMapMatrixItems, filterEmptyMatrixCells, storesWithoutMatrixReference } from "./matrixImportPrefill";
+import { autoMapMatrixItems, filterEmptyMatrixCells, storesWithoutMatrixReference, transferKitQuantities } from "./matrixImportPrefill";
 
 describe("matrix import prefill rules", () => {
   it("reuses Flow normalization and accepts Jaccard 0.5 but rejects lower scores", () => {
@@ -53,5 +53,17 @@ describe("matrix import prefill rules", () => {
       { store_id: "s", piece_id: "filled", quantity: 2 },
       { store_id: "s", piece_id: "zero", quantity: 0 },
     ])).toEqual({ changes: changes.slice(1), skipped: 1 });
+  });
+});
+describe("kit to kit transfer", () => {
+  const src = [{ kit_id: "k", piece_id: "a", quantity: 2 }, { kit_id: "k", piece_id: "b", quantity: 1 }];
+  const dst = [{ kit_id: "t", piece_id: "x", quantity: 3 }, { kit_id: "t", piece_id: "y", quantity: 1 }];
+  it("uses min floor(component/qty-per-kit) and multiplies by destination qty-per-kit", () => {
+    expect(transferKitQuantities("k", "t", src, dst, [
+      { store_id: "s", piece_id: "a", quantity: 5 }, { store_id: "s", piece_id: "b", quantity: 4 },
+    ], ["s"])).toEqual([{ storeId: "s", pieceId: "x", quantity: 6 }, { storeId: "s", pieceId: "y", quantity: 2 }]);
+  });
+  it("a component with 0 in the store makes the kit 0 there", () => {
+    expect(transferKitQuantities("k", "t", src, dst, [{ store_id: "s", piece_id: "a", quantity: 8 }], ["s"])).toEqual([]);
   });
 });
