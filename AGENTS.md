@@ -1,6 +1,7 @@
 # Architecture rules
 
 - Matrix quantity prefill reuses Flow name tokens and shared pure matching/filter helpers; reread paginated current quantities before confirmation so existing positive cells are preserved without changing the parent importer.
+- Matrix prefill transfers kits as kit counts (min floor of component qty ÷ qty-per-kit) re-expanded through the destination kit structure; kit components are never mapped individually, so differing kit structures stay consistent.
 - Renegotiation "vigente" campaign is the chain leaf (no other campaign of the client has parent_campaign_id pointing at it); import-source pickers show leaves only, so originals and intermediates can never be picked.
 
 

@@ -61,3 +61,34 @@ export function filterEmptyMatrixCells(changes: MatrixImportChange[], current: M
   const emptyChanges = changes.filter((change) => !filled.has(`${change.storeId}|${change.pieceId}`));
   return { changes: emptyChanges, skipped: changes.length - emptyChanges.length };
 }
+export interface MatrixKitLink {
+  kit_id: string;
+  piece_id: string;
+  quantity: number;
+}
+
+/**
+ * Source kit count per store = min over components of floor(store qty / qty per kit);
+ * a missing/zero component makes the kit 0 there. Each destination component then
+ * receives kitCount × its own qty per kit, so differing structures still transfer.
+ */
+export function transferKitQuantities(
+  sourceKitId: string,
+  targetKitId: string,
+  sourceLinks: MatrixKitLink[],
+  targetLinks: MatrixKitLink[],
+  sourceQuantities: MatrixImportQuantity[],
+  storeIds: string[],
+): MatrixImportChange[] {
+  const source = sourceLinks.filter((l) => l.kit_id === sourceKitId && l.quantity > 0);
+  const target = targetLinks.filter((l) => l.kit_id === targetKitId && l.quantity > 0);
+  if (source.length === 0 || target.length === 0) return [];
+  const qty = new Map(sourceQuantities.map((q) => [`${q.store_id}|${q.piece_id}`, q.quantity]));
+  const changes: MatrixImportChange[] = [];
+  for (const storeId of storeIds) {
+    const kits = Math.min(...source.map((l) => Math.floor(Math.max(0, qty.get(`${storeId}|${l.piece_id}`) ?? 0) / l.quantity)));
+    if (kits <= 0) continue;
+    for (const l of target) changes.push({ storeId, pieceId: l.piece_id, quantity: kits * l.quantity });
+  }
+  return changes;
+}
