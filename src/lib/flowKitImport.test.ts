@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildFlowImportRecords, flowNameWithoutKit, isFlowKit, parseKitComponents } from "./flowKitImport";
+import { buildFlowImportRecords, flowKitMatchName, flowNameWithoutKit, isFlowKit, parseKitComponents } from "./flowKitImport";
 import { parseFlowPieceName, type FlowParsedPiece } from "./parseFlowWorkbook";
 
 const sourceName = "LINDT_SUMMER_INT_PROMOTABLE_KIT_LATERAL_50x88cm";
@@ -25,6 +25,14 @@ describe("Flow kit import rules", () => {
     ["Pick&Mix K IT Mobiles", "Pick&Mix Mobiles"],
   ])("removes isolated KIT from %s", (name, expected) => {
     expect(flowNameWithoutKit(name)).toBe(expected);
+  });
+
+  it.each([
+    ["Promotable KIT Lateral", "KIT Promotable Lateral"],
+    ["Pick&Mix K IT Mobiles", "KIT Pick&Mix Mobiles"],
+    ["KIT Shelftalk 2020", "KIT Shelftalk 2020"],
+  ])("builds the stored kit name for matching: %s", (name, expected) => {
+    expect(flowKitMatchName(name)).toBe(expected);
   });
 
   it.each([

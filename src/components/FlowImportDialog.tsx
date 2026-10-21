@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { compressImage } from "@/lib/compressImage";
-import { buildFlowImportRecords, flowNameWithoutKit, isFlowKit, parseKitComponents } from "@/lib/flowKitImport";
+import { buildFlowImportRecords, flowKitMatchName, flowNameWithoutKit, isFlowKit, parseKitComponents } from "@/lib/flowKitImport";
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
 import { combineImagesVertically, fetchImageBlob, runInBatches } from "@/lib/flowImages";
 import type { FlowParsedPiece } from "@/lib/parseFlowWorkbook";
@@ -60,6 +60,7 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
   const [downloaded, setDownloaded] = useState(0);
   const [importing, setImporting] = useState(false);
   const [existing, setExisting] = useState<ExistingPieceRef[]>([]);
+  const [existingKits, setExistingKits] = useState<ExistingPieceRef[]>([]);
   const runRef = useRef<symbol | null>(null);
   const imagesOnly = mode === "images";
   const specsOnly = mode === "specs";
@@ -129,10 +130,39 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
       });
   }, [open, matchExisting, campaignId]);
 
-  const matches = useMemo(
-    () => (matchExisting ? matchFlowRows(rows.map((r) => ({ name: r.piece.name, category: r.piece.category })), existing) : []),
-    [matchExisting, rows, existing],
-  );
+  // No modo "imagens", os kits da campanha também são carregados para receber a imagem.
+  useEffect(() => {
+    if (!open || !imagesOnly) { setExistingKits([]); return; }
+    void supabase
+      .from("campaign_kits")
+      .select("id, code, name, category, image_url")
+      .eq("campaign_id", campaignId)
+      .eq("is_deleted", false)
+      .order("code")
+      .then(({ data, error }) => {
+        if (error) toast.error(`Erro ao ler kits: ${error.message}`);
+        setExistingKits((data || []) as ExistingPieceRef[]);
+      });
+  }, [open, imagesOnly, campaignId]);
+
+  // No modo "imagens", linhas-KIT casam com kits; as demais (e todo o modo "specs") casam com peças.
+  const matches = useMemo(() => {
+    if (!matchExisting) return [];
+    const indexes = rows.map((r, i) => (imagesOnly && isFlowKit(r.piece.sourceName) ? -1 : i)).filter((i) => i >= 0);
+    const hits = matchFlowRows(indexes.map((i) => ({ name: rows[i].piece.name, category: rows[i].piece.category })), existing);
+    const result: Array<ExistingPieceRef | null> = rows.map(() => null);
+    indexes.forEach((rowIndex, i) => { result[rowIndex] = hits[i]; });
+    return result;
+  }, [matchExisting, rows, existing, imagesOnly]);
+
+  const kitMatches = useMemo(() => {
+    const map = new Map<number, ExistingPieceRef>();
+    if (!imagesOnly) return map;
+    const indexes = rows.map((r, i) => (isFlowKit(r.piece.sourceName) ? i : -1)).filter((i) => i >= 0);
+    const hits = matchFlowRows(indexes.map((i) => ({ name: flowKitMatchName(rows[i].piece.name), category: rows[i].piece.category })), existingKits);
+    indexes.forEach((rowIndex, i) => { const hit = hits[i]; if (hit) map.set(rowIndex, hit); });
+    return map;
+  }, [imagesOnly, rows, existingKits]);
 
   const handleApplyImages = async () => {
     if (importing) return;
@@ -141,18 +171,42 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
     let ok = 0, failed = 0, skipped = 0;
     try {
       for (let i = 0; i < rows.length; i += 1) {
-        const target = matches[i];
+        const kit = kitMatches.get(i);
+        const target = kit ?? matches[i];
         const image = rows[i].image;
         if (!target || image.status !== "ready") continue;
         if (!canReplaceImage(target.image_url)) { skipped += 1; continue; }
         toast.loading(`Enviando imagens... ${i + 1}/${rows.length}`, { id: toastId });
         const url = await uploadImage(image.blob, target.code);
         if (!url) { failed += 1; continue; }
+        if (kit) {
+          // Linha-KIT: a imagem vai para o kit e para a 1ª peça componente (a mesma do import).
+          const { error } = await supabase.from("campaign_kits").update({ image_url: url }).eq("id", kit.id);
+          if (error) { failed += 1; continue; }
+          const { data: links } = await supabase
+            .from("campaign_kit_pieces")
+            .select("piece_id")
+            .eq("kit_id", kit.id)
+            .order("display_order")
+            .limit(1);
+          const pieceId = links?.[0]?.piece_id;
+          if (pieceId) {
+            const { data: component } = await supabase.from("campaign_pieces").select("id, image_url").eq("id", pieceId).maybeSingle();
+            if (component && canReplaceImage(component.image_url)) {
+              await supabase.from("campaign_pieces").update({ image_url: url }).eq("id", component.id);
+            }
+          }
+          ok += 1;
+          continue;
+        }
         const { error } = await supabase.from("campaign_pieces").update({ image_url: url }).eq("id", target.id);
         if (error) { failed += 1; continue; }
         ok += 1;
       }
-      await queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] }),
+        queryClient.invalidateQueries({ queryKey: ["campaign_kits"] }),
+      ]);
       toast.success(`${ok} imagem(ns) aplicada(s)`, {
         id: toastId,
         description: [failed && `${failed} falharam`, skipped && `${skipped} já tinham imagem própria (mantidas)`].filter(Boolean).join(" · ") || undefined,
@@ -379,7 +433,7 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
             {specsOnly
               ? `Nenhuma peça será criada. Localização vem da Demanda; a especificação sugerida só entra em peças de ${campaignName} sem especificação ou com "${DEFAULT_SPECIFICATION}".`
               : imagesOnly
-              ? `Nenhuma peça será criada. As imagens vão para as peças já existentes em ${campaignName} com o mesmo nome; imagens enviadas manualmente são mantidas.`
+              ? `Nenhuma peça será criada. As imagens vão para as peças e kits já existentes em ${campaignName} com o mesmo nome (kits também atualizam a 1ª peça componente); imagens enviadas manualmente são mantidas.`
               : `Revise os dados antes de importar para ${campaignName}. Nada será gravado até a confirmação.`}
           </DialogDescription>
         </DialogHeader>
@@ -451,9 +505,18 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
                   <TableCell className="p-1.5">{renderImage(row.image)}</TableCell>
                   {matchExisting && (
                     <TableCell className="p-1.5 text-xs">
-                      {matches[index]
-                        ? <span className="text-foreground">#{matches[index]!.code} {matches[index]!.name}{imagesOnly && !canReplaceImage(matches[index]!.image_url) && <span className="block text-muted-foreground">já tem imagem — mantida</span>}</span>
-                        : <span className="text-destructive">não encontrada</span>}
+                      {(() => {
+                        const kit = imagesOnly ? kitMatches.get(index) : undefined;
+                        const target = kit ?? matches[index];
+                        if (!target) return <span className="text-destructive">não encontrada</span>;
+                        return (
+                          <span className="text-foreground">
+                            #{target.code} {target.name}
+                            {kit && <span className="block text-muted-foreground">kit + 1º componente</span>}
+                            {imagesOnly && !canReplaceImage(target.image_url) && <span className="block text-muted-foreground">já tem imagem — mantida</span>}
+                          </span>
+                        );
+                      })()}
                     </TableCell>
                   )}
                   <TableCell className="p-1.5">
