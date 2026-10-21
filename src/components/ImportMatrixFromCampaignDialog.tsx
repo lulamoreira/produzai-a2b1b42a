@@ -91,6 +91,34 @@ const ImportMatrixFromCampaignDialog = ({
     enabled: open && !!clientId,
   });
 
+  // Renegotiation chains: a campaign that another campaign points to through
+  // parent_campaign_id has been renegotiated, so only chain leaves (the vigente
+  // campaign of each chain) may be used as an import source.
+  const chainLinksQuery = useQuery({
+    queryKey: ["import-matrix-chain-links", clientId],
+    queryFn: () => supabasePaginate<{ id: string; parent_campaign_id: string | null }>((from, to) =>
+      supabase.from("campaigns")
+        .select("id,parent_campaign_id", { count: "exact" })
+        .eq("client_id", clientId)
+        .order("id")
+        .range(from, to)
+    ),
+    enabled: open && !!clientId,
+  });
+
+  const parentCampaignIds = useMemo(
+    () => new Set(chainLinksQuery.data?.map((c) => c.parent_campaign_id).filter((id): id is string => !!id) ?? []),
+    [chainLinksQuery.data],
+  );
+
+  // Leaves only: original and intermediate renegotiations stay hidden, campaigns
+  // that were never renegotiated keep appearing.
+  const sourceCampaigns = useMemo(
+    () => campaigns.filter((c) => !parentCampaignIds.has(c.id)),
+    [campaigns, parentCampaignIds],
+  );
+
+
   const { data: campaignData, isPending: sourceLoading, isError: sourceError } = useQuery({
     queryKey: ["import-matrix-data-rpc", selectedCampaignId],
     queryFn: async () => {
@@ -318,11 +346,11 @@ const ImportMatrixFromCampaignDialog = ({
         <div className="space-y-1">
           <label className="text-xs font-medium text-muted-foreground">Campanha de origem</label>
           <Select value={selectedCampaignId} onValueChange={(v) => { autoMappedCampaign.current = null; setSelectedCampaignId(v); setMapping({}); }}>
-            <SelectTrigger>
-              <SelectValue placeholder="Selecione uma campanha..." />
+            <SelectTrigger disabled={chainLinksQuery.isPending}>
+              <SelectValue placeholder={chainLinksQuery.isPending ? "Carregando campanhas..." : "Selecione uma campanha..."} />
             </SelectTrigger>
             <SelectContent>
-              {campaigns.map((c) => (
+              {sourceCampaigns.map((c) => (
                 <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
               ))}
             </SelectContent>
