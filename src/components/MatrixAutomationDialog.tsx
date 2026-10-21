@@ -540,7 +540,7 @@ export default function MatrixAutomationDialog({
     const target = bulkLoc.trim().toUpperCase();
     const used = new Set(selectedItems.map(i => `${i.type}-${i.id}`));
     const newItems = pieces
-      .filter(p => String(p.category ?? "").trim().toUpperCase() === target)
+      .filter(p => !p.kit_only && String(p.category ?? "").trim().toUpperCase() === target)
       .filter(p => !used.has(`piece-${p.id}`))
       .map(p => ({
         id: p.id,
