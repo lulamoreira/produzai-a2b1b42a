@@ -433,7 +433,7 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
             {specsOnly
               ? `Nenhuma peça será criada. Localização vem da Demanda; a especificação sugerida só entra em peças de ${campaignName} sem especificação ou com "${DEFAULT_SPECIFICATION}".`
               : imagesOnly
-              ? `Nenhuma peça será criada. As imagens vão para as peças já existentes em ${campaignName} com o mesmo nome; imagens enviadas manualmente são mantidas.`
+              ? `Nenhuma peça será criada. As imagens vão para as peças e kits já existentes em ${campaignName} com o mesmo nome (kits também atualizam a 1ª peça componente); imagens enviadas manualmente são mantidas.`
               : `Revise os dados antes de importar para ${campaignName}. Nada será gravado até a confirmação.`}
           </DialogDescription>
         </DialogHeader>
@@ -505,9 +505,18 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
                   <TableCell className="p-1.5">{renderImage(row.image)}</TableCell>
                   {matchExisting && (
                     <TableCell className="p-1.5 text-xs">
-                      {matches[index]
-                        ? <span className="text-foreground">#{matches[index]!.code} {matches[index]!.name}{imagesOnly && !canReplaceImage(matches[index]!.image_url) && <span className="block text-muted-foreground">já tem imagem — mantida</span>}</span>
-                        : <span className="text-destructive">não encontrada</span>}
+                      {(() => {
+                        const kit = imagesOnly ? kitMatches.get(index) : undefined;
+                        const target = kit ?? matches[index];
+                        if (!target) return <span className="text-destructive">não encontrada</span>;
+                        return (
+                          <span className="text-foreground">
+                            #{target.code} {target.name}
+                            {kit && <span className="block text-muted-foreground">kit + 1º componente</span>}
+                            {imagesOnly && !canReplaceImage(target.image_url) && <span className="block text-muted-foreground">já tem imagem — mantida</span>}
+                          </span>
+                        );
+                      })()}
                     </TableCell>
                   )}
                   <TableCell className="p-1.5">
