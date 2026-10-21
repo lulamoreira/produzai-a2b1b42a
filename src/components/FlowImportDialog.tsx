@@ -130,10 +130,39 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
       });
   }, [open, matchExisting, campaignId]);
 
-  const matches = useMemo(
-    () => (matchExisting ? matchFlowRows(rows.map((r) => ({ name: r.piece.name, category: r.piece.category })), existing) : []),
-    [matchExisting, rows, existing],
-  );
+  // No modo "imagens", os kits da campanha também são carregados para receber a imagem.
+  useEffect(() => {
+    if (!open || !imagesOnly) { setExistingKits([]); return; }
+    void supabase
+      .from("campaign_kits")
+      .select("id, code, name, category, image_url")
+      .eq("campaign_id", campaignId)
+      .eq("is_deleted", false)
+      .order("code")
+      .then(({ data, error }) => {
+        if (error) toast.error(`Erro ao ler kits: ${error.message}`);
+        setExistingKits((data || []) as ExistingPieceRef[]);
+      });
+  }, [open, imagesOnly, campaignId]);
+
+  // No modo "imagens", linhas-KIT casam com kits; as demais (e todo o modo "specs") casam com peças.
+  const matches = useMemo(() => {
+    if (!matchExisting) return [];
+    const indexes = rows.map((r, i) => (imagesOnly && isFlowKit(r.piece.sourceName) ? -1 : i)).filter((i) => i >= 0);
+    const hits = matchFlowRows(indexes.map((i) => ({ name: rows[i].piece.name, category: rows[i].piece.category })), existing);
+    const result: Array<ExistingPieceRef | null> = rows.map(() => null);
+    indexes.forEach((rowIndex, i) => { result[rowIndex] = hits[i]; });
+    return result;
+  }, [matchExisting, rows, existing, imagesOnly]);
+
+  const kitMatches = useMemo(() => {
+    const map = new Map<number, ExistingPieceRef>();
+    if (!imagesOnly) return map;
+    const indexes = rows.map((r, i) => (isFlowKit(r.piece.sourceName) ? i : -1)).filter((i) => i >= 0);
+    const hits = matchFlowRows(indexes.map((i) => ({ name: flowKitMatchName(rows[i].piece.name), category: rows[i].piece.category })), existingKits);
+    indexes.forEach((rowIndex, i) => { const hit = hits[i]; if (hit) map.set(rowIndex, hit); });
+    return map;
+  }, [imagesOnly, rows, existingKits]);
 
   const handleApplyImages = async () => {
     if (importing) return;
