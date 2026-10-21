@@ -4,7 +4,13 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { CampaignPiece, ClientStore } from "@/hooks/useMultiClientData";
 import ImportMatrixFromCampaignDialog from "./ImportMatrixFromCampaignDialog";
 
-const mocks = vi.hoisted(() => ({ import: vi.fn(), close: vi.fn(), current: [] as { store_id: string; piece_id: string; quantity: number }[] }));
+const mocks = vi.hoisted(() => ({
+  import: vi.fn(),
+  close: vi.fn(),
+  current: [] as { store_id: string; piece_id: string; quantity: number }[],
+  campaigns: [{ id: "source", name: "Origem" }] as { id: string; name: string }[],
+  chainLinks: [] as { id: string; parent_campaign_id: string | null }[],
+}));
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), info: vi.fn(), error: vi.fn() } }));
 vi.mock("@/components/PieceThumbnail", () => ({ default: () => null }));
 vi.mock("@/components/ui/select", () => ({
@@ -15,7 +21,7 @@ vi.mock("@/components/ui/select", () => ({
   SelectItem: ({ children, value, disabled }: { children: React.ReactNode; value: string; disabled?: boolean }) => <option value={value} disabled={disabled}>{typeof children === "string" ? children : value}</option>,
 }));
 vi.mock("@/integrations/supabase/client", () => ({ supabase: {
-  rpc: async (name: string) => ({ error: null, data: name === "get_client_campaigns_for_import" ? [{ id: "source", name: "Origem" }] : {
+  rpc: async (name: string) => ({ error: null, data: name === "get_client_campaigns_for_import" ? mocks.campaigns : {
     pieces: [{ id: "11111111-1111-1111-1111-111111111111", name: "Painel Lateral", code: 1 }],
     kits: [{ id: "22222222-2222-2222-2222-222222222222", name: "Painel", code: 2 }],
     kit_pieces: [{ kit_id: "22222222-2222-2222-2222-222222222222", piece_id: "11111111-1111-1111-1111-111111111111", quantity: 1 }],
@@ -26,8 +32,11 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
     ],
   } }),
   from: (table: string) => {
+    const rows = table === "campaign_pieces" ? [{ id: "target", name: "Painel Lateral", code: 3 }]
+      : table === "campaigns" ? mocks.chainLinks
+      : mocks.current;
     const query = { select: () => query, eq: () => query, order: () => query,
-      range: async () => ({ data: table === "campaign_pieces" ? [{ id: "target", name: "Painel Lateral", code: 3 }] : mocks.current, error: null, count: table === "campaign_pieces" ? 1 : mocks.current.length }),
+      range: async () => ({ data: rows, error: null, count: rows.length }),
     };
     return query;
   },
@@ -42,7 +51,7 @@ function setup() {
 }
 
 describe("matrix quantity confirmation", () => {
-  beforeEach(() => { vi.clearAllMocks(); mocks.current = []; mocks.import.mockResolvedValue(undefined); });
+  beforeEach(() => { vi.clearAllMocks(); mocks.current = []; mocks.campaigns = [{ id: "source", name: "Origem" }]; mocks.chainLinks = []; mocks.import.mockResolvedValue(undefined); });
   afterEach(cleanup);
 
   it("auto-maps a missing kit-only target, rereads current values and imports only empty current-store cells", async () => {
@@ -67,5 +76,22 @@ describe("matrix quantity confirmation", () => {
     await client.invalidateQueries({ queryKey: ["import-matrix-data-rpc", "source"] });
     expect(screen.getAllByRole("combobox")[2]).toHaveValue("");
     expect(screen.getByRole("button", { name: "Pré-preencher rateio" })).toBeDisabled();
+  });
+
+  it("lists only the vigente campaign of each renegotiation chain", async () => {
+    mocks.campaigns = [
+      { id: "original", name: "Natal Original" },
+      { id: "renegociada", name: "Natal Renegociado" },
+      { id: "solitaria", name: "Verão Sem Renegociação" },
+    ];
+    mocks.chainLinks = [
+      { id: "original", parent_campaign_id: null },
+      { id: "renegociada", parent_campaign_id: "original" },
+      { id: "solitaria", parent_campaign_id: null },
+    ];
+    setup();
+    await screen.findByRole("option", { name: "Natal Renegociado" });
+    await screen.findByRole("option", { name: "Verão Sem Renegociação" });
+    expect(screen.queryByRole("option", { name: "Natal Original" })).toBeNull();
   });
 });
