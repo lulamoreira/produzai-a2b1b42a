@@ -1653,6 +1653,7 @@ export default function PiecesTab({
           onUpdateKitPiece={(kp) => updateKitPiece?.mutateAsync?.(kp)}
           onReorderKitPieces={(updates) => reorderKitPieces?.mutateAsync?.(updates)}
           onUpdatePiece={(p) => updatePiece?.mutateAsync?.(p)}
+          onDeletePiece={(id) => deletePiece?.mutate?.(id)}
           onDuplicateKitPiece={handleDuplicateKitPiece}
         />
       )}
