@@ -11,7 +11,7 @@ import {
 import { Copy, Package, ArrowRight, Store, Loader2, X, Boxes, AlertTriangle } from "lucide-react";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { cn } from "@/lib/utils";
-import { autoMapMatrixItems, filterEmptyMatrixCells, storesWithoutMatrixReference, transferKitQuantities, type MatrixImportQuantity, type MatrixKitLink } from "@/lib/matrixImportPrefill";
+import { applyQuantityToTarget, autoMapMatrixItems, filterEmptyMatrixCells, sourceQuantityPerStore, storesWithoutMatrixReference, type MatrixImportQuantity, type MatrixKitLink } from "@/lib/matrixImportPrefill";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import { toast } from "sonner";
 import type { CampaignPiece, ClientStore, CampaignKit } from "@/hooks/useMultiClientData";

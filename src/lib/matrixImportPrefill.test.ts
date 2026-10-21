@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { autoMapMatrixItems, filterEmptyMatrixCells, storesWithoutMatrixReference, transferKitQuantities } from "./matrixImportPrefill";
+import { applyQuantityToTarget, autoMapMatrixItems, filterEmptyMatrixCells, sourceQuantityPerStore, storesWithoutMatrixReference, transferKitQuantities } from "./matrixImportPrefill";
 
 describe("matrix import prefill rules", () => {
   it("reuses Flow normalization and accepts Jaccard 0.5 but rejects lower scores", () => {
