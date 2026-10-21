@@ -171,18 +171,42 @@ export function FlowImportDialog({ open, onOpenChange, campaignId, campaignName,
     let ok = 0, failed = 0, skipped = 0;
     try {
       for (let i = 0; i < rows.length; i += 1) {
-        const target = matches[i];
+        const kit = kitMatches.get(i);
+        const target = kit ?? matches[i];
         const image = rows[i].image;
         if (!target || image.status !== "ready") continue;
         if (!canReplaceImage(target.image_url)) { skipped += 1; continue; }
         toast.loading(`Enviando imagens... ${i + 1}/${rows.length}`, { id: toastId });
         const url = await uploadImage(image.blob, target.code);
         if (!url) { failed += 1; continue; }
+        if (kit) {
+          // Linha-KIT: a imagem vai para o kit e para a 1ª peça componente (a mesma do import).
+          const { error } = await supabase.from("campaign_kits").update({ image_url: url }).eq("id", kit.id);
+          if (error) { failed += 1; continue; }
+          const { data: links } = await supabase
+            .from("campaign_kit_pieces")
+            .select("piece_id")
+            .eq("kit_id", kit.id)
+            .order("display_order")
+            .limit(1);
+          const pieceId = links?.[0]?.piece_id;
+          if (pieceId) {
+            const { data: component } = await supabase.from("campaign_pieces").select("id, image_url").eq("id", pieceId).maybeSingle();
+            if (component && canReplaceImage(component.image_url)) {
+              await supabase.from("campaign_pieces").update({ image_url: url }).eq("id", component.id);
+            }
+          }
+          ok += 1;
+          continue;
+        }
         const { error } = await supabase.from("campaign_pieces").update({ image_url: url }).eq("id", target.id);
         if (error) { failed += 1; continue; }
         ok += 1;
       }
-      await queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["campaign_pieces"] }),
+        queryClient.invalidateQueries({ queryKey: ["campaign_kits"] }),
+      ]);
       toast.success(`${ok} imagem(ns) aplicada(s)`, {
         id: toastId,
         description: [failed && `${failed} falharam`, skipped && `${skipped} já tinham imagem própria (mantidas)`].filter(Boolean).join(" · ") || undefined,
