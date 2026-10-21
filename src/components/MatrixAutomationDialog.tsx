@@ -498,10 +498,11 @@ export default function MatrixAutomationDialog({
 
   // Available items for search
   const availableItems = useMemo(() => {
+    // Only items shown in the Rateio grid: standalone pieces + kits (no kit components), by code
     const all: { id: string; type: "piece" | "kit"; code: number; name: string }[] = [
-      ...pieces.map(p => ({ id: p.id, type: "piece" as const, code: p.code, name: p.name })),
+      ...pieces.filter(p => !p.kit_only).map(p => ({ id: p.id, type: "piece" as const, code: p.code, name: p.name })),
       ...kits.map(k => ({ id: k.id, type: "kit" as const, code: k.code, name: k.name })),
-    ];
+    ].sort((a, b) => (a.code ?? 0) - (b.code ?? 0));
     const usedIds = new Set(selectedItems.map(i => `${i.type}-${i.id}`));
     return all.filter(i => {
       if (usedIds.has(`${i.type}-${i.id}`)) return false;
@@ -539,7 +540,7 @@ export default function MatrixAutomationDialog({
     const target = bulkLoc.trim().toUpperCase();
     const used = new Set(selectedItems.map(i => `${i.type}-${i.id}`));
     const newItems = pieces
-      .filter(p => String(p.category ?? "").trim().toUpperCase() === target)
+      .filter(p => !p.kit_only && String(p.category ?? "").trim().toUpperCase() === target)
       .filter(p => !used.has(`piece-${p.id}`))
       .map(p => ({
         id: p.id,
