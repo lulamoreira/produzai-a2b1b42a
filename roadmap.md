@@ -1,3 +1,7 @@
+# Rateio prefill source campaigns
+- [x] Show only the vigente campaign of each renegotiation chain in the "Campanha de origem" picker (chain leaves by parent_campaign_id), keeping never-renegotiated campaigns.
+- [x] Test the rule and confirm the real chain structure read-only, without changing campaign records.
+
 # Team export formatting
 - [x] Add automatic matrix associations, missing-reference warning and empty-cell-only import; verify component coverage and 15 tests. No active caller exists for this dialog, so live end-to-end verification is unavailable without expanding scope.
 - [x] Import Flow KIT rows as kits with one component, preserve enrichment/images, and verify shared numbering with tests and authenticated review; no real campaign records changed.
