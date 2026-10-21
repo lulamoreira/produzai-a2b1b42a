@@ -32,6 +32,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
     ],
   } }),
   from: (table: string) => {
+    if (table === "campaign_kit_pieces") return { select: () => ({ in: async () => ({ data: [{ kit_id: "tkit", piece_id: "target", quantity: 2 }], error: null }) }) };
     const rows = table === "campaign_pieces" ? [{ id: "target", name: "Painel Lateral", code: 3 }]
       : table === "campaigns" ? mocks.chainLinks
       : mocks.current;
@@ -44,7 +45,7 @@ vi.mock("@/integrations/supabase/client", () => ({ supabase: {
 
 function setup() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  render(<QueryClientProvider client={client}><ImportMatrixFromCampaignDialog open onOpenChange={mocks.close} clientId="client" currentCampaignId="target-campaign" currentPieces={[] as CampaignPiece[]} currentKits={[]} currentStores={[
+  render(<QueryClientProvider client={client}><ImportMatrixFromCampaignDialog open onOpenChange={mocks.close} clientId="client" currentCampaignId="target-campaign" currentPieces={[] as CampaignPiece[]} currentKits={[{ id: "tkit", name: "Painel", code: 4 }] as never} currentStores={[
     { id: "s1", name: "Loja 1" }, { id: "s2", name: "Loja 2" }, { id: "new", name: "Loja Nova" },
   ] as ClientStore[]} onImport={mocks.import} /></QueryClientProvider>);
   return client;
@@ -54,16 +55,17 @@ describe("matrix quantity confirmation", () => {
   beforeEach(() => { vi.clearAllMocks(); mocks.current = []; mocks.campaigns = [{ id: "source", name: "Origem" }]; mocks.chainLinks = []; mocks.import.mockResolvedValue(undefined); });
   afterEach(cleanup);
 
-  it("auto-maps a missing kit-only target, rereads current values and imports only empty current-store cells", async () => {
+  it("transfers a kit→kit association: source kit count × destination qty-per-kit, only into empty cells", async () => {
     setup();
     await screen.findByRole("option", { name: "Origem" });
     fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "source" } });
-    await waitFor(() => expect(screen.getAllByRole("combobox")[2]).toHaveValue("target"));
+    await waitFor(() => expect(screen.getAllByRole("combobox")[1]).toHaveValue("tkit"));
+    expect(screen.getAllByRole("combobox")).toHaveLength(2); // kit components are not mapped individually
     expect(screen.getByRole("alert")).toHaveTextContent("1 loja(s) sem referência — preencher à mão: Loja Nova");
     // A manual value appears after the dialog was opened.
     mocks.current = [{ store_id: "s1", piece_id: "target", quantity: 4 }];
     fireEvent.click(screen.getByRole("button", { name: "Pré-preencher rateio" }));
-    await waitFor(() => expect(mocks.import).toHaveBeenCalledWith([{ storeId: "s2", pieceId: "target", quantity: 9 }]));
+    await waitFor(() => expect(mocks.import).toHaveBeenCalledWith([{ storeId: "s2", pieceId: "target", quantity: 18 }]));
     expect(mocks.close).toHaveBeenCalledWith(false);
   });
 
@@ -71,10 +73,10 @@ describe("matrix quantity confirmation", () => {
     const client = setup();
     await screen.findByRole("option", { name: "Origem" });
     fireEvent.change(screen.getAllByRole("combobox")[0], { target: { value: "source" } });
-    await waitFor(() => expect(screen.getAllByRole("combobox")[2]).toHaveValue("target"));
-    fireEvent.click(screen.getByRole("button", { name: "Limpar associação de Painel Lateral" }));
+    await waitFor(() => expect(screen.getAllByRole("combobox")[1]).toHaveValue("tkit"));
+    fireEvent.click(screen.getByRole("button", { name: "Limpar associação de KIT Painel" }));
     await client.invalidateQueries({ queryKey: ["import-matrix-data-rpc", "source"] });
-    expect(screen.getAllByRole("combobox")[2]).toHaveValue("");
+    expect(screen.getAllByRole("combobox")[1]).toHaveValue("");
     expect(screen.getByRole("button", { name: "Pré-preencher rateio" })).toBeDisabled();
   });
 
