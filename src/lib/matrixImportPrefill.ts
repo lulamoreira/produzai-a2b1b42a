@@ -68,6 +68,59 @@ export interface MatrixKitLink {
 }
 
 /**
+ * Source quantity per store for any source type: a piece contributes its own
+ * store quantity; a kit contributes min over components of
+ * floor(store qty / qty per kit), and a missing/zero component makes it 0.
+ */
+export function sourceQuantityPerStore(
+  sourceType: "piece" | "kit",
+  sourceId: string,
+  sourceLinks: MatrixKitLink[],
+  sourceQuantities: MatrixImportQuantity[],
+  storeIds: string[],
+): Map<string, number> {
+  const perStore = new Map<string, number>();
+  const allowed = new Set(storeIds);
+  if (sourceType === "piece") {
+    for (const q of sourceQuantities) {
+      if (q.piece_id === sourceId && q.quantity > 0 && allowed.has(q.store_id)) perStore.set(q.store_id, q.quantity);
+    }
+    return perStore;
+  }
+  const links = sourceLinks.filter((l) => l.kit_id === sourceId && l.quantity > 0);
+  if (links.length === 0) return perStore;
+  const qty = new Map(sourceQuantities.map((q) => [`${q.store_id}|${q.piece_id}`, q.quantity]));
+  for (const storeId of storeIds) {
+    const kits = Math.min(...links.map((l) => Math.floor(Math.max(0, qty.get(`${storeId}|${l.piece_id}`) ?? 0) / l.quantity)));
+    if (kits > 0) perStore.set(storeId, kits);
+  }
+  return perStore;
+}
+
+/**
+ * Applies a per-store source quantity to any target type: a piece target
+ * receives the quantity directly; a kit target expands it to each of its
+ * components as quantity × that component's qty per kit.
+ */
+export function applyQuantityToTarget(
+  targetType: "piece" | "kit",
+  targetId: string,
+  targetLinks: MatrixKitLink[],
+  quantityPerStore: Map<string, number>,
+): MatrixImportChange[] {
+  const changes: MatrixImportChange[] = [];
+  if (targetType === "piece") {
+    for (const [storeId, quantity] of quantityPerStore) changes.push({ storeId, pieceId: targetId, quantity });
+    return changes;
+  }
+  const links = targetLinks.filter((l) => l.kit_id === targetId && l.quantity > 0);
+  for (const [storeId, kits] of quantityPerStore) {
+    for (const l of links) changes.push({ storeId, pieceId: l.piece_id, quantity: kits * l.quantity });
+  }
+  return changes;
+}
+
+/**
  * Source kit count per store = min over components of floor(store qty / qty per kit);
  * a missing/zero component makes the kit 0 there. Each destination component then
  * receives kitCount × its own qty per kit, so differing structures still transfer.

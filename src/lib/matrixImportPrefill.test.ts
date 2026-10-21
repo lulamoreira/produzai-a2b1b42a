@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { autoMapMatrixItems, filterEmptyMatrixCells, storesWithoutMatrixReference, transferKitQuantities } from "./matrixImportPrefill";
+import { applyQuantityToTarget, autoMapMatrixItems, filterEmptyMatrixCells, sourceQuantityPerStore, storesWithoutMatrixReference, transferKitQuantities } from "./matrixImportPrefill";
 
 describe("matrix import prefill rules", () => {
   it("reuses Flow normalization and accepts Jaccard 0.5 but rejects lower scores", () => {
@@ -65,5 +65,27 @@ describe("kit to kit transfer", () => {
   });
   it("a component with 0 in the store makes the kit 0 there", () => {
     expect(transferKitQuantities("k", "t", src, dst, [{ store_id: "s", piece_id: "a", quantity: 8 }], ["s"])).toEqual([]);
+  });
+});
+describe("crossed transfers (piece↔kit)", () => {
+  const src = [{ kit_id: "k", piece_id: "a", quantity: 2 }, { kit_id: "k", piece_id: "b", quantity: 1 }];
+  const dst = [{ kit_id: "t", piece_id: "x", quantity: 3 }, { kit_id: "t", piece_id: "y", quantity: 1 }];
+  it("piece→kit: the piece quantity expands to every target component", () => {
+    const perStore = sourceQuantityPerStore("piece", "p", [], [
+      { store_id: "s", piece_id: "p", quantity: 4 }, { store_id: "outside", piece_id: "p", quantity: 9 },
+    ], ["s"]);
+    expect(applyQuantityToTarget("kit", "t", dst, perStore)).toEqual([
+      { storeId: "s", pieceId: "x", quantity: 12 }, { storeId: "s", pieceId: "y", quantity: 4 },
+    ]);
+  });
+  it("kit→piece: the derived kit count lands directly on the target piece", () => {
+    const perStore = sourceQuantityPerStore("kit", "k", src, [
+      { store_id: "s", piece_id: "a", quantity: 5 }, { store_id: "s", piece_id: "b", quantity: 4 },
+    ], ["s"]);
+    expect(applyQuantityToTarget("piece", "target", [], perStore)).toEqual([{ storeId: "s", pieceId: "target", quantity: 2 }]);
+  });
+  it("a kit source with a zero component transfers nothing to a piece target", () => {
+    const perStore = sourceQuantityPerStore("kit", "k", src, [{ store_id: "s", piece_id: "a", quantity: 8 }], ["s"]);
+    expect(applyQuantityToTarget("piece", "target", [], perStore)).toEqual([]);
   });
 });

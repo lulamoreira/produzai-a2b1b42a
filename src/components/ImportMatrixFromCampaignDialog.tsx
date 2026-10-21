@@ -11,7 +11,7 @@ import {
 import { Copy, Package, ArrowRight, Store, Loader2, X, Boxes, AlertTriangle } from "lucide-react";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { cn } from "@/lib/utils";
-import { autoMapMatrixItems, filterEmptyMatrixCells, storesWithoutMatrixReference, transferKitQuantities, type MatrixImportQuantity, type MatrixKitLink } from "@/lib/matrixImportPrefill";
+import { applyQuantityToTarget, autoMapMatrixItems, filterEmptyMatrixCells, sourceQuantityPerStore, storesWithoutMatrixReference, type MatrixImportQuantity, type MatrixKitLink } from "@/lib/matrixImportPrefill";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import { toast } from "sonner";
 import type { CampaignPiece, ClientStore, CampaignKit } from "@/hooks/useMultiClientData";
@@ -295,32 +295,24 @@ const ImportMatrixFromCampaignDialog = ({
 
     for (const [remoteItemId, target] of Object.entries(mapping)) {
       if (remoteItemId.startsWith("kitpiece-")) continue; // handled by the kit transfer
-      if (remoteItemId.startsWith("kit-")) {
-        if (target.targetType !== "kit") continue;
-        if (!targetLinks) {
-          const kitIds = currentKits.map((k) => k.id);
-          if (kitIds.length === 0) { targetLinks = []; } else {
-            const { data, error } = await supabase.from("campaign_kit_pieces")
-              .select("kit_id,piece_id,quantity").in("kit_id", kitIds);
-            if (error) { toast.error("Erro ao ler os componentes dos kits atuais."); return; }
-            targetLinks = (data ?? []) as MatrixKitLink[];
-          }
+      const isRemoteKit = remoteItemId.startsWith("kit-");
+      const remoteId = isRemoteKit ? remoteItemId.slice(4) : getRemotePieceId(remoteItemId);
+      if (!remoteId) continue;
+      if (target.targetType === "kit" && !targetLinks) {
+        const kitIds = currentKits.map((k) => k.id);
+        if (kitIds.length === 0) { targetLinks = []; } else {
+          const { data, error } = await supabase.from("campaign_kit_pieces")
+            .select("kit_id,piece_id,quantity").in("kit_id", kitIds);
+          if (error) { toast.error("Erro ao ler os componentes dos kits atuais."); return; }
+          targetLinks = (data ?? []) as MatrixKitLink[];
         }
-        changes.push(...transferKitQuantities(
-          remoteItemId.slice(4), target.targetId, remoteKitPieceLinks, targetLinks,
-          remoteStorePieces, storeIds,
-        ));
-        continue;
       }
-      const remotePieceId = getRemotePieceId(remoteItemId);
-      if (!remotePieceId || target.targetType === "kit") continue;
-
-      const storeQtys = remoteStorePieces.filter(
-        (sp) => sp.piece_id === remotePieceId && sp.quantity > 0 && currentStoreIds.has(sp.store_id)
+      // Unified transfer: any source type → any target type (piece→piece,
+      // kit→kit, and the crossed piece→kit / kit→piece mappings).
+      const perStore = sourceQuantityPerStore(
+        isRemoteKit ? "kit" : "piece", remoteId, remoteKitPieceLinks, remoteStorePieces, storeIds,
       );
-      for (const sq of storeQtys) {
-        changes.push({ storeId: sq.store_id, pieceId: target.targetId, quantity: sq.quantity });
-      }
+      changes.push(...applyQuantityToTarget(target.targetType, target.targetId, targetLinks ?? [], perStore));
     }
 
     if (changes.length === 0) {
