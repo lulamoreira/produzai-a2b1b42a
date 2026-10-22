@@ -2615,10 +2615,16 @@ ${msgLabels.winnerWaFooter}
                           <span>Produção</span>
                           <span>{fmtCurrency(displayTotal - (partial.installation + partial.freight - partial.discount))}</span>
                         </div>
-                        {(partial.installation > 0 || partial.freight > 0) && (
+                        {partial.freight > 0 && (
                           <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                            <span>Embalagem / Frete + Inst.</span>
-                            <span>{fmtCurrency(partial.installation + partial.freight)}</span>
+                            <span>Embalagem / Frete</span>
+                            <span>{fmtCurrency(partial.freight)}</span>
+                          </div>
+                        )}
+                        {partial.installation > 0 && (
+                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                            <span>Instalação</span>
+                            <span>{fmtCurrency(partial.installation)}</span>
                           </div>
                         )}
                         {partial.discount > 0 && (
