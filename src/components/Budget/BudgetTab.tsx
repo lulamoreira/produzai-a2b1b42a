@@ -2615,18 +2615,15 @@ ${msgLabels.winnerWaFooter}
                           <span>Produção</span>
                           <span>{fmtCurrency(displayTotal - (partial.installation + partial.freight - partial.discount))}</span>
                         </div>
-                        {partial.freight > 0 && (
-                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                            <span>Embalagem / Frete</span>
-                            <span>{fmtCurrency(partial.freight)}</span>
-                          </div>
-                        )}
-                        {partial.installation > 0 && (
-                          <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                            <span>Instalação</span>
-                            <span>{fmtCurrency(partial.installation)}</span>
-                          </div>
-                        )}
+                        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                          <span>Embalagem / Frete</span>
+                          <span>{fmtCurrency(partial.freight)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                          <span>Instalação</span>
+                          <span>{fmtCurrency(partial.installation)}</span>
+                        </div>
+
                         {partial.discount > 0 && (
                           <div className="flex items-center justify-between text-[10px] text-red-600">
                             <span>Desconto</span>
@@ -3062,10 +3059,10 @@ ${msgLabels.winnerWaFooter}
                             {piecesTotal > 0 ? fmtCurrency(piecesTotal) : "—"}
                           </TableCell>
                           <TableCell className="text-right tabular-nums">
-                            {p.freight > 0 ? fmtCurrency(p.freight) : "—"}
+                            {fmtCurrency(p.freight)}
                           </TableCell>
                           <TableCell className="text-right tabular-nums">
-                            {p.installation > 0 ? fmtCurrency(p.installation) : "—"}
+                            {fmtCurrency(p.installation)}
                           </TableCell>
                           <TableCell className="text-right tabular-nums text-red-600">
                             {p.discount > 0 ? `-${fmtCurrency(p.discount)}` : "—"}
