@@ -1502,7 +1502,6 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         </label>
                         <DebouncedInput disabled={!cardCanEdit} placeholder={t("scheduling.osNumber")} value={schedule?.installation_os || ""} onValueCommit={(val) => handleFieldChange(store.id, "installation_os", val || null)} className="h-9 text-sm w-full" />
                         <div className="flex items-center justify-end gap-1">
-
                           <CopyOsButton value={schedule?.installation_os} />
                           <OsFileUpload
                             campaignId={campaignId}
