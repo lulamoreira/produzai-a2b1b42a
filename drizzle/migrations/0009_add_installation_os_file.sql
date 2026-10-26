@@ -1,0 +1,2 @@
+ALTER TABLE public.campaign_schedules ADD COLUMN IF NOT EXISTS installation_os_file_url text;
+COMMENT ON COLUMN public.campaign_schedules.installation_os_file_url IS 'Caminho do arquivo (imagem/PDF) da OS enviada pelo lojista, no bucket schedule-os-files';

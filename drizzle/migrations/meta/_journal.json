@@ -64,6 +64,13 @@
       "when": 1792500803400,
       "tag": "0008_get_latest_campaign_in_chain",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792985566868,
+      "tag": "0009_add_installation_os_file",
+      "breakpoints": true
     }
   ]
 }
