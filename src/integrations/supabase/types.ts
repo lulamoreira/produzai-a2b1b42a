@@ -2057,6 +2057,7 @@ export type Database = {
           install_code_expires_at: string | null
           install_code_generated_at: string | null
           installation_os: string | null
+          installation_os_file_url: string | null
           installation_preference: string | null
           locked: boolean
           manual_checkin_at: string | null
@@ -2119,6 +2120,7 @@ export type Database = {
           install_code_expires_at?: string | null
           install_code_generated_at?: string | null
           installation_os?: string | null
+          installation_os_file_url?: string | null
           installation_preference?: string | null
           locked?: boolean
           manual_checkin_at?: string | null
@@ -2181,6 +2183,7 @@ export type Database = {
           install_code_expires_at?: string | null
           install_code_generated_at?: string | null
           installation_os?: string | null
+          installation_os_file_url?: string | null
           installation_preference?: string | null
           locked?: boolean
           manual_checkin_at?: string | null

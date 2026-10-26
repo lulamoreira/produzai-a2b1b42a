@@ -8,6 +8,7 @@ export type Schedule = {
   scheduled_date: string | null;
   scheduled_time: string | null;
   installation_os: string | null;
+  installation_os_file_url: string | null;
   installation_preference: string | null;
   team_id: string | null;
   store_approved: boolean;
