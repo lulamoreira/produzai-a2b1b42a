@@ -17,6 +17,7 @@ import { useClientPermission } from "@/hooks/useClientPermission";
 import { Input } from "@/components/ui/input";
 import DebouncedInput from "@/components/DebouncedInput";
 import CopyOsButton from "@/components/CopyOsButton";
+import OsFileUpload from "@/components/OsFileUpload";
 import CopyTeamButton from "@/components/CopyTeamButton";
 
 import ScheduleHistorySheet from "@/components/ScheduleHistorySheet";
@@ -1499,6 +1500,13 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
                         <div className="flex items-center gap-1">
                           <DebouncedInput disabled={!cardCanEdit} placeholder={t("scheduling.osNumber")} value={schedule?.installation_os || ""} onValueCommit={(val) => handleFieldChange(store.id, "installation_os", val || null)} className="h-8 text-xs flex-1" />
                           <CopyOsButton value={schedule?.installation_os} />
+                          <OsFileUpload
+                            campaignId={campaignId}
+                            storeId={store.id}
+                            filePath={schedule?.installation_os_file_url || null}
+                            disabled={!cardCanEdit}
+                            onChange={(path) => handleFieldChange(store.id, "installation_os_file_url", path)}
+                          />
                         </div>
                       </div>
                       <div className="space-y-2 rounded-md border border-primary bg-primary/10 p-3 sm:col-span-2">
