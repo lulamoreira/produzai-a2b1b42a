@@ -7,6 +7,7 @@
 export type RateioFindingSeverity = "alta" | "media" | "baixa";
 export type RateioFindingType =
   | "modelo_divergente"
+  | "quantidade_abaixo"
   | "modelo_incompativel"
   | "era_incompativel"
   | "vitrine_excesso";
@@ -30,12 +31,20 @@ export const norm = (s: unknown): string =>
 const SEVERITY_ORDER: Record<RateioFindingSeverity, number> = { alta: 0, media: 1, baixa: 2 };
 const TYPE_ORDER: Record<RateioFindingType, number> = {
   modelo_divergente: 0,
-  modelo_incompativel: 1,
-  era_incompativel: 2,
-  vitrine_excesso: 3,
+  quantidade_abaixo: 1,
+  modelo_incompativel: 2,
+  era_incompativel: 3,
+  vitrine_excesso: 4,
 };
 
 type Item = { kind: "piece" | "kit"; src: any };
+
+type CapacityField = {
+  nome: string;
+  kind: "number" | "boolean" | "text";
+  tokens: string[];
+  valueKey: string;
+};
 
 export function reviewRateio(
   pieces: any[],
@@ -43,6 +52,7 @@ export function reviewRateio(
   kitPieces: any[],
   stores: any[],
   qtyMap: Record<string, number>,
+  customFieldLabels: { index: number; label: string }[] = [],
 ): RateioFinding[] {
   const findings: RateioFinding[] = [];
   const items: Item[] = [
@@ -86,12 +96,39 @@ export function reviewRateio(
   });
   const getQ = (s: any, i: number) => q.get(`${s.id}|${i}`) || 0;
 
-  // Item de vitrine: só é elegível em lojas que TÊM vitrine (showcase_count > 0)
-  const isVitrineItem = (src: any): boolean =>
-    norm(src?.name).includes("VITRINE") || norm(src?.category).includes("VITRINE");
-  const isEligible = (store: any, src: any): boolean => {
-    if (isVitrineItem(src)) return (Number(store?.showcase_count) || 0) > 0;
-    return true;
+  const STOP = new Set(["DE", "DA", "DO", "E", "ADESIVO", "ADESIVOS", "KIT"]);
+  const tokensDe = (nome: string): string[] => norm(nome).split(/[^A-Z0-9]+/).filter(
+    (t) => t && !STOP.has(t) && (t.length >= 3 || ["G", "P", "M"].includes(t) || /^\d/.test(t)),
+  );
+  const campos: CapacityField[] = customFieldLabels.map(({ index, label }): CapacityField => {
+    const nome = label.split("|")[0];
+    return {
+      nome,
+      kind: /\|number/i.test(label) ? "number" : /\|boolean/i.test(label) ? "boolean" : "text",
+      tokens: tokensDe(nome),
+      valueKey: `custom_field_${index}`,
+    };
+  }).filter((f) => f.tokens.length > 0);
+  campos.push({ nome: "Vitrine", kind: "number", tokens: ["VITRINE"], valueKey: "showcase_count" });
+
+  const linkField = (src: { name?: unknown; category?: unknown }): CapacityField | null => {
+    const n = norm(src.name) + " " + norm(src.category);
+    let best: CapacityField | null = null;
+    for (const f of campos) {
+      if (f.tokens.every((t) => new RegExp("\\b" + t + "\\b").test(n))) {
+        if (!best || f.tokens.length > best.tokens.length) best = f;
+      }
+    }
+    return best;
+  };
+  const capacidade = (store: Record<string, unknown>, campo: CapacityField): { num: number; tem: boolean } => {
+    const raw = store[campo.valueKey];
+    if (campo.kind === "number") {
+      const num = Number(raw) || 0;
+      return { num, tem: num > 0 };
+    }
+    const v = norm(raw);
+    return { num: 0, tem: v !== "" && !["NAO", "0", "FALSE", "-"].includes(v) };
   };
 
   // CHECK 1 — modelo_divergente
@@ -108,8 +145,8 @@ export function reviewRateio(
     const modelo = (group[0].store_model ?? "").toString().trim();
     items.forEach((it, i) => {
       const nome = it.src.name ?? "";
-      // Reduz o grupo às lojas ELEGÍVEIS ao item (ex.: item de vitrine só em lojas com vitrine)
-      const elegiveis = group.filter((s) => isEligible(s, it.src));
+      const campoItem = linkField(it.src);
+      const elegiveis = campoItem ? group.filter((s) => capacidade(s, campoItem).tem) : group;
       if (elegiveis.length < 2) return; // sem base de comparação, pula este item
       const com = elegiveis.filter((s) => getQ(s, i) > 0);
       const n = com.length;
@@ -139,33 +176,6 @@ export function reviewRateio(
             storeModel: modelo,
             storesWith: withNames,
           });
-        }
-      }
-      // Outlier de quantidade
-      if (n > 1) {
-        const freq = new Map<number, number>();
-        com.forEach((s) => freq.set(getQ(s, i), (freq.get(getQ(s, i)) || 0) + 1));
-        if (freq.size > 1) {
-          let moda = 0;
-          let best = -1;
-          for (const [v, c] of freq) {
-            if (c > best || (c === best && v > moda)) {
-              moda = v;
-              best = c;
-            }
-          }
-          for (const s of com) {
-            const v = getQ(s, i);
-            if (v === moda) continue;
-            findings.push({
-              severity: "baixa",
-              type: "modelo_divergente",
-              title: "Quantidade divergente no mesmo modelo",
-              detail: `No modelo ${modelo}, a maioria recebe ${moda} de '${nome}', mas ${storeName(s)} recebe ${v}.`,
-              ...meta(it),
-              storeModel: modelo,
-            });
-          }
         }
       }
     });
@@ -261,6 +271,43 @@ export function reviewRateio(
     }
   }
 
+  // CHECK 5 — quantidade_abaixo: apenas desvios para menos de um padrão proporcional.
+  items.forEach((it, i) => {
+    const campoItem = linkField(it.src);
+    if (!campoItem || campoItem.kind !== "number") return;
+    const base = participants
+      .filter((s) => getQ(s, i) > 0 && capacidade(s, campoItem).num > 0)
+      .map((s) => ({ s, q: getQ(s, i), cap: capacidade(s, campoItem).num }));
+    if (base.length < 4) return;
+    const freq = new Map<number, number>();
+    for (const { q, cap } of base) {
+      const r = +(q / cap).toFixed(2);
+      freq.set(r, (freq.get(r) || 0) + 1);
+    }
+    let R = 0;
+    let mostFrequent = 0;
+    for (const [r, count] of freq) {
+      if (count > mostFrequent) {
+        R = r;
+        mostFrequent = count;
+      }
+    }
+    if (mostFrequent / base.length < 0.6) return;
+    for (const { s, q, cap } of base) {
+      const esperado = R * cap;
+      if (q < esperado * 0.9) {
+        findings.push({
+          severity: "media",
+          type: "quantidade_abaixo",
+          title: "Quantidade abaixo da capacidade",
+          detail: `A loja ${storeName(s)} recebe ${q} de '${it.src.name}', abaixo do esperado (~${Math.round(esperado)}) para a capacidade ${cap} (${campoItem.nome}). O padrão das demais lojas é ${R}× a capacidade.`,
+          ...meta(it),
+          storeModel: s.store_model ?? undefined,
+        });
+      }
+    }
+  });
+
   return findings.sort(
     (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] || TYPE_ORDER[a.type] - TYPE_ORDER[b.type],
   );
@@ -268,6 +315,7 @@ export function reviewRateio(
 
 export const FINDING_TYPE_LABELS: Record<RateioFindingType, string> = {
   modelo_divergente: "Divergência entre lojas do mesmo modelo",
+  quantidade_abaixo: "Quantidade abaixo da capacidade",
   modelo_incompativel: "Modelo incompatível",
   era_incompativel: "Era (Novo × Antigo) incompatível",
   vitrine_excesso: "Vitrine",

@@ -19,6 +19,7 @@ export interface RateioReviewDialogProps {
   qtyMap: Record<string, number>;
   campaignName: string;
   clientName?: string;
+  customFieldLabels?: { index: number; label: string }[];
 }
 
 const SEV_STYLE: Record<RateioFinding["severity"], string> = {
@@ -29,12 +30,12 @@ const SEV_STYLE: Record<RateioFinding["severity"], string> = {
 const SEV_LABEL = { alta: "Alta", media: "Média", baixa: "Baixa" } as const;
 
 export default function RateioReviewDialog(props: RateioReviewDialogProps) {
-  const { open, onOpenChange, pieces, kits, kitPieces, stores, qtyMap, campaignName, clientName } = props;
+  const { open, onOpenChange, pieces, kits, kitPieces, stores, qtyMap, campaignName, clientName, customFieldLabels } = props;
   const [exporting, setExporting] = useState(false);
 
   const findings = useMemo(
-    () => (open ? reviewRateio(pieces, kits, kitPieces, stores, qtyMap) : []),
-    [open, pieces, kits, kitPieces, stores, qtyMap],
+    () => (open ? reviewRateio(pieces, kits, kitPieces, stores, qtyMap, customFieldLabels) : []),
+    [open, pieces, kits, kitPieces, stores, qtyMap, customFieldLabels],
   );
   const types = Object.keys(FINDING_TYPE_LABELS) as RateioFindingType[];
 

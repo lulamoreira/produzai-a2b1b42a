@@ -2796,6 +2796,7 @@ export default function RateioTabV2({
         kitPieces={kitPieces}
         stores={stores}
         qtyMap={qtyMap}
+        customFieldLabels={customFieldLabels}
         campaignName={campaign?.name ?? ""}
         clientName={client?.name ?? ""}
       />

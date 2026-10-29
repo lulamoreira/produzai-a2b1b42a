@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Rateio review keeps capacity matching and findings in one read-only pure engine shared by the dialog and PDF; client field labels are passed from Rateio so capacities do not depend on fixed custom-field indices.
+
 - Matrix quantity prefill reuses Flow name tokens and shared pure matching/filter helpers; reread paginated current quantities before confirmation so existing positive cells are preserved without changing the parent importer.
 - Matrix prefill uses one unified transfer (sourceQuantityPerStore + applyQuantityToTarget) for any source→target type combination: kits count as min floor of component qty ÷ qty-per-kit, kit targets expand to each component × qty-per-kit; kit components are never mapped individually, so differing kit structures stay consistent.
 - Renegotiation "vigente" campaign is the chain leaf (no other campaign of the client has parent_campaign_id pointing at it); import-source pickers show leaves only, so originals and intermediates can never be picked.
