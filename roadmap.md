@@ -3,8 +3,8 @@
 - [x] Test the rule and confirm the real chain structure read-only, without changing campaign records.
 
 # Capacity-aware Rateio review
-- [ ] Pass client capacity labels into the read-only review and add eligible-store/proportional checks, preserving checks 2–4.
-- [ ] Test the capacity rules and verify the authenticated review without changing campaign data.
+- [x] Pass client capacity labels into the read-only review and add eligible-store/proportional checks, preserving checks 2–4.
+- [x] Verify 17 tests and the authenticated Natal review: capacity group displays 20 findings; no campaign data changed.
 
 # Team export formatting
 - [x] Add automatic matrix associations, missing-reference warning and empty-cell-only import; verify component coverage and 15 tests. No active caller exists for this dialog, so live end-to-end verification is unavailable without expanding scope.
