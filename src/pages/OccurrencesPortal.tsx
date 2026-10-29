@@ -1,3 +1,4 @@
+import { toast } from "sonner";
 import { useParams, useNavigate } from "react-router-dom";
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -184,11 +185,19 @@ export default function OccurrencesPortal() {
   const { user } = useAuth();
   const isPublic = !user;
 
-  const handleGoToStores = () => {
+  const handleGoToStores = async () => {
     if (isPublic || !resolvedCampaignId) return;
-    const pathParts = window.location.pathname.split("/");
-    const agencyId = pathParts[2];
-    const clientId = pathParts[4];
+    const { data, error } = await supabase
+      .from("campaigns")
+      .select("client_id, clients(agency_id)")
+      .eq("id", resolvedCampaignId)
+      .maybeSingle();
+    const clientId = (data as any)?.client_id;
+    const agencyId = (data as any)?.clients?.agency_id;
+    if (error || !clientId || !agencyId) {
+      toast.error("Não foi possível abrir as lojas desta campanha.");
+      return;
+    }
     navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${resolvedCampaignId}?section=loja_a_loja&tab=lojas`);
   };
 
