@@ -14,11 +14,11 @@ const pieces: LojaALojaPeca[] = ["a", "b", "s1", "s2"].map(id => ({ id, campaign
 const items = [{ id: "source", nome: "Editada", image_url: "photo", checked: true }, { id: "ignored", nome: "Outra", image_url: null, checked: false }];
 
 describe("copy Loja a Loja pieces", () => {
-  it("only offers populated other vitrines for a vitrine", () => {
-    expect(copyPieceSources(tipos, pieces, "a", null).map(s => s.id)).toEqual(["b"]);
+  it("offers other vitrines and internal subdivisions for a vitrine", () => {
+    expect(copyPieceSources(tipos, pieces, "a", null).map(s => [s.id, s.kind])).toEqual([["b", "tipo"], ["s1", "sub"], ["s2", "sub"]]);
   });
-  it("only offers populated other subdivisions for an internal selection", () => {
-    expect(copyPieceSources(tipos, pieces, "h", "s1").map(s => s.id)).toEqual(["s2"]);
+  it("offers vitrines and other subdivisions for an internal selection", () => {
+    expect(copyPieceSources(tipos, pieces, "h", "s1").map(s => s.id)).toEqual(["a", "b", "s2"]);
   });
   it("copies marked rows independently without source ids or changes", () => {
     const snapshot = structuredClone(items);

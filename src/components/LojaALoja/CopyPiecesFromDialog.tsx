@@ -79,7 +79,8 @@ export function CopyPiecesFromDialog({ open, onOpenChange, campaignId, selectedT
         ? <p className="text-sm text-destructive">{t("Não foi possível carregar as peças.")}</p>
         : <Select value={sourceId ?? ""} disabled={copy.isPending} onValueChange={id => {
           setSourceId(id);
-          setItems((allPieces.data ?? []).filter(p => selectedSubId ? p.subdivisao_id === id : p.tipo_id === id && !p.subdivisao_id)
+          const src = sources.find(s => s.id === id);
+          setItems((allPieces.data ?? []).filter(p => src?.kind === "sub" ? p.subdivisao_id === id : (p.tipo_id === id && !p.subdivisao_id))
             .map(p => ({ id: p.id, nome: p.nome, image_url: p.image_url, checked: false })));
         }}>
           <SelectTrigger aria-label={t("Letra de origem")}><SelectValue placeholder={t("Letra de origem")} /></SelectTrigger>
