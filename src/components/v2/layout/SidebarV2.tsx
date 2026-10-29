@@ -581,10 +581,8 @@ export function SidebarV2() {
                             <Building2 className="w-3 h-3 flex-shrink-0 opacity-80" />
                             <span className="truncate font-medium">{fav.agency_name}</span>
                           </NavLink>
-                          </SortableFavoriteItem>
                         );
                       })}
-                      </SortableFavoritesList>
                     </>
                   )}
 
@@ -652,8 +650,10 @@ export function SidebarV2() {
                             />
                             <span className="truncate font-medium">{fav.campaign_name}</span>
                           </NavLink>
+                          </SortableFavoriteItem>
                         );
                       })}
+                      </SortableFavoritesList>
                     </>
                   )}
                 </div>
