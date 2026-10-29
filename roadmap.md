@@ -1,3 +1,7 @@
+# Performance without functional changes
+- [ ] Optimize the verified campaign quantity query plan without changing records or permissions.
+- [ ] Remove redundant summary request and parallelize independent counts; verify authenticated loading and rateio completeness.
+
 # Loja a Loja letter copying
 - [x] Add iterative selective copying with editable names and independent destination rows.
 - [x] Six rule tests passed; authenticated Natal copy saved/read back, stayed open and reset selection; temporary test row removed.

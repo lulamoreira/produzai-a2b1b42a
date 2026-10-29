@@ -1,5 +1,7 @@
 # Architecture rules
 
+- Performance changes preserve complete exact-count pagination, live invalidation and eager shared quantity availability; optimize query indexes and independent request scheduling instead of disabling data needed by existing actions.
+
 - Loja a Loja letter copying uses a dedicated iterative dialog and pure row builder; new rows omit source IDs, share image references, and read fresh destination order before each insertion to keep copies independent.
 
 - Rateio review keeps capacity matching and findings in one read-only pure engine shared by the dialog and PDF; client field labels are passed from Rateio so capacities do not depend on fixed custom-field indices.
