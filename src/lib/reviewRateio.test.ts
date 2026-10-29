@@ -104,16 +104,17 @@ describe("reviewRateio", () => {
     expect(below([10, 10, 10, 10, 10], [10, 10, 10, 5, 2])).toHaveLength(2);
   });
 
-  it("aponta somente abaixo de 90% do esperado, nunca a mais", () => {
+  it("compara só lojas de mesma capacidade e aponta somente quem recebe a menos", () => {
     const f = below([10, 20, 30, 10, 10, 10, 10, 10], [10, 20, 30, 10, 9, 8, 20, 10]);
-    expect(f).toHaveLength(1);
-    expect(f[0]?.detail).toContain("Loja 5 recebe 8");
-    expect(f[0]?.detail).toContain("capacidade 10 (Cubo G 2020)");
+    expect(f).toHaveLength(2);
+    expect(f.map((x) => x.detail).join(" ")).toContain("Loja 5 recebe 9");
+    expect(f[0]?.detail).toContain("abaixo do padrão 10");
+    expect(f[0]?.detail).toContain("(10 Cubo G 2020)");
     expect(f[0]?.severity).toBe("media");
   });
 
-  it("arredonda as razões a duas casas antes de contar a frequência", () => {
-    expect(below([1000, 1000, 1000, 1000], [1001, 1002, 1003, 500])).toHaveLength(1);
+  it("quantidade fixa por loja não é apontada entre capacidades diferentes", () => {
+    expect(below([1, 1, 1, 1, 2, 2, 2, 2], [1, 1, 1, 1, 1, 1, 1, 1])).toHaveLength(0);
   });
 
   it("não gera ruído para quantidade fixa sem razão dominante nem outlier simétrico", () => {
