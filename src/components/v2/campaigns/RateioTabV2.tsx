@@ -2747,6 +2747,7 @@ export default function RateioTabV2({
         kitPieces={kitPieces}
         qtyMap={qtyMap}
         customFieldLabels={customFieldLabels}
+        clientId={clientId}
         onComplete={handleAutomationComplete}
         isAdjustmentView={activeTabData?.type === "adjustment"}
         adjustmentId={activeAdjustment?.id}
@@ -2797,6 +2798,7 @@ export default function RateioTabV2({
         stores={stores}
         qtyMap={qtyMap}
         customFieldLabels={customFieldLabels}
+        clientId={clientId}
         campaignName={campaign?.name ?? ""}
         clientName={client?.name ?? ""}
       />

@@ -21,6 +21,7 @@ export type RateioFinding = {
   itemCode?: string | number;
   itemImage?: string | null;
   storeModel?: string;
+  storeName?: string;
   storesWith?: string[];
   storesWithout?: string[];
 };
@@ -198,6 +199,7 @@ export function reviewRateio(
         detail: `O item '${it.src.name ?? ""}' é destinado ao modelo '${it.src.store_category}', mas foi aplicado na loja ${storeName(s)} (modelo ${s.store_model ?? ""}).`,
         ...meta(it),
         storeModel: s.store_model ?? undefined,
+        storeName: storeName(s),
       });
     }
   });
@@ -229,6 +231,7 @@ export function reviewRateio(
         detail: `A loja ${storeName(s)} é modelo ${el}, mas recebeu '${it.src.name ?? ""}', que é material ${ei}.`,
         ...meta(it),
         storeModel: s.store_model ?? undefined,
+        storeName: storeName(s),
       });
     }
   });
@@ -258,6 +261,7 @@ export function reviewRateio(
         title: "Excesso de vitrine",
         detail: `A loja ${storeName(s)} tem ${count} vitrine(s) cadastrada(s), mas está recebendo ${total} item(ns) de vitrine.`,
         storeModel: s.store_model ?? undefined,
+        storeName: storeName(s),
       });
     }
     if (sizes.size > 1) {
@@ -267,6 +271,7 @@ export function reviewRateio(
         title: "Vitrines de tamanhos diferentes",
         detail: `A loja ${storeName(s)} está recebendo vitrines de tamanhos diferentes (${[...sizes].join(", ")}).`,
         storeModel: s.store_model ?? undefined,
+        storeName: storeName(s),
       });
     }
   }
@@ -304,6 +309,7 @@ export function reviewRateio(
             detail: `A loja ${storeName(s)} recebe ${q} de '${it.src.name}', abaixo do padrão ${modo} das demais lojas com a mesma capacidade (${cap} ${campoItem.nome}).`,
             ...meta(it),
             storeModel: s.store_model ?? undefined,
+            storeName: storeName(s),
           });
         }
       }
