@@ -108,9 +108,12 @@ export function reviewRateio(
     const modelo = (group[0].store_model ?? "").toString().trim();
     items.forEach((it, i) => {
       const nome = it.src.name ?? "";
-      const com = group.filter((s) => getQ(s, i) > 0);
+      // Reduz o grupo às lojas ELEGÍVEIS ao item (ex.: item de vitrine só em lojas com vitrine)
+      const elegiveis = group.filter((s) => isEligible(s, it.src));
+      if (elegiveis.length < 2) return; // sem base de comparação, pula este item
+      const com = elegiveis.filter((s) => getQ(s, i) > 0);
       const n = com.length;
-      const N = group.length;
+      const N = elegiveis.length;
       if (n > 0 && n < N) {
         const sem = group.filter((s) => getQ(s, i) <= 0);
         const withNames = com.map(storeName);
