@@ -115,7 +115,7 @@ export function reviewRateio(
       const n = com.length;
       const N = elegiveis.length;
       if (n > 0 && n < N) {
-        const sem = group.filter((s) => getQ(s, i) <= 0);
+        const sem = elegiveis.filter((s) => getQ(s, i) <= 0);
         const withNames = com.map(storeName);
         const withoutNames = sem.map(storeName);
         if (n / N >= 0.5) {
