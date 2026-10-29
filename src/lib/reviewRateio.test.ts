@@ -105,7 +105,7 @@ describe("reviewRateio", () => {
   });
 
   it("aponta somente abaixo de 90% do esperado, nunca a mais", () => {
-    const f = below([10, 20, 30, 10, 10, 10, 10], [10, 20, 30, 10, 9, 8, 20]);
+    const f = below([10, 20, 30, 10, 10, 10, 10, 10], [10, 20, 30, 10, 9, 8, 20, 10]);
     expect(f).toHaveLength(1);
     expect(f[0]?.detail).toContain("Loja 5 recebe 8");
     expect(f[0]?.detail).toContain("capacidade 10 (Cubo G 2020)");
