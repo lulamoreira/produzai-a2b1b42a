@@ -54,7 +54,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { KpiDetailDialog } from "@/components/v2/home/KpiDetailDialog";
 import { useUserRole } from "@/hooks/useUserRole";
-import { useCampaignFavorites, useToggleFavorite, useFavoriteIds } from "@/hooks/useCampaignFavorites";
+import { useCampaignFavorites, useToggleFavorite, useFavoriteIds, useReorderFavorites } from "@/hooks/useCampaignFavorites";
+import { SortableFavoritesList, SortableFavoriteItem } from "@/components/v2/favorites/SortableFavorites";
 import { useNotifications } from "@/hooks/useNotifications";
 import { useUpdateCampaign } from "@/hooks/useMultiClientData";
 import { Switch } from "@/components/ui/switch";
@@ -77,6 +78,7 @@ export function HomeV2() {
   const { notifications, isLoading: loadingNotifications, markAsRead } = useNotifications();
   const { data: favoriteIds } = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
+  const reorderFavorites = useReorderFavorites();
   const updateCampaign = useUpdateCampaign();
 
 
@@ -270,13 +272,23 @@ export function HomeV2() {
               {t("sidebar.favorites", "Favoritos")}
             </h3>
           </div>
+          <SortableFavoritesList
+            ids={favorites.map((f) => f.campaign_id)}
+            layout="grid"
+            onReorder={(ids) => reorderFavorites.mutate(ids)}
+          >
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {favorites.map((fav) => {
               const isFavorited = favoriteIds?.has(fav.campaign_id) ?? false;
               return (
-                <Card
+                <SortableFavoriteItem
                   key={fav.campaign_id}
-                  className="bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition-shadow cursor-pointer group relative overflow-hidden"
+                  id={fav.campaign_id}
+                  handleClassName="absolute bottom-2 right-2 z-10 p-1 text-stone-300 hover:text-stone-500"
+                  handleSize={16}
+                >
+                <Card
+                  className="h-full bg-white dark:bg-stone-900 border-stone-200 dark:border-stone-700 p-4 hover:shadow-md transition-shadow cursor-pointer group relative overflow-hidden"
                   onClick={() => navigate(`/agency/${fav.agency_id}/clients/${fav.client_id}/campaigns/${fav.campaign_id}`)}
                 >
                   <div 
@@ -323,9 +335,11 @@ export function HomeV2() {
                     </div>
                   )}
                 </Card>
+                </SortableFavoriteItem>
               );
             })}
           </div>
+          </SortableFavoritesList>
         </section>
       )}
 

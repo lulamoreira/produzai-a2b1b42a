@@ -5,7 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useUserRole } from "@/hooks/useUserRole";
 import { useUserDirectAccess } from "@/hooks/useUserDirectAccess";
 import { useSidebarPermissions } from "@/hooks/useSidebarPermissions";
-import { useCampaignFavorites } from "@/hooks/useCampaignFavorites";
+import { useCampaignFavorites, useReorderFavorites } from "@/hooks/useCampaignFavorites";
+import { SortableFavoritesList, SortableFavoriteItem } from "@/components/v2/favorites/SortableFavorites";
 import { useClientFavorites } from "@/hooks/useClientFavorites";
 import { useAgencyFavorites } from "@/hooks/useAgencyFavorites";
 
@@ -92,6 +93,7 @@ export function SidebarV2() {
 
   // Favorites in sidebar
   const { data: favorites = [] } = useCampaignFavorites();
+  const reorderFavorites = useReorderFavorites();
   const { data: clientFavorites = [] } = useClientFavorites();
   const { data: agencyFavorites = [] } = useAgencyFavorites();
   const totalFavorites = favorites.length + clientFavorites.length + agencyFavorites.length;
@@ -579,8 +581,10 @@ export function SidebarV2() {
                             <Building2 className="w-3 h-3 flex-shrink-0 opacity-80" />
                             <span className="truncate font-medium">{fav.agency_name}</span>
                           </NavLink>
+                          </SortableFavoriteItem>
                         );
                       })}
+                      </SortableFavoritesList>
                     </>
                   )}
 
@@ -618,12 +622,22 @@ export function SidebarV2() {
                       <div className="px-3 py-0.5 text-[10px] uppercase tracking-wider opacity-60" style={{ color: 'var(--v2-sidebar-section-label)' }}>
                         {t("sidebar.campaigns", "Campanhas")}
                       </div>
+                      <SortableFavoritesList
+                        ids={favorites.map((f) => f.campaign_id)}
+                        layout="vertical"
+                        onReorder={(ids) => reorderFavorites.mutate(ids)}
+                      >
                       {favorites.map((fav) => {
                         const route = `/agency/${fav.agency_id}/clients/${fav.client_id}/campaigns/${fav.campaign_id}`;
                         const isActive = campaignId === fav.campaign_id;
                         return (
+                          <SortableFavoriteItem
+                            key={fav.campaign_id}
+                            id={fav.campaign_id}
+                            handleClassName="absolute left-2.5 top-1/2 -translate-y-1/2 z-10 p-0.5 opacity-40 hover:opacity-100"
+                            handleSize={12}
+                          >
                           <NavLink
-                            key={fav.id}
                             to={route}
                             className="group flex items-center gap-2 pl-[1.875rem] pr-3 py-1.5 rounded-lg transition-colors text-xs"
                             style={{
