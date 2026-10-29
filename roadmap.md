@@ -1,4 +1,9 @@
 # Rateio prefill source campaigns
+# Loja a Loja letter copying
+- [ ] Add iterative selective copying with editable names and independent destination rows.
+- [ ] Run rule tests and verify the authenticated dialog and copy flow.
+
+# Rateio prefill source campaigns
 - [x] Show only the vigente campaign of each renegotiation chain in the "Campanha de origem" picker (chain leaves by parent_campaign_id), keeping never-renegotiated campaigns.
 - [x] Test the rule and confirm the real chain structure read-only, without changing campaign records.
 

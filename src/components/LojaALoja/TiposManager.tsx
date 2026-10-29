@@ -4,6 +4,7 @@ import { useHistory } from "@/lib/undo/useHistory";
 import { historyStore } from "@/lib/undo/historyStore";
 import { UndoRedoToolbar } from "@/components/UndoRedoToolbar";
 import { getThumbnailUrl } from "@/lib/imageUrl";
+import { CopyPiecesFromDialog } from "./CopyPiecesFromDialog";
 import { supabase } from "@/integrations/supabase/client";
 import {
   useLojaALojaTipos,
@@ -38,7 +39,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { Plus, Pencil, Trash2, Image, ImagePlus, ChevronRight, X, Upload, Check, Loader2, GripVertical, Download, AlertTriangle } from "lucide-react";
+import { Plus, Pencil, Trash2, Image, ImagePlus, ChevronRight, X, Upload, Check, Loader2, GripVertical, Download, AlertTriangle, Copy } from "lucide-react";
 import { DialogFooter } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { useMemo } from "react";
@@ -502,6 +503,7 @@ const TiposManager = ({ campaignId, clientId, permissions }: TiposManagerProps) 
 
   // Add peca dialog
   const [showAddPeca, setShowAddPeca] = useState(false);
+  const [showCopyFrom, setShowCopyFrom] = useState(false);
   const [newPecaNome, setNewPecaNome] = useState("");
   const [newPecaPreview, setNewPecaPreview] = useState<string | null>(null);
   const [newPecaBlob, setNewPecaBlob] = useState<Blob | null>(null);
@@ -1216,7 +1218,7 @@ const TiposManager = ({ campaignId, clientId, permissions }: TiposManagerProps) 
           </div>
         ) : (
           <>
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
               <h3 className="text-sm font-semibold text-foreground">
                 Peças {selectedTipo ? `— ${selectedTipo.letra} ${selectedTipo.nome}` : ""}
               </h3>
@@ -1231,6 +1233,11 @@ const TiposManager = ({ campaignId, clientId, permissions }: TiposManagerProps) 
                   undoCount={undoCount}
                   redoCount={redoCount}
                 />
+                {canEdit && (
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setShowCopyFrom(true)}>
+                    <Copy className="w-3 h-3 mr-1" /> {t("Copiar de outra letra")}
+                  </Button>
+                )}
                 {canEdit && (
                   <Button size="sm" className="h-7 text-xs" onClick={() => setShowAddPeca(true)}>
                     <Plus className="w-3 h-3 mr-1" /> Peça
@@ -1309,6 +1316,8 @@ const TiposManager = ({ campaignId, clientId, permissions }: TiposManagerProps) 
       </div>
 
       {/* ── Add Peça Dialog ── */}
+      {canEdit && <CopyPiecesFromDialog open={showCopyFrom} onOpenChange={setShowCopyFrom}
+        campaignId={campaignId} selectedTipoId={selectedTipoId} selectedSubId={selectedSubId} tipos={tipos ?? []} />}
       <Dialog open={showAddPeca} onOpenChange={setShowAddPeca}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
