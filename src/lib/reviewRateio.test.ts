@@ -21,9 +21,10 @@ describe("reviewRateio", () => {
       { id: "b", name: "B", store_model: "Antigo", showcase_count: 0 },
       { id: "d", name: "D", store_model: "Antigo", showcase_count: 2 },
     ];
-    const pieces = [{ id: "p1", name: "Adesivo Vitrine BF" }];
+    const pieces = [{ id: "p1", name: "Adesivo Vitrine BF" }, { id: "p2", name: "Base" }];
     // A tem o item; B e D não têm. B não tem vitrine → inelegível; só D deve ser apontada.
-    const f = reviewRateio(pieces, [], [], storesV, { "a-p1": 1 });
+    // p2 garante que B e D participam da análise.
+    const f = reviewRateio(pieces, [], [], storesV, { "a-p1": 1, "b-p2": 1, "d-p2": 1 });
     const hits = f.filter((x) => x.title === "Falta em lojas do mesmo modelo" && x.itemName === "Adesivo Vitrine BF");
     expect(hits).toHaveLength(1);
     expect(hits[0]?.storesWithout).toEqual(["D"]);
