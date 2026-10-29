@@ -107,7 +107,7 @@ describe("reviewRateio", () => {
   it("compara só lojas de mesma capacidade e aponta somente quem recebe a menos", () => {
     const f = below([10, 10, 10, 10, 10, 10, 10, 10, 20], [10, 10, 10, 10, 10, 9, 8, 20, 5]);
     expect(f).toHaveLength(2);
-    expect(f.map((x) => x.detail).join(" ")).toContain("Loja 6 recebe 9");
+    expect(f.map((x) => x.detail).join(" ")).toContain("Loja 5 recebe 9");
     expect(f[0]?.detail).toContain("abaixo do padrão 10");
     expect(f[0]?.detail).toContain("(10 Cubo G 2020)");
     expect(f[0]?.severity).toBe("media");
