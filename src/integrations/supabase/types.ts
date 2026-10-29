@@ -4789,6 +4789,42 @@ export type Database = {
           },
         ]
       }
+      rateio_review_justificativas: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          escopo: string
+          finding_type: string
+          fingerprint: string
+          id: string
+          item_name: string | null
+          motivo: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          escopo?: string
+          finding_type: string
+          fingerprint: string
+          id?: string
+          item_name?: string | null
+          motivo: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          escopo?: string
+          finding_type?: string
+          fingerprint?: string
+          id?: string
+          item_name?: string | null
+          motivo?: string
+        }
+        Relationships: []
+      }
       schedule_history: {
         Row: {
           campaign_id: string
