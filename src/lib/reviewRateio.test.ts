@@ -10,7 +10,8 @@ const stores = [
 describe("reviewRateio", () => {
   it("aponta item faltando em loja do mesmo modelo", () => {
     const pieces = [{ id: "p1", name: "Banner" }, { id: "p2", name: "Base" }];
-    const f = reviewRateio(pieces, [], [], stores, { "a-p1": 1, "b-p2": 1, "c-p2": 1 });
+    const withoutCapacityDifference = stores.map((store) => ({ ...store, showcase_count: 0 }));
+    const f = reviewRateio(pieces, [], [], withoutCapacityDifference, { "a-p1": 1, "b-p2": 1, "c-p2": 1 });
     const hit = f.find((x) => x.title === "Falta em lojas do mesmo modelo" && x.itemName === "Banner");
     expect(hit?.storesWithout).toEqual(["B"]);
   });
@@ -76,7 +77,7 @@ describe("reviewRateio", () => {
       { index: 10, label: "Cubo G 20|number" },
     ]);
     expect(f.filter((x) => x.type === "modelo_divergente" && x.itemName === capacityPieces[0].name)).toHaveLength(0);
-    const unmatched = reviewRateio(capacityPieces, [], [], makeStores([1, 0]), makeQty([1, 0]), [
+    const unmatched = reviewRateio(capacityPieces, [], [], makeStores([1, 1]), makeQty([1, 0]), [
       { index: 7, label: "Cubo P 2020|number" }, { index: 7, label: "Cubo G 20|number" },
     ]);
     expect(unmatched.find((x) => x.itemName === capacityPieces[0].name)?.storesWithout).toEqual(["Loja 1"]);
@@ -133,5 +134,38 @@ describe("reviewRateio", () => {
   it("mantém o CHECK 2 de modelo incompatível", () => {
     const f = reviewRateio([{ id: "p", name: "Banner", store_category: "Novo" }], [], [], stores, { "a-p": 1, "c-p": 1 });
     expect(f.filter((x) => x.type === "modelo_incompativel")).toHaveLength(1);
+  });
+
+  it.each([
+    { recipientsWithCapacity: 9, expectedMissing: ["Com café"] },
+    { recipientsWithCapacity: 8, expectedMissing: ["Sem café", "Com café"] },
+  ])("deduz capacidade só a partir de 90% dos recebedores ($recipientsWithCapacity/10)", ({ recipientsWithCapacity, expectedMissing }) => {
+    const recipients = Array.from({ length: 10 }, (_, i) => ({
+      id: String(i), name: `Recebedora ${i}`, store_model: "Modelo",
+      custom_field_18: i < recipientsWithCapacity ? "true" : "false",
+    }));
+    const missing = [
+      { id: "no", name: "Sem café", store_model: "Modelo", custom_field_18: "false" },
+      { id: "yes", name: "Com café", store_model: "Modelo", custom_field_18: "true" },
+    ];
+    const quantities = Object.fromEntries([
+      ...recipients.map((s) => [`${s.id}-p`, 1]),
+      ...missing.map((s) => [`${s.id}-base`, 1]),
+    ]);
+    const findings = reviewRateio([{ id: "p", name: "Banner" }, { id: "base", name: "Base" }],
+      [], [], [...recipients, ...missing], quantities, [{ index: 18, label: "Café|boolean" }]);
+    const hit = findings.find((f) => f.type === "modelo_divergente" && f.itemName === "Banner");
+    expect(hit?.storesWithout).toEqual(expectedMissing);
+    expect(hit?.storesWith).toEqual(recipients.map((s) => s.name));
+  });
+
+  it("retira ausências explicadas da base usada no limiar de metade das lojas", () => {
+    const group = makeStores([1, 1, 1, 0, "", -1, 0]);
+    const findings = reviewRateio([{ id: "p", name: "Banner" }, { id: "base", name: "Base" }],
+      [], [], group, makeQty([1, 1, 0, 0, 0, 0, 0]), [{ index: 7, label: "Capacidade|number" }]);
+    const hit = findings.find((f) => f.type === "modelo_divergente" && f.itemName === "Banner");
+    expect(hit?.severity).toBe("media");
+    expect(hit?.storesWith).toEqual(["Loja 0", "Loja 1"]);
+    expect(hit?.storesWithout).toEqual(["Loja 2"]);
   });
 });
