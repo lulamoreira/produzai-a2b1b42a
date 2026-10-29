@@ -135,11 +135,19 @@ export default function OccurrencesPortalV2() {
       .toUpperCase();
   };
 
-  const handleGoToStores = () => {
-    if (isPublic) return;
-    const pathParts = window.location.pathname.split("/");
-    const agencyId = pathParts[2];
-    const clientId = pathParts[4];
+  const handleGoToStores = async () => {
+    if (isPublic || !campaignId) return;
+    const { data, error } = await supabase
+      .from("campaigns")
+      .select("client_id, clients(agency_id)")
+      .eq("id", campaignId)
+      .maybeSingle();
+    const clientId = (data as any)?.client_id;
+    const agencyId = (data as any)?.clients?.agency_id;
+    if (error || !clientId || !agencyId) {
+      toast.error("Não foi possível abrir as lojas desta campanha.");
+      return;
+    }
     navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${campaignId}?section=loja_a_loja&tab=lojas`);
   };
 
