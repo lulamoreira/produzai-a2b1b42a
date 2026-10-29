@@ -86,6 +86,14 @@ export function reviewRateio(
   });
   const getQ = (s: any, i: number) => q.get(`${s.id}|${i}`) || 0;
 
+  // Item de vitrine: só é elegível em lojas que TÊM vitrine (showcase_count > 0)
+  const isVitrineItem = (src: any): boolean =>
+    norm(src?.name).includes("VITRINE") || norm(src?.category).includes("VITRINE");
+  const isEligible = (store: any, src: any): boolean => {
+    if (isVitrineItem(src)) return (Number(store?.showcase_count) || 0) > 0;
+    return true;
+  };
+
   // CHECK 1 — modelo_divergente
   const groups = new Map<string, any[]>();
   for (const s of participants) {
