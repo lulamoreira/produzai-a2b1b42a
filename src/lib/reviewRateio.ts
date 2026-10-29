@@ -24,6 +24,7 @@ export type RateioFinding = {
   storeName?: string;
   storesWith?: string[];
   storesWithout?: string[];
+  breakdown?: { name: string; quantity: number }[];
 };
 
 export const norm = (s: unknown): string =>
@@ -245,10 +246,12 @@ export function reviewRateio(
     if (count <= 0) continue;
     let total = 0;
     const sizes = new Set<string>();
+    const recebidos: { name: string; quantity: number }[] = [];
     for (const { it, i } of vitrineIdx) {
       const v = getQ(s, i);
       if (v <= 0) continue;
       total += v;
+      recebidos.push({ name: it.src.name ?? "", quantity: v });
       const n = norm(it.src.name);
       if (/\bG\b|GRANDE/.test(n)) sizes.add("G");
       if (/\bP\b|PEQUEN/.test(n)) sizes.add("P");
@@ -262,6 +265,7 @@ export function reviewRateio(
         detail: `A loja ${storeName(s)} tem ${count} vitrine(s) cadastrada(s), mas está recebendo ${total} item(ns) de vitrine.`,
         storeModel: s.store_model ?? undefined,
         storeName: storeName(s),
+        breakdown: recebidos,
       });
     }
     if (sizes.size > 1) {
@@ -272,6 +276,7 @@ export function reviewRateio(
         detail: `A loja ${storeName(s)} está recebendo vitrines de tamanhos diferentes (${[...sizes].join(", ")}).`,
         storeModel: s.store_model ?? undefined,
         storeName: storeName(s),
+        breakdown: recebidos,
       });
     }
   }
