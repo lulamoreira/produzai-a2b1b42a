@@ -271,7 +271,7 @@ export function reviewRateio(
     }
   }
 
-  // CHECK 5 — quantidade_abaixo: apenas desvios para menos de um padrão proporcional.
+  // CHECK 5 — quantidade_abaixo: compara lojas de MESMA capacidade; aponta só quem recebe a menos.
   items.forEach((it, i) => {
     const campoItem = linkField(it.src);
     if (!campoItem || campoItem.kind !== "number") return;
@@ -279,31 +279,33 @@ export function reviewRateio(
       .filter((s) => getQ(s, i) > 0 && capacidade(s, campoItem).num > 0)
       .map((s) => ({ s, q: getQ(s, i), cap: capacidade(s, campoItem).num }));
     if (base.length < 4) return;
-    const freq = new Map<number, number>();
-    for (const { q, cap } of base) {
-      const r = +(q / cap).toFixed(2);
-      freq.set(r, (freq.get(r) || 0) + 1);
+    const byCap = new Map<number, { s: any; q: number; cap: number }[]>();
+    for (const r of base) {
+      const arr = byCap.get(r.cap) ?? [];
+      arr.push(r);
+      byCap.set(r.cap, arr);
     }
-    let R = 0;
-    let mostFrequent = 0;
-    for (const [r, count] of freq) {
-      if (count > mostFrequent) {
-        R = r;
-        mostFrequent = count;
+    for (const [cap, coorte] of byCap) {
+      if (coorte.length < 4) continue; // coorte pequena demais pra ter padrão
+      const freq = new Map<number, number>();
+      for (const r of coorte) freq.set(r.q, (freq.get(r.q) || 0) + 1);
+      let modo = 0;
+      let maisFreq = 0;
+      for (const [v, c] of freq) {
+        if (c > maisFreq || (c === maisFreq && v > modo)) { modo = v; maisFreq = c; }
       }
-    }
-    if (mostFrequent / base.length < 0.6) return;
-    for (const { s, q, cap } of base) {
-      const esperado = R * cap;
-      if (q < esperado * 0.9) {
-        findings.push({
-          severity: "media",
-          type: "quantidade_abaixo",
-          title: "Quantidade abaixo da capacidade",
-          detail: `A loja ${storeName(s)} recebe ${q} de '${it.src.name}', abaixo do esperado (~${Math.round(esperado)}) para a capacidade ${cap} (${campoItem.nome}). O padrão das demais lojas é ${R}× a capacidade.`,
-          ...meta(it),
-          storeModel: s.store_model ?? undefined,
-        });
+      if (maisFreq / coorte.length < 0.6) continue; // sem padrão claro na coorte
+      for (const { s, q } of coorte) {
+        if (q < modo) {
+          findings.push({
+            severity: "media",
+            type: "quantidade_abaixo",
+            title: "Quantidade abaixo das lojas iguais",
+            detail: `A loja ${storeName(s)} recebe ${q} de '${it.src.name}', abaixo do padrão ${modo} das demais lojas com a mesma capacidade (${cap} ${campoItem.nome}).`,
+            ...meta(it),
+            storeModel: s.store_model ?? undefined,
+          });
+        }
       }
     }
   });
@@ -315,7 +317,7 @@ export function reviewRateio(
 
 export const FINDING_TYPE_LABELS: Record<RateioFindingType, string> = {
   modelo_divergente: "Divergência entre lojas do mesmo modelo",
-  quantidade_abaixo: "Quantidade abaixo da capacidade",
+  quantidade_abaixo: "Quantidade abaixo das lojas iguais",
   modelo_incompativel: "Modelo incompatível",
   era_incompativel: "Era (Novo × Antigo) incompatível",
   vitrine_excesso: "Vitrine",
