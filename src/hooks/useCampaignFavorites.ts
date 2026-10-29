@@ -58,7 +58,9 @@ export function useCampaignFavorites() {
       const { data: favs, error } = await supabase
         .from("user_campaign_favorites")
         .select("*")
-        .eq("user_id", user!.id);
+        .eq("user_id", user!.id)
+        .order("position", { ascending: true, nullsFirst: false })
+        .order("created_at", { ascending: true });
       if (error) throw error;
       if (!favs || favs.length === 0) return [];
 
@@ -197,5 +199,32 @@ export function useToggleFavorite() {
       }
     },
     onError: (e: Error) => toast.error(e.message),
+  });
+}
+
+/** Persists a new per-user order of campaign favorites with an optimistic cache update. */
+export function useReorderFavorites() {
+  const { user } = useAuth();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const { error } = await supabase.rpc("reorder_campaign_favorites", { _campaign_ids: ids });
+      if (error) throw error;
+    },
+    onMutate: async (ids: string[]) => {
+      const key = ["campaign_favorites", user?.id];
+      await qc.cancelQueries({ queryKey: key });
+      qc.setQueryData<FavoriteWithDetails[]>(key, (prev) => {
+        if (!prev) return prev;
+        const rank = new Map(ids.map((id, i) => [id, i]));
+        return [...prev].sort(
+          (a, b) => (rank.get(a.campaign_id) ?? Infinity) - (rank.get(b.campaign_id) ?? Infinity),
+        );
+      });
+    },
+    onError: (e: Error) => {
+      qc.invalidateQueries({ queryKey: ["campaign_favorites"] });
+      toast.error(e.message);
+    },
   });
 }

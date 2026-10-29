@@ -6084,18 +6084,21 @@ export type Database = {
           campaign_id: string
           created_at: string
           id: string
+          position: number | null
           user_id: string
         }
         Insert: {
           campaign_id: string
           created_at?: string
           id?: string
+          position?: number | null
           user_id: string
         }
         Update: {
           campaign_id?: string
           created_at?: string
           id?: string
+          position?: number | null
           user_id?: string
         }
         Relationships: [
@@ -6573,6 +6576,10 @@ export type Database = {
       reject_budget_qty_requote: {
         Args: { p_id: string; p_notes?: string }
         Returns: Json
+      }
+      reorder_campaign_favorites: {
+        Args: { _campaign_ids: string[] }
+        Returns: undefined
       }
       revert_store_import: { Args: { _batch_id: string }; Returns: Json }
       set_campaign_favorite: {
