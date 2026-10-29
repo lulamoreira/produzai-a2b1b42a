@@ -92,6 +92,13 @@
       "when": 1793296621085,
       "tag": "0012_campaign_favorites_position",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1793301365113,
+      "tag": "0013_optimize_campaign_quantity_pagination",
+      "breakpoints": true
     }
   ]
 }

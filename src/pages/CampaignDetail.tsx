@@ -132,13 +132,12 @@ const CampaignDetail = () => {
   const { data: campaignKpis } = useQuery({
     queryKey: ["campaign-summary-kpis", campaignId],
     queryFn: async () => {
-      // Count stores of the client
-      const storesRes = await supabase.from("client_stores").select("id", { count: "exact", head: true }).eq("client_id", clientId);
-      // Count pieces + kits of the campaign
-      const piecesRes = await supabase.from("campaign_pieces").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).eq("is_deleted", false);
-      const kitsRes = await supabase.from("campaign_kits").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
-      
-      const pendingInstallationsRes = await supabase.from("campaign_schedules").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).is("completed_at", null);
+      // Independent counts run together; stores already come from the shared store query.
+      const [piecesRes, kitsRes, pendingInstallationsRes] = await Promise.all([
+        supabase.from("campaign_pieces").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).eq("is_deleted", false),
+        supabase.from("campaign_kits").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId),
+        supabase.from("campaign_schedules").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).is("completed_at", null),
+      ]);
       
       // Approvals might be in budget_suppliers or other tables, using 0 for now as user_approvals doesn't exist
       const pendingApprovalsRes = { count: 0 }; 
