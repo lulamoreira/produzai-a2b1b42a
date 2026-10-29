@@ -67,6 +67,21 @@ function FindingCard({ f, children }: { f: RateioFinding; children?: React.React
           <span className="text-sm font-medium">{f.title}</span>
         </div>
         <p className="text-xs text-muted-foreground">{f.detail}</p>
+        {f.breakdown?.length ? (
+          <details className="text-xs pt-0.5">
+            <summary className="cursor-pointer select-none text-primary hover:underline">
+              Ver itens recebidos ({f.breakdown.length})
+            </summary>
+            <ul className="mt-1 ml-1 space-y-0.5">
+              {f.breakdown.map((b, idx) => (
+                <li key={idx} className="flex justify-between gap-2 border-b border-dashed border-border/50 py-0.5">
+                  <span className="truncate">{b.name}</span>
+                  <span className="font-medium shrink-0">{b.quantity}</span>
+                </li>
+              ))}
+            </ul>
+          </details>
+        ) : null}
         {f.storesWith?.length || f.storesWithout?.length ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
             {f.storesWith?.length ? <div><span className="font-semibold">Tem:</span> {f.storesWith.join(", ")}</div> : null}
