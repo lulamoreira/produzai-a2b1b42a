@@ -157,7 +157,7 @@ export async function exportRateioReviewPDF(
             headStyles: { fillColor: BROWN, textColor: WHITE },
             styles: { fontSize: 8, lineColor: BORDER },
             margin: { left: textX, right: M, top: 26 },
-            didDrawPage: () => header(),
+            didDrawPage: () => { header(); },
           });
           y = (doc as any).lastAutoTable.finalY + 5;
         }
