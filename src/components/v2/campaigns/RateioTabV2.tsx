@@ -43,6 +43,8 @@ import MatrixDistributionDashboard from "@/components/Matrix/MatrixDistributionD
 import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
 import CopyQuantitiesDialog from "@/components/Matrix/CopyQuantitiesDialog";
 import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
+import RateioReviewDialog from "@/components/RateioReviewDialog";
+import { ClipboardCheck } from "lucide-react";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { exportRateioGrid } from "@/lib/exportRateioGrid";
 import { useUserRole } from "@/hooks/useUserRole";
@@ -484,6 +486,7 @@ export default function RateioTabV2({
   const [isExecutingAutomation, setIsExecutingAutomation] = useState(false);
   const [copyQtyOpen, setCopyQtyOpen] = useState(false);
   const [showImportMatrix, setShowImportMatrix] = useState(false);
+  const [showReview, setShowReview] = useState(false);
   
   // Excel Paste Modal state
   const [isPasteModalOpen, setIsPasteModalOpen] = useState(false);
@@ -1860,6 +1863,13 @@ export default function RateioTabV2({
                       )}
                       <DropdownMenuItem
                         className="text-xs min-h-[44px] cursor-pointer"
+                        onClick={() => setShowReview(true)}
+                      >
+                        <ClipboardCheck className="w-4 h-4 mr-2" />
+                        REVISAR RATEIO
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-xs min-h-[44px] cursor-pointer"
                         onClick={handleExport}
                         disabled={isExporting}
                       >
@@ -1979,6 +1989,15 @@ export default function RateioTabV2({
                       </Button>
                     </>
                   )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 text-xs gap-2 rounded-lg shadow-sm"
+                    onClick={() => setShowReview(true)}
+                  >
+                    <ClipboardCheck className="w-3.5 h-3.5" />
+                    REVISAR RATEIO
+                  </Button>
 
 
 
@@ -2768,6 +2787,17 @@ export default function RateioTabV2({
         currentKits={kits}
         currentStores={stores}
         onImport={handleImportMatrix}
+      />
+      <RateioReviewDialog
+        open={showReview}
+        onOpenChange={setShowReview}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        stores={stores}
+        qtyMap={qtyMap}
+        campaignName={campaign?.name ?? ""}
+        clientName={client?.name ?? ""}
       />
 
       <Dialog open={isPasteModalOpen} onOpenChange={setIsPasteModalOpen}>
