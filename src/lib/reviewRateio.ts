@@ -151,10 +151,18 @@ export function reviewRateio(
       const elegiveis = campoItem ? group.filter((s) => capacidade(s, campoItem).tem) : group;
       if (elegiveis.length < 2) return; // sem base de comparação, pula este item
       const com = elegiveis.filter((s) => getQ(s, i) > 0);
+      const semRaw = elegiveis.filter((s) => getQ(s, i) <= 0);
+      // Fração das lojas que TÊM a peça e possuem cada campo de capacidade.
+      const fracHave = (campo: CapacityField): number =>
+        com.length ? com.filter((s) => capacidade(s, campo).tem).length / com.length : 0;
+      // Ausência "explicada": campo que >=90% das lojas-com-peça possuem e a loja não possui.
+      const LIMIAR_HAVE = 0.9;
+      const explicada = (loja: Record<string, unknown>): boolean =>
+        campos.some((campo) => fracHave(campo) >= LIMIAR_HAVE && !capacidade(loja, campo).tem);
+      const sem = semRaw.filter((s) => !explicada(s));
       const n = com.length;
-      const N = elegiveis.length;
-      if (n > 0 && n < N) {
-        const sem = elegiveis.filter((s) => getQ(s, i) <= 0);
+      const N = com.length + sem.length; // base sem as lojas incapazes
+      if (n > 0 && sem.length > 0) {
         const withNames = com.map(storeName);
         const withoutNames = sem.map(storeName);
         if (n / N >= 0.5) {
