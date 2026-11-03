@@ -9,6 +9,7 @@ import {
   getExcelColumnLetter,
 } from "@/lib/exportMatrixExcelJS";
 import { getSupplierExcelLabels } from "@/utils/currencyLocale";
+import type { StoreFieldDef } from "@/components/RateioExportColorDialog";
 import type {
   CampaignPiece,
   CampaignKit,
@@ -17,6 +18,15 @@ import type {
   CampaignPieceLocation,
   CampaignPieceSubLocation,
 } from "@/hooks/useMultiClientData";
+
+// Supplier quotation matrices keep their own store columns without changing other exports.
+const SUPPLIER_STORE_FIELDS: StoreFieldDef[] = [
+  { key: "name", label: "NOME DA LOJA" },
+  { key: "store_model", label: "MODELO DE LOJA" },
+  { key: "city", label: "CIDADE" },
+  { key: "state", label: "UF" },
+  { key: "showcase_count", label: "VITRINES" },
+];
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -338,6 +348,7 @@ export async function buildSupplierBudgetWorkbook(
       reservedSheetNames: new Set(["cotação"]),
       skipDashboard: true,
       skipKitTabs: true,
+      storeFields: SUPPLIER_STORE_FIELDS,
     });
     const matrixWs = wb.getWorksheet(matrixSheetName);
     if (matrixWs && params.rateio.unitPriceByPieceId) {
@@ -371,7 +382,7 @@ export async function buildSupplierBudgetWorkbook(
       appendMatrixFinancialFooter({
         ws: matrixWs,
         storeCount: activeStores.length,
-        storeMetaColumnCount: getMatrixStoreFieldsWithHidden().length,
+        storeMetaColumnCount: getMatrixStoreFieldsWithHidden(SUPPLIER_STORE_FIELDS).length,
         unitPricesByColumn: columnItems.map((item) => item.unitPrice),
         moneyFormat: money,
         installation: params.rateio.installation ?? params.installation ?? 0,
@@ -395,7 +406,7 @@ export async function buildSupplierBudgetWorkbook(
           (a.type === b.type ? 0 : a.type === "piece" ? -1 : 1) ||
           (a.id < b.id ? -1 : 1),
       );
-      const metaCols = getMatrixStoreFieldsWithHidden().length;
+      const metaCols = getMatrixStoreFieldsWithHidden(SUPPLIER_STORE_FIELDS).length;
       const totalQtyRow = getMatrixTotalQtyRowNum(activeStores.length);
       const idToColLetter = new Map<string, string>();
       matrixColumns.forEach((c, idx) => {
