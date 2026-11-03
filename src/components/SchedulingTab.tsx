@@ -145,7 +145,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   const [filterLocked, setFilterLocked] = useState("");
   const [filterReschedule, setFilterReschedule] = useState("");
   const [filterModel, setFilterModel] = useState("");
-  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "scheduled" | "noDate" | "approved" | "withTeam" | "withReschedule" | "withOccurrence">("");
+  const [summaryFilter, setSummaryFilter] = useState<"" | "total" | "scheduled" | "noDate" | "approved" | "withTeam" | "withReschedule" | "withOccurrence" | "noOs">("");
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyStoreId, setHistoryStoreId] = useState("");
   const [historyStoreName, setHistoryStoreName] = useState("");
@@ -408,6 +408,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         case "withTeam": return !!sch?.team_id;
         case "withReschedule": return !!sch?.reschedule_enabled;
         case "withOccurrence": return occ?.hasOccurrence && !occ.allResolved;
+        case "noOs": return !sch?.installation_os?.trim();
         default: return true;
       }
     });
