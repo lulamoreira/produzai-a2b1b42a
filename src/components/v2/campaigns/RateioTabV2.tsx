@@ -149,6 +149,7 @@ const RateioRow = memo(({
               {store.nickname && (
                 <span className="text-[10px] text-stone-400 truncate">({store.nickname})</span>
               )}
+              <StoreObservationsButton store={store} canEdit={isTabEditable} />
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <StoreIcon className="w-3 h-3 text-stone-300 shrink-0" />
