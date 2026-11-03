@@ -1051,6 +1051,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           const occ = storeOccurrenceStatus[s.id];
           return occ?.hasOccurrence && !occ.allResolved;
         }).length;
+        const noOs = filteredStores.filter(s => !scheduleMap[s.id]?.installation_os?.trim()).length;
 
         const items = [
           { key: "total" as const, value: total, label: t("common.total"), isTotal: true, dangerWhenPositive: false },
@@ -1060,6 +1061,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
           { key: "withTeam" as const, value: withTeam, label: t("scheduling.withTeam"), isTotal: false, dangerWhenPositive: false },
           { key: "withReschedule" as const, value: withReschedule, label: t("dashboard.withReschedule"), isTotal: false, dangerWhenPositive: false },
           { key: "withOccurrence" as const, value: withOccurrence, label: t("scheduling.withOccurrence"), isTotal: false, dangerWhenPositive: true },
+          { key: "noOs" as const, value: noOs, label: t("scheduling.noOs", "Sem OS"), isTotal: false, dangerWhenPositive: true },
         ];
         return (
           <>
@@ -1125,7 +1127,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
             {summaryFilter && summaryFilter !== "total" && (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <span>{t("filters.filteringBy")} <strong className="text-foreground">{
-                  { scheduled: t("scheduling.scheduled"), noDate: t("scheduling.noDate"), approved: t("filters.approved"), withTeam: t("scheduling.withTeam"), withReschedule: t("dashboard.withReschedule"), withOccurrence: t("scheduling.withOccurrence") }[summaryFilter]
+                  { scheduled: t("scheduling.scheduled"), noDate: t("scheduling.noDate"), approved: t("filters.approved"), withTeam: t("scheduling.withTeam"), withReschedule: t("dashboard.withReschedule"), withOccurrence: t("scheduling.withOccurrence"), noOs: t("scheduling.noOs", "Sem OS") }[summaryFilter]
                 }</strong> ({displayedStores.length})</span>
                 <Button variant="ghost" size="sm" className="h-5 px-1.5 text-xs" onClick={() => setSummaryFilter("")}>✕</Button>
               </div>
