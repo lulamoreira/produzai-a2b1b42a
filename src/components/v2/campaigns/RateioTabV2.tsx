@@ -44,6 +44,7 @@ import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
 import CopyQuantitiesDialog from "@/components/Matrix/CopyQuantitiesDialog";
 import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
 import RateioReviewDialog from "@/components/RateioReviewDialog";
+import StoreObservationsButton from "@/components/v2/campaigns/StoreObservationsButton";
 import { ClipboardCheck } from "lucide-react";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { exportRateioGrid } from "@/lib/exportRateioGrid";
