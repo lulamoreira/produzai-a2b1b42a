@@ -44,6 +44,7 @@ import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
 import CopyQuantitiesDialog from "@/components/Matrix/CopyQuantitiesDialog";
 import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
 import RateioReviewDialog from "@/components/RateioReviewDialog";
+import StoreObservationsButton from "@/components/v2/campaigns/StoreObservationsButton";
 import { ClipboardCheck } from "lucide-react";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
 import { exportRateioGrid } from "@/lib/exportRateioGrid";
@@ -149,6 +150,7 @@ const RateioRow = memo(({
               {store.nickname && (
                 <span className="text-[10px] text-stone-400 truncate">({store.nickname})</span>
               )}
+              <StoreObservationsButton store={store} canEdit={isTabEditable} />
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <StoreIcon className="w-3 h-3 text-stone-300 shrink-0" />
