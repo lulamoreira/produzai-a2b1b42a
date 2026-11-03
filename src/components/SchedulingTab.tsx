@@ -1066,7 +1066,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
         return (
           <>
             <div
-              className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 gap-1 rounded-md"
+              className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-1 rounded-md"
               style={{
                 padding: "8px",
                 background: "var(--bg-surface)",
