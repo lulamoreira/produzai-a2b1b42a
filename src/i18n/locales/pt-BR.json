@@ -785,6 +785,7 @@
     "noDate": "⏳ Sem agendamento",
     "withTeam": "🔧 Com equipe",
     "withOccurrence": "⚠️ Ocorrências",
+    "noOs": "Sem OS",
     "installationTeam": "Equipe de Instalação",
     "noTeam": "Nenhuma equipe",
     "teamIncomplete": "Equipe com dados incompletos (RG, CPF ou Telefone)",

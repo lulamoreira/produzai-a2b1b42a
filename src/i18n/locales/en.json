@@ -784,6 +784,7 @@
     "noDate": "⏳ No date",
     "withTeam": "🔧 With team",
     "withOccurrence": "⚠️ Occurrences",
+    "noOs": "No OS",
     "installationTeam": "Installation Team",
     "noTeam": "No team",
     "teamIncomplete": "Team with incomplete data (ID, Tax ID or Phone)",

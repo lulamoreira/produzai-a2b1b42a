@@ -810,6 +810,7 @@
     "noDate": "⏳ Sin fecha",
     "withTeam": "🔧 Con equipo",
     "withOccurrence": "⚠️ Ocurrencias",
+    "noOs": "Sin OS",
     "installationTeam": "Equipo de Instalación",
     "noTeam": "Ningún equipo",
     "teamIncomplete": "Equipo con datos incompletos (RUT, ID o Teléfono)",
