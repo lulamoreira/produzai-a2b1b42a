@@ -43,7 +43,8 @@ function titleCase(text: string): string {
   return text.split(" ").filter(Boolean).map(titleWord).join(" ");
 }
 
-/** Prefixo de campanha/cliente comum a TODAS as peças do Flow (ex.: "LINDT CH SUMMER27"). */
+/** Prefixo de campanha/cliente comum à MAIORIA das peças do Flow (ex.: "LINDT CH SUMMER27").
+ *  Tolera peças fora do padrão (ex.: "Cubo Expositor ... BOOK") sem zerar o prefixo de todas. */
 export function commonFlowPrefix(sourceNames: string[]): string {
   const STOP = new Set<string>([
     ...SUBGROUPS,
@@ -54,13 +55,29 @@ export function commonFlowPrefix(sourceNames: string[]): string {
     .map((n) => n.replace(/_/g, " ").replace(/\s+/g, " ").trim().split(" ").filter(Boolean))
     .filter((l) => l.length > 0);
   if (lists.length < 2) return "";
-  const minLen = Math.min(...lists.map((l) => l.length));
+
+  // Define a "coorte" pela 1ª palavra mais comum, descartando peças fora do padrão.
+  const firstCounts = new Map<string, number>();
+  for (const l of lists) {
+    const up = l[0].toUpperCase();
+    firstCounts.set(up, (firstCounts.get(up) ?? 0) + 1);
+  }
+  let majorityFirst = "";
+  let majorityCount = 0;
+  for (const [up, count] of firstCounts) {
+    if (count > majorityCount) { majorityCount = count; majorityFirst = up; }
+  }
+  // Só corta se a maioria real compartilhar a 1ª palavra (ao menos 2 peças e ≥ metade).
+  if (majorityCount < 2 || majorityCount < lists.length * 0.5) return "";
+
+  const cohort = lists.filter((l) => l[0].toUpperCase() === majorityFirst);
+  const minLen = Math.min(...cohort.map((l) => l.length));
   const prefix: string[] = [];
   for (let i = 0; i < minLen - 1; i++) {        // sempre deixa pelo menos 1 token (o nome)
-    const token = lists[0][i];
+    const token = cohort[0][i];
     const up = token.toUpperCase();
-    if (STOP.has(up)) break;                    // nunca remove palavra de tipo/local da peça
-    if (!lists.every((l) => l[i].toUpperCase() === up)) break;
+    if (STOP.has(up)) break;                     // nunca remove palavra de tipo/local da peça
+    if (!cohort.every((l) => l[i].toUpperCase() === up)) break;
     prefix.push(token);
   }
   return prefix.join(" ");
