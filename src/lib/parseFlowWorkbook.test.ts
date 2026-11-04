@@ -8,14 +8,14 @@ describe("parseFlowPieceName", () => {
   });
 
   it("move a nota entre parênteses para especificação", () => {
-    const p = parseFlowPieceName("LINDT_SUMMER_INT_SHELFTALK_PAINEL_ 140x20cm (Dobra: 8cm)");
+    const p = parseFlowPieceName("LINDT_SUMMER_INT_SHELFTALK_PAINEL_ 140x20cm (Dobra: 8cm)", "", {}, "LINDT SUMMER");
     expect(p.specification).toBe("(Dobra: 8cm)");
     expect(p.size).toBe("140×20");
     expect(p.name).toBe("Shelftalk Painel");
   });
 
   it("mapeia o token de local e corrige K IT", () => {
-    const p = parseFlowPieceName("LINDT_SUMMER_VIT_K IT_REVESTIMENTO_100x50cm");
+    const p = parseFlowPieceName("LINDT_SUMMER_VIT_K IT_REVESTIMENTO_100x50cm", "", {}, "LINDT SUMMER");
     expect(p.category).toBe("Vitrine");
     expect(p.name).toBe("KIT Revestimento");
     expect(p.subLocation).toBe("Revestimento");
