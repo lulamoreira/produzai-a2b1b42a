@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as XLSX from "xlsx";
-import { parseFlowPieceName, parseFlowWorkbook } from "./parseFlowWorkbook";
+import { commonFlowPrefix, parseFlowPieceName, parseFlowWorkbook } from "./parseFlowWorkbook";
 
 describe("parseFlowPieceName", () => {
   it("extrai a última medida, sem cm e mantendo vírgula", () => {
@@ -23,6 +23,33 @@ describe("parseFlowPieceName", () => {
 
   it("usa a Demanda quando o token é só TDS", () => {
     expect(parseFlowPieceName("LINDT_SUMMER_TDS_DISPLAY_30x30cm", "QUIOSQUE").category).toBe("QUIOSQUE");
+  });
+
+  it("remove o prefixo comum da campanha quando informado", () => {
+    const p = parseFlowPieceName("LINDT_CH_SUMMER27_VIT_SHELFTALK_2020_10x5cm", "", {}, "LINDT CH SUMMER27");
+    expect(p.name).toBe("Shelftalk 2020");
+    expect(p.category).toBe("Vitrine");
+  });
+});
+
+describe("commonFlowPrefix", () => {
+  it("detecta o prefixo comum a todas as peças, sem hardcode de campanha", () => {
+    expect(commonFlowPrefix([
+      "LINDT_CH_SUMMER27_VIT_SHELFTALK_2020",
+      "LINDT_CH_SUMMER27_INT_DISPLAY_30x30cm",
+    ])).toBe("LINDT CH SUMMER27");
+  });
+
+  it("para antes de palavras de tipo/local da peça", () => {
+    expect(commonFlowPrefix([
+      "LINDT_CH_VIT_ADESIVO_10x5cm",
+      "LINDT_CH_VIT_TAG_20x10cm",
+    ])).toBe("LINDT CH");
+  });
+
+  it("retorna vazio com menos de duas peças ou sem prefixo comum", () => {
+    expect(commonFlowPrefix(["LINDT_CH_SUMMER27_VIT_TAG"])).toBe("");
+    expect(commonFlowPrefix(["AAA_VIT_TAG", "BBB_VIT_TAG"])).toBe("");
   });
 });
 
