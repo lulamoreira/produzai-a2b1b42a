@@ -33,6 +33,14 @@ describe("parseFlowPieceName", () => {
 });
 
 describe("commonFlowPrefix", () => {
+  it("ignora peças fora do padrão e usa o prefixo da maioria", () => {
+    expect(commonFlowPrefix([
+      "LINDT_CH_SUMMER27_VIT_SHELFTALK_2020",
+      "LINDT_CH_SUMMER27_INT_DISPLAY_30x30cm",
+      "Cubo Expositor_L15 x A 20 x P 10 cm - BOOK",
+    ])).toBe("LINDT CH SUMMER27");
+  });
+
   it("detecta o prefixo comum a todas as peças, sem hardcode de campanha", () => {
     expect(commonFlowPrefix([
       "LINDT_CH_SUMMER27_VIT_SHELFTALK_2020",
