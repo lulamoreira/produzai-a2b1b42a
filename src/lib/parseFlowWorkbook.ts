@@ -89,14 +89,13 @@ export function parseFlowPieceName(
   text = text.replace(SIZE_RE, " ");
 
   text = text
-    .replace(/^LINDT_SUMMER_?/i, "")
     .replace(/_/g, " ")
     .replace(/\bK\s+IT\b/gi, "KIT")
     .replace(/\s+/g, " ")
     .trim();
 
-  // Remove o prefixo comum da campanha/cliente (ex.: "LINDT CH SUMMER27"),
-  // calculado a partir de TODAS as peças do arquivo, deixando só o nome da peça.
+  // Remove o prefixo comum da campanha/cliente (ex.: calculado a partir de TODAS
+  // as peças do arquivo), deixando só o nome da peça. Regra geral, sem nome fixo.
   if (stripPrefix) {
     const esc = stripPrefix.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     if (esc) text = text.replace(new RegExp(`^${esc}\\b\\s*`, "i"), "").trim();
