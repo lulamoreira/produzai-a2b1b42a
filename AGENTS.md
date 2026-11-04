@@ -10,7 +10,6 @@
 - Matrix prefill uses one unified transfer (sourceQuantityPerStore + applyQuantityToTarget) for any source→target type combination: kits count as min floor of component qty ÷ qty-per-kit, kit targets expand to each component × qty-per-kit; kit components are never mapped individually, so differing kit structures stay consistent.
 - Renegotiation "vigente" campaign is the chain leaf (no other campaign of the client has parent_campaign_id pointing at it); import-source pickers show leaves only, so originals and intermediates can never be picked.
 
-
 - Flow creation uses a shared record builder for kit/component payloads and one code/order counter; kit naming is shared with New Kit to prevent convention drift.
 
 - Individual team exports use a shared labeled-field model for Excel and both clipboard formats so installer documents and vehicle details stay consistent.
