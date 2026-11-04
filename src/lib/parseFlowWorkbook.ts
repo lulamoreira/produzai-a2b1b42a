@@ -43,11 +43,35 @@ function titleCase(text: string): string {
   return text.split(" ").filter(Boolean).map(titleWord).join(" ");
 }
 
+/** Prefixo de campanha/cliente comum a TODAS as peças do Flow (ex.: "LINDT CH SUMMER27"). */
+export function commonFlowPrefix(sourceNames: string[]): string {
+  const STOP = new Set<string>([
+    ...SUBGROUPS,
+    ...LOCATION_WORDS,
+    ...Object.keys(LOCATION_TOKENS),
+  ]);
+  const lists = sourceNames
+    .map((n) => n.replace(/_/g, " ").replace(/\s+/g, " ").trim().split(" ").filter(Boolean))
+    .filter((l) => l.length > 0);
+  if (lists.length < 2) return "";
+  const minLen = Math.min(...lists.map((l) => l.length));
+  const prefix: string[] = [];
+  for (let i = 0; i < minLen - 1; i++) {        // sempre deixa pelo menos 1 token (o nome)
+    const token = lists[0][i];
+    const up = token.toUpperCase();
+    if (STOP.has(up)) break;                    // nunca remove palavra de tipo/local da peça
+    if (!lists.every((l) => l[i].toUpperCase() === up)) break;
+    prefix.push(token);
+  }
+  return prefix.join(" ");
+}
+
 /** Converte o nome técnico do Flow (LINDT_SUMMER_...) em campos da peça. */
 export function parseFlowPieceName(
   rawName: string,
   demanda = "",
   structured: { width?: string; height?: string } = {},
+  stripPrefix = "",
 ): Omit<FlowParsedPiece, "sourceName" | "imageUrls"> {
   let text = rawName.trim();
 
@@ -70,6 +94,13 @@ export function parseFlowPieceName(
     .replace(/\bK\s+IT\b/gi, "KIT")
     .replace(/\s+/g, " ")
     .trim();
+
+  // Remove o prefixo comum da campanha/cliente (ex.: "LINDT CH SUMMER27"),
+  // calculado a partir de TODAS as peças do arquivo, deixando só o nome da peça.
+  if (stripPrefix) {
+    const esc = stripPrefix.trim().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    if (esc) text = text.replace(new RegExp(`^${esc}\\b\\s*`, "i"), "").trim();
+  }
 
   const tokens = text.split(" ").filter(Boolean);
   let category = "";
@@ -149,6 +180,8 @@ export function parseFlowWorkbook(workbook: XLSX.WorkBook): FlowParsedPiece[] {
     return key ? str(row[key]) : "";
   };
 
+  const flowPrefix = commonFlowPrefix(rows.map((row) => get(row, "Nome")).filter(Boolean));
+
   const pieces: FlowParsedPiece[] = [];
   for (const row of rows) {
     const sourceName = get(row, "Nome");
@@ -156,7 +189,7 @@ export function parseFlowWorkbook(workbook: XLSX.WorkBook): FlowParsedPiece[] {
     const parsed = parseFlowPieceName(sourceName, get(row, "Demanda"), {
       width: get(row, "Largura (cm)"),
       height: get(row, "Altura (cm)"),
-    });
+    }, flowPrefix);
     const aplicacao = get(row, "Aplicação");
     const materialidade = get(row, "Materialidade");
     const extra = [aplicacao && `Aplicação: ${aplicacao}`, materialidade && `Materialidade: ${materialidade}`]
