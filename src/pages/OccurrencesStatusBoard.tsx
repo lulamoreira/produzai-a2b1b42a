@@ -116,7 +116,7 @@ export default function OccurrencesStatusBoard() {
                 return <div key={s.store_id} className="rounded-lg border bg-card/50 p-4 opacity-70">{inner}</div>;
               }
               return (
-                <a key={s.store_id} href={`/loja/${s.token}`} className="rounded-lg border bg-card p-4 hover:ring-2 hover:ring-primary/50 transition-all block">
+                <a key={s.store_id} href={`/loja/${s.token}?situacao=1`} className="rounded-lg border bg-card p-4 hover:ring-2 hover:ring-primary/50 transition-all block">
                   {inner}
                 </a>
               );
