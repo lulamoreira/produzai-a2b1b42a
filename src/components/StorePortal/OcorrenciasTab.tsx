@@ -16,6 +16,7 @@ import { useEffectiveTratativaStatuses, type TratativaStatus } from "@/hooks/use
 interface Props {
   data: PortalData;
   agencyId: string;
+  initialSituacao?: boolean;
 }
 
 interface StatusItem {
