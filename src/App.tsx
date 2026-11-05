@@ -50,6 +50,7 @@ const BudgetQtyRequotePortal = lazy(() => import("./pages/BudgetQtyRequotePortal
 const StorePortal = lazy(() => import("./pages/StorePortal"));
 const StoreFormPortal = lazy(() => import("./pages/StoreFormPortal"));
 const OccurrencesPortal = lazy(() => import("./pages/OccurrencesPortal"));
+const OccurrencesStatusBoard = lazy(() => import("./pages/OccurrencesStatusBoard"));
 const HomeV2 = lazy(() => import("./pages/v2/HomeV2").then(m => ({ default: m.HomeV2 })));
 const AgencySuppliers = lazy(() => import("./pages/AgencySuppliers"));
 const ClientsV2 = lazy(() => import("./pages/v2/ClientsV2"));
@@ -128,6 +129,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     "/convite/fornecedor/",
     "/loja/",
     "/ocorrencias-portal/",
+    "/ocorrencias-status/",
     "/ocorrencias/",
     "/ocorrencia/",
     "/unsubscribe",
@@ -313,6 +315,8 @@ const App = () => (
                         <Route path="/ficha/:token" element={<StoreFormPortal />} />
                         <Route path="/ocorrencias-portal/t/:token" element={<OccurrencesPortal />} />
                         <Route path="/ocorrencias-portal/:campaignId" element={<OccurrencesPortal />} />
+                        <Route path="/ocorrencias-status/t/:token" element={<OccurrencesStatusBoard />} />
+                        <Route path="/ocorrencias-status/:campaignId" element={<OccurrencesStatusBoard />} />
                         <Route path="/ocorrencias/:campaignId" element={<PublicOccurrence />} />
                         <Route path="/ocorrencia/:occurrenceId" element={<PublicOccurrenceDetail />} />
                         <Route path="/unsubscribe" element={<Unsubscribe />} />
