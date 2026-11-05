@@ -6420,6 +6420,10 @@ export type Database = {
         Args: { p_campaign_id: string }
         Returns: string
       }
+      get_occurrences_summary_by_token: {
+        Args: { p_token: string }
+        Returns: Json
+      }
       get_portal_directory_by_token: {
         Args: { p_token: string }
         Returns: Json

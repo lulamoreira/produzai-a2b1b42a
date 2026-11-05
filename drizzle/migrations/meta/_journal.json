@@ -99,6 +99,13 @@
       "when": 1793301365113,
       "tag": "0013_optimize_campaign_quantity_pagination",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793906358286,
+      "tag": "0014_occurrences_status_board_rpc",
+      "breakpoints": true
     }
   ]
 }
