@@ -59,6 +59,18 @@ function formatDateBR(iso: string | null | undefined) {
   return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
+function formatReporter(reporterType: string | null | undefined): string {
+  if (!reporterType) return "—";
+  if (reporterType.includes(":")) {
+    return reporterType.split(":").slice(1).join(":").trim() || reporterType;
+  }
+  const map: Record<string, string> = {
+    lojista: "Lojista", fornecedor: "Fornecedor", agencia: "Agência", cliente: "Cliente",
+  };
+  const key = reporterType.toLowerCase();
+  return map[key] || (reporterType.charAt(0).toUpperCase() + reporterType.slice(1));
+}
+
 function buildWhatsAppMessage(r: any, data: PortalData, statuses: StatusItem[]) {
   const peca = data.pecas.find(p => p.id === r.loja_a_loja_peca_id);
   const tipo = data.tipos.find(t => t.id === r.tipo_id);
@@ -77,6 +89,7 @@ function buildWhatsAppMessage(r: any, data: PortalData, statuses: StatusItem[]) 
     `🔴 Motivo: ${motivo?.descricao || "—"}`,
     `📊 Status: ${statusInfo.label}`,
     `📅 Abertura: ${formatDateBR(r.created_at)}`,
+    `👤 Reportado por: ${formatReporter(r.reporter_type)}`,
     r.description ? `📝 Descrição: ${r.description}` : null,
     r.expected_resolution_date ? `⏰ Previsão de atendimento: ${formatDateTimeBR(r.expected_resolution_date)}` : null,
     r.tratativa_notes ? `📋 Tratativa: ${r.tratativa_notes}` : null,
@@ -138,9 +151,45 @@ function OcorrenciaCard({ r, data, statuses }: { r: any; data: PortalData; statu
           <Row label="Motivo" value={motivo?.descricao || "—"} />
           <Row label="Prioridade" value={r.priority || "—"} />
           <Row label="Status" value={statusInfo.label} />
+          <Row label="Reportado por" value={formatReporter(r.reporter_type)} />
+          <Row label="Aberta em" value={formatDateTimeBR(r.created_at)} />
           {r.description && <Row label="Descrição" value={r.description} multiline />}
           {r.expected_resolution_date && <Row label="Previsão de atendimento" value={formatDateTimeBR(r.expected_resolution_date)} />}
           {r.tratativa_notes && <Row label="Tratativa" value={r.tratativa_notes} multiline />}
+          {r.needs_reinstallation && (
+            <Row
+              label="Reinstalação"
+              value={
+                "Necessária" +
+                (r.reinstallation_scheduled_at ? ` — ${formatDateTimeBR(r.reinstallation_scheduled_at)}` : "") +
+                (r.reinstallation_os ? ` | OS: ${r.reinstallation_os}` : "")
+              }
+            />
+          )}
+          {Array.isArray(r.photo_urls) && r.photo_urls.length > 0 && (
+            <div>
+              <span className="text-xs font-medium text-muted-foreground">Fotos do reporte</span>
+              <div className="grid grid-cols-3 gap-2 mt-1">
+                {r.photo_urls.map((url: string, i: number) => (
+                  <a key={i} href={url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="aspect-square rounded-md overflow-hidden border block">
+                    <img src={getThumbnailUrl(url, 200)} alt={`Foto ${i + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+          {Array.isArray(r.resolution_photo_urls) && r.resolution_photo_urls.length > 0 && (
+            <div>
+              <span className="text-xs font-medium text-muted-foreground">Fotos da resolução</span>
+              <div className="grid grid-cols-3 gap-2 mt-1">
+                {r.resolution_photo_urls.map((url: string, i: number) => (
+                  <a key={i} href={url} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="aspect-square rounded-md overflow-hidden border block">
+                    <img src={getThumbnailUrl(url, 200)} alt={`Resolução ${i + 1}`} loading="lazy" decoding="async" className="w-full h-full object-cover" />
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-2 pt-1">
             <Button size="sm" variant="outline" onClick={(e) => { e.stopPropagation(); handleShare(); }} className="flex-1 gap-1.5">
