@@ -20,7 +20,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle, Wrench, RefreshCw, ClipboardCheck, Check, X, Trash2, Clock, RotateCw, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, ExternalLink, MessageCircle } from "lucide-react";
+import { AlertTriangle, Wrench, RefreshCw, ClipboardCheck, Check, X, Trash2, Clock, RotateCw, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, ExternalLink, MessageCircle, ClipboardList } from "lucide-react";
 import { toast } from "sonner";
 import { criarNotificacao } from "@/lib/criarNotificacao";
 import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
@@ -518,6 +518,15 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
             >
               <ExternalLink className="h-3.5 w-3.5" />
               Abrir Portal Público
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8 gap-1.5"
+              onClick={() => window.open(`/ocorrencias-status/${campaignId}`, '_blank')}
+            >
+              <ClipboardList className="h-3.5 w-3.5" />
+              Painel de Status
             </Button>
             <Button
               variant="outline"
