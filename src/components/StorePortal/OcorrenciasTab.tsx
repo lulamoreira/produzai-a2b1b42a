@@ -16,6 +16,7 @@ import { useEffectiveTratativaStatuses, type TratativaStatus } from "@/hooks/use
 interface Props {
   data: PortalData;
   agencyId: string;
+  initialSituacao?: boolean;
 }
 
 interface StatusItem {
@@ -216,7 +217,7 @@ function Row({ label, value, multiline }: { label: string; value: string; multil
   );
 }
 
-export default function OcorrenciasTab({ data, agencyId }: Props) {
+export default function OcorrenciasTab({ data, agencyId, initialSituacao }: Props) {
   const [selectedPeca, setSelectedPeca] = useState<any>(null);
   const [blockedPeca, setBlockedPeca] = useState<any>(null);
   const [reporterType, setReporterType] = useState("lojista");
@@ -227,7 +228,7 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [reports, setReports] = useState<any[]>([]);
-  const [showSituacao, setShowSituacao] = useState(false);
+  const [showSituacao, setShowSituacao] = useState(!!initialSituacao);
   const [allReports, setAllReports] = useState<any[]>([]);
   const [loadingAll, setLoadingAll] = useState(false);
   const { statuses } = useEffectiveTratativaStatuses(data.campaign.client_id);
@@ -300,6 +301,10 @@ export default function OcorrenciasTab({ data, agencyId }: Props) {
   }, [data.campaign.id, data.store.id]);
 
   useEffect(() => { loadReports(); }, [loadReports]);
+
+  useEffect(() => {
+    if (initialSituacao) loadAllReports();
+  }, [initialSituacao, loadAllReports]);
 
   useEffect(() => {
     const channel = supabase

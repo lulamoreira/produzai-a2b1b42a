@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { Store, AlertTriangle, Loader2, Clock, LogOut, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -106,6 +106,8 @@ function getDeadlineStatus(config: PortalData["portal_config"], key: DeadlineKey
 
 export default function StorePortal() {
   const { token } = useParams<{ token: string }>();
+  const [searchParams] = useSearchParams();
+  const wantSituacao = searchParams.get("situacao") === "1";
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<PortalData | null>(null);
@@ -222,7 +224,9 @@ export default function StorePortal() {
   const agencyName = data.campaign.clients.agencies.name;
   const storeName = data.store.nickname || data.store.name;
   const storeLocation = [data.store.city, data.store.state].filter(Boolean).join("/");
-  const defaultTab = enabledTabs.length > 0 ? enabledTabs[0].value : "ocorrencias";
+  const defaultTab = wantSituacao && enabledTabs.some((t) => t.value === "ocorrencias")
+    ? "ocorrencias"
+    : (enabledTabs.length > 0 ? enabledTabs[0].value : "ocorrencias");
 
   return (
     <div className="min-h-screen bg-background">
@@ -305,7 +309,7 @@ export default function StorePortal() {
                           </AlertDescription>
                         </Alert>
                       )}
-                      {tab.value === "ocorrencias" && <OcorrenciasTab data={data} agencyId={agencyId} />}
+                      {tab.value === "ocorrencias" && <OcorrenciasTab data={data} agencyId={agencyId} initialSituacao={wantSituacao} />}
                       {tab.value === "manutencao" && <ManutencaoTab data={data} agencyId={agencyId} />}
                       {tab.value === "reposicoes" && <ReposicoesTab data={data} agencyId={agencyId} />}
                       {tab.value === "conformidade" && <ConformidadeTab data={data} agencyId={agencyId} />}
