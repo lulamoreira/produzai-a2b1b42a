@@ -11,6 +11,7 @@
 - [x] Test the rule and confirm the real chain structure read-only, without changing campaign records.
 
 # Capacity-aware Rateio review
+- [ ] Add CHECK 1b for lone-model stores without changing existing checks or saved data; verify minimum base, receipt threshold and capacity exclusions.
 - [x] Pass client capacity labels into the read-only review and add eligible-store/proportional checks, preserving checks 2–4.
 - [x] Verify 17 tests and the authenticated Natal review: capacity group displays 20 findings; no campaign data changed.
 
