@@ -10,7 +10,8 @@ export type RateioFindingType =
   | "quantidade_abaixo"
   | "modelo_incompativel"
   | "era_incompativel"
-  | "vitrine_excesso";
+  | "vitrine_excesso"
+  | "loja_unica";
 
 export type RateioFinding = {
   severity: RateioFindingSeverity;
@@ -37,6 +38,7 @@ const TYPE_ORDER: Record<RateioFindingType, number> = {
   modelo_incompativel: 2,
   era_incompativel: 3,
   vitrine_excesso: 4,
+  loja_unica: 5,
 };
 
 type Item = { kind: "piece" | "kit"; src: any };
@@ -191,6 +193,44 @@ export function reviewRateio(
     });
   }
 
+  // CHECK 1b — lojas únicas do modelo: a CHECK 1 só compara dentro de um modelo com 2+ lojas,
+  // então uma loja que é a única do seu modelo (ex.: um Outlet, um Quiosque) nunca é revisada.
+  // Aqui comparamos essa loja contra TODAS as participantes (consciente de capacidade),
+  // apontando itens presentes na MAIORIA das lojas comparáveis que faltam nela.
+  const loneStores = participants.filter((s) => {
+    const m = norm(s.store_model);
+    const g = m ? groups.get(m) : undefined;
+    return !g || g.length < 2;
+  });
+  for (const loja of loneStores) {
+    const modelo = (loja.store_model ?? "").toString().trim() || "(sem modelo)";
+    items.forEach((it, i) => {
+      if (getQ(loja, i) > 0) return;                       // só o que FALTA nesta loja
+      const campoItem = linkField(it.src);
+      if (campoItem && !capacidade(loja, campoItem).tem) return; // sem capacidade → ausência esperada
+      const elegiveis = participants.filter(
+        (s) => s.id !== loja.id && (!campoItem || capacidade(s, campoItem).tem),
+      );
+      if (elegiveis.length < 4) return;                    // base pequena demais p/ padrão
+      const com = elegiveis.filter((s) => getQ(s, i) > 0);
+      if (com.length / elegiveis.length < 0.5) return;     // só itens que a MAIORIA tem
+      const fracHave = (campo: CapacityField): number =>
+        com.length ? com.filter((s) => capacidade(s, campo).tem).length / com.length : 0;
+      const explicada = campos.some((campo) => fracHave(campo) >= 0.9 && !capacidade(loja, campo).tem);
+      if (explicada) return;                               // ausência explicada por capacidade
+      findings.push({
+        severity: "media",
+        type: "loja_unica",
+        title: "Falta item que a maioria das lojas tem",
+        detail: `A loja ${storeName(loja)} (modelo ${modelo}, única desse modelo) não recebe '${it.src.name ?? ""}', presente em ${com.length} de ${elegiveis.length} lojas comparáveis.`,
+        ...meta(it),
+        storeModel: modelo,
+        storeName: storeName(loja),
+        storesWith: com.map(storeName),
+      });
+    });
+  }
+
   // CHECK 2 — modelo_incompativel
   const modelSet = new Set(participants.map((s) => norm(s.store_model)).filter(Boolean));
   const flagged = new Set<string>();
@@ -336,6 +376,7 @@ export function reviewRateio(
 
 export const FINDING_TYPE_LABELS: Record<RateioFindingType, string> = {
   modelo_divergente: "Divergência entre lojas do mesmo modelo",
+  loja_unica: "Loja única do modelo",
   quantidade_abaixo: "Quantidade abaixo das lojas iguais",
   modelo_incompativel: "Modelo incompatível",
   era_incompativel: "Era (Novo × Antigo) incompatível",

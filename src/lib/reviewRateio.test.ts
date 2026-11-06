@@ -8,6 +8,72 @@ const stores = [
 ];
 
 describe("reviewRateio", () => {
+  const lonePieces = [{ id: "p1", name: "Banner" }, { id: "base", name: "Base" }];
+  const loneStores = (count: number) => [
+    { id: "o", name: "Outlet", store_model: "OUTLET", showcase_count: 1 },
+    ...Array.from({ length: count }, (_, i) => ({
+      id: `l${i}`, name: `Loja ${i}`, store_model: "LOJA", showcase_count: 1,
+    })),
+  ];
+  const loneQty = (count: number, receivers: number) => Object.fromEntries([
+    ["o-base", 1],
+    ...Array.from({ length: count }, (_, i) => [`l${i}-base`, 1]),
+    ...Array.from({ length: receivers }, (_, i) => [`l${i}-p1`, 1]),
+  ]);
+  const loneHits = (findings: ReturnType<typeof reviewRateio>) => findings.filter(
+    (finding) => String(finding.type) === "loja_unica" && finding.itemName === "Banner",
+  );
+
+  it("revisa loja única do modelo comparando com todas as lojas", () => {
+    const hits = loneHits(reviewRateio(lonePieces, [], [], loneStores(5), loneQty(5, 5)));
+    expect(hits).toHaveLength(1);
+    expect(hits[0]?.storeName).toBe("Outlet");
+    expect(hits[0]?.storesWith).toEqual(["Loja 0", "Loja 1", "Loja 2", "Loja 3", "Loja 4"]);
+  });
+
+  it("loja única exige quatro comparáveis e aceita exatamente 50% recebendo", () => {
+    expect(loneHits(reviewRateio(lonePieces, [], [], loneStores(3), loneQty(3, 3)))).toHaveLength(0);
+    expect(loneHits(reviewRateio(lonePieces, [], [], loneStores(4), loneQty(4, 2)))).toHaveLength(1);
+    expect(loneHits(reviewRateio(lonePieces, [], [], loneStores(4), loneQty(4, 1)))).toHaveLength(0);
+  });
+
+  it("loja única ignora item já recebido e lojas não participantes ou com modelo repetido", () => {
+    expect(loneHits(reviewRateio(lonePieces, [], [], loneStores(5), { ...loneQty(5, 5), "o-p1": 1 }))).toHaveLength(0);
+    const quantities = loneQty(5, 5);
+    delete quantities["o-base"];
+    expect(loneHits(reviewRateio(lonePieces, [], [], loneStores(5), quantities))).toHaveLength(0);
+    const repeated = [...loneStores(5), { id: "o2", name: "Outro Outlet", store_model: " outlet ", showcase_count: 1 }];
+    expect(loneHits(reviewRateio(lonePieces, [], [], repeated, { ...loneQty(5, 5), "o2-base": 1 }))).toHaveLength(0);
+  });
+
+  it("loja única ignora ausência sem capacidade vinculada e exclui comparáveis inelegíveis", () => {
+    const pieces = [{ id: "p1", name: "Banner", category: "Vitrine" }, lonePieces[1]];
+    const noShowcase = loneStores(5).map((store) => ({ ...store, showcase_count: store.id === "o" ? 0 : 1 }));
+    expect(loneHits(reviewRateio(pieces, [], [], noShowcase, loneQty(5, 5)))).toHaveLength(0);
+    const smallBase = loneStores(5).map((store) => ({ ...store, showcase_count: ["l3", "l4"].includes(store.id) ? 0 : 1 }));
+    expect(loneHits(reviewRateio(pieces, [], [], smallBase, loneQty(5, 3)))).toHaveLength(0);
+  });
+
+  it.each([{ withCapacity: 9, expected: 0 }, { withCapacity: 8, expected: 1 }])(
+    "loja única ignora ausência explicada só a partir de 90% ($withCapacity/10)",
+    ({ withCapacity, expected }) => {
+      const stores = loneStores(10).map((store, i) => ({
+        ...store, custom_field_18: i > 0 && i <= withCapacity ? "true" : "false",
+      }));
+      expect(loneHits(reviewRateio(lonePieces, [], [], stores, loneQty(10, 10),
+        [{ index: 18, label: "Café|boolean" }]))).toHaveLength(expected);
+    },
+  );
+
+  it("revisa loja participante sem modelo e usa quantidade derivada de kits", () => {
+    const stores = loneStores(5).map((store) => ({ ...store, store_model: store.id === "o" ? "" : store.store_model }));
+    const findings = reviewRateio([lonePieces[1]], [{ id: "k", name: "Banner" }],
+      [{ kit_id: "k", piece_id: "p1", quantity: 2 }], stores,
+      { ...loneQty(5, 0), ...Object.fromEntries(Array.from({ length: 5 }, (_, i) => [`l${i}-p1`, 2])) });
+    expect(loneHits(findings)[0]?.storeName).toBe("Outlet");
+    expect(loneHits(findings)[0]?.storeModel).toBe("(sem modelo)");
+  });
+
   it("aponta item faltando em loja do mesmo modelo", () => {
     const pieces = [{ id: "p1", name: "Banner" }, { id: "p2", name: "Base" }];
     const withoutCapacityDifference = stores.map((store) => ({ ...store, showcase_count: 0 }));
