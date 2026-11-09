@@ -25,6 +25,8 @@ import { toast } from "sonner";
 import { criarNotificacao } from "@/lib/criarNotificacao";
 import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
 import PieceMultiSelectFilter from "./PieceMultiSelectFilter";
+import OccurrenceDateRangeFilter from "./OccurrenceDateRangeFilter";
+import { isOpenedWithinRange } from "@/lib/occurrenceDateFilter";
 import { useTableSort } from "@/hooks/useTableSort";
 import SortableHeader from "./SortableHeader";
 import { useStorePortalConfig } from "@/hooks/useStorePortalConfig";
@@ -217,6 +219,8 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
   const [filterPriority, setFilterPriority] = useState<string>("all");
   const [filterStore, setFilterStore] = useState<string>("all");
   const [filterPieceIds, setFilterPieceIds] = useState<string[]>([]);
+  const [filterOpenedFrom, setFilterOpenedFrom] = useState<Date | undefined>();
+  const [filterOpenedTo, setFilterOpenedTo] = useState<Date | undefined>();
   // Extra KPI-driven filters: "all" | "valid" | "atrasadas" | "reinst"
   const [kpiFilter, setKpiFilter] = useState<"all" | "valid" | "atrasadas" | "reinst">("all");
   const [occViewMode, setOccViewMode] = useState<"list" | "cards">("list");
@@ -313,6 +317,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
       if (filterPriority !== "all" && o.priority !== filterPriority) return false;
       if (filterStore !== "all" && o.store_id !== filterStore) return false;
       if (filterPieceIds.length > 0 && !filterPieceIds.includes(o.loja_a_loja_peca_id)) return false;
+      if (!isOpenedWithinRange(o.created_at, filterOpenedFrom, filterOpenedTo)) return false;
       
       if (kpiFilter === "valid" && !countsAsOccurrence(o.tratativa_status)) return false;
       if (kpiFilter === "atrasadas" && !isOverdue(o)) return false;
@@ -321,7 +326,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
       }
       return true;
     });
-  }, [occList, filterStatus, filterPriority, filterStore, filterPieceIds, kpiFilter, tratativaStatuses]);
+  }, [occList, filterStatus, filterPriority, filterStore, filterPieceIds, filterOpenedFrom, filterOpenedTo, kpiFilter, tratativaStatuses]);
 
   /* Other KPIs */
   const openMaintenance = useMemo(() => (maintenance ?? []).filter((m: any) => ["aberto", "em_andamento"].includes(m.status)).length, [maintenance]);
@@ -736,6 +741,12 @@ _Relatório gerado pelo ProduzAI_ 🚀`;
               onChange={setFilterPieceIds}
               className="w-[240px]"
               triggerClassName="h-8 text-xs"
+            />
+            <OccurrenceDateRangeFilter
+              from={filterOpenedFrom}
+              to={filterOpenedTo}
+              onFromChange={setFilterOpenedFrom}
+              onToChange={setFilterOpenedTo}
             />
           </div>
 
