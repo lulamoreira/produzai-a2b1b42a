@@ -320,6 +320,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
       if (filterStatus !== "all" && status !== filterStatus) return false;
       if (filterPriority !== "all" && o.priority !== filterPriority) return false;
       if (filterStore !== "all" && o.store_id !== filterStore) return false;
+      if (!matchesOccurrenceStoreName(o, filterStoreSearch)) return false;
       if (filterPieceIds.length > 0 && !filterPieceIds.includes(o.loja_a_loja_peca_id)) return false;
       if (!isOpenedWithinRange(o.created_at, filterOpenedFrom, filterOpenedTo)) return false;
       
@@ -330,7 +331,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
       }
       return true;
     });
-  }, [occList, filterStatus, filterPriority, filterStore, filterPieceIds, filterOpenedFrom, filterOpenedTo, kpiFilter, tratativaStatuses]);
+  }, [occList, filterStatus, filterPriority, filterStore, filterStoreSearch, filterPieceIds, filterOpenedFrom, filterOpenedTo, kpiFilter, tratativaStatuses]);
 
   /* Other KPIs */
   const openMaintenance = useMemo(() => (maintenance ?? []).filter((m: any) => ["aberto", "em_andamento"].includes(m.status)).length, [maintenance]);
@@ -752,6 +753,27 @@ _Relatório gerado pelo ProduzAI_ 🚀`;
               onFromChange={setFilterOpenedFrom}
               onToChange={setFilterOpenedTo}
             />
+            {/* Busca por nome da loja */}
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={filterStoreSearch}
+                onChange={(e) => setFilterStoreSearch(e.target.value)}
+                placeholder="Buscar loja..."
+                aria-label="Buscar loja pelo nome"
+                className="h-8 w-[220px] pl-8 pr-7 text-xs"
+              />
+              {filterStoreSearch && (
+                <button
+                  type="button"
+                  onClick={() => setFilterStoreSearch("")}
+                  aria-label="Limpar busca de loja"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Occurrences — Lista ou Cards */}
