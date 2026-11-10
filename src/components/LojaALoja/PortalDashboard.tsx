@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
@@ -20,13 +21,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle, Wrench, RefreshCw, ClipboardCheck, Check, X, Trash2, Clock, RotateCw, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, ExternalLink, MessageCircle, ClipboardList } from "lucide-react";
+import { AlertTriangle, Wrench, RefreshCw, ClipboardCheck, Check, X, Trash2, Clock, RotateCw, AlertCircle, CheckCircle2, ChevronDown, ChevronRight, ExternalLink, MessageCircle, ClipboardList, Search } from "lucide-react";
 import { toast } from "sonner";
 import { criarNotificacao } from "@/lib/criarNotificacao";
 import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
 import PieceMultiSelectFilter from "./PieceMultiSelectFilter";
 import OccurrenceDateRangeFilter from "./OccurrenceDateRangeFilter";
 import { isOpenedWithinRange } from "@/lib/occurrenceDateFilter";
+import { matchesOccurrenceStoreName } from "@/lib/occurrenceStoreSearch";
 import { useTableSort } from "@/hooks/useTableSort";
 import SortableHeader from "./SortableHeader";
 import { useStorePortalConfig } from "@/hooks/useStorePortalConfig";
@@ -221,6 +223,8 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
   const [filterPieceIds, setFilterPieceIds] = useState<string[]>([]);
   const [filterOpenedFrom, setFilterOpenedFrom] = useState<Date | undefined>();
   const [filterOpenedTo, setFilterOpenedTo] = useState<Date | undefined>();
+  // Busca por nome de loja digitada na barra de filtros
+  const [filterStoreSearch, setFilterStoreSearch] = useState("");
   // Extra KPI-driven filters: "all" | "valid" | "atrasadas" | "reinst"
   const [kpiFilter, setKpiFilter] = useState<"all" | "valid" | "atrasadas" | "reinst">("all");
   const [occViewMode, setOccViewMode] = useState<"list" | "cards">("list");
