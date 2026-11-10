@@ -6281,6 +6281,14 @@ export type Database = {
         Returns: Json
       }
       approve_budget_qty_requote: { Args: { p_id: string }; Returns: Json }
+      bulk_update_occurrence_status: {
+        Args: {
+          _campaign_id: string
+          _occurrence_ids: string[]
+          _status: string
+        }
+        Returns: number
+      }
       campaigns_set_active: { Args: never; Returns: undefined }
       can_edit_prices: { Args: { p_campaign_id: string }; Returns: boolean }
       can_edit_rateio: { Args: { p_campaign_id: string }; Returns: boolean }
