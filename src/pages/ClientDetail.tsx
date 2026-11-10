@@ -68,6 +68,9 @@ import StoreFormFieldsConfig from "@/components/client/StoreFormFieldsConfig";
 import { getCountryConfig, SUPPORTED_COUNTRIES, type CountryConfig } from "@/lib/countryConfig";
 import { getStoreIdentityKey, normalizeStoreIdentityCnpj, normalizeStoreIdentityName } from "@/lib/storeHelpers";
 import { useLanguage } from "@/hooks/useLanguage";
+import { useCampaignCycles } from "@/hooks/useCampaignCycles";
+import { CampaignCycleReviewDialog } from "@/components/client/CampaignCycleReviewDialog";
+import { CampaignCycleFolders } from "@/components/client/CampaignCycleFolders";
 
 // Helper to parse "Label|type" format from custom field labels
 const FIELD_TYPES = [
@@ -396,6 +399,7 @@ const ClientDetail = () => {
   useLanguage((client as any)?.language);
   const { t } = useTranslation();
   const { data: campaigns = [], isLoading: loadingCampaigns } = useCampaigns(clientId);
+  const { data: cycleAssignments = [], save: saveCycles, isLoading: loadingCycles, isError: cyclesError } = useCampaignCycles(clientId);
   const { data: favoriteIds } = useFavoriteIds();
   const toggleFavorite = useToggleFavorite();
 
@@ -1562,6 +1566,14 @@ const ClientDetail = () => {
               </div>
             )}
 
+            {canEditCampaigns && campaignFamilies.length > 0 && (
+              <div className="flex justify-end mt-4">
+                <CampaignCycleReviewDialog families={campaignFamilies} assignments={cycleAssignments}
+                  onSave={values => saveCycles.mutateAsync(values)} disabled={loadingCycles || cyclesError} />
+              </div>
+            )}
+            {cyclesError && <p role="alert" className="text-sm text-destructive mt-3">{t('campaignCycles.loadError', { defaultValue: 'Não foi possível carregar as pastas. Atualize a página para tentar novamente.' })}</p>}
+
             {loadingCampaigns ? (
               <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
             ) : allVisibleCampaigns.length === 0 ? (
@@ -1579,8 +1591,8 @@ const ClientDetail = () => {
             ) : (
               <div className="mt-6">
                 <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
-                  <div className="grid gap-3 sm:grid-cols-1 md:grid-cols-1 lg:grid-cols-1">
-                    {visibleFamilies.map((fam) => (
+                  <CampaignCycleFolders families={visibleFamilies} assignments={cycleAssignments}>
+                    {(fam) => (
                       <React.Fragment key={fam.parent.id}>
                         <SortableContext items={[fam.parent.id]} strategy={rectSortingStrategy}>
                           <SortableCampaignCard
@@ -1615,8 +1627,8 @@ const ClientDetail = () => {
                           </div>
                         )}
                       </React.Fragment>
-                    ))}
-                  </div>
+                    )}
+                  </CampaignCycleFolders>
                 </DndContext>
               </div>
 
