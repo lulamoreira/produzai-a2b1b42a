@@ -39,3 +39,6 @@
 # Occurrences store-name search
 - [x] Add a store-name search field to the Loja a Loja occurrences filter bar, accent- and case-insensitive, with a clear button.
 - [x] Test the matching rule and verify the live filter, clear action, and layout at 1440 and 1243 widths without changing saved occurrences.
+# Bulk occurrence status change
+- [x] Let admins and masters tick occurrences (or all visible after filters) and change their status at once, revalidated on the server.
+- [x] Test the permission rule and verify the live flow on two Cuiabá occurrences, then restore their original status.
