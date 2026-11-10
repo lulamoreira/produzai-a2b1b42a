@@ -19,6 +19,7 @@ import { Store, Copy, Search, ArrowUp, ArrowDown, ArrowUpDown, AlertTriangle, Ar
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { isClassifiableStore } from "@/lib/lojaALojaClassifiable";
 
 interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boolean }
 
@@ -96,7 +97,7 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
   const sortedStores = useMemo(() => {
     const getVal = (s: any) => (s?.[sortField] ?? "").toString();
     return [...stores]
-      .filter((s) => (s.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao')
+      .filter((s) => isClassifiableStore(s.tipo_entrega))
       .sort((a, b) =>
         getVal(a).localeCompare(getVal(b), "pt-BR", { numeric: true, sensitivity: "base" })
       );
@@ -156,7 +157,7 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
   }, [lojas]);
   const isUnclassified = (storeId: string) => !storesWithAnyAssignment.has(storeId);
   const unclassifiedCount = useMemo(
-    () => stores.filter((s) => isUnclassified(s.id)).length,
+    () => stores.filter((s) => isClassifiableStore(s.tipo_entrega) && isUnclassified(s.id)).length,
     [stores, storesWithAnyAssignment]
   );
 
@@ -485,6 +486,11 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
                 <td className="px-3 py-1.5">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-medium truncate max-w-[240px] text-foreground">{store.name}</span>
+                    {store.tipo_entrega === "frete_apenas" && (
+                      <span title="Loja recebe só frete, sem instalação" className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground shrink-0">
+                        Só frete
+                      </span>
+                    )}
                     {unclassified && (
                       <span title="Sem classificação" className="inline-flex items-center gap-1 rounded-full bg-amber-200/70 dark:bg-amber-900/40 px-1.5 py-0.5 text-[9px] font-semibold text-amber-900 dark:text-amber-200 shrink-0">
                         <AlertTriangle className="h-2.5 w-2.5" /> Nova
