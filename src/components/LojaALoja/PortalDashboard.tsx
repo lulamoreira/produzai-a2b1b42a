@@ -359,9 +359,15 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
       return next;
     });
   const bulkStatusOptions = useMemo(() => {
-    const builtin = ["aberta", "em_andamento", "resolvida", "nao_procede"].map((v) => ({
-      value: v,
-      label: getTratativaDisplay(v, tratativaStatuses).label === v ? "Não procede" : getTratativaDisplay(v, tratativaStatuses).label,
+    const builtinLabels: Record<string, string> = {
+      aberta: "Aberta",
+      em_andamento: "Em andamento",
+      resolvida: "Resolvida",
+      nao_procede: "Não procede",
+    };
+    const builtin = Object.entries(builtinLabels).map(([value, fallback]) => ({
+      value,
+      label: (tratativaStatuses.find((s: any) => s.value === value) as any)?.label ?? fallback,
     }));
     const custom = tratativaStatuses
       .filter((s: any) => !["aberta", "em_andamento", "resolvida", "nao_procede"].includes(s.value) && s.ativo !== false)
