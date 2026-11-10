@@ -35,6 +35,10 @@ import { useStorePortalConfig } from "@/hooks/useStorePortalConfig";
 import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
 import { useEffectiveTratativaStatuses } from "@/hooks/useLalTratativaStatuses";
 import { isLalOccurrenceOverdue, type LalOverdueOccurrence } from "@/lib/lalOccurrenceOverdue";
+import { useUserRole } from "@/hooks/useUserRole";
+import { Checkbox } from "@/components/ui/checkbox";
+import BulkOccurrenceStatusBar from "./BulkOccurrenceStatusBar";
+import { canBulkChangeOccurrenceStatus, visibleSelection, headerCheckState, countDistinctStores } from "@/lib/occurrenceBulkStatus";
 
 interface CollapsibleCardProps {
   title: string;
@@ -229,6 +233,10 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
   const [kpiFilter, setKpiFilter] = useState<"all" | "valid" | "atrasadas" | "reinst">("all");
   const [occViewMode, setOccViewMode] = useState<"list" | "cards">("list");
   const [selectedOccurrence, setSelectedOccurrence] = useState<any | null>(null);
+  // Seleção para alteração de status em lote (somente admin/master)
+  const { role } = useUserRole();
+  const canBulk = canBulkChangeOccurrenceStatus(role);
+  const [bulkSelected, setBulkSelected] = useState<Set<string>>(() => new Set());
 
   // ─── Deep-link: abrir card específico ao chegar via notificação ───
   const [searchParams, setSearchParams] = useSearchParams();
@@ -332,6 +340,34 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
       return true;
     });
   }, [occList, filterStatus, filterPriority, filterStore, filterStoreSearch, filterPieceIds, filterOpenedFrom, filterOpenedTo, kpiFilter, tratativaStatuses]);
+
+  // Seleção em lote: só conta o que está visível com os filtros atuais
+  const visibleOccIds = useMemo(() => filteredOccurrences.map((o: any) => o.id as string), [filteredOccurrences]);
+  const bulkVisibleIds = useMemo(() => visibleSelection(bulkSelected, visibleOccIds), [bulkSelected, visibleOccIds]);
+  const bulkStoreCount = useMemo(() => countDistinctStores(filteredOccurrences as any[], bulkVisibleIds), [filteredOccurrences, bulkVisibleIds]);
+  const bulkHeaderState = headerCheckState(bulkVisibleIds.length, visibleOccIds.length);
+  const toggleBulk = (id: string, checked: boolean) =>
+    setBulkSelected((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  const toggleBulkAll = (checked: boolean) =>
+    setBulkSelected((prev) => {
+      const next = new Set(prev);
+      visibleOccIds.forEach((id) => (checked ? next.add(id) : next.delete(id)));
+      return next;
+    });
+  const bulkStatusOptions = useMemo(() => {
+    const builtin = ["aberta", "em_andamento", "resolvida", "nao_procede"].map((v) => ({
+      value: v,
+      label: getTratativaDisplay(v, tratativaStatuses).label === v ? "Não procede" : getTratativaDisplay(v, tratativaStatuses).label,
+    }));
+    const custom = tratativaStatuses
+      .filter((s: any) => !["aberta", "em_andamento", "resolvida", "nao_procede"].includes(s.value) && s.ativo !== false)
+      .map((s: any) => ({ value: s.value as string, label: s.label as string }));
+    return [...builtin, ...custom];
+  }, [tratativaStatuses]);
 
   /* Other KPIs */
   const openMaintenance = useMemo(() => (maintenance ?? []).filter((m: any) => ["aberto", "em_andamento"].includes(m.status)).length, [maintenance]);
@@ -776,12 +812,32 @@ _Relatório gerado pelo ProduzAI_ 🚀`;
             </div>
           </div>
 
+          {canBulk && (
+            <BulkOccurrenceStatusBar
+              campaignId={campaignId}
+              selectedIds={bulkVisibleIds}
+              storeCount={bulkStoreCount}
+              statusOptions={bulkStatusOptions}
+              onClear={() => setBulkSelected(new Set())}
+            />
+          )}
+
           {/* Occurrences — Lista ou Cards */}
           {occViewMode === "list" ? (
             <div className="overflow-x-auto border rounded-lg">
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {canBulk && (
+                      <TableHead className="w-10">
+                        <Checkbox
+                          checked={bulkHeaderState}
+                          onCheckedChange={(c) => toggleBulkAll(c === true)}
+                          disabled={visibleOccIds.length === 0}
+                          aria-label="Selecionar todas as ocorrências visíveis"
+                        />
+                      </TableHead>
+                    )}
                     <SortableHeader label="Loja" field="store" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
                     <SortableHeader label="Peça" field="piece" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
                     <SortableHeader label="Motivo" field="motive" sortField={occSort.sortField} sortDir={occSort.sortDir} onSort={occSort.handleSort} />
@@ -797,14 +853,28 @@ _Relatório gerado pelo ProduzAI_ 🚀`;
                 <TableBody>
                   {occSort.sortedItems.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={(isAdmin ? 10 : 9) - (showPriority ? 0 : 1)} className="text-center text-muted-foreground py-6">Nenhuma ocorrência encontrada.</TableCell>
+                      <TableCell colSpan={(isAdmin ? 10 : 9) - (showPriority ? 0 : 1) + (canBulk ? 1 : 0)} className="text-center text-muted-foreground py-6">Nenhuma ocorrência encontrada.</TableCell>
                     </TableRow>
                   )}
                   {occSort.sortedItems.map((o: any) => {
                     const ts = o.tratativa_status ?? "aberta";
                     const overdue = isOverdue(o);
                     return (
-                      <TableRow key={o.id} className="cursor-pointer hover:bg-muted/40" onClick={() => setSelectedOccurrence(o)}>
+                      <TableRow
+                        key={o.id}
+                        data-state={bulkSelected.has(o.id) ? "selected" : undefined}
+                        className="cursor-pointer hover:bg-muted/40"
+                        onClick={() => setSelectedOccurrence(o)}
+                      >
+                        {canBulk && (
+                          <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
+                            <Checkbox
+                              checked={bulkSelected.has(o.id)}
+                              onCheckedChange={(c) => toggleBulk(o.id, c === true)}
+                              aria-label={`Selecionar ocorrência de ${(o.client_stores as any)?.name ?? "loja"}`}
+                            />
+                          </TableCell>
+                        )}
                         <TableCell className="font-medium">{(o.client_stores as any)?.name ?? "—"}</TableCell>
                         <TableCell>{(o.loja_a_loja_pecas as any)?.nome ?? "—"}</TableCell>
                         <TableCell><span className="line-clamp-1 max-w-[160px]">{(o.store_portal_motivos as any)?.descricao ?? "—"}</span></TableCell>
@@ -862,7 +932,16 @@ _Relatório gerado pelo ProduzAI_ 🚀`;
                   >
                     {/* Header: store + delete */}
                     <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
+                      {canBulk && (
+                        <div onClick={(e) => e.stopPropagation()} className="pt-0.5">
+                          <Checkbox
+                            checked={bulkSelected.has(o.id)}
+                            onCheckedChange={(c) => toggleBulk(o.id, c === true)}
+                            aria-label={`Selecionar ocorrência de ${store.name ?? "loja"}`}
+                          />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
                         <div className="font-medium text-sm text-foreground truncate">{store.name ?? "—"}</div>
                         <div className="text-xs text-muted-foreground truncate">
                           {[store.state, store.city].filter(Boolean).join(" · ") || "—"}
