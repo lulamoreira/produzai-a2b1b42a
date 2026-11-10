@@ -1524,6 +1524,38 @@ export type Database = {
           },
         ]
       }
+      campaign_cycle_assignments: {
+        Row: {
+          campaign_id: string
+          created_at: string
+          cycle_year: number | null
+          deleted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string
+          cycle_year?: number | null
+          deleted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string
+          cycle_year?: number | null
+          deleted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_cycle_assignments_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: true
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_kit_pieces: {
         Row: {
           created_at: string

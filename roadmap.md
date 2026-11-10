@@ -1,3 +1,7 @@
+# Campaign cycle folders
+- [x] Add reviewed year suggestions and persisted folders for campaign chains, preserving content, permissions and ordering.
+- [x] Eight tests passed; authenticated save/reload and expandable folders verified, desktop/mobile reviewed; temporary classifications removed for user review.
+
 # Performance without functional changes
 - [x] Optimize the verified campaign quantity query plan without changing records or permissions: covering campaign/order index, measured late page 194 ms → 6.8 ms.
 - [x] Remove redundant summary request and parallelize independent counts; 33 tests passed, authenticated Loja a Loja unchanged and Rateio loaded all 9,278 unique rows (21,957 quantity).
