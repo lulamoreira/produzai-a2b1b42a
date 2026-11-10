@@ -31,3 +31,7 @@
 - [x] Add transactional, permission-checked execution import preserving source and existing target records.
 - [x] Add scheduling dialog with root default, options and import summary.
 - [x] Verify rules in isolated PostgreSQL (including rollback); check authenticated dialog and UI summary with isolated writes, leaving real campaigns unchanged.
+
+# Occurrences store-name search
+- [x] Add a store-name search field to the Loja a Loja occurrences filter bar, accent- and case-insensitive, with a clear button.
+- [x] Test the matching rule and verify the live filter, clear action, and layout at 1440 and 1243 widths without changing saved occurrences.
