@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { isClassifiableStore } from "@/lib/lojaALojaClassifiable";
+import { InternosMaterialsPicker } from "./InternosMaterialsPicker";
 
 interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boolean }
 
@@ -210,6 +211,20 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
     return true;
   };
 
+  // Select/deselect every material of one internal letter for a single store
+  const handleSetAllForTipo = async (storeId: string, tipo: LojaALojaTipo, ativo: boolean) => {
+    if (!isAdmin) return;
+    try {
+      const rows = (tipo.subdivisoes ?? []).map((sub) => ({
+        campaign_id: campaignId, store_id: storeId, tipo_id: tipo.id, subdivisao_id: sub.id, ativo,
+      }));
+      await saveLojaAssignments(campaignId, rows);
+      await qc.invalidateQueries({ queryKey: ["loja-a-loja-lojas", campaignId] });
+    } catch (err: any) {
+      toast.error("Erro: " + err.message);
+    }
+  };
+
   const handleToggle = (storeId: string, tipoId: string, subId: string | null, newAtivo: boolean) => {
     if (!isAdmin) return;
     toggle.mutate({ campaign_id: campaignId, store_id: storeId, tipo_id: tipoId, subdivisao_id: subId, ativo: newAtivo });
@@ -331,42 +346,18 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
     );
   }
 
-  const renderLetraCell = (store: { id: string }, tipo: LojaALojaTipo) => {
+  const renderLetraCell = (store: { id: string; name?: string | null }, tipo: LojaALojaTipo) => {
     if (tipo.tem_subdivisao && (tipo.subdivisoes ?? []).length > 0) {
-      const anyActive = hasAnySub(store.id, tipo);
       return (
-        <Popover key={tipo.id}>
-          <PopoverTrigger asChild>
-            <button
-              className={cn(
-                "inline-flex items-center justify-center h-7 w-7 rounded-full text-[11px] font-bold border transition-colors",
-                anyActive
-                  ? "bg-primary text-primary-foreground border-primary"
-                  : "bg-background text-muted-foreground border-border hover:border-primary/50"
-              )}
-            >
-              {tipo.letra}
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-48 p-2" align="start">
-            <p className="text-xs font-semibold mb-1.5">{tipo.nome}</p>
-            <div className="space-y-1">
-              {(tipo.subdivisoes ?? []).map((sub) => {
-                const active = isActive(store.id, tipo.id, sub.id, tipo.tem_subdivisao);
-                return (
-                  <label key={sub.id} className="flex items-center gap-2 text-sm cursor-pointer hover:bg-muted/50 rounded px-1 py-0.5">
-                    <Checkbox
-                      checked={active}
-                      disabled={!isAdmin}
-                      onCheckedChange={(checked) => handleToggle(store.id, tipo.id, sub.id, !!checked)}
-                    />
-                    {sub.nome}
-                  </label>
-                );
-              })}
-            </div>
-          </PopoverContent>
-        </Popover>
+        <InternosMaterialsPicker
+          key={tipo.id}
+          storeName={store.name ?? ""}
+          tipo={tipo}
+          canEdit={isAdmin}
+          isSelected={(subId) => isActive(store.id, tipo.id, subId, true)}
+          onToggle={(subId, selected) => handleToggle(store.id, tipo.id, subId, selected)}
+          onSetAll={(selected) => handleSetAllForTipo(store.id, tipo, selected)}
+        />
       );
     }
     const active = isActive(store.id, tipo.id, null, tipo.tem_subdivisao);
@@ -462,7 +453,7 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
                 </th>
               ))}
               {internosTipos.map((t, i) => (
-                <th key={t.id} className={cn("h-9 px-1 text-center text-xs font-bold w-10", i === 0 && "border-l border-border")} title={t.nome}>
+                <th key={t.id} className={cn("h-9 px-1 text-center text-xs font-bold", (t.subdivisoes ?? []).length > 0 ? "min-w-[76px]" : "w-10", i === 0 && "border-l border-border")} title={t.nome}>
                   {t.letra}
                 </th>
               ))}
