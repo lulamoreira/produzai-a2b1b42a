@@ -1,3 +1,4 @@
+import { explicitCampaignVersionPath } from "@/lib/campaignVersionLink";
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Edit3, Database, Layers, PauseCircle, PlayCircle, AlertTriangle, PowerOff, ExternalLink, Info, GitBranch, Loader2 } from "lucide-react";
@@ -145,7 +146,7 @@ export function CampaignHeader({
           </div>
           {campaign.root_campaign_id && (
             <Link 
-              to={`/agency/${agencyId}/clients/${clientId}/campaigns/${campaign.root_campaign_id}`}
+              to={explicitCampaignVersionPath(`/agency/${agencyId}/clients/${clientId}/campaigns/${campaign.root_campaign_id}`)}
               className="flex items-center gap-1 hover:underline text-stone-500 font-medium"
             >
               Ver campanha original

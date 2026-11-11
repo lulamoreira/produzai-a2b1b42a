@@ -1,3 +1,4 @@
+import { explicitCampaignVersionPath } from "@/lib/campaignVersionLink";
 import React, { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
@@ -1599,7 +1600,7 @@ const ClientDetail = () => {
                             campaign={fam.parent}
                             canDelete={canDeleteCampaigns}
                             canEdit={canEditCampaigns}
-                            onNavigate={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${fam.parent.id}`)}
+                            onNavigate={() => navigate(explicitCampaignVersionPath(`/agency/${agencyId}/clients/${clientId}/campaigns/${fam.parent.id}`))}
                             onDelete={() => deleteCampaign.mutate(fam.parent.id)}
                             onColorChange={(color) => updateCampaign.mutate({ id: fam.parent.id, color })}
                             isFavorited={favoriteIds?.has(fam.parent.id) ?? false}
@@ -1616,7 +1617,7 @@ const ClientDetail = () => {
                                 campaign={child}
                                 canDelete={canDeleteCampaigns}
                                 canEdit={canEditCampaigns}
-                                onNavigate={() => navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${child.id}`)}
+                                onNavigate={() => navigate(explicitCampaignVersionPath(`/agency/${agencyId}/clients/${clientId}/campaigns/${child.id}`))}
                                 onDelete={() => deleteCampaign.mutate(child.id)}
                                 onColorChange={(color) => updateCampaign.mutate({ id: child.id, color })}
                                 isFavorited={favoriteIds?.has(child.id) ?? false}
