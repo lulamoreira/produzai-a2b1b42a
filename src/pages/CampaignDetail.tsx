@@ -1,3 +1,4 @@
+import { EXPLICIT_VERSION_PARAM, isExplicitCampaignVersion, shouldRedirectToLatest } from "@/lib/campaignVersionLink";
 import { Fragment, useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -89,20 +90,38 @@ const CampaignDetail = () => {
   const lalPerms = useLojaALojaPermissions(campaignId, clientId);
   const { data: campaign, isLoading: loadingCampaign } = useCampaign(campaignId);
 
-  // Old links to a superseded campaign of a renegotiation chain always go to the
-  // newest campaign, with a full page reload so every module loads fresh data.
+  // Old links to a superseded campaign of a renegotiation chain go to the newest
+  // campaign, with a full page reload so every module loads fresh data. Explicit
+  // clicks on an older version ("Ver campanha original", campaign list cards)
+  // stay on it whenever the user can open it.
+  const explicitVersion = isExplicitCampaignVersion(location.search);
+  const { data: latestCampaignId } = useQuery({
+    queryKey: ["latest-campaign-in-chain", campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_latest_campaign_in_chain", { p_campaign_id: campaignId! });
+      if (error) return null;
+      return (data as string | null) ?? null;
+    },
+    enabled: !!campaignId,
+    staleTime: 60_000,
+  });
   useEffect(() => {
     if (!campaignId) return;
-    let cancelled = false;
-    supabase.rpc("get_latest_campaign_in_chain", { p_campaign_id: campaignId }).then(({ data, error }) => {
-      if (cancelled || error || !data || data === campaignId) return;
-      const newPath = window.location.pathname.replace(`/campaigns/${campaignId}`, `/campaigns/${data}`);
-      if (newPath !== window.location.pathname) {
-        window.location.replace(`${newPath}${window.location.search}${window.location.hash}`);
-      }
+    const redirect = shouldRedirectToLatest({
+      campaignId,
+      latestId: latestCampaignId,
+      explicit: explicitVersion,
+      campaignLoading: loadingCampaign,
+      campaignLoaded: !!campaign,
     });
-    return () => { cancelled = true; };
-  }, [campaignId]);
+    if (!redirect || !latestCampaignId) return;
+    const newPath = window.location.pathname.replace(`/campaigns/${campaignId}`, `/campaigns/${latestCampaignId}`);
+    if (newPath === window.location.pathname) return;
+    const params = new URLSearchParams(window.location.search);
+    params.delete(EXPLICIT_VERSION_PARAM);
+    const qs = params.toString();
+    window.location.replace(`${newPath}${qs ? `?${qs}` : ""}${window.location.hash}`);
+  }, [campaignId, latestCampaignId, explicitVersion, loadingCampaign, campaign]);
   const { data: client } = useClient(clientId);
   const { data: agency } = useQuery({
     queryKey: ["agency", agencyId],
