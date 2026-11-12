@@ -23,6 +23,9 @@ import CopySpecFromPiece from "./CopySpecFromPiece";
 import { useQueryClient } from "@tanstack/react-query";
 import { disambiguateKitPieceNames } from "@/lib/disambiguateKitPieces";
 import { ensureCampaignLocations } from "@/lib/ensureCampaignLocations";
+import { findCodeConflicts, parseItemCode } from "@/lib/itemCodeConflicts";
+import { useCodeConflictConfirm } from "@/hooks/useCodeConflictConfirm";
+import { CodeConflictHint } from "@/components/pieces/CodeConflictHint";
 
 interface AddPieceDialogProps {
   existingPieces: any[];
@@ -199,6 +202,21 @@ const AddPieceDialog = ({
       : 0
   );
 
+  // Código digitado manualmente: aviso inline quando inválido ou repetido.
+  const { confirmCode, dialog: codeConflictDialog } = useCodeConflictConfirm();
+  const typedCode = form.code.trim();
+  const parsedCode = parseItemCode(typedCode);
+  const codeInvalid = typedCode !== "" && parsedCode === null;
+  const originalCode = initialPiece ? Number(initialPiece.code) : null;
+  const codeChanged = parsedCode !== null && parsedCode !== originalCode;
+  const localCodeConflicts = codeChanged
+    ? findCodeConflicts(
+        parsedCode,
+        { pieces: Array.isArray(existingPieces) ? existingPieces : [], kits: Array.isArray(existingKits) ? existingKits : [] },
+        { pieceId: initialPiece?.id },
+      )
+    : [];
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -239,13 +257,22 @@ const AddPieceDialog = ({
       return;
     }
 
+    if (codeInvalid) {
+      toast.error("Código inválido. Use um número inteiro maior que zero.");
+      return;
+    }
+    if (codeChanged && parsedCode !== null) {
+      const ok = await confirmCode(campaignId, parsedCode, { pieceId: initialPiece?.id }, localCodeConflicts);
+      if (!ok) return;
+    }
+
     const size = [form.width, form.height, form.length]
       .map(v => v?.trim())
       .filter(Boolean)
       .join("×");
 
     const pieceData = {
-      code: Number(form.code) || (maxCode + 1),
+      code: parsedCode ?? (initialPiece ? Number(initialPiece.code) || (maxCode + 1) : (maxCode + 1)),
       category: form.category.toUpperCase(),
       name: form.name,
       size: size,
@@ -298,6 +325,8 @@ const AddPieceDialog = ({
   };
 
   return (
+    <>
+    {codeConflictDialog}
     <Dialog open={open} onOpenChange={setOpen}>
       {!initialPiece && !hideTrigger && (
         <DialogTrigger asChild>
@@ -327,10 +356,15 @@ const AddPieceDialog = ({
                 <label className="text-xs font-medium text-muted-foreground">{t("common.code")}</label>
                 <Input
                   type="number"
+                  inputMode="numeric"
+                  min={1}
+                  step={1}
                   placeholder={String(maxCode + 1)}
                   value={form.code}
+                  aria-invalid={codeInvalid || localCodeConflicts.length > 0}
                   onChange={(e) => setForm({ ...form, code: e.target.value })}
                 />
+                <CodeConflictHint conflicts={localCodeConflicts} invalid={codeInvalid} />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-medium text-muted-foreground">Localização na Loja</label>
@@ -557,6 +591,7 @@ const AddPieceDialog = ({
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 };
 
