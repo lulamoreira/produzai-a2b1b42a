@@ -11,6 +11,7 @@ import { SupplierChangeMarkerDialog, type SupplierChangeTarget } from "@/compone
 import { SupplierChangesPanelDialog } from "@/components/supplierChanges/SupplierChangesPanelDialog";
 import type { ResolvedSupplierChange } from "@/lib/supplierChangeMarkers";
 
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -1023,17 +1024,23 @@ export default function PiecesTab({
             {visiblePieces.length + filteredKits.length} {t("pieces.pieceCountShort")}
           </span>
           <div className="relative flex-1 min-w-0 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder={t("common.search") + " peça/kit"}
               value={pieceSearch}
               onChange={(e) => setPieceSearch(e.target.value)}
-              className="h-9 w-full pl-9 pr-8 text-sm"
+              className={cn(
+                "h-10 w-full rounded-full pl-10 pr-9 text-sm font-medium shadow-inner transition-colors",
+                "bg-primary/5 border-primary/30 placeholder:text-muted-foreground",
+                "focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-0",
+                pieceSearch && "bg-primary/10 border-primary/60",
+              )}
             />
             {pieceSearch && (
               <button
                 onClick={() => setPieceSearch("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label={t("common.clear", "Limpar filtro")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-foreground/10 hover:text-foreground"
               >
                 <X className="w-4 h-4" />
               </button>
