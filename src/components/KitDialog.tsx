@@ -26,6 +26,10 @@ import { toast } from "sonner";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece } from "@/hooks/useMultiClientData";
 import { findDuplicateName, duplicateNameMessage } from "@/lib/duplicateName";
 import CopySpecFromPiece from "./CopySpecFromPiece";
+import { KitCodeEditor } from "@/components/pieces/KitCodeEditor";
+import { CodeConflictHint } from "@/components/pieces/CodeConflictHint";
+import { useCodeConflictConfirm } from "@/hooks/useCodeConflictConfirm";
+import { findCodeConflicts, parseItemCode } from "@/lib/itemCodeConflicts";
 
 // ─── Kit Image Upload (inline) ───────────────────────────
 
@@ -418,7 +422,7 @@ interface KitDetailDialogProps {
   onDeleteKitPiece?: (id: string) => void;
   onDeleteKit?: (id: string) => void;
   onAddKitPiece?: (kitPiece: { kit_id: string; piece_id: string; quantity?: number }) => Promise<void>;
-  onUpdateKit?: (kit: { id: string; name?: string; image_url?: string | null; is_mockup?: boolean; is_new?: boolean; category?: string | null; sub_location?: string | null }) => Promise<CampaignKit>;
+  onUpdateKit?: (kit: { id: string; name?: string; code?: number; image_url?: string | null; is_mockup?: boolean; is_new?: boolean; category?: string | null; sub_location?: string | null }) => Promise<CampaignKit>;
   onUpdatePiece?: (piece: Partial<CampaignPiece> & { id: string }) => Promise<void>;
   onDeletePiece?: (id: string) => void;
   onUpdateKitPiece?: (update: { id: string; quantity: number }) => Promise<void>;
@@ -453,6 +457,7 @@ export function KitDetailDialog({
   const [localKitName, setLocalKitName] = useState<string | undefined>(undefined);
   const [localCategory, setLocalCategory] = useState<string | null | undefined>(undefined);
   const [localSubLocation, setLocalSubLocation] = useState<string | null | undefined>(undefined);
+  const { confirmCode: confirmPieceCode, dialog: pieceCodeConflictDialog } = useCodeConflictConfirm();
 
   // Reset local overrides when kit changes
   const displayKitName = localKitName !== undefined ? localKitName : kit?.name ?? "";
@@ -523,6 +528,7 @@ export function KitDetailDialog({
     setEditingPieceId(p.id);
     const [w, h, l] = (p.size || "").split(/[x×]/i).map((s: string) => s.trim());
     setEditForm({
+      code: String(p.code ?? ""),
       name: p.name,
       category: p.category,
       width: w || "",
@@ -579,9 +585,24 @@ export function KitDetailDialog({
       toast.error(`Já existe uma peça de kit com o nome "${duplicate.name}". Peças de kit devem ter nomes únicos — cada peça só pode pertencer a um kit.`);
       return;
     }
+    // Código manual: inválido bloqueia; repetido pede confirmação.
+    const editingPiece = allPieces.find(p => p.id === editingPieceId);
+    const typedCode = (editForm.code ?? "").trim();
+    const parsedCode = parseItemCode(typedCode);
+    if (typedCode !== "" && parsedCode === null) {
+      toast.error("Código inválido. Use um número inteiro maior que zero.");
+      return;
+    }
+    const codeChanged = parsedCode !== null && parsedCode !== Number(editingPiece?.code);
+    if (codeChanged && parsedCode !== null) {
+      const localConflicts = findCodeConflicts(parsedCode, { pieces: allPieces, kits: existingKits }, { pieceId: editingPieceId });
+      const ok = await confirmPieceCode(kit?.campaign_id, parsedCode, { pieceId: editingPieceId }, localConflicts);
+      if (!ok) return;
+    }
     const size = [editForm.width, editForm.height, editForm.length].filter(Boolean).join(" x ");
     await onUpdatePiece({
       id: editingPieceId,
+      ...(codeChanged && parsedCode !== null ? { code: parsedCode } : {}),
       name: trimmedName,
       category: editForm.category,
       size,
@@ -676,7 +697,15 @@ export function KitDetailDialog({
                 </div>
               ) : (
                 <span className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">{kit.code}</span>
+                  <KitCodeEditor
+                    kitId={kit.id}
+                    campaignId={kit.campaign_id}
+                    code={kit.code}
+                    pieces={allPieces}
+                    kits={existingKits}
+                    canEdit={!!canEdit && !!onUpdateKit}
+                    onSave={(code) => onUpdateKit!({ id: kit.id, code })}
+                  />
                   {displayKitName}
                   {canEdit && onUpdateKit && (
                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setKitNameInput(kit.name); setEditingKitName(true); }}>
@@ -917,7 +946,20 @@ export function KitDetailDialog({
               if (isEditing && canEdit && onUpdatePiece) {
                 return (
                   <div key={kp.id} className="p-3 rounded-lg border-2 border-primary/30 bg-primary/5 space-y-2">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-[88px_1fr_1fr] gap-2">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground" htmlFor={`kit-piece-code-${p.id}`}>Código</label>
+                        <Input
+                          id={`kit-piece-code-${p.id}`}
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          step={1}
+                          value={editForm.code ?? ""}
+                          onChange={(e) => setEditForm(f => ({ ...f, code: e.target.value }))}
+                          className="h-7 text-xs"
+                        />
+                      </div>
                       <div>
                         <label className="text-[10px] text-muted-foreground">Nome</label>
                         <Input value={editForm.name} onChange={(e) => setEditForm(f => ({ ...f, name: e.target.value }))} className="h-7 text-xs" />
