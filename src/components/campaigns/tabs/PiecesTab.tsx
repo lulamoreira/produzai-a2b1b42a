@@ -1024,7 +1024,7 @@ export default function PiecesTab({
             {visiblePieces.length + filteredKits.length} {t("pieces.pieceCountShort")}
           </span>
           <div className="relative flex-1 min-w-0 max-w-md">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-foreground/60" />
             <Input
               placeholder={t("common.search") + " peça/kit"}
               value={pieceSearch}
@@ -1041,7 +1041,7 @@ export default function PiecesTab({
               <button
                 onClick={() => setPieceSearch("")}
                 aria-label={t("common.clear", "Limpar filtro")}
-                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-foreground/10 hover:text-foreground"
+                className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-foreground/70 hover:bg-foreground/10 hover:text-foreground"
               >
                 <X className="w-4 h-4" />
               </button>
