@@ -25,7 +25,8 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { GripVertical, Edit3, Trash2, CheckSquare, Package, Palette, Copy, MoreVertical } from "lucide-react";
+import { GripVertical, Edit3, Trash2, CheckSquare, Package, Palette, Copy, MoreVertical, Flag } from "lucide-react";
+import { describeSupplierChange, type ResolvedSupplierChange } from "@/lib/supplierChangeMarkers";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import PieceImageDropZone from "@/components/PieceImageDropZone";
 import KitImageDropZone from "@/components/KitImageDropZone";
@@ -58,6 +59,21 @@ function ExpandableText({ text, className }: { text: string; className?: string 
     </span>
   );
 }
+
+/** Badge shown when the item is flagged to suppliers as new/changed in a renegotiation. */
+function SupplierChangeBadge({ marker }: { marker?: ResolvedSupplierChange }) {
+  if (!marker) return null;
+  const title = `Sinalizado ao fornecedor — ${describeSupplierChange(marker)}${marker.note ? ` · ${marker.note}` : ""}`;
+  return (
+    <span title={title} className="inline-flex items-center gap-1 text-[10px] bg-warning/15 text-warning-foreground border border-warning/40 font-semibold px-1.5 py-0.5 rounded whitespace-nowrap">
+      <Flag className="w-3 h-3 text-warning" aria-hidden />
+      {marker.change_type === "new" ? "Nova p/ fornecedor" : "Alterada p/ fornecedor"}
+    </span>
+  );
+}
+
+/** Target passed to the "flag to supplier" action. */
+export type SupplierChangeFlagTarget = { kind: "piece" | "kit"; id: string; code: number; name: string };
 
 // Unified row type
 export type UnifiedRow = 
@@ -93,13 +109,18 @@ interface SortableRowProps {
   parentKitName?: string;
   /** When false, the Modelo (store_category) column is hidden because no piece uses it. */
   hasStoreCategory?: boolean;
+  /** Supplier change marker for this row (renegotiations only). */
+  supplierChange?: ResolvedSupplierChange;
+  /** When set, the ⋮ menu offers "Sinalizar ao fornecedor". */
+  onFlagSupplierChange?: (target: SupplierChangeFlagTarget) => void;
 }
 
 function SortableRow({
   row, pieceTotal, canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit,
   isDistributed, kitCategory, customFieldLabels, visibleColumns,
-  selectedPieceIds, onToggleSelection, disableDrag, hasStoreCategory = true, parentKitName
+  selectedPieceIds, onToggleSelection, disableDrag, hasStoreCategory = true, parentKitName,
+  supplierChange, onFlagSupplierChange,
 }: SortableRowProps) {
   const { t } = useTranslation();
   const id = row.type === "piece" ? row.data.id : `kit-${row.data.id}`;
@@ -150,6 +171,7 @@ function SortableRow({
               {kit.name}
               {kit.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">{t("common.mockup")}</span>}
               {(kit as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold">{t("common.new")}</span>}
+              <SupplierChangeBadge marker={supplierChange} />
             </span>
             <span className="text-[11px] text-muted-foreground block truncate max-w-[40ch]">
               {kitPieceDetails.length} {t("pieces.pieceCountShort")}: {kitPieceDetails.map(p => p!.name).join(", ") || t("common.none")}
@@ -193,6 +215,12 @@ function SortableRow({
                 {canEditPieces && (
                   <DropdownMenuItem onClick={() => onDuplicateKit(kit)}>
                     <Copy className="w-4 h-4 mr-2" /> {t("pieces.duplicateKit")}
+                  </DropdownMenuItem>
+                )}
+                {canEditPieces && onFlagSupplierChange && (
+                  <DropdownMenuItem onClick={() => onFlagSupplierChange({ kind: "kit", id: kit.id, code: kit.code, name: kit.name })}>
+                    <Flag className={`w-4 h-4 mr-2 ${supplierChange ? "text-warning" : ""}`} />
+                    {supplierChange ? "Editar sinalização ao fornecedor" : "Sinalizar ao fornecedor"}
                   </DropdownMenuItem>
                 )}
                 {canEditPieces && (
@@ -305,6 +333,7 @@ function SortableRow({
             )}
             {piece.is_mockup && <span className="text-[10px] bg-amber-500/20 text-amber-700 font-bold px-1.5 py-0.5 rounded">{t("common.mockup")}</span>}
             {(piece as any).is_new && <span className="bg-green-500 text-white text-[9px] px-1.5 rounded-full font-bold">{t("common.new")}</span>}
+            <SupplierChangeBadge marker={supplierChange} />
           </span>
           {isKitPiece && parentKitName && (
             <span className="block text-xs text-muted-foreground italic">↳ Kit: {parentKitName}</span>
@@ -368,6 +397,12 @@ function SortableRow({
                 <DropdownMenuItem onClick={() => onToggleMockup(piece)} disabled={isOptimistic}>
                   <Palette className={`w-4 h-4 mr-2 ${piece.is_mockup ? "text-amber-600" : ""}`} />
                   {piece.is_mockup ? t("pieces.removeMockup") : t("pieces.markMockup")}
+                </DropdownMenuItem>
+              )}
+              {canEditPieces && onFlagSupplierChange && (
+                <DropdownMenuItem onClick={() => onFlagSupplierChange({ kind: "piece", id: piece.id, code: piece.code, name: piece.name })} disabled={isOptimistic}>
+                  <Flag className={`w-4 h-4 mr-2 ${supplierChange ? "text-warning" : ""}`} />
+                  {supplierChange ? "Editar sinalização ao fornecedor" : "Sinalizar ao fornecedor"}
                 </DropdownMenuItem>
               )}
               {canEditPieces && (
@@ -438,6 +473,9 @@ interface SortablePiecesTableProps {
   onToggleSelectAll?: (checked: boolean) => void;
   /** When true, rows are sorted by code (ascending) and drag-to-reorder is disabled. */
   sortByCode?: boolean;
+  /** Supplier change markers keyed by `piece:<id>` / `kit:<id>` (renegotiations only). */
+  supplierChangeByItem?: Map<string, ResolvedSupplierChange>;
+  onFlagSupplierChange?: (target: SupplierChangeFlagTarget) => void;
 }
 
 export default function SortablePiecesTable({
@@ -445,7 +483,8 @@ export default function SortablePiecesTable({
   canEditPieces, canDeletePieces,
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit, onReorder,
   customFieldLabels, visibleColumns,
-  selectedPieceIds, onToggleSelection, onToggleSelectAll, sortByCode = false
+  selectedPieceIds, onToggleSelection, onToggleSelectAll, sortByCode = false,
+  supplierChangeByItem, onFlagSupplierChange,
 }: SortablePiecesTableProps) {
   const { t } = useTranslation();
   const sensors = useSensors(
@@ -620,6 +659,8 @@ export default function SortablePiecesTable({
                     disableDrag={sortByCode}
                     hasStoreCategory={hasStoreCategory}
                     parentKitName={row.type === "piece" ? parentKitNameByPieceId.get(row.data.id) : undefined}
+                    supplierChange={supplierChangeByItem?.get(`${row.type}:${row.data.id}`)}
+                    onFlagSupplierChange={onFlagSupplierChange}
                   />
                 );
               })}
