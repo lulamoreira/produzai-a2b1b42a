@@ -1705,6 +1705,7 @@ export default function PiecesTab({
           kit={viewKitDetail}
           kitPieces={kitPieces.filter(kp => kp.kit_id === viewKitDetail.id)}
           allPieces={pieces}
+          existingKits={kits}
           canEdit={canEditPieces}
           onDeleteKitPiece={(id) => deleteKitPiece?.mutate?.(id)}
           onAddKitPiece={async (kp) => {

@@ -654,6 +654,7 @@ export function KitDetailDialog({
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v) { setEditingPieceId(null); setShowAddPieces(false); setEditingKitName(false); setLocalImageUrl(undefined); setLocalKitName(undefined); setLocalCategory(undefined); setLocalSubLocation(undefined); } onOpenChange(v); }}>
       <DialogContent className="max-w-2xl flex flex-col max-h-[90vh] p-0 overflow-hidden">
+        {pieceCodeConflictDialog}
         <div className="p-6 pb-2 border-b space-y-4">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -969,6 +970,14 @@ export function KitDetailDialog({
                         <Input value={editForm.category} onChange={(e) => setEditForm(f => ({ ...f, category: e.target.value }))} className="h-7 text-xs" />
                       </div>
                     </div>
+                    {(() => {
+                      const typed = (editForm.code ?? "").trim();
+                      const parsed = parseItemCode(typed);
+                      const conflicts = parsed !== null && parsed !== Number(p.code)
+                        ? findCodeConflicts(parsed, { pieces: allPieces, kits: existingKits }, { pieceId: p.id })
+                        : [];
+                      return <CodeConflictHint conflicts={conflicts} invalid={typed !== "" && parsed === null} />;
+                    })()}
                     <div className="grid grid-cols-3 gap-2">
                       <div>
                         <label className="text-[10px] text-muted-foreground">Largura</label>
