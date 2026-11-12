@@ -1,5 +1,14 @@
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { buildExportFileName } from "@/lib/exportFileName";
+import {
+  changeTypeLabel,
+  describeSupplierChange,
+  formatSupplierChangeCounts,
+  indexChangesByCode,
+  summarizeSupplierChanges,
+  supplierChangeKey,
+  type ResolvedSupplierChange,
+} from "@/lib/supplierChangeMarkers";
 import { fetchImageBytes, type RateioImageCache } from "@/lib/rateioGridShared";
 import {
   appendMatrixFinancialFooter,
@@ -37,6 +46,7 @@ const DARK = "FF1C1916";
 const BORDER = "FFE5E7EB";
 const KIT_BG = "FFEDE3D4";
 const GREY = "FF999999";
+const CHANGE_BG = "FFFFE8B3"; // light amber — flags items changed since the supplier's quote
 
 export type SupplierExportRow = {
   type: "standalone_piece" | "kit_header" | "kit_piece";
@@ -70,6 +80,8 @@ type Params = {
   labels?: ReturnType<typeof getSupplierExcelLabels>;
   /** When true: write Total del Ítem (col G) as formula =E*F and items total as =SUM(G_body). */
   useFormulas?: boolean;
+  /** Optional (renegotiations): manual change markers; annotates item cells and adds an "Alterações" tab. */
+  supplierChanges?: ResolvedSupplierChange[];
   /** Optional: include the full Rateio module export (Matriz Lojas x Peças + Kit tabs) as additional sheets. */
   rateio?: {
     pieces: CampaignPiece[];
@@ -187,6 +199,11 @@ export async function buildSupplierBudgetWorkbook(
   // Cache image fetches across rows AND across the optional Rateio sheet.
   const imageCache: RateioImageCache = new Map();
 
+  // Change markers (renegotiation) — matched by kind + code, since rows only carry codes.
+  const changeLang = params.currencyCode === "CLP" ? ("es" as const) : ("pt" as const);
+  const supplierChanges = params.supplierChanges ?? [];
+  const changeByCode = indexChangesByCode(supplierChanges);
+
   // Body rows — sequential because we await image fetches
   let bodyEvenIdx = 0;
   const bodyRowNumbers: number[] = []; // rows that contribute to Total de los Ítems
@@ -232,6 +249,16 @@ export async function buildSupplierBudgetWorkbook(
       };
       if (col === 6 || col === 7) cell.numFmt = money;
     });
+
+    // Flag changed/new items in the Item cell without touching the other columns or formulas.
+    const change = changeByCode.get(supplierChangeKey(r.type === "kit_header" ? "kit" : "piece", r.code));
+    if (change) {
+      const itemCell = row.getCell(4);
+      const noteText = change.note ? ` — ${change.note}` : "";
+      itemCell.value = `${String(itemCell.value ?? "")}\n⚑ ${describeSupplierChange(change, changeLang).toUpperCase()}${noteText}`;
+      itemCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: CHANGE_BG } };
+      row.height = Math.max(row.height ?? 54, 66);
+    }
 
     // Insert image into Foto column (col A → index 0)
     let inserted = false;
@@ -325,6 +352,45 @@ export async function buildSupplierBudgetWorkbook(
     { width: 18 }, // Total
   ];
   ws.views = [{ state: "frozen", ySplit: headerRowIdx }];
+
+  // ─── Optional: "Alterações" tab listing every marked change, including removed items ───
+  if (supplierChanges.length > 0) {
+    const es = changeLang === "es";
+    const cs = wb.addWorksheet(es ? "Cambios" : "Alterações", { views: [{ showGridLines: false }] });
+    cs.mergeCells("A1:F1");
+    const title = cs.getCell("A1");
+    title.value = `${es ? "Cambios respecto a la planilla cotizada" : "Alterações em relação à planilha orçada"}: ${formatSupplierChangeCounts(summarizeSupplierChanges(supplierChanges), changeLang)}`;
+    title.font = { bold: true, color: { argb: WHITE } };
+    title.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BROWN } };
+    title.alignment = { vertical: "middle", horizontal: "center", wrapText: true };
+    cs.getRow(1).height = 26;
+    const head = cs.addRow(es
+      ? ["Situación", "Tipo", "Código", "Ítem", "Qué cambió", "Observación"]
+      : ["Situação", "Tipo", "Código", "Item", "O que mudou", "Observação"]);
+    head.eachCell((cell) => {
+      cell.font = { bold: true };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BEIGE } };
+    });
+    const order = { new: 0, changed: 1, removed: 2 } as const;
+    [...supplierChanges]
+      .sort((a, b) => order[a.change_type] - order[b.change_type] || (a.code ?? 0) - (b.code ?? 0))
+      .forEach((c) => {
+        const what = c.change_type === "changed" ? describeSupplierChange(c, changeLang).replace(/^[^:]+:\s*/, "") : "";
+        const r = cs.addRow([
+          changeTypeLabel(c.change_type, changeLang),
+          c.kind === "kit" ? "Kit" : es ? "Pieza" : "Peça",
+          c.code ?? "",
+          c.name,
+          what,
+          c.note ?? "",
+        ]);
+        r.eachCell({ includeEmpty: true }, (cell) => {
+          cell.alignment = { vertical: "top", wrapText: true };
+          cell.border = { bottom: { style: "thin", color: { argb: BORDER } } };
+        });
+      });
+    cs.columns = [{ width: 14 }, { width: 10 }, { width: 10 }, { width: 48 }, { width: 36 }, { width: 40 }];
+  }
 
   // ─── Optional: append the full Rateio module export (Matriz Lojas x Peças + Kit tabs) ───
   if (params.rateio) {
