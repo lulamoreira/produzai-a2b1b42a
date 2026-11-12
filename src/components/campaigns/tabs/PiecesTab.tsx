@@ -3,8 +3,13 @@ import { useTranslation } from "react-i18next";
 import { 
   Plus, Download, Upload, Sparkles, RefreshCw, ArrowDownAZ, MapPin, Copy, 
   Trash2, Search, X, Package, MoreHorizontal, Presentation, Settings2, Columns, CaseSensitive,
-  FileSpreadsheet, ListOrdered
+  FileSpreadsheet, ListOrdered, Flag
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { useSupplierChangeMarkers } from "@/hooks/useSupplierChangeMarkers";
+import { SupplierChangeMarkerDialog, type SupplierChangeTarget } from "@/components/supplierChanges/SupplierChangeMarkerDialog";
+import { SupplierChangesPanelDialog } from "@/components/supplierChanges/SupplierChangesPanelDialog";
+import type { ResolvedSupplierChange } from "@/lib/supplierChangeMarkers";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -130,6 +135,34 @@ export default function PiecesTab({
   const [locationDialogOpen, setLocationDialogOpen] = useState(false);
   const [orderByLocationOpen, setOrderByLocationOpen] = useState(false);
   const [organizeOpen, setOrganizeOpen] = useState(false);
+
+  // ─── Supplier change markers (renegotiations only) ───
+  const previousCampaignId: string | null = campaign?.parent_campaign_id ?? null;
+  const isRenegotiation = !!previousCampaignId;
+  const { data: supplierChanges = [], isLoading: supplierChangesLoading } = useSupplierChangeMarkers(campaignId, isRenegotiation);
+  const { data: previousCampaignName = "versão anterior" } = useQuery({
+    queryKey: ["campaign_name", previousCampaignId],
+    enabled: isRenegotiation,
+    staleTime: 5 * 60_000,
+    queryFn: async () => {
+      const { data } = await supabase.from("campaigns").select("name").eq("id", previousCampaignId!).maybeSingle();
+      return data?.name ?? "versão anterior";
+    },
+  });
+  const supplierChangeByItem = useMemo(() => {
+    const map = new Map<string, ResolvedSupplierChange>();
+    for (const m of supplierChanges) {
+      if (m.piece_id) map.set(`piece:${m.piece_id}`, m);
+      if (m.kit_id) map.set(`kit:${m.kit_id}`, m);
+    }
+    return map;
+  }, [supplierChanges]);
+  const [supplierChangeTarget, setSupplierChangeTarget] = useState<SupplierChangeTarget | null>(null);
+  const [supplierChangesPanelOpen, setSupplierChangesPanelOpen] = useState(false);
+  const currentItemCodes = useMemo(() => [
+    ...pieces.map((p: any) => ({ kind: "piece" as const, code: (p.code ?? null) as number | null })),
+    ...kits.map((k: any) => ({ kind: "kit" as const, code: (k.code ?? null) as number | null })),
+  ], [pieces, kits]);
   const [pptExportOpen, setPptExportOpen] = useState(false);
   const [pieceImportOpen, setPieceImportOpen] = useState(false);
   const [oneNoteSourceOpen, setOneNoteSourceOpen] = useState(false);
@@ -1148,6 +1181,14 @@ export default function PiecesTab({
                   <DropdownMenuItem onClick={() => setOrganizeOpen(true)}>
                     <ListOrdered className="w-4 h-4 mr-2" /> Organizar peças
                   </DropdownMenuItem>
+                  {isRenegotiation && (
+                    <DropdownMenuItem onClick={() => setSupplierChangesPanelOpen(true)}>
+                      <Flag className="w-4 h-4 mr-2 text-warning" /> Alterações para o fornecedor
+                      {supplierChanges.length > 0 && (
+                        <span className="ml-auto text-[10px] text-muted-foreground">{supplierChanges.length}</span>
+                      )}
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => setTimeout(() => setPptExportOpen(true), 10)}>
                     <Download className="w-4 h-4 mr-2" /> Exportar relatórios e catálogos
                   </DropdownMenuItem>
@@ -1312,7 +1353,36 @@ export default function PiecesTab({
         selectedPieceIds={selectedPieceIds}
         onToggleSelection={handleToggleSelection}
         onToggleSelectAll={handleToggleSelectAll}
+        supplierChangeByItem={isRenegotiation ? supplierChangeByItem : undefined}
+        onFlagSupplierChange={isRenegotiation && canEditPieces ? setSupplierChangeTarget : undefined}
       />
+
+      {isRenegotiation && (
+        <>
+          <SupplierChangeMarkerDialog
+            campaignId={campaignId}
+            target={supplierChangeTarget}
+            existing={supplierChangeTarget ? supplierChangeByItem.get(`${supplierChangeTarget.kind}:${supplierChangeTarget.id}`) ?? null : null}
+            onOpenChange={(open) => { if (!open) setSupplierChangeTarget(null); }}
+          />
+          <SupplierChangesPanelDialog
+            open={supplierChangesPanelOpen}
+            onOpenChange={setSupplierChangesPanelOpen}
+            campaignId={campaignId}
+            previousCampaignId={previousCampaignId!}
+            previousCampaignName={previousCampaignName}
+            markers={supplierChanges}
+            loading={supplierChangesLoading}
+            current={currentItemCodes}
+            onEdit={(m) => {
+              const id = m.kit_id ?? m.piece_id;
+              if (!id) return;
+              setSupplierChangesPanelOpen(false);
+              setSupplierChangeTarget({ kind: m.kind, id, code: m.code ?? 0, name: m.name });
+            }}
+          />
+        </>
+      )}
 
       <OrganizePiecesDialog
         open={organizeOpen}
