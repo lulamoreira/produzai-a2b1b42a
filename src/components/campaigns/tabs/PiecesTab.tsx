@@ -1031,9 +1031,10 @@ export default function PiecesTab({
               onChange={(e) => setPieceSearch(e.target.value)}
               className={cn(
                 "h-10 w-full rounded-full pl-10 pr-9 text-sm font-medium shadow-inner transition-colors",
-                "bg-primary/5 border-primary/30 placeholder:text-muted-foreground",
-                "focus-visible:bg-background focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-0",
-                pieceSearch && "bg-primary/10 border-primary/60",
+                "bg-foreground/[0.06] border-foreground/25 placeholder:text-muted-foreground",
+                "dark:bg-foreground/10 dark:border-foreground/35",
+                "focus-visible:bg-background focus-visible:border-primary focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-0",
+                pieceSearch && "bg-primary/10 border-primary/60 dark:bg-primary/25 dark:border-primary/70",
               )}
             />
             {pieceSearch && (
