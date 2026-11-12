@@ -25,6 +25,8 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from "@/components/ui/sheet";
 import * as XLSX from "xlsx";
 import { exportSupplierBudget } from "@/lib/exportSupplierBudget";
+import { SupplierPortalChangesBanner, SupplierPortalChangeInline } from "@/components/supplierChanges/SupplierPortalChanges";
+import { filterRowsWithChanges, type ResolvedSupplierChange } from "@/lib/supplierChangeMarkers";
 import { exportStoresExcel } from "@/lib/exportStoresExcel";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
@@ -206,6 +208,9 @@ const SupplierPortal = () => {
   const [storeData, setStoreData] = useState<{ id: string; name: string; city?: string; state?: string; address?: string; street?: string; number?: string; neighborhood?: string; code?: string; zip_code?: string; nickname?: string; showcase_count?: number; tipo_entrega: 'frete_instalacao' | 'frete_apenas' | 'sem_logistica' | null }[]>([]);
   const [downloadingStores, setDownloadingStores] = useState(false);
   const [fullQtyMap, setFullQtyMap] = useState<Record<string, number>>({});
+  // Manual change markers (renegotiation): what changed vs the spreadsheet the supplier quoted.
+  const [supplierChanges, setSupplierChanges] = useState<ResolvedSupplierChange[]>([]);
+  const [onlyChanges, setOnlyChanges] = useState(false);
 
   const currencyDefaultLocale: CurrencyLocale = currencyCode === "CLP" ? "es-CL" : "pt-BR";
   const [localeOverride, setLocaleOverride] = useState<CurrencyLocale | null>(() => {
@@ -393,6 +398,19 @@ const SupplierPortal = () => {
         setClientName(resolvedClientName);
         setAgencyName(resolvedAgencyName);
         setHeaderIds({ client_id: resolvedClientId, agency_id: header.agency_id ?? null });
+
+        // 3b) Change markers — optional; a failure here must never block the quotation.
+        try {
+          const { data: changesData, error: changesErr } = await supabase.rpc(
+            "get_supplier_portal_change_markers" as never,
+            { _token: token } as never,
+          );
+          if (changesErr) throw changesErr;
+          setSupplierChanges(Array.isArray(changesData) ? (changesData as unknown as ResolvedSupplierChange[]) : []);
+        } catch (changesError) {
+          console.warn("[SupplierPortal] Não foi possível carregar alterações sinalizadas:", changesError);
+          setSupplierChanges([]);
+        }
 
         // 4) ALL pieces (including kit_only) — paginated
         const piecesRaw = await supabasePaginate<PieceData>((from, to) =>
@@ -625,6 +643,24 @@ const SupplierPortal = () => {
     return rows;
   }, [allPieces, kitsData, kitPiecesData, storePieceQtyMap]);
 
+  // ─── Change markers lookups + "only changes" filter ─────
+  const changeLang = isES ? "es" as const : "pt" as const;
+  const { changeByPieceId, changeByKitId } = useMemo(() => {
+    const byPiece = new Map<string, ResolvedSupplierChange>();
+    const byKit = new Map<string, ResolvedSupplierChange>();
+    for (const c of supplierChanges) {
+      if (c.piece_id) byPiece.set(c.piece_id, c);
+      if (c.kit_id) byKit.set(c.kit_id, c);
+    }
+    return { changeByPieceId: byPiece, changeByKitId: byKit };
+  }, [supplierChanges]);
+  const renderedRows = useMemo(
+    () => (onlyChanges
+      ? filterRowsWithChanges(displayRows, new Set(changeByPieceId.keys()), new Set(changeByKitId.keys()))
+      : displayRows),
+    [onlyChanges, displayRows, changeByPieceId, changeByKitId],
+  );
+
   // ─── Mark as preenchendo on first interaction ──────────
   const markFilling = useCallback(async () => {
     if (!supplier || !["aguardando", "prazo_estendido"].includes(supplier.status)) return;
@@ -754,6 +790,7 @@ const SupplierPortal = () => {
         supplierName: supplier.company_name,
         currencyCode,
         rows: exportRows,
+        supplierChanges,
         installation: extraCosts.installation_value,
         freight: extraCosts.freight_value,
         discount: extraCosts.discount_value,
@@ -777,7 +814,7 @@ const SupplierPortal = () => {
     } finally {
       setDownloadingExcel(false);
     }
-  }, [supplier, displayRows, prices, campaignName, agencyName, clientName, currencyCode, extraCosts, grandTotal]);
+  }, [supplier, displayRows, prices, campaignName, agencyName, clientName, currencyCode, extraCosts, grandTotal, supplierChanges]);
 
   const handleDecline = async () => {
     if (!supplier) return;
@@ -1382,6 +1419,12 @@ const SupplierPortal = () => {
                 )}
               </Button>
             </div>
+            <SupplierPortalChangesBanner
+              changes={supplierChanges}
+              lang={changeLang}
+              onlyChanges={onlyChanges}
+              onOnlyChangesChange={setOnlyChanges}
+            />
             <div className="overflow-x-auto">
               <Table className="min-w-[760px] table-fixed">
                 <TableHeader>
@@ -1394,10 +1437,19 @@ const SupplierPortal = () => {
                 </TableHeader>
                 <TableBody>
                   {(() => {
-                    const editableKeys = displayRows.filter((r) => r.editable && r.pieceId).map((r) => r.key);
+                    const editableKeys = renderedRows.filter((r) => r.editable && r.pieceId).map((r) => r.key);
                     const editableIndexMap = new Map<string, number>(editableKeys.map((k, i) => [k, i]));
                     const totalEditable = editableKeys.length;
-                    return displayRows.map((row) => {
+                    if (renderedRows.length === 0) {
+                      return (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">
+                            {isES ? "Ningún ítem modificado en la lista." : "Nenhum item alterado na lista."}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }
+                    return renderedRows.map((row) => {
                     const __editableIndex = editableIndexMap.has(row.key) ? editableIndexMap.get(row.key)! : -1;
                     const __totalEditable = totalEditable;
                     if (row.type === "kit_header") {
@@ -1411,6 +1463,7 @@ const SupplierPortal = () => {
                                   <Badge className="bg-primary/10 text-primary border-primary/20 text-[10px]">{portal.kitLabel}</Badge>
                                   <span className="font-semibold text-sm">{row.name}</span>
                                 </div>
+                                <SupplierPortalChangeInline change={row.kitId ? changeByKitId.get(row.kitId) : undefined} lang={changeLang} />
                                 <p className="text-xs text-muted-foreground mt-0.5">
                                   {kitPiecesData.filter((kp) => kp.kit_id === row.kitId).length} {labels.columnItem.toLowerCase()}(s) · {labels.columnQty} kit: {row.totalQty}
                                 </p>
@@ -1476,6 +1529,7 @@ const SupplierPortal = () => {
                                     <Badge className="bg-warning/15 text-warning border-warning/30 text-[9px]">{portal.suggestModificationActive}</Badge>
                                   )}
                                 </div>
+                                <SupplierPortalChangeInline change={row.pieceId ? changeByPieceId.get(row.pieceId) : undefined} lang={changeLang} />
                                 <div className="flex items-center gap-1 mt-0.5">
                                   {row.specification && (
                                     <p className="text-xs text-muted-foreground break-words whitespace-normal">{row.specification}</p>
