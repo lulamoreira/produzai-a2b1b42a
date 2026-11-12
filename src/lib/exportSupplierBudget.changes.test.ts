@@ -3,6 +3,14 @@ import ExcelJS from "exceljs";
 import { buildSupplierBudgetWorkbook } from "./exportSupplierBudget";
 import type { ResolvedSupplierChange } from "./supplierChangeMarkers";
 
+const readBlob = (blob: Blob) =>
+  new Promise<ArrayBuffer>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(blob);
+  });
+
 const change = (c: Partial<ResolvedSupplierChange>): ResolvedSupplierChange => ({
   id: crypto.randomUUID(), change_type: "changed", aspects: [], note: null, kind: "piece",
   code: 1, name: "", piece_id: null, kit_id: null, ...c,
@@ -23,7 +31,7 @@ describe("supplier spreadsheet with change markers", () => {
       ],
     });
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(await blob.arrayBuffer());
+    await wb.xlsx.load(await readBlob(blob));
     const main = wb.worksheets[0];
     expect(String(main.getRow(6).getCell(4).value)).toContain("ALTERADA: MEDIDAS E MATERIAL — 1,50 m");
     expect(String(main.getRow(7).getCell(4).value)).toBe("Faixa");
@@ -40,7 +48,7 @@ describe("supplier spreadsheet with change markers", () => {
       rows: [{ type: "standalone_piece", name: "Display", code: 10, totalQty: 5, unitPrice: null, lineTotal: 0 }],
     });
     const wb = new ExcelJS.Workbook();
-    await wb.xlsx.load(await blob.arrayBuffer());
+    await wb.xlsx.load(await readBlob(blob));
     expect(wb.getWorksheet("Alterações")).toBeUndefined();
     expect(String(wb.worksheets[0].getRow(6).getCell(4).value)).toBe("Display");
   });
