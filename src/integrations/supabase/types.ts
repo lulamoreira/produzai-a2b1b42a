@@ -2419,6 +2419,76 @@ export type Database = {
           },
         ]
       }
+      campaign_supplier_change_markers: {
+        Row: {
+          aspects: string[]
+          campaign_id: string
+          change_type: string
+          created_at: string
+          created_by: string | null
+          id: string
+          kit_id: string | null
+          note: string | null
+          piece_id: string | null
+          removed_code: number | null
+          removed_kind: string | null
+          removed_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          aspects?: string[]
+          campaign_id: string
+          change_type: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kit_id?: string | null
+          note?: string | null
+          piece_id?: string | null
+          removed_code?: number | null
+          removed_kind?: string | null
+          removed_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aspects?: string[]
+          campaign_id?: string
+          change_type?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          kit_id?: string | null
+          note?: string | null
+          piece_id?: string | null
+          removed_code?: number | null
+          removed_kind?: string | null
+          removed_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaign_supplier_change_markers_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_supplier_change_markers_kit_id_fkey"
+            columns: ["kit_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaign_supplier_change_markers_piece_id_fkey"
+            columns: ["piece_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_pieces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaign_support_materials: {
         Row: {
           campaign_id: string
@@ -6485,6 +6555,10 @@ export type Database = {
         Returns: Json
       }
       get_supplier_portal_budget: { Args: { _token: string }; Returns: Json }
+      get_supplier_portal_change_markers: {
+        Args: { _token: string }
+        Returns: Json
+      }
       get_supplier_portal_header: {
         Args: { _supplier_token: string }
         Returns: Json

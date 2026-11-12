@@ -120,6 +120,13 @@
       "when": 1794344124340,
       "tag": "0016_bulk_update_occurrence_status",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794497415870,
+      "tag": "0017_supplier_change_markers",
+      "breakpoints": true
     }
   ]
 }
