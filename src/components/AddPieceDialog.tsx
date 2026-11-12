@@ -591,6 +591,7 @@ const AddPieceDialog = ({
         </form>
       </DialogContent>
     </Dialog>
+    </>
   );
 };
 
