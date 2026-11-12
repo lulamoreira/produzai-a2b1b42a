@@ -65,7 +65,7 @@ function SupplierChangeBadge({ marker }: { marker?: ResolvedSupplierChange }) {
   if (!marker) return null;
   const title = `Sinalizado ao fornecedor — ${describeSupplierChange(marker)}${marker.note ? ` · ${marker.note}` : ""}`;
   return (
-    <span title={title} className="inline-flex items-center gap-1 text-[10px] bg-warning/15 text-warning-foreground border border-warning/40 font-semibold px-1.5 py-0.5 rounded whitespace-nowrap">
+    <span title={title} className="inline-flex items-center gap-1 text-[10px] bg-warning/15 text-foreground border border-warning/40 font-semibold px-1.5 py-0.5 rounded whitespace-nowrap">
       <Flag className="w-3 h-3 text-warning" aria-hidden />
       {marker.change_type === "new" ? "Nova p/ fornecedor" : "Alterada p/ fornecedor"}
     </span>
