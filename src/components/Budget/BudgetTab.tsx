@@ -1025,8 +1025,7 @@ ${sharedMaterials.map((m: any) => `🔸 ${m.title || m.file_name}\n   ${m.file_u
 
 ✨ A ${agencyName} ${labels.inviteIntro} a ${sup.company_name} ${labels.inviteAction}:
 
-${clientName ? `🏢 CLIENTE: ${clientName.toUpperCase()}\n` : ''}📌 ${locale === 'es-CL' ? 'CAMPAÑA' : 'CAMPANHA'}: ${campaignName.toUpperCase()}
-${changesMessage ? `\n${changesMessage}\n` : ''}
+${clientName ? `🏢 CLIENTE: ${clientName.toUpperCase()}\n` : ''}📌 ${locale === 'es-CL' ? 'CAMPAÑA' : 'CAMPANHA'}: ${campaignName.toUpperCase()}${changesMessage ? `\n\n${changesMessage}` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
   📝 ${locale === 'es-CL' ? 'CÓMO PARTICIPAR' : 'COMO PARTICIPAR'}
