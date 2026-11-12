@@ -84,6 +84,8 @@ import StartAdjustmentDialog from "@/components/Adjustments/StartAdjustmentDialo
 import CostAnalysisDialog from "@/components/Budget/CostAnalysisDialog";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
+import { useSupplierChangeMarkers } from "@/hooks/useSupplierChangeMarkers";
+import { buildSupplierChangeMessage, summarizeSupplierChanges } from "@/lib/supplierChangeMarkers";
 
 interface BudgetTabProps {
   campaignId: string;
@@ -230,6 +232,9 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   const updateSupplier = useUpdateSupplier();
   const { data: prices = [] } = useBudgetPrices(campaignId);
   const { data: extraCosts = [] } = useBudgetExtraCosts(campaignId);
+  // Manual change markers (renegotiations) — shown to suppliers in portal, Excel and invitations.
+  const isRenegotiationCampaign = !!(campaign as { parent_campaign_id?: string | null } | null | undefined)?.parent_campaign_id;
+  const { data: supplierChanges = [] } = useSupplierChangeMarkers(campaignId, isRenegotiationCampaign);
   const { data: timelineEntries = [] } = useBudgetTimeline(campaignId);
 
   // ═══ Recotação por Quantidade ═══
@@ -973,6 +978,7 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
     const labels = getMessageLabels(currencyCode);
     const locale = getLocaleFromCurrency(currencyCode);
     const subject = `${campaignName} — ${labels.inviteSubject}`;
+    const changesMessage = buildSupplierChangeMessage(summarizeSupplierChanges(supplierChanges), locale === 'es-CL' ? 'es' : 'pt');
 
     const deadlineBlock = settings?.deadline
       ? `
@@ -1020,7 +1026,7 @@ ${sharedMaterials.map((m: any) => `🔸 ${m.title || m.file_name}\n   ${m.file_u
 ✨ A ${agencyName} ${labels.inviteIntro} a ${sup.company_name} ${labels.inviteAction}:
 
 ${clientName ? `🏢 CLIENTE: ${clientName.toUpperCase()}\n` : ''}📌 ${locale === 'es-CL' ? 'CAMPAÑA' : 'CAMPANHA'}: ${campaignName.toUpperCase()}
-
+${changesMessage ? `\n${changesMessage}\n` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━
   📝 ${locale === 'es-CL' ? 'CÓMO PARTICIPAR' : 'COMO PARTICIPAR'}
@@ -1056,7 +1062,9 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
     const instrStr = labels.inviteInstructions.map((inst, i) => `${i + 1}) ${inst}`).join('\n');
     
     const clientLine = clientName ? `🏢 *${locale === 'es-CL' ? 'CLIENTE' : 'CLIENTE'}: ${clientName.toUpperCase()}*\n` : '';
-    const msg = `${labels.inviteGreeting} ${sup.contact_name}! A ${agencyName} ${labels.inviteIntro} ${sup.company_name} ${labels.inviteAction} ${campaignName}.\n\n${clientLine}${labels.inviteLinkText}\n${portalUrl}\n\n${labels.inviteDeadline}: ${deadlineStr}${materialsLine}\n\n${labels.inviteInstructionsTitle}\n${instrStr}\n\n${labels.inviteFooter}`;
+    const changesMessage = buildSupplierChangeMessage(summarizeSupplierChanges(supplierChanges), locale === 'es-CL' ? 'es' : 'pt');
+    const changesLine = changesMessage ? `${changesMessage}\n\n` : '';
+    const msg = `${labels.inviteGreeting} ${sup.contact_name}! A ${agencyName} ${labels.inviteIntro} ${sup.company_name} ${labels.inviteAction} ${campaignName}.\n\n${clientLine}${changesLine}${labels.inviteLinkText}\n${portalUrl}\n\n${labels.inviteDeadline}: ${deadlineStr}${materialsLine}\n\n${labels.inviteInstructionsTitle}\n${instrStr}\n\n${labels.inviteFooter}`;
 
     const phone = sup.phone.replace(/\D/g, "");
     return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
@@ -1211,6 +1219,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         supplierName: sup.company_name,
         currencyCode,
         rows,
+        supplierChanges,
         installation,
         freight,
         discount: ec?.discount_value != null ? Number(ec.discount_value) : 0,
@@ -1395,6 +1404,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         supplierName: sup.company_name,
         currencyCode,
         rows,
+        supplierChanges,
         installation,
         freight,
         discount: ec?.adjusted_discount_value != null ? Number(ec.adjusted_discount_value) : (ec?.discount_value != null ? Number(ec.discount_value) : 0),
@@ -1578,6 +1588,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         supplierName: sup.company_name,
         currencyCode,
         rows,
+        supplierChanges,
         installation,
         freight,
         discount,
