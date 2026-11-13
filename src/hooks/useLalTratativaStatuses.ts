@@ -12,13 +12,17 @@ export interface TratativaStatus {
   is_resolved: boolean;
   ativo: boolean;
   conta_como_ocorrencia: boolean;
+  /** Quando true, o status só é oferecido para ADM/Master. */
+  admin_only: boolean;
+  /** Status gravado no lugar deste quando um usuário comum salva. */
+  fallback_status: string | null;
 }
 
 /** Built-in fallback statuses used when the client has no custom statuses configured. */
 export const FALLBACK_TRATATIVA_STATUSES: Omit<TratativaStatus, "id" | "client_id">[] = [
-  { value: "aberta", label: "Aberta", color: "#6366f1", display_order: 0, is_default: true, is_resolved: false, ativo: true, conta_como_ocorrencia: true },
-  { value: "em_andamento", label: "Em andamento", color: "#f59e0b", display_order: 1, is_default: false, is_resolved: false, ativo: true, conta_como_ocorrencia: true },
-  { value: "resolvida", label: "Resolvida", color: "#22c55e", display_order: 2, is_default: false, is_resolved: true, ativo: true, conta_como_ocorrencia: true },
+  { value: "aberta", label: "Aberta", color: "#6366f1", display_order: 0, is_default: true, is_resolved: false, ativo: true, conta_como_ocorrencia: true, admin_only: false, fallback_status: null },
+  { value: "em_andamento", label: "Em andamento", color: "#f59e0b", display_order: 1, is_default: false, is_resolved: false, ativo: true, conta_como_ocorrencia: true, admin_only: false, fallback_status: null },
+  { value: "resolvida", label: "Resolvida", color: "#22c55e", display_order: 2, is_default: false, is_resolved: true, ativo: true, conta_como_ocorrencia: true, admin_only: false, fallback_status: null },
 ];
 
 export function useLalTratativaStatuses(clientId: string | undefined, onlyActive = false) {
