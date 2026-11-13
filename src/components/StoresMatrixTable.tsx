@@ -29,6 +29,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { getStateColor } from "@/lib/stateColors";
+import { isCustomFieldTrue } from "@/lib/customFields";
 import type { ClientStore } from "@/hooks/useMultiClientData";
 import {
   DndContext, closestCenter, PointerSensor, useSensor, useSensors, type DragEndEvent,
@@ -706,7 +707,7 @@ export default function StoresMatrixTable({
 
   const getCellDisplay = useCallback((store: ClientStore, col: ColumnDef) => {
     const val = (store as any)[col.storeField];
-    if (col.fieldType === "boolean") return val === "true" || val === true ? "Sim" : "Não";
+    if (col.fieldType === "boolean") return isCustomFieldTrue(val) ? "Sim" : "Não";
     if (!val) return "";
     if (col.storeField === "phone") return formatPhone(val);
     return val;
@@ -848,7 +849,7 @@ export default function StoresMatrixTable({
                   // Boolean field: render as Switch
                   if (col.fieldType === "boolean") {
                     const boolVal = (store as any)[col.storeField];
-                    const isTrue = boolVal === "true" || boolVal === true;
+                    const isTrue = isCustomFieldTrue(boolVal);
 
                     return (
                       <TableCell 

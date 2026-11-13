@@ -4,7 +4,7 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { MAX_CUSTOM_FIELDS } from "@/lib/customFields";
+import { MAX_CUSTOM_FIELDS, isCustomFieldTrue } from "@/lib/customFields";
 import {
   useClient, useCampaigns, useAddCampaign, useDeleteCampaign, useUpdateCampaign, useReorderCampaigns,
   useClientStores, useAddClientStore, useImportClientStores, useDeleteClientStore,
@@ -1348,10 +1348,10 @@ const ClientDetail = () => {
                 {field.type === "boolean" ? (
                   <div className="flex items-center gap-2">
                     <Switch
-                      checked={currentValue === "true"}
+                      checked={isCustomFieldTrue(currentValue)}
                       onCheckedChange={(checked) => setForm((f) => ({ ...f, [fieldKey]: checked ? "true" : "false" }))}
                     />
-                    <span className="text-sm text-muted-foreground">{currentValue === "true" ? "Sim" : "Não"}</span>
+                    <span className="text-sm text-muted-foreground">{isCustomFieldTrue(currentValue) ? "Sim" : "Não"}</span>
                   </div>
                 ) : field.type === "number" || field.type === "date" ? (
                   <Input
