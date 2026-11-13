@@ -39,12 +39,21 @@ export function useGenerateStoreToken() {
         .from("store_portal_tokens")
         .upsert(
           { campaign_id: params.campaign_id, store_id: params.store_id },
-          { onConflict: "campaign_id,store_id" }
+          { onConflict: "campaign_id,store_id", ignoreDuplicates: true }
         )
         .select()
-        .single();
+        .maybeSingle();
       if (error) throw error;
-      return data;
+      if (data) return data;
+      // já existia: retorna o token atual
+      const { data: existing, error: selErr } = await supabase
+        .from("store_portal_tokens")
+        .select("*")
+        .eq("campaign_id", params.campaign_id)
+        .eq("store_id", params.store_id)
+        .single();
+      if (selErr) throw selErr;
+      return existing;
     },
     onSuccess: (_, v) => {
       qc.invalidateQueries({ queryKey: ["store-portal-tokens", v.campaign_id] });
@@ -92,15 +101,16 @@ export function useGenerateAllStoreTokens() {
         store_id,
       }));
 
-      const { error } = await supabase
+      const { data: inserted, error } = await supabase
         .from("store_portal_tokens")
-        .upsert(rows, { onConflict: "campaign_id,store_id" });
+        .upsert(rows, { onConflict: "campaign_id,store_id", ignoreDuplicates: true })
+        .select("id");
       if (error) throw error;
-      return uniqueStoreIds.length;
+      return (inserted ?? []).length;
     },
     onSuccess: (count, campaignId) => {
       qc.invalidateQueries({ queryKey: ["store-portal-tokens", campaignId] });
-      toast.success(`${count} links gerados`);
+      toast.success(count > 0 ? `${count} novo(s) link(s) gerado(s)` : "Todos os links já existiam");
     },
     onError: (e: any) => toast.error("Erro ao gerar links: " + e.message),
   });
