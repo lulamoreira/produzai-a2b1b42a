@@ -20,6 +20,18 @@ import { createPortal } from "react-dom";
 import { useEffectiveTratativaStatuses } from "@/hooks/useLalTratativaStatuses";
 import { useUserRole } from "@/hooks/useUserRole";
 import { visibleTratativaStatuses, resolveEffectiveTratativaStatus } from "@/lib/tratativaStatusAccess";
+import {
+  tratativaTimeline,
+  localTodayISO,
+  normalizeDateOnly,
+  validateMaterialDates,
+  isReinstallBeforeMaterial,
+  arrivalCountdownText,
+  type TimelineOccurrence,
+} from "@/lib/tratativaTimeline";
+import { TONE_PILL_CLASS } from "@/components/tratativa/timelineStyles";
+import { TratativaTimelineEditor } from "./TratativaTimelineEditor";
+import { cn } from "@/lib/utils";
 
 interface Props {
   open: boolean;
@@ -84,6 +96,11 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const [resolutionPhotos, setResolutionPhotos] = useState<string[]>([]);
   const [reinstallationDate, setReinstallationDate] = useState<string>("");
   const [reinstallationOs, setReinstallationOs] = useState<string>("");
+  // Linha do tempo do material (datas "YYYY-MM-DD"; nunca converter com new Date).
+  const [needsMaterial, setNeedsMaterial] = useState(false);
+  const [materialSentDate, setMaterialSentDate] = useState<string>("");
+  const [materialEtaDate, setMaterialEtaDate] = useState<string>("");
+  const [materialArrivedDate, setMaterialArrivedDate] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -181,6 +198,10 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
       setResolutionPhotos(Array.isArray(occurrence.resolution_photo_urls) ? occurrence.resolution_photo_urls : []);
       setReinstallationDate(occurrence.reinstallation_scheduled_at ?? "");
       setReinstallationOs(occurrence.reinstallation_os ?? "");
+      setNeedsMaterial(!!occurrence.needs_material_shipment);
+      setMaterialSentDate(normalizeDateOnly(occurrence.material_sent_date) ?? "");
+      setMaterialEtaDate(normalizeDateOnly(occurrence.material_eta_date) ?? "");
+      setMaterialArrivedDate(normalizeDateOnly(occurrence.material_arrived_date) ?? "");
       setReporterType(occurrence.reporter_type ?? "lojista");
       setInitialized(occurrence.id);
       // Reset transient UI so leftover lightbox/check-in from a previous occurrence don't reappear
@@ -207,6 +228,37 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   if (!occurrence) return null;
 
   const photoUrls: string[] = Array.isArray(occurrence.photo_urls) ? occurrence.photo_urls : [];
+
+  // Linha do tempo montada a partir do rascunho em edição. "Registrado por" só
+  // aparece enquanto a etapa não foi alterada (o banco carimba o novo autor ao salvar).
+  const today = localTodayISO();
+  const toIso = (v: string | null | undefined): string | null => {
+    if (!v) return null;
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  };
+  const draftReinstIso = needsReinst ? toIso(reinstallationDate) : null;
+  const origReinstIso = toIso(occurrence.reinstallation_scheduled_at);
+  const sameSent = (materialSentDate || null) === (normalizeDateOnly(occurrence.material_sent_date) ?? null);
+  const sameArrived = (materialArrivedDate || null) === (normalizeDateOnly(occurrence.material_arrived_date) ?? null);
+  const draftTimelineOcc: TimelineOccurrence = {
+    status: occurrence.status,
+    resolved_at: occurrence.resolved_at,
+    needs_material_shipment: needsMaterial,
+    material_sent_date: needsMaterial ? materialSentDate || null : null,
+    material_eta_date: needsMaterial ? materialEtaDate || null : null,
+    material_arrived_date: needsMaterial ? materialArrivedDate || null : null,
+    needs_reinstallation: needsReinst,
+    reinstallation_scheduled_at: draftReinstIso,
+    reinstallation_os: reinstallationOs,
+    material_sent_by_name: sameSent ? occurrence.material_sent_by_name : null,
+    material_sent_recorded_at: sameSent ? occurrence.material_sent_recorded_at : null,
+    material_arrived_by_name: sameArrived ? occurrence.material_arrived_by_name : null,
+    material_arrived_recorded_at: sameArrived ? occurrence.material_arrived_recorded_at : null,
+    reinstallation_by_name: draftReinstIso === origReinstIso ? occurrence.reinstallation_by_name : null,
+    reinstallation_recorded_at: draftReinstIso === origReinstIso ? occurrence.reinstallation_recorded_at : null,
+  };
+  const timeline = tratativaTimeline(draftTimelineOcc, today);
   const storeName = occurrence.client_stores?.name ?? "—";
   const pieceName = occurrence.loja_a_loja_pecas?.nome ?? "—";
   const pieceImageUrl: string | null = occurrence.loja_a_loja_pecas?.image_url ?? null;
@@ -254,6 +306,13 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
 
   async function handleSave() {
     if (!occurrence) return;
+    if (needsMaterial) {
+      const dateError = validateMaterialDates(
+        { sent: materialSentDate, eta: materialEtaDate, arrived: materialArrivedDate },
+        localTodayISO(),
+      );
+      if (dateError) { toast.error(dateError); return; }
+    }
     setSaving(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -272,6 +331,11 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
           resolution_photo_urls: resolutionPhotos,
           reinstallation_scheduled_at: needsReinst && reinstallationDate ? new Date(reinstallationDate).toISOString() : null,
           reinstallation_os: needsReinst && reinstallationOs.trim() ? reinstallationOs.trim() : null,
+          // Autor/horário de cada etapa (*_by_name / *_recorded_at) são carimbados pelo banco.
+          needs_material_shipment: needsMaterial,
+          material_sent_date: needsMaterial && materialSentDate ? materialSentDate : null,
+          material_eta_date: needsMaterial && materialEtaDate ? materialEtaDate : null,
+          material_arrived_date: needsMaterial && materialArrivedDate ? materialArrivedDate : null,
           reporter_type: reporterType || null,
           resolved_by_user_id: (tratativaStatuses.find((s) => s.value === effectiveStatus)?.is_resolved) ? userId : null,
         } as any)
@@ -448,76 +512,85 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
 
             <Separator />
 
-            {/* TRATATIVA */}
-            <section className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Tratativa</h3>
-                {occurrence.resolved_at && (
-                  <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50 dark:bg-green-950/20">
-                    Resolvida em {formatDateTime(occurrence.resolved_at)}
-                  </Badge>
-                )}
+            {/* TRATATIVA — painel próprio, destacado do restante do card */}
+            <section className="rounded-lg border-2 border-primary/40 overflow-hidden" aria-labelledby="tratativa-title">
+              <div className="flex items-center justify-between gap-2 flex-wrap bg-primary/10 px-3 py-2">
+                <h3 id="tratativa-title" className="text-xs font-bold uppercase tracking-wide text-primary">Tratativa</h3>
+                <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                  {timeline.show && (
+                    <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border", TONE_PILL_CLASS[timeline.tone])}>
+                      {timeline.headline}
+                    </span>
+                  )}
+                  {occurrence.resolved_at && (
+                    <Badge variant="outline" className="text-green-700 border-green-300 bg-green-50 dark:bg-green-950/20">
+                      Resolvida em {formatDateTime(occurrence.resolved_at)}
+                    </Badge>
+                  )}
+                </div>
               </div>
 
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Status da tratativa</label>
-                <Select value={tratativaStatus} onValueChange={setTratativaStatus} disabled={!isAdmin}>
-                  <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {visibleStatuses.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        <span className="flex items-center gap-2">
-                          <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
-                          {s.label}
-                        </span>
-                      </SelectItem>
-                    ))}
-                    {tratativaStatus && !visibleStatuses.find((s) => s.value === tratativaStatus) && (
-                      <SelectItem value={tratativaStatus}>
-                        {tratativaStatuses.find((s) => s.value === tratativaStatus)?.label ?? TRATATIVA_LABELS[tratativaStatus] ?? tratativaStatus}
-                      </SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
+              <div className="space-y-4 p-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Status da tratativa</label>
+                  <Select value={tratativaStatus} onValueChange={setTratativaStatus} disabled={!isAdmin}>
+                    <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {visibleStatuses.map((s) => (
+                        <SelectItem key={s.value} value={s.value}>
+                          <span className="flex items-center gap-2">
+                            <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                            {s.label}
+                          </span>
+                        </SelectItem>
+                      ))}
+                      {tratativaStatus && !visibleStatuses.find((s) => s.value === tratativaStatus) && (
+                        <SelectItem value={tratativaStatus}>
+                          {tratativaStatuses.find((s) => s.value === tratativaStatus)?.label ?? TRATATIVA_LABELS[tratativaStatus] ?? tratativaStatus}
+                        </SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Previsão de resolução</label>
+                  <DateTimePicker value={expectedDate} onChange={setExpectedDate} disabled={!isAdmin} buttonClassName="h-9" clearable />
+                </div>
               </div>
 
-              <div>
-                <label className="text-xs font-medium text-muted-foreground mb-1 block">Previsão de resolução</label>
-                <DateTimePicker value={expectedDate} onChange={setExpectedDate} disabled={!isAdmin} buttonClassName="h-9" clearable />
+              <div className="flex items-center gap-x-6 gap-y-2 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Checkbox id="material-shipment" checked={needsMaterial} onCheckedChange={(v) => setNeedsMaterial(!!v)} disabled={!isAdmin} />
+                  <label htmlFor="material-shipment" className="text-sm cursor-pointer">Envolve envio de material</label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Checkbox id="reinst" checked={needsReinst} onCheckedChange={(v) => setNeedsReinst(!!v)} disabled={!isAdmin} />
+                  <label htmlFor="reinst" className="text-sm cursor-pointer">Precisa reinstalação</label>
+                </div>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Checkbox id="reinst" checked={needsReinst} onCheckedChange={(v) => setNeedsReinst(!!v)} disabled={!isAdmin} />
-                <label htmlFor="reinst" className="text-sm cursor-pointer">Precisa reinstalação</label>
-              </div>
-
-              {needsReinst && (
-                <div className="grid grid-cols-2 gap-3 pl-4 border-l-2 border-orange-400 mt-2">
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">
-                      Data e horário da reinstalação
-                    </label>
-                    <DateTimePicker
-                      value={reinstallationDate}
-                      onChange={setReinstallationDate}
-                      disabled={!isAdmin}
-                      buttonClassName="h-9"
-                      clearable
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-medium text-foreground mb-1 block">
-                      Número da OS
-                    </label>
-                    <input
-                      type="text"
-                      value={reinstallationOs}
-                      onChange={(e) => setReinstallationOs(e.target.value)}
-                      disabled={!isAdmin}
-                      placeholder="Ex: OS-2024-001"
-                      className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
-                    />
-                  </div>
+              {timeline.show && (
+                <div className="rounded-md border border-border bg-muted/20 p-3">
+                  <TratativaTimelineEditor
+                    timeline={timeline}
+                    disabled={!isAdmin}
+                    today={today}
+                    sentDate={materialSentDate}
+                    onSentDateChange={setMaterialSentDate}
+                    etaDate={materialEtaDate}
+                    onEtaDateChange={setMaterialEtaDate}
+                    arrivedDate={materialArrivedDate}
+                    onArrivedDateChange={setMaterialArrivedDate}
+                    arrivalCountdown={arrivalCountdownText(draftTimelineOcc, today)}
+                    reinstallationDate={reinstallationDate}
+                    onReinstallationDateChange={setReinstallationDate}
+                    reinstallationOs={reinstallationOs}
+                    onReinstallationOsChange={setReinstallationOs}
+                    reinstallBeforeMaterial={isReinstallBeforeMaterial(draftTimelineOcc)}
+                  />
+                  {timeline.nextStep && <p className="mt-3 text-xs text-muted-foreground">{timeline.nextStep}</p>}
                 </div>
               )}
 
@@ -574,6 +647,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                   </Button>
                 </div>
               )}
+              </div>
             </section>
           </div>
         </SheetContent>

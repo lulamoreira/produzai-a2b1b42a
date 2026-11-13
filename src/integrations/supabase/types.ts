@@ -5359,11 +5359,21 @@ export type Database = {
           expected_resolution_date: string | null
           id: string
           loja_a_loja_peca_id: string | null
+          material_arrived_by_name: string | null
+          material_arrived_date: string | null
+          material_arrived_recorded_at: string | null
+          material_eta_date: string | null
+          material_sent_by_name: string | null
+          material_sent_date: string | null
+          material_sent_recorded_at: string | null
           motive_id: string | null
+          needs_material_shipment: boolean
           needs_reinstallation: boolean
           photo_urls: string[] | null
           priority: string
+          reinstallation_by_name: string | null
           reinstallation_os: string | null
+          reinstallation_recorded_at: string | null
           reinstallation_scheduled_at: string | null
           reporter_type: string
           resolution_photo_urls: string[] | null
@@ -5385,11 +5395,21 @@ export type Database = {
           expected_resolution_date?: string | null
           id?: string
           loja_a_loja_peca_id?: string | null
+          material_arrived_by_name?: string | null
+          material_arrived_date?: string | null
+          material_arrived_recorded_at?: string | null
+          material_eta_date?: string | null
+          material_sent_by_name?: string | null
+          material_sent_date?: string | null
+          material_sent_recorded_at?: string | null
           motive_id?: string | null
+          needs_material_shipment?: boolean
           needs_reinstallation?: boolean
           photo_urls?: string[] | null
           priority?: string
+          reinstallation_by_name?: string | null
           reinstallation_os?: string | null
+          reinstallation_recorded_at?: string | null
           reinstallation_scheduled_at?: string | null
           reporter_type?: string
           resolution_photo_urls?: string[] | null
@@ -5411,11 +5431,21 @@ export type Database = {
           expected_resolution_date?: string | null
           id?: string
           loja_a_loja_peca_id?: string | null
+          material_arrived_by_name?: string | null
+          material_arrived_date?: string | null
+          material_arrived_recorded_at?: string | null
+          material_eta_date?: string | null
+          material_sent_by_name?: string | null
+          material_sent_date?: string | null
+          material_sent_recorded_at?: string | null
           motive_id?: string | null
+          needs_material_shipment?: boolean
           needs_reinstallation?: boolean
           photo_urls?: string[] | null
           priority?: string
+          reinstallation_by_name?: string | null
           reinstallation_os?: string | null
+          reinstallation_recorded_at?: string | null
           reinstallation_scheduled_at?: string | null
           reporter_type?: string
           resolution_photo_urls?: string[] | null
@@ -6391,6 +6421,14 @@ export type Database = {
       }
       compute_budget_qty_requote_changes: {
         Args: { p_campaign_id: string; p_existing: Json }
+        Returns: Json
+      }
+      confirm_material_arrival_by_store: {
+        Args: {
+          p_arrived_date: string
+          p_occurrence_id: string
+          p_token: string
+        }
         Returns: Json
       }
       count_active_suppliers: {

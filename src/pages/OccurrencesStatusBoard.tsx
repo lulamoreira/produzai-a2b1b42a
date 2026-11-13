@@ -14,6 +14,10 @@ interface SummaryStore {
   token: string | null;
   total_count: number;
   open_count: number;
+  /** Material enviado, ainda não chegou, dentro da previsão. */
+  in_transit_count?: number | null;
+  /** Material com previsão de chegada vencida. */
+  late_count?: number | null;
 }
 
 export default function OccurrencesStatusBoard() {
@@ -90,6 +94,8 @@ export default function OccurrencesStatusBoard() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {stores.map((s) => {
+              const late = Number(s.late_count ?? 0) || 0;
+              const inTransit = Number(s.in_transit_count ?? 0) || 0;
               const inner = (
                 <>
                   <div className="flex items-start gap-2">
@@ -100,7 +106,12 @@ export default function OccurrencesStatusBoard() {
                       <div className="text-xs text-muted-foreground mt-0.5">{s.city}{s.state ? ` / ${s.state}` : ""}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 mt-3">
+                  <div className="flex items-center gap-2 mt-3 flex-wrap">
+                    {late > 0 && (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
+                        {late} {late === 1 ? "material atrasado" : "materiais atrasados"}
+                      </span>
+                    )}
                     {s.open_count > 0 && (
                       <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-destructive/10 text-destructive">
                         {s.open_count} aberta{s.open_count === 1 ? "" : "s"}
@@ -109,6 +120,11 @@ export default function OccurrencesStatusBoard() {
                     <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
                       {s.total_count} no total
                     </span>
+                    {inTransit > 0 && (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                        {inTransit} a caminho
+                      </span>
+                    )}
                   </div>
                 </>
               );
