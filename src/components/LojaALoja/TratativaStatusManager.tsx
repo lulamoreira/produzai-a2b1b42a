@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { tratativaAccessMode, tratativaAccessPatch } from "@/lib/tratativaStatusAccess";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -36,6 +38,7 @@ function SortableRow({
   s, canEdit, canDelete, isEditing, editLabel, editColor, editResolved, editCountsAsOcc,
   onChangeLabel, onChangeColor, onChangeResolved, onChangeCountsAsOcc,
   onSave, onCancel, onStartEdit, onToggleAtivo, onSetDefault, onDelete,
+  allStatuses, onSetAccess,
 }: {
   s: TratativaStatus;
   canEdit: boolean; canDelete: boolean;
@@ -48,7 +51,15 @@ function SortableRow({
   onSave: () => void; onCancel: () => void;
   onStartEdit: () => void; onToggleAtivo: () => void;
   onSetDefault: () => void; onDelete: () => void;
+  allStatuses: TratativaStatus[];
+  onSetAccess: (patch: Partial<TratativaStatus>) => void;
 }) {
+  const accessMode = tratativaAccessMode(s);
+  const redirectTargets = allStatuses.filter((o) => o.id !== s.id && o.ativo);
+  // Destino salvo que foi removido/desativado: mantém a opção visível para não deixar o seletor em branco.
+  const missingTarget = s.fallback_status && !redirectTargets.some((o) => o.value === s.fallback_status)
+    ? s.fallback_status : null;
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: s.id });
   const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1 };
 
@@ -102,6 +113,23 @@ function SortableRow({
                 <Button size="sm" variant="ghost" onClick={onSetDefault} className="h-8 w-8 p-0" title="Definir como padrão" disabled={s.is_default}>
                   <Star className={`h-3.5 w-3.5 ${s.is_default ? "fill-yellow-400 text-yellow-500" : ""}`} />
                 </Button>
+              )}
+              {canEdit && (
+                <Select value={accessMode} onValueChange={(v) => onSetAccess(tratativaAccessPatch(v))}>
+                  <SelectTrigger className="h-8 w-[180px] text-xs shrink-0" title="Quem pode usar este status" aria-label="Quem pode usar este status">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="open">Disponível p/ todos</SelectItem>
+                    <SelectItem value="admin">Somente ADM/Master</SelectItem>
+                    {redirectTargets.map((o) => (
+                      <SelectItem key={o.id} value={`redirect:${o.value}`}>Encaminhar → {o.label}</SelectItem>
+                    ))}
+                    {missingTarget && (
+                      <SelectItem value={`redirect:${missingTarget}`}>Encaminhar → {missingTarget} (inativo)</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
               )}
               {canEdit && <Switch checked={s.ativo} onCheckedChange={onToggleAtivo} />}
               {canEdit && (
@@ -182,6 +210,11 @@ export default function TratativaStatusManager({ clientId, permissions, embedded
     catch { toast.error("Erro ao alterar status."); }
   };
 
+  const setAccess = async (s: TratativaStatus, patch: Partial<TratativaStatus>) => {
+    try { await updateM.mutateAsync({ id: s.id, client_id: clientId, patch }); toast.success("Permissão do status atualizada."); }
+    catch { toast.error("Erro ao atualizar permissão."); }
+  };
+
   const setDefault = async (s: TratativaStatus) => {
     try { await defaultM.mutateAsync({ id: s.id, client_id: clientId }); toast.success("Status padrão definido."); }
     catch { toast.error("Erro ao definir padrão."); }
@@ -248,7 +281,8 @@ export default function TratativaStatusManager({ clientId, permissions, embedded
                   onChangeLabel={setEditLabel} onChangeColor={setEditColor} onChangeResolved={setEditResolved} onChangeCountsAsOcc={setEditCountsAsOcc}
                   onSave={() => saveEdit(s)} onCancel={() => setEditingId(null)}
                   onStartEdit={() => startEdit(s)} onToggleAtivo={() => toggleAtivo(s)}
-                  onSetDefault={() => setDefault(s)} onDelete={() => setDeleteTarget(s)} />
+                  onSetDefault={() => setDefault(s)} onDelete={() => setDeleteTarget(s)}
+                  allStatuses={statuses} onSetAccess={(patch) => setAccess(s, patch)} />
               ))}
             </div>
           </SortableContext>
@@ -281,7 +315,7 @@ export default function TratativaStatusManager({ clientId, permissions, embedded
       <CardHeader>
         <CardTitle className="text-lg">Status da Tratativa</CardTitle>
         <CardDescription>
-          Personalize os status disponíveis para a tratativa das ocorrências (rótulo, cor, ordem). Marque um como padrão (usado em novas ocorrências) e quais contam como "resolvido".
+          Personalize os status disponíveis para a tratativa das ocorrências (rótulo, cor, ordem). Marque um como padrão (usado em novas ocorrências) e quais contam como "resolvido". Você também pode restringir um status a ADM/Master ou encaminhá-lo para outro quando usado por um usuário comum.
         </CardDescription>
       </CardHeader>
       <CardContent>{body}</CardContent>

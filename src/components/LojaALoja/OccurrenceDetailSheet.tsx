@@ -18,6 +18,8 @@ import { compressImage } from "@/lib/compressImage";
 import { toast } from "sonner";
 import { createPortal } from "react-dom";
 import { useEffectiveTratativaStatuses } from "@/hooks/useLalTratativaStatuses";
+import { useUserRole } from "@/hooks/useUserRole";
+import { visibleTratativaStatuses, resolveEffectiveTratativaStatus } from "@/lib/tratativaStatusAccess";
 
 interface Props {
   open: boolean;
@@ -106,6 +108,12 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   });
   const clientId = campaignRow?.client_id as string | undefined;
   const { statuses: tratativaStatuses } = useEffectiveTratativaStatuses(clientId);
+  const { isAdminOrMaster } = useUserRole();
+  // Usuário comum não vê status marcados como "Somente ADM/Master".
+  const visibleStatuses = useMemo(
+    () => visibleTratativaStatuses(tratativaStatuses, isAdminOrMaster),
+    [tratativaStatuses, isAdminOrMaster],
+  );
 
   // Portal config (for custom reporter names)
   const { data: portalConfig } = useQuery({
@@ -250,12 +258,14 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
     try {
       const { data: userData } = await supabase.auth.getUser();
       const userId = userData?.user?.id ?? null;
+      // Usuário comum: status com encaminhamento é convertido ao salvar.
+      const effectiveStatus = resolveEffectiveTratativaStatus(tratativaStatuses, tratativaStatus, isAdminOrMaster);
 
       const { error } = await supabase
         .from("store_occurrence_reports")
         .update({
           priority,
-          tratativa_status: tratativaStatus,
+          tratativa_status: effectiveStatus,
           expected_resolution_date: expectedDate ? new Date(expectedDate).toISOString() : null,
           needs_reinstallation: needsReinst,
           tratativa_notes: tratativaNotes || null,
@@ -263,13 +273,18 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
           reinstallation_scheduled_at: needsReinst && reinstallationDate ? new Date(reinstallationDate).toISOString() : null,
           reinstallation_os: needsReinst && reinstallationOs.trim() ? reinstallationOs.trim() : null,
           reporter_type: reporterType || null,
-          resolved_by_user_id: (tratativaStatuses.find((s) => s.value === tratativaStatus)?.is_resolved) ? userId : null,
+          resolved_by_user_id: (tratativaStatuses.find((s) => s.value === effectiveStatus)?.is_resolved) ? userId : null,
         } as any)
         .eq("id", occurrence.id);
 
       if (error) throw error;
 
       toast.success("Ocorrência atualizada.");
+      if (effectiveStatus !== tratativaStatus) {
+        setTratativaStatus(effectiveStatus);
+        const lbl = tratativaStatuses.find((s) => s.value === effectiveStatus)?.label ?? TRATATIVA_LABELS[effectiveStatus] ?? effectiveStatus;
+        toast.info(`Status encaminhado para "${lbl}".`);
+      }
       qc.invalidateQueries({ queryKey: ["portal-occurrences-v2", campaignId] });
       qc.invalidateQueries({ queryKey: ["portal-occurrences-by-store", campaignId] });
       qc.invalidateQueries({ queryKey: ["loja-a-loja-dashboard", campaignId] });
@@ -449,7 +464,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                 <Select value={tratativaStatus} onValueChange={setTratativaStatus} disabled={!isAdmin}>
                   <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {tratativaStatuses.map((s) => (
+                    {visibleStatuses.map((s) => (
                       <SelectItem key={s.value} value={s.value}>
                         <span className="flex items-center gap-2">
                           <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
@@ -457,9 +472,9 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                         </span>
                       </SelectItem>
                     ))}
-                    {tratativaStatus && !tratativaStatuses.find((s) => s.value === tratativaStatus) && (
+                    {tratativaStatus && !visibleStatuses.find((s) => s.value === tratativaStatus) && (
                       <SelectItem value={tratativaStatus}>
-                        {TRATATIVA_LABELS[tratativaStatus] ?? tratativaStatus}
+                        {tratativaStatuses.find((s) => s.value === tratativaStatus)?.label ?? TRATATIVA_LABELS[tratativaStatus] ?? tratativaStatus}
                       </SelectItem>
                     )}
                   </SelectContent>
