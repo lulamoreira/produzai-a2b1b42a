@@ -148,6 +148,13 @@
       "when": 1794601810788,
       "tag": "0020_occurrence_material_timeline",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1794604434485,
+      "tag": "0021_supplier_portal_snapshot",
+      "breakpoints": true
     }
   ]
 }

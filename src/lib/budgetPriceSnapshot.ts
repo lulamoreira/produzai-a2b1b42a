@@ -18,7 +18,7 @@ export async function snapshotSupplierBudget(params: {
   // Fetch current prices + extra costs
   const [{ data: prices }, { data: extra }] = await Promise.all([
     supabase.from("budget_prices").select("piece_id, kit_id, unit_price").eq("supplier_id", supplierId),
-    supabase.from("budget_extra_costs").select("installation_value, freight_value, notes").eq("supplier_id", supplierId).maybeSingle(),
+    supabase.from("budget_extra_costs").select("installation_value, freight_value, discount_value").eq("supplier_id", supplierId).maybeSingle(),
   ]);
 
   // Compute next version

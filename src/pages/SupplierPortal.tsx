@@ -859,12 +859,12 @@ const SupplierPortal = () => {
 
       // Save snapshot
       try {
-        const { snapshotSupplierBudget } = await import("@/lib/budgetPriceSnapshot");
-        await snapshotSupplierBudget({
-          supplierId: supplier.id,
-          campaignId: supplier.campaign_id,
-          reason: (isNeg ? "negotiation_submitted" : "submitted") as any,
-        });
+        const { data: snapData, error: snapError } = await supabase.rpc("supplier_portal_snapshot" as never, {
+          _token: token,
+          _reason: isNeg ? "negotiation_submitted" : "submitted",
+        } as never);
+        if (snapError) throw snapError;
+        if (!(snapData as any)?.success) throw new Error("snapshot_failed");
       } catch (snapErr) {
         console.warn("Snapshot history failed (non-blocking):", snapErr);
       }
