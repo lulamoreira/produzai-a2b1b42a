@@ -3623,12 +3623,14 @@ export type Database = {
       }
       lal_tratativa_statuses: {
         Row: {
+          admin_only: boolean
           ativo: boolean
           client_id: string
           color: string
           conta_como_ocorrencia: boolean
           created_at: string
           display_order: number
+          fallback_status: string | null
           id: string
           is_default: boolean
           is_resolved: boolean
@@ -3637,12 +3639,14 @@ export type Database = {
           value: string
         }
         Insert: {
+          admin_only?: boolean
           ativo?: boolean
           client_id: string
           color?: string
           conta_como_ocorrencia?: boolean
           created_at?: string
           display_order?: number
+          fallback_status?: string | null
           id?: string
           is_default?: boolean
           is_resolved?: boolean
@@ -3651,12 +3655,14 @@ export type Database = {
           value: string
         }
         Update: {
+          admin_only?: boolean
           ativo?: boolean
           client_id?: string
           color?: string
           conta_como_ocorrencia?: boolean
           created_at?: string
           display_order?: number
+          fallback_status?: string | null
           id?: string
           is_default?: boolean
           is_resolved?: boolean

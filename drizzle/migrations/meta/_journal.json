@@ -127,6 +127,13 @@
       "when": 1794497415870,
       "tag": "0017_supplier_change_markers",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794580533437,
+      "tag": "0018_tratativa_status_access",
+      "breakpoints": true
     }
   ]
 }
