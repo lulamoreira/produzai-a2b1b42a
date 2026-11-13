@@ -309,7 +309,7 @@ export default function StorePortal() {
                           </AlertDescription>
                         </Alert>
                       )}
-                      {tab.value === "ocorrencias" && <OcorrenciasTab data={data} agencyId={agencyId} initialSituacao={wantSituacao} />}
+                      {tab.value === "ocorrencias" && <OcorrenciasTab data={data} agencyId={agencyId} initialSituacao={wantSituacao} storeToken={token} />}
                       {tab.value === "manutencao" && <ManutencaoTab data={data} agencyId={agencyId} />}
                       {tab.value === "reposicoes" && <ReposicoesTab data={data} agencyId={agencyId} />}
                       {tab.value === "conformidade" && <ConformidadeTab data={data} agencyId={agencyId} />}

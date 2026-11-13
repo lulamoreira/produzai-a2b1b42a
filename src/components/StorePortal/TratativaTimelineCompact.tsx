@@ -53,11 +53,11 @@ export function TratativaTimelineCompact({
     if (!storeToken) { toast.error(errorMessage("invalid_token")); return; }
     setSending(true);
     try {
-      const { data, error } = await supabase.rpc("confirm_material_arrival_by_store" as any, {
+      const { data, error } = await supabase.rpc("confirm_material_arrival_by_store", {
         p_token: storeToken,
         p_occurrence_id: occurrenceId,
         p_arrived_date: today,
-      } as any);
+      });
       if (error) throw error;
       const result = data as ConfirmResult;
       if (result?.ok) {

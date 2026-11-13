@@ -12,11 +12,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Loader2, Image as ImageIcon, ArrowLeft, ChevronDown, ChevronUp, MessageCircle, Share2, ClipboardList } from "lucide-react";
 import { useEffectiveTratativaStatuses, type TratativaStatus } from "@/hooks/useLalTratativaStatuses";
+import { tratativaTimeline, localTodayISO, formatDateOnlyBR } from "@/lib/tratativaTimeline";
+import { TratativaTimelineCompact } from "./TratativaTimelineCompact";
 
 interface Props {
   data: PortalData;
   agencyId: string;
   initialSituacao?: boolean;
+  /** Token da loja (URL /loja/:token), usado para confirmar a chegada do material. */
+  storeToken?: string;
 }
 
 interface StatusItem {
@@ -93,12 +97,29 @@ function buildWhatsAppMessage(r: any, data: PortalData, statuses: StatusItem[]) 
     `👤 Reportado por: ${formatReporter(r.reporter_type)}`,
     r.description ? `📝 Descrição: ${r.description}` : null,
     r.expected_resolution_date ? `⏰ Previsão de atendimento: ${formatDateTimeBR(r.expected_resolution_date)}` : null,
+    r.material_sent_date ? `🚚 Material enviado em: ${formatDateOnlyBR(r.material_sent_date)}` : null,
+    r.material_eta_date ? `📦 Previsão de chegada do material: ${formatDateOnlyBR(r.material_eta_date)}` : null,
+    r.material_arrived_date ? `✅ Material chegou em: ${formatDateOnlyBR(r.material_arrived_date)}` : null,
     r.tratativa_notes ? `📋 Tratativa: ${r.tratativa_notes}` : null,
   ].filter(Boolean).join("\n");
 }
 
-function OcorrenciaCard({ r, data, statuses }: { r: any; data: PortalData; statuses: StatusItem[] }) {
+function OcorrenciaCard({
+  r,
+  data,
+  statuses,
+  storeToken,
+  onChanged,
+}: {
+  r: any;
+  data: PortalData;
+  statuses: StatusItem[];
+  storeToken?: string;
+  onChanged: () => void;
+}) {
   const [expanded, setExpanded] = useState(false);
+  const timeline = tratativaTimeline(r, localTodayISO());
+  const canConfirmArrival = !!r.needs_material_shipment && !r.material_arrived_date && !timeline.isResolved;
 
   const peca = data.pecas.find(p => p.id === r.loja_a_loja_peca_id);
   const tipo = data.tipos.find(t => t.id === r.tipo_id);
@@ -136,6 +157,16 @@ function OcorrenciaCard({ r, data, statuses }: { r: any; data: PortalData; statu
           <p className="text-xs text-muted-foreground mt-1 truncate">
             {local} · {formatDateBR(r.created_at)}
           </p>
+          {timeline.show && (
+            <TratativaTimelineCompact
+              occurrenceId={r.id}
+              timeline={timeline}
+              reinstallationOs={r.needs_reinstallation ? r.reinstallation_os : null}
+              canConfirmArrival={canConfirmArrival}
+              storeToken={storeToken}
+              onConfirmed={onChanged}
+            />
+          )}
         </div>
         <div className="flex flex-col items-end gap-0.5 shrink-0">
           {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
@@ -157,7 +188,7 @@ function OcorrenciaCard({ r, data, statuses }: { r: any; data: PortalData; statu
           {r.description && <Row label="Descrição" value={r.description} multiline />}
           {r.expected_resolution_date && <Row label="Previsão de atendimento" value={formatDateTimeBR(r.expected_resolution_date)} />}
           {r.tratativa_notes && <Row label="Tratativa" value={r.tratativa_notes} multiline />}
-          {r.needs_reinstallation && (
+          {r.needs_reinstallation && !timeline.show && (
             <Row
               label="Reinstalação"
               value={
@@ -217,7 +248,7 @@ function Row({ label, value, multiline }: { label: string; value: string; multil
   );
 }
 
-export default function OcorrenciasTab({ data, agencyId, initialSituacao }: Props) {
+export default function OcorrenciasTab({ data, agencyId, initialSituacao, storeToken }: Props) {
   const [selectedPeca, setSelectedPeca] = useState<any>(null);
   const [blockedPeca, setBlockedPeca] = useState<any>(null);
   const [reporterType, setReporterType] = useState("lojista");
@@ -399,7 +430,14 @@ export default function OcorrenciasTab({ data, agencyId, initialSituacao }: Prop
         ) : (
           <div className="space-y-3">
             {allReports.map(r => (
-              <OcorrenciaCard key={r.id} r={r} data={data} statuses={statuses} />
+              <OcorrenciaCard
+                key={r.id}
+                r={r}
+                data={data}
+                statuses={statuses}
+                storeToken={storeToken}
+                onChanged={() => { loadReports(); loadAllReports(); }}
+              />
             ))}
           </div>
         )}
