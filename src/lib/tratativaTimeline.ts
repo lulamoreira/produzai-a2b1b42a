@@ -220,7 +220,8 @@ export function tratativaTimeline(o: TimelineOccurrence, today: string): Tratati
     steps.push({
       key: "sent",
       label: "Material enviado",
-      state: sent ? "done" : "todo",
+      // Se a chegada já foi registrada, o envio aconteceu (mesmo sem data informada).
+      state: sent || arrived ? "done" : "todo",
       dateLabel: formatDateOnlyBR(sent),
       shortDateLabel: formatDayMonth(sent),
       isForecast: false,
@@ -283,7 +284,7 @@ export function tratativaTimeline(o: TimelineOccurrence, today: string): Tratati
     headline = "Resolvido";
     tone = "success";
     nextStep = null;
-  } else if (needsMaterial && !sent) {
+  } else if (needsMaterial && !sent && !arrived) {
     headline = "Aguardando envio do material";
     tone = "warning";
     nextStep = "Próximo passo: a equipe responsável enviar o material para a loja.";
