@@ -1,4 +1,5 @@
 import { useParams } from "react-router-dom";
+import { isCustomFieldTrue } from "@/lib/customFields";
 import { useMemo, useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabaseAnon as supabase } from "@/integrations/supabase/anonClient";
@@ -231,12 +232,12 @@ export default function StoreFormPortal() {
                     {f.field_type === "boolean" && (
                       <div className="flex items-center gap-2">
                         <Switch
-                          checked={value === "true"}
+                          checked={isCustomFieldTrue(value)}
                           onCheckedChange={(v) => setValue(v ? "true" : "false")}
                           disabled={locked}
                         />
                         <span className="text-sm text-muted-foreground">
-                          {value === "true" ? "Sim" : "Não"}
+                          {isCustomFieldTrue(value) ? "Sim" : "Não"}
                         </span>
                       </div>
                     )}
