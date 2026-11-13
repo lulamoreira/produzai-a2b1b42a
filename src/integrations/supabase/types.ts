@@ -6809,6 +6809,10 @@ export type Database = {
         Args: { _decline_reason?: string; _status: string; _token: string }
         Returns: Json
       }
+      supplier_portal_snapshot: {
+        Args: { _reason: string; _token: string }
+        Returns: Json
+      }
       supplier_portal_submit: {
         Args: { _is_negotiation: boolean; _token: string }
         Returns: Json
