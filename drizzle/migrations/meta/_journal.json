@@ -134,6 +134,13 @@
       "when": 1794580533437,
       "tag": "0018_tratativa_status_access",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794581789433,
+      "tag": "0019_enforce_tratativa_status_access",
+      "breakpoints": true
     }
   ]
 }
