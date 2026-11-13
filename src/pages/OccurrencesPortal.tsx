@@ -86,27 +86,25 @@ export default function OccurrencesPortal() {
 
   const tokensData = useMemo(() => {
     if (!isTokenMode || !tokenData) return undefined;
-    {
-      const stores = (tokenData.stores ?? []) as Array<{
-        store_id: string; name: string; store_code: string | null;
-        city: string | null; state: string | null; token: string | null;
-      }>;
-      const tokensList: StoreToken[] = stores.map((s) => ({
-        token: s.token,
-        client_stores: {
-          id: s.store_id,
-          name: s.name,
-          city: s.city,
-          state: s.state,
-          store_code: s.store_code,
-        },
-      }));
-      return {
-        tokens: tokensList,
-        hasStores: tokensList.length > 0,
-        hasTokens: tokensList.some((t) => t.token !== null),
-      };
-    }
+    const stores = (tokenData.stores ?? []) as Array<{
+      store_id: string; name: string; store_code: string | null;
+      city: string | null; state: string | null; token: string | null;
+    }>;
+    const tokensList: StoreToken[] = stores.map((s) => ({
+      token: s.token,
+      client_stores: {
+        id: s.store_id,
+        name: s.name,
+        city: s.city,
+        state: s.state,
+        store_code: s.store_code,
+      },
+    }));
+    return {
+      tokens: tokensList,
+      hasStores: tokensList.length > 0,
+      hasTokens: tokensList.some((t) => t.token !== null),
+    };
   }, [isTokenMode, tokenData]);
 
   // Legacy mode keeps the skeleton while the async redirect is resolved.
