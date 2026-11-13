@@ -9,7 +9,7 @@ import { History } from "lucide-react";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 
 interface PriceRow { piece_id: string | null; kit_id: string | null; unit_price: number | null; }
-interface ExtraRow { installation_value: number | null; freight_value: number | null; notes?: string | null; }
+interface ExtraRow { installation_value: number | null; freight_value: number | null; discount_value?: number | null; }
 interface Snapshot { prices: PriceRow[]; extra_costs: ExtraRow | null; }
 interface HistoryEntry {
   id: string;
@@ -28,6 +28,16 @@ interface Props {
   pieces: { id: string; code?: string | number | null; name?: string | null }[];
   kits: { id: string; name?: string | null }[];
 }
+
+/** Human-readable labels for budget_price_history.reason (unknown values fall back to the raw key). */
+const REASON_LABELS: Record<string, string> = {
+  submitted: "Enviado pelo fornecedor",
+  reopened: "Liberado para revisão",
+  negotiation_submitted: "Renegociação enviada pelo fornecedor",
+  negotiation_opened: "Renegociação aberta",
+  negotiation_approved: "Renegociação aprovada",
+  negotiation_auto_applied: "Ajuste automático aplicado",
+};
 
 export default function BudgetSupplierHistorySheet({
   open, onOpenChange, supplierId, supplierName, currencyCode = "BRL", pieces, kits,
@@ -72,10 +82,7 @@ export default function BudgetSupplierHistorySheet({
             <p className="text-xs text-muted-foreground text-center py-8">Nenhuma versão registrada ainda.</p>
           )}
           {entries.map((e) => {
-            const reasonLabel =
-              e.reason === "submitted" ? "Enviado pelo fornecedor"
-              : e.reason === "reopened" ? "Liberado para revisão"
-              : e.reason;
+            const reasonLabel = REASON_LABELS[e.reason] ?? e.reason;
             const reasonColor =
               e.reason === "submitted"
                 ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
@@ -121,8 +128,15 @@ export default function BudgetSupplierHistorySheet({
                           <TableCell className="text-xs text-right tabular-nums">{fmt(e.snapshot.extra_costs?.freight_value)}</TableCell>
                         </TableRow>
                       )}
+                      {(e.snapshot.extra_costs?.discount_value || 0) > 0 && (
+                        <TableRow>
+                          <TableCell className="text-xs italic text-muted-foreground">Desconto</TableCell>
+                          <TableCell className="text-xs text-right tabular-nums">{fmt(e.snapshot.extra_costs?.discount_value)}</TableCell>
+                        </TableRow>
+                      )}
                       {(e.snapshot.prices || []).filter((r) => Number(r.unit_price) > 0).length === 0 &&
-                       !e.snapshot.extra_costs?.installation_value && !e.snapshot.extra_costs?.freight_value && (
+                       !e.snapshot.extra_costs?.installation_value && !e.snapshot.extra_costs?.freight_value &&
+                       !e.snapshot.extra_costs?.discount_value && (
                         <TableRow><TableCell colSpan={2} className="text-xs text-center text-muted-foreground py-3">Sem valores registrados.</TableCell></TableRow>
                       )}
                     </TableBody>

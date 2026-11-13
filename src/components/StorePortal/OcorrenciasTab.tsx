@@ -157,16 +157,6 @@ function OcorrenciaCard({
           <p className="text-xs text-muted-foreground mt-1 truncate">
             {local} · {formatDateBR(r.created_at)}
           </p>
-          {timeline.show && (
-            <TratativaTimelineCompact
-              occurrenceId={r.id}
-              timeline={timeline}
-              reinstallationOs={r.needs_reinstallation ? r.reinstallation_os : null}
-              canConfirmArrival={canConfirmArrival}
-              storeToken={storeToken}
-              onConfirmed={onChanged}
-            />
-          )}
         </div>
         <div className="flex flex-col items-end gap-0.5 shrink-0">
           {expanded ? <ChevronUp className="w-4 h-4 text-muted-foreground" /> : <ChevronDown className="w-4 h-4 text-muted-foreground" />}
@@ -175,6 +165,20 @@ function OcorrenciaCard({
           </span>
         </div>
       </div>
+
+      {/* Compact material timeline gets its own full-width row below the header. */}
+      {timeline.show && (
+        <div className="w-full">
+          <TratativaTimelineCompact
+            occurrenceId={r.id}
+            timeline={timeline}
+            reinstallationOs={r.needs_reinstallation ? r.reinstallation_os : null}
+            canConfirmArrival={canConfirmArrival}
+            storeToken={storeToken}
+            onConfirmed={onChanged}
+          />
+        </div>
+      )}
 
       {expanded && (
         <div className="mt-3 space-y-3 border-t pt-3">
