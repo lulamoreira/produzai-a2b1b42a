@@ -232,8 +232,13 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   // Linha do tempo montada a partir do rascunho em edição. "Registrado por" só
   // aparece enquanto a etapa não foi alterada (o banco carimba o novo autor ao salvar).
   const today = localTodayISO();
-  const draftReinstIso = needsReinst && reinstallationDate ? new Date(reinstallationDate).toISOString() : null;
-  const origReinstIso = occurrence.reinstallation_scheduled_at ? new Date(occurrence.reinstallation_scheduled_at).toISOString() : null;
+  const toIso = (v: string | null | undefined): string | null => {
+    if (!v) return null;
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+  };
+  const draftReinstIso = needsReinst ? toIso(reinstallationDate) : null;
+  const origReinstIso = toIso(occurrence.reinstallation_scheduled_at);
   const sameSent = (materialSentDate || null) === (normalizeDateOnly(occurrence.material_sent_date) ?? null);
   const sameArrived = (materialArrivedDate || null) === (normalizeDateOnly(occurrence.material_arrived_date) ?? null);
   const draftTimelineOcc: TimelineOccurrence = {
