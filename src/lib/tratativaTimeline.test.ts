@@ -178,6 +178,38 @@ describe("tratativaTimeline", () => {
   });
 });
 
+describe("número do rastreio", () => {
+  const sentStep = (o: TimelineOccurrence) => tratativaTimeline(o, TODAY).steps.find((s) => s.key === "sent");
+
+  it("remove espaços do código na etapa Material enviado", () => {
+    expect(sentStep({ ...base, needs_material_shipment: true, material_tracking_code: "  BR123456789BR " })?.trackingCode)
+      .toBe("BR123456789BR");
+  });
+
+  it("vazio ou null vira null", () => {
+    expect(sentStep({ ...base, needs_material_shipment: true, material_tracking_code: "   " })?.trackingCode).toBeNull();
+    expect(sentStep({ ...base, needs_material_shipment: true, material_tracking_code: null })?.trackingCode).toBeNull();
+  });
+
+  it("sem envio de material não há etapa nem rastreio", () => {
+    const t = tratativaTimeline(
+      { ...base, needs_material_shipment: false, needs_reinstallation: true, material_tracking_code: "BR123456789BR" },
+      TODAY,
+    );
+    const code = t.steps.find((s) => s.key === "sent")?.trackingCode ?? null;
+    expect(code).toBeNull();
+  });
+
+  it("rastreio não muda título nem próximo passo", () => {
+    const o: TimelineOccurrence = { ...base, needs_material_shipment: true, material_sent_date: "2026-11-15", material_eta_date: "2026-11-20" };
+    const a = tratativaTimeline(o, TODAY);
+    const b = tratativaTimeline({ ...o, material_tracking_code: "BR123456789BR" }, TODAY);
+    expect(b.headline).toBe(a.headline);
+    expect(b.tone).toBe(a.tone);
+    expect(b.nextStep).toBe(a.nextStep);
+  });
+});
+
 describe("validateMaterialDates", () => {
   it("previsão antes do envio", () => {
     expect(validateMaterialDates({ sent: "2026-11-10", eta: "2026-11-09" }, TODAY)).toMatch(/previsão/i);

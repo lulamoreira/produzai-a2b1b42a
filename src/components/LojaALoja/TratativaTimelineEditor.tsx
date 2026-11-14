@@ -24,6 +24,8 @@ export interface TratativaTimelineEditorProps {
   onSentDateChange: (v: string) => void;
   etaDate: string;
   onEtaDateChange: (v: string) => void;
+  trackingCode: string;
+  onTrackingCodeChange: (v: string) => void;
   arrivedDate: string;
   onArrivedDateChange: (v: string) => void;
   /** "Aguardando · faltam N dias" / "Atrasado N dia(s)" enquanto a chegada está vazia. */
@@ -85,9 +87,24 @@ function TimelineRow({ step, isLast, children }: { step: TimelineStep; isLast: b
 function StepBody({ step, ...p }: { step: TimelineStep } & TratativaTimelineEditorProps) {
   if (step.key === "sent") {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <DateField label="Data do envio" value={p.sentDate} onChange={p.onSentDateChange} disabled={p.disabled} />
-        <DateField label="Previsão de chegada" value={p.etaDate} onChange={p.onEtaDateChange} disabled={p.disabled} />
+      <div className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <DateField label="Data do envio" value={p.sentDate} onChange={p.onSentDateChange} disabled={p.disabled} />
+          <DateField label="Previsão de chegada" value={p.etaDate} onChange={p.onEtaDateChange} disabled={p.disabled} />
+        </div>
+        <div>
+          <label htmlFor="material-tracking-code" className="text-xs font-medium text-foreground mb-1 block">Número do rastreio</label>
+          <input
+            id="material-tracking-code"
+            type="text"
+            value={p.trackingCode}
+            onChange={(e) => p.onTrackingCodeChange(e.target.value)}
+            disabled={p.disabled}
+            placeholder="Ex.: BR123456789BR"
+            maxLength={60}
+            className={INPUT_CLASS}
+          />
+        </div>
       </div>
     );
   }

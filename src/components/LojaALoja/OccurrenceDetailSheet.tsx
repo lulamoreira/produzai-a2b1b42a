@@ -101,6 +101,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const [materialSentDate, setMaterialSentDate] = useState<string>("");
   const [materialEtaDate, setMaterialEtaDate] = useState<string>("");
   const [materialArrivedDate, setMaterialArrivedDate] = useState<string>("");
+  const [materialTrackingCode, setMaterialTrackingCode] = useState<string>("");
   const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
@@ -202,6 +203,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
       setMaterialSentDate(normalizeDateOnly(occurrence.material_sent_date) ?? "");
       setMaterialEtaDate(normalizeDateOnly(occurrence.material_eta_date) ?? "");
       setMaterialArrivedDate(normalizeDateOnly(occurrence.material_arrived_date) ?? "");
+      setMaterialTrackingCode(occurrence.material_tracking_code ?? "");
       setReporterType(occurrence.reporter_type ?? "lojista");
       setInitialized(occurrence.id);
       // Reset transient UI so leftover lightbox/check-in from a previous occurrence don't reappear
@@ -248,6 +250,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
     material_sent_date: needsMaterial ? materialSentDate || null : null,
     material_eta_date: needsMaterial ? materialEtaDate || null : null,
     material_arrived_date: needsMaterial ? materialArrivedDate || null : null,
+    material_tracking_code: needsMaterial ? (materialTrackingCode.trim() || null) : null,
     needs_reinstallation: needsReinst,
     reinstallation_scheduled_at: draftReinstIso,
     reinstallation_os: reinstallationOs,
@@ -336,6 +339,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
           material_sent_date: needsMaterial && materialSentDate ? materialSentDate : null,
           material_eta_date: needsMaterial && materialEtaDate ? materialEtaDate : null,
           material_arrived_date: needsMaterial && materialArrivedDate ? materialArrivedDate : null,
+          material_tracking_code: needsMaterial && materialTrackingCode.trim() ? materialTrackingCode.trim() : null,
           reporter_type: reporterType || null,
           resolved_by_user_id: (tratativaStatuses.find((s) => s.value === effectiveStatus)?.is_resolved) ? userId : null,
         } as any)
@@ -583,6 +587,8 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                     onEtaDateChange={setMaterialEtaDate}
                     arrivedDate={materialArrivedDate}
                     onArrivedDateChange={setMaterialArrivedDate}
+                    trackingCode={materialTrackingCode}
+                    onTrackingCodeChange={setMaterialTrackingCode}
                     arrivalCountdown={arrivalCountdownText(draftTimelineOcc, today)}
                     reinstallationDate={reinstallationDate}
                     onReinstallationDateChange={setReinstallationDate}

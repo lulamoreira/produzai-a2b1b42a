@@ -99,6 +99,7 @@ function buildWhatsAppMessage(r: any, data: PortalData, statuses: StatusItem[]) 
     r.expected_resolution_date ? `⏰ Previsão de atendimento: ${formatDateTimeBR(r.expected_resolution_date)}` : null,
     r.material_sent_date ? `🚚 Material enviado em: ${formatDateOnlyBR(r.material_sent_date)}` : null,
     r.material_eta_date ? `📦 Previsão de chegada do material: ${formatDateOnlyBR(r.material_eta_date)}` : null,
+    r.needs_material_shipment && r.material_tracking_code?.trim() ? `📮 Rastreio: ${r.material_tracking_code.trim()}` : null,
     r.material_arrived_date ? `✅ Material chegou em: ${formatDateOnlyBR(r.material_arrived_date)}` : null,
     r.tratativa_notes ? `📋 Tratativa: ${r.tratativa_notes}` : null,
   ].filter(Boolean).join("\n");
