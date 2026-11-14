@@ -271,6 +271,13 @@ describe("reviewRateio", () => {
       expect(f[0]?.breakdown).toEqual([{ name: "Peça B", quantity: 19 }]);
     });
 
+    it("peça presente mas abaixo da quantidade por kit também conta como kit incompleto", () => {
+      const f = kitFindings(reviewRateio(abPieces, abKit, abComps, threeStores, { ...proportional, "1-B": 1 }));
+      expect(f).toHaveLength(1);
+      expect(f[0]?.type).toBe("kit_incompleto");
+      expect(f[0]?.detail).toContain("'Peça B' tem só 1 e o kit pede 2 por kit");
+    });
+
     const sharedPieces = [{ id: "T", name: "Tapete" }, { id: "U", name: "U" }, { id: "V", name: "V" }];
     const sharedKits = [{ id: "K1", name: "Kit 1" }, { id: "K2", name: "Kit 2" }];
     const sharedComps = [
