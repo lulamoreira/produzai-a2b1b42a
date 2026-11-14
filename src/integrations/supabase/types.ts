@@ -5366,6 +5366,7 @@ export type Database = {
           material_sent_by_name: string | null
           material_sent_date: string | null
           material_sent_recorded_at: string | null
+          material_tracking_code: string | null
           motive_id: string | null
           needs_material_shipment: boolean
           needs_reinstallation: boolean
@@ -5402,6 +5403,7 @@ export type Database = {
           material_sent_by_name?: string | null
           material_sent_date?: string | null
           material_sent_recorded_at?: string | null
+          material_tracking_code?: string | null
           motive_id?: string | null
           needs_material_shipment?: boolean
           needs_reinstallation?: boolean
@@ -5438,6 +5440,7 @@ export type Database = {
           material_sent_by_name?: string | null
           material_sent_date?: string | null
           material_sent_recorded_at?: string | null
+          material_tracking_code?: string | null
           motive_id?: string | null
           needs_material_shipment?: boolean
           needs_reinstallation?: boolean

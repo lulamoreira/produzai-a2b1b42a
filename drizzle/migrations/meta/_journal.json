@@ -155,6 +155,13 @@
       "when": 1794604434485,
       "tag": "0021_supplier_portal_snapshot",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1794677742712,
+      "tag": "0022_occurrence_material_tracking_code",
+      "breakpoints": true
     }
   ]
 }
