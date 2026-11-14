@@ -428,12 +428,12 @@ export function reviewRateio(
           partes.push(`${zeradas.map((c) => `'${pieceName(c.piece_id)}'`).join(", ")} ${zeradas.length > 1 ? "estão zeradas" : "está zerada"}`);
         }
         for (const c of insuf) {
-          partes.push(`'${pieceName(c.piece_id)}' tem ${have(s, c.piece_id)}, mas o kit pede ${perKit(c)} por kit`);
+          partes.push(`'${pieceName(c.piece_id)}' tem só ${have(s, c.piece_id)} e o kit pede ${perKit(c)} por kit`);
         }
         if (partes.length === 0) continue; // defensivo: sem componente faltando de fato
         incompletas.push({
           s,
-          text: `Em ${storeName(s)}: '${pieceName(pres.piece_id)}' tem ${have(s, pres.piece_id)}, mas ${partes.join("; e ")}.`,
+          text: `Em ${storeName(s)}: '${pieceName(pres.piece_id)}' tem ${have(s, pres.piece_id)}, mas ${partes.join("; ")}.`,
         });
         continue;
       }
