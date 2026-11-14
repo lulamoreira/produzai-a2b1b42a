@@ -11,7 +11,10 @@ export type RateioFindingType =
   | "modelo_incompativel"
   | "era_incompativel"
   | "vitrine_excesso"
-  | "loja_unica";
+  | "loja_unica"
+  | "kit_incompleto"
+  | "kit_fora_proporcao"
+  | "peca_compartilhada";
 
 export type RateioFinding = {
   severity: RateioFindingSeverity;
@@ -39,6 +42,9 @@ const TYPE_ORDER: Record<RateioFindingType, number> = {
   era_incompativel: 3,
   vitrine_excesso: 4,
   loja_unica: 5,
+  kit_incompleto: 6,
+  kit_fora_proporcao: 7,
+  peca_compartilhada: 8,
 };
 
 type Item = { kind: "piece" | "kit"; src: any };
@@ -369,6 +375,139 @@ export function reviewRateio(
     }
   });
 
+  // ============================================================
+  // CHECKS 6–8 — consistência dos KITS (somente leitura).
+  // Regra: cada peça do kit tem uma quantidade por kit (kit_pieces.quantity).
+  // A quantidade do kit na loja é o mínimo entre componentes, então peças
+  // zeradas ou fora da proporção ficam invisíveis sem estas checagens.
+  // ============================================================
+  const pieceById = new Map<string, any>();
+  for (const p of pieces || []) if (p?.id) pieceById.set(p.id, p);
+  const pieceName = (id: string): string => pieceById.get(id)?.name ?? "";
+  const have = (store: any, pieceId: string): number => qtyMap[`${store.id}-${pieceId}`] || 0;
+  const perKit = (c: any): number => c.quantity || 1;
+
+  // Em quantos kits (distintos) cada peça aparece.
+  const kitsByPiece = new Map<string, Set<string>>();
+  for (const kp of kitPieces || []) {
+    const set = kitsByPiece.get(kp.piece_id) ?? new Set<string>();
+    set.add(kp.kit_id);
+    kitsByPiece.set(kp.piece_id, set);
+  }
+  const isExclusive = (pieceId: string): boolean => (kitsByPiece.get(pieceId)?.size ?? 0) === 1;
+  const exclByKit = new Map<string, any[]>();
+  for (const [kitId, comps] of compsByKit) exclByKit.set(kitId, comps.filter((c) => isExclusive(c.piece_id)));
+  // Quantidade do kit considerando só componentes exclusivos (null = kit sem exclusivos).
+  const kitQtyEx = (store: any, kitId: string): number | null => {
+    const excl = exclByKit.get(kitId) ?? [];
+    if (excl.length === 0) return null;
+    return Math.min(...excl.map((c) => Math.floor(have(store, c.piece_id) / perKit(c))));
+  };
+  const maisLojas = (n: number): string => (n > 3 ? ` E mais ${n - 3} loja(s).` : "");
+
+  for (const kit of kits || []) {
+    const excl = exclByKit.get(kit.id) ?? [];
+    if (excl.length === 0) continue; // kit só com componentes compartilhados: fora das checagens 6 e 7
+    const kitItem: Item = { kind: "kit", src: kit };
+    const incompletas: { s: any; text: string }[] = [];
+    const foraProp: { s: any; text: string; breakdown: { name: string; quantity: number }[] }[] = [];
+
+    for (const s of stores || []) {
+      const presentes = excl.filter((c) => have(s, c.piece_id) > 0);
+      if (presentes.length === 0) continue; // loja sem nenhum componente exclusivo deste kit
+      const kq = kitQtyEx(s, kit.id) ?? 0;
+
+      if (kq === 0) {
+        // CHECK 6: há componente com quantidade, mas outro não completa nem 1 kit.
+        const faltando = excl.filter((c) => Math.floor(have(s, c.piece_id) / perKit(c)) === 0);
+        const pres = presentes.find((c) => Math.floor(have(s, c.piece_id) / perKit(c)) > 0) ?? presentes[0];
+        const zeradas = faltando.filter((c) => have(s, c.piece_id) === 0 && c !== pres);
+        const insuf = faltando.filter((c) => have(s, c.piece_id) > 0 && c !== pres);
+        const partes: string[] = [];
+        if (zeradas.length) {
+          partes.push(`${zeradas.map((c) => `'${pieceName(c.piece_id)}'`).join(", ")} ${zeradas.length > 1 ? "estão zeradas" : "está zerada"}`);
+        }
+        for (const c of insuf) {
+          partes.push(`'${pieceName(c.piece_id)}' tem só ${have(s, c.piece_id)} e o kit pede ${perKit(c)} por kit`);
+        }
+        if (partes.length === 0) continue; // defensivo: sem componente faltando de fato
+        incompletas.push({
+          s,
+          text: `Em ${storeName(s)}: '${pieceName(pres.piece_id)}' tem ${have(s, pres.piece_id)}, mas ${partes.join("; ")}.`,
+        });
+        continue;
+      }
+
+      // CHECK 7: kit completo, mas alguma peça fora da proporção.
+      const erradas = excl.filter((c) => have(s, c.piece_id) !== kq * perKit(c));
+      if (erradas.length === 0) continue;
+      const c = erradas[0];
+      const esperado = kq * perKit(c);
+      foraProp.push({
+        s,
+        text: `Em ${storeName(s)}: '${pieceName(c.piece_id)}' tem ${have(s, c.piece_id)}, mas o kit pede ${perKit(c)} por kit × ${kq} kit(s) = ${esperado}. O orçamento do fornecedor usa ${esperado}.`,
+        breakdown: erradas.map((e) => ({ name: pieceName(e.piece_id), quantity: have(s, e.piece_id) })),
+      });
+    }
+
+    if (incompletas.length > 0) {
+      const first = incompletas[0].s;
+      findings.push({
+        severity: "alta",
+        type: "kit_incompleto",
+        title: `Kit incompleto em ${incompletas.length} loja(s)`,
+        detail: `${incompletas.slice(0, 3).map((x) => x.text).join(" ")} O kit conta como 0 e essas peças ficam fora do orçamento do fornecedor.${maisLojas(incompletas.length)}`,
+        ...meta(kitItem),
+        storesWith: incompletas.map((x) => storeName(x.s)),
+        breakdown: (compsByKit.get(kit.id) ?? []).map((c) => ({ name: pieceName(c.piece_id), quantity: have(first, c.piece_id) })),
+      });
+    }
+    if (foraProp.length > 0) {
+      findings.push({
+        severity: "media",
+        type: "kit_fora_proporcao",
+        title: `Quantidade fora da proporção do kit em ${foraProp.length} loja(s)`,
+        detail: `${foraProp.slice(0, 3).map((x) => x.text).join(" ")}${maisLojas(foraProp.length)}`,
+        ...meta(kitItem),
+        storesWith: foraProp.map((x) => storeName(x.s)),
+        breakdown: foraProp[0].breakdown,
+      });
+    }
+  }
+
+  // CHECK 8 — peça em 2+ kits: total gravado na loja deve ser a soma dos kits.
+  const kitById = new Map<string, any>();
+  for (const k of kits || []) if (k?.id) kitById.set(k.id, k);
+  for (const [pieceId, kitIds] of kitsByPiece) {
+    if (kitIds.size < 2) continue;
+    const links = (kitPieces || []).filter((kp) => kp.piece_id === pieceId && kitById.has(kp.kit_id));
+    const comExcl = links.filter((kp) => (exclByKit.get(kp.kit_id) ?? []).length > 0);
+    if (comExcl.length === 0) continue;
+    let totalHave = 0;
+    let totalEsp = 0;
+    const divergentes: any[] = [];
+    for (const s of stores || []) {
+      const esperado = comExcl.reduce((acc, kp) => acc + (kitQtyEx(s, kp.kit_id) ?? 0) * perKit(kp), 0);
+      if (esperado <= 0) continue;
+      const h = have(s, pieceId);
+      totalHave += h;
+      totalEsp += esperado;
+      if (h !== esperado) divergentes.push(s);
+    }
+    if (divergentes.length === 0) continue;
+    const piece = pieceById.get(pieceId) ?? { id: pieceId, name: "" };
+    const efeito = totalHave < totalEsp ? "o rateio por loja fica menor" : totalHave > totalEsp ? "o rateio por loja fica maior" : "o rateio por loja fica diferente";
+    findings.push({
+      severity: "media",
+      type: "peca_compartilhada",
+      title: "Peça em vários kits com total diferente da soma dos kits",
+      detail: `'${piece.name ?? ""}' está em ${kitIds.size} kits. O rateio grava ${totalHave} no total, mas a soma dos kits é ${totalEsp}. A cobrança ao fornecedor segue os kits (${totalEsp}); ${efeito}. ${divergentes.length} loja(s) divergem.`,
+      ...meta({ kind: "piece", src: piece }),
+      storesWith: divergentes.map(storeName),
+      breakdown: links.map((kp) => ({ name: kitById.get(kp.kit_id)?.name ?? "", quantity: perKit(kp) })),
+    });
+  }
+
   return findings.sort(
     (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] || TYPE_ORDER[a.type] - TYPE_ORDER[b.type],
   );
@@ -381,4 +520,7 @@ export const FINDING_TYPE_LABELS: Record<RateioFindingType, string> = {
   modelo_incompativel: "Modelo incompatível",
   era_incompativel: "Era (Novo × Antigo) incompatível",
   vitrine_excesso: "Vitrine",
+  kit_incompleto: "Kit incompleto na loja",
+  kit_fora_proporcao: "Quantidade fora da proporção do kit",
+  peca_compartilhada: "Peça em vários kits com total diferente",
 };
