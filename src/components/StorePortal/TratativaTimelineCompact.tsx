@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { PackageCheck, Loader2 } from "lucide-react";
+import { PackageCheck, Loader2, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -48,6 +48,17 @@ export function TratativaTimelineCompact({
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const today = localTodayISO();
+  const trackingCode = timeline.steps.find((s) => s.key === "sent")?.trackingCode ?? null;
+
+  async function copyTracking(code: string) {
+    try {
+      await navigator.clipboard.writeText(code);
+      toast.success("Rastreio copiado");
+    } catch (e) {
+      console.error("Clipboard Error [copy tracking code]:", e);
+      toast.error("Não foi possível copiar o rastreio.");
+    }
+  }
 
   async function handleConfirm() {
     if (!storeToken) { toast.error(errorMessage("invalid_token")); return; }
@@ -96,6 +107,23 @@ export function TratativaTimelineCompact({
           </li>
         ))}
       </ul>
+
+      {trackingCode && (
+        <div className="flex items-center gap-1.5 text-xs">
+          <span className="text-muted-foreground">Rastreio:</span>
+          <span className="font-medium text-foreground select-all break-all">{trackingCode}</span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 shrink-0"
+            aria-label="Copiar rastreio"
+            onClick={(e) => { e.stopPropagation(); void copyTracking(trackingCode); }}
+          >
+            <Copy className="h-3 w-3" aria-hidden />
+          </Button>
+        </div>
+      )}
 
       {timeline.nextStep && <p className="text-xs text-foreground">{timeline.nextStep}</p>}
       {reinstallationOs && <p className="text-[11px] text-muted-foreground">OS da reinstalação: {reinstallationOs}</p>}

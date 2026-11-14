@@ -86,7 +86,7 @@ function usePortalOccurrences(campaignId: string) {
           description, priority, status, photo_urls, created_at, resolved_at,
           expected_resolution_date, needs_reinstallation, resolution_photo_urls,
           reinstallation_scheduled_at, reinstallation_os,
-          needs_material_shipment, material_sent_date, material_eta_date, material_arrived_date,
+          needs_material_shipment, material_sent_date, material_eta_date, material_arrived_date, material_tracking_code,
           material_sent_by_name, material_sent_recorded_at, material_arrived_by_name, material_arrived_recorded_at,
           reinstallation_by_name, reinstallation_recorded_at,
           tratativa_status, tratativa_notes,

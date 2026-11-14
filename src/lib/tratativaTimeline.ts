@@ -24,6 +24,8 @@ export interface TimelineOccurrence {
   material_sent_date?: string | null;
   material_eta_date?: string | null;
   material_arrived_date?: string | null;
+  /** Número do rastreio do envio (texto livre, opcional). */
+  material_tracking_code?: string | null;
   needs_reinstallation?: boolean | null;
   reinstallation_scheduled_at?: string | null;
   reinstallation_os?: string | null;
@@ -49,6 +51,8 @@ export interface TimelineStep {
   badge?: ReinstallBadge;
   /** "Registrado por {nome} · dd/mm às hh:mm" quando houver. */
   recordedBy: string | null;
+  /** Só na etapa "Material enviado": número do rastreio (já sem espaços) ou null. */
+  trackingCode?: string | null;
 }
 
 export interface TratativaTimeline {
@@ -226,6 +230,8 @@ export function tratativaTimeline(o: TimelineOccurrence, today: string): Tratati
       shortDateLabel: formatDayMonth(sent),
       isForecast: false,
       recordedBy: sent ? recordedByText(o.material_sent_by_name, o.material_sent_recorded_at) : null,
+      // Só informação: o rastreio não altera situação, título nem próximo passo.
+      trackingCode: o.material_tracking_code?.trim() || null,
     });
     steps.push({
       key: "arrived",
