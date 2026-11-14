@@ -501,7 +501,7 @@ export function reviewRateio(
       severity: "media",
       type: "peca_compartilhada",
       title: "Peça em vários kits com total diferente da soma dos kits",
-      detail: `'${piece.name ?? ""}' está em ${links.length} kits. O rateio grava ${totalHave} no total, mas a soma dos kits é ${totalEsp}. A cobrança ao fornecedor segue os kits (${totalEsp}); ${efeito}. ${divergentes.length} loja(s) divergem.`,
+      detail: `'${piece.name ?? ""}' está em ${kitIds.size} kits. O rateio grava ${totalHave} no total, mas a soma dos kits é ${totalEsp}. A cobrança ao fornecedor segue os kits (${totalEsp}); ${efeito}. ${divergentes.length} loja(s) divergem.`,
       ...meta({ kind: "piece", src: piece }),
       storesWith: divergentes.map(storeName),
       breakdown: links.map((kp) => ({ name: kitById.get(kp.kit_id)?.name ?? "", quantity: perKit(kp) })),

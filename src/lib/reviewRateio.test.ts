@@ -234,4 +234,70 @@ describe("reviewRateio", () => {
     expect(hit?.storesWith).toEqual(["Loja 0", "Loja 1"]);
     expect(hit?.storesWithout).toEqual(["Loja 2"]);
   });
+
+  describe("consistência dos kits", () => {
+    const KIT_TYPES = ["kit_incompleto", "kit_fora_proporcao", "peca_compartilhada"];
+    const kitFindings = (findings: ReturnType<typeof reviewRateio>) =>
+      findings.filter((f) => KIT_TYPES.includes(f.type));
+    const abPieces = [{ id: "A", name: "Peça A" }, { id: "B", name: "Peça B" }];
+    const abKit = [{ id: "K", name: "Kit AB" }];
+    const abComps = [{ kit_id: "K", piece_id: "A", quantity: 1 }, { kit_id: "K", piece_id: "B", quantity: 2 }];
+    const threeStores = ["1", "2", "3"].map((id) => ({ id, name: `Loja ${id}`, store_model: "M" }));
+    const proportional = { "1-A": 1, "1-B": 2, "2-A": 1, "2-B": 2, "3-A": 1, "3-B": 2 };
+
+    it("kit proporcional em 3 lojas não gera nenhum achado de kit", () => {
+      expect(kitFindings(reviewRateio(abPieces, abKit, abComps, threeStores, proportional))).toHaveLength(0);
+    });
+
+    it("loja com A=2 e B=0 gera kit_incompleto citando A presente e B zerada", () => {
+      const f = kitFindings(reviewRateio(abPieces, abKit, abComps, threeStores, { ...proportional, "2-A": 2, "2-B": 0 }));
+      expect(f).toHaveLength(1);
+      expect(f[0]?.type).toBe("kit_incompleto");
+      expect(f[0]?.severity).toBe("alta");
+      expect(f[0]?.title).toBe("Kit incompleto em 1 loja(s)");
+      expect(f[0]?.detail).toContain("Em Loja 2: 'Peça A' tem 2, mas 'Peça B' está zerada.");
+      expect(f[0]?.itemName).toBe("Kit AB");
+      expect(f[0]?.storesWith).toEqual(["Loja 2"]);
+      expect(f[0]?.breakdown).toEqual([{ name: "Peça A", quantity: 2 }, { name: "Peça B", quantity: 0 }]);
+    });
+
+    it("loja com A=1 e B=19 gera kit_fora_proporcao citando 19 e 2", () => {
+      const f = kitFindings(reviewRateio(abPieces, abKit, abComps, threeStores, { ...proportional, "3-B": 19 }));
+      expect(f).toHaveLength(1);
+      expect(f[0]?.type).toBe("kit_fora_proporcao");
+      expect(f[0]?.severity).toBe("media");
+      expect(f[0]?.detail).toContain("'Peça B' tem 19, mas o kit pede 2 por kit × 1 kit(s) = 2.");
+      expect(f[0]?.storesWith).toEqual(["Loja 3"]);
+      expect(f[0]?.breakdown).toEqual([{ name: "Peça B", quantity: 19 }]);
+    });
+
+    const sharedPieces = [{ id: "T", name: "Tapete" }, { id: "U", name: "U" }, { id: "V", name: "V" }];
+    const sharedKits = [{ id: "K1", name: "Kit 1" }, { id: "K2", name: "Kit 2" }];
+    const sharedComps = [
+      { kit_id: "K1", piece_id: "T", quantity: 1 }, { kit_id: "K1", piece_id: "U", quantity: 1 },
+      { kit_id: "K2", piece_id: "T", quantity: 1 }, { kit_id: "K2", piece_id: "V", quantity: 1 },
+    ];
+    const oneStore = [{ id: "s", name: "Loja S", store_model: "M" }];
+
+    it("peça em 2 kits com T=1 (esperado 2) gera peca_compartilhada; com T=2 não gera", () => {
+      const f = kitFindings(reviewRateio(sharedPieces, sharedKits, sharedComps, oneStore, { "s-U": 1, "s-V": 1, "s-T": 1 }));
+      expect(f).toHaveLength(1);
+      expect(f[0]?.type).toBe("peca_compartilhada");
+      expect(f[0]?.itemName).toBe("Tapete");
+      expect(f[0]?.detail).toContain("'Tapete' está em 2 kits. O rateio grava 1 no total, mas a soma dos kits é 2.");
+      expect(f[0]?.storesWith).toEqual(["Loja S"]);
+      expect(f[0]?.breakdown).toEqual([{ name: "Kit 1", quantity: 1 }, { name: "Kit 2", quantity: 1 }]);
+      expect(kitFindings(reviewRateio(sharedPieces, sharedKits, sharedComps, oneStore, { "s-U": 1, "s-V": 1, "s-T": 2 }))).toHaveLength(0);
+    });
+
+    it("kit com todos os componentes compartilhados é ignorado nas checagens 6 e 7", () => {
+      const pieces = [{ id: "T", name: "T" }, { id: "X", name: "X" }];
+      const kits = [{ id: "K1", name: "Kit 1" }, { id: "K2", name: "Kit 2" }];
+      const comps = ["K1", "K2"].flatMap((kit_id) => [
+        { kit_id, piece_id: "T", quantity: 1 }, { kit_id, piece_id: "X", quantity: 1 },
+      ]);
+      expect(kitFindings(reviewRateio(pieces, kits, comps, oneStore, { "s-T": 1, "s-X": 0 }))).toHaveLength(0);
+      expect(kitFindings(reviewRateio(pieces, kits, comps, oneStore, { "s-T": 1, "s-X": 5 }))).toHaveLength(0);
+    });
+  });
 });
