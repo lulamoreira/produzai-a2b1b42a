@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
+import { hasScheduledDateAndTime } from "@/lib/installationSchedule";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
 
@@ -39,16 +40,11 @@ function useCampaignStats(campaignId: string) {
       // exists there when its schedule has BOTH a date and a time, and the
       // reschedule pair wins when reschedule_enabled is on. Schedules without
       // them (e.g. copied from a previous campaign) must not be counted here.
-      const isScheduled = (s: any) =>
-        s.reschedule_enabled
-          ? !!(s.reschedule_date && s.reschedule_time)
-          : !!(s.scheduled_date && s.scheduled_time);
-
       const schedules = (schedulesRes.data ?? [])
         .filter(
           (s: any) => (s.client_stores?.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica'
         )
-        .filter(isScheduled);
+        .filter(hasScheduledDateAndTime);
       const lalOccurrences = (lalOccurrencesRes.data ?? []).filter(
         (o: any) => (o.client_stores?.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica'
       );
