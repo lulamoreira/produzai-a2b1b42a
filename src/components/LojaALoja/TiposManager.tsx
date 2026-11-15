@@ -6,6 +6,8 @@ import { UndoRedoToolbar } from "@/components/UndoRedoToolbar";
 import { getThumbnailUrl } from "@/lib/imageUrl";
 import { CopyPiecesFromDialog } from "./CopyPiecesFromDialog";
 import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 import {
   useLojaALojaTipos,
   useLojaALojaPecas,
@@ -844,25 +846,62 @@ const TiposManager = ({ campaignId, clientId, permissions }: TiposManagerProps) 
     setImporting(true);
     try {
       // 1) Fetch source structure
-      const [srcTiposRes, srcSubsRes, srcPecasRes, srcAssignRes, destStoresRes, srcStoresRes] = await Promise.all([
-        supabase.from("loja_a_loja_tipos").select("*").eq("campaign_id", selectedImportCampaignId),
-        supabase.from("loja_a_loja_subdivisoes").select("*"),
-        supabase.from("loja_a_loja_pecas").select("*").eq("campaign_id", selectedImportCampaignId),
-        supabase.from("loja_a_loja_lojas").select("*").eq("campaign_id", selectedImportCampaignId),
-        supabase.from("client_stores").select("id, name, store_code").eq("client_id", clientId!),
-        supabase.from("loja_a_loja_lojas").select("store_id").eq("campaign_id", selectedImportCampaignId),
+      // Todas as leituras são paginadas (supabasePaginate + count exact + order("id") estável)
+      // porque o PostgREST devolve no máximo 1000 linhas por resposta: sem isso, uma origem
+      // com mais de 1000 classificações seria copiada pela metade, em silêncio.
+      const srcCampaignId = selectedImportCampaignId;
+      const [srcTipos, srcPecas, srcAssignments, destStores] = await Promise.all([
+        supabasePaginate<Tables<"loja_a_loja_tipos">>((from, to) =>
+          supabase
+            .from("loja_a_loja_tipos")
+            .select("*", { count: "exact" })
+            .eq("campaign_id", srcCampaignId)
+            .order("id")
+            .range(from, to) as any
+        ),
+        supabasePaginate<Tables<"loja_a_loja_pecas">>((from, to) =>
+          supabase
+            .from("loja_a_loja_pecas")
+            .select("*", { count: "exact" })
+            .eq("campaign_id", srcCampaignId)
+            .order("id")
+            .range(from, to) as any
+        ),
+        supabasePaginate<Tables<"loja_a_loja_lojas">>((from, to) =>
+          supabase
+            .from("loja_a_loja_lojas")
+            .select("*", { count: "exact" })
+            .eq("campaign_id", srcCampaignId)
+            .order("id")
+            .range(from, to) as any
+        ),
+        supabasePaginate<Pick<Tables<"client_stores">, "id" | "name" | "store_code">>((from, to) =>
+          supabase
+            .from("client_stores")
+            .select("id, name, store_code", { count: "exact" })
+            .eq("client_id", clientId!)
+            .order("id")
+            .range(from, to) as any
+        ),
       ]);
-      if (srcTiposRes.error) throw srcTiposRes.error;
-      if (srcSubsRes.error) throw srcSubsRes.error;
-      if (srcPecasRes.error) throw srcPecasRes.error;
-      if (srcAssignRes.error) throw srcAssignRes.error;
-      if (destStoresRes.error) throw destStoresRes.error;
 
-      const srcTipos = srcTiposRes.data ?? [];
-      const srcSubs = (srcSubsRes.data ?? []).filter((s: any) => srcTipos.some((t) => t.id === s.tipo_id));
-      const srcPecas = srcPecasRes.data ?? [];
-      const srcAssignments = srcAssignRes.data ?? [];
-      const destStores = destStoresRes.data ?? [];
+      // Subdivisões: somente as dos tipos de origem, em lotes de até 200 ids por chamada
+      // (evita URL longa demais), cada lote também paginado.
+      const SUB_ID_BATCH = 200;
+      const srcTipoIds = srcTipos.map((t) => t.id);
+      const srcSubs: Tables<"loja_a_loja_subdivisoes">[] = [];
+      for (let i = 0; i < srcTipoIds.length; i += SUB_ID_BATCH) {
+        const batch = srcTipoIds.slice(i, i + SUB_ID_BATCH);
+        const page = await supabasePaginate<Tables<"loja_a_loja_subdivisoes">>((from, to) =>
+          supabase
+            .from("loja_a_loja_subdivisoes")
+            .select("*", { count: "exact" })
+            .in("tipo_id", batch)
+            .order("id")
+            .range(from, to) as any
+        );
+        srcSubs.push(...page);
+      }
 
       // 2) Reconcile tipos by letra — insert missing
       const existingByLetra = new Map((tipos ?? []).map((t) => [t.letra, t]));
@@ -975,7 +1014,8 @@ const TiposManager = ({ campaignId, clientId, permissions }: TiposManagerProps) 
       await saveLojaAssignments(campaignId, assignmentRows);
 
       // 6) Build store discrepancy report
-      const srcStoreIds = new Set((srcStoresRes.data ?? []).map((r: any) => r.store_id));
+      // Derivado das classificações já lidas (antes era uma segunda consulta redundante à mesma tabela)
+      const srcStoreIds = new Set(srcAssignments.map((r) => r.store_id));
       const destClassifiedStoreIds = new Set(assignmentRows.map((r) => r.store_id));
       const missingStores = destStores
         .filter((s) => srcStoreIds.has(s.id) === false && false) // placeholder
