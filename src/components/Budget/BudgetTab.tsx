@@ -1076,7 +1076,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
   };
 
   const handleExportBudget = async () => {
-    if (suppliers.length === 0) {
+    if (activeSuppliers.length === 0) {
       toast.error("Adicione ao menos um fornecedor para exportar.");
       return;
     }
@@ -1089,7 +1089,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
         clientName: "",
         currencyCode,
         budgetAmount,
-        suppliers,
+        // Fornecedores "Consultada" não participam da rodada: ficam fora do comparativo.
+        suppliers: activeSuppliers,
         prices,
         extraCosts,
         pieces,
@@ -3756,7 +3757,9 @@ ${msgLabels.winnerWaFooter}
         clientId={clientId}
         clientName={clientName}
         clientEmail={clientEmail}
-        suppliers={suppliers}
+        // Somente participantes da rodada: fornecedores "Consultada" (consulted_only)
+        // são registro da cotação anterior e não podem ir ao cliente como participantes.
+        suppliers={activeSuppliers}
         supplierPartialTotals={supplierPartialTotals}
         bestSupplier={bestSupplier}
         budgetAmount={budgetAmount}
