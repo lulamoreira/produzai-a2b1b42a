@@ -140,3 +140,43 @@ export function buildOccurrenceWhatsappMessage(input: OccurrenceWhatsappInput): 
 
   return blocks.join("\n\n");
 }
+
+/** Converte o país do cadastro (ex.: "BRASIL", "Chile", "CL") para o código do countryConfig. */
+const COUNTRY_ALIASES: Record<string, string> = {
+  BR: "BR", BRA: "BR", BRASIL: "BR", BRAZIL: "BR",
+  CL: "CL", CHL: "CL", CHILE: "CL",
+  US: "US", USA: "US", "ESTADOS UNIDOS": "US", "UNITED STATES": "US", EUA: "US",
+  MX: "MX", MEX: "MX", MEXICO: "MX",
+  AR: "AR", ARG: "AR", ARGENTINA: "AR",
+  CO: "CO", COL: "CO", COLOMBIA: "CO",
+  PE: "PE", PER: "PE", PERU: "PE",
+};
+export function normalizeCountryCode(country: string | null | undefined): string {
+  const k = normalizeStatusText(country).toUpperCase();
+  return COUNTRY_ALIASES[k] ?? "BR";
+}
+
+const LOCAL_MAX_DIGITS: Record<string, number> = { BR: 11, CL: 9, PE: 9, US: 10, MX: 10, AR: 10, CO: 10 };
+
+/**
+ * Número para wa.me: só dígitos, com DDI do país, sem duplicar o DDI.
+ * Retorna "" quando o número não parece válido (menos de 10 ou mais de 15 dígitos).
+ */
+export function buildWhatsappNumber(raw: string | null | undefined, countryCode: string, phonePrefix: string): string {
+  const s = t(raw);
+  if (!s) return "";
+  let digits = s.replace(/\D/g, "");
+  if (!digits) return "";
+  let full: string;
+  if (s.startsWith("+")) full = digits;
+  else if (digits.startsWith("00")) full = digits.slice(2);
+  else {
+    const localMax = LOCAL_MAX_DIGITS[countryCode] ?? 11;
+    if (digits.startsWith(phonePrefix) && digits.length > localMax) full = digits;
+    else {
+      digits = digits.replace(/^0+/, "");
+      full = phonePrefix + digits;
+    }
+  }
+  return full.length >= 10 && full.length <= 15 ? full : "";
+}

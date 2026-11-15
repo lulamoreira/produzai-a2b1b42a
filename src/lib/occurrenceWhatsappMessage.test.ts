@@ -71,3 +71,19 @@ describe("buildOccurrenceWhatsappMessage", () => {
     expect(m).not.toMatch(/ \n|  /);
   });
 });
+
+import { buildWhatsappNumber, normalizeCountryCode } from "./occurrenceWhatsappMessage";
+describe("buildWhatsappNumber", () => {
+  it("acrescenta DDI sem duplicar", () => {
+    expect(buildWhatsappNumber("(11) 98765-4321", "BR", "55")).toBe("5511987654321");
+    expect(buildWhatsappNumber("55 11 98765-4321", "BR", "55")).toBe("5511987654321");
+    expect(buildWhatsappNumber("(55) 99876-5432", "BR", "55")).toBe("5555998765432");
+    expect(buildWhatsappNumber("9 1234 5678", "CL", "56")).toBe("56912345678");
+    expect(buildWhatsappNumber("123", "BR", "55")).toBe("");
+  });
+  it("normaliza país do cadastro", () => {
+    expect(normalizeCountryCode("CHILE")).toBe("CL");
+    expect(normalizeCountryCode("BRASIL")).toBe("BR");
+    expect(normalizeCountryCode("")).toBe("BR");
+  });
+});
