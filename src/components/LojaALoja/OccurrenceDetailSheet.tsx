@@ -594,7 +594,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                 <h3 id="tratativa-title" className="text-xs font-bold uppercase tracking-wide text-primary">Tratativa</h3>
                 <div className="flex items-center gap-1.5 flex-wrap justify-end">
                   {isAdmin && (
-                    <Button type="button" size="sm" variant="outline" className="h-7 gap-1.5 text-xs" onClick={() => setWhatsOpen(true)}>
+                    <Button type="button" size="sm" className="h-7 gap-1.5 text-xs bg-success text-primary-foreground hover:bg-success/90" onClick={() => setWhatsOpen(true)}>
                       <MessageCircle className="w-3.5 h-3.5" />
                       WhatsApp para a loja
                     </Button>

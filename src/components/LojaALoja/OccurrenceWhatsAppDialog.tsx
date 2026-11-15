@@ -174,7 +174,7 @@ export function OccurrenceWhatsAppDialog({ open, onOpenChange, message, store, c
             <Button type="button" variant="outline" className="gap-1.5" onClick={copy}>
               <Copy className="w-4 h-4" /> Copiar mensagem
             </Button>
-            <Button type="button" className="gap-1.5" disabled={!waNumber || !text.trim()} onClick={openWhatsapp}>
+            <Button type="button" className="gap-1.5 bg-success text-primary-foreground hover:bg-success/90" disabled={!waNumber || !text.trim()} onClick={openWhatsapp}>
               <MessageCircle className="w-4 h-4" /> Abrir WhatsApp
             </Button>
           </div>
