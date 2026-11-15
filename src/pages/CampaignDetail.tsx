@@ -1,4 +1,12 @@
-import { EXPLICIT_VERSION_PARAM, isExplicitCampaignVersion, shouldRedirectToLatest } from "@/lib/campaignVersionLink";
+import {
+  EXPLICIT_VERSION_PARAM,
+  isExplicitCampaignVersion,
+  shouldRedirectToLatest,
+  isLatestOnlySection,
+  latestOnlySectionState,
+  latestCampaignPath,
+  LATEST_ONLY_SECTION_MESSAGE,
+} from "@/lib/campaignVersionLink";
 import { Fragment, useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -95,7 +103,7 @@ const CampaignDetail = () => {
   // clicks on an older version ("Ver campanha original", campaign list cards)
   // stay on it whenever the user can open it.
   const explicitVersion = isExplicitCampaignVersion(location.search);
-  const { data: latestCampaignId } = useQuery({
+  const { data: latestCampaignId, isLoading: loadingLatestCampaign } = useQuery({
     queryKey: ["latest-campaign-in-chain", campaignId],
     queryFn: async () => {
       const { data, error } = await supabase.rpc("get_latest_campaign_in_chain", { p_campaign_id: campaignId! });
@@ -115,13 +123,15 @@ const CampaignDetail = () => {
       campaignLoaded: !!campaign,
     });
     if (!redirect || !latestCampaignId) return;
+    // Latest-only modules are handled by their own redirect (with a notice) below.
+    if (isLatestOnlySection(new URLSearchParams(window.location.search).get("section"))) return;
     const newPath = window.location.pathname.replace(`/campaigns/${campaignId}`, `/campaigns/${latestCampaignId}`);
     if (newPath === window.location.pathname) return;
     const params = new URLSearchParams(window.location.search);
     params.delete(EXPLICIT_VERSION_PARAM);
     const qs = params.toString();
     window.location.replace(`${newPath}${qs ? `?${qs}` : ""}${window.location.hash}`);
-  }, [campaignId, latestCampaignId, explicitVersion, loadingCampaign, campaign]);
+  }, [campaignId, latestCampaignId, explicitVersion, loadingCampaign, campaign, location.search]);
   const { data: client } = useClient(clientId);
   const { data: agency } = useQuery({
     queryKey: ["agency", agencyId],
@@ -205,6 +215,35 @@ const CampaignDetail = () => {
     
     navigate(`${location.pathname}${params.toString() ? `?${params}` : ""}`, { replace: true, state: location.state });
   }, [location, navigate]);
+
+  // Agendamento, Instalações, Loja a Loja and Ocorrências only exist on the newest
+  // campaign of a renegotiation chain: opening them on an older version (direct
+  // link, "Ver campanha original", sidebar or in-page switch) goes to the newest one.
+  const latestOnlyState = campaignId
+    ? latestOnlySectionState({
+        campaignId,
+        latestId: latestCampaignId,
+        latestLoading: loadingLatestCampaign,
+        section: activeSection,
+      })
+    : "stay";
+  useEffect(() => {
+    if (latestOnlyState !== "redirect" || !campaignId || !latestCampaignId) return;
+    // The newest campaign is its own latest: seed it so the destination does not wait again.
+    queryClient.setQueryData(["latest-campaign-in-chain", latestCampaignId], latestCampaignId);
+    navigate(
+      latestCampaignPath({
+        pathname: location.pathname,
+        search: location.search,
+        hash: location.hash,
+        campaignId,
+        latestId: latestCampaignId,
+      }),
+      { replace: true },
+    );
+    // Fixed id avoids a duplicate notice if the effect runs twice.
+    toast.info(LATEST_ONLY_SECTION_MESSAGE, { id: "latest-only-section" });
+  }, [latestOnlyState, campaignId, latestCampaignId, location.pathname, location.search, location.hash, navigate, queryClient]);
 
   useEffect(() => {
     if (!isLimited || !activeSection || activeSection === "summary") return;
@@ -338,7 +377,7 @@ const CampaignDetail = () => {
 
 
 
-  if (loadingCampaign) return <div className="flex h-screen items-center justify-center">Carregando...</div>;
+  if (loadingCampaign || latestOnlyState !== "stay") return <div className="flex h-screen items-center justify-center">Carregando...</div>;
   
   // Restricted access check for inactive campaigns
   if (campaign && campaign.is_active === false && !isAdminOrMaster) {

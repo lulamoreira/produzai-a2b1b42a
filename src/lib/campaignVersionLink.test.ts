@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { explicitCampaignVersionPath, isExplicitCampaignVersion, shouldRedirectToLatest } from "./campaignVersionLink";
+import {
+  explicitCampaignVersionPath,
+  isExplicitCampaignVersion,
+  shouldRedirectToLatest,
+  latestOnlySectionState,
+  latestCampaignPath,
+  isLatestOnlySection,
+} from "./campaignVersionLink";
 
 describe("explicit campaign version links", () => {
   it("marks the path and keeps existing query/hash", () => {
@@ -23,5 +30,40 @@ describe("explicit campaign version links", () => {
 
   it("the newest campaign never redirects", () => {
     expect(shouldRedirectToLatest({ campaignId: "reneg2", latestId: "reneg2", explicit: false, campaignLoading: false, campaignLoaded: true })).toBe(false);
+  });
+});
+
+describe("latest-only modules on older campaign versions", () => {
+  const base = { campaignId: "orig", latestId: "reneg2", latestLoading: false };
+
+  it("Agendamento, Instalações, Loja a Loja e Ocorrências redirect from an older version", () => {
+    for (const section of ["scheduling", "installations", "loja_a_loja", "occurrences"]) {
+      expect(latestOnlySectionState({ ...base, section })).toBe("redirect");
+    }
+  });
+
+  it("other modules keep opening on the chosen version", () => {
+    for (const section of ["budgets", "mockup", "pieces", "matrix", "summary", "stores", "briefing", "adjustments", "history", "approvals", null]) {
+      expect(latestOnlySectionState({ ...base, section })).toBe("stay");
+    }
+  });
+
+  it("waits while the newest campaign is still unknown", () => {
+    expect(latestOnlySectionState({ ...base, latestId: undefined, latestLoading: true, section: "installations" })).toBe("wait");
+  });
+
+  it("the newest campaign never redirects (no loop)", () => {
+    expect(latestOnlySectionState({ ...base, campaignId: "reneg2", section: "installations" })).toBe("stay");
+    expect(latestOnlySectionState({ ...base, latestId: null, section: "installations" })).toBe("stay");
+  });
+
+  it("builds the newest path keeping section and dropping versao=anterior", () => {
+    expect(latestCampaignPath({
+      pathname: "/agency/a/clients/c/campaigns/orig",
+      search: "?section=installations&versao=anterior",
+      campaignId: "orig",
+      latestId: "reneg2",
+    })).toBe("/agency/a/clients/c/campaigns/reneg2?section=installations");
+    expect(isLatestOnlySection("loja_a_loja")).toBe(true);
   });
 });
