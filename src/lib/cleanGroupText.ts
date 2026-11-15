@@ -12,7 +12,7 @@
  * contêm aspas internas, ex.: Shelftalk "Lisa" - Wallbay).
  */
 
-/** Caracteres invisíveis que devem se comportar como espaço. */
+/** Caracteres invisíveis que devem se comportar como espaço: NBSP, ZWSP-ZWJ, BOM. */
 const INVISIBLE_RE = /[ ​-‍﻿]/g;
 
 /** Aspas tipográficas → aspas retas. */
