@@ -23,9 +23,9 @@ describe("cleanGroupText", () => {
   });
 
   it("troca NBSP e invisíveis por espaço comum", () => {
-    expect(cleanGroupText("STANDARD G")).toBe("STANDARD G");
-    expect(cleanGroupText("STANDARD​G")).toBe("STANDARD G");
-    expect(cleanGroupText("﻿STANDARD G")).toBe("STANDARD G");
+    expect(cleanGroupText("STANDARD\u00a0G")).toBe("STANDARD G");
+    expect(cleanGroupText("STANDARD\u200bG")).toBe("STANDARD G");
+    expect(cleanGroupText("\ufeffSTANDARD G")).toBe("STANDARD G");
   });
 
   it("remove par de aspas retas que cerca o valor inteiro", () => {

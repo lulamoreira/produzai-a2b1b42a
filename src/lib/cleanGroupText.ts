@@ -13,7 +13,7 @@
  */
 
 /** Caracteres invisíveis que devem se comportar como espaço: NBSP, ZWSP-ZWJ, BOM. */
-const INVISIBLE_RE = /[ ​-‍﻿]/g;
+const INVISIBLE_RE = /[\u00a0\u200b-\u200d\ufeff]/g;
 
 /** Aspas tipográficas → aspas retas. */
 const CURLY_QUOTES_RE = /[“”„‘’]/g;
