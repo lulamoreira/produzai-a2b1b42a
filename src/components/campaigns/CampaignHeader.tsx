@@ -293,8 +293,28 @@ export function CampaignHeader({
                       Isto cria uma NOVA campanha, cópia exata desta (peças, kits, rateio, Loja a Loja e cotação com todos os fornecedores). As duas ficam totalmente independentes — o que você fizer em uma não afeta a outra. A campanha atual continua existindo e ativa.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
+                  <div
+                    role="note"
+                    className="flex items-start gap-2 rounded-md border border-primary/30 bg-primary/10 p-3 text-sm font-medium text-foreground"
+                  >
+                    <Database className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                    <span>Recomendado: faça um backup desta campanha antes de criar a renegociação.</span>
+                  </div>
                   <AlertDialogFooter>
                     <AlertDialogCancel disabled={isCloning}>Cancelar</AlertDialogCancel>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={isCloning}
+                      className="gap-1.5"
+                      onClick={() => {
+                        // Offer only: closes this alert and opens the existing backup dialog.
+                        setIsRenegotiationAlertOpen(false);
+                        onBackup();
+                      }}
+                    >
+                      <Database className="h-4 w-4" aria-hidden="true" /> Fazer backup antes
+                    </Button>
                     <AlertDialogAction 
                       onClick={(e) => {
                         e.preventDefault();
