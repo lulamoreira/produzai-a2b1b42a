@@ -43,3 +43,57 @@ export function shouldRedirectToLatest(args: {
   if (campaignLoading) return false;
   return !campaignLoaded;
 }
+
+/**
+ * Modules that only make sense on the newest campaign of a renegotiation chain
+ * (field operation data). Opening them on an older version sends the user to
+ * the newest campaign; every other module keeps opening on the chosen version.
+ */
+export const LATEST_ONLY_SECTIONS: ReadonlySet<string> = new Set([
+  "scheduling",
+  "installations",
+  "loja_a_loja",
+  "occurrences",
+]);
+
+export const LATEST_ONLY_SECTION_MESSAGE =
+  "Esses módulos só são visualizados na versão mais recente dessa campanha";
+
+export function isLatestOnlySection(section: string | null | undefined): boolean {
+  return !!section && LATEST_ONLY_SECTIONS.has(section);
+}
+
+/**
+ * State of a latest-only section on the opened campaign:
+ * - "wait": the newest-campaign lookup has not answered yet (render nothing);
+ * - "redirect": this is an older version, go to the newest one;
+ * - "stay": not a latest-only section, already the newest, or unknown chain.
+ */
+export function latestOnlySectionState(args: {
+  campaignId: string;
+  latestId: string | null | undefined;
+  latestLoading: boolean;
+  section: string | null | undefined;
+}): "wait" | "redirect" | "stay" {
+  const { campaignId, latestId, latestLoading, section } = args;
+  if (!isLatestOnlySection(section)) return "stay";
+  if (latestLoading) return "wait";
+  if (!latestId || latestId === campaignId) return "stay";
+  return "redirect";
+}
+
+/** Same campaign path on the newest campaign, keeping ?section= and dropping the version marker. */
+export function latestCampaignPath(args: {
+  pathname: string;
+  search: string;
+  hash?: string;
+  campaignId: string;
+  latestId: string;
+}): string {
+  const { pathname, search, hash = "", campaignId, latestId } = args;
+  const newPath = pathname.replace(`/campaigns/${campaignId}`, `/campaigns/${latestId}`);
+  const params = new URLSearchParams(search);
+  params.delete(EXPLICIT_VERSION_PARAM);
+  const qs = params.toString();
+  return `${newPath}${qs ? `?${qs}` : ""}${hash}`;
+}
