@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
-import { explicitCampaignVersionPath, isExplicitCampaignVersion, shouldRedirectToLatest } from "./campaignVersionLink";
+import {
+  explicitCampaignVersionPath,
+  isExplicitCampaignVersion,
+  shouldRedirectToLatest,
+  latestOnlySectionState,
+  latestCampaignPath,
+  isLatestOnlySection,
+} from "./campaignVersionLink";
 
 describe("explicit campaign version links", () => {
   it("marks the path and keeps existing query/hash", () => {
@@ -25,8 +32,6 @@ describe("explicit campaign version links", () => {
     expect(shouldRedirectToLatest({ campaignId: "reneg2", latestId: "reneg2", explicit: false, campaignLoading: false, campaignLoaded: true })).toBe(false);
   });
 });
-
-import { latestOnlySectionState, latestCampaignPath, isLatestOnlySection } from "./campaignVersionLink";
 
 describe("latest-only modules on older campaign versions", () => {
   const base = { campaignId: "orig", latestId: "reneg2", latestLoading: false };
