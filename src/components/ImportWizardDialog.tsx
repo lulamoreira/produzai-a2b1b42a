@@ -442,7 +442,8 @@ export default function ImportWizardDialog({
       }
       return out;
     });
-  }, [rawRows, mapping, systemFields]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawRows, mapping, systemFields, mode]);
 
   const fileDuplicates = useMemo(() => {
     if (mode !== "stores") return [] as Record<string, string>[];
