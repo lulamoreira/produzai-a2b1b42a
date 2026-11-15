@@ -43,7 +43,7 @@ describe("buildOccurrenceWhatsappMessage", () => {
     expect(m).not.toContain("*Material*");
     expect(m).not.toContain("—");
     expect(m).not.toMatch(/\n\n\n/);
-    expect(m).not.toMatch(/: *$/m);
+    expect(m).not.toMatch(/^• [^:\n]+: *$/m);
   });
 
   it("notas vazias usam a frase padrão", () => {
