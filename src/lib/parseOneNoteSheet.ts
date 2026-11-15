@@ -1,4 +1,5 @@
 import * as XLSX from "xlsx";
+import { cleanGroupText } from "./cleanGroupText";
 
 /** Peça normalizada extraída da planilha crua do OneNote. */
 export interface OneNoteParsedPiece {
@@ -107,7 +108,7 @@ export function transformOneNoteRows(rows: Record<string, unknown>[]): OneNotePa
     const nome = cell(row, COL.name).trim();
     const loc = cell(row, COL.location).trim().toUpperCase();
     const tam = cell(row, COL.size).trim();
-    const sub = cell(row, COL.subgroup).trim();
+    const sub = cleanGroupText(cell(row, COL.subgroup).trim());
     const comp = cell(row, COL.kitContent).trim();
     const isMockup = cell(row, COL.mockup).trim().toLowerCase() === "sim";
 

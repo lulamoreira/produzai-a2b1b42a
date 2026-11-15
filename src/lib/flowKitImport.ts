@@ -1,4 +1,5 @@
 import { ensureKitPrefix } from "./kitName";
+import { cleanGroupText } from "./cleanGroupText";
 import type { FlowParsedPiece } from "./parseFlowWorkbook";
 
 /** Underscores delimitam tokens no nome bruto do Flow; espaços duplos são colapsados. */
@@ -99,8 +100,8 @@ export function buildFlowImportRecords(piece: FlowParsedPiece, campaignId: strin
   const name = kit ? flowNameWithoutKit(piece.name) : piece.name.trim();
   if (!name) throw new Error("Informe o nome da peça antes de importar.");
   const common = {
-    campaign_id: campaignId, category: piece.category.trim().toUpperCase(),
-    sub_location: piece.subLocation.trim() || null,
+    campaign_id: campaignId, category: cleanGroupText(piece.category.trim()).toUpperCase(),
+    sub_location: cleanGroupText(piece.subLocation.trim()) || null,
     is_deleted: false, is_new: false, is_mockup: false,
   };
   const components = kit ? parseKitComponents(piece.sourceName) : null;
