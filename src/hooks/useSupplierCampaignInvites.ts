@@ -34,6 +34,7 @@ export function useSupplierCampaignInvites(supplier: AgencySupplier | null) {
           is_winner,
           status,
           invited_at,
+          consulted_only,
           email,
           company_name,
           campaigns!inner(
@@ -58,6 +59,9 @@ export function useSupplierCampaignInvites(supplier: AgencySupplier | null) {
 
       return (data as any[])
         .filter((row) => {
+          // Registro "Consultada" (copiado da rodada anterior numa renegociação)
+          // não é participação nesta campanha.
+          if (row.consulted_only) return false;
           // Filtro 1: deve ser da mesma agência
           const clientAgencyId = row.campaigns?.clients?.agency_id;
           if (clientAgencyId !== supplier.agency_id) return false;
