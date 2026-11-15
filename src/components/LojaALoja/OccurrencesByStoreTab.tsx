@@ -44,7 +44,7 @@ function useOccurrencesByStore(campaignId: string) {
           material_sent_by_name, material_sent_recorded_at, material_arrived_by_name, material_arrived_recorded_at,
           reinstallation_by_name, reinstallation_recorded_at,
           tratativa_status, tratativa_notes,
-          client_stores(name, city, state, tipo_entrega),
+          client_stores(name, city, state, tipo_entrega, store_model),
           loja_a_loja_pecas(nome, image_url, loja_a_loja_tipos(letra, nome), loja_a_loja_subdivisoes(nome)),
           store_portal_motivos(descricao)
         ` as any)
