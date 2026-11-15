@@ -8,6 +8,7 @@
 
 - Rateio review keeps capacity matching and findings in one read-only pure engine shared by the dialog and PDF; client field labels are passed from Rateio so capacities do not depend on fixed custom-field indices.
 - Rateio review kit checks derive kit counts only from components exclusive to one kit and add new finding types through FINDING_TYPE_LABELS, which the dialog and PDF iterate, so shared pieces are validated as the sum of their kits.
+- Rateio kit_incompleto skips expected absences only via deterministic rules (opposite era, or piece zeroed in ≥90% of kit-receiving stores with base ≥4) when every missing component is zeroed; grouped kit findings fingerprint the sorted store set so a new affected store reopens a justified finding.
 
 - Matrix quantity prefill reuses Flow name tokens and shared pure matching/filter helpers; reread paginated current quantities before confirmation so existing positive cells are preserved without changing the parent importer.
 - Matrix prefill uses one unified transfer (sourceQuantityPerStore + applyQuantityToTarget) for any source→target type combination: kits count as min floor of component qty ÷ qty-per-kit, kit targets expand to each component × qty-per-kit; kit components are never mapped individually, so differing kit structures stay consistent.
