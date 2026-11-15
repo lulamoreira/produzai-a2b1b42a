@@ -11,7 +11,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { DateTimePicker } from "@/components/ui/date-time-picker";
-import { Camera, X, Loader2, ExternalLink, RotateCw, ImageIcon, Plus, Check } from "lucide-react";
+import { Camera, X, Loader2, ExternalLink, RotateCw, ImageIcon, Plus, Check, MessageCircle } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { useStorePortalTokens } from "@/hooks/useStorePortalTokens";
+import { buildOccurrenceWhatsappMessage, normalizeStatusText } from "@/lib/occurrenceWhatsappMessage";
+import { OccurrenceWhatsAppDialog } from "./OccurrenceWhatsAppDialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useQuery } from "@tanstack/react-query";
 import { compressImage } from "@/lib/compressImage";
@@ -227,6 +231,27 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
     }
   }, [tratativaStatus, open, campaignId]);
 
+  // WhatsApp para a loja — somente leitura (o link da loja só é gerado por clique, na janela).
+  const [whatsOpen, setWhatsOpen] = useState(false);
+  const { user } = useAuth();
+  const { data: senderProfile } = useQuery({
+    queryKey: ["lal-whatsapp-sender", user?.id],
+    enabled: whatsOpen && !!user?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("display_name, nickname")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+  });
+  const { data: portalTokens } = useStorePortalTokens(whatsOpen ? campaignId : undefined);
+  const whatsStoreId: string | undefined = occurrence?.store_id;
+  const whatsToken = portalTokens?.find((tk) => tk.store_id === whatsStoreId)?.token;
+  const whatsPortalUrl = whatsToken ? `${window.location.origin}/loja/${whatsToken}` : "";
+
   if (!occurrence) return null;
 
   const photoUrls: string[] = Array.isArray(occurrence.photo_urls) ? occurrence.photo_urls : [];
@@ -270,6 +295,35 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const tipo = occurrence.loja_a_loja_pecas?.loja_a_loja_tipos;
   const subdivisao = occurrence.loja_a_loja_pecas?.loja_a_loja_subdivisoes;
   const local = [tipo?.nome, subdivisao?.nome].filter(Boolean).join(" / ") || "—";
+
+  // Mesmo rótulo exibido no seletor de status.
+  const tratativaStatusLabel =
+    tratativaStatuses.find((s) => s.value === tratativaStatus)?.label ?? TRATATIVA_LABELS[tratativaStatus] ?? tratativaStatus;
+  const whatsMessage = whatsOpen
+    ? buildOccurrenceWhatsappMessage({
+        storeName: occurrence.client_stores?.name,
+        pieceName: occurrence.loja_a_loja_pecas?.nome,
+        local: local === "—" ? "" : local,
+        openedAtIso: occurrence.created_at,
+        descricao: occurrence.description,
+        statusLabel: tratativaStatusLabel,
+        statusNormalizado: normalizeStatusText(`${tratativaStatusLabel} ${tratativaStatus.replace(/_/g, " ")}`),
+        expectedDate,
+        needsMaterial,
+        materialSentDate,
+        materialEtaDate,
+        materialTrackingCode,
+        materialArrivedDate,
+        needsReinst,
+        reinstallationDate,
+        reinstallationOs,
+        resolvedAt: occurrence.resolved_at,
+        notes: tratativaNotes,
+        portalUrl: whatsPortalUrl,
+        senderName: senderProfile?.nickname || senderProfile?.display_name || "",
+        agencyName: (campaignRow as any)?.clients?.agencies?.name ?? "",
+      })
+    : "";
 
 
   const reporterLabel = (() => {
@@ -539,6 +593,12 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
               <div className="flex items-center justify-between gap-2 flex-wrap bg-primary/10 px-3 py-2">
                 <h3 id="tratativa-title" className="text-xs font-bold uppercase tracking-wide text-primary">Tratativa</h3>
                 <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                  {isAdmin && (
+                    <Button type="button" size="sm" variant="outline" className="h-7 gap-1.5 text-xs" onClick={() => setWhatsOpen(true)}>
+                      <MessageCircle className="w-3.5 h-3.5" />
+                      WhatsApp para a loja
+                    </Button>
+                  )}
                   {timeline.show && (
                     <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border", TONE_PILL_CLASS[timeline.tone])}>
                       {timeline.headline}
@@ -679,6 +739,20 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
 
       {/* Lightbox */}
       {lightbox}
+
+      <OccurrenceWhatsAppDialog
+        open={whatsOpen}
+        onOpenChange={setWhatsOpen}
+        message={whatsMessage}
+        portalUrl={whatsPortalUrl}
+        campaignId={campaignId}
+        store={{
+          id: occurrence.store_id,
+          name: occurrence.client_stores?.name ?? "",
+          phone: occurrence.client_stores?.phone ?? null,
+          country: occurrence.client_stores?.country ?? null,
+        }}
+      />
 
       {/* Check-in fotográfico da loja */}
       <Dialog open={checkinOpen} onOpenChange={setCheckinOpen}>
