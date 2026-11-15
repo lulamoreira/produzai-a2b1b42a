@@ -421,7 +421,25 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
             <section className="space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wide text-muted-foreground">Identificação</h3>
               <div className="flex items-start justify-between gap-3">
-                <Field label="Loja" value={storeName} />
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <Field label="Loja" value={storeName} />
+                  {(() => {
+                    // Somente leitura: exibe o modelo exatamente como cadastrado (apenas trim).
+                    const cs = (occurrence.client_stores ?? {}) as { store_model?: string | null; city?: string | null; state?: string | null };
+                    const model = (cs.store_model ?? "").trim();
+                    const city = (cs.city ?? "").trim();
+                    const uf = (cs.state ?? "").trim();
+                    const loc = [city, uf].filter(Boolean).join(" - ");
+                    return (
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                        <Badge variant="outline" className={cn("text-[11px] font-normal max-w-full break-words whitespace-normal", !model && "text-muted-foreground")}>
+                          {model ? `Modelo: ${model}` : "Modelo: não cadastrado"}
+                        </Badge>
+                        {loc && <span className="text-xs text-muted-foreground break-words">{loc}</span>}
+                      </div>
+                    );
+                  })()}
+                </div>
                 <Button
                   type="button"
                   variant="outline"
