@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ClipboardCheck, Download, Loader2, ImageOff, CheckCircle2, ChevronDown, RotateCcw } from "lucide-react";
+import { ClipboardCheck, Download, Loader2, ImageOff, CheckCircle2, ChevronDown, RotateCcw, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,11 +45,28 @@ const SEV_LABEL = { alta: "Alta", media: "Média", baixa: "Baixa" } as const;
 
 const norm = (s: unknown) =>
   (s ?? "").toString().trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+// Tipos de kit agrupam várias lojas num só apontamento (sem storeName): a justificativa
+// "só este caso" vale para o conjunto de lojas daquele momento. Loja nova com o problema
+// muda a impressão digital e o apontamento volta a aparecer.
+const KIT_GROUP_TYPES: ReadonlySet<RateioFindingType> = new Set(["kit_incompleto", "kit_fora_proporcao", "peca_compartilhada"]);
 const fpEspecifico = (f: RateioFinding) =>
-  f.type === "modelo_divergente"
-    ? `${f.type}::${norm(f.itemName)}::MOD:${norm(f.storeModel)}`
-    : `${f.type}::${norm(f.itemName)}::LOJA:${norm(f.storeName)}`;
+  KIT_GROUP_TYPES.has(f.type)
+    ? `${f.type}::${norm(f.itemName)}::LOJAS:${[...(f.storesWith ?? [])].map(norm).sort().join("|")}`
+    : f.type === "modelo_divergente"
+      ? `${f.type}::${norm(f.itemName)}::MOD:${norm(f.storeModel)}`
+      : `${f.type}::${norm(f.itemName)}::LOJA:${norm(f.storeName)}`;
 const fpTodas = (f: RateioFinding) => `${f.type}::${norm(f.itemName)}::ALL`;
+
+/** Separa apontamentos ativos dos justificados (usado pela tela e pelo "Reanalisar"). */
+function splitByJust(findings: RateioFinding[], justMap: Map<string, Justificativa>) {
+  const ativos: RateioFinding[] = [];
+  const justificados: { f: RateioFinding; reg: Justificativa }[] = [];
+  for (const f of findings) {
+    const reg = justMap.get(fpEspecifico(f)) ?? justMap.get(fpTodas(f));
+    if (reg) justificados.push({ f, reg }); else ativos.push(f);
+  }
+  return { ativos, justificados };
+}
 
 function FindingCard({ f, children }: { f: RateioFinding; children?: React.ReactNode }) {
   return (
@@ -143,34 +160,51 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
   const [exporting, setExporting] = useState(false);
   const [justMap, setJustMap] = useState<Map<string, Justificativa>>(new Map());
   const [showJust, setShowJust] = useState(false);
+  const [rev, setRev] = useState(0);
+  const [reanalyzing, setReanalyzing] = useState(false);
+  // Espelho síncrono do justMap: o "Reanalisar" conta com os dados recém-carregados.
+  const justMapRef = useRef<Map<string, Justificativa>>(new Map());
 
   const findings = useMemo(
-    () => (open ? reviewRateio(pieces, kits, kitPieces, stores, qtyMap, customFieldLabels) : []),
-    [open, pieces, kits, kitPieces, stores, qtyMap, customFieldLabels],
+    () => (open && rev >= 0 ? reviewRateio(pieces, kits, kitPieces, stores, qtyMap, customFieldLabels) : []),
+    [open, rev, pieces, kits, kitPieces, stores, qtyMap, customFieldLabels],
   );
   const types = Object.keys(FINDING_TYPE_LABELS) as RateioFindingType[];
 
-  const loadJust = useCallback(async () => {
-    if (!clientId) return;
+  const loadJust = useCallback(async (): Promise<boolean> => {
+    if (!clientId) return false;
     const { data, error } = await supabase
       .from("rateio_review_justificativas")
       .select("id, fingerprint, motivo, escopo, created_at")
       .eq("client_id", clientId);
-    if (error) { console.error(error); toast.error("Não foi possível carregar as justificativas."); return; }
-    setJustMap(new Map((data ?? []).map((j) => [j.fingerprint, j as Justificativa])));
+    if (error) { console.error(error); toast.error("Não foi possível carregar as justificativas."); return false; }
+    const map = new Map((data ?? []).map((j) => [j.fingerprint, j as Justificativa]));
+    justMapRef.current = map;
+    setJustMap(map);
+    return true;
   }, [clientId]);
 
   useEffect(() => { if (open) void loadJust(); }, [open, loadJust]);
 
-  const { ativos, justificados } = useMemo(() => {
-    const a: RateioFinding[] = [];
-    const j: { f: RateioFinding; reg: Justificativa }[] = [];
-    for (const f of findings) {
-      const reg = justMap.get(fpEspecifico(f)) ?? justMap.get(fpTodas(f));
-      if (reg) j.push({ f, reg }); else a.push(f);
+  const { ativos, justificados } = useMemo(() => splitByJust(findings, justMap), [findings, justMap]);
+
+  const handleReanalyze = async () => {
+    setReanalyzing(true);
+    try {
+      const ok = await loadJust();
+      if (!ok) throw new Error("justificativas não carregadas");
+      // Varredura local com os mesmos dados que a tela vai usar após o novo ciclo.
+      const fresh = reviewRateio(pieces, kits, kitPieces, stores, qtyMap, customFieldLabels);
+      const { ativos: a, justificados: j } = splitByJust(fresh, justMapRef.current);
+      setRev((r) => r + 1);
+      toast.success(`Análise atualizada: ${a.length} ativo(s), ${j.length} justificado(s).`);
+    } catch (err) {
+      console.error(err);
+      toast.error("Não foi possível reanalisar.");
+    } finally {
+      setReanalyzing(false);
     }
-    return { ativos: a, justificados: j };
-  }, [findings, justMap]);
+  };
 
   const saveJust = async (f: RateioFinding, escopo: "caso" | "item_todas", motivo: string) => {
     const fingerprint = escopo === "item_todas" ? fpTodas(f) : fpEspecifico(f);
@@ -226,7 +260,11 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
               {SEV_LABEL[s]}: {ativos.filter((f) => f.severity === s).length}
             </Badge>
           ))}
-          <Button size="sm" className="ml-auto gap-2" onClick={handlePdf} disabled={exporting}>
+          <Button size="sm" variant="outline" className="ml-auto gap-2" onClick={handleReanalyze} disabled={reanalyzing}>
+            {reanalyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+            Reanalisar
+          </Button>
+          <Button size="sm" className="gap-2" onClick={handlePdf} disabled={exporting}>
             {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
             Baixar PDF completo
           </Button>
