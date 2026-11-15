@@ -162,6 +162,13 @@
       "when": 1794677742712,
       "tag": "0022_occurrence_material_tracking_code",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794756754635,
+      "tag": "0023_skip_notifications_for_old_copied_rows",
+      "breakpoints": true
     }
   ]
 }
