@@ -39,7 +39,9 @@ export default function CostAnalysisDialog({
         supabase.from("budget_prices").select("*").eq("campaign_id", campaignId),
       ]);
       return {
-        suppliers: (suppliers.data as any[]) ?? [],
+        // Fornecedores "Consultada" (consulted_only) não participam da rodada:
+        // ficam fora da base de preços desta análise.
+        suppliers: ((suppliers.data as any[]) ?? []).filter((s) => !s.consulted_only),
         prices: (prices.data as any[]) ?? [],
       };
     },

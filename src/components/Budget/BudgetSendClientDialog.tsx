@@ -98,12 +98,14 @@ export default function BudgetSendClientDialog(props: BudgetSendClientDialogProp
   }, [open, clientEmail]);
 
   const submittedSuppliers = useMemo(
-    () => suppliers.filter((s) => s.status === "enviado"),
+    // Defesa extra: fornecedores "Consultada" (consulted_only) vêm com status
+    // "enviado" copiado da rodada anterior, mas nunca participam desta rodada.
+    () => suppliers.filter((s) => s.status === "enviado" && !s.consulted_only),
     [suppliers],
   );
 
   const declinedSuppliers = useMemo(
-    () => suppliers.filter((s) => s.status === "declinado"),
+    () => suppliers.filter((s) => s.status === "declinado" && !s.consulted_only),
     [suppliers],
   );
 
