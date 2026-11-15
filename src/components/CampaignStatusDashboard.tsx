@@ -22,7 +22,7 @@ function useCampaignStats(campaignId: string) {
       const [schedulesRes, lalOccurrencesRes, photosCountRes] = await Promise.all([
         supabase
           .from("campaign_schedules")
-          .select("id, store_id, completed_at, checkin_timestamp, manual_checkin_at, manual_checkout_at, scheduled_date, client_stores(tipo_entrega)")
+          .select("id, store_id, completed_at, checkin_timestamp, manual_checkin_at, manual_checkout_at, scheduled_date, scheduled_time, reschedule_enabled, reschedule_date, reschedule_time, client_stores(tipo_entrega)")
           .eq("campaign_id", campaignId),
         supabase
           .from("store_occurrence_reports")
@@ -35,9 +35,20 @@ function useCampaignStats(campaignId: string) {
       ]);
 
       // Filter all by tipo_entrega !== 'sem_logistica'
-      const schedules = (schedulesRes.data ?? []).filter(
-        (s: any) => (s.client_stores?.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica'
-      );
+      // Same rule as the Installations screen ("scheduledStores"): a store only
+      // exists there when its schedule has BOTH a date and a time, and the
+      // reschedule pair wins when reschedule_enabled is on. Schedules without
+      // them (e.g. copied from a previous campaign) must not be counted here.
+      const isScheduled = (s: any) =>
+        s.reschedule_enabled
+          ? !!(s.reschedule_date && s.reschedule_time)
+          : !!(s.scheduled_date && s.scheduled_time);
+
+      const schedules = (schedulesRes.data ?? [])
+        .filter(
+          (s: any) => (s.client_stores?.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica'
+        )
+        .filter(isScheduled);
       const lalOccurrences = (lalOccurrencesRes.data ?? []).filter(
         (o: any) => (o.client_stores?.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica'
       );
