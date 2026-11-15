@@ -22,6 +22,7 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { getStoreIdentityKey, normalizeStoreIdentityCnpj, normalizeStoreIdentityName } from "@/lib/storeHelpers";
+import { cleanGroupText } from "@/lib/cleanGroupText";
 import { cn } from "@/lib/utils";
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -414,6 +415,9 @@ export default function ImportWizardDialog({
 
 
   // ─── Step 3 — preview transformed rows ────────────────────────────────────
+  // Colunas de agrupamento de PEÇAS: variações de escrita (espaço duplo, NBSP,
+  // aspas tipográficas) não podem criar grupos duplicados. O nome da peça fica fora.
+  const PIECE_GROUP_KEYS = new Set(["category", "sub_location", "kit", "store_category"]);
   const transformedRows = useMemo(() => {
     // rawRows already has the header removed and objects with correct keys.
     // So rawRows[0] is the first store (e.g., GEA).
@@ -429,13 +433,17 @@ export default function ImportWizardDialog({
         const value = row[col];
         // Ensure values like 0 or "0" are not treated as empty.
         // Also ensure everything is converted to a trimmed string for consistency.
-        out[targetKey] = (value !== null && value !== undefined && value !== "") 
-          ? String(value).trim() 
+        const trimmed = (value !== null && value !== undefined && value !== "")
+          ? String(value).trim()
           : "";
+        out[targetKey] = mode === "pieces" && PIECE_GROUP_KEYS.has(targetKey)
+          ? cleanGroupText(trimmed)
+          : trimmed;
       }
       return out;
     });
-  }, [rawRows, mapping, systemFields]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawRows, mapping, systemFields, mode]);
 
   const fileDuplicates = useMemo(() => {
     if (mode !== "stores") return [] as Record<string, string>[];
