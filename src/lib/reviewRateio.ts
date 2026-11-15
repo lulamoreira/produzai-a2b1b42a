@@ -412,6 +412,35 @@ export function reviewRateio(
     const incompletas: { s: any; text: string }[] = [];
     const foraProp: { s: any; text: string; breakdown: { name: string; quantity: number }[] }[] = [];
 
+    // Ausências esperadas (CHECK 6). Duas regras deterministas, sem lista fixa de nomes:
+    //  (a) Era: a peça zerada é de outra era (ex.: "2020" = NOVO) e a loja é da era oposta;
+    //      é o mesmo critério do CHECK 3 (loja ANTIGO não recebe material NOVO).
+    //  (b) Padrão: a peça está zerada em >= 90% das lojas que recebem o kit (base mínima 4),
+    //      então a ausência é a norma da campanha e não um erro isolado.
+    // Só valem quando TODOS os componentes faltantes estão zerados; peça presente abaixo
+    // do que o kit pede continua sempre apontada.
+    const lojasComAlgum = (stores || []).filter((s) => excl.some((c) => have(s, c.piece_id) > 0));
+    const zeroFrac = new Map<string, number>();
+    for (const c of excl) {
+      const zeros = lojasComAlgum.filter((s) => have(s, c.piece_id) === 0).length;
+      zeroFrac.set(c.piece_id, lojasComAlgum.length ? zeros / lojasComAlgum.length : 0);
+    }
+    const eraDaPeca = (pieceId: string): string | null => {
+      const p = pieceById.get(pieceId);
+      return p ? eraItem(p) : null;
+    };
+    const ausenciaEsperada = (s: any, faltando: any[]): boolean => {
+      const zeradosLoja = faltando.filter((c) => have(s, c.piece_id) === 0);
+      if (zeradosLoja.length === 0 || zeradosLoja.length !== faltando.length) return false;
+      const el = eraLoja(s);
+      const porEra = el !== null && zeradosLoja.every((c) => {
+        const ei = eraDaPeca(c.piece_id);
+        return ei !== null && ei !== el;
+      });
+      const porPadrao = lojasComAlgum.length >= 4 && zeradosLoja.every((c) => (zeroFrac.get(c.piece_id) ?? 0) >= 0.9);
+      return porEra || porPadrao;
+    };
+
     for (const s of stores || []) {
       const presentes = excl.filter((c) => have(s, c.piece_id) > 0);
       if (presentes.length === 0) continue; // loja sem nenhum componente exclusivo deste kit
@@ -420,6 +449,7 @@ export function reviewRateio(
       if (kq === 0) {
         // CHECK 6: há componente com quantidade, mas outro não completa nem 1 kit.
         const faltando = excl.filter((c) => Math.floor(have(s, c.piece_id) / perKit(c)) === 0);
+        if (ausenciaEsperada(s, faltando)) continue; // ausência esperada (era ou padrão da campanha)
         const pres = presentes.find((c) => Math.floor(have(s, c.piece_id) / perKit(c)) > 0) ?? presentes[0];
         const zeradas = faltando.filter((c) => have(s, c.piece_id) === 0 && c !== pres);
         const insuf = faltando.filter((c) => have(s, c.piece_id) > 0 && c !== pres);

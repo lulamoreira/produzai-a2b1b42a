@@ -306,5 +306,52 @@ describe("reviewRateio", () => {
       expect(kitFindings(reviewRateio(pieces, kits, comps, oneStore, { "s-T": 1, "s-X": 0 }))).toHaveLength(0);
       expect(kitFindings(reviewRateio(pieces, kits, comps, oneStore, { "s-T": 1, "s-X": 5 }))).toHaveLength(0);
     });
+
+    describe("ausência esperada no kit incompleto", () => {
+      const supInfPieces = [{ id: "S", name: "Superior" }, { id: "I", name: "Inferior 2020" }];
+      const supInfKit = [{ id: "K", name: "Kit Mesa" }];
+      const supInfComps = [{ kit_id: "K", piece_id: "S", quantity: 1 }, { kit_id: "K", piece_id: "I", quantity: 1 }];
+      const incompletos = (findings: ReturnType<typeof reviewRateio>) => findings.filter((f) => f.type === "kit_incompleto");
+      const lojas = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `l${i}`, name: `Loja ${i}`, store_model: "M" }));
+      const qtd = (n: number, comInferior: number) => Object.fromEntries(
+        Array.from({ length: n }, (_, i) => [[`l${i}-S`, 1], [`l${i}-I`, i < comInferior ? 1 : 0]]).flat(),
+      );
+      const pecasSemEra = [{ id: "S", name: "Superior" }, { id: "I", name: "Inferior" }];
+
+      it("loja ANTIGO sem a Inferior 2020 não é apontada", () => {
+        const loja = [{ id: "x", name: "Loja Antiga", store_model: "Antigo" }];
+        expect(incompletos(reviewRateio(supInfPieces, supInfKit, supInfComps, loja, { "x-S": 1, "x-I": 0 }))).toHaveLength(0);
+      });
+
+      it("loja NOVO sem a Inferior 2020 continua apontada", () => {
+        const loja = [{ id: "x", name: "Loja Nova", store_model: "Novo" }];
+        const f = incompletos(reviewRateio(supInfPieces, supInfKit, supInfComps, loja, { "x-S": 1, "x-I": 0 }));
+        expect(f).toHaveLength(1);
+        expect(f[0]?.storesWith).toEqual(["Loja Nova"]);
+      });
+
+      it("Inferior zerada em 80% das lojas do kit (4 de 5) ainda é apontada", () => {
+        const f = incompletos(reviewRateio(pecasSemEra, supInfKit, supInfComps, lojas(5), qtd(5, 1)));
+        expect(f).toHaveLength(1);
+        expect(f[0]?.storesWith).toEqual(["Loja 1", "Loja 2", "Loja 3", "Loja 4"]);
+      });
+
+      it("Inferior zerada em 90% das lojas do kit (9 de 10) não é apontada", () => {
+        expect(incompletos(reviewRateio(pecasSemEra, supInfKit, supInfComps, lojas(10), qtd(10, 1)))).toHaveLength(0);
+      });
+
+      it("base pequena (3 lojas, Inferior zerada em todas) continua apontada", () => {
+        const f = incompletos(reviewRateio(pecasSemEra, supInfKit, supInfComps, lojas(3), qtd(3, 0)));
+        expect(f).toHaveLength(1);
+        expect(f[0]?.title).toBe("Kit incompleto em 3 loja(s)");
+      });
+
+      it("peça presente abaixo do que o kit pede continua apontada mesmo com 90% de zeradas", () => {
+        const comps = [{ kit_id: "K", piece_id: "S", quantity: 1 }, { kit_id: "K", piece_id: "I", quantity: 2 }];
+        const q = { ...qtd(10, 0), "l0-I": 1 };
+        const f = incompletos(reviewRateio(pecasSemEra, supInfKit, comps, lojas(10), q));
+        expect(f[0]?.storesWith).toEqual(["Loja 0"]);
+      });
+    });
   });
 });
