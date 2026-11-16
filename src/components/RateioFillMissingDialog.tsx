@@ -6,13 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import type { RateioFinding } from "@/lib/reviewRateio";
-import { summarizeQuantities, type FillItemKind } from "@/lib/rateioFillMissing";
+import { suggestQuantityFor, type FillItemKind, type FillTarget } from "@/lib/rateioFillMissing";
 
 export interface FillMissingRequest {
   itemKind: FillItemKind;
   itemId: string;
-  storeIds: string[];
-  quantity: number;
+  /** Uma entrada por loja marcada, com a quantidade dela. */
+  targets: FillTarget[];
 }
 
 export interface RateioFillMissingDialogProps {
@@ -22,29 +22,46 @@ export interface RateioFillMissingDialogProps {
   onConfirm: (req: FillMissingRequest) => Promise<boolean>;
 }
 
-/** Prévia de "Colocar nas que não têm": nada é gravado até CONFIRMAR. */
+interface Row {
+  id: string;
+  name: string;
+  suggested: number;
+  reason: string;
+}
+
+const vitrines = (n: number) => `${n} ${n === 1 ? "vitrine" : "vitrines"}`;
+
+/** Prévia de "Colocar nas que não têm": quantidade sugerida POR LOJA; nada é gravado até CONFIRMAR. */
 export function RateioFillMissingDialog({ finding, onOpenChange, onConfirm }: RateioFillMissingDialogProps) {
-  const without = useMemo(() => finding?.storesWithoutIds ?? [], [finding]);
-  const suggested = useMemo(
-    () => summarizeQuantities((finding?.storesWithQty ?? []).map((s) => s.qty)).mode,
-    [finding],
-  );
-  const [qtyText, setQtyText] = useState("");
+  const isKit = finding?.itemKind === "kit";
+  const unit = isKit ? "kit(s)" : "un.";
+
+  const rows = useMemo<Row[]>(() => {
+    const withs = finding?.storesWithQty ?? [];
+    return (finding?.storesWithoutIds ?? []).map((s) => {
+      const sug = suggestQuantityFor(s.showcase, withs);
+      const reason = sug.sameShowcase
+        ? `lojas com ${vitrines(s.showcase)} recebem ${sug.quantity}`
+        : `nenhuma loja com ${vitrines(s.showcase)} tem; usada a menor quantidade (${sug.quantity})`;
+      return { id: s.id, name: s.name, suggested: sug.quantity, reason };
+    });
+  }, [finding]);
+
+  const [qtyText, setQtyText] = useState<Record<string, string>>({});
   const [checked, setChecked] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
 
   // Reinicia a prévia a cada apontamento aberto.
   useEffect(() => {
-    if (!finding) return;
-    setQtyText(suggested > 0 ? String(suggested) : "");
-    setChecked(new Set(without.map((s) => s.id)));
-  }, [finding, suggested, without]);
+    setQtyText(Object.fromEntries(rows.map((r) => [r.id, r.suggested > 0 ? String(r.suggested) : ""])));
+    setChecked(new Set(rows.map((r) => r.id)));
+  }, [rows]);
 
-  const quantity = Math.floor(Number(qtyText));
-  const validQty = Number.isFinite(quantity) && quantity > 0;
-  const isKit = finding?.itemKind === "kit";
-  const unit = isKit ? "kit(s)" : "un.";
-  const canConfirm = validQty && checked.size > 0 && !saving && !!finding?.itemId && !!finding?.itemKind;
+  const qtyOf = (id: string) => Math.floor(Number(qtyText[id]));
+  const isValid = (id: string) => Number.isFinite(qtyOf(id)) && qtyOf(id) >= 1;
+  const marked = rows.filter((r) => checked.has(r.id));
+  const allMarkedValid = marked.every((r) => isValid(r.id));
+  const canConfirm = marked.length > 0 && allMarkedValid && !saving && !!finding?.itemId && !!finding?.itemKind;
 
   const toggle = (id: string, on: boolean) =>
     setChecked((prev) => {
@@ -60,8 +77,7 @@ export function RateioFillMissingDialog({ finding, onOpenChange, onConfirm }: Ra
       const ok = await onConfirm({
         itemKind: finding.itemKind,
         itemId: finding.itemId,
-        storeIds: without.filter((s) => checked.has(s.id)).map((s) => s.id),
-        quantity,
+        targets: marked.map((r) => ({ storeId: r.id, quantity: qtyOf(r.id) })),
       });
       if (ok) onOpenChange(false);
     } finally {
@@ -71,38 +87,19 @@ export function RateioFillMissingDialog({ finding, onOpenChange, onConfirm }: Ra
 
   return (
     <Dialog open={!!finding} onOpenChange={(v) => { if (!saving) onOpenChange(v); }}>
-      <DialogContent className="max-w-md w-[calc(100vw-1.5rem)] max-h-[90vh] flex flex-col">
+      <DialogContent className="max-w-lg w-[calc(100vw-1.5rem)] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-base leading-snug break-words">Colocar nas que não têm</DialogTitle>
           <DialogDescription className="break-words">
             {finding?.itemName} · modelo {finding?.storeModel}. Nada é gravado até você confirmar.
+            {isKit ? " A quantidade é em kits; cada peça do kit recebe kits × peças por kit." : ""}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-1">
-          <Label htmlFor="fill-qty" className="text-xs">
-            Quantidade por loja {isKit ? "(número de kits)" : ""}
-          </Label>
-          <Input
-            id="fill-qty"
-            type="number"
-            inputMode="numeric"
-            min={1}
-            step={1}
-            value={qtyText}
-            onChange={(e) => setQtyText(e.target.value)}
-            className="w-32"
-          />
-          <p className="text-[11px] text-muted-foreground">
-            Sugerida: {suggested} {unit} (a mais comum entre as lojas que têm).
-            {isKit ? " Cada peça do kit recebe essa quantidade × as peças por kit." : ""}
-          </p>
-        </div>
-
         <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-xs">
-          <span className="font-semibold">Lojas que não têm ({checked.size}/{without.length})</span>
+          <span className="font-semibold">Lojas que não têm ({checked.size}/{rows.length})</span>
           <div className="flex flex-wrap gap-1">
-            <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setChecked(new Set(without.map((s) => s.id)))}>
+            <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setChecked(new Set(rows.map((r) => r.id)))}>
               Marcar todas
             </Button>
             <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setChecked(new Set())}>
@@ -112,24 +109,43 @@ export function RateioFillMissingDialog({ finding, onOpenChange, onConfirm }: Ra
         </div>
 
         <ul className="flex-1 min-h-0 overflow-y-auto rounded border divide-y">
-          {without.map((s) => {
-            const on = checked.has(s.id);
+          {rows.map((r) => {
+            const on = checked.has(r.id);
+            const invalid = on && !isValid(r.id);
             return (
-              <li key={s.id} className="flex items-center gap-2 px-2 py-1.5 text-xs">
-                <Checkbox id={`fill-${s.id}`} checked={on} onCheckedChange={(v) => toggle(s.id, v === true)} />
-                <Label htmlFor={`fill-${s.id}`} className="flex-1 min-w-0 break-words text-xs font-normal cursor-pointer">
-                  {s.name}
-                </Label>
-                <span className="shrink-0 tabular-nums text-muted-foreground">
-                  {on && validQty ? `${quantity} ${unit}` : "—"}
-                </span>
+              <li key={r.id} className="flex items-start gap-2 px-2 py-2 text-xs">
+                <Checkbox id={`fill-${r.id}`} className="mt-1.5" checked={on} onCheckedChange={(v) => toggle(r.id, v === true)} />
+                <div className="flex-1 min-w-0">
+                  <Label htmlFor={`fill-${r.id}`} className="block break-words text-xs font-medium cursor-pointer">
+                    {r.name}
+                  </Label>
+                  <span className="block text-[11px] text-muted-foreground break-words">{r.reason}</span>
+                </div>
+                <div className="shrink-0 flex items-center gap-1">
+                  <Input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    step={1}
+                    aria-label={`Quantidade para ${r.name}`}
+                    aria-invalid={invalid}
+                    disabled={!on}
+                    value={qtyText[r.id] ?? ""}
+                    onChange={(e) => setQtyText((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                    className="h-8 w-16 px-2 text-xs tabular-nums"
+                  />
+                  <span className="text-[11px] text-muted-foreground w-9">{unit}</span>
+                </div>
               </li>
             );
           })}
         </ul>
 
+        {!allMarkedValid ? (
+          <p className="text-[11px] text-destructive">Informe uma quantidade de pelo menos 1 em cada loja marcada.</p>
+        ) : null}
         <p className="text-[11px] text-muted-foreground">
-          Confira se a ausência não é intencional (ex.: outlet, modelo de vitrine). Se for, use Justificar.
+          Loja sem a peça costuma estar errada (a vitrine primária deve receber), mas confira. Se a ausência for intencional, use Justificar.
         </p>
 
         <DialogFooter className="flex-col-reverse sm:flex-row gap-2">

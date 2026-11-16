@@ -16,7 +16,7 @@ import { exportRateioReviewPDF } from "@/lib/exportRateioReviewPDF";
 import { buildStoreLookup, normalizeStoreKey } from "@/lib/storeFicha";
 import { StoreFichaDialog } from "@/components/StoreFichaDialog";
 import { RateioFillMissingDialog, type FillMissingRequest } from "@/components/RateioFillMissingDialog";
-import { summarizeQuantities } from "@/lib/rateioFillMissing";
+import { quantityDistribution } from "@/lib/rateioFillMissing";
 
 export interface RateioReviewDialogProps {
   open: boolean;
@@ -122,7 +122,9 @@ function FindingCard({ f, children, lookup, onOpenStore }: { f: RateioFinding; c
   const withoutQtys = f.storesWithoutIds?.length && f.storesWithoutIds.length === f.storesWithout?.length
     ? f.storesWithoutIds.map(() => 0)
     : undefined;
-  const summary = f.storesWithQty?.length ? summarizeQuantities(f.storesWithQty.map((s) => s.qty)) : null;
+  const dist = f.storesWithQty?.length ? quantityDistribution(f.storesWithQty.map((s) => s.qty)) : null;
+  const totalWith = f.storesWithQty?.reduce((a, s) => a + s.qty, 0) ?? 0;
+  const lojas = (n: number) => `${n} ${n === 1 ? "loja" : "lojas"}`;
   return (
     <div className="flex gap-3 rounded-lg border bg-card p-3">
       <div className="w-14 h-14 shrink-0 rounded border bg-muted flex items-center justify-center overflow-hidden">
@@ -159,10 +161,10 @@ function FindingCard({ f, children, lookup, onOpenStore }: { f: RateioFinding; c
             {f.storesWithout?.length ? <div><span className="font-semibold">Não tem:</span> <StoreNames names={f.storesWithout} lookup={lookup} onOpen={onOpenStore} qtys={withoutQtys} /></div> : null}
           </div>
         ) : null}
-        {summary ? (
+        {dist ? (
           <p className="text-[11px] text-muted-foreground break-words">
-            Quem tem: {summary.count} {summary.count === 1 ? "loja" : "lojas"}, total {summary.total} un., quantidade mais comum {summary.mode} (mín. {summary.min}, máx. {summary.max}).
-            {" "}Quem não tem: {f.storesWithoutIds?.length ?? 0} {(f.storesWithoutIds?.length ?? 0) === 1 ? "loja" : "lojas"}, total 0.
+            Quem tem: {lojas(f.storesWithQty?.length ?? 0)}, total {totalWith} un. → {dist.map((d) => `${d.qty} un.: ${lojas(d.stores)}`).join(" · ")}.
+            {" "}Quem não tem: {lojas(f.storesWithoutIds?.length ?? 0)}, total 0.
           </p>
         ) : null}
         {children}
