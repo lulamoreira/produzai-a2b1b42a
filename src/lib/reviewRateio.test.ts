@@ -363,8 +363,8 @@ describe("reviewRateio — quantidades em 'Falta em lojas do mesmo modelo'", () 
       [{ id: "p", name: "Banner" }, { id: "base", name: "Base" }], [], [], st,
       { "a-p": 6, "b-p": 4, "a-base": 1, "b-base": 1, "c-base": 1 },
     ).find((x) => x.title === "Falta em lojas do mesmo modelo" && x.itemName === "Banner");
-    expect(f?.storesWithQty).toEqual([{ id: "a", name: "A", qty: 6 }, { id: "b", name: "B", qty: 4 }]);
-    expect(f?.storesWithoutIds).toEqual([{ id: "c", name: "C" }]);
+    expect(f?.storesWithQty).toEqual([{ id: "a", name: "A", qty: 6, showcase: 1 }, { id: "b", name: "B", qty: 4, showcase: 1 }]);
+    expect(f?.storesWithoutIds).toEqual([{ id: "c", name: "C", showcase: 1 }]);
     expect(f?.itemKind).toBe("piece");
     expect(f?.itemId).toBe("p");
   });

@@ -30,9 +30,9 @@ export type RateioFinding = {
   storesWithout?: string[];
   breakdown?: { name: string; quantity: number }[];
   /** Só em "Falta em lojas do mesmo modelo": quantidade efetiva de cada loja que tem o item. */
-  storesWithQty?: { id: string; name: string; qty: number }[];
+  storesWithQty?: { id: string; name: string; qty: number; showcase: number }[];
   /** Só em "Falta em lojas do mesmo modelo": lojas que não têm o item (mesma ordem de storesWithout). */
-  storesWithoutIds?: { id: string; name: string }[];
+  storesWithoutIds?: { id: string; name: string; showcase: number }[];
   itemKind?: "piece" | "kit";
   itemId?: string;
 };
@@ -189,8 +189,8 @@ export function reviewRateio(
             storeModel: modelo,
             storesWith: withNames,
             storesWithout: withoutNames,
-            storesWithQty: com.map((s) => ({ id: s.id, name: storeName(s), qty: getQ(s, i) })),
-            storesWithoutIds: sem.map((s) => ({ id: s.id, name: storeName(s) })),
+            storesWithQty: com.map((s) => ({ id: s.id, name: storeName(s), qty: getQ(s, i), showcase: Number(s.showcase_count) || 0 })),
+            storesWithoutIds: sem.map((s) => ({ id: s.id, name: storeName(s), showcase: Number(s.showcase_count) || 0 })),
             itemKind: it.kind,
             itemId: it.src.id,
           });
