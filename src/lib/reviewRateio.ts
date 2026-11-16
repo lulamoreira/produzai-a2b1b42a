@@ -40,6 +40,16 @@ export type RateioFinding = {
 export const norm = (s: unknown): string =>
   (s ?? "").toString().trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
+/**
+ * Rótulo do código do item ("Cód. 76"), único para tela e PDF.
+ * Código vazio, nulo ou só espaços => null (nada é exibido, sem "—").
+ */
+export function itemCodeLabel(code?: string | number | null): string | null {
+  if (code === null || code === undefined) return null;
+  const s = String(code).trim();
+  return s ? `Cód. ${s}` : null;
+}
+
 const SEVERITY_ORDER: Record<RateioFindingSeverity, number> = { alta: 0, media: 1, baixa: 2 };
 const TYPE_ORDER: Record<RateioFindingType, number> = {
   modelo_divergente: 0,

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { fetchImageBytes } from "@/lib/rateioGridShared";
-import { FINDING_TYPE_LABELS, type RateioFinding, type RateioFindingType } from "@/lib/reviewRateio";
+import { FINDING_TYPE_LABELS, itemCodeLabel, type RateioFinding, type RateioFindingType } from "@/lib/reviewRateio";
 
 const BROWN: [number, number, number] = [140, 111, 78];
 const DARK: [number, number, number] = [28, 25, 22];
@@ -138,7 +138,15 @@ export async function exportRateioReviewPDF(
         doc.setFont("helvetica", "bold");
         doc.setFontSize(10);
         doc.setTextColor(...SEV_COLOR[f.severity]);
-        doc.text(`[${SEV_LABEL[f.severity]}] ${f.title}`, textX, y + 4);
+        const titleStr = `[${SEV_LABEL[f.severity]}] ${f.title}`;
+        doc.text(titleStr, textX, y + 4);
+        const codeStr = itemCodeLabel(f.itemCode);
+        if (codeStr) {
+          doc.setFont("courier", "normal");
+          doc.setFontSize(8);
+          doc.setTextColor(...GREY);
+          doc.text(codeStr, textX + doc.getTextWidth(titleStr) + 2, y + 4);
+        }
         doc.setFont("helvetica", "normal");
         doc.setFontSize(9);
         doc.setTextColor(...DARK);
