@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { reviewRateio, FINDING_TYPE_LABELS, itemCodeLabel, type RateioFinding, type RateioFindingType } from "@/lib/reviewRateio";
+import { buildJustRow, countSameTodas, splitByJust, type JustEscopo, type Justificativa } from "@/lib/rateioReviewJust";
 import { exportRateioReviewPDF } from "@/lib/exportRateioReviewPDF";
 import { buildStoreLookup, normalizeStoreKey } from "@/lib/storeFicha";
 import { StoreFichaDialog } from "@/components/StoreFichaDialog";
@@ -41,40 +42,6 @@ export interface RateioReviewDialogProps {
    * Só é passado para quem pode editar a matriz; sem ele o botão não aparece.
    */
   onFillMissing?: (req: FillMissingRequest) => Promise<boolean>;
-}
-
-interface Justificativa {
-  id: string;
-  fingerprint: string;
-  motivo: string;
-  escopo: string;
-  created_at: string;
-}
-
-
-const norm = (s: unknown) =>
-  (s ?? "").toString().trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-// Tipos de kit agrupam várias lojas num só apontamento (sem storeName): a justificativa
-// "só este caso" vale para o conjunto de lojas daquele momento. Loja nova com o problema
-// muda a impressão digital e o apontamento volta a aparecer.
-const KIT_GROUP_TYPES: ReadonlySet<RateioFindingType> = new Set(["kit_incompleto", "kit_fora_proporcao", "peca_compartilhada"]);
-const fpEspecifico = (f: RateioFinding) =>
-  KIT_GROUP_TYPES.has(f.type)
-    ? `${f.type}::${norm(f.itemName)}::LOJAS:${[...(f.storesWith ?? [])].map(norm).sort().join("|")}`
-    : f.type === "modelo_divergente"
-      ? `${f.type}::${norm(f.itemName)}::MOD:${norm(f.storeModel)}`
-      : `${f.type}::${norm(f.itemName)}::LOJA:${norm(f.storeName)}`;
-const fpTodas = (f: RateioFinding) => `${f.type}::${norm(f.itemName)}::ALL`;
-
-/** Separa apontamentos ativos dos justificados (usado pela tela e pelo "Reanalisar"). */
-function splitByJust(findings: RateioFinding[], justMap: Map<string, Justificativa>) {
-  const ativos: RateioFinding[] = [];
-  const justificados: { f: RateioFinding; reg: Justificativa }[] = [];
-  for (const f of findings) {
-    const reg = justMap.get(fpEspecifico(f)) ?? justMap.get(fpTodas(f));
-    if (reg) justificados.push({ f, reg }); else ativos.push(f);
-  }
-  return { ativos, justificados };
 }
 
 type StoreLookup = Map<string, any>;
@@ -203,10 +170,22 @@ function FindingCard({ f, children, lookup, onOpenStore, onOpenItem }: FindingCa
   );
 }
 
-function JustifyButton({ f, onSave, reasons }: { f: RateioFinding; onSave: (f: RateioFinding, escopo: "caso" | "item_todas", motivo: string) => Promise<boolean>; reasons: string[] }) {
+interface JustifyButtonProps {
+  f: RateioFinding;
+  onSave: (f: RateioFinding, escopo: JustEscopo, motivo: string) => Promise<boolean>;
+  reasons: string[];
+  /** Apontamentos ativos (para contar quantas lojas a regra "Todas as lojas" cobre agora). */
+  ativos: RateioFinding[];
+}
+
+function JustifyButton({ f, onSave, reasons, ativos }: JustifyButtonProps) {
   const [open, setOpen] = useState(false);
   const [motivo, setMotivo] = useState("");
-  const [escopo, setEscopo] = useState<"caso" | "item_todas">("caso");
+  const [escopo, setEscopo] = useState<JustEscopo>("caso");
+  // Só calcula quando o usuário escolhe "Todas as lojas" (contagem ao vivo).
+  const alcance = useMemo(() => (escopo === "item_todas" ? countSameTodas(f, ativos) : 0), [escopo, f, ativos]);
+  const isVitrine = f.type === "vitrine_excesso";
+  const ids = `${f.type}-${f.storeName ?? ""}-${f.itemId ?? f.itemName ?? ""}-${f.title}`.replace(/[^\w-]/g, "_");
   const [saving, setSaving] = useState(false);
   const confirm = async () => {
     if (!motivo.trim()) return;
@@ -246,21 +225,31 @@ function JustifyButton({ f, onSave, reasons }: { f: RateioFinding; onSave: (f: R
           </div>
         )}
         <div className="space-y-1">
-          <Label htmlFor="motivo" className="text-xs">Motivo (obrigatório)</Label>
-          <Textarea id="motivo" value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={3} placeholder="Ex.: loja pediu sem esse item" />
+          <Label htmlFor={`motivo-${ids}`} className="text-xs">Motivo (obrigatório)</Label>
+          <Textarea id={`motivo-${ids}`} value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={3} placeholder="Ex.: loja pediu sem esse item" />
         </div>
-        <RadioGroup value={escopo} onValueChange={(v) => setEscopo(v as "caso" | "item_todas")} className="gap-2">
+        <RadioGroup value={escopo} onValueChange={(v) => setEscopo(v as JustEscopo)} className="gap-2">
           <div className="flex items-center gap-2">
-            <RadioGroupItem value="caso" id="esc-caso" />
-            <Label htmlFor="esc-caso" className="text-xs font-normal">Só este caso</Label>
+            <RadioGroupItem value="caso" id={`esc-caso-${ids}`} />
+            <Label htmlFor={`esc-caso-${ids}`} className="text-xs font-normal">Só este caso</Label>
           </div>
-          {f.itemName ? (
-            <div className="flex items-center gap-2">
-              <RadioGroupItem value="item_todas" id="esc-todas" />
-              <Label htmlFor="esc-todas" className="text-xs font-normal">Este item em todas as lojas</Label>
+          <div className="flex items-start gap-2">
+            <RadioGroupItem value="item_todas" id={`esc-todas-${ids}`} className="mt-0.5" />
+            <div className="min-w-0">
+              <Label htmlFor={`esc-todas-${ids}`} className="text-xs font-normal">Todas as lojas</Label>
+              <p className="text-[10px] leading-snug text-muted-foreground">
+                {isVitrine
+                  ? "Todas as lojas na mesma situação (mesmo nº de vitrines e mesmos itens e quantidades)"
+                  : "Este item em todas as lojas"}
+              </p>
             </div>
-          ) : null}
+          </div>
         </RadioGroup>
+        {escopo === "item_todas" ? (
+          <p className="text-xs font-medium text-foreground" aria-live="polite">
+            Vale para {alcance} loja(s) agora
+          </p>
+        ) : null}
         <Button size="sm" className="w-full" onClick={confirm} disabled={!motivo.trim() || saving}>
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar"}
         </Button>
@@ -347,15 +336,17 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
     }
   };
 
-  const saveJust = async (f: RateioFinding, escopo: "caso" | "item_todas", motivo: string) => {
-    const fingerprint = escopo === "item_todas" ? fpTodas(f) : fpEspecifico(f);
+  const saveJust = async (f: RateioFinding, escopo: JustEscopo, motivo: string) => {
+    const row = buildJustRow(f, escopo);
     const { error } = await supabase.from("rateio_review_justificativas").upsert(
-      { client_id: clientId, fingerprint, finding_type: f.type, item_name: f.itemName ?? null, escopo, motivo },
+      { client_id: clientId, ...row, motivo },
       { onConflict: "client_id,fingerprint" },
     );
     if (error) { console.error(error); toast.error("Não foi possível salvar a justificativa."); return false; }
-    toast.success("Apontamento justificado.");
+    toast.success(escopo === "item_todas" ? "Justificado para todas as lojas." : "Apontamento justificado.");
+    // Recarrega e reanalisa: os demais apontamentos iguais somem na hora.
     await loadJust();
+    setRev((r) => r + 1);
     return true;
   };
 
@@ -430,7 +421,7 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
                   {list.map((f, i) => (
                     <FindingCard key={`${t}-${i}-${f.detail}`} f={f} lookup={storeLookup} onOpenStore={setFichaStore} onOpenItem={openItem}>
                       <div className="flex flex-wrap items-center gap-2">
-                        <JustifyButton f={f} onSave={saveJust} reasons={reasons} />
+                        <JustifyButton f={f} onSave={saveJust} reasons={reasons} ativos={ativos} />
                         {onFillMissing && canFill(f) ? (
                           <Button size="sm" variant="outline" className="h-7 text-xs gap-1 mt-1" onClick={() => setFillFinding(f)}>
                             <CopyPlus className="w-3.5 h-3.5" /> Colocar nas que não têm
@@ -461,7 +452,7 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
                     <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
                       <span className="rounded bg-muted px-2 py-1">
                         <span className="font-semibold">Motivo:</span> {reg.motivo}
-                        {reg.escopo === "item_todas" ? " (item em todas as lojas)" : ""} ·{" "}
+                        {reg.escopo === "item_todas" ? " (todas as lojas)" : ""} ·{" "}
                         {new Date(reg.created_at).toLocaleDateString("pt-BR")}
                       </span>
                       <Button size="sm" variant="ghost" className="h-7 text-xs gap-1" onClick={() => reopen(reg.id)}>
