@@ -30,6 +30,9 @@ import { LinkifiedText } from "@/components/LinkifiedText";
 import { findingStoreNames } from "@/lib/storeNameLinks";
 import { buildStoreNotes, filterStoreNotes, findingCountsByStore, storeNote } from "@/lib/storeNotes";
 import { RateioStoreNotesSection } from "@/components/RateioStoreNotesSection";
+import { AUTO_CORRECT_REASON, findCurrentFinding, findingIdentity } from "@/lib/rateioFixFinding";
+import { TaCertoButton, TaErradoButton } from "@/components/RateioQuickDecision";
+import { RateioFixFindingDialog } from "@/components/RateioFixFindingDialog";
 
 export interface RateioReviewDialogProps {
   open: boolean;
@@ -312,6 +315,8 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
   const { open, onOpenChange, pieces, kits, kitPieces, stores, qtyMap, campaignName, clientName, clientId, customFieldLabels, onFillMissing, onEditStoreRateio, editKitPieces } = props;
   // Apontamento aberto na prévia "Colocar nas que não têm".
   const [fillFinding, setFillFinding] = useState<RateioFinding | null>(null);
+  // Apontamento aberto na janela "Corrigir" (TÁ ERRADO), como estava ao clicar.
+  const [fixFinding, setFixFinding] = useState<RateioFinding | null>(null);
   const [exporting, setExporting] = useState(false);
   const [justMap, setJustMap] = useState<Map<string, Justificativa>>(new Map());
   const [showJust, setShowJust] = useState(false);
@@ -383,6 +388,8 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
   // Notas das lojas (client_stores.observations, já carregadas com as lojas): só exibição.
   const storeNotes = useMemo(() => (open ? buildStoreNotes(stores ?? []) : []), [open, stores]);
   const storeNotesVisiveis = useMemo(() => filterStoreNotes(storeNotes, filters.query), [storeNotes, filters.query]);
+  // Versão atual do apontamento em correção (null = resolvido após a reanálise).
+  const fixCurrent = useMemo(() => (fixFinding ? findCurrentFinding(fixFinding, ativos) : null), [fixFinding, ativos]);
   const findingCounts = useMemo(() => findingCountsByStore(ativos, storeLookup), [ativos, storeLookup]);
   // Motivos mais usados por este cliente (do justMap já carregado; sem consulta nova).
   const reasons = useMemo(() => topReasons([...justMap.values()]), [justMap]);
@@ -422,6 +429,22 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
     // Recarrega e reanalisa: os demais apontamentos iguais somem na hora.
     await loadJust();
     setRev((r) => r + 1);
+    return true;
+  };
+
+  /** TÁ CERTO: justificativa "só este caso" com motivo automático; "Desfazer" apaga a recém-criada. */
+  const markCorrect = async (f: RateioFinding): Promise<boolean> => {
+    const row = buildJustRow(f, "caso");
+    const { data, error } = await supabase
+      .from("rateio_review_justificativas")
+      .upsert({ client_id: clientId, ...row, motivo: AUTO_CORRECT_REASON }, { onConflict: "client_id,fingerprint" })
+      .select("id")
+      .single();
+    if (error || !data?.id) { console.error(error); toast.error("Não foi possível marcar como certo."); return false; }
+    await loadJust();
+    setRev((r) => r + 1);
+    const createdId = data.id as string;
+    toast.success("Marcado como certo.", { action: { label: "Desfazer", onClick: () => { void reopen(createdId); } } });
     return true;
   };
 
@@ -507,6 +530,8 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
                   {list.map((f, i) => (
                     <FindingCard key={`${t}-${i}-${f.detail}`} f={f} lookup={storeLookup} onOpenStore={setFichaStore} onOpenItem={openItem} onEditStore={onEditStoreRateio ? editStore : undefined}>
                       <div className="flex flex-wrap items-center gap-2">
+                        <TaCertoButton onConfirm={() => markCorrect(f)} />
+                        {onEditStoreRateio && onFillMissing ? <TaErradoButton onClick={() => setFixFinding(f)} /> : null}
                         <JustifyButton f={f} onSave={saveJust} reasons={reasons} ativos={ativos} lookup={storeLookup} onOpenStore={setFichaStore} />
                         {onFillMissing && canFill(f) ? (
                           <Button size="sm" variant="outline" className="h-7 text-xs gap-1 mt-1" onClick={() => setFillFinding(f)}>
@@ -572,6 +597,20 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
             if (ok) setRev((r) => r + 1);
             return ok;
           }}
+        />
+      ) : null}
+      {onEditStoreRateio && onFillMissing ? (
+        <RateioFixFindingDialog
+          key={fixFinding ? findingIdentity(fixFinding) : "none"}
+          finding={fixFinding}
+          current={fixCurrent}
+          onOpenChange={(v) => { if (!v) setFixFinding(null); }}
+          lookup={storeLookup}
+          qtyMap={qtyMap}
+          kitPieces={(editKitPieces ?? kitPieces) as any[]}
+          onOpenStore={setFichaStore}
+          onEditStore={editStore}
+          onFill={fixCurrent && canFill(fixCurrent) ? () => setFillFinding(fixCurrent) : undefined}
         />
       ) : null}
       <StoreFichaDialog
