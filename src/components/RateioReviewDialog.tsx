@@ -315,6 +315,8 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
   }, [clientId]);
 
   useEffect(() => { if (open) void loadJust(); }, [open, loadJust]);
+  // Ao fechar a revisão, a próxima abertura começa sem filtros.
+  useEffect(() => { if (!open) setFilters(EMPTY_FILTERS); }, [open]);
 
   const { ativos, justificados } = useMemo(() => splitByJust(findings, justMap), [findings, justMap]);
   const ativosVisiveis = useMemo(() => filterFindings(ativos, filters, (f) => f), [ativos, filters]);
