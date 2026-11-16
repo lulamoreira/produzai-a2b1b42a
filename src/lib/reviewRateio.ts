@@ -36,6 +36,11 @@ export type RateioFinding = {
   /** Identificação do item (todos os achados de item único; vitrine não tem). */
   itemKind?: "piece" | "kit";
   itemId?: string;
+  /**
+   * Só nos dois achados de vitrine: `<EXC|TAM>::VIT:<nº de vitrines>::<NOME:qtd|...>` (itens normalizados e
+   * ordenados). Identifica lojas "na mesma situação" para a justificativa "Todas as lojas".
+   */
+  situacao?: string;
 };
 
 export const norm = (s: unknown): string =>
@@ -335,6 +340,8 @@ export function reviewRateio(
       if (/\bP\b|PEQUEN/.test(n)) sizes.add("P");
       if (/\bM\b|MEDI/.test(n)) sizes.add("M");
     }
+    const assinatura = recebidos.map((r) => `${norm(r.name)}:${r.quantity}`).sort().join("|");
+    const situacao = (sub: "EXC" | "TAM") => `${sub}::VIT:${count}::${assinatura}`;
     if (total > count) {
       findings.push({
         severity: "media",
@@ -344,6 +351,7 @@ export function reviewRateio(
         storeModel: s.store_model ?? undefined,
         storeName: storeName(s),
         breakdown: recebidos,
+        situacao: situacao("EXC"),
       });
     }
     if (sizes.size > 1) {
@@ -355,6 +363,7 @@ export function reviewRateio(
         storeModel: s.store_model ?? undefined,
         storeName: storeName(s),
         breakdown: recebidos,
+        situacao: situacao("TAM"),
       });
     }
   }
