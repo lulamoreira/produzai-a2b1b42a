@@ -100,3 +100,29 @@ export function buildJustRow(f: RateioFinding, escopo: JustEscopo) {
     escopo,
   };
 }
+
+/** Apontamentos que a regra "Todas as lojas" deste achado cobre, ordenados pelo nome exibido. */
+export function sameTodasFindings(f: RateioFinding, list: RateioFinding[]): RateioFinding[] {
+  const fp = fpTodas(f);
+  return list
+    .filter((a) => a.type === f.type && fpTodas(a) === fp)
+    .sort((a, b) => coverageRow(a).title.localeCompare(coverageRow(b).title, "pt-BR", { sensitivity: "base" }));
+}
+
+/**
+ * Linha da prévia: loja (ou item, quando o apontamento não tem loja) e o que a identifica.
+ * Vitrine: "2 vit. · itens: BF 2, Compre e Ganhe 1". Demais: item e modelo/loja.
+ */
+export function coverageRow(f: RateioFinding): { title: string; sub: string } {
+  if (f.type === "vitrine_excesso") {
+    const vit = /(?:^|::)VIT:(\d+)/.exec(f.situacao ?? "")?.[1];
+    const itens = (f.breakdown ?? []).map((b) => `${b.name} ${b.quantity}`).join(", ");
+    const parts = [vit ? `${vit} vit.` : "", itens ? `itens: ${itens}` : ""].filter(Boolean);
+    return { title: f.storeName || "—", sub: parts.join(" · ") };
+  }
+  if (f.storeName) {
+    const parts = [f.itemName, f.storeModel ? `Modelo ${f.storeModel}` : ""].filter(Boolean);
+    return { title: f.storeName, sub: parts.join(" · ") };
+  }
+  return { title: f.itemName || f.title, sub: f.storeModel ? `Modelo ${f.storeModel}` : "" };
+}

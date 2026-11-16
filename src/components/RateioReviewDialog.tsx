@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { reviewRateio, FINDING_TYPE_LABELS, itemCodeLabel, type RateioFinding, type RateioFindingType } from "@/lib/reviewRateio";
-import { buildJustRow, countSameTodas, splitByJust, type JustEscopo, type Justificativa } from "@/lib/rateioReviewJust";
+import { buildJustRow, countSameTodas, sameTodasFindings, splitByJust, type JustEscopo, type Justificativa } from "@/lib/rateioReviewJust";
 import { exportRateioReviewPDF } from "@/lib/exportRateioReviewPDF";
 import { buildStoreLookup, normalizeStoreKey } from "@/lib/storeFicha";
 import { StoreFichaDialog } from "@/components/StoreFichaDialog";
@@ -24,6 +24,7 @@ import { SEV_LABEL, SEV_STYLE } from "@/components/rateioReviewStyles";
 import { RateioShowcaseGroups } from "@/components/RateioShowcaseGroups";
 import { RateioReviewFilters } from "@/components/RateioReviewFilters";
 import { RateioItemDetailDialog } from "@/components/RateioItemDetailDialog";
+import { RateioJustCoverageList } from "@/components/RateioJustCoverageList";
 
 export interface RateioReviewDialogProps {
   open: boolean;
@@ -183,7 +184,8 @@ function JustifyButton({ f, onSave, reasons, ativos }: JustifyButtonProps) {
   const [motivo, setMotivo] = useState("");
   const [escopo, setEscopo] = useState<JustEscopo>("caso");
   // Só calcula quando o usuário escolhe "Todas as lojas" (contagem ao vivo).
-  const alcance = useMemo(() => (escopo === "item_todas" ? countSameTodas(f, ativos) : 0), [escopo, f, ativos]);
+  const cobertos = useMemo(() => (escopo === "item_todas" ? sameTodasFindings(f, ativos) : []), [escopo, f, ativos]);
+  const alcance = cobertos.length;
   const isVitrine = f.type === "vitrine_excesso";
   const ids = `${f.type}-${f.storeName ?? ""}-${f.itemId ?? f.itemName ?? ""}-${f.title}`.replace(/[^\w-]/g, "_");
   const [saving, setSaving] = useState(false);
@@ -201,7 +203,7 @@ function JustifyButton({ f, onSave, reasons, ativos }: JustifyButtonProps) {
           <CheckCircle2 className="w-3.5 h-3.5" /> Justificar
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 max-w-[calc(100vw-2rem)] space-y-3" align="start">
+      <PopoverContent className="w-80 max-w-[calc(100vw-2rem)] max-h-[var(--radix-popover-content-available-height)] overflow-y-auto space-y-3" align="start" collisionPadding={8}>
         {reasons.length > 0 && (
           <div className="space-y-1">
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block">Motivos frequentes</span>
@@ -246,12 +248,15 @@ function JustifyButton({ f, onSave, reasons, ativos }: JustifyButtonProps) {
           </div>
         </RadioGroup>
         {escopo === "item_todas" ? (
-          <p className="text-xs font-medium text-foreground" aria-live="polite">
-            Vale para {alcance} loja(s) agora
-          </p>
+          <RateioJustCoverageList
+            findings={cobertos}
+            current={f}
+            label={`Vale para ${alcance} loja(s) agora — ver quais`}
+            footerTotal={ativos.length}
+          />
         ) : null}
         <Button size="sm" className="w-full" onClick={confirm} disabled={!motivo.trim() || saving}>
-          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Confirmar"}
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : escopo === "item_todas" ? `Confirmar para ${alcance} loja(s)` : "Confirmar"}
         </Button>
       </PopoverContent>
     </Popover>
@@ -337,13 +342,19 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
   };
 
   const saveJust = async (f: RateioFinding, escopo: JustEscopo, motivo: string) => {
+    // Contado antes de gravar: os mesmos apontamentos mostrados na prévia.
+    const n = escopo === "item_todas" ? countSameTodas(f, ativos) : 1;
     const row = buildJustRow(f, escopo);
     const { error } = await supabase.from("rateio_review_justificativas").upsert(
       { client_id: clientId, ...row, motivo },
       { onConflict: "client_id,fingerprint" },
     );
     if (error) { console.error(error); toast.error("Não foi possível salvar a justificativa."); return false; }
-    toast.success(escopo === "item_todas" ? "Justificado para todas as lojas." : "Apontamento justificado.");
+    toast.success(
+      escopo === "item_todas"
+        ? `Justificado para ${n} loja(s). Reabra em Justificadas se precisar desfazer.`
+        : "Apontamento justificado.",
+    );
     // Recarrega e reanalisa: os demais apontamentos iguais somem na hora.
     await loadJust();
     setRev((r) => r + 1);
@@ -459,6 +470,15 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
                         <RotateCcw className="w-3.5 h-3.5" /> Reabrir
                       </Button>
                     </div>
+                    {reg.escopo === "item_todas" ? (() => {
+                      // Auditoria: apontamentos que hoje casam com esta regra "todas as lojas".
+                      const cobertos = sameTodasFindings(f, justificadosF);
+                      return (
+                        <div className="pt-1">
+                          <RateioJustCoverageList findings={cobertos} current={f} label={`Ver lojas cobertas (${cobertos.length})`} defaultOpen={false} />
+                        </div>
+                      );
+                    })() : null}
                   </FindingCard>
                 ))}
             </section>

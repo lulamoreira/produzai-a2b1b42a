@@ -94,3 +94,20 @@ describe("tipos com item mantêm as regras", () => {
     expect(buildJustRow(f, "item_todas").item_name).toBe("Wobbler");
   });
 });
+
+describe("prévia de 'Todas as lojas'", () => {
+  it("lista os mesmos apontamentos que a contagem, ordenados pela loja", async () => {
+    const { sameTodasFindings, coverageRow } = await import("@/lib/rateioReviewJust");
+    const all = vit();
+    const tamB = all.find((f) => f.storeName === "Loja B" && f.title.includes("tamanhos")) as RateioFinding;
+    const list = sameTodasFindings(tamB, all);
+    expect(list.length).toBe(countSameTodas(tamB, all));
+    expect(list.map((f) => f.storeName)).toEqual(["Loja A", "Loja B"]);
+    expect(coverageRow(list[0])).toEqual({ title: "Loja A", sub: "1 vit. · itens: Vitrine G 1, Vitrine P 1" });
+  });
+  it("sem loja mostra o item e o modelo", async () => {
+    const { coverageRow } = await import("@/lib/rateioReviewJust");
+    const f: RateioFinding = { severity: "alta", type: "modelo_divergente", title: "x", detail: "", itemName: "Wobbler", storeModel: "LOOK" };
+    expect(coverageRow(f)).toEqual({ title: "Wobbler", sub: "Modelo LOOK" });
+  });
+});
