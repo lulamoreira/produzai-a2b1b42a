@@ -33,6 +33,7 @@ export type RateioFinding = {
   storesWithQty?: { id: string; name: string; qty: number; showcase: number }[];
   /** Só em "Falta em lojas do mesmo modelo": lojas que não têm o item (mesma ordem de storesWithout). */
   storesWithoutIds?: { id: string; name: string; showcase: number }[];
+  /** Identificação do item (todos os achados de item único; vitrine não tem). */
   itemKind?: "piece" | "kit";
   itemId?: string;
 };
@@ -107,6 +108,9 @@ export function reviewRateio(
     itemName: it.src.name ?? "",
     itemCode: it.src.code ?? undefined,
     itemImage: it.src.image_report_url || it.src.image_url || null,
+    // Só identificação (abre o detalhe do item na tela); não participa da detecção.
+    itemKind: it.kind,
+    itemId: it.src.id ?? undefined,
   });
 
   // Matriz de quantidades das lojas participantes

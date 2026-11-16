@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildStoreLookup, normalizeStoreKey, storeCampaignItems, storeCustomFields } from "./storeFicha";
+import { buildStoreLookup, findingConcernsStore, normalizeStoreKey, storeCampaignItems, storeCustomFields } from "./storeFicha";
 
 describe("buildStoreLookup", () => {
   it("encontra a loja pelo nome ignorando espaços, maiúsculas e acentos", () => {
@@ -38,5 +38,21 @@ describe("storeCampaignItems", () => {
       { [`${store}-p1`]: 3, [`${store}-c1`]: 3, [`${store}-c2`]: 4 },
     );
     expect(items.map((i) => [i.kind, i.name, i.quantity])).toEqual([["kit", "KIT Vitrine", 2], ["piece", "Wobbler", 3]]);
+  });
+});
+
+
+describe("findingConcernsStore", () => {
+  const store = { id: "s1", name: "Shopping Recife", nickname: "Recife" };
+  it("loja do achado (storeName) conta; lojas de referência em 'Tem' não", () => {
+    expect(findingConcernsStore({ storeName: "Recife", storesWith: ["Outra"] }, store)).toBe(true);
+    expect(findingConcernsStore({ storeName: "Outra", storesWith: ["Recife"] }, store)).toBe(false);
+  });
+  it("em 'Falta…' conta quem não tem, não quem tem", () => {
+    expect(findingConcernsStore({ storesWith: ["Outra"], storesWithout: ["recife"] }, store)).toBe(true);
+    expect(findingConcernsStore({ storesWith: ["Recife"], storesWithout: ["Outra"] }, store)).toBe(false);
+  });
+  it("sem storeName nem 'Não tem', 'Tem' é a lista afetada (kits, poucas lojas)", () => {
+    expect(findingConcernsStore({ storesWith: ["Shopping Recife"] }, store)).toBe(true);
   });
 });
