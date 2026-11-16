@@ -1,12 +1,35 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { getStateColor } from "@/lib/stateColors";
-import { findingConcernsStore, storeCampaignItems, storeCustomFields } from "@/lib/storeFicha";
+import { findingConcernsStore } from "@/lib/storeFicha";
 import type { RateioFinding } from "@/lib/reviewRateio";
-import { StoreFichaFindings } from "@/components/StoreFichaFindings";
+import {
+  buildStoreEditWrites,
+  draftChanges,
+  editKey,
+  storeEditableItems,
+  type StoreEditChange,
+  type StoreEditKind,
+} from "@/lib/rateioStoreEdit";
 import type { StoreLookup } from "@/components/StoreNameLink";
+import { StoreFichaInfo } from "@/components/StoreFichaInfo";
+import { StoreRateioEditor } from "@/components/StoreRateioEditor";
+import { StoreRateioEditReview } from "@/components/StoreRateioEditReview";
+
+/** Pedido de gravação do rateio de uma loja (feito pelo Rateio, com histórico). */
+export interface StoreRateioEditRequest {
+  storeId: string;
+  storeName: string;
+  changes: StoreEditChange[];
+}
+
+/** Como a ficha deve abrir: só leitura ou já em edição, com o item do apontamento destacado. */
+export interface StoreFichaIntent {
+  mode: "view" | "edit";
+  focus?: { kind: StoreEditKind; id: string } | null;
+}
 
 export interface StoreFichaDialogProps {
   store: any | null;
@@ -24,39 +47,90 @@ export interface StoreFichaDialogProps {
   storeLookup?: StoreLookup;
   /** Troca a ficha aberta pela de outra loja citada. */
   onOpenStore?: (store: any) => void;
+  /** Grava pelo caminho do Rateio. Só é passado para quem pode editar; sem ele a ficha é só leitura. */
+  onSaveRateio?: (req: StoreRateioEditRequest) => Promise<boolean>;
+  /** Composição de kits da origem de rateio ativa (padrão: kitPieces). */
+  editKitPieces?: any[];
+  intent?: StoreFichaIntent;
 }
 
-const filled = (v: unknown) => v !== null && v !== undefined && String(v).trim() !== "";
+type Mode = "view" | "edit" | "review";
+type Pending = { kind: "close" } | { kind: "cancel" } | { kind: "switch"; store: any };
 
-function Field({ label, value, mono }: { label: string; value: unknown; mono?: boolean }) {
-  if (!filled(value)) return null;
-  return (
-    <div className="space-y-0.5 min-w-0">
-      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block break-words">{label}</span>
-      <p className={mono ? "text-xs font-medium font-mono break-words" : "text-xs font-medium break-words leading-tight"}>{String(value)}</p>
-    </div>
-  );
-}
+/** Ficha da loja, aberta por cima da janela "Revisar Rateio"; edita o rateio só com permissão. */
+export function StoreFichaDialog(props: StoreFichaDialogProps) {
+  const { store, onOpenChange, pieces, kits, kitPieces, qtyMap, findings, justifiedFindings, onOpenStore, onSaveRateio, editKitPieces, intent } = props;
+  const canEdit = !!onSaveRateio;
+  const [mode, setMode] = useState<Mode>("view");
+  const [draft, setDraft] = useState<Record<string, string>>({});
+  const [pending, setPending] = useState<Pending | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-/** Ficha somente leitura de uma loja, aberta por cima da janela "Revisar Rateio". */
-export function StoreFichaDialog({ store, onOpenChange, pieces, kits, kitPieces, qtyMap, customFieldLabels, findings, justifiedFindings, storeLookup, onOpenStore }: StoreFichaDialogProps) {
-  const storeFindings = useMemo(
-    () => ({
-      active: store ? (findings ?? []).filter((f) => findingConcernsStore(f, store)) : [],
-      justified: store ? (justifiedFindings ?? []).filter((f) => findingConcernsStore(f, store)) : [],
-    }),
-    [store, findings, justifiedFindings],
-  );
-  const customFields = useMemo(() => (store ? storeCustomFields(store, customFieldLabels) : []), [store, customFieldLabels]);
-  const items = useMemo(
-    () => (store ? storeCampaignItems(store.id, pieces, kits, kitPieces, qtyMap) : []),
-    [store, pieces, kits, kitPieces, qtyMap],
-  );
-  const cityUf = store ? [store.city, store.state].filter(filled).join(" / ") : "";
+  // Nova loja ou novo pedido de abertura: recomeça (padrão "ajustar estado no render").
+  const [seen, setSeen] = useState<{ id: string | null; intent?: StoreFichaIntent }>({ id: null });
+  const storeId: string | null = store?.id ?? null;
+  if (seen.id !== storeId || seen.intent !== intent) {
+    setSeen({ id: storeId, intent });
+    setDraft({});
+    setPending(null);
+    setError(null);
+    setMode(intent?.mode === "edit" && canEdit && storeId ? "edit" : "view");
+  }
+  const focusKey = intent?.focus ? editKey(intent.focus.kind, intent.focus.id) : null;
+
+  const links = editKitPieces ?? kitPieces;
+  const qty = useCallback((pid: string) => (storeId ? qtyMap[`${storeId}-${pid}`] || 0 : 0), [qtyMap, storeId]);
+  const items = useMemo(() => (storeId && mode !== "view" ? storeEditableItems(pieces, kits, links, qty) : []), [storeId, mode, pieces, kits, links, qty]);
+  const changes = useMemo(() => draftChanges(items, draft), [items, draft]);
+  const writes = useMemo(() => (mode === "review" ? buildStoreEditWrites(changes, links, qty) : []), [mode, changes, links, qty]);
+  const dirty = mode !== "view" && changes.length > 0;
+  const pieceLabel = useMemo(() => {
+    const byId = new Map((pieces ?? []).map((p: any) => [p.id, p]));
+    return (id: string) => {
+      const p: any = byId.get(id);
+      return [p?.code !== null && p?.code !== undefined && p?.code !== "" ? `Cód. ${p.code}` : "", p?.name ?? "Peça"].filter(Boolean).join(" ");
+    };
+  }, [pieces]);
+
+  const active = useMemo(() => (store ? (findings ?? []).filter((f) => findingConcernsStore(f, store)) : undefined), [store, findings]);
+  const justified = useMemo(() => (store ? (justifiedFindings ?? []).filter((f) => findingConcernsStore(f, store)) : []), [store, justifiedFindings]);
+
+  const run = (p: Pending) => {
+    setPending(null);
+    setDraft({});
+    setError(null);
+    if (p.kind === "close") onOpenChange(false);
+    else if (p.kind === "cancel") setMode("view");
+    else onOpenStore?.(p.store);
+  };
+  const ask = (p: Pending) => (dirty ? setPending(p) : run(p));
+  const openOther = onOpenStore ? (s: any) => ask({ kind: "switch", store: s }) : undefined;
+
+  const confirmSave = async () => {
+    if (!store || !onSaveRateio || changes.length === 0) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const ok = await onSaveRateio({ storeId: store.id, storeName: store.nickname || store.name || "", changes });
+      if (ok) { setDraft({}); setMode("view"); }
+      else setError("Não foi possível salvar. Nada foi alterado; confira e tente de novo.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const stateColor = store?.state ? getStateColor(store.state) : null;
-
   return (
-    <Dialog open={!!store} onOpenChange={onOpenChange}>
+    <Dialog
+      open={!!store}
+      onOpenChange={(v) => {
+        if (v || saving) return;
+        // Com a pergunta aberta, Esc/clique fora só volta para a edição.
+        if (pending) setPending(null);
+        else ask({ kind: "close" });
+      }}
+    >
       {/* data-store-ficha: popovers abertos por baixo (ex.: Justificar) não fecham ao interagir com a ficha. */}
       <DialogContent data-store-ficha="" className="z-[60] max-w-md p-0 gap-0 overflow-hidden flex flex-col max-h-[85dvh]">
         {store && (
@@ -74,59 +148,61 @@ export function StoreFichaDialog({ store, onOpenChange, pieces, kits, kitPieces,
                 )}
               </div>
               <DialogDescription className="text-[11px] italic truncate">
-                {store.nickname && store.nickname !== store.name ? `"${store.nickname}"` : "Ficha da loja (somente leitura)"}
+                {mode !== "view"
+                  ? "Editando o rateio desta loja"
+                  : store.nickname && store.nickname !== store.name ? `"${store.nickname}"` : "Ficha da loja (somente leitura)"}
               </DialogDescription>
             </DialogHeader>
 
-            <div className="px-4 py-3 space-y-3 overflow-y-auto">
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                <Field label="Código" value={store.store_code || "—"} />
-                <Field label="Cidade/UF" value={cityUf || "—"} />
-                <Field label="CNPJ" value={store.cnpj} mono />
-                <Field label="Modelo" value={store.store_model} />
-                <Field label="Era" value={store.era} />
-                <Field label="Vitrines" value={store.showcase_count} />
-              </div>
+            {mode === "view" ? (
+              <StoreFichaInfo
+                store={store}
+                pieces={pieces}
+                kits={kits}
+                kitPieces={kitPieces}
+                qtyMap={qtyMap}
+                customFieldLabels={props.customFieldLabels}
+                storeLookup={props.storeLookup}
+                activeFindings={findings ? active : undefined}
+                justifiedFindings={justified}
+                onOpenStore={openOther}
+                onEdit={canEdit ? () => setMode("edit") : undefined}
+              />
+            ) : mode === "edit" ? (
+              <StoreRateioEditor
+                items={items}
+                draft={draft}
+                onDraft={(key, value) => setDraft((d) => ({ ...d, [key]: value }))}
+                focusKey={focusKey}
+                changeCount={changes.length}
+                onCancel={() => ask({ kind: "cancel" })}
+                onReview={() => { setError(null); setMode("review"); }}
+              />
+            ) : (
+              <StoreRateioEditReview
+                changes={changes}
+                writes={writes}
+                items={items}
+                pieceLabel={pieceLabel}
+                saving={saving}
+                error={error}
+                onBack={() => setMode("edit")}
+                onConfirm={confirmSave}
+              />
+            )}
 
-              {customFields.length > 0 && (
-                <div className="pt-2 border-t border-border/60 grid grid-cols-2 gap-x-4 gap-y-3">
-                  {customFields.map((f) => <Field key={f.label} label={f.label} value={f.value} />)}
+            {pending ? (
+              <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/80 p-4" role="alertdialog" aria-label="Descartar alterações?">
+                <div className="w-full max-w-xs space-y-3 rounded-lg border bg-card p-4 shadow-lg">
+                  <p className="text-sm font-semibold">Descartar alterações?</p>
+                  <p className="text-xs text-muted-foreground">As {changes.length} alteração(ões) feitas nesta loja ainda não foram salvas.</p>
+                  <div className="flex flex-wrap justify-end gap-2">
+                    <Button type="button" size="sm" variant="outline" onClick={() => setPending(null)}>Continuar editando</Button>
+                    <Button type="button" size="sm" variant="destructive" onClick={() => run(pending)}>Descartar</Button>
+                  </div>
                 </div>
-              )}
-
-              {findings ? (
-                <StoreFichaFindings
-                  active={storeFindings.active}
-                  justified={storeFindings.justified}
-                  currentStoreId={store.id}
-                  lookup={storeLookup}
-                  onOpenStore={onOpenStore}
-                />
-              ) : null}
-
-              <div className="pt-2 border-t border-border/60 space-y-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Nesta campanha</span>
-                  <Badge variant="outline" className="text-[10px]">{items.length} item(ns)</Badge>
-                </div>
-                {items.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">A loja não recebe nenhum item nesta campanha.</p>
-                ) : (
-                  <ul className="max-h-56 overflow-y-auto rounded border border-border/60 divide-y divide-border/50">
-                    {items.map((it) => (
-                      <li key={`${it.kind}-${it.id}`} className="flex items-center justify-between gap-2 px-2 py-1 text-xs">
-                        <span className="min-w-0 truncate">
-                          {it.code !== null && it.code !== "" ? <span className="text-muted-foreground mr-1">#{it.code}</span> : null}
-                          {it.name}
-                          {it.kind === "kit" ? <Badge variant="secondary" className="ml-1.5 text-[9px] px-1 py-0">Kit</Badge> : null}
-                        </span>
-                        <span className="font-semibold shrink-0">{it.quantity}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </div>
-            </div>
+            ) : null}
           </>
         )}
       </DialogContent>

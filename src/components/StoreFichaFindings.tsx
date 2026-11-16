@@ -58,7 +58,7 @@ export function StoreFichaFindings({ active, justified, ...link }: { active: Rat
       {active.length === 0 ? (
         <p className="text-xs text-muted-foreground">Nenhum apontamento ativo para esta loja.</p>
       ) : (
-        <ul className="max-h-56 overflow-y-auto rounded border border-border/60 divide-y divide-border/50">
+        <ul className="max-h-56 overflow-y-auto rounded border border-border/60 divide-y divide-border/50" onWheel={(e) => e.stopPropagation()} onTouchMove={(e) => e.stopPropagation()}>
           {active.map((f, i) => <FindingRow key={`a-${i}-${f.detail}`} f={f} {...link} />)}
         </ul>
       )}

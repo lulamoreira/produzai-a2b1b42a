@@ -42,7 +42,11 @@ export function RateioJustCoverageList({ findings, label, current, footerTotal, 
       </button>
       {open ? (
         <div className="rounded-md border bg-muted/30">
-          <ul className="max-h-[180px] overflow-y-auto divide-y">
+          <ul
+            className="max-h-[180px] overflow-y-auto divide-y"
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+          >
             {findings.map((f, i) => {
               const row = coverageRow(f);
               return (
