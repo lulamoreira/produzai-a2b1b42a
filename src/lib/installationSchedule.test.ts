@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasScheduledDateAndTime } from "./installationSchedule";
+import { hasScheduledDateAndTime, isVisiblePendingInstallation, latestCampaignIdsByChain } from "./installationSchedule";
 
 describe("hasScheduledDateAndTime", () => {
   it("counts a normal schedule that has date and time", () => {
@@ -44,8 +44,6 @@ describe("hasScheduledDateAndTime", () => {
     ).toBe(false);
   });
 });
-
-import { isVisiblePendingInstallation, latestCampaignIdsByChain } from "./installationSchedule";
 
 describe("isVisiblePendingInstallation", () => {
   const base = { scheduled_date: "2026-11-20", scheduled_time: "08:00", completed_at: null };

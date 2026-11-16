@@ -159,13 +159,17 @@ const CampaignDetail = () => {
   const { data: pieceSubLocations = [] } = useCampaignPieceSubLocations(campaignId);
 
   const { data: campaignKpis } = useQuery({
-    queryKey: ["campaign-summary-kpis", campaignId],
+    // Pending installations are read from the newest campaign of the chain
+    // (field modules only live there), so the key carries it and the query
+    // waits for it to resolve instead of flashing the old version's number.
+    queryKey: ["campaign-summary-kpis", campaignId, latestCampaignId ?? null],
     queryFn: async () => {
       // Independent counts run together; stores already come from the shared store query.
-      const [piecesRes, kitsRes, pendingInstallationsRes] = await Promise.all([
+      const [piecesRes, kitsRes, pendingInstallationsCount] = await Promise.all([
         supabase.from("campaign_pieces").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).eq("is_deleted", false),
         supabase.from("campaign_kits").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId),
-        supabase.from("campaign_schedules").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).is("completed_at", null),
+        // Same rule as the status panel "Pendentes": date+time, store with logistics.
+        fetchPendingInstallationsCount(latestCampaignId ?? campaignId!),
       ]);
       
       // Approvals might be in budget_suppliers or other tables, using 0 for now as user_approvals doesn't exist
@@ -174,11 +178,11 @@ const CampaignDetail = () => {
       return {
         stores: stores.length,
         pieces: (piecesRes.count || 0) + (kitsRes.count || 0),
-        pendingInstallations: pendingInstallationsRes.count || 0,
+        pendingInstallations: pendingInstallationsCount,
         pendingApprovals: pendingApprovalsRes.count || 0
       };
     },
-    enabled: !!campaignId && !!clientId
+    enabled: !!campaignId && !!clientId && !loadingLatestCampaign
   });
 
   const updateCampaign = useUpdateCampaign();
