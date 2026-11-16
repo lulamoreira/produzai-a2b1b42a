@@ -211,6 +211,10 @@ interface JustifyButtonProps {
   onOpenStore: (store: any) => void;
 }
 
+/** O alvo do evento está dentro de um aviso (toast)? */
+const insideToast = (target: EventTarget | null) =>
+  target instanceof Element && !!target.closest("[data-sonner-toaster]");
+
 /** O alvo do evento está dentro da ficha da loja (aberta por cima de tudo)? */
 const insideFicha = (target: EventTarget | null) =>
   target instanceof Element && !!target.closest("[data-store-ficha]");
@@ -444,7 +448,11 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
     await loadJust();
     setRev((r) => r + 1);
     const createdId = data.id as string;
-    toast.success("Marcado como certo.", { action: { label: "Desfazer", onClick: () => { void reopen(createdId); } } });
+    // pointer-events-auto: com o Dialog aberto o body fica sem cliques; o "Desfazer" precisa receber o clique.
+    toast.success("Marcado como certo.", {
+      className: "pointer-events-auto",
+      action: { label: "Desfazer", onClick: () => { void reopen(createdId); } },
+    });
     return true;
   };
 
@@ -477,7 +485,11 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+      <DialogContent
+        className="max-w-3xl max-h-[90vh] flex flex-col"
+        // Clicar num aviso (ex.: "Desfazer" do TÁ CERTO) não fecha a revisão.
+        onInteractOutside={(e) => { if (insideToast(e.target)) e.preventDefault(); }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ClipboardCheck className="w-5 h-5 text-primary" /> Revisar Rateio
