@@ -124,7 +124,7 @@ export function RateioFillMissingDialog({ finding, onOpenChange, onConfirm, look
                   {lookup && onOpenStore ? (
                     // Fora do Label: clicar no nome abre a ficha sem marcar/desmarcar a loja.
                     <div className="block break-words text-xs font-medium">
-                      <StoreNameLink name={r.name} lookup={lookup} onOpen={onOpenStore} />
+                      <StoreNameLink name={r.name} storeId={r.id} lookup={lookup} onOpen={onOpenStore} showNote />
                     </div>
                   ) : (
                     <Label htmlFor={`fill-${r.id}`} className="block break-words text-xs font-medium cursor-pointer">

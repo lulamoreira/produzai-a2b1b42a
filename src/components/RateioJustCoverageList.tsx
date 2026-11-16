@@ -53,7 +53,7 @@ export function RateioJustCoverageList({ findings, label, current, footerTotal, 
                 <li key={`${fpEspecifico(f)}-${f.title}-${i}`} className="px-2 py-1.5">
                   <div className="flex items-center gap-1.5 min-w-0">
                     {f.storeName && lookup && onOpenStore ? (
-                      <StoreNameLink name={f.storeName} lookup={lookup} onOpen={onOpenStore} className="text-xs min-w-0">
+                      <StoreNameLink name={f.storeName} lookup={lookup} onOpen={onOpenStore} showNote className="text-xs min-w-0">
                         {row.title}
                       </StoreNameLink>
                     ) : (

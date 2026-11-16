@@ -42,3 +42,9 @@
 # Bulk occurrence status change
 - [x] Let admins and masters tick occurrences (or all visible after filters) and change their status at once, revalidated on the server.
 - [x] Test the permission rule and verify the live flow on two Cuiabá occurrences, then restore their original status.
+
+# Rateio review store notes
+- [x] Show store notes (section, single-store finding strip, amber icon in store lists, store card block, PDF) read-only from the already-loaded stores; 5 rule tests passed and preview checked at 1280/375 with writes blocked.
+
+# Rateio review quick decisions (TÁ CERTO / TÁ ERRADO)
+- [ ] Requested earlier (16/11 15:10) but not built yet; awaiting the user's go-ahead to build it next.
