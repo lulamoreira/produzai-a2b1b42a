@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useMemo } from "react";
-import { Pencil } from "lucide-react";
+import { AlertCircle, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { storeCampaignItems, storeCustomFields } from "@/lib/storeFicha";
+import { storeNote } from "@/lib/storeNotes";
 import type { RateioFinding } from "@/lib/reviewRateio";
 import { StoreFichaFindings } from "@/components/StoreFichaFindings";
 import type { StoreLookup } from "@/components/StoreNameLink";
@@ -40,6 +41,7 @@ export function StoreFichaInfo({ store, pieces, kits, kitPieces, qtyMap, customF
   const customFields = useMemo(() => storeCustomFields(store, customFieldLabels), [store, customFieldLabels]);
   const items = useMemo(() => storeCampaignItems(store.id, pieces, kits, kitPieces, qtyMap), [store, pieces, kits, kitPieces, qtyMap]);
   const cityUf = [store.city, store.state].filter(filled).join(" / ");
+  const note = storeNote(store);
   return (
     <div className="px-4 py-3 space-y-3 overflow-y-auto" onWheel={(e) => e.stopPropagation()} onTouchMove={(e) => e.stopPropagation()}>
       <div className="grid grid-cols-2 gap-x-4 gap-y-3">
@@ -50,6 +52,15 @@ export function StoreFichaInfo({ store, pieces, kits, kitPieces, qtyMap, customF
         <Field label="Era" value={store.era} />
         <Field label="Vitrines" value={store.showcase_count} />
       </div>
+
+      {note ? (
+        <div className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 space-y-1">
+          <span className="flex items-center gap-1 text-[10px] uppercase tracking-wider font-semibold text-foreground">
+            <AlertCircle className="h-3.5 w-3.5 text-warning" aria-hidden /> Observações da loja
+          </span>
+          <p className="whitespace-pre-wrap break-words text-xs text-foreground">{note}</p>
+        </div>
+      ) : null}
 
       {customFields.length > 0 && (
         <div className="pt-2 border-t border-border/60 grid grid-cols-2 gap-x-4 gap-y-3">
