@@ -122,7 +122,15 @@ export function StoreFichaDialog(props: StoreFichaDialogProps) {
 
   const stateColor = store?.state ? getStateColor(store.state) : null;
   return (
-    <Dialog open={!!store} onOpenChange={(v) => { if (!v && !saving) ask({ kind: "close" }); }}>
+    <Dialog
+      open={!!store}
+      onOpenChange={(v) => {
+        if (v || saving) return;
+        // Com a pergunta aberta, Esc/clique fora só volta para a edição.
+        if (pending) setPending(null);
+        else ask({ kind: "close" });
+      }}
+    >
       {/* data-store-ficha: popovers abertos por baixo (ex.: Justificar) não fecham ao interagir com a ficha. */}
       <DialogContent data-store-ficha="" className="z-[60] max-w-md p-0 gap-0 overflow-hidden flex flex-col max-h-[85dvh]">
         {store && (
