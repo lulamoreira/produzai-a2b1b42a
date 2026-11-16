@@ -17,6 +17,12 @@ import { buildStoreLookup, normalizeStoreKey } from "@/lib/storeFicha";
 import { StoreFichaDialog } from "@/components/StoreFichaDialog";
 import { RateioFillMissingDialog, type FillMissingRequest } from "@/components/RateioFillMissingDialog";
 import { quantityDistribution } from "@/lib/rateioFillMissing";
+import { EMPTY_FILTERS, filterFindings, topReasons, type FindingFilters } from "@/lib/rateioReviewView";
+import { buildItemDetail } from "@/lib/rateioItemDetail";
+import { SEV_LABEL, SEV_STYLE } from "@/components/rateioReviewStyles";
+import { RateioShowcaseGroups } from "@/components/RateioShowcaseGroups";
+import { RateioReviewFilters } from "@/components/RateioReviewFilters";
+import { RateioItemDetailDialog } from "@/components/RateioItemDetailDialog";
 
 export interface RateioReviewDialogProps {
   open: boolean;
@@ -45,12 +51,6 @@ interface Justificativa {
   created_at: string;
 }
 
-const SEV_STYLE: Record<RateioFinding["severity"], string> = {
-  alta: "bg-destructive text-destructive-foreground",
-  media: "bg-amber-500/90 text-white",
-  baixa: "bg-muted text-muted-foreground",
-};
-const SEV_LABEL = { alta: "Alta", media: "Média", baixa: "Baixa" } as const;
 
 const norm = (s: unknown) =>
   (s ?? "").toString().trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -87,7 +87,7 @@ const canFill = (f: RateioFinding) =>
   (f.storesWithoutIds?.length ?? 0) > 0;
 
 /** Nomes de loja separados por vírgula; os encontrados viram botão que abre a ficha (só leitura). */
-function StoreNames({ names, lookup, onOpen, qtys }: { names: string[]; lookup: StoreLookup; onOpen: (store: any) => void; qtys?: number[] }) {
+function StoreNames({ names, lookup, onOpen, suffixes }: { names: string[]; lookup: StoreLookup; onOpen: (store: any) => void; suffixes?: string[] }) {
   return (
     <>
       {names.map((name, idx) => {
@@ -106,8 +106,8 @@ function StoreNames({ names, lookup, onOpen, qtys }: { names: string[]; lookup: 
             ) : (
               name
             )}
-            {qtys && qtys[idx] !== undefined ? (
-              <span className="text-[10px] text-muted-foreground tabular-nums"> ({qtys[idx]})</span>
+            {suffixes && suffixes[idx] !== undefined ? (
+              <span className="text-[10px] text-muted-foreground tabular-nums"> ({suffixes[idx]})</span>
             ) : null}
           </span>
         );
@@ -116,24 +116,50 @@ function StoreNames({ names, lookup, onOpen, qtys }: { names: string[]; lookup: 
   );
 }
 
-function FindingCard({ f, children, lookup, onOpenStore }: { f: RateioFinding; children?: React.ReactNode; lookup: StoreLookup; onOpenStore: (store: any) => void }) {
-  // Quantidades só existem no apontamento "Falta em lojas do mesmo modelo" (mesma ordem dos nomes).
-  const withQtys = f.storesWithQty?.length === f.storesWith?.length ? f.storesWithQty?.map((s) => s.qty) : undefined;
-  const withoutQtys = f.storesWithoutIds?.length && f.storesWithoutIds.length === f.storesWithout?.length
-    ? f.storesWithoutIds.map(() => 0)
+interface FindingCardProps {
+  f: RateioFinding;
+  children?: React.ReactNode;
+  lookup: StoreLookup;
+  onOpenStore: (store: any) => void;
+  onOpenItem: (f: RateioFinding) => void;
+}
+
+function FindingCard({ f, children, lookup, onOpenStore, onOpenItem }: FindingCardProps) {
+  // Quantidades e vitrines só existem no apontamento "Falta em lojas do mesmo modelo" (mesma ordem dos nomes).
+  const vit = (n: number) => `${Number(n) || 0} vit.`;
+  const withSuffixes = f.storesWithQty?.length && f.storesWithQty.length === f.storesWith?.length
+    ? f.storesWithQty.map((s) => `${s.qty} un. · ${vit(s.showcase)}`)
     : undefined;
+  const withoutSuffixes = f.storesWithoutIds?.length && f.storesWithoutIds.length === f.storesWithout?.length
+    ? f.storesWithoutIds.map((s) => `0 un. · ${vit(s.showcase)}`)
+    : undefined;
+  const canOpenItem = !!f.itemId && !!f.itemKind;
   const dist = f.storesWithQty?.length ? quantityDistribution(f.storesWithQty.map((s) => s.qty)) : null;
   const totalWith = f.storesWithQty?.reduce((a, s) => a + s.qty, 0) ?? 0;
   const lojas = (n: number) => `${n} ${n === 1 ? "loja" : "lojas"}`;
   return (
     <div className="flex gap-3 rounded-lg border bg-card p-3">
-      <div className="w-14 h-14 shrink-0 rounded border bg-muted flex items-center justify-center overflow-hidden">
-        {f.itemImage ? (
+      {(() => {
+        const thumb = f.itemImage ? (
           <img src={f.itemImage} alt={f.itemName ?? ""} loading="lazy" className="w-full h-full object-contain" />
         ) : (
           <ImageOff className="w-5 h-5 text-muted-foreground" aria-hidden />
-        )}
-      </div>
+        );
+        const base = "w-14 h-14 shrink-0 rounded border bg-muted flex items-center justify-center overflow-hidden";
+        return canOpenItem ? (
+          <button
+            type="button"
+            onClick={() => onOpenItem(f)}
+            aria-label={`Ver detalhes do item ${f.itemName ?? ""}`.trim()}
+            title="Ver detalhes do item"
+            className={cn(base, "cursor-zoom-in hover:ring-2 hover:ring-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring")}
+          >
+            {thumb}
+          </button>
+        ) : (
+          <div className={base}>{thumb}</div>
+        );
+      })()}
       <div className="min-w-0 flex-1 space-y-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <Badge className={cn("border-0 text-[10px]", SEV_STYLE[f.severity])}>{SEV_LABEL[f.severity]}</Badge>
@@ -160,8 +186,8 @@ function FindingCard({ f, children, lookup, onOpenStore }: { f: RateioFinding; c
         ) : null}
         {f.storesWith?.length || f.storesWithout?.length ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
-            {f.storesWith?.length ? <div><span className="font-semibold">Tem:</span> <StoreNames names={f.storesWith} lookup={lookup} onOpen={onOpenStore} qtys={withQtys} /></div> : null}
-            {f.storesWithout?.length ? <div><span className="font-semibold">Não tem:</span> <StoreNames names={f.storesWithout} lookup={lookup} onOpen={onOpenStore} qtys={withoutQtys} /></div> : null}
+            {f.storesWith?.length ? <div><span className="font-semibold">Tem:</span> <StoreNames names={f.storesWith} lookup={lookup} onOpen={onOpenStore} suffixes={withSuffixes} /></div> : null}
+            {f.storesWithout?.length ? <div><span className="font-semibold">Não tem:</span> <StoreNames names={f.storesWithout} lookup={lookup} onOpen={onOpenStore} suffixes={withoutSuffixes} /></div> : null}
           </div>
         ) : null}
         {dist ? (
@@ -170,13 +196,14 @@ function FindingCard({ f, children, lookup, onOpenStore }: { f: RateioFinding; c
             {" "}Quem não tem: {lojas(f.storesWithoutIds?.length ?? 0)}, total 0.
           </p>
         ) : null}
+        {f.storesWithQty?.length && f.storesWithoutIds?.length ? <RateioShowcaseGroups f={f} /> : null}
         {children}
       </div>
     </div>
   );
 }
 
-function JustifyButton({ f, onSave }: { f: RateioFinding; onSave: (f: RateioFinding, escopo: "caso" | "item_todas", motivo: string) => Promise<boolean> }) {
+function JustifyButton({ f, onSave, reasons }: { f: RateioFinding; onSave: (f: RateioFinding, escopo: "caso" | "item_todas", motivo: string) => Promise<boolean>; reasons: string[] }) {
   const [open, setOpen] = useState(false);
   const [motivo, setMotivo] = useState("");
   const [escopo, setEscopo] = useState<"caso" | "item_todas">("caso");
@@ -195,7 +222,29 @@ function JustifyButton({ f, onSave }: { f: RateioFinding; onSave: (f: RateioFind
           <CheckCircle2 className="w-3.5 h-3.5" /> Justificar
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 space-y-3" align="start">
+      <PopoverContent className="w-80 max-w-[calc(100vw-2rem)] space-y-3" align="start">
+        {reasons.length > 0 && (
+          <div className="space-y-1">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block">Motivos frequentes</span>
+            <div className="flex flex-wrap gap-1.5">
+              {reasons.map((r) => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setMotivo(r)}
+                  aria-pressed={motivo.trim() === r}
+                  className={cn(
+                    "rounded-full border px-2 py-0.5 text-[11px] max-w-full truncate transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+                    motivo.trim() === r ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-muted",
+                  )}
+                  title={r}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="space-y-1">
           <Label htmlFor="motivo" className="text-xs">Motivo (obrigatório)</Label>
           <Textarea id="motivo" value={motivo} onChange={(e) => setMotivo(e.target.value)} rows={3} placeholder="Ex.: loja pediu sem esse item" />
@@ -234,12 +283,23 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
   // Ficha da loja (somente leitura) aberta a partir das listas "Tem"/"Não tem".
   const [fichaStore, setFichaStore] = useState<any | null>(null);
   const storeLookup = useMemo(() => buildStoreLookup(stores ?? []), [stores]);
+  // Detalhe do item (somente leitura) aberto pela miniatura.
+  const [itemRef, setItemRef] = useState<{ kind: "piece" | "kit"; id: string } | null>(null);
+  const itemDetail = useMemo(
+    () => (itemRef ? buildItemDetail(itemRef.kind, itemRef.id, pieces ?? [], kits ?? [], kitPieces ?? [], stores ?? [], qtyMap) : null),
+    [itemRef, pieces, kits, kitPieces, stores, qtyMap],
+  );
+  const openItem = useCallback((f: RateioFinding) => {
+    if (f.itemId && f.itemKind) setItemRef({ kind: f.itemKind, id: f.itemId });
+  }, []);
+  // Busca/filtros: só mudam o que é exibido (contadores do topo e PDF usam todos os ativos).
+  const [filters, setFilters] = useState<FindingFilters>(EMPTY_FILTERS);
 
   const findings = useMemo(
     () => (open && rev >= 0 ? reviewRateio(pieces, kits, kitPieces, stores, qtyMap, customFieldLabels) : []),
     [open, rev, pieces, kits, kitPieces, stores, qtyMap, customFieldLabels],
   );
-  const types = Object.keys(FINDING_TYPE_LABELS) as RateioFindingType[];
+  const types = useMemo(() => Object.keys(FINDING_TYPE_LABELS) as RateioFindingType[], []);
 
   const loadJust = useCallback(async (): Promise<boolean> => {
     if (!clientId) return false;
@@ -257,6 +317,15 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
   useEffect(() => { if (open) void loadJust(); }, [open, loadJust]);
 
   const { ativos, justificados } = useMemo(() => splitByJust(findings, justMap), [findings, justMap]);
+  const ativosVisiveis = useMemo(() => filterFindings(ativos, filters, (f) => f), [ativos, filters]);
+  const justificadosVisiveis = useMemo(() => filterFindings(justificados, filters, (j) => j.f), [justificados, filters]);
+  const justificadosF = useMemo(() => justificados.map((j) => j.f), [justificados]);
+  const typesPresentes = useMemo(() => {
+    const present = new Set(findings.map((f) => f.type));
+    return types.filter((t) => present.has(t));
+  }, [findings, types]);
+  // Motivos mais usados por este cliente (do justMap já carregado; sem consulta nova).
+  const reasons = useMemo(() => topReasons([...justMap.values()]), [justMap]);
 
   const handleReanalyze = async () => {
     setReanalyzing(true);
@@ -340,20 +409,26 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
           </Button>
         </div>
 
+        {findings.length > 0 ? (
+          <RateioReviewFilters value={filters} onChange={setFilters} types={typesPresentes} shown={ativosVisiveis.length} total={ativos.length} />
+        ) : null}
+
         <div className="flex-1 overflow-y-auto space-y-5 pr-1">
           {ativos.length === 0 ? (
             <p className="py-12 text-center text-muted-foreground">Nenhuma inconsistência encontrada 🎉</p>
+          ) : ativosVisiveis.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">Nenhum apontamento com esses filtros.</p>
           ) : (
             types.map((t) => {
-              const list = ativos.filter((f) => f.type === t);
+              const list = ativosVisiveis.filter((f) => f.type === t);
               if (!list.length) return null;
               return (
                 <section key={t} className="space-y-2">
                   <h3 className="text-sm font-semibold text-foreground">{FINDING_TYPE_LABELS[t]} ({list.length})</h3>
                   {list.map((f, i) => (
-                    <FindingCard key={`${t}-${i}-${f.detail}`} f={f} lookup={storeLookup} onOpenStore={setFichaStore}>
+                    <FindingCard key={`${t}-${i}-${f.detail}`} f={f} lookup={storeLookup} onOpenStore={setFichaStore} onOpenItem={openItem}>
                       <div className="flex flex-wrap items-center gap-2">
-                        <JustifyButton f={f} onSave={saveJust} />
+                        <JustifyButton f={f} onSave={saveJust} reasons={reasons} />
                         {onFillMissing && canFill(f) ? (
                           <Button size="sm" variant="outline" className="h-7 text-xs gap-1 mt-1" onClick={() => setFillFinding(f)}>
                             <CopyPlus className="w-3.5 h-3.5" /> Colocar nas que não têm
@@ -376,11 +451,11 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
                 aria-expanded={showJust}
               >
                 <ChevronDown className={cn("w-4 h-4 transition-transform", !showJust && "-rotate-90")} />
-                Justificadas ({justificados.length})
+                Justificadas ({justificadosVisiveis.length === justificados.length ? justificados.length : `${justificadosVisiveis.length} de ${justificados.length}`})
               </button>
               {showJust &&
-                justificados.map(({ f, reg }, i) => (
-                  <FindingCard key={`j-${i}-${f.detail}`} f={f} lookup={storeLookup} onOpenStore={setFichaStore}>
+                justificadosVisiveis.map(({ f, reg }, i) => (
+                  <FindingCard key={`j-${i}-${f.detail}`} f={f} lookup={storeLookup} onOpenStore={setFichaStore} onOpenItem={openItem}>
                     <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
                       <span className="rounded bg-muted px-2 py-1">
                         <span className="font-semibold">Motivo:</span> {reg.motivo}
@@ -417,7 +492,10 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
         kitPieces={kitPieces}
         qtyMap={qtyMap}
         customFieldLabels={customFieldLabels}
+        findings={ativos}
+        justifiedFindings={justificadosF}
       />
+      <RateioItemDetailDialog detail={itemDetail} onOpenChange={(v) => { if (!v) setItemRef(null); }} />
     </Dialog>
   );
 }
