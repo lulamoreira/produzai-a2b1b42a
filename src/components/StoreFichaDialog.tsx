@@ -3,7 +3,9 @@ import { useMemo } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { getStateColor } from "@/lib/stateColors";
-import { storeCampaignItems, storeCustomFields } from "@/lib/storeFicha";
+import { findingConcernsStore, storeCampaignItems, storeCustomFields } from "@/lib/storeFicha";
+import type { RateioFinding } from "@/lib/reviewRateio";
+import { StoreFichaFindings } from "@/components/StoreFichaFindings";
 
 export interface StoreFichaDialogProps {
   store: any | null;
@@ -13,6 +15,10 @@ export interface StoreFichaDialogProps {
   kitPieces: any[];
   qtyMap: Record<string, number>;
   customFieldLabels?: { index: number; label: string }[];
+  /** Apontamentos ativos da revisão (já calculados); a ficha só filtra os desta loja. */
+  findings?: RateioFinding[];
+  /** Apontamentos justificados da revisão (linha recolhida "Justificados (N)"). */
+  justifiedFindings?: RateioFinding[];
 }
 
 const filled = (v: unknown) => v !== null && v !== undefined && String(v).trim() !== "";
@@ -28,7 +34,14 @@ function Field({ label, value, mono }: { label: string; value: unknown; mono?: b
 }
 
 /** Ficha somente leitura de uma loja, aberta por cima da janela "Revisar Rateio". */
-export function StoreFichaDialog({ store, onOpenChange, pieces, kits, kitPieces, qtyMap, customFieldLabels }: StoreFichaDialogProps) {
+export function StoreFichaDialog({ store, onOpenChange, pieces, kits, kitPieces, qtyMap, customFieldLabels, findings, justifiedFindings }: StoreFichaDialogProps) {
+  const storeFindings = useMemo(
+    () => ({
+      active: store ? (findings ?? []).filter((f) => findingConcernsStore(f, store)) : [],
+      justified: store ? (justifiedFindings ?? []).filter((f) => findingConcernsStore(f, store)) : [],
+    }),
+    [store, findings, justifiedFindings],
+  );
   const customFields = useMemo(() => (store ? storeCustomFields(store, customFieldLabels) : []), [store, customFieldLabels]);
   const items = useMemo(
     () => (store ? storeCampaignItems(store.id, pieces, kits, kitPieces, qtyMap) : []),
@@ -74,6 +87,8 @@ export function StoreFichaDialog({ store, onOpenChange, pieces, kits, kitPieces,
                   {customFields.map((f) => <Field key={f.label} label={f.label} value={f.value} />)}
                 </div>
               )}
+
+              {findings ? <StoreFichaFindings active={storeFindings.active} justified={storeFindings.justified} /> : null}
 
               <div className="pt-2 border-t border-border/60 space-y-1.5">
                 <div className="flex items-center justify-between gap-2">
