@@ -9,6 +9,7 @@ import SupportMaterialsSection from "@/components/SupportMaterialsSection";
 import ModuleGrid from "@/components/ModuleGrid";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
 import { Card } from "@/components/ui/card";
 
 interface SummaryTabProps {
@@ -90,8 +91,16 @@ export default function SummaryTab({
 
       const piecesRes = await supabase.from("campaign_pieces").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).eq("is_deleted", false);
       const kitsRes = await supabase.from("campaign_kits").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
-      const pendingInstallationsRes = await supabase.from("campaign_schedules").select("id, client_stores(tipo_entrega)").eq("campaign_id", campaignId).is("completed_at", null);
-      const pendingInstData = pendingInstallationsRes.data ?? [];
+      // Paginated: a campaign may have more than 1000 schedules.
+      const pendingInstData = await supabasePaginate<any>((from, to) =>
+        supabase
+          .from("campaign_schedules")
+          .select("id, client_stores(tipo_entrega)", { count: "exact" })
+          .eq("campaign_id", campaignId)
+          .is("completed_at", null)
+          .order("id")
+          .range(from, to)
+      );
       const pendingInstCount = pendingInstData.length;
       
       return {

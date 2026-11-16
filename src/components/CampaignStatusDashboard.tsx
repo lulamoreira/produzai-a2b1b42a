@@ -20,19 +20,34 @@ function useCampaignStats(campaignId: string) {
   return useQuery({
     queryKey: ["campaign_stats", campaignId],
     queryFn: async () => {
-      const [schedulesRes, lalOccurrencesRes, photosCountRes] = await Promise.all([
-        supabase
-          .from("campaign_schedules")
-          .select("id, store_id, completed_at, checkin_timestamp, manual_checkin_at, manual_checkout_at, scheduled_date, scheduled_time, reschedule_enabled, reschedule_date, reschedule_time, client_stores(tipo_entrega)")
-          .eq("campaign_id", campaignId),
-        supabase
-          .from("store_occurrence_reports")
-          .select("id, store_id, tratativa_status, client_stores(tipo_entrega)")
-          .eq("campaign_id", campaignId),
-        supabase
-          .from("installation_photos")
-          .select("id, store_id, campaign_id, client_stores(tipo_entrega)")
-          .eq("campaign_id", campaignId),
+      // Each list can exceed PostgREST's 1000-row cap (e.g. 1.618 photos), so
+      // every read is paginated with an exact count and a stable id order.
+      // supabasePaginate throws on error, so a failed read never counts as zero.
+      const [schedulesRows, lalOccurrencesRows, photosRows] = await Promise.all([
+        supabasePaginate<any>((from, to) =>
+          supabase
+            .from("campaign_schedules")
+            .select("id, store_id, completed_at, checkin_timestamp, manual_checkin_at, manual_checkout_at, scheduled_date, scheduled_time, reschedule_enabled, reschedule_date, reschedule_time, client_stores(tipo_entrega)", { count: "exact" })
+            .eq("campaign_id", campaignId)
+            .order("id")
+            .range(from, to)
+        ),
+        supabasePaginate<any>((from, to) =>
+          supabase
+            .from("store_occurrence_reports")
+            .select("id, store_id, tratativa_status, client_stores(tipo_entrega)", { count: "exact" })
+            .eq("campaign_id", campaignId)
+            .order("id")
+            .range(from, to)
+        ),
+        supabasePaginate<any>((from, to) =>
+          supabase
+            .from("installation_photos")
+            .select("id, store_id, campaign_id, client_stores(tipo_entrega)", { count: "exact" })
+            .eq("campaign_id", campaignId)
+            .order("id")
+            .range(from, to)
+        ),
       ]);
 
       // Filter all by tipo_entrega !== 'sem_logistica'
@@ -40,15 +55,15 @@ function useCampaignStats(campaignId: string) {
       // exists there when its schedule has BOTH a date and a time, and the
       // reschedule pair wins when reschedule_enabled is on. Schedules without
       // them (e.g. copied from a previous campaign) must not be counted here.
-      const schedules = (schedulesRes.data ?? [])
+      const schedules = schedulesRows
         .filter(
           (s: any) => (s.client_stores?.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica'
         )
         .filter(hasScheduledDateAndTime);
-      const lalOccurrences = (lalOccurrencesRes.data ?? []).filter(
+      const lalOccurrences = lalOccurrencesRows.filter(
         (o: any) => (o.client_stores?.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica'
       );
-      const photos = (photosCountRes.data ?? []).filter(
+      const photos = photosRows.filter(
         (p: any) => (p.client_stores?.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica'
       );
 

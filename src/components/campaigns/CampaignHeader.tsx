@@ -81,6 +81,22 @@ export function CampaignHeader({
     enabled: !!campaign.id,
   });
 
+  // Only the newest campaign of the chain may start a renegotiation (the database
+  // function refuses older ones). Same key/queryFn as CampaignDetail, so the cache
+  // is shared. Null (no chain info / no access to newer) keeps the button visible.
+  const { data: latestCampaignId, isFetched: latestCampaignFetched } = useQuery({
+    queryKey: ["latest-campaign-in-chain", campaign.id],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_latest_campaign_in_chain", { p_campaign_id: campaign.id });
+      if (error) return null;
+      return (data as string | null) ?? null;
+    },
+    enabled: !!campaign.id,
+    staleTime: 60_000,
+  });
+  const canRequestRenegotiation =
+    latestCampaignFetched && (!latestCampaignId || latestCampaignId === campaign.id);
+
   const isRenegotiation = !!campaign.origin_label;
 
   const [isAlertOpen, setIsAlertOpen] = useState(false);
@@ -274,7 +290,7 @@ export function CampaignHeader({
             </Badge>
           )}
           
-          {isAdminOrMaster && (activeSection === "summary" || !activeSection) && (
+          {isAdminOrMaster && (activeSection === "summary" || !activeSection) && canRequestRenegotiation && (
             <>
               <Button
                 size="sm"
