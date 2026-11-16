@@ -47,4 +47,4 @@
 - [x] Show store notes (section, single-store finding strip, amber icon in store lists, store card block, PDF) read-only from the already-loaded stores; 5 rule tests passed and preview checked at 1280/375 with writes blocked.
 
 # Rateio review quick decisions (TÁ CERTO / TÁ ERRADO)
-- [ ] Requested earlier (16/11 15:10) but not built yet; awaiting the user's go-ahead to build it next.
+- [x] Add TÁ CERTO (one-click 'caso' justification with undo) and TÁ ERRADO (correction window opening the store card in edit mode); 6 rule tests passed, preview checked at 1280/375 with saves simulated.
