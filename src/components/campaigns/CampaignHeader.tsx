@@ -290,7 +290,7 @@ export function CampaignHeader({
                   <AlertDialogHeader>
                     <AlertDialogTitle>Criar campanha de renegociação?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Isto cria uma NOVA campanha, cópia exata desta (peças, kits, rateio, Loja a Loja e cotação com todos os fornecedores). As duas ficam totalmente independentes — o que você fizer em uma não afeta a outra. A campanha atual continua existindo e ativa.
+                      Cotações, peças, rateio e mockup são copiados e ficam independentes em cada versão. Agendamento, Instalações, Loja a Loja e Ocorrências são MOVIDOS para a nova versão e passam a existir só nela (a versão anterior deixa de exibir esses módulos). Recomendado fazer um backup antes.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <div
