@@ -17,11 +17,13 @@ export interface RateioJustCoverageListProps {
   /** Total de apontamentos do contexto, para o rodapé "N de M apontamentos ativos". */
   footerTotal?: number;
   footerNoun?: string;
+  /** Abre de início? Padrão: aberta se houver até 8 linhas. */
+  defaultOpen?: boolean;
 }
 
 /** Prévia somente leitura das lojas/apontamentos cobertos por uma regra "Todas as lojas". */
-export function RateioJustCoverageList({ findings, label, current, footerTotal, footerNoun = "apontamentos ativos" }: RateioJustCoverageListProps) {
-  const [open, setOpen] = useState(findings.length <= AUTO_OPEN_MAX);
+export function RateioJustCoverageList({ findings, label, current, footerTotal, footerNoun = "apontamentos ativos", defaultOpen }: RateioJustCoverageListProps) {
+  const [open, setOpen] = useState(defaultOpen ?? findings.length <= AUTO_OPEN_MAX);
   return (
     <div className="space-y-1">
       <button

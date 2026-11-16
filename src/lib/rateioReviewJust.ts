@@ -109,13 +109,6 @@ export function sameTodasFindings(f: RateioFinding, list: RateioFinding[]): Rate
     .sort((a, b) => coverageRow(a).title.localeCompare(coverageRow(b).title, "pt-BR", { sensitivity: "base" }));
 }
 
-/** Apontamentos justificados por uma regra "todas as lojas" já salva (mesmo fpTodas). */
-export function coveredByRule(reg: Justificativa, justified: RateioFinding[]): RateioFinding[] {
-  if (reg.escopo !== "item_todas") return [];
-  const sample = justified.find((f) => fpTodas(f) === reg.fingerprint);
-  return sample ? sameTodasFindings(sample, justified) : [];
-}
-
 /**
  * Linha da prévia: loja (ou item, quando o apontamento não tem loja) e o que a identifica.
  * Vitrine: "2 vit. · itens: BF 2, Compre e Ganhe 1". Demais: item e modelo/loja.

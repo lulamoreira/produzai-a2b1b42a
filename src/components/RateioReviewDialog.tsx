@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { reviewRateio, FINDING_TYPE_LABELS, itemCodeLabel, type RateioFinding, type RateioFindingType } from "@/lib/reviewRateio";
-import { buildJustRow, countSameTodas, coveredByRule, fpTodas, sameTodasFindings, splitByJust, type JustEscopo, type Justificativa } from "@/lib/rateioReviewJust";
+import { buildJustRow, countSameTodas, sameTodasFindings, splitByJust, type JustEscopo, type Justificativa } from "@/lib/rateioReviewJust";
 import { exportRateioReviewPDF } from "@/lib/exportRateioReviewPDF";
 import { buildStoreLookup, normalizeStoreKey } from "@/lib/storeFicha";
 import { StoreFichaDialog } from "@/components/StoreFichaDialog";
@@ -470,6 +470,15 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
                         <RotateCcw className="w-3.5 h-3.5" /> Reabrir
                       </Button>
                     </div>
+                    {reg.escopo === "item_todas" ? (() => {
+                      // Auditoria: apontamentos que hoje casam com esta regra "todas as lojas".
+                      const cobertos = sameTodasFindings(f, justificadosF);
+                      return (
+                        <div className="pt-1">
+                          <RateioJustCoverageList findings={cobertos} current={f} label={`Ver lojas cobertas (${cobertos.length})`} defaultOpen={false} />
+                        </div>
+                      );
+                    })() : null}
                   </FindingCard>
                 ))}
             </section>
