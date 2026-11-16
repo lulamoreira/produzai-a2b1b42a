@@ -369,3 +369,50 @@ describe("reviewRateio — quantidades em 'Falta em lojas do mesmo modelo'", () 
     expect(f?.itemId).toBe("p");
   });
 });
+
+describe("itemCodeLabel (código do item na tela e no PDF)", () => {
+  const storesWithCodes = (n: number) => [
+    { id: "o", name: "Outlet", store_model: "OUTLET", showcase_count: 1 },
+    ...Array.from({ length: n }, (_, i) => ({
+      id: `l${i}`, name: `Loja ${i}`, store_model: "LOJA", showcase_count: 1,
+    })),
+  ];
+  const qtyWithCodes = (n: number, receivers: number) => Object.fromEntries([
+    ["o-base", 1],
+    ...Array.from({ length: n }, (_, i) => [`l${i}-base`, 1]),
+    ...Array.from({ length: receivers }, (_, i) => [`l${i}-p1`, 1]),
+  ]);
+
+  it("mostra o código no formato 'Cód. N'", () => {
+    expect(itemCodeLabel(76)).toBe("Cód. 76");
+    expect(itemCodeLabel(" 76 ")).toBe("Cód. 76");
+    expect(itemCodeLabel("76A")).toBe("Cód. 76A");
+  });
+
+  it("não mostra nada quando o código está vazio, só espaços ou nulo", () => {
+    expect(itemCodeLabel("")).toBeNull();
+    expect(itemCodeLabel("   ")).toBeNull();
+    expect(itemCodeLabel(null)).toBeNull();
+    expect(itemCodeLabel(undefined)).toBeNull();
+  });
+
+  it("achado de loja única traz o código do item", () => {
+    const hits = reviewRateio(
+      [{ id: "p1", name: "Banner", code: 76 }, { id: "base", name: "Base", code: 12 }],
+      [], [], storesWithCodes(5), qtyWithCodes(5, 5),
+    ).filter((f) => f.type === "loja_unica" && f.itemName === "Banner");
+    expect(hits).toHaveLength(1);
+    expect(hits[0]?.itemCode).toBe(76);
+    expect(itemCodeLabel(hits[0]?.itemCode)).toBe("Cód. 76");
+  });
+
+  it("achado 'Falta em lojas do mesmo modelo' traz o código do item", () => {
+    const st = ["a", "b", "c"].map((id) => ({ id, name: id.toUpperCase(), store_model: "M", showcase_count: 1 }));
+    const f = reviewRateio(
+      [{ id: "p", name: "Banner", code: 76 }, { id: "base", name: "Base", code: 12 }], [], [], st,
+      { "a-p": 6, "b-p": 4, "a-base": 1, "b-base": 1, "c-base": 1 },
+    ).find((x) => x.title === "Falta em lojas do mesmo modelo" && x.itemName === "Banner");
+    expect(f?.itemCode).toBe(76);
+    expect(itemCodeLabel(f?.itemCode)).toBe("Cód. 76");
+  });
+});
