@@ -11,7 +11,7 @@ import { ClipboardCheck, Download, Loader2, ImageOff, CheckCircle2, ChevronDown,
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { reviewRateio, FINDING_TYPE_LABELS, type RateioFinding, type RateioFindingType } from "@/lib/reviewRateio";
+import { reviewRateio, FINDING_TYPE_LABELS, itemCodeLabel, type RateioFinding, type RateioFindingType } from "@/lib/reviewRateio";
 import { exportRateioReviewPDF } from "@/lib/exportRateioReviewPDF";
 import { buildStoreLookup, normalizeStoreKey } from "@/lib/storeFicha";
 import { StoreFichaDialog } from "@/components/StoreFichaDialog";

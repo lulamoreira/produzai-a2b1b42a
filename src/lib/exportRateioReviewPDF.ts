@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { fetchImageBytes } from "@/lib/rateioGridShared";
-import { FINDING_TYPE_LABELS, type RateioFinding, type RateioFindingType } from "@/lib/reviewRateio";
+import { FINDING_TYPE_LABELS, itemCodeLabel, type RateioFinding, type RateioFindingType } from "@/lib/reviewRateio";
 
 const BROWN: [number, number, number] = [140, 111, 78];
 const DARK: [number, number, number] = [28, 25, 22];
