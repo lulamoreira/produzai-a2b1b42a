@@ -41,7 +41,19 @@ export type RateioFinding = {
    * ordenados). Identifica lojas "na mesma situação" para a justificativa "Todas as lojas".
    */
   situacao?: string;
+  /**
+   * Rótulo curto por loja de `storesWith` (mesma ordem e tamanho), exibido entre parênteses ao lado do nome.
+   * `qty` (quando houver) é a quantidade do item na loja, usada no resumo de distribuição.
+   * Só exibição: não entra em fingerprint, justificativa nem gravação.
+   */
+  storesInfo?: { name: string; label: string; qty?: number }[];
+  /** Apontamentos de uma loja só: quantidade do item e nº de vitrines da loja citada. */
+  storeItemQty?: number;
+  storeShowcase?: number;
 };
+
+const vitCount = (s: any): number => Number(s?.showcase_count) || 0;
+const qtyVitLabel = (qty: number, showcase: number): string => `${qty} un. · ${showcase} vit.`;
 
 export const norm = (s: unknown): string =>
   (s ?? "").toString().trim().toUpperCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
@@ -222,6 +234,7 @@ export function reviewRateio(
             ...meta(it),
             storeModel: modelo,
             storesWith: withNames,
+            storesInfo: com.map((s) => ({ name: storeName(s), label: qtyVitLabel(getQ(s, i), vitCount(s)), qty: getQ(s, i) })),
           });
         }
       }
@@ -262,6 +275,7 @@ export function reviewRateio(
         storeModel: modelo,
         storeName: storeName(loja),
         storesWith: com.map(storeName),
+        storesInfo: com.map((s) => ({ name: storeName(s), label: qtyVitLabel(getQ(s, i), vitCount(s)), qty: getQ(s, i) })),
       });
     });
   }
@@ -284,6 +298,8 @@ export function reviewRateio(
         ...meta(it),
         storeModel: s.store_model ?? undefined,
         storeName: storeName(s),
+        storeItemQty: getQ(s, i),
+        storeShowcase: vitCount(s),
       });
     }
   });
@@ -316,6 +332,8 @@ export function reviewRateio(
         ...meta(it),
         storeModel: s.store_model ?? undefined,
         storeName: storeName(s),
+        storeItemQty: getQ(s, i),
+        storeShowcase: vitCount(s),
       });
     }
   });
@@ -402,6 +420,8 @@ export function reviewRateio(
             ...meta(it),
             storeModel: s.store_model ?? undefined,
             storeName: storeName(s),
+            storeItemQty: q,
+            storeShowcase: vitCount(s),
           });
         }
       }
@@ -442,8 +462,8 @@ export function reviewRateio(
     const excl = exclByKit.get(kit.id) ?? [];
     if (excl.length === 0) continue; // kit só com componentes compartilhados: fora das checagens 6 e 7
     const kitItem: Item = { kind: "kit", src: kit };
-    const incompletas: { s: any; text: string }[] = [];
-    const foraProp: { s: any; text: string; breakdown: { name: string; quantity: number }[] }[] = [];
+    const incompletas: { s: any; text: string; label: string }[] = [];
+    const foraProp: { s: any; text: string; label: string; breakdown: { name: string; quantity: number }[] }[] = [];
 
     // Ausências esperadas (CHECK 6). Duas regras deterministas, sem lista fixa de nomes:
     //  (a) Era: a peça zerada é de outra era (ex.: "2020" = NOVO) e a loja é da era oposta;
@@ -494,8 +514,14 @@ export function reviewRateio(
           partes.push(`'${pieceName(c.piece_id)}' tem só ${have(s, c.piece_id)} e o kit pede ${perKit(c)} por kit`);
         }
         if (partes.length === 0) continue; // defensivo: sem componente faltando de fato
+        // Rótulo por loja (só exibição): peças que faltam com a quantidade que a loja tem de cada.
+        const faltam = [...zeradas, ...insuf].map((c) => {
+          const h = have(s, c.piece_id);
+          return h > 0 ? `${pieceName(c.piece_id)}: tem ${h} de ${perKit(c)}` : `${pieceName(c.piece_id)}: tem 0`;
+        });
         incompletas.push({
           s,
+          label: `kit conta 0 · faltam: ${faltam.join("; ")}`,
           text: `Em ${storeName(s)}: '${pieceName(pres.piece_id)}' tem ${have(s, pres.piece_id)}, mas ${partes.join("; ")}.`,
         });
         continue;
@@ -508,6 +534,7 @@ export function reviewRateio(
       const esperado = kq * perKit(c);
       foraProp.push({
         s,
+        label: `${pieceName(c.piece_id)} tem ${have(s, c.piece_id)}, esperado ${esperado}`,
         text: `Em ${storeName(s)}: '${pieceName(c.piece_id)}' tem ${have(s, c.piece_id)}, mas o kit pede ${perKit(c)} por kit × ${kq} kit(s) = ${esperado}. O orçamento do fornecedor usa ${esperado}.`,
         breakdown: erradas.map((e) => ({ name: pieceName(e.piece_id), quantity: have(s, e.piece_id) })),
       });
@@ -522,6 +549,7 @@ export function reviewRateio(
         detail: `${incompletas.slice(0, 3).map((x) => x.text).join(" ")} O kit conta como 0 e essas peças ficam fora do orçamento do fornecedor.${maisLojas(incompletas.length)}`,
         ...meta(kitItem),
         storesWith: incompletas.map((x) => storeName(x.s)),
+        storesInfo: incompletas.map((x) => ({ name: storeName(x.s), label: x.label })),
         breakdown: (compsByKit.get(kit.id) ?? []).map((c) => ({ name: pieceName(c.piece_id), quantity: have(first, c.piece_id) })),
       });
     }
@@ -533,6 +561,7 @@ export function reviewRateio(
         detail: `${foraProp.slice(0, 3).map((x) => x.text).join(" ")}${maisLojas(foraProp.length)}`,
         ...meta(kitItem),
         storesWith: foraProp.map((x) => storeName(x.s)),
+        storesInfo: foraProp.map((x) => ({ name: storeName(x.s), label: x.label })),
         breakdown: foraProp[0].breakdown,
       });
     }
@@ -549,13 +578,17 @@ export function reviewRateio(
     let totalHave = 0;
     let totalEsp = 0;
     const divergentes: any[] = [];
+    const divInfo: { name: string; label: string; qty: number }[] = [];
     for (const s of stores || []) {
       const esperado = comExcl.reduce((acc, kp) => acc + (kitQtyEx(s, kp.kit_id) ?? 0) * perKit(kp), 0);
       if (esperado <= 0) continue;
       const h = have(s, pieceId);
       totalHave += h;
       totalEsp += esperado;
-      if (h !== esperado) divergentes.push(s);
+      if (h !== esperado) {
+        divergentes.push(s);
+        divInfo.push({ name: storeName(s), label: `tem ${h} · esperado ${esperado}`, qty: h });
+      }
     }
     if (divergentes.length === 0) continue;
     const piece = pieceById.get(pieceId) ?? { id: pieceId, name: "" };
@@ -567,6 +600,7 @@ export function reviewRateio(
       detail: `'${piece.name ?? ""}' está em ${kitIds.size} kits. O rateio grava ${totalHave} no total, mas a soma dos kits é ${totalEsp}. A cobrança ao fornecedor segue os kits (${totalEsp}); ${efeito}. ${divergentes.length} loja(s) divergem.`,
       ...meta({ kind: "piece", src: piece }),
       storesWith: divergentes.map(storeName),
+      storesInfo: divInfo,
       breakdown: links.map((kp) => ({ name: kitById.get(kp.kit_id)?.name ?? "", quantity: perKit(kp) })),
     });
   }
@@ -574,6 +608,47 @@ export function reviewRateio(
   return findings.sort(
     (a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity] || TYPE_ORDER[a.type] - TYPE_ORDER[b.type],
   );
+}
+
+/**
+ * Rótulos entre parênteses ao lado de cada loja ("Tem"/"Não tem"), únicos para tela e PDF.
+ * "Falta em lojas do mesmo modelo" usa storesWithQty/storesWithoutIds; os demais usam storesInfo.
+ * Rótulos só valem quando alinhados por índice com os nomes; senão nada é exibido.
+ */
+export function storeSuffixes(f: RateioFinding): { with?: string[]; without?: string[] } {
+  const names = f.storesWith ?? [];
+  const aligned = (list: { name: string }[] | undefined, ref: string[]) =>
+    !!list && list.length > 0 && list.length === ref.length && list.every((x, i) => x.name === ref[i]);
+  let withS: string[] | undefined;
+  if (aligned(f.storesWithQty, names)) withS = f.storesWithQty!.map((s) => qtyVitLabel(s.qty, Number(s.showcase) || 0));
+  else if (aligned(f.storesInfo, names)) withS = f.storesInfo!.map((s) => s.label);
+  const without = aligned(f.storesWithoutIds, f.storesWithout ?? [])
+    ? f.storesWithoutIds!.map((s) => qtyVitLabel(0, Number(s.showcase) || 0))
+    : undefined;
+  return { with: withS, without };
+}
+
+/**
+ * Quantidades de quem tem o item, para o resumo de distribuição ("Quem tem: ...").
+ * Só nos dois achados de "modelo_divergente"; null quando não há dado.
+ */
+export function withQuantities(f: RateioFinding): number[] | null {
+  if (f.type !== "modelo_divergente") return null;
+  if (f.storesWithQty?.length) return f.storesWithQty.map((s) => s.qty);
+  const info = f.storesInfo ?? [];
+  if (info.length && info.every((s) => typeof s.qty === "number")) return info.map((s) => s.qty as number);
+  return null;
+}
+
+/**
+ * Linha "Quantidade deste item nesta loja: N · V vit." dos apontamentos de uma loja só.
+ * Em "quantidade_abaixo" a descrição já cita a quantidade, então a linha não é repetida.
+ */
+export function storeQtyLine(f: RateioFinding): string | null {
+  if (typeof f.storeItemQty !== "number") return null;
+  if (f.type === "quantidade_abaixo" && f.detail.includes(`recebe ${f.storeItemQty} de`)) return null;
+  const vit = typeof f.storeShowcase === "number" ? ` · ${f.storeShowcase} vit.` : "";
+  return `Quantidade deste item nesta loja: ${f.storeItemQty}${vit}`;
 }
 
 export const FINDING_TYPE_LABELS: Record<RateioFindingType, string> = {

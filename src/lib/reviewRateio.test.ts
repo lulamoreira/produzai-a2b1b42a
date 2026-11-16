@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { itemCodeLabel, reviewRateio } from "./reviewRateio";
+import { itemCodeLabel, reviewRateio, storeQtyLine, storeSuffixes, withQuantities } from "./reviewRateio";
 
 const stores = [
   { id: "a", name: "A", store_model: "Novo", showcase_count: 1 },
@@ -414,5 +414,63 @@ describe("itemCodeLabel (código do item na tela e no PDF)", () => {
     ).find((x) => x.title === "Falta em lojas do mesmo modelo" && x.itemName === "Banner");
     expect(f?.itemCode).toBe(76);
     expect(itemCodeLabel(f?.itemCode)).toBe("Cód. 76");
+  });
+});
+
+describe("reviewRateio — quantidade por loja em todos os apontamentos (só exibição)", () => {
+  it("'Aplicado em poucas lojas' traz qty e vitrines por loja, alinhados com storesWith", () => {
+    const st = ["a", "b", "c", "d", "e"].map((id) => ({ id, name: id.toUpperCase(), store_model: "M", showcase_count: 2 }));
+    const qty: Record<string, number> = { "a-p": 3 };
+    for (const s of st) qty[`${s.id}-base`] = 1;
+    const f = reviewRateio([{ id: "p", name: "Banner" }, { id: "base", name: "Base" }], [], [], st, qty)
+      .find((x) => x.title === "Aplicado em poucas lojas do modelo" && x.itemName === "Banner");
+    expect(f?.storesWith).toEqual(["A"]);
+    expect(f?.storesInfo).toEqual([{ name: "A", label: "3 un. · 2 vit.", qty: 3 }]);
+    expect(storeSuffixes(f!).with).toEqual(["3 un. · 2 vit."]);
+    expect(withQuantities(f!)).toEqual([3]);
+    // Sem storesWithoutIds: o botão "Colocar nas que não têm" continua indisponível.
+    expect(f?.storesWithQty).toBeUndefined();
+  });
+
+  it("kit incompleto mostra peças que faltam com a quantidade da loja", () => {
+    const pieces = [{ id: "A", name: "Peça A" }, { id: "B", name: "Peça B" }];
+    const comps = [{ kit_id: "K", piece_id: "A", quantity: 1 }, { kit_id: "K", piece_id: "B", quantity: 2 }];
+    const st = ["1", "2"].map((id) => ({ id, name: `Loja ${id}`, store_model: "M" }));
+    const f = reviewRateio(pieces, [{ id: "K", name: "Kit AB" }], comps, st, { "1-A": 1, "1-B": 2, "2-A": 2, "2-B": 1 })
+      .find((x) => x.type === "kit_incompleto");
+    expect(f?.storesInfo).toEqual([{ name: "Loja 2", label: "kit conta 0 · faltam: Peça B: tem 1 de 2" }]);
+  });
+
+  it("kit fora da proporção mostra peça, quantidade e esperado", () => {
+    const pieces = [{ id: "A", name: "Peça A" }, { id: "B", name: "Peça B" }];
+    const comps = [{ kit_id: "K", piece_id: "A", quantity: 1 }, { kit_id: "K", piece_id: "B", quantity: 2 }];
+    const st = [{ id: "3", name: "Loja 3", store_model: "M" }];
+    const f = reviewRateio(pieces, [{ id: "K", name: "Kit AB" }], comps, st, { "3-A": 1, "3-B": 19 })
+      .find((x) => x.type === "kit_fora_proporcao");
+    expect(storeSuffixes(f!).with).toEqual(["Peça B tem 19, esperado 2"]);
+  });
+
+  it("peça compartilhada mostra 'tem X · esperado Y'", () => {
+    const pieces = [{ id: "T", name: "Tapete" }, { id: "U", name: "U" }, { id: "V", name: "V" }];
+    const comps = [
+      { kit_id: "K1", piece_id: "T", quantity: 1 }, { kit_id: "K1", piece_id: "U", quantity: 1 },
+      { kit_id: "K2", piece_id: "T", quantity: 1 }, { kit_id: "K2", piece_id: "V", quantity: 1 },
+    ];
+    const f = reviewRateio(pieces, [{ id: "K1", name: "Kit 1" }, { id: "K2", name: "Kit 2" }], comps,
+      [{ id: "s", name: "Loja S", store_model: "M" }], { "s-U": 1, "s-V": 1, "s-T": 1 })
+      .find((x) => x.type === "peca_compartilhada");
+    expect(storeSuffixes(f!).with).toEqual(["tem 1 · esperado 2"]);
+  });
+
+  it("apontamento de uma loja mostra a quantidade e as vitrines; quantidade_abaixo não repete", () => {
+    const st = [
+      { id: "a", name: "A", store_model: "Novo", showcase_count: 1 },
+      { id: "c", name: "C", store_model: "Antigo", showcase_count: 0 },
+    ];
+    const f = reviewRateio([{ id: "p", name: "Banner", store_category: "Novo" }], [], [], st, { "a-p": 1, "c-p": 4 })
+      .find((x) => x.type === "modelo_incompativel");
+    expect(storeQtyLine(f!)).toBe("Quantidade deste item nesta loja: 4 · 0 vit.");
+    expect(storeQtyLine({ type: "quantidade_abaixo", detail: "A loja X recebe 2 de 'Y'", storeItemQty: 2, storeShowcase: 1 } as never)).toBeNull();
+    expect(storeQtyLine({ type: "loja_unica", detail: "x" } as never)).toBeNull();
   });
 });
