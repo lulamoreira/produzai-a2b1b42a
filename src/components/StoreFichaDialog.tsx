@@ -21,7 +21,7 @@ function Field({ label, value, mono }: { label: string; value: unknown; mono?: b
   if (!filled(value)) return null;
   return (
     <div className="space-y-0.5 min-w-0">
-      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block truncate">{label}</span>
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block break-words">{label}</span>
       <p className={mono ? "text-xs font-medium font-mono break-words" : "text-xs font-medium break-words leading-tight"}>{String(value)}</p>
     </div>
   );
