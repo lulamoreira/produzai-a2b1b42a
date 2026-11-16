@@ -96,3 +96,25 @@ export function storeCampaignItems(
   };
   return items.sort((a, b) => codeNum(a.code) - codeNum(b.code) || a.name.localeCompare(b.name, "pt-BR"));
 }
+
+interface FindingStores {
+  storeName?: string;
+  storesWith?: string[];
+  storesWithout?: string[];
+}
+
+/**
+ * O apontamento é SOBRE esta loja? (para "Apontamentos desta loja")
+ * - storeName (achado de uma loja só) ou "Não tem" (falta) → sim;
+ * - "Tem" só conta quando é a lista das lojas afetadas, isto é, quando o achado não tem
+ *   storeName nem "Não tem" (ex.: "Aplicado em poucas lojas", kits). Quando há storeName
+ *   ou "Não tem", "Tem" são apenas as lojas de referência.
+ */
+export function findingConcernsStore(f: FindingStores, store: NamedStore): boolean {
+  const keys = new Set([normalizeStoreKey(store.nickname), normalizeStoreKey(store.name)].filter(Boolean));
+  if (keys.size === 0) return false;
+  const hit = (name?: string | null) => keys.has(normalizeStoreKey(name));
+  if (f.storeName) return hit(f.storeName);
+  if (f.storesWithout?.length) return f.storesWithout.some(hit);
+  return (f.storesWith ?? []).some(hit);
+}
