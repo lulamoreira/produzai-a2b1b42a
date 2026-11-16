@@ -355,3 +355,17 @@ describe("reviewRateio", () => {
     });
   });
 });
+
+describe("reviewRateio — quantidades em 'Falta em lojas do mesmo modelo'", () => {
+  it("traz a quantidade de quem tem e os ids de quem não tem", () => {
+    const st = ["a", "b", "c"].map((id) => ({ id, name: id.toUpperCase(), store_model: "M", showcase_count: 1 }));
+    const f = reviewRateio(
+      [{ id: "p", name: "Banner" }, { id: "base", name: "Base" }], [], [], st,
+      { "a-p": 6, "b-p": 4, "a-base": 1, "b-base": 1, "c-base": 1 },
+    ).find((x) => x.title === "Falta em lojas do mesmo modelo" && x.itemName === "Banner");
+    expect(f?.storesWithQty).toEqual([{ id: "a", name: "A", qty: 6 }, { id: "b", name: "B", qty: 4 }]);
+    expect(f?.storesWithoutIds).toEqual([{ id: "c", name: "C" }]);
+    expect(f?.itemKind).toBe("piece");
+    expect(f?.itemId).toBe("p");
+  });
+});

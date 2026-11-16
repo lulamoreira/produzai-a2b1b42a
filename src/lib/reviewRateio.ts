@@ -29,6 +29,12 @@ export type RateioFinding = {
   storesWith?: string[];
   storesWithout?: string[];
   breakdown?: { name: string; quantity: number }[];
+  /** Só em "Falta em lojas do mesmo modelo": quantidade efetiva de cada loja que tem o item. */
+  storesWithQty?: { id: string; name: string; qty: number }[];
+  /** Só em "Falta em lojas do mesmo modelo": lojas que não têm o item (mesma ordem de storesWithout). */
+  storesWithoutIds?: { id: string; name: string }[];
+  itemKind?: "piece" | "kit";
+  itemId?: string;
 };
 
 export const norm = (s: unknown): string =>
@@ -183,6 +189,10 @@ export function reviewRateio(
             storeModel: modelo,
             storesWith: withNames,
             storesWithout: withoutNames,
+            storesWithQty: com.map((s) => ({ id: s.id, name: storeName(s), qty: getQ(s, i) })),
+            storesWithoutIds: sem.map((s) => ({ id: s.id, name: storeName(s) })),
+            itemKind: it.kind,
+            itemId: it.src.id,
           });
         } else {
           findings.push({
