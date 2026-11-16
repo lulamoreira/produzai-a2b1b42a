@@ -46,12 +46,51 @@ export function summarizeQuantities(values: number[]): QuantitySummary {
   };
 }
 
+/** Distribuição "quantidade → nº de lojas", ordenada pela quantidade. */
+export function quantityDistribution(values: number[]): { qty: number; stores: number }[] {
+  const freq = new Map<number, number>();
+  for (const v of values) if (Number.isFinite(v)) freq.set(v, (freq.get(v) ?? 0) + 1);
+  return Array.from(freq, ([qty, stores]) => ({ qty, stores })).sort((a, b) => a.qty - b.qty);
+}
+
+export interface StoreWithQty {
+  qty: number;
+  showcase: number;
+}
+
+export interface QuantitySuggestion {
+  quantity: number;
+  /** true quando veio de lojas com o mesmo número de vitrines. */
+  sameShowcase: boolean;
+  /** Quantas lojas com o mesmo número de vitrines serviram de base. */
+  base: number;
+}
+
+/**
+ * Sugestão POR LOJA (regra do dono): moda (empate = menor) entre as lojas que têm o item
+ * e possuem o MESMO número de vitrines. Sem loja comparável, a MENOR quantidade entre as
+ * que têm (tende a ser a vitrine primária). Nunca média nem maior.
+ */
+export function suggestQuantityFor(showcase: number, storesWith: StoreWithQty[]): QuantitySuggestion {
+  const positives = storesWith.filter((s) => s.qty > 0);
+  const same = positives.filter((s) => (Number(s.showcase) || 0) === (Number(showcase) || 0));
+  if (same.length > 0) {
+    return { quantity: summarizeQuantities(same.map((s) => s.qty)).mode, sameShowcase: true, base: same.length };
+  }
+  return { quantity: summarizeQuantities(positives.map((s) => s.qty)).min, sameShowcase: false, base: 0 };
+}
+
+export interface FillTarget {
+  storeId: string;
+  /** Quantidade da peça, ou número de kits, para esta loja. */
+  quantity: number;
+}
+
 export interface FillRequest {
   itemKind: FillItemKind;
   itemId: string;
-  storeIds: string[];
-  /** Quantidade da peça, ou número de kits, por loja. */
-  quantity: number;
+  /** Uma entrada por loja marcada, cada uma com a sua quantidade. */
+  targets: FillTarget[];
   kitPieces: KitPieceLink[];
   /** Quantidade atual da peça na loja (visão atual do Rateio). */
   currentQty: (storeId: string, pieceId: string) => number;
@@ -69,19 +108,22 @@ const kitCount = (storeId: string, comps: KitPieceLink[], currentQty: FillReques
 };
 
 /**
- * Peça: grava `quantity` nas lojas marcadas que hoje têm 0.
+ * Peça: grava a quantidade de cada loja marcada que hoje tem 0.
  * Kit: para cada peça do kit grava `quantity × peças por kit`. Peça usada em mais de um
  * kit soma à quantidade atual (ela já serve o outro kit); peça exclusiva do kit fica com o
  * maior valor entre o atual e o necessário, para nunca diminuir.
  */
 export function buildFillMissingUpserts(req: FillRequest): FillUpsert[] {
-  const qty = Math.floor(Number(req.quantity));
-  if (!Number.isFinite(qty) || qty <= 0) return [];
-  const storeIds = Array.from(new Set(req.storeIds));
+  // Uma quantidade válida (inteira ≥ 1) por loja; a última entrada repetida vence.
+  const byStore = new Map<string, number>();
+  for (const t of req.targets) {
+    const qty = Math.floor(Number(t.quantity));
+    if (Number.isFinite(qty) && qty > 0) byStore.set(t.storeId, qty);
+  }
   const out: FillUpsert[] = [];
 
   if (req.itemKind === "piece") {
-    for (const storeId of storeIds) {
+    for (const [storeId, qty] of byStore) {
       if ((req.currentQty(storeId, req.itemId) || 0) > 0) continue;
       out.push({ storeId, pieceId: req.itemId, quantity: qty });
     }
@@ -100,7 +142,7 @@ export function buildFillMissingUpserts(req: FillRequest): FillUpsert[] {
   const perKit = new Map<string, number>();
   for (const c of comps) perKit.set(c.piece_id, (perKit.get(c.piece_id) ?? 0) + (c.quantity || 1));
 
-  for (const storeId of storeIds) {
+  for (const [storeId, qty] of byStore) {
     if (kitCount(storeId, comps, req.currentQty) > 0) continue;
     for (const [pieceId, perUnit] of perKit) {
       const existing = req.currentQty(storeId, pieceId) || 0;
