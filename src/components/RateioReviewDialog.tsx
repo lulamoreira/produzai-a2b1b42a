@@ -13,6 +13,8 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { reviewRateio, FINDING_TYPE_LABELS, type RateioFinding, type RateioFindingType } from "@/lib/reviewRateio";
 import { exportRateioReviewPDF } from "@/lib/exportRateioReviewPDF";
+import { buildStoreLookup, normalizeStoreKey } from "@/lib/storeFicha";
+import { StoreFichaDialog } from "@/components/StoreFichaDialog";
 
 export interface RateioReviewDialogProps {
   open: boolean;
@@ -68,7 +70,36 @@ function splitByJust(findings: RateioFinding[], justMap: Map<string, Justificati
   return { ativos, justificados };
 }
 
-function FindingCard({ f, children }: { f: RateioFinding; children?: React.ReactNode }) {
+type StoreLookup = Map<string, any>;
+
+/** Nomes de loja separados por vírgula; os encontrados viram botão que abre a ficha (só leitura). */
+function StoreNames({ names, lookup, onOpen }: { names: string[]; lookup: StoreLookup; onOpen: (store: any) => void }) {
+  return (
+    <>
+      {names.map((name, idx) => {
+        const store = lookup.get(normalizeStoreKey(name));
+        return (
+          <span key={`${idx}-${name}`}>
+            {idx > 0 ? ", " : ""}
+            {store ? (
+              <button
+                type="button"
+                onClick={() => onOpen(store)}
+                className="text-primary hover:underline cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                {name}
+              </button>
+            ) : (
+              name
+            )}
+          </span>
+        );
+      })}
+    </>
+  );
+}
+
+function FindingCard({ f, children, lookup, onOpenStore }: { f: RateioFinding; children?: React.ReactNode; lookup: StoreLookup; onOpenStore: (store: any) => void }) {
   return (
     <div className="flex gap-3 rounded-lg border bg-card p-3">
       <div className="w-14 h-14 shrink-0 rounded border bg-muted flex items-center justify-center overflow-hidden">
@@ -101,8 +132,8 @@ function FindingCard({ f, children }: { f: RateioFinding; children?: React.React
         ) : null}
         {f.storesWith?.length || f.storesWithout?.length ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
-            {f.storesWith?.length ? <div><span className="font-semibold">Tem:</span> {f.storesWith.join(", ")}</div> : null}
-            {f.storesWithout?.length ? <div><span className="font-semibold">Não tem:</span> {f.storesWithout.join(", ")}</div> : null}
+            {f.storesWith?.length ? <div><span className="font-semibold">Tem:</span> <StoreNames names={f.storesWith} lookup={lookup} onOpen={onOpenStore} /></div> : null}
+            {f.storesWithout?.length ? <div><span className="font-semibold">Não tem:</span> <StoreNames names={f.storesWithout} lookup={lookup} onOpen={onOpenStore} /></div> : null}
           </div>
         ) : null}
         {children}
@@ -164,6 +195,9 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
   const [reanalyzing, setReanalyzing] = useState(false);
   // Espelho síncrono do justMap: o "Reanalisar" conta com os dados recém-carregados.
   const justMapRef = useRef<Map<string, Justificativa>>(new Map());
+  // Ficha da loja (somente leitura) aberta a partir das listas "Tem"/"Não tem".
+  const [fichaStore, setFichaStore] = useState<any | null>(null);
+  const storeLookup = useMemo(() => buildStoreLookup(stores ?? []), [stores]);
 
   const findings = useMemo(
     () => (open && rev >= 0 ? reviewRateio(pieces, kits, kitPieces, stores, qtyMap, customFieldLabels) : []),
@@ -281,7 +315,7 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
                 <section key={t} className="space-y-2">
                   <h3 className="text-sm font-semibold text-foreground">{FINDING_TYPE_LABELS[t]} ({list.length})</h3>
                   {list.map((f, i) => (
-                    <FindingCard key={`${t}-${i}-${f.detail}`} f={f}>
+                    <FindingCard key={`${t}-${i}-${f.detail}`} f={f} lookup={storeLookup} onOpenStore={setFichaStore}>
                       <JustifyButton f={f} onSave={saveJust} />
                     </FindingCard>
                   ))}
@@ -303,7 +337,7 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
               </button>
               {showJust &&
                 justificados.map(({ f, reg }, i) => (
-                  <FindingCard key={`j-${i}-${f.detail}`} f={f}>
+                  <FindingCard key={`j-${i}-${f.detail}`} f={f} lookup={storeLookup} onOpenStore={setFichaStore}>
                     <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
                       <span className="rounded bg-muted px-2 py-1">
                         <span className="font-semibold">Motivo:</span> {reg.motivo}
@@ -320,6 +354,15 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
           )}
         </div>
       </DialogContent>
+      <StoreFichaDialog
+        store={fichaStore}
+        onOpenChange={(v) => { if (!v) setFichaStore(null); }}
+        pieces={pieces}
+        kits={kits}
+        kitPieces={kitPieces}
+        qtyMap={qtyMap}
+        customFieldLabels={customFieldLabels}
+      />
     </Dialog>
   );
 }
