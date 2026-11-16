@@ -148,8 +148,13 @@ export function StoreFichaDialog(props: StoreFichaDialogProps) {
 
             {mode === "view" ? (
               <StoreFichaInfo
-                {...props}
                 store={store}
+                pieces={pieces}
+                kits={kits}
+                kitPieces={kitPieces}
+                qtyMap={qtyMap}
+                customFieldLabels={props.customFieldLabels}
+                storeLookup={props.storeLookup}
                 activeFindings={findings ? active : undefined}
                 justifiedFindings={justified}
                 onOpenStore={openOther}

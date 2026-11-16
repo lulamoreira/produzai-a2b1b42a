@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ClipboardCheck, Download, Loader2, ImageOff, CheckCircle2, ChevronDown, RotateCcw, RefreshCw, CopyPlus, Store } from "lucide-react";
+import { ClipboardCheck, Download, Loader2, ImageOff, CheckCircle2, ChevronDown, RotateCcw, RefreshCw, CopyPlus, Store, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,7 +15,7 @@ import { reviewRateio, FINDING_TYPE_LABELS, itemCodeLabel, storeQtyLine, storeSu
 import { buildJustRow, countSameTodas, sameTodasFindings, splitByJust, type JustEscopo, type Justificativa } from "@/lib/rateioReviewJust";
 import { exportRateioReviewPDF } from "@/lib/exportRateioReviewPDF";
 import { buildStoreLookup, normalizeStoreKey } from "@/lib/storeFicha";
-import { StoreFichaDialog } from "@/components/StoreFichaDialog";
+import { StoreFichaDialog, type StoreFichaIntent, type StoreRateioEditRequest } from "@/components/StoreFichaDialog";
 import { RateioFillMissingDialog, type FillMissingRequest } from "@/components/RateioFillMissingDialog";
 import { quantityDistribution } from "@/lib/rateioFillMissing";
 import { EMPTY_FILTERS, filterFindings, topReasons, type FindingFilters } from "@/lib/rateioReviewView";
@@ -46,6 +46,13 @@ export interface RateioReviewDialogProps {
    * Só é passado para quem pode editar a matriz; sem ele o botão não aparece.
    */
   onFillMissing?: (req: FillMissingRequest) => Promise<boolean>;
+  /**
+   * Grava a edição do rateio de uma loja (ficha) pelo caminho do Rateio (histórico + desfazer).
+   * Mesma condição de onFillMissing; sem ele a ficha fica só leitura.
+   */
+  onEditStoreRateio?: (req: StoreRateioEditRequest) => Promise<boolean>;
+  /** Composição de kits da origem de rateio ativa, usada só na edição da ficha. */
+  editKitPieces?: any[];
 }
 
 /** "Colocar nas que não têm" só vale para "Falta em lojas do mesmo modelo" com dados completos. */
@@ -78,9 +85,11 @@ interface FindingCardProps {
   lookup: StoreLookup;
   onOpenStore: (store: any) => void;
   onOpenItem: (f: RateioFinding) => void;
+  /** Abre a ficha da loja já em edição (só para quem pode editar o rateio). */
+  onEditStore?: (store: any, f: RateioFinding) => void;
 }
 
-function FindingCard({ f, children, lookup, onOpenStore, onOpenItem }: FindingCardProps) {
+function FindingCard({ f, children, lookup, onOpenStore, onOpenItem, onEditStore }: FindingCardProps) {
   // Rótulos por loja (quantidade, vitrines ou peças do kit): mesma regra da tela e do PDF.
   const { with: withSuffixes, without: withoutSuffixes } = storeSuffixes(f);
   const qtyLine = storeQtyLine(f);
@@ -129,6 +138,15 @@ function FindingCard({ f, children, lookup, onOpenStore, onOpenItem }: FindingCa
               className="inline-flex shrink-0 items-center gap-1 rounded-sm text-[11px] text-primary hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
               <Store className="h-3 w-3" aria-hidden /> Ver ficha da loja
+            </button>
+          ) : null}
+          {ownStore && onEditStore ? (
+            <button
+              type="button"
+              onClick={() => onEditStore(ownStore, f)}
+              className="inline-flex shrink-0 items-center gap-1 rounded-sm text-[11px] text-primary hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <Pencil className="h-3 w-3" aria-hidden /> Editar rateio da loja
             </button>
           ) : null}
         </div>
@@ -215,6 +233,9 @@ function JustifyButton({ f, onSave, reasons, ativos, lookup, onOpenStore }: Just
         // A ficha da loja abre por cima: interagir com ela não fecha este popover.
         onFocusOutside={(e) => { if (insideFicha(e.target)) e.preventDefault(); }}
         onInteractOutside={(e) => { if (insideFicha(e.target)) e.preventDefault(); }}
+        // O bloqueio de rolagem do Dialog cancela roda/toque fora dele: o popover é portado para fora.
+        onWheel={(e) => e.stopPropagation()}
+        onTouchMove={(e) => e.stopPropagation()}
       >
         {reasons.length > 0 && (
           <div className="space-y-1">
@@ -278,7 +299,7 @@ function JustifyButton({ f, onSave, reasons, ativos, lookup, onOpenStore }: Just
 }
 
 export default function RateioReviewDialog(props: RateioReviewDialogProps) {
-  const { open, onOpenChange, pieces, kits, kitPieces, stores, qtyMap, campaignName, clientName, clientId, customFieldLabels, onFillMissing } = props;
+  const { open, onOpenChange, pieces, kits, kitPieces, stores, qtyMap, campaignName, clientName, clientId, customFieldLabels, onFillMissing, onEditStoreRateio, editKitPieces } = props;
   // Apontamento aberto na prévia "Colocar nas que não têm".
   const [fillFinding, setFillFinding] = useState<RateioFinding | null>(null);
   const [exporting, setExporting] = useState(false);
@@ -289,7 +310,17 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
   // Espelho síncrono do justMap: o "Reanalisar" conta com os dados recém-carregados.
   const justMapRef = useRef<Map<string, Justificativa>>(new Map());
   // Ficha da loja (somente leitura) aberta por qualquer nome de loja da revisão.
-  const [fichaStore, setFichaStore] = useState<any | null>(null);
+  const [fichaStore, setFichaStoreRaw] = useState<any | null>(null);
+  // Novo objeto a cada abertura: a ficha recomeça (modo e item destacado).
+  const [fichaIntent, setFichaIntent] = useState<StoreFichaIntent>({ mode: "view" });
+  const setFichaStore = useCallback((store: any | null) => {
+    setFichaIntent({ mode: "view" });
+    setFichaStoreRaw(store);
+  }, []);
+  const editStore = useCallback((store: any, f: RateioFinding) => {
+    setFichaIntent({ mode: "edit", focus: f.itemId && f.itemKind ? { kind: f.itemKind, id: f.itemId } : null });
+    setFichaStoreRaw(store);
+  }, []);
   const storeLookup = useMemo(() => buildStoreLookup(stores ?? []), [stores]);
   // Detalhe do item (somente leitura) aberto pela miniatura.
   const [itemRef, setItemRef] = useState<{ kind: "piece" | "kit"; id: string } | null>(null);
@@ -444,7 +475,7 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
                 <section key={t} className="space-y-2">
                   <h3 className="text-sm font-semibold text-foreground">{FINDING_TYPE_LABELS[t]} ({list.length})</h3>
                   {list.map((f, i) => (
-                    <FindingCard key={`${t}-${i}-${f.detail}`} f={f} lookup={storeLookup} onOpenStore={setFichaStore} onOpenItem={openItem}>
+                    <FindingCard key={`${t}-${i}-${f.detail}`} f={f} lookup={storeLookup} onOpenStore={setFichaStore} onOpenItem={openItem} onEditStore={onEditStoreRateio ? editStore : undefined}>
                       <div className="flex flex-wrap items-center gap-2">
                         <JustifyButton f={f} onSave={saveJust} reasons={reasons} ativos={ativos} lookup={storeLookup} onOpenStore={setFichaStore} />
                         {onFillMissing && canFill(f) ? (
@@ -473,7 +504,7 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
               </button>
               {showJust &&
                 justificadosVisiveis.map(({ f, reg }, i) => (
-                  <FindingCard key={`j-${i}-${f.detail}`} f={f} lookup={storeLookup} onOpenStore={setFichaStore} onOpenItem={openItem}>
+                  <FindingCard key={`j-${i}-${f.detail}`} f={f} lookup={storeLookup} onOpenStore={setFichaStore} onOpenItem={openItem} onEditStore={onEditStoreRateio ? editStore : undefined}>
                     <div className="flex flex-wrap items-center gap-2 pt-1 text-xs">
                       <span className="rounded bg-muted px-2 py-1">
                         <span className="font-semibold">Motivo:</span> {reg.motivo}
@@ -525,6 +556,18 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
         justifiedFindings={justificadosF}
         storeLookup={storeLookup}
         onOpenStore={setFichaStore}
+        intent={fichaIntent}
+        editKitPieces={editKitPieces}
+        onSaveRateio={
+          onEditStoreRateio
+            ? async (req) => {
+                const ok = await onEditStoreRateio(req);
+                // A matriz já foi relida por quem grava; reanalisa para o apontamento sumir se foi resolvido.
+                if (ok) setRev((r) => r + 1);
+                return ok;
+              }
+            : undefined
+        }
       />
       <RateioItemDetailDialog detail={itemDetail} onOpenChange={(v) => { if (!v) setItemRef(null); }} />
     </Dialog>
