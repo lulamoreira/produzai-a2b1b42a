@@ -99,13 +99,13 @@ export function RateioFillMissingDialog({ finding, onOpenChange, onConfirm }: Ra
           </p>
         </div>
 
-        <div className="flex items-center justify-between gap-2 text-xs">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-xs">
           <span className="font-semibold">Lojas que não têm ({checked.size}/{without.length})</span>
-          <div className="flex gap-1">
-            <Button type="button" size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setChecked(new Set(without.map((s) => s.id)))}>
+          <div className="flex flex-wrap gap-1">
+            <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setChecked(new Set(without.map((s) => s.id)))}>
               Marcar todas
             </Button>
-            <Button type="button" size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setChecked(new Set())}>
+            <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setChecked(new Set())}>
               Desmarcar todas
             </Button>
           </div>
