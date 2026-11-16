@@ -6,6 +6,7 @@ import { getStateColor } from "@/lib/stateColors";
 import { findingConcernsStore, storeCampaignItems, storeCustomFields } from "@/lib/storeFicha";
 import type { RateioFinding } from "@/lib/reviewRateio";
 import { StoreFichaFindings } from "@/components/StoreFichaFindings";
+import type { StoreLookup } from "@/components/StoreNameLink";
 
 export interface StoreFichaDialogProps {
   store: any | null;
@@ -19,6 +20,10 @@ export interface StoreFichaDialogProps {
   findings?: RateioFinding[];
   /** Apontamentos justificados da revisão (linha recolhida "Justificados (N)"). */
   justifiedFindings?: RateioFinding[];
+  /** Lookup de lojas já em memória: outras lojas citadas nos apontamentos viram link. */
+  storeLookup?: StoreLookup;
+  /** Troca a ficha aberta pela de outra loja citada. */
+  onOpenStore?: (store: any) => void;
 }
 
 const filled = (v: unknown) => v !== null && v !== undefined && String(v).trim() !== "";
@@ -34,7 +39,7 @@ function Field({ label, value, mono }: { label: string; value: unknown; mono?: b
 }
 
 /** Ficha somente leitura de uma loja, aberta por cima da janela "Revisar Rateio". */
-export function StoreFichaDialog({ store, onOpenChange, pieces, kits, kitPieces, qtyMap, customFieldLabels, findings, justifiedFindings }: StoreFichaDialogProps) {
+export function StoreFichaDialog({ store, onOpenChange, pieces, kits, kitPieces, qtyMap, customFieldLabels, findings, justifiedFindings, storeLookup, onOpenStore }: StoreFichaDialogProps) {
   const storeFindings = useMemo(
     () => ({
       active: store ? (findings ?? []).filter((f) => findingConcernsStore(f, store)) : [],
@@ -52,7 +57,8 @@ export function StoreFichaDialog({ store, onOpenChange, pieces, kits, kitPieces,
 
   return (
     <Dialog open={!!store} onOpenChange={onOpenChange}>
-      <DialogContent className="z-[60] max-w-md p-0 gap-0 overflow-hidden flex flex-col max-h-[85dvh]">
+      {/* data-store-ficha: popovers abertos por baixo (ex.: Justificar) não fecham ao interagir com a ficha. */}
+      <DialogContent data-store-ficha="" className="z-[60] max-w-md p-0 gap-0 overflow-hidden flex flex-col max-h-[85dvh]">
         {store && (
           <>
             <DialogHeader className="bg-muted/40 px-4 py-3 border-b border-border text-left space-y-0.5">
@@ -88,7 +94,15 @@ export function StoreFichaDialog({ store, onOpenChange, pieces, kits, kitPieces,
                 </div>
               )}
 
-              {findings ? <StoreFichaFindings active={storeFindings.active} justified={storeFindings.justified} /> : null}
+              {findings ? (
+                <StoreFichaFindings
+                  active={storeFindings.active}
+                  justified={storeFindings.justified}
+                  currentStoreId={store.id}
+                  lookup={storeLookup}
+                  onOpenStore={onOpenStore}
+                />
+              ) : null}
 
               <div className="pt-2 border-t border-border/60 space-y-1.5">
                 <div className="flex items-center justify-between gap-2">

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import type { RateioFinding } from "@/lib/reviewRateio";
 import { suggestQuantityFor, type FillItemKind, type FillTarget } from "@/lib/rateioFillMissing";
+import { StoreNameLink, type StoreLookup } from "@/components/StoreNameLink";
 
 export interface FillMissingRequest {
   itemKind: FillItemKind;
@@ -20,6 +21,10 @@ export interface RateioFillMissingDialogProps {
   onOpenChange: (open: boolean) => void;
   /** Grava pelo caminho do Rateio. Devolve true quando gravou; erros já são avisados por quem grava. */
   onConfirm: (req: FillMissingRequest) => Promise<boolean>;
+  /** Com lookup + onOpenStore, o nome de cada loja abre a ficha (por cima desta janela). */
+  lookup?: StoreLookup;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onOpenStore?: (store: any) => void;
 }
 
 interface Row {
@@ -32,7 +37,7 @@ interface Row {
 const vitrines = (n: number) => `${n} ${n === 1 ? "vitrine" : "vitrines"}`;
 
 /** Prévia de "Colocar nas que não têm": quantidade sugerida POR LOJA; nada é gravado até CONFIRMAR. */
-export function RateioFillMissingDialog({ finding, onOpenChange, onConfirm }: RateioFillMissingDialogProps) {
+export function RateioFillMissingDialog({ finding, onOpenChange, onConfirm, lookup, onOpenStore }: RateioFillMissingDialogProps) {
   const isKit = finding?.itemKind === "kit";
   const unit = isKit ? "kit(s)" : "un.";
 
@@ -114,11 +119,18 @@ export function RateioFillMissingDialog({ finding, onOpenChange, onConfirm }: Ra
             const invalid = on && !isValid(r.id);
             return (
               <li key={r.id} className="flex items-start gap-2 px-2 py-2 text-xs">
-                <Checkbox id={`fill-${r.id}`} className="mt-1.5" checked={on} onCheckedChange={(v) => toggle(r.id, v === true)} />
+                <Checkbox id={`fill-${r.id}`} aria-label={`Marcar ${r.name}`} className="mt-1.5" checked={on} onCheckedChange={(v) => toggle(r.id, v === true)} />
                 <div className="flex-1 min-w-0">
-                  <Label htmlFor={`fill-${r.id}`} className="block break-words text-xs font-medium cursor-pointer">
-                    {r.name}
-                  </Label>
+                  {lookup && onOpenStore ? (
+                    // Fora do Label: clicar no nome abre a ficha sem marcar/desmarcar a loja.
+                    <div className="block break-words text-xs font-medium">
+                      <StoreNameLink name={r.name} lookup={lookup} onOpen={onOpenStore} />
+                    </div>
+                  ) : (
+                    <Label htmlFor={`fill-${r.id}`} className="block break-words text-xs font-medium cursor-pointer">
+                      {r.name}
+                    </Label>
+                  )}
                   <span className="block text-[11px] text-muted-foreground break-words">{r.reason}</span>
                 </div>
                 <div className="shrink-0 flex items-center gap-1">

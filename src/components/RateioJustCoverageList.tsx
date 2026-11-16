@@ -3,6 +3,7 @@ import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RateioFinding } from "@/lib/reviewRateio";
 import { coverageRow, fpEspecifico } from "@/lib/rateioReviewJust";
+import { StoreNameLink, type StoreLookup } from "@/components/StoreNameLink";
 
 /** Acima disso a lista começa recolhida. */
 const AUTO_OPEN_MAX = 8;
@@ -19,10 +20,14 @@ export interface RateioJustCoverageListProps {
   footerNoun?: string;
   /** Abre de início? Padrão: aberta se houver até 8 linhas. */
   defaultOpen?: boolean;
+  /** Com lookup + onOpenStore, o nome da loja de cada linha abre a ficha. */
+  lookup?: StoreLookup;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onOpenStore?: (store: any) => void;
 }
 
 /** Prévia somente leitura das lojas/apontamentos cobertos por uma regra "Todas as lojas". */
-export function RateioJustCoverageList({ findings, label, current, footerTotal, footerNoun = "apontamentos ativos", defaultOpen }: RateioJustCoverageListProps) {
+export function RateioJustCoverageList({ findings, label, current, footerTotal, footerNoun = "apontamentos ativos", defaultOpen, lookup, onOpenStore }: RateioJustCoverageListProps) {
   const [open, setOpen] = useState(defaultOpen ?? findings.length <= AUTO_OPEN_MAX);
   return (
     <div className="space-y-1">
@@ -43,7 +48,13 @@ export function RateioJustCoverageList({ findings, label, current, footerTotal, 
               return (
                 <li key={`${fpEspecifico(f)}-${f.title}-${i}`} className="px-2 py-1.5">
                   <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-xs text-foreground truncate">{row.title}</span>
+                    {f.storeName && lookup && onOpenStore ? (
+                      <StoreNameLink name={f.storeName} lookup={lookup} onOpen={onOpenStore} className="text-xs min-w-0">
+                        {row.title}
+                      </StoreNameLink>
+                    ) : (
+                      <span className="text-xs text-foreground truncate">{row.title}</span>
+                    )}
                     {current && f === current ? (
                       <span className="shrink-0 rounded bg-primary/10 px-1 text-[10px] font-semibold text-primary">este</span>
                     ) : null}
