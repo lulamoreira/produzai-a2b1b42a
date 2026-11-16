@@ -9,7 +9,7 @@ import SupportMaterialsSection from "@/components/SupportMaterialsSection";
 import ModuleGrid from "@/components/ModuleGrid";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { supabasePaginate } from "@/lib/supabasePaginate";
+import { fetchPendingInstallationsCount } from "@/lib/pendingInstallations";
 import { Card } from "@/components/ui/card";
 
 interface SummaryTabProps {
@@ -78,7 +78,9 @@ export default function SummaryTab({
   });
 
   const { data: internalKpis } = useQuery({
-    queryKey: ["campaign-summary-kpis", campaignId],
+    // Pending installations come from the newest campaign of the chain, so the
+    // key carries it and the query waits for it (no flash of a wrong number).
+    queryKey: ["campaign-summary-kpis", campaignId, latestCampaignId ?? null, "summary-tab"],
     queryFn: async () => {
       // Find client_id first if not available in props (though it should be via parent)
       const { data: campaign } = await supabase.from("campaigns").select("client_id").eq("id", campaignId).single();
@@ -91,18 +93,9 @@ export default function SummaryTab({
 
       const piecesRes = await supabase.from("campaign_pieces").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId).eq("is_deleted", false);
       const kitsRes = await supabase.from("campaign_kits").select("id", { count: "exact", head: true }).eq("campaign_id", campaignId);
-      // Paginated: a campaign may have more than 1000 schedules.
-      const pendingInstData = await supabasePaginate<any>((from, to) =>
-        supabase
-          .from("campaign_schedules")
-          .select("id, client_stores(tipo_entrega)", { count: "exact" })
-          .eq("campaign_id", campaignId)
-          .is("completed_at", null)
-          .order("id")
-          .range(from, to)
-      );
-      const pendingInstCount = pendingInstData.length;
-      
+      // Same rule as the status panel: date+time, store with logistics, newest version.
+      const pendingInstCount = await fetchPendingInstallationsCount(latestCampaignId ?? campaignId);
+
       return {
         stores: totalStores,
         activeStores,
@@ -111,7 +104,7 @@ export default function SummaryTab({
         pendingApprovals: 0
       };
     },
-    enabled: !!campaignId && !externalKpis
+    enabled: !!campaignId && !externalKpis && !loadingLatestCampaign
   });
 
   const baseKpis = externalKpis || internalKpis;
