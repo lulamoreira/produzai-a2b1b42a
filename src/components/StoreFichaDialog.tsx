@@ -1,0 +1,106 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useMemo } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { getStateColor } from "@/lib/stateColors";
+import { storeCampaignItems, storeCustomFields } from "@/lib/storeFicha";
+
+export interface StoreFichaDialogProps {
+  store: any | null;
+  onOpenChange: (open: boolean) => void;
+  pieces: any[];
+  kits: any[];
+  kitPieces: any[];
+  qtyMap: Record<string, number>;
+  customFieldLabels?: { index: number; label: string }[];
+}
+
+const filled = (v: unknown) => v !== null && v !== undefined && String(v).trim() !== "";
+
+function Field({ label, value, mono }: { label: string; value: unknown; mono?: boolean }) {
+  if (!filled(value)) return null;
+  return (
+    <div className="space-y-0.5 min-w-0">
+      <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block break-words">{label}</span>
+      <p className={mono ? "text-xs font-medium font-mono break-words" : "text-xs font-medium break-words leading-tight"}>{String(value)}</p>
+    </div>
+  );
+}
+
+/** Ficha somente leitura de uma loja, aberta por cima da janela "Revisar Rateio". */
+export function StoreFichaDialog({ store, onOpenChange, pieces, kits, kitPieces, qtyMap, customFieldLabels }: StoreFichaDialogProps) {
+  const customFields = useMemo(() => (store ? storeCustomFields(store, customFieldLabels) : []), [store, customFieldLabels]);
+  const items = useMemo(
+    () => (store ? storeCampaignItems(store.id, pieces, kits, kitPieces, qtyMap) : []),
+    [store, pieces, kits, kitPieces, qtyMap],
+  );
+  const cityUf = store ? [store.city, store.state].filter(filled).join(" / ") : "";
+  const stateColor = store?.state ? getStateColor(store.state) : null;
+
+  return (
+    <Dialog open={!!store} onOpenChange={onOpenChange}>
+      <DialogContent className="z-[60] max-w-md p-0 gap-0 overflow-hidden flex flex-col max-h-[85dvh]">
+        {store && (
+          <>
+            <DialogHeader className="bg-muted/40 px-4 py-3 border-b border-border text-left space-y-0.5">
+              <div className="flex items-center gap-2 pr-6">
+                <DialogTitle className="text-sm font-semibold truncate">{store.name}</DialogTitle>
+                {stateColor && (
+                  <span
+                    className="text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 uppercase tracking-wider"
+                    style={{ backgroundColor: stateColor.bg, color: stateColor.text }}
+                  >
+                    {store.state}
+                  </span>
+                )}
+              </div>
+              <DialogDescription className="text-[11px] italic truncate">
+                {store.nickname && store.nickname !== store.name ? `"${store.nickname}"` : "Ficha da loja (somente leitura)"}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="px-4 py-3 space-y-3 overflow-y-auto">
+              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                <Field label="Código" value={store.store_code || "—"} />
+                <Field label="Cidade/UF" value={cityUf || "—"} />
+                <Field label="CNPJ" value={store.cnpj} mono />
+                <Field label="Modelo" value={store.store_model} />
+                <Field label="Era" value={store.era} />
+                <Field label="Vitrines" value={store.showcase_count} />
+              </div>
+
+              {customFields.length > 0 && (
+                <div className="pt-2 border-t border-border/60 grid grid-cols-2 gap-x-4 gap-y-3">
+                  {customFields.map((f) => <Field key={f.label} label={f.label} value={f.value} />)}
+                </div>
+              )}
+
+              <div className="pt-2 border-t border-border/60 space-y-1.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Nesta campanha</span>
+                  <Badge variant="outline" className="text-[10px]">{items.length} item(ns)</Badge>
+                </div>
+                {items.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">A loja não recebe nenhum item nesta campanha.</p>
+                ) : (
+                  <ul className="max-h-56 overflow-y-auto rounded border border-border/60 divide-y divide-border/50">
+                    {items.map((it) => (
+                      <li key={`${it.kind}-${it.id}`} className="flex items-center justify-between gap-2 px-2 py-1 text-xs">
+                        <span className="min-w-0 truncate">
+                          {it.code !== null && it.code !== "" ? <span className="text-muted-foreground mr-1">#{it.code}</span> : null}
+                          {it.name}
+                          {it.kind === "kit" ? <Badge variant="secondary" className="ml-1.5 text-[9px] px-1 py-0">Kit</Badge> : null}
+                        </span>
+                        <span className="font-semibold shrink-0">{it.quantity}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
