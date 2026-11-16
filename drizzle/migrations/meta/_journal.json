@@ -169,6 +169,13 @@
       "when": 1794756754635,
       "tag": "0023_skip_notifications_for_old_copied_rows",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1794798696636,
+      "tag": "0024_renegotiation_moves_field_modules",
+      "breakpoints": true
     }
   ]
 }
