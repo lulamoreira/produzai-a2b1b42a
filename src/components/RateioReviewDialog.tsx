@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ClipboardCheck, Download, Loader2, ImageOff, CheckCircle2, ChevronDown, RotateCcw, RefreshCw, CopyPlus } from "lucide-react";
+import { ClipboardCheck, Download, Loader2, ImageOff, CheckCircle2, ChevronDown, RotateCcw, RefreshCw, CopyPlus, Store } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +25,9 @@ import { RateioShowcaseGroups } from "@/components/RateioShowcaseGroups";
 import { RateioReviewFilters } from "@/components/RateioReviewFilters";
 import { RateioItemDetailDialog } from "@/components/RateioItemDetailDialog";
 import { RateioJustCoverageList } from "@/components/RateioJustCoverageList";
+import { StoreNameLink, type StoreLookup } from "@/components/StoreNameLink";
+import { LinkifiedText } from "@/components/LinkifiedText";
+import { findingStoreNames } from "@/lib/storeNameLinks";
 
 export interface RateioReviewDialogProps {
   open: boolean;
@@ -45,8 +48,6 @@ export interface RateioReviewDialogProps {
   onFillMissing?: (req: FillMissingRequest) => Promise<boolean>;
 }
 
-type StoreLookup = Map<string, any>;
-
 /** "Colocar nas que não têm" só vale para "Falta em lojas do mesmo modelo" com dados completos. */
 const canFill = (f: RateioFinding) =>
   f.type === "modelo_divergente" &&
@@ -54,32 +55,19 @@ const canFill = (f: RateioFinding) =>
   (f.storesWithQty?.length ?? 0) > 0 &&
   (f.storesWithoutIds?.length ?? 0) > 0;
 
-/** Nomes de loja separados por vírgula; os encontrados viram botão que abre a ficha (só leitura). */
+/** Nomes de loja separados por vírgula; os encontrados viram link que abre a ficha (só leitura). */
 function StoreNames({ names, lookup, onOpen, suffixes }: { names: string[]; lookup: StoreLookup; onOpen: (store: any) => void; suffixes?: string[] }) {
   return (
     <>
-      {names.map((name, idx) => {
-        const store = lookup.get(normalizeStoreKey(name));
-        return (
-          <span key={`${idx}-${name}`}>
-            {idx > 0 ? ", " : ""}
-            {store ? (
-              <button
-                type="button"
-                onClick={() => onOpen(store)}
-                className="text-primary hover:underline cursor-pointer rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                {name}
-              </button>
-            ) : (
-              name
-            )}
-            {suffixes && suffixes[idx] !== undefined ? (
-              <span className="text-[10px] text-muted-foreground tabular-nums"> ({suffixes[idx]})</span>
-            ) : null}
-          </span>
-        );
-      })}
+      {names.map((name, idx) => (
+        <span key={`${idx}-${name}`}>
+          {idx > 0 ? ", " : ""}
+          <StoreNameLink name={name} lookup={lookup} onOpen={onOpen} />
+          {suffixes && suffixes[idx] !== undefined ? (
+            <span className="text-[10px] text-muted-foreground tabular-nums"> ({suffixes[idx]})</span>
+          ) : null}
+        </span>
+      ))}
     </>
   );
 }
@@ -101,6 +89,9 @@ function FindingCard({ f, children, lookup, onOpenStore, onOpenItem }: FindingCa
   const dist = withQ?.length ? quantityDistribution(withQ) : null;
   const totalWith = withQ?.reduce((a, q) => a + q, 0) ?? 0;
   const lojas = (n: number) => `${n} ${n === 1 ? "loja" : "lojas"}`;
+  const storeNames = useMemo(() => findingStoreNames(f), [f]);
+  // Apontamento de uma loja só: atalho fixo para a ficha, mesmo se o nome no texto não casar.
+  const ownStore = f.storeName ? lookup.get(normalizeStoreKey(f.storeName)) : null;
   return (
     <div className="flex gap-3 rounded-lg border bg-card p-3">
       {(() => {
@@ -131,8 +122,19 @@ function FindingCard({ f, children, lookup, onOpenStore, onOpenItem }: FindingCa
             <span className="font-mono text-[10px] text-muted-foreground shrink-0">{itemCodeLabel(f.itemCode)}</span>
           ) : null}
           <span className="min-w-0 text-sm font-medium">{f.title}</span>
+          {ownStore ? (
+            <button
+              type="button"
+              onClick={() => onOpenStore(ownStore)}
+              className="inline-flex shrink-0 items-center gap-1 rounded-sm text-[11px] text-primary hover:underline focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            >
+              <Store className="h-3 w-3" aria-hidden /> Ver ficha da loja
+            </button>
+          ) : null}
         </div>
-        <p className="text-xs text-muted-foreground">{f.detail}</p>
+        <p className="text-xs text-muted-foreground break-words">
+          <LinkifiedText text={f.detail} names={storeNames} lookup={lookup} onOpen={onOpenStore} />
+        </p>
         {qtyLine ? <p className="text-[11px] text-muted-foreground tabular-nums">{qtyLine}</p> : null}
         {f.breakdown?.length ? (
           <details className="text-xs pt-0.5">
@@ -174,9 +176,15 @@ interface JustifyButtonProps {
   reasons: string[];
   /** Apontamentos ativos (para contar quantas lojas a regra "Todas as lojas" cobre agora). */
   ativos: RateioFinding[];
+  lookup: StoreLookup;
+  onOpenStore: (store: any) => void;
 }
 
-function JustifyButton({ f, onSave, reasons, ativos }: JustifyButtonProps) {
+/** O alvo do evento está dentro da ficha da loja (aberta por cima de tudo)? */
+const insideFicha = (target: EventTarget | null) =>
+  target instanceof Element && !!target.closest("[data-store-ficha]");
+
+function JustifyButton({ f, onSave, reasons, ativos, lookup, onOpenStore }: JustifyButtonProps) {
   const [open, setOpen] = useState(false);
   const [motivo, setMotivo] = useState("");
   const [escopo, setEscopo] = useState<JustEscopo>("caso");
@@ -200,7 +208,14 @@ function JustifyButton({ f, onSave, reasons, ativos }: JustifyButtonProps) {
           <CheckCircle2 className="w-3.5 h-3.5" /> Justificar
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 max-w-[calc(100vw-2rem)] max-h-[var(--radix-popover-content-available-height)] overflow-y-auto space-y-3" align="start" collisionPadding={8}>
+      <PopoverContent
+        className="w-80 max-w-[calc(100vw-2rem)] max-h-[var(--radix-popover-content-available-height)] overflow-y-auto space-y-3"
+        align="start"
+        collisionPadding={8}
+        // A ficha da loja abre por cima: interagir com ela não fecha este popover.
+        onFocusOutside={(e) => { if (insideFicha(e.target)) e.preventDefault(); }}
+        onInteractOutside={(e) => { if (insideFicha(e.target)) e.preventDefault(); }}
+      >
         {reasons.length > 0 && (
           <div className="space-y-1">
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold block">Motivos frequentes</span>
@@ -250,6 +265,8 @@ function JustifyButton({ f, onSave, reasons, ativos }: JustifyButtonProps) {
             current={f}
             label={`Vale para ${alcance} loja(s) agora — ver quais`}
             footerTotal={ativos.length}
+            lookup={lookup}
+            onOpenStore={onOpenStore}
           />
         ) : null}
         <Button size="sm" className="w-full" onClick={confirm} disabled={!motivo.trim() || saving}>
@@ -271,7 +288,7 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
   const [reanalyzing, setReanalyzing] = useState(false);
   // Espelho síncrono do justMap: o "Reanalisar" conta com os dados recém-carregados.
   const justMapRef = useRef<Map<string, Justificativa>>(new Map());
-  // Ficha da loja (somente leitura) aberta a partir das listas "Tem"/"Não tem".
+  // Ficha da loja (somente leitura) aberta por qualquer nome de loja da revisão.
   const [fichaStore, setFichaStore] = useState<any | null>(null);
   const storeLookup = useMemo(() => buildStoreLookup(stores ?? []), [stores]);
   // Detalhe do item (somente leitura) aberto pela miniatura.
@@ -429,7 +446,7 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
                   {list.map((f, i) => (
                     <FindingCard key={`${t}-${i}-${f.detail}`} f={f} lookup={storeLookup} onOpenStore={setFichaStore} onOpenItem={openItem}>
                       <div className="flex flex-wrap items-center gap-2">
-                        <JustifyButton f={f} onSave={saveJust} reasons={reasons} ativos={ativos} />
+                        <JustifyButton f={f} onSave={saveJust} reasons={reasons} ativos={ativos} lookup={storeLookup} onOpenStore={setFichaStore} />
                         {onFillMissing && canFill(f) ? (
                           <Button size="sm" variant="outline" className="h-7 text-xs gap-1 mt-1" onClick={() => setFillFinding(f)}>
                             <CopyPlus className="w-3.5 h-3.5" /> Colocar nas que não têm
@@ -472,7 +489,7 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
                       const cobertos = sameTodasFindings(f, justificadosF);
                       return (
                         <div className="pt-1">
-                          <RateioJustCoverageList findings={cobertos} current={f} label={`Ver lojas cobertas (${cobertos.length})`} defaultOpen={false} />
+                          <RateioJustCoverageList findings={cobertos} current={f} label={`Ver lojas cobertas (${cobertos.length})`} defaultOpen={false} lookup={storeLookup} onOpenStore={setFichaStore} />
                         </div>
                       );
                     })() : null}
@@ -486,6 +503,8 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
         <RateioFillMissingDialog
           finding={fillFinding}
           onOpenChange={(v) => { if (!v) setFillFinding(null); }}
+          lookup={storeLookup}
+          onOpenStore={setFichaStore}
           onConfirm={async (req) => {
             const ok = await onFillMissing(req);
             // A matriz é recarregada por quem grava; reanalisa para o apontamento sumir se foi corrigido.
