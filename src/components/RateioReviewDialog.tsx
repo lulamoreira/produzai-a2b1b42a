@@ -135,9 +135,12 @@ function FindingCard({ f, children, lookup, onOpenStore }: { f: RateioFinding; c
         )}
       </div>
       <div className="min-w-0 flex-1 space-y-1">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <Badge className={cn("border-0 text-[10px]", SEV_STYLE[f.severity])}>{SEV_LABEL[f.severity]}</Badge>
-          <span className="text-sm font-medium">{f.title}</span>
+          {itemCodeLabel(f.itemCode) ? (
+            <span className="font-mono text-[10px] text-muted-foreground shrink-0">{itemCodeLabel(f.itemCode)}</span>
+          ) : null}
+          <span className="min-w-0 text-sm font-medium">{f.title}</span>
         </div>
         <p className="text-xs text-muted-foreground">{f.detail}</p>
         {f.breakdown?.length ? (
