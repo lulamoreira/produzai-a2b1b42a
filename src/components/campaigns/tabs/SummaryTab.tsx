@@ -62,6 +62,20 @@ export default function SummaryTab({
 }: SummaryTabProps) {
   const { t } = useTranslation();
 
+  // Agendamento, Instalações e Ocorrências só existem na versão mais recente da
+  // cadeia de renegociação; o painel de status lê dessa versão. Mesma consulta
+  // (e cache) usada em CampaignDetail.
+  const { data: latestCampaignId, isLoading: loadingLatestCampaign } = useQuery({
+    queryKey: ["latest-campaign-in-chain", campaignId],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_latest_campaign_in_chain", { p_campaign_id: campaignId });
+      if (error) return null;
+      return (data as string | null) ?? null;
+    },
+    enabled: !!campaignId,
+    staleTime: 60_000,
+  });
+
   const { data: internalKpis } = useQuery({
     queryKey: ["campaign-summary-kpis", campaignId],
     queryFn: async () => {
@@ -185,12 +199,14 @@ export default function SummaryTab({
         </button>
       </div>
 
-      <CampaignStatusDashboard
-        campaignId={campaignId}
-        onNavigate={(section, filter) => {
-          onNavigate(section, filter);
-        }}
-      />
+      {!loadingLatestCampaign && (
+        <CampaignStatusDashboard
+          campaignId={latestCampaignId ?? campaignId}
+          onNavigate={(section, filter) => {
+            onNavigate(section, filter);
+          }}
+        />
+      )}
 
       <SupportMaterialsSection campaignId={campaignId} canEdit={canEditCampaign} />
 
