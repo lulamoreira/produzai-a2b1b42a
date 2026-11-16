@@ -5,6 +5,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDisplayName } from "@/components/AppHeader";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { supabasePaginate } from "@/lib/supabasePaginate";
+import { isVisiblePendingInstallation, latestCampaignIdsByChain } from "@/lib/installationSchedule";
 import { useNavigate } from "react-router-dom";
 import { 
   Megaphone, 
@@ -150,10 +152,20 @@ export function HomeV2() {
           (supabase.from("user_approvals" as any).select("id, created_at") as any).eq("status", "pending"),
           agencyClientIds.length
             ? (async () => {
-                const campIds = (await (supabase.from("campaigns") as any).select("id").in("client_id", agencyClientIds)).data?.map((c: any) => c.id) || [];
-                return campIds.length
-                  ? (supabase.from("campaign_schedules") as any).select("id, scheduled_date, scheduled_time, campaign_id, store_id, client_stores(name), campaigns(name, client_id, clients(name)), installation_teams(name)").is("completed_at", null).in("campaign_id", campIds)
-                  : { data: [] };
+                // Only the newest campaign of each renegotiation chain holds field data.
+                const campRows = (await (supabase.from("campaigns") as any).select("id, root_campaign_id, created_at").in("client_id", agencyClientIds)).data || [];
+                const campIds = [...latestCampaignIdsByChain(campRows)];
+                if (!campIds.length) return { data: [] };
+                const rows = await supabasePaginate<any>((from, to) =>
+                  (supabase.from("campaign_schedules") as any)
+                    .select("id, scheduled_date, scheduled_time, reschedule_enabled, reschedule_date, reschedule_time, completed_at, campaign_id, store_id, client_stores(name, tipo_entrega), campaigns(name, client_id, clients(name)), installation_teams(name)", { count: "exact" })
+                    .is("completed_at", null)
+                    .in("campaign_id", campIds)
+                    .order("id")
+                    .range(from, to)
+                );
+                // Same rule as the campaign status panel "Pendentes".
+                return { data: rows.filter(isVisiblePendingInstallation) };
               })()
             : Promise.resolve({ data: [] })
         ]);

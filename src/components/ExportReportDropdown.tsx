@@ -68,6 +68,12 @@ function buildInterleavedOrder(
 }
 
 async function fetchReportData(campaignId: string, clientId: string, campaignName: string, clientName: string): Promise<ReportData> {
+  // Schedules, occurrences and photos only live on the newest campaign of a
+  // renegotiation chain; an older version reads them from there (same as the
+  // status panel). Falls back to this campaign when the RPC returns nothing.
+  const { data: latestId } = await supabase.rpc("get_latest_campaign_in_chain", { p_campaign_id: campaignId });
+  const fieldCampaignId = (latestId as string | null) ?? campaignId;
+
   const [stores, schedules, occurrences, photos] = await Promise.all([
     supabasePaginate<{ id: string; name: string; city: string | null; state: string | null; store_model: string | null }>(
       (from, to) =>
@@ -83,7 +89,7 @@ async function fetchReportData(campaignId: string, clientId: string, campaignNam
         supabase
           .from("campaign_schedules")
           .select("store_id, scheduled_date, completed_at, checkin_timestamp, photo_checkin", { count: "exact" })
-          .eq("campaign_id", campaignId)
+          .eq("campaign_id", fieldCampaignId)
           .order("id")
           .range(from, to) as any
     ),
@@ -92,7 +98,7 @@ async function fetchReportData(campaignId: string, clientId: string, campaignNam
         supabase
           .from("occurrences")
           .select("store_id, status, priority, description, created_at, resolved_date, motive_id", { count: "exact" })
-          .eq("campaign_id", campaignId)
+          .eq("campaign_id", fieldCampaignId)
           .order("id")
           .range(from, to) as any
     ),
@@ -101,7 +107,7 @@ async function fetchReportData(campaignId: string, clientId: string, campaignNam
         supabase
           .from("installation_photos")
           .select("store_id, category", { count: "exact" })
-          .eq("campaign_id", campaignId)
+          .eq("campaign_id", fieldCampaignId)
           .order("id")
           .range(from, to) as any
     ),
