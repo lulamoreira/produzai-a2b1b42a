@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { fetchImageBytes } from "@/lib/rateioGridShared";
-import { FINDING_TYPE_LABELS, itemCodeLabel, type RateioFinding, type RateioFindingType } from "@/lib/reviewRateio";
+import { FINDING_TYPE_LABELS, itemCodeLabel, storeQtyLine, storeSuffixes, type RateioFinding, type RateioFindingType } from "@/lib/reviewRateio";
 
 const BROWN: [number, number, number] = [140, 111, 78];
 const DARK: [number, number, number] = [28, 25, 22];
@@ -120,7 +120,10 @@ export async function exportRateioReviewPDF(
         const textW = pw - textX - M;
         doc.setFontSize(9);
         const detailLines = doc.splitTextToSize(f.detail, textW);
-        const blockH = Math.max(20, 10 + detailLines.length * 4);
+        // Linha de quantidade dos apontamentos de uma loja só (mesma regra da tela).
+        const qtyLine = storeQtyLine(f);
+        const qtyLines: string[] = qtyLine ? doc.splitTextToSize(qtyLine, textW) : [];
+        const blockH = Math.max(20, 10 + (detailLines.length + qtyLines.length) * 4);
         if (y + blockH > ph - 14) {
           doc.addPage();
           y = header();
@@ -151,10 +154,21 @@ export async function exportRateioReviewPDF(
         doc.setFontSize(9);
         doc.setTextColor(...DARK);
         doc.text(detailLines, textX, y + 9);
+        if (qtyLines.length) {
+          doc.setFontSize(8);
+          doc.setTextColor(...GREY);
+          doc.text(qtyLines, textX, y + 9 + detailLines.length * 4);
+          doc.setFontSize(9);
+          doc.setTextColor(...DARK);
+        }
         y += blockH + 2;
 
-        const w = f.storesWith ?? [];
-        const wo = f.storesWithout ?? [];
+        // Mesmos rótulos da tela entre parênteses ao lado de cada loja.
+        const sfx = storeSuffixes(f);
+        const withLabel = (names: string[], labels?: string[]) =>
+          names.map((n, i) => (labels && labels[i] ? `${n} (${labels[i]})` : n));
+        const w = withLabel(f.storesWith ?? [], sfx.with);
+        const wo = withLabel(f.storesWithout ?? [], sfx.without);
         if (w.length || wo.length) {
           const rows = Array.from({ length: Math.max(w.length, wo.length) }, (_, i) => [w[i] ?? "", wo[i] ?? ""]);
           autoTable(doc, {

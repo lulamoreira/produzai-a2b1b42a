@@ -11,7 +11,7 @@ import { ClipboardCheck, Download, Loader2, ImageOff, CheckCircle2, ChevronDown,
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
-import { reviewRateio, FINDING_TYPE_LABELS, itemCodeLabel, type RateioFinding, type RateioFindingType } from "@/lib/reviewRateio";
+import { reviewRateio, FINDING_TYPE_LABELS, itemCodeLabel, storeQtyLine, storeSuffixes, withQuantities, type RateioFinding, type RateioFindingType } from "@/lib/reviewRateio";
 import { buildJustRow, countSameTodas, sameTodasFindings, splitByJust, type JustEscopo, type Justificativa } from "@/lib/rateioReviewJust";
 import { exportRateioReviewPDF } from "@/lib/exportRateioReviewPDF";
 import { buildStoreLookup, normalizeStoreKey } from "@/lib/storeFicha";
@@ -93,17 +93,13 @@ interface FindingCardProps {
 }
 
 function FindingCard({ f, children, lookup, onOpenStore, onOpenItem }: FindingCardProps) {
-  // Quantidades e vitrines só existem no apontamento "Falta em lojas do mesmo modelo" (mesma ordem dos nomes).
-  const vit = (n: number) => `${Number(n) || 0} vit.`;
-  const withSuffixes = f.storesWithQty?.length && f.storesWithQty.length === f.storesWith?.length
-    ? f.storesWithQty.map((s) => `${s.qty} un. · ${vit(s.showcase)}`)
-    : undefined;
-  const withoutSuffixes = f.storesWithoutIds?.length && f.storesWithoutIds.length === f.storesWithout?.length
-    ? f.storesWithoutIds.map((s) => `0 un. · ${vit(s.showcase)}`)
-    : undefined;
+  // Rótulos por loja (quantidade, vitrines ou peças do kit): mesma regra da tela e do PDF.
+  const { with: withSuffixes, without: withoutSuffixes } = storeSuffixes(f);
+  const qtyLine = storeQtyLine(f);
   const canOpenItem = !!f.itemId && !!f.itemKind;
-  const dist = f.storesWithQty?.length ? quantityDistribution(f.storesWithQty.map((s) => s.qty)) : null;
-  const totalWith = f.storesWithQty?.reduce((a, s) => a + s.qty, 0) ?? 0;
+  const withQ = withQuantities(f);
+  const dist = withQ?.length ? quantityDistribution(withQ) : null;
+  const totalWith = withQ?.reduce((a, q) => a + q, 0) ?? 0;
   const lojas = (n: number) => `${n} ${n === 1 ? "loja" : "lojas"}`;
   return (
     <div className="flex gap-3 rounded-lg border bg-card p-3">
@@ -137,6 +133,7 @@ function FindingCard({ f, children, lookup, onOpenStore, onOpenItem }: FindingCa
           <span className="min-w-0 text-sm font-medium">{f.title}</span>
         </div>
         <p className="text-xs text-muted-foreground">{f.detail}</p>
+        {qtyLine ? <p className="text-[11px] text-muted-foreground tabular-nums">{qtyLine}</p> : null}
         {f.breakdown?.length ? (
           <details className="text-xs pt-0.5">
             <summary className="cursor-pointer select-none text-primary hover:underline">
@@ -153,15 +150,15 @@ function FindingCard({ f, children, lookup, onOpenStore, onOpenItem }: FindingCa
           </details>
         ) : null}
         {f.storesWith?.length || f.storesWithout?.length ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1 [&>div]:min-w-0 [&>div]:break-words">
             {f.storesWith?.length ? <div><span className="font-semibold">Tem:</span> <StoreNames names={f.storesWith} lookup={lookup} onOpen={onOpenStore} suffixes={withSuffixes} /></div> : null}
             {f.storesWithout?.length ? <div><span className="font-semibold">Não tem:</span> <StoreNames names={f.storesWithout} lookup={lookup} onOpen={onOpenStore} suffixes={withoutSuffixes} /></div> : null}
           </div>
         ) : null}
         {dist ? (
           <p className="text-[11px] text-muted-foreground break-words">
-            Quem tem: {lojas(f.storesWithQty?.length ?? 0)}, total {totalWith} un. → {dist.map((d) => `${d.qty} un.: ${lojas(d.stores)}`).join(" · ")}.
-            {" "}Quem não tem: {lojas(f.storesWithoutIds?.length ?? 0)}, total 0.
+            Quem tem: {lojas(withQ?.length ?? 0)}, total {totalWith} un. → {dist.map((d) => `${d.qty} un.: ${lojas(d.stores)}`).join(" · ")}.
+            {f.storesWithoutIds?.length ? <>{" "}Quem não tem: {lojas(f.storesWithoutIds.length)}, total 0.</> : null}
           </p>
         ) : null}
         {f.storesWithQty?.length && f.storesWithoutIds?.length ? <RateioShowcaseGroups f={f} /> : null}
