@@ -181,7 +181,7 @@ export function buildStoreEditWrites(
 }
 
 /** Alterações reais (valor digitado diferente do atual) a partir do rascunho da ficha. */
-export function draftChanges(items: readonly StoreEditItem[], draft: Readonly<Record<string, number>>): StoreEditChange[] {
+export function draftChanges(items: readonly StoreEditItem[], draft: Readonly<Record<string, number | string>>): StoreEditChange[] {
   const out: StoreEditChange[] = [];
   for (const it of items) {
     const key = editKey(it.kind, it.id);
