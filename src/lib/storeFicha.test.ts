@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildStoreLookup, normalizeStoreKey, storeCampaignItems, storeCustomFields } from "./storeFicha";
+import { buildStoreLookup, findingConcernsStore, normalizeStoreKey, storeCampaignItems, storeCustomFields } from "./storeFicha";
 
 describe("buildStoreLookup", () => {
   it("encontra a loja pelo nome ignorando espaços, maiúsculas e acentos", () => {
@@ -41,7 +41,6 @@ describe("storeCampaignItems", () => {
   });
 });
 
-import { findingConcernsStore } from "@/lib/storeFicha";
 
 describe("findingConcernsStore", () => {
   const store = { id: "s1", name: "Shopping Recife", nickname: "Recife" };
