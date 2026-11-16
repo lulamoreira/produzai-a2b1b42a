@@ -46,6 +46,8 @@ import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaig
 import RateioReviewDialog from "@/components/RateioReviewDialog";
 import type { FillMissingRequest } from "@/components/RateioFillMissingDialog";
 import { buildFillMissingUpserts } from "@/lib/rateioFillMissing";
+import { buildStoreEditWrites } from "@/lib/rateioStoreEdit";
+import type { StoreRateioEditRequest } from "@/components/StoreFichaDialog";
 import StoreObservationsButton from "@/components/v2/campaigns/StoreObservationsButton";
 import { ClipboardCheck } from "lucide-react";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
@@ -1108,6 +1110,51 @@ export default function RateioTabV2({
       return true;
     } catch {
       const keys = new Set(upserts.map((u) => `${u.storeId}-${u.pieceId}`));
+      setLocalQtyOverrides((prev) => {
+        const next = { ...prev };
+        keys.forEach((k) => { delete next[k]; });
+        return next;
+      });
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ["campaign_store_pieces", campaignId] }),
+        queryClient.refetchQueries({ queryKey: ["campaign_negotiation_store_pieces", campaignId] }),
+        queryClient.refetchQueries({ queryKey: ["negotiation_store_pieces", effectiveNegSupplierId] }),
+        queryClient.refetchQueries({ queryKey: ["adjustment_rateio_qty_map"] }),
+      ]);
+      return false;
+    }
+  };
+
+  // Editar o rateio de UMA loja pela ficha (Revisar Rateio): mesmo caminho das demais
+  // escritas (applyWithHistory → applyRateioBulk, respeitando a origem ativa) para entrar
+  // no histórico. Kits viram as peças do kit (peça em 2+ kits = soma dos kits); só as
+  // células alteradas desta loja. Em erro, desfaz o que apareceu na tela e relê do servidor.
+  const handleReviewEditStore = async (req: StoreRateioEditRequest): Promise<boolean> => {
+    const writes = buildStoreEditWrites(
+      req.changes,
+      activeKitPieces || [],
+      (pieceId) => visibleQtyMap[`${req.storeId}-${pieceId}`] || 0,
+    );
+    if (writes.length === 0) {
+      toast.info("Nenhuma célula precisou de alteração.");
+      return false;
+    }
+    const upserts: RateioUpsert[] = writes
+      .filter((w) => w.to > 0)
+      .map((w) => ({ campaignId, storeId: req.storeId, pieceId: w.pieceId, quantity: w.to }));
+    const deletes = writes
+      .filter((w) => w.to <= 0)
+      .map((w) => ({ campaignId, storeId: req.storeId, pieceId: w.pieceId }));
+    const n = req.changes.length;
+    try {
+      await applyWithHistory(
+        upserts,
+        deletes,
+        `Rateio de ${req.storeName} atualizado: ${n} ${n === 1 ? "alteração" : "alterações"}. Você pode desfazer no histórico.`,
+      );
+      return true;
+    } catch {
+      const keys = new Set(writes.map((w) => `${req.storeId}-${w.pieceId}`));
       setLocalQtyOverrides((prev) => {
         const next = { ...prev };
         keys.forEach((k) => { delete next[k]; });
@@ -2847,6 +2894,8 @@ export default function RateioTabV2({
         campaignName={campaign?.name ?? ""}
         clientName={client?.name ?? ""}
         onFillMissing={canEditCampaignStores && isTabEditable ? handleReviewFillMissing : undefined}
+        onEditStoreRateio={canEditCampaignStores && isTabEditable ? handleReviewEditStore : undefined}
+        editKitPieces={activeKitPieces}
       />
 
       <Dialog open={isPasteModalOpen} onOpenChange={setIsPasteModalOpen}>
