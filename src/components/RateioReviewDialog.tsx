@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ClipboardCheck, Download, Loader2, ImageOff, CheckCircle2, ChevronDown, RotateCcw, RefreshCw, CopyPlus, Store, Pencil } from "lucide-react";
+import { ClipboardCheck, Download, Loader2, ImageOff, CheckCircle2, ChevronDown, RotateCcw, RefreshCw, CopyPlus, Store, Pencil, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +28,8 @@ import { RateioJustCoverageList } from "@/components/RateioJustCoverageList";
 import { StoreNameLink, type StoreLookup } from "@/components/StoreNameLink";
 import { LinkifiedText } from "@/components/LinkifiedText";
 import { findingStoreNames } from "@/lib/storeNameLinks";
+import { buildStoreNotes, filterStoreNotes, findingCountsByStore, storeNote } from "@/lib/storeNotes";
+import { RateioStoreNotesSection } from "@/components/RateioStoreNotesSection";
 
 export interface RateioReviewDialogProps {
   open: boolean;
@@ -69,7 +71,7 @@ function StoreNames({ names, lookup, onOpen, suffixes }: { names: string[]; look
       {names.map((name, idx) => (
         <span key={`${idx}-${name}`}>
           {idx > 0 ? ", " : ""}
-          <StoreNameLink name={name} lookup={lookup} onOpen={onOpen} />
+          <StoreNameLink name={name} lookup={lookup} onOpen={onOpen} showNote />
           {suffixes && suffixes[idx] !== undefined ? (
             <span className="text-[10px] text-muted-foreground tabular-nums"> ({suffixes[idx]})</span>
           ) : null}
@@ -101,6 +103,8 @@ function FindingCard({ f, children, lookup, onOpenStore, onOpenItem, onEditStore
   const storeNames = useMemo(() => findingStoreNames(f), [f]);
   // Apontamento de uma loja só: atalho fixo para a ficha, mesmo se o nome no texto não casar.
   const ownStore = f.storeName ? lookup.get(normalizeStoreKey(f.storeName)) : null;
+  // Nota (observação) da loja do apontamento de uma loja só — somente leitura.
+  const ownNote = storeNote(ownStore);
   return (
     <div className="flex gap-3 rounded-lg border bg-card p-3">
       {(() => {
@@ -154,6 +158,12 @@ function FindingCard({ f, children, lookup, onOpenStore, onOpenItem, onEditStore
           <LinkifiedText text={f.detail} names={storeNames} lookup={lookup} onOpen={onOpenStore} />
         </p>
         {qtyLine ? <p className="text-[11px] text-muted-foreground tabular-nums">{qtyLine}</p> : null}
+        {ownNote ? (
+          <div className="flex items-start gap-1.5 rounded-md border border-warning/40 bg-warning/10 px-2 py-1.5 text-xs text-foreground">
+            <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-warning" aria-hidden />
+            <p className="min-w-0 whitespace-pre-wrap break-words"><span className="font-semibold">Nota da loja:</span> {ownNote}</p>
+          </div>
+        ) : null}
         {f.breakdown?.length ? (
           <details className="text-xs pt-0.5">
             <summary className="cursor-pointer select-none text-primary hover:underline">
@@ -322,6 +332,11 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
     setFichaStoreRaw(store);
   }, []);
   const storeLookup = useMemo(() => buildStoreLookup(stores ?? []), [stores]);
+  // Abre a ficha em edição sem item destacado (botão "Abrir rateio" das notas).
+  const editStoreNoFocus = useCallback((store: any) => {
+    setFichaIntent({ mode: "edit", focus: null });
+    setFichaStoreRaw(store);
+  }, []);
   // Detalhe do item (somente leitura) aberto pela miniatura.
   const [itemRef, setItemRef] = useState<{ kind: "piece" | "kit"; id: string } | null>(null);
   const itemDetail = useMemo(
@@ -365,6 +380,10 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
     const present = new Set(findings.map((f) => f.type));
     return types.filter((t) => present.has(t));
   }, [findings, types]);
+  // Notas das lojas (client_stores.observations, já carregadas com as lojas): só exibição.
+  const storeNotes = useMemo(() => (open ? buildStoreNotes(stores ?? []) : []), [open, stores]);
+  const storeNotesVisiveis = useMemo(() => filterStoreNotes(storeNotes, filters.query), [storeNotes, filters.query]);
+  const findingCounts = useMemo(() => findingCountsByStore(ativos, storeLookup), [ativos, storeLookup]);
   // Motivos mais usados por este cliente (do justMap já carregado; sem consulta nova).
   const reasons = useMemo(() => topReasons([...justMap.values()]), [justMap]);
 
@@ -420,6 +439,8 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
       await exportRateioReviewPDF(ativos, {
         campaignName,
         clientName,
+        storeNotes: storeNotes.map((r) => ({ label: r.label, meta: r.meta, note: r.note })),
+        noteFor: (f) => storeNote(f.storeName ? storeLookup.get(normalizeStoreKey(f.storeName)) : null),
         onProgress: (c, t) => toast.loading(`Baixando imagens ${c}/${t}...`, { id }),
       });
       toast.success("PDF gerado.", { id });
@@ -458,11 +479,20 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
           </Button>
         </div>
 
-        {findings.length > 0 ? (
+        {findings.length > 0 || storeNotes.length > 0 ? (
           <RateioReviewFilters value={filters} onChange={setFilters} types={typesPresentes} shown={ativosVisiveis.length} total={ativos.length} />
         ) : null}
 
         <div className="flex-1 overflow-y-auto space-y-5 pr-1">
+          <RateioStoreNotesSection
+            total={storeNotes.length}
+            rows={storeNotesVisiveis}
+            counts={findingCounts}
+            lookup={storeLookup}
+            onOpenStore={setFichaStore}
+            onSearchStore={(label) => setFilters((prev) => ({ ...prev, query: label }))}
+            onEditStore={onEditStoreRateio ? editStoreNoFocus : undefined}
+          />
           {ativos.length === 0 ? (
             <p className="py-12 text-center text-muted-foreground">Nenhuma inconsistência encontrada 🎉</p>
           ) : ativosVisiveis.length === 0 ? (
