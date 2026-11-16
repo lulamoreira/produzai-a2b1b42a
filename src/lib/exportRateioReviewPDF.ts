@@ -8,6 +8,17 @@ const DARK: [number, number, number] = [28, 25, 22];
 const GREY: [number, number, number] = [102, 102, 102];
 const BORDER: [number, number, number] = [224, 213, 200];
 const WHITE: [number, number, number] = [255, 255, 255];
+// Notas das lojas (pontos de atenção): mesmo âmbar da tela.
+const AMBER_BG: [number, number, number] = [255, 247, 230];
+const AMBER_LINE: [number, number, number] = [234, 179, 8];
+const AMBER_TEXT: [number, number, number] = [120, 70, 10];
+
+/** Linha da seção "Notas das lojas" (já filtrada e ordenada por quem chama). */
+export interface PdfStoreNote {
+  label: string;
+  meta: string;
+  note: string;
+}
 const SEV_LABEL = { alta: "Alta", media: "Média", baixa: "Baixa" } as const;
 const SEV_COLOR: Record<string, [number, number, number]> = {
   alta: [185, 28, 28],
@@ -42,7 +53,15 @@ async function loadImage(url: string, cache: Map<string, ImageEntry>): Promise<I
 
 export async function exportRateioReviewPDF(
   findings: RateioFinding[],
-  opts: { campaignName: string; clientName?: string; onProgress?: (current: number, total: number) => void },
+  opts: {
+    campaignName: string;
+    clientName?: string;
+    onProgress?: (current: number, total: number) => void;
+    /** Lojas com observação (seção antes dos apontamentos). */
+    storeNotes?: PdfStoreNote[];
+    /** Nota da loja de um apontamento de loja única (null quando não há). */
+    noteFor?: (f: RateioFinding) => string | null;
+  },
 ): Promise<void> {
   const { jsPDF } = await import("jspdf");
   const { default: autoTable } = await import("jspdf-autotable");
@@ -80,11 +99,40 @@ export async function exportRateioReviewPDF(
 
   let y = header();
   doc.setTextColor(...DARK);
+  const notes = opts.storeNotes ?? [];
+
+  /** Seção "Notas das lojas"; o autoTable quebra página sozinho em textos longos. */
+  const drawStoreNotes = (startY: number): number => {
+    if (notes.length === 0) return startY;
+    let yy = startY;
+    if (yy > ph - 40) { doc.addPage(); yy = header(); }
+    doc.setTextColor(...AMBER_TEXT);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(13);
+    doc.text(`Notas das lojas (pontos de atenção) (${notes.length})`, M, yy);
+    autoTable(doc, {
+      startY: yy + 3,
+      head: [["Loja", "Nota"]],
+      body: notes.map((n) => [n.meta ? `${n.label}\n${n.meta}` : n.label, n.note]),
+      theme: "grid",
+      headStyles: { fillColor: AMBER_LINE, textColor: DARK },
+      styles: { fontSize: 8.5, lineColor: BORDER, valign: "top", overflow: "linebreak" },
+      bodyStyles: { fillColor: AMBER_BG, textColor: DARK },
+      columnStyles: { 0: { cellWidth: 55, fontStyle: "bold" } },
+      rowPageBreak: "auto",
+      margin: { left: M, right: M, top: 26 },
+      didDrawPage: () => { header(); },
+    });
+    doc.setTextColor(...DARK);
+    return (doc as any).lastAutoTable.finalY + 6;
+  };
 
   if (findings.length === 0) {
+    y = drawStoreNotes(y);
+    doc.setTextColor(...DARK);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(14);
-    doc.text("Nenhuma inconsistência encontrada", pw / 2, ph / 2, { align: "center" });
+    doc.text("Nenhuma inconsistência encontrada", pw / 2, notes.length ? Math.min(y + 10, ph - 20) : ph / 2, { align: "center" });
   } else {
     // Resumo
     doc.setFont("helvetica", "bold");
@@ -103,6 +151,8 @@ export async function exportRateioReviewPDF(
       styles: { fontSize: 9, lineColor: BORDER },
       margin: { left: M, right: M },
     });
+    // Notas das lojas antes dos apontamentos.
+    drawStoreNotes((doc as any).lastAutoTable.finalY + 8);
 
     for (const t of types) {
       const list = findings.filter((f) => f.type === t);
@@ -162,6 +212,21 @@ export async function exportRateioReviewPDF(
           doc.setTextColor(...DARK);
         }
         y += blockH + 2;
+
+        // "Nota da loja: ..." nos apontamentos de loja única (tabela de uma célula: quebra página sozinha).
+        const note = opts.noteFor?.(f) ?? null;
+        if (note) {
+          autoTable(doc, {
+            startY: y,
+            body: [[`Nota da loja: ${note}`]],
+            theme: "plain",
+            styles: { fontSize: 8, textColor: AMBER_TEXT, fillColor: AMBER_BG, lineColor: AMBER_LINE, lineWidth: 0.2, overflow: "linebreak" },
+            rowPageBreak: "auto",
+            margin: { left: textX, right: M, top: 26 },
+            didDrawPage: () => { header(); },
+          });
+          y = (doc as any).lastAutoTable.finalY + 3;
+        }
 
         // Mesmos rótulos da tela entre parênteses ao lado de cada loja.
         const sfx = storeSuffixes(f);
