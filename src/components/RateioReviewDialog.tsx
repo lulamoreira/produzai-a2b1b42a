@@ -7,7 +7,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { ClipboardCheck, Download, Loader2, ImageOff, CheckCircle2, ChevronDown, RotateCcw, RefreshCw } from "lucide-react";
+import { ClipboardCheck, Download, Loader2, ImageOff, CheckCircle2, ChevronDown, RotateCcw, RefreshCw, CopyPlus } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -15,6 +15,8 @@ import { reviewRateio, FINDING_TYPE_LABELS, type RateioFinding, type RateioFindi
 import { exportRateioReviewPDF } from "@/lib/exportRateioReviewPDF";
 import { buildStoreLookup, normalizeStoreKey } from "@/lib/storeFicha";
 import { StoreFichaDialog } from "@/components/StoreFichaDialog";
+import { RateioFillMissingDialog, type FillMissingRequest } from "@/components/RateioFillMissingDialog";
+import { summarizeQuantities } from "@/lib/rateioFillMissing";
 
 export interface RateioReviewDialogProps {
   open: boolean;
@@ -28,6 +30,11 @@ export interface RateioReviewDialogProps {
   clientName?: string;
   clientId: string;
   customFieldLabels?: { index: number; label: string }[];
+  /**
+   * Grava "Colocar nas que não têm" pelo caminho do Rateio (histórico + desfazer).
+   * Só é passado para quem pode editar a matriz; sem ele o botão não aparece.
+   */
+  onFillMissing?: (req: FillMissingRequest) => Promise<boolean>;
 }
 
 interface Justificativa {
@@ -72,8 +79,15 @@ function splitByJust(findings: RateioFinding[], justMap: Map<string, Justificati
 
 type StoreLookup = Map<string, any>;
 
+/** "Colocar nas que não têm" só vale para "Falta em lojas do mesmo modelo" com dados completos. */
+const canFill = (f: RateioFinding) =>
+  f.type === "modelo_divergente" &&
+  !!f.itemId && !!f.itemKind &&
+  (f.storesWithQty?.length ?? 0) > 0 &&
+  (f.storesWithoutIds?.length ?? 0) > 0;
+
 /** Nomes de loja separados por vírgula; os encontrados viram botão que abre a ficha (só leitura). */
-function StoreNames({ names, lookup, onOpen }: { names: string[]; lookup: StoreLookup; onOpen: (store: any) => void }) {
+function StoreNames({ names, lookup, onOpen, qtys }: { names: string[]; lookup: StoreLookup; onOpen: (store: any) => void; qtys?: number[] }) {
   return (
     <>
       {names.map((name, idx) => {
@@ -92,6 +106,9 @@ function StoreNames({ names, lookup, onOpen }: { names: string[]; lookup: StoreL
             ) : (
               name
             )}
+            {qtys && qtys[idx] !== undefined ? (
+              <span className="text-[10px] text-muted-foreground tabular-nums"> ({qtys[idx]})</span>
+            ) : null}
           </span>
         );
       })}
@@ -100,6 +117,12 @@ function StoreNames({ names, lookup, onOpen }: { names: string[]; lookup: StoreL
 }
 
 function FindingCard({ f, children, lookup, onOpenStore }: { f: RateioFinding; children?: React.ReactNode; lookup: StoreLookup; onOpenStore: (store: any) => void }) {
+  // Quantidades só existem no apontamento "Falta em lojas do mesmo modelo" (mesma ordem dos nomes).
+  const withQtys = f.storesWithQty?.length === f.storesWith?.length ? f.storesWithQty?.map((s) => s.qty) : undefined;
+  const withoutQtys = f.storesWithoutIds?.length && f.storesWithoutIds.length === f.storesWithout?.length
+    ? f.storesWithoutIds.map(() => 0)
+    : undefined;
+  const summary = f.storesWithQty?.length ? summarizeQuantities(f.storesWithQty.map((s) => s.qty)) : null;
   return (
     <div className="flex gap-3 rounded-lg border bg-card p-3">
       <div className="w-14 h-14 shrink-0 rounded border bg-muted flex items-center justify-center overflow-hidden">
@@ -132,9 +155,15 @@ function FindingCard({ f, children, lookup, onOpenStore }: { f: RateioFinding; c
         ) : null}
         {f.storesWith?.length || f.storesWithout?.length ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
-            {f.storesWith?.length ? <div><span className="font-semibold">Tem:</span> <StoreNames names={f.storesWith} lookup={lookup} onOpen={onOpenStore} /></div> : null}
-            {f.storesWithout?.length ? <div><span className="font-semibold">Não tem:</span> <StoreNames names={f.storesWithout} lookup={lookup} onOpen={onOpenStore} /></div> : null}
+            {f.storesWith?.length ? <div><span className="font-semibold">Tem:</span> <StoreNames names={f.storesWith} lookup={lookup} onOpen={onOpenStore} qtys={withQtys} /></div> : null}
+            {f.storesWithout?.length ? <div><span className="font-semibold">Não tem:</span> <StoreNames names={f.storesWithout} lookup={lookup} onOpen={onOpenStore} qtys={withoutQtys} /></div> : null}
           </div>
+        ) : null}
+        {summary ? (
+          <p className="text-[11px] text-muted-foreground break-words">
+            Quem tem: {summary.count} {summary.count === 1 ? "loja" : "lojas"}, total {summary.total} un., quantidade mais comum {summary.mode} (mín. {summary.min}, máx. {summary.max}).
+            {" "}Quem não tem: {f.storesWithoutIds?.length ?? 0} {(f.storesWithoutIds?.length ?? 0) === 1 ? "loja" : "lojas"}, total 0.
+          </p>
         ) : null}
         {children}
       </div>
@@ -187,7 +216,9 @@ function JustifyButton({ f, onSave }: { f: RateioFinding; onSave: (f: RateioFind
 }
 
 export default function RateioReviewDialog(props: RateioReviewDialogProps) {
-  const { open, onOpenChange, pieces, kits, kitPieces, stores, qtyMap, campaignName, clientName, clientId, customFieldLabels } = props;
+  const { open, onOpenChange, pieces, kits, kitPieces, stores, qtyMap, campaignName, clientName, clientId, customFieldLabels, onFillMissing } = props;
+  // Apontamento aberto na prévia "Colocar nas que não têm".
+  const [fillFinding, setFillFinding] = useState<RateioFinding | null>(null);
   const [exporting, setExporting] = useState(false);
   const [justMap, setJustMap] = useState<Map<string, Justificativa>>(new Map());
   const [showJust, setShowJust] = useState(false);
@@ -284,7 +315,7 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
           <DialogTitle className="flex items-center gap-2">
             <ClipboardCheck className="w-5 h-5 text-primary" /> Revisar Rateio
           </DialogTitle>
-          <DialogDescription>Análise automática da matriz atual. Nada é alterado.</DialogDescription>
+          <DialogDescription>Análise automática da matriz atual. Nada é alterado sem a sua confirmação.</DialogDescription>
         </DialogHeader>
 
         <div className="flex flex-wrap items-center gap-2">
@@ -316,7 +347,14 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
                   <h3 className="text-sm font-semibold text-foreground">{FINDING_TYPE_LABELS[t]} ({list.length})</h3>
                   {list.map((f, i) => (
                     <FindingCard key={`${t}-${i}-${f.detail}`} f={f} lookup={storeLookup} onOpenStore={setFichaStore}>
-                      <JustifyButton f={f} onSave={saveJust} />
+                      <div className="flex flex-wrap items-center gap-2">
+                        <JustifyButton f={f} onSave={saveJust} />
+                        {onFillMissing && canFill(f) ? (
+                          <Button size="sm" variant="outline" className="h-7 text-xs gap-1 mt-1" onClick={() => setFillFinding(f)}>
+                            <CopyPlus className="w-3.5 h-3.5" /> Colocar nas que não têm
+                          </Button>
+                        ) : null}
+                      </div>
                     </FindingCard>
                   ))}
                 </section>
@@ -354,6 +392,18 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
           )}
         </div>
       </DialogContent>
+      {onFillMissing ? (
+        <RateioFillMissingDialog
+          finding={fillFinding}
+          onOpenChange={(v) => { if (!v) setFillFinding(null); }}
+          onConfirm={async (req) => {
+            const ok = await onFillMissing(req);
+            // A matriz é recarregada por quem grava; reanalisa para o apontamento sumir se foi corrigido.
+            if (ok) setRev((r) => r + 1);
+            return ok;
+          }}
+        />
+      ) : null}
       <StoreFichaDialog
         store={fichaStore}
         onOpenChange={(v) => { if (!v) setFichaStore(null); }}
