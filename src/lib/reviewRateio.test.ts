@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { reviewRateio } from "./reviewRateio";
+import { itemCodeLabel, reviewRateio } from "./reviewRateio";
 
 const stores = [
   { id: "a", name: "A", store_model: "Novo", showcase_count: 1 },
