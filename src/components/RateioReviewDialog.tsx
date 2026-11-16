@@ -523,6 +523,8 @@ export default function RateioReviewDialog(props: RateioReviewDialogProps) {
         customFieldLabels={customFieldLabels}
         findings={ativos}
         justifiedFindings={justificadosF}
+        storeLookup={storeLookup}
+        onOpenStore={setFichaStore}
       />
       <RateioItemDetailDialog detail={itemDetail} onOpenChange={(v) => { if (!v) setItemRef(null); }} />
     </Dialog>
