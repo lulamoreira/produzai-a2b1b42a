@@ -44,6 +44,8 @@ import MatrixAutomationDialog from "@/components/MatrixAutomationDialog";
 import CopyQuantitiesDialog from "@/components/Matrix/CopyQuantitiesDialog";
 import ImportMatrixFromCampaignDialog from "@/components/ImportMatrixFromCampaignDialog";
 import RateioReviewDialog from "@/components/RateioReviewDialog";
+import type { FillMissingRequest } from "@/components/RateioFillMissingDialog";
+import { buildFillMissingUpserts } from "@/lib/rateioFillMissing";
 import StoreObservationsButton from "@/components/v2/campaigns/StoreObservationsButton";
 import { ClipboardCheck } from "lucide-react";
 import { exportMatrixExcelJS } from "@/lib/exportMatrixExcelJS";
@@ -1079,6 +1081,46 @@ export default function RateioTabV2({
       quantity: c.quantity,
     }));
     await applyWithHistory(upserts, [], t("rateio.prefillDone", "Quantidades pré-preenchidas"));
+  };
+
+  // "Colocar nas que não têm" (Revisar Rateio): grava pelo MESMO caminho das demais
+  // escritas (applyWithHistory → applyRateioBulk) para entrar no histórico e poder ser
+  // desfeito. Kits viram as peças do kit, como na colagem. Só lojas marcadas; nunca apaga
+  // nem diminui. Em caso de erro, desfaz o que apareceu na tela e relê do servidor.
+  const handleReviewFillMissing = async (req: FillMissingRequest): Promise<boolean> => {
+    const changes = buildFillMissingUpserts({
+      ...req,
+      kitPieces: activeKitPieces || [],
+      currentQty: (storeId, pieceId) => visibleQtyMap[`${storeId}-${pieceId}`] || 0,
+    });
+    if (changes.length === 0) {
+      toast.info("Nenhuma loja precisou de alteração.");
+      return false;
+    }
+    const upserts: RateioUpsert[] = changes.map((c) => ({ campaignId, ...c }));
+    const storeCount = new Set(changes.map((c) => c.storeId)).size;
+    try {
+      await applyWithHistory(
+        upserts,
+        [],
+        `${storeCount} ${storeCount === 1 ? "loja atualizada" : "lojas atualizadas"}. Você pode desfazer no histórico.`,
+      );
+      return true;
+    } catch {
+      const keys = new Set(upserts.map((u) => `${u.storeId}-${u.pieceId}`));
+      setLocalQtyOverrides((prev) => {
+        const next = { ...prev };
+        keys.forEach((k) => { delete next[k]; });
+        return next;
+      });
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ["campaign_store_pieces", campaignId] }),
+        queryClient.refetchQueries({ queryKey: ["campaign_negotiation_store_pieces", campaignId] }),
+        queryClient.refetchQueries({ queryKey: ["negotiation_store_pieces", effectiveNegSupplierId] }),
+        queryClient.refetchQueries({ queryKey: ["adjustment_rateio_qty_map"] }),
+      ]);
+      return false;
+    }
   };
 
   const handleUndo = async () => {
@@ -2804,6 +2846,7 @@ export default function RateioTabV2({
         clientId={clientId}
         campaignName={campaign?.name ?? ""}
         clientName={client?.name ?? ""}
+        onFillMissing={canEditCampaignStores && isTabEditable ? handleReviewFillMissing : undefined}
       />
 
       <Dialog open={isPasteModalOpen} onOpenChange={setIsPasteModalOpen}>
