@@ -44,3 +44,38 @@ describe("hasScheduledDateAndTime", () => {
     ).toBe(false);
   });
 });
+
+import { isVisiblePendingInstallation, latestCampaignIdsByChain } from "./installationSchedule";
+
+describe("isVisiblePendingInstallation", () => {
+  const base = { scheduled_date: "2026-11-20", scheduled_time: "08:00", completed_at: null };
+
+  it("counts an open schedule with date and time", () => {
+    expect(isVisiblePendingInstallation(base)).toBe(true);
+  });
+
+  it("does not count an empty schedule row (no date/time)", () => {
+    expect(isVisiblePendingInstallation({ completed_at: null })).toBe(false);
+  });
+
+  it("does not count completed installations", () => {
+    expect(isVisiblePendingInstallation({ ...base, completed_at: "2026-11-20T10:00:00Z" })).toBe(false);
+  });
+
+  it("does not count stores without logistics, treating missing type as frete_instalacao", () => {
+    expect(isVisiblePendingInstallation({ ...base, client_stores: { tipo_entrega: "sem_logistica" } })).toBe(false);
+    expect(isVisiblePendingInstallation({ ...base, client_stores: { tipo_entrega: null } })).toBe(true);
+  });
+});
+
+describe("latestCampaignIdsByChain", () => {
+  it("keeps only the newest campaign of each renegotiation chain", () => {
+    const ids = latestCampaignIdsByChain([
+      { id: "natal", root_campaign_id: null, created_at: "2026-09-01T00:00:00Z" },
+      { id: "reneg1", root_campaign_id: "natal", created_at: "2026-10-01T00:00:00Z" },
+      { id: "reneg2", root_campaign_id: "natal", created_at: "2026-11-01T00:00:00Z" },
+      { id: "solo", root_campaign_id: null, created_at: "2026-08-01T00:00:00Z" },
+    ]);
+    expect([...ids].sort()).toEqual(["reneg2", "solo"]);
+  });
+});
