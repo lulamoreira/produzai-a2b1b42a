@@ -365,6 +365,15 @@ export const supplierExcelLabels = {
     typePiece: "Peça",
     exportFileNamePrefix: "Cotacao",
     onlyDeliveryNote: (n: number) => `⚠️ ${n} loja(s) somente entrega — sem instalação.`,
+    onlyInstallNote: (n: number) => `⚠️ ${n} loja(s) somente instalação — sem frete.`,
+    noLogisticsNote: (n: number) => `⚠️ ${n} loja(s) sem logística — sem frete e sem instalação.`,
+    colStoreDelivery: "Tipo de Logística",
+    deliveryTypeLabels: {
+      frete_instalacao: "Frete + Instalação",
+      frete_apenas: "Só frete",
+      instalacao_apenas: "Só instalação",
+      sem_logistica: "Sem logística",
+    },
   },
   "es-CL": {
     worksheetName: "Cotización",
@@ -384,6 +393,15 @@ export const supplierExcelLabels = {
     typePiece: "Ítem",
     exportFileNamePrefix: "Cotizacion",
     onlyDeliveryNote: (n: number) => `⚠️ ${n} punto(s) solo entrega — sin instalación.`,
+    onlyInstallNote: (n: number) => `⚠️ ${n} punto(s) solo instalación — sin flete.`,
+    noLogisticsNote: (n: number) => `⚠️ ${n} punto(s) sin logística — sin flete y sin instalación.`,
+    colStoreDelivery: "Tipo de Logística",
+    deliveryTypeLabels: {
+      frete_instalacao: "Flete + Instalación",
+      frete_apenas: "Solo flete",
+      instalacao_apenas: "Solo instalación",
+      sem_logistica: "Sin logística",
+    },
   },
 } as const;
 

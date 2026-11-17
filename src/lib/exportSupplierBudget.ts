@@ -1,4 +1,8 @@
-import { hasInstallation, normalizeDeliveryType } from "@/lib/deliveryType";
+import {
+  buildLogisticsNotes,
+  deliveryTypeText,
+  LOGISTICS_NOTE_SEPARATOR,
+} from "@/lib/supplierSheetLogistics";
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { buildExportFileName } from "@/lib/exportFileName";
 import {
@@ -37,6 +41,11 @@ const SUPPLIER_STORE_FIELDS: StoreFieldDef[] = [
   { key: "state", label: "UF" },
   { key: "showcase_count", label: "VITRINES" },
 ];
+
+/** Colunas por loja da matriz + "Tipo de Logística" (tipo efetivo da campanha) no fim. */
+function supplierStoreFields(columnLabel: string): StoreFieldDef[] {
+  return [...SUPPLIER_STORE_FIELDS, { key: "delivery_type_label", label: columnLabel }];
+}
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
@@ -157,19 +166,19 @@ export async function buildSupplierBudgetWorkbook(
   t3.alignment = { horizontal: "center", vertical: "middle" };
   ws.getRow(3).height = 22;
 
-  // Add "Only Delivery" warning if any
-  // Lojas sem instalação (Só frete / Sem logística). `tipo_entrega` deve chegar já
-  // como tipo EFETIVO da campanha (ajuste ?? padrão); "Só instalação" não entra aqui.
-  const somenteEntrega = params.rateio?.stores.filter((s: any) => !params.rateio?.disabledStoreIds?.has(s.id) && !hasInstallation(normalizeDeliveryType(s.tipo_entrega))).length || 0;
-  if (somenteEntrega > 0) {
-    const note = labels.onlyDeliveryNote(somenteEntrega);
+  // Avisos de logística (um por tipo com lojas), juntos na mesma faixa amarela.
+  // `tipo_entrega` chega como tipo EFETIVO da campanha; lojas desativadas ficam fora.
+  const logisticsNotes = params.rateio
+    ? buildLogisticsNotes(params.rateio.stores, params.rateio.disabledStoreIds, labels)
+    : [];
+  if (logisticsNotes.length > 0) {
     ws.mergeCells("A4:G4");
     const t4 = ws.getCell("A4");
-    t4.value = note;
+    t4.value = logisticsNotes.join(LOGISTICS_NOTE_SEPARATOR);
     t4.font = { name: "Arial", size: 10, bold: true, color: { argb: "FF990000" } };
     t4.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFF2CC" } };
-    t4.alignment = { horizontal: "center", vertical: "middle" };
-    ws.getRow(4).height = 20;
+    t4.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+    ws.getRow(4).height = logisticsNotes.length > 1 ? 34 : 20;
   } else {
     ws.getRow(4).height = 6;
   }
@@ -400,7 +409,10 @@ export async function buildSupplierBudgetWorkbook(
     // Mirror the Rateio module: only standalone pieces (kit_only=false) become
     // columns in the "Matriz Lojas x Peças" tab. The full piece pool is still
     // passed via `allPieces` so kit components can be resolved.
-    const activeStores = params.rateio.stores.filter(s => !params.rateio?.disabledStoreIds?.has(s.id));
+    const storeFields = supplierStoreFields(labels.colStoreDelivery);
+    const activeStores = params.rateio.stores
+      .filter(s => !params.rateio?.disabledStoreIds?.has(s.id))
+      .map(s => ({ ...s, delivery_type_label: deliveryTypeText((s as any).tipo_entrega, labels) }));
     const visiblePieces = params.rateio.pieces.filter((p: any) => p.kit_only !== true);
     const matrixSheetName = await appendMatrixSheets(wb, {
       stores: activeStores,
@@ -417,7 +429,7 @@ export async function buildSupplierBudgetWorkbook(
       reservedSheetNames: new Set(["cotação"]),
       skipDashboard: true,
       skipKitTabs: true,
-      storeFields: SUPPLIER_STORE_FIELDS,
+      storeFields,
     });
     const matrixWs = wb.getWorksheet(matrixSheetName);
     if (matrixWs && params.rateio.unitPriceByPieceId) {
@@ -451,7 +463,7 @@ export async function buildSupplierBudgetWorkbook(
       appendMatrixFinancialFooter({
         ws: matrixWs,
         storeCount: activeStores.length,
-        storeMetaColumnCount: getMatrixStoreFieldsWithHidden(SUPPLIER_STORE_FIELDS).length,
+        storeMetaColumnCount: getMatrixStoreFieldsWithHidden(storeFields).length,
         unitPricesByColumn: columnItems.map((item) => item.unitPrice),
         moneyFormat: money,
         installation: params.rateio.installation ?? params.installation ?? 0,
@@ -475,7 +487,7 @@ export async function buildSupplierBudgetWorkbook(
           (a.type === b.type ? 0 : a.type === "piece" ? -1 : 1) ||
           (a.id < b.id ? -1 : 1),
       );
-      const metaCols = getMatrixStoreFieldsWithHidden(SUPPLIER_STORE_FIELDS).length;
+      const metaCols = getMatrixStoreFieldsWithHidden(storeFields).length;
       const totalQtyRow = getMatrixTotalQtyRowNum(activeStores.length);
       const idToColLetter = new Map<string, string>();
       matrixColumns.forEach((c, idx) => {

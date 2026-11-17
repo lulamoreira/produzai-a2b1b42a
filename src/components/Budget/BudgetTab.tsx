@@ -238,9 +238,10 @@ async function loadSupplierSheetStores(
   for (let i = 0; i < ids.length; i += CHUNK) {
     const { data, error } = await supabase
       .from("client_stores")
-      .select(SUPPLIER_SHEET_STORE_COLUMNS)
+      .select(SUPPLIER_SHEET_STORE_COLUMNS, { count: "exact" })
       .in("id", ids.slice(i, i + CHUNK))
-      .order("id");
+      .order("id")
+      .range(0, CHUNK - 1);
     if (error) console.warn("Planilha do fornecedor: usando lojas já carregadas.", error.message);
     if (data) fresh.push(...(data as Array<{ id: string } & Record<string, unknown>>));
   }
@@ -253,6 +254,10 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
 
   // Ajustes de logística desta campanha (tipo efetivo = ajuste ?? padrão da loja).
   const { overrides: deliveryOverrides } = useCampaignDeliveryOverrides(campaignId);
+  const storesWithEffectiveDelivery = useMemo(
+    () => stores.map((st) => ({ ...st, tipo_entrega: effectiveDeliveryType(st, deliveryOverrides) })),
+    [stores, deliveryOverrides],
+  );
 
   // Data hooks
   const { data: settings } = useBudgetSettings(campaignId);
@@ -3774,7 +3779,8 @@ ${msgLabels.winnerWaFooter}
         kits={kits}
         kitPieces={kitPieces}
         qtyMap={qtyMap}
-        stores={stores}
+        // tipo_entrega já como tipo EFETIVO desta campanha (avisos da planilha enviada ao cliente)
+        stores={storesWithEffectiveDelivery}
         pieceTotals={pieceTotalsFull}
         prices={prices}
         extraCosts={extraCosts}
