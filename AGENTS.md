@@ -38,11 +38,12 @@
 - Pending-installation counts (campaign Resumo card, status panel, home KPI) use isVisiblePendingInstallation (open, store with logistics, date+time) read from the chain's newest campaign via fetchPendingInstallationsCount/latestCampaignIdsByChain, so every screen matches the Installations list.
 - The Rateio review store card (StoreFichaDialog) is read-only and built only from data already loaded by the dialog through the pure storeFicha module; kit counts reuse sourceQuantityPerStore so the card matches the Rateio kit rule.
 - Rateio review "fill missing" builds writes only in pure rateioFillMissing and saves via the Rateio's applyWithHistory prop (current-version editors), so changes enter undo history; never deletes or lowers quantities, shared kit pieces add up.
-- Rateio review item codes render only through itemCodeLabel (reviewRateio.ts), shared by dialog and PDF; multi-item (vitrine) findings show no code.
+- Rateio review item codes render only via itemCodeLabel (dialog and PDF); vitrine findings show no code.
 - Rateio review display helpers live in pure modules rateioReviewView, rateioItemDetail and storeFicha.findingConcernsStore; filters never feed the PDF or top counters.
 - Rateio review per-store labels come only from storeSuffixes/storeQtyLine/withQuantities (reviewRateio.ts); storesInfo/storeItemQty are display-only, never feeding fingerprints, justifications or fill-missing.
-- Rateio review store names link to the ficha only via StoreNameLink and LinkifiedText over the pure storeNameLinks splitter; the ficha carries data-store-ficha so popovers underneath stay open.
+- Rateio review store names link to the ficha only via StoreNameLink/LinkifiedText (pure storeNameLinks); the ficha carries data-store-ficha so popovers underneath stay open.
 - Rateio review store-card editing turns per-item drafts into cell writes only in the pure rateioStoreEdit module (shared pieces = sum of the store's kits) and saves through the Rateio's applyWithHistory passed as a prop (same permission as fill-missing), so edits enter undo history and respect the active rateio source.
 - Rateio review store notes are display-only, derived only in the pure storeNotes module (shared by StoreNameLink showNote and the PDF) and never feed detection, fingerprints or justifications.
-- Rateio review TÁ CERTO saves a 'caso' justification via buildJustRow; TÁ ERRADO only lists stores (pure rateioFixFinding) and edits via the ficha.
-- "Exportar para campanha" plans and verifies (rateio diff) in pure exportToCampaign and writes only in exportToCampaignRun; the origin is only SELECTed (paginated), and rollback deletes only destination rows/files it created, so the origin stays untouched.
+- Rateio TÁ CERTO saves a 'caso' justification (buildJustRow); TÁ ERRADO lists stores (pure rateioFixFinding) and edits via the ficha.
+- "Exportar para campanha" plans/verifies in pure exportToCampaign and writes only in exportToCampaignRun; the origin is only read and rollback deletes only destination rows/files it created.
+- Store logistics type resolves only via deliveryType: campaign screens use the campaign_store_status override over the client_stores default (edited only in client registration); the supplier portal reads overrides via its token RPC.

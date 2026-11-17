@@ -52,3 +52,7 @@
 # Exportar para campanha
 - [x] Copy chosen pieces/kits (with kit components, images, missing locations, used custom-field labels) to a new or existing campaign of the same client, placed last with next free codes; origin only read; rollback deletes only destination rows/files. 7 rule tests passed; preview checked at 1280/375 with writes simulated (success, existing destination, failure rollback).
 - [x] Copy the rateio exactly (incl. zeros) in 500-row batches, carry disabled stores into new campaigns, warn about disabled destination stores, and verify by rereading the destination; 11 rule tests passed; preview checked at 1280/375 with writes simulated (identical, difference, rollback, Outlet destination).
+
+# Logística por campanha
+- [x] Add "Só instalação" and per-campaign store logistics overrides (default from client store), copied on renegotiation, not on export.
+- [x] Use the effective type in Lojas, Cotações, supplier portal/spreadsheet, Agendamento, Instalações, Loja a Loja, status panels, Resumo and Home; 36 tests passed; preview checked at 1280/375 with writes simulated.

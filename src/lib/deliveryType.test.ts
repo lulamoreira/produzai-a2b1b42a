@@ -66,3 +66,37 @@ describe("parseDeliveryTypeInput (importação de lojas)", () => {
     expect(parseDeliveryTypeInput("")).toBe("frete_instalacao");
   });
 });
+
+describe("planDeliveryChanges (ajuste em lote nesta campanha)", () => {
+  const stores = [
+    { id: "a", name: "Loja B", tipo_entrega: "frete_instalacao" },
+    { id: "b", name: "Loja A", tipo_entrega: "frete_apenas" },
+    { id: "c", name: "Loja C", tipo_entrega: "frete_instalacao" },
+  ];
+
+  it("lista só as lojas que mudam, com de → para, em ordem alfabética", async () => {
+    const { planDeliveryChanges, buildDeliveryOverrideMap } = await import("./deliveryType");
+    const overrides = buildDeliveryOverrideMap([{ store_id: "c", tipo_entrega: "sem_logistica" }]);
+    const rows = planDeliveryChanges(stores, overrides, "frete_apenas");
+    expect(rows.map((r) => [r.name, r.from, r.to])).toEqual([
+      ["Loja A", "frete_apenas", "frete_apenas"],
+      ["Loja B", "frete_instalacao", "frete_apenas"],
+      ["Loja C", "sem_logistica", "frete_apenas"],
+    ]);
+  });
+
+  it("desfazer devolve cada loja ao ajuste anterior ou ao padrão", async () => {
+    const { planDeliveryChanges, changesToUndoWrites, buildDeliveryOverrideMap } = await import("./deliveryType");
+    const overrides = buildDeliveryOverrideMap([{ store_id: "c", tipo_entrega: "sem_logistica" }]);
+    const rows = planDeliveryChanges(stores, overrides, "instalacao_apenas");
+    const undo = Object.fromEntries(changesToUndoWrites(rows).map((w) => [w.storeId, w.tipo]));
+    expect(undo).toEqual({ a: null, b: null, c: "sem_logistica" });
+  });
+
+  it("voltar ao padrão só afeta lojas ajustadas", async () => {
+    const { planDeliveryChanges, buildDeliveryOverrideMap } = await import("./deliveryType");
+    const overrides = buildDeliveryOverrideMap([{ store_id: "c", tipo_entrega: "sem_logistica" }]);
+    const rows = planDeliveryChanges(stores, overrides, null);
+    expect(rows.map((r) => [r.storeId, r.to])).toEqual([["c", "frete_instalacao"]]);
+  });
+});

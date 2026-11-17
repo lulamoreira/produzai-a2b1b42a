@@ -1347,7 +1347,12 @@ export function useSetCampaignDeliveryTypes() {
       }
       return rows.length;
     },
-    onSettled: (_d, _e, vars) => { qc.invalidateQueries({ queryKey: ["campaign_store_status", vars.campaignId] }); },
+    onSettled: (_d, _e, vars) => {
+      qc.invalidateQueries({ queryKey: ["campaign_store_status", vars.campaignId] });
+      // Contagens que dependem do tipo efetivo (painel de status / resumo).
+      qc.invalidateQueries({ queryKey: ["campaign_stats"] });
+      qc.invalidateQueries({ queryKey: ["campaign-summary-kpis"] });
+    },
   });
 }
 

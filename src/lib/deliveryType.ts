@@ -208,3 +208,58 @@ export function parseDeliveryTypeInput(raw: unknown): DeliveryType {
   if (hasI) return "instalacao_apenas";
   return DEFAULT_DELIVERY_TYPE;
 }
+
+// ─── Planejamento de ajustes em lote (prévia "de → para" e desfazer) ─────────
+
+export interface DeliveryPlanStore extends DeliveryStoreLike {
+  name: string;
+}
+
+export interface DeliveryChangeRow {
+  storeId: string;
+  name: string;
+  /** Tipo efetivo antes. */
+  from: DeliveryType;
+  /** Tipo efetivo depois. */
+  to: DeliveryType;
+  /** Ajuste gravado antes (null = seguia o padrão). */
+  fromOverride: DeliveryType | null;
+  /** Ajuste a gravar (null = volta ao padrão). */
+  toOverride: DeliveryType | null;
+}
+
+/**
+ * `target` = tipo escolhido, ou null para "Voltar ao padrão da loja".
+ * Retorna só as lojas em que algo muda (tipo efetivo OU ajuste gravado),
+ * em ordem alfabética.
+ */
+export function planDeliveryChanges(
+  stores: ReadonlyArray<DeliveryPlanStore>,
+  overrides: DeliveryOverrideMap | null | undefined,
+  target: DeliveryType | null,
+): DeliveryChangeRow[] {
+  const rows: DeliveryChangeRow[] = [];
+  const seen = new Set<string>();
+  for (const s of stores) {
+    if (!s?.id || seen.has(s.id)) continue;
+    seen.add(s.id);
+    const fromOverride = overrides?.get(s.id) ?? null;
+    const storeDefault = normalizeDeliveryType(s.tipo_entrega);
+    const from = fromOverride ?? storeDefault;
+    const toOverride = target;
+    const to = toOverride ?? storeDefault;
+    if (fromOverride === toOverride) continue;
+    rows.push({ storeId: s.id, name: s.name, from, to, fromOverride, toOverride });
+  }
+  return rows.sort((a, b) => a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base", numeric: true }));
+}
+
+/** Gravações para aplicar o plano. */
+export function changesToWrites(rows: ReadonlyArray<DeliveryChangeRow>): Array<{ storeId: string; tipo: DeliveryType | null }> {
+  return rows.map((r) => ({ storeId: r.storeId, tipo: r.toOverride }));
+}
+
+/** Gravações para desfazer o plano (cada loja volta ao ajuste anterior ou ao padrão). */
+export function changesToUndoWrites(rows: ReadonlyArray<DeliveryChangeRow>): Array<{ storeId: string; tipo: DeliveryType | null }> {
+  return rows.map((r) => ({ storeId: r.storeId, tipo: r.fromOverride }));
+}

@@ -122,6 +122,11 @@ const StoreFullCardView = ({ clientId, stores, agencyName, clientName, customFie
                             Instalação
                           </span>
                         );
+                        if (tipo === "instalacao_apenas") return (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-700 border border-purple-200 uppercase">
+                            Só Instalação
+                          </span>
+                        );
                         if (tipo === "sem_logistica") return (
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-gray-100 text-gray-600 border border-gray-200 uppercase">
                             Sem Logística

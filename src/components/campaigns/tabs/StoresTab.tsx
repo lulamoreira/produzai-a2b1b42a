@@ -10,7 +10,22 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 import StoreContactsCardView from "@/components/StoreContactsCardView";
-import { useCampaignStoreStatus, useUpsertCampaignStoreStatus } from "@/hooks/useMultiClientData";
+import { useCampaignStoreStatus, useUpsertCampaignStoreStatus, useCampaignDeliveryOverrides } from "@/hooks/useMultiClientData";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  countByDeliveryType,
+  effectiveDeliveryType,
+  normalizeDeliveryType,
+  planDeliveryChanges,
+  DELIVERY_LABELS,
+  type DeliveryType,
+} from "@/lib/deliveryType";
+import { DeliveryTypeBadge } from "@/components/campaigns/stores/DeliveryTypeBadge";
+import { DeliveryTypeMenu } from "@/components/campaigns/stores/DeliveryTypeMenu";
+import { DeliveryFilterChips, type DeliveryFilter } from "@/components/campaigns/stores/DeliveryFilterChips";
+import { DeliveryBulkBar } from "@/components/campaigns/stores/DeliveryBulkBar";
+import { DeliveryBulkPreviewDialog } from "@/components/campaigns/stores/DeliveryBulkPreviewDialog";
+import { useDeliveryEditing } from "@/components/campaigns/stores/useDeliveryEditing";
 import { useStoreContacts, useStoreContactRoles } from "@/hooks/useStoreContacts";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -213,6 +228,14 @@ export default function StoresTab({
   const { data: campaignStoreStatus = [] } = useCampaignStoreStatus(campaignId);
   const upsertStatus = useUpsertCampaignStoreStatus();
 
+  // ─── Logística por campanha (ajuste ?? padrão da loja) ───
+  const { overrides: deliveryOverrides } = useCampaignDeliveryOverrides(campaignId);
+  const { apply: applyDelivery, isSaving: savingDelivery } = useDeliveryEditing(campaignId);
+  const [deliveryFilter, setDeliveryFilter] = useState<DeliveryFilter>("all");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [bulkTarget, setBulkTarget] = useState<DeliveryType | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
+
   const { data: selectedStoreContacts = [] } = useStoreContacts(selectedStore?.id);
   const { data: contactRoles = [] } = useStoreContactRoles(clientId);
 
@@ -298,6 +321,69 @@ export default function StoresTab({
     }
     return result;
   }, [allStores, storeSearch]);
+
+  // Contagem por tipo efetivo (sobre o resultado da busca) e lista após o filtro rápido.
+  const deliveryCounts = useMemo(() => countByDeliveryType(filteredStores, deliveryOverrides), [filteredStores, deliveryOverrides]);
+  const adjustedCount = useMemo(
+    () => filteredStores.filter((s) => deliveryOverrides.has(s.id)).length,
+    [filteredStores, deliveryOverrides],
+  );
+  const visibleStores = useMemo(() => {
+    if (deliveryFilter === "all") return filteredStores;
+    if (deliveryFilter === "adjusted") return filteredStores.filter((s) => deliveryOverrides.has(s.id));
+    return filteredStores.filter((s) => effectiveDeliveryType(s, deliveryOverrides) === deliveryFilter);
+  }, [filteredStores, deliveryFilter, deliveryOverrides]);
+
+  // Seleção só considera lojas ainda existentes na lista do cliente.
+  const selectedStores = useMemo(() => allStores.filter((s) => selectedIds.has(s.id)), [allStores, selectedIds]);
+  const allVisibleSelected = visibleStores.length > 0 && visibleStores.every((s) => selectedIds.has(s.id));
+  const someVisibleSelected = !allVisibleSelected && visibleStores.some((s) => selectedIds.has(s.id));
+
+  const toggleSelectAllVisible = (checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      visibleStores.forEach((s) => (checked ? next.add(s.id) : next.delete(s.id)));
+      return next;
+    });
+  };
+  const toggleSelectOne = (id: string, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
+
+  const bulkRows = useMemo(
+    () => (bulkOpen ? planDeliveryChanges(selectedStores, deliveryOverrides, bulkTarget) : []),
+    [bulkOpen, selectedStores, deliveryOverrides, bulkTarget],
+  );
+
+  const handleSingleDelivery = async (store: any, tipo: DeliveryType | null) => {
+    const rows = planDeliveryChanges([store], deliveryOverrides, tipo);
+    if (rows.length === 0) return;
+    const to = rows[0].to;
+    await applyDelivery(
+      rows,
+      tipo
+        ? `${store.name}: ${DELIVERY_LABELS[to].text} nesta campanha.`
+        : `${store.name} voltou ao padrão da loja (${DELIVERY_LABELS[to].text}).`,
+    );
+  };
+
+  const handleConfirmBulk = async () => {
+    const n = bulkRows.length;
+    const ok = await applyDelivery(
+      bulkRows,
+      bulkTarget
+        ? `Logística nesta campanha: ${DELIVERY_LABELS[bulkTarget].text} em ${n} ${n === 1 ? "loja" : "lojas"}.`
+        : `${n} ${n === 1 ? "loja voltou" : "lojas voltaram"} ao padrão da loja.`,
+    );
+    if (ok) {
+      setBulkOpen(false);
+      setSelectedIds(new Set());
+    }
+  };
 
   const handleToggleStore = async (storeId: string, currentEnabled: boolean) => {
     try {
@@ -404,7 +490,7 @@ export default function StoresTab({
           <Store className="w-5 h-5 text-primary" />
           <h2 className="text-lg font-semibold">{t("modules.stores")}</h2>
           <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
-            {filteredStores.length} registradas
+            {visibleStores.length} registradas
           </span>
         </div>
 
@@ -490,11 +576,41 @@ export default function StoresTab({
         </div>
       </div>
 
+      {storesViewMode === "table" && (
+        <div className="space-y-2 mb-3">
+          <DeliveryFilterChips
+            value={deliveryFilter}
+            onChange={setDeliveryFilter}
+            counts={deliveryCounts}
+            total={filteredStores.length}
+            adjustedCount={adjustedCount}
+          />
+          {canEditCampaignStores && (
+            <DeliveryBulkBar
+              count={selectedStores.length}
+              disabled={savingDelivery}
+              onPick={(tipo) => { setBulkTarget(tipo); setBulkOpen(true); }}
+              onClear={() => setSelectedIds(new Set())}
+            />
+          )}
+        </div>
+      )}
+
       {storesViewMode === "table" ? (
         <Card className="overflow-hidden border-gray-200 dark:border-gray-700">
           <Table className="border-collapse">
             <TableHeader className="bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
               <TableRow className="hover:bg-transparent border-gray-200 dark:border-gray-700">
+                {canEditCampaignStores && (
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allVisibleSelected ? true : someVisibleSelected ? "indeterminate" : false}
+                      onCheckedChange={(v) => toggleSelectAllVisible(v === true)}
+                      aria-label="Selecionar todas as lojas da lista"
+                      disabled={visibleStores.length === 0}
+                    />
+                  </TableHead>
+                )}
                 <TableHead className="text-gray-900 dark:text-gray-100 font-semibold">Loja</TableHead>
                 <TableHead className="text-gray-900 dark:text-gray-100 font-semibold">Cidade/UF</TableHead>
                 <TableHead className="text-gray-900 dark:text-gray-100 font-semibold">Modelo</TableHead>
@@ -502,9 +618,12 @@ export default function StoresTab({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredStores.map((store) => {
+              {visibleStores.map((store) => {
                 const status = campaignStoreStatus.find((s) => s.store_id === store.id);
                 const isEnabled = status ? status.enabled : true;
+                const storeDefault = normalizeDeliveryType(store.tipo_entrega);
+                const effective = effectiveDeliveryType(store, deliveryOverrides);
+                const isOverride = deliveryOverrides.has(store.id);
 
                 return (
                   <TableRow
@@ -514,6 +633,15 @@ export default function StoresTab({
                       !isEnabled && "opacity-60 grayscale-[0.5]"
                     )}
                   >
+                    {canEditCampaignStores && (
+                      <TableCell className="w-10 align-top pt-4">
+                        <Checkbox
+                          checked={selectedIds.has(store.id)}
+                          onCheckedChange={(v) => toggleSelectOne(store.id, v === true)}
+                          aria-label={`Selecionar ${store.name}`}
+                        />
+                      </TableCell>
+                    )}
                     <TableCell className="font-medium text-gray-900 dark:text-gray-100">
                       <div className="flex flex-col gap-1">
                         <span
@@ -529,19 +657,15 @@ export default function StoresTab({
                           </span>
                         )}
                         <div className="flex gap-1 mt-1">
-                          {store.tipo_entrega === "frete_apenas" ? (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-100 text-blue-700 border border-blue-200">
-                              📦 Frete Apenas
-                            </span>
-                          ) : store.tipo_entrega === "sem_logistica" ? (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-700 border border-gray-300">
-                              🏪 Sem Logística
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 border border-emerald-200">
-                              📦🔧 Frete + Instalação
-                            </span>
-                          )}
+                          <DeliveryTypeMenu
+                            storeName={store.name}
+                            type={effective}
+                            storeDefault={storeDefault}
+                            isOverride={isOverride}
+                            canEdit={canEditCampaignStores}
+                            disabled={savingDelivery}
+                            onSelect={(tipo) => handleSingleDelivery(store, tipo)}
+                          />
                         </div>
                       </div>
                     </TableCell>
@@ -563,6 +687,13 @@ export default function StoresTab({
                   </TableRow>
                 );
               })}
+              {visibleStores.length === 0 && (
+                <TableRow>
+                  <TableCell colSpan={canEditCampaignStores ? 5 : 4} className="py-8 text-center text-sm text-muted-foreground">
+                    Nenhuma loja neste filtro.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </Card>
@@ -575,6 +706,16 @@ export default function StoresTab({
           clientName={clientName}
         />
       )}
+
+      <DeliveryBulkPreviewDialog
+        open={bulkOpen}
+        onOpenChange={setBulkOpen}
+        target={bulkTarget}
+        rows={bulkRows}
+        unchangedCount={Math.max(0, selectedStores.length - bulkRows.length)}
+        saving={savingDelivery}
+        onConfirm={handleConfirmBulk}
+      />
 
       <Dialog open={!!selectedStore} onOpenChange={(open) => !open && setSelectedStore(null)}>
         <DialogContent className="max-w-2xl">
@@ -719,18 +860,16 @@ export default function StoresTab({
                   <div className="flex flex-col">
                     <span className="text-[10px] uppercase text-muted-foreground font-bold">Tipo de Entrega</span>
                     <div className="mt-1">
-                      {selectedStore.tipo_entrega === "frete_apenas" ? (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-blue-100 text-blue-700 border border-blue-200">
-                          📦 Frete Apenas
-                        </span>
-                      ) : selectedStore.tipo_entrega === "sem_logistica" ? (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-700 border border-gray-300">
-                          🏪 Sem Logística
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-100 text-emerald-700 border border-emerald-200">
-                          📦🔧 Frete + Instalação
-                        </span>
+                      {/* Tipo EFETIVO nesta campanha (ajuste ?? padrão da loja). */}
+                      <DeliveryTypeBadge
+                        type={effectiveDeliveryType(selectedStore, deliveryOverrides)}
+                        storeDefault={normalizeDeliveryType(selectedStore.tipo_entrega)}
+                        isOverride={deliveryOverrides.has(selectedStore.id)}
+                      />
+                      {deliveryOverrides.has(selectedStore.id) && (
+                        <p className="text-[11px] text-muted-foreground mt-1">
+                          Padrão da loja: {DELIVERY_LABELS[normalizeDeliveryType(selectedStore.tipo_entrega)].text}
+                        </p>
                       )}
                     </div>
                   </div>

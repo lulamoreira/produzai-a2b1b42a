@@ -169,7 +169,7 @@ function DraggableHeaderCell({
                   <Info className="w-3 h-3 text-muted-foreground/70" />
                 </TooltipTrigger>
                 <TooltipContent side="top">
-                  <p className="text-xs">Frete + Instalação ou Frete Apenas</p>
+                  <p className="text-xs">Padrão da loja: Frete + Instalação, Frete Apenas, Só instalação ou Sem logística. Cada campanha pode ajustar na aba Lojas.</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -793,7 +793,8 @@ export default function StoresMatrixTable({
 
                     const CYCLE: Record<string, string> = {
                       frete_instalacao: 'frete_apenas',
-                      frete_apenas: 'sem_logistica',
+                      frete_apenas: 'instalacao_apenas',
+                      instalacao_apenas: 'sem_logistica',
                       sem_logistica: 'frete_instalacao',
                     };
 
@@ -807,6 +808,11 @@ export default function StoresMatrixTable({
                         label: '📦 Frete Apenas',
                         className: 'bg-blue-100 text-blue-700 border-blue-200 hover:bg-blue-200',
                         tooltip: 'Esta loja recebe apenas o material — sem instalação. Clique para alterar.',
+                      },
+                      instalacao_apenas: {
+                        label: '🔧 Só instalação',
+                        className: 'bg-purple-100 text-purple-700 border-purple-200 hover:bg-purple-200',
+                        tooltip: 'Esta loja tem só instalação — sem frete. Clique para alterar.',
                       },
                       sem_logistica: {
                         label: '🏪 Sem Logística',
