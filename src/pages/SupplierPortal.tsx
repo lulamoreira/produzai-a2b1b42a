@@ -763,10 +763,25 @@ const SupplierPortal = () => {
     return map;
   }, [kitsData, displayRows, lineTotals]);
 
+  // Lojas ativas que recebem instalação / frete nesta campanha (tipo efetivo).
+  const activeInstallCount = useMemo(
+    () => storeData.filter(s => !disabledStoreIds.has(s.id) && hasInstallation(normalizeDeliveryType(s.tipo_entrega))).length,
+    [storeData, disabledStoreIds],
+  );
+  const activeFreightCount = useMemo(
+    () => storeData.filter(s => !disabledStoreIds.has(s.id) && hasFreight(normalizeDeliveryType(s.tipo_entrega))).length,
+    [storeData, disabledStoreIds],
+  );
+  // Sem lojas, o campo fica bloqueado e não entra no total.
+  const installationBlocked = storeData.length > 0 && activeInstallCount === 0;
+  const freightBlocked = storeData.length > 0 && activeFreightCount === 0;
+
   const grandTotal = useMemo(() => {
     const itemsTotal = Object.values(lineTotals).reduce((s, v) => s + v, 0);
-    return itemsTotal + (extraCosts.installation_value || 0) + (extraCosts.freight_value || 0) - (extraCosts.discount_value || 0);
-  }, [lineTotals, extraCosts]);
+    const inst = installationBlocked ? 0 : (extraCosts.installation_value || 0);
+    const frt = freightBlocked ? 0 : (extraCosts.freight_value || 0);
+    return itemsTotal + inst + frt - (extraCosts.discount_value || 0);
+  }, [lineTotals, extraCosts, installationBlocked, freightBlocked]);
 
   // ─── Excel download (matches on-screen budget) ─────────
   const handleDownloadExcel = useCallback(async () => {
@@ -1869,7 +1884,7 @@ const SupplierPortal = () => {
                     <span className="text-[11px] font-normal text-muted-foreground">({currencyCode})</span>
                   </label>
                   <div className="flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
-                    {storeData.filter(s => !disabledStoreIds.has(s.id) && hasInstallation(normalizeDeliveryType(s.tipo_entrega))).length} {portal.summaryInstallations}
+                    {activeInstallCount} {portal.summaryInstallations}
                   </div>
                 </div>
                 <div className="relative group">
@@ -1878,9 +1893,9 @@ const SupplierPortal = () => {
                     step="0.01" 
                     min="0" 
                     placeholder={labels.noPrice} 
-                    disabled={isLocked}
+                    disabled={isLocked || installationBlocked}
                     className="h-11 bg-background border-border group-hover:border-primary/30 focus:border-primary transition-all pr-12 font-semibold"
-                    value={extraCosts.installation_value ?? ""}
+                    value={installationBlocked ? "" : (extraCosts.installation_value ?? "")}
                     onFocus={markFilling}
                     onChange={(e) => {
                       const val = e.target.value === "" ? null : parseFloat(e.target.value);
@@ -1901,7 +1916,7 @@ const SupplierPortal = () => {
                     <span className="text-[11px] font-normal text-muted-foreground">({currencyCode})</span>
                   </label>
                   <div className="flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                    {storeData.filter(s => !disabledStoreIds.has(s.id) && hasFreight(normalizeDeliveryType(s.tipo_entrega))).length} {portal.summaryFrete}
+                    {activeFreightCount} {portal.summaryFrete}
                   </div>
                 </div>
                 <div className="relative group">
@@ -1910,9 +1925,9 @@ const SupplierPortal = () => {
                     step="0.01" 
                     min="0" 
                     placeholder={labels.noPrice} 
-                    disabled={isLocked}
+                    disabled={isLocked || freightBlocked}
                     className="h-11 bg-background border-border group-hover:border-primary/30 focus:border-primary transition-all pr-12 font-semibold"
-                    value={extraCosts.freight_value ?? ""}
+                    value={freightBlocked ? "" : (extraCosts.freight_value ?? "")}
                     onFocus={markFilling}
                     onChange={(e) => {
                       const val = e.target.value === "" ? null : parseFloat(e.target.value);
