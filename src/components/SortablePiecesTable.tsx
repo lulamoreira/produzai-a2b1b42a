@@ -25,7 +25,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { GripVertical, Edit3, Trash2, CheckSquare, Package, Palette, Copy, MoreVertical, Flag } from "lucide-react";
+import { GripVertical, Edit3, Trash2, CheckSquare, Package, Palette, Copy, MoreVertical, Flag, Send } from "lucide-react";
 import { describeSupplierChange, type ResolvedSupplierChange } from "@/lib/supplierChangeMarkers";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import PieceImageDropZone from "@/components/PieceImageDropZone";
@@ -113,6 +113,10 @@ interface SortableRowProps {
   supplierChange?: ResolvedSupplierChange;
   /** When set, the ⋮ menu offers "Sinalizar ao fornecedor". */
   onFlagSupplierChange?: (target: SupplierChangeFlagTarget) => void;
+  /** When set, the ⋮ menu offers "Exportar para campanha" (piece). */
+  onExportPiece?: (piece: CampaignPiece) => void;
+  /** When set, the ⋮ menu offers "Exportar kit para campanha". */
+  onExportKit?: (kit: CampaignKit) => void;
 }
 
 function SortableRow({
@@ -120,7 +124,7 @@ function SortableRow({
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit,
   isDistributed, kitCategory, customFieldLabels, visibleColumns,
   selectedPieceIds, onToggleSelection, disableDrag, hasStoreCategory = true, parentKitName,
-  supplierChange, onFlagSupplierChange,
+  supplierChange, onFlagSupplierChange, onExportPiece, onExportKit,
 }: SortableRowProps) {
   const { t } = useTranslation();
   const id = row.type === "piece" ? row.data.id : `kit-${row.data.id}`;
@@ -215,6 +219,11 @@ function SortableRow({
                 {canEditPieces && (
                   <DropdownMenuItem onClick={() => onDuplicateKit(kit)}>
                     <Copy className="w-4 h-4 mr-2" /> {t("pieces.duplicateKit")}
+                  </DropdownMenuItem>
+                )}
+                {canEditPieces && onExportKit && (
+                  <DropdownMenuItem onClick={() => onExportKit(kit)}>
+                    <Send className="w-4 h-4 mr-2" /> Exportar kit para campanha
                   </DropdownMenuItem>
                 )}
                 {canEditPieces && onFlagSupplierChange && (
@@ -410,6 +419,11 @@ function SortableRow({
                   <Copy className="w-4 h-4 mr-2" /> {t("pieces.duplicatePiece")}
                 </DropdownMenuItem>
               )}
+              {canEditPieces && onExportPiece && (
+                <DropdownMenuItem onClick={() => onExportPiece(piece)} disabled={isOptimistic}>
+                  <Send className="w-4 h-4 mr-2" /> Exportar para campanha
+                </DropdownMenuItem>
+              )}
               {canEditPieces && (
                 <DropdownMenuItem onClick={() => onEdit(piece)} disabled={isOptimistic}>
                   <Edit3 className="w-4 h-4 mr-2" /> {t("pieces.editPiece")}
@@ -476,6 +490,8 @@ interface SortablePiecesTableProps {
   /** Supplier change markers keyed by `piece:<id>` / `kit:<id>` (renegotiations only). */
   supplierChangeByItem?: Map<string, ResolvedSupplierChange>;
   onFlagSupplierChange?: (target: SupplierChangeFlagTarget) => void;
+  onExportPiece?: (piece: CampaignPiece) => void;
+  onExportKit?: (kit: CampaignKit) => void;
 }
 
 export default function SortablePiecesTable({
@@ -484,7 +500,7 @@ export default function SortablePiecesTable({
   onEdit, onDelete, onDistribute, onMarkKitOnly, onToggleMockup, onKitClick, onDeleteKit, onToggleKitMockup, onDuplicate, onDuplicateKit, onReorder,
   customFieldLabels, visibleColumns,
   selectedPieceIds, onToggleSelection, onToggleSelectAll, sortByCode = false,
-  supplierChangeByItem, onFlagSupplierChange,
+  supplierChangeByItem, onFlagSupplierChange, onExportPiece, onExportKit,
 }: SortablePiecesTableProps) {
   const { t } = useTranslation();
   const sensors = useSensors(
@@ -661,6 +677,8 @@ export default function SortablePiecesTable({
                     parentKitName={row.type === "piece" ? parentKitNameByPieceId.get(row.data.id) : undefined}
                     supplierChange={supplierChangeByItem?.get(`${row.type}:${row.data.id}`)}
                     onFlagSupplierChange={onFlagSupplierChange}
+                    onExportPiece={onExportPiece}
+                    onExportKit={onExportKit}
                   />
                 );
               })}

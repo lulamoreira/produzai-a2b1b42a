@@ -4,7 +4,7 @@
  * origem é apenas lida; toda gravação acontece no destino.
  */
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Loader2, Send } from "lucide-react";
 import { toast } from "sonner";
@@ -50,6 +50,8 @@ export default function ExportToCampaignDialog({
   request, onClose, agencyId, clientId, sourceCampaign, pieces, kits, kitPieces, pieceLocations, pieceSubLocations,
 }: ExportToCampaignDialogProps) {
   const navigate = useNavigate();
+  const params = useParams<{ agencyId: string }>();
+  const routeAgencyId = agencyId || params.agencyId || "";
   const qc = useQueryClient();
   const open = !!request;
   const [destKind, setDestKind] = useState<"new" | "existing">("new");
@@ -99,7 +101,7 @@ export default function ExportToCampaignDialog({
 
   const openDestination = (id: string) => {
     onClose();
-    navigate(`/agency/${agencyId}/clients/${clientId}/campaigns/${id}?section=pieces`);
+    navigate(`/agency/${routeAgencyId}/clients/${clientId}/campaigns/${id}?section=pieces`);
   };
 
   const handleExport = async () => {

@@ -48,3 +48,6 @@
 
 # Rateio review quick decisions (TÁ CERTO / TÁ ERRADO)
 - [x] Add TÁ CERTO (one-click 'caso' justification with undo) and TÁ ERRADO (correction window opening the store card in edit mode); 6 rule tests passed, preview checked at 1280/375 with saves simulated.
+
+# Exportar para campanha
+- [x] Copy chosen pieces/kits (with kit components, images, missing locations, used custom-field labels) to a new or existing campaign of the same client, placed last with next free codes; origin only read; rollback deletes only destination rows/files. 7 rule tests passed; preview checked at 1280/375 with writes simulated (success, existing destination, failure rollback).

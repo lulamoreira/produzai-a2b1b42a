@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { 
   Plus, Download, Upload, Sparkles, RefreshCw, ArrowDownAZ, MapPin, Copy, 
   Trash2, Search, X, Package, MoreHorizontal, Presentation, Settings2, Columns, CaseSensitive,
-  FileSpreadsheet, ListOrdered, Flag
+  FileSpreadsheet, ListOrdered, Flag, Send
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useSupplierChangeMarkers } from "@/hooks/useSupplierChangeMarkers";
@@ -34,6 +34,7 @@ import SortablePiecesTable, { type UnifiedRow } from "@/components/SortablePiece
 import ExportReportDropdown from "@/components/ExportReportDropdown";
 import { CreateKitDialog, KitDetailDialog } from "@/components/KitDialog";
 import ImportPiecesFromCampaignDialog from "@/components/ImportPiecesFromCampaignDialog";
+import ExportToCampaignDialog, { type ExportToCampaignRequest } from "@/components/ExportToCampaignDialog";
 import BulkDeletePiecesDialog from "@/components/BulkDeletePiecesDialog";
 import ManageLocationsDialog from "@/components/ManageLocationsDialog";
 import { OrderByLocationDialog } from "@/components/OrderByLocationDialog";
@@ -258,6 +259,13 @@ export default function PiecesTab({
   const [customExportOpen, setCustomExportOpen] = useState(false);
   const [changeCaseOpen, setChangeCaseOpen] = useState(false);
   const [selectedPieceIds, setSelectedPieceIds] = useState<string[]>([]);
+  // "Exportar para campanha" (somente cópia; a origem é apenas lida).
+  const [exportRequest, setExportRequest] = useState<ExportToCampaignRequest | null>(null);
+  const [exportDialogKey, setExportDialogKey] = useState(0);
+  const openExport = useCallback((req: ExportToCampaignRequest) => {
+    setExportDialogKey((k) => k + 1);
+    setExportRequest(req);
+  }, []);
   const [convertSelectionDialogOpen, setConvertSelectionDialogOpen] = useState(false);
   const [preSelectedForKit, setPreSelectedForKit] = useState<string[]>([]);
   const [bulkLocationDialogOpen, setBulkLocationDialogOpen] = useState(false);
@@ -1271,6 +1279,12 @@ export default function PiecesTab({
                       <span className="ml-auto text-[10px] text-muted-foreground">{selectedPieceIds.length}</span>
                     )}
                   </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => openExport({ pieceIds: [...selectedPieceIds], kitIds: [] })}
+                    disabled={selectedPieceIds.length === 0}
+                  >
+                    <Send className="w-4 h-4 mr-2" /> Exportar selecionadas para campanha ({selectedPieceIds.length})
+                  </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => setBulkDeleteOpen(true)} className="text-destructive focus:text-destructive">
                     <Trash2 className="w-4 h-4 mr-2" /> {t("pieces.bulkDelete")}
@@ -1363,7 +1377,25 @@ export default function PiecesTab({
         onToggleSelectAll={handleToggleSelectAll}
         supplierChangeByItem={isRenegotiation ? supplierChangeByItem : undefined}
         onFlagSupplierChange={isRenegotiation && canEditPieces ? setSupplierChangeTarget : undefined}
+        onExportPiece={canEditPieces ? (p: any) => openExport({ pieceIds: [p.id], kitIds: [] }) : undefined}
+        onExportKit={canEditPieces ? (kit: any) => openExport({ pieceIds: [], kitIds: [kit.id] }) : undefined}
       />
+
+      {canEditPieces && (
+        <ExportToCampaignDialog
+          key={exportDialogKey}
+          request={exportRequest}
+          onClose={() => setExportRequest(null)}
+          agencyId={agency?.id ?? ""}
+          clientId={clientId}
+          sourceCampaign={{ ...(campaign ?? {}), id: campaignId }}
+          pieces={pieces}
+          kits={kits}
+          kitPieces={kitPieces}
+          pieceLocations={pieceLocations}
+          pieceSubLocations={pieceSubLocations}
+        />
+      )}
 
       {isRenegotiation && (
         <>

@@ -79,10 +79,14 @@ function friendlyError(e: unknown): string {
 
 /** Lê todas as linhas (paginado, count exact, ordem estável por id). */
 async function readAll<T>(table: "campaign_pieces" | "campaign_kits" | "campaign_piece_locations" | "campaign_piece_sub_locations", columns: string, campaignId: string, onlyActive: boolean): Promise<T[]> {
+  type PageResult = { data: T[] | null; error: unknown; count?: number | null };
+  // Cliente sem tipagem só aqui: a união de tabelas estoura a inferência do TS.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const client = supabase as any;
   return supabasePaginate<T>((from, to) => {
-    let q = supabase.from(table).select(columns, { count: "exact" }).eq("campaign_id", campaignId);
+    let q = client.from(table).select(columns, { count: "exact" }).eq("campaign_id", campaignId);
     if (onlyActive) q = q.eq("is_deleted", false);
-    return q.order("id").range(from, to) as unknown as PromiseLike<{ data: T[] | null; error: unknown; count?: number | null }>;
+    return q.order("id").range(from, to) as PromiseLike<PageResult>;
   });
 }
 
