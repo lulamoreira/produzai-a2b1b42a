@@ -1,7 +1,7 @@
 /**
  * "Exportar para campanha": copia peças e kits escolhidos para OUTRA campanha
- * do mesmo cliente (nova ou existente). É somente cópia — a campanha de
- * origem é apenas lida; toda gravação acontece no destino.
+ * do mesmo cliente (nova ou existente), com o rateio. É somente cópia — a
+ * campanha de origem é apenas lida; toda gravação acontece no destino.
  */
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -16,11 +16,15 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { capitalizeName } from "@/lib/utils";
+import { useClientStores } from "@/hooks/useMultiClientData";
 import {
-  customFieldWarnings, customFieldWarningText, exportItemCount, exportSummaryText, resolveExportSelection, usedCustomFields,
+  customFieldWarnings, customFieldWarningText, disabledStoresWithQuantity, exportedRateioRows, exportItemCount,
+  exportSummaryWithRateio, resolveExportSelection, usedCustomFields,
   type ExportSourceKit, type ExportSourceKitPiece, type ExportSourcePiece, type LocationRow, type SubLocationRow,
 } from "@/lib/exportToCampaign";
-import { ExportToCampaignError, runExportToCampaign, type ExportProgress, type ExportRunResult } from "@/lib/exportToCampaignRun";
+import {
+  ExportToCampaignError, readDisabledStoreIds, readStorePieces, runExportToCampaign, type ExportProgress, type ExportRunResult,
+} from "@/lib/exportToCampaignRun";
 import { ExportItemsPreview } from "@/components/exportToCampaign/ExportItemsPreview";
 import { ExportResultView } from "@/components/exportToCampaign/ExportResultView";
 
@@ -69,6 +73,30 @@ export default function ExportToCampaignDialog({
   const itemCount = exportItemCount(selection);
   const sourceLabels = useMemo(() => labelsOf(sourceCampaign), [sourceCampaign]);
   const used = useMemo(() => usedCustomFields(selection.allPieces), [selection]);
+  const exportedPieceIds = useMemo(() => selection.allPieces.map((p) => p.id).sort(), [selection]);
+
+  // Rateio da origem das peças exportadas (somente leitura, paginado).
+  const { data: sourceRateioAll, isError: rateioError } = useQuery({
+    queryKey: ["export_source_rateio", sourceCampaign.id, exportedPieceIds],
+    enabled: open && exportedPieceIds.length > 0,
+    staleTime: 30_000,
+    queryFn: () => readStorePieces(sourceCampaign.id, exportedPieceIds),
+  });
+  const sourceRateio = useMemo(
+    () => (sourceRateioAll ? exportedRateioRows(sourceRateioAll, selection) : null),
+    [sourceRateioAll, selection],
+  );
+
+  // Nomes das lojas do cliente (mesmo cache da campanha).
+  const { data: clientStores = [] } = useClientStores(open ? clientId : undefined);
+  const storeNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const st of clientStores as Array<{ id: string; name?: string | null; nickname?: string | null }>) {
+      m.set(st.id, (st.nickname || st.name || "Loja").trim());
+    }
+    return m;
+  }, [clientStores]);
+  const sourceCodeById = useMemo(() => new Map(pieces.map((p) => [p.id, p.code])), [pieces]);
 
   const { data: campaigns = [], isLoading: loadingCampaigns } = useQuery({
     queryKey: ["client_campaigns_for_import_rpc", clientId, sourceCampaign.id],
@@ -94,10 +122,22 @@ export default function ExportToCampaignDialog({
     },
   });
 
+  // Lojas desativadas no destino existente (o status do destino nunca é alterado).
+  const { data: destDisabled } = useQuery({
+    queryKey: ["export_dest_disabled_stores", destId],
+    enabled: open && destKind === "existing" && !!destId,
+    queryFn: () => readDisabledStoreIds(destId),
+  });
+  const disabledWithQty = destKind === "existing" && destDisabled && sourceRateio
+    ? disabledStoresWithQuantity(sourceRateio, new Set(destDisabled))
+    : [];
+
   const warnings = destKind === "existing" && destLabels ? customFieldWarnings(sourceLabels, destLabels, used) : [];
   const destCampaign = campaigns.find((c) => c.id === destId);
   const destLabel = destKind === "new" ? (newName.trim() ? capitalizeName(newName.trim()) : "nova campanha") : destCampaign?.name ?? "…";
-  const canSubmit = !running && !result && itemCount > 0 && (destKind === "new" ? newName.trim().length > 0 : !!destCampaign);
+  const rateioReady = exportedPieceIds.length === 0 || !!sourceRateio;
+  const canSubmit = !running && !result && itemCount > 0 && rateioReady
+    && (destKind === "new" ? newName.trim().length > 0 : !!destCampaign && !!destDisabled);
 
   const openDestination = (id: string) => {
     onClose();
@@ -121,7 +161,7 @@ export default function ExportToCampaignDialog({
           : { kind: "existing", campaignId: destCampaign!.id, name: destCampaign!.name },
         onProgress: setProgress,
       });
-      for (const key of ["campaign_pieces", "campaign_kits", "campaign_kit_pieces", "campaign_piece_locations", "campaign_piece_sub_locations", "campaign"]) {
+      for (const key of ["campaign_pieces", "campaign_kits", "campaign_kit_pieces", "campaign_store_pieces", "campaign_store_status", "campaign_piece_locations", "campaign_piece_sub_locations", "campaign"]) {
         qc.invalidateQueries({ queryKey: [key, res.campaignId] });
       }
       qc.invalidateQueries({ queryKey: ["campaigns", clientId] });
@@ -152,16 +192,17 @@ export default function ExportToCampaignDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Send className="h-5 w-5" /> Exportar para campanha</DialogTitle>
           <DialogDescription>
-            Copia os itens para outra campanha do mesmo cliente. A campanha atual não é alterada. Rateio e orçamentos não vão junto.
+            Copia os itens e o rateio deles para outra campanha do mesmo cliente. A campanha atual não é alterada. Orçamentos não vão junto.
           </DialogDescription>
         </DialogHeader>
 
         {result ? (
-          <ExportResultView result={result} />
+          <ExportResultView result={result} sourceCodeById={sourceCodeById} storeNameById={storeNameById} />
         ) : (
           <div className="space-y-4">
             <section className="space-y-2">
-              <p className="text-sm font-medium text-foreground">{exportSummaryText(selection)}</p>
+              <p className="text-sm font-medium text-foreground">{exportSummaryWithRateio(selection, sourceRateio)}</p>
+              {rateioError && <p className="text-xs text-destructive">Não foi possível ler o rateio da origem. Feche e abra de novo.</p>}
               {selection.autoKitIds.size > 0 && (
                 <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-2.5">
                   <AlertTriangle className="h-4 w-4 shrink-0 text-warning mt-0.5" aria-hidden />
@@ -171,7 +212,7 @@ export default function ExportToCampaignDialog({
                   </p>
                 </div>
               )}
-              {itemCount > 0 ? <ExportItemsPreview selection={selection} /> : (
+              {itemCount > 0 ? <ExportItemsPreview selection={selection} rateio={sourceRateio} /> : (
                 <p className="text-sm text-muted-foreground">Nenhum item para exportar.</p>
               )}
             </section>
@@ -208,6 +249,19 @@ export default function ExportToCampaignDialog({
                       </Select>
                       {!loadingCampaigns && campaigns.length === 0 && (
                         <p className="text-xs text-muted-foreground">Este cliente não tem outra campanha.</p>
+                      )}
+                      {disabledWithQty.length > 0 && (
+                        <div
+                          className="flex items-start gap-1.5 text-xs text-foreground max-h-28 overflow-y-auto overscroll-contain rounded-md border border-warning/40 bg-warning/10 p-2"
+                          onWheel={(e) => e.stopPropagation()}
+                          onTouchMove={(e) => e.stopPropagation()}
+                        >
+                          <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-warning mt-0.5" aria-hidden />
+                          <p>
+                            {disabledWithQty.length} loja(s) com quantidade estão desativadas na campanha de destino:{" "}
+                            {disabledWithQty.map((id) => storeNameById.get(id) ?? "Loja").sort((x, y) => x.localeCompare(y, "pt-BR")).join(", ")}
+                          </p>
+                        </div>
                       )}
                       {warnings.map((w) => (
                         <p key={w.index} className="flex items-start gap-1.5 text-xs text-foreground">

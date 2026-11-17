@@ -1188,7 +1188,7 @@ export default function PiecesTab({
                     <MoreHorizontal className="w-3.5 h-3.5" /> {t("common.moreActions")}
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuContent align="end" collisionPadding={8} className="w-56 max-h-[var(--radix-dropdown-menu-content-available-height)] overflow-y-auto">
                   {isAdminOrMaster && (
                     <DropdownMenuItem onClick={() => setCustomFieldsOpen(true)}>
                       <Settings2 className="w-4 h-4 mr-2" /> Campos Personalizados

@@ -1,14 +1,17 @@
 import { AlertTriangle, ArrowRight, CheckCircle2 } from "lucide-react";
 import type { ExportRunResult } from "@/lib/exportToCampaignRun";
+import { ExportRateioCheck } from "@/components/exportToCampaign/ExportRateioCheck";
 
 export interface ExportResultViewProps {
   result: ExportRunResult;
+  sourceCodeById: Map<string, number>;
+  storeNameById: Map<string, string>;
 }
 
 const stopScroll = { onWheel: (e: React.WheelEvent) => e.stopPropagation(), onTouchMove: (e: React.TouchEvent) => e.stopPropagation() };
 
 /** Resultado: "Cód. origem → Cód. destino" de cada item e aviso de imagens compartilhadas. */
-export function ExportResultView({ result }: ExportResultViewProps) {
+export function ExportResultView({ result, sourceCodeById, storeNameById }: ExportResultViewProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-start gap-2 rounded-md border border-success/40 bg-success/10 p-3">
@@ -18,6 +21,12 @@ export function ExportResultView({ result }: ExportResultViewProps) {
           {result.createdCampaign ? " (campanha nova)" : ""}.
         </p>
       </div>
+      <ExportRateioCheck check={result.rateioCheck} sourceCodeById={sourceCodeById} storeNameById={storeNameById} />
+      {result.disabledStoresCopied > 0 && (
+        <p className="text-xs text-muted-foreground">
+          {result.disabledStoresCopied} loja(s) desativada(s) na origem também ficaram desativadas na campanha nova.
+        </p>
+      )}
       {result.sharedImages > 0 && (
         <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3">
           <AlertTriangle className="h-4 w-4 shrink-0 text-warning mt-0.5" aria-hidden />

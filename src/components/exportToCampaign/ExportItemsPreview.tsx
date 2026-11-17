@@ -2,18 +2,33 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, Package } from "lucide-react";
 import PieceThumbnail from "@/components/PieceThumbnail";
 import { cn } from "@/lib/utils";
-import type { ExportSelection, ExportSourceKit } from "@/lib/exportToCampaign";
+import {
+  kitRateioTotals, pieceRateioTotals,
+  type ExportSelection, type ExportSourceKit, type RateioTotals, type StorePieceRow,
+} from "@/lib/exportToCampaign";
 
 export interface ExportItemsPreviewProps {
   selection: ExportSelection;
+  /** Rateio da origem das peças exportadas; null enquanto carrega. */
+  rateio: StorePieceRow[] | null;
+}
+
+/** "em L lojas, T un." do item na origem. */
+function RateioTag({ totals }: { totals: RateioTotals | null }) {
+  return (
+    <span className="text-[11px] text-muted-foreground shrink-0 whitespace-nowrap">
+      {totals ? `em ${totals.stores} lojas, ${totals.units} un.` : "rateio…"}
+    </span>
+  );
 }
 
 /** Evita que a rolagem da lista "vaze" para a janela de trás. */
 const stopScroll = { onWheel: (e: React.WheelEvent) => e.stopPropagation(), onTouchMove: (e: React.TouchEvent) => e.stopPropagation() };
 
-function KitRow({ kit, selection }: { kit: ExportSourceKit; selection: ExportSelection }) {
+function KitRow({ kit, selection, rateio }: { kit: ExportSourceKit; selection: ExportSelection; rateio: StorePieceRow[] | null }) {
   const [open, setOpen] = useState(false);
   const comps = selection.componentsByKit.get(kit.id) ?? [];
+  const totals = rateio ? kitRateioTotals(rateio, comps) : null;
   return (
     <li className="py-1.5">
       <button
@@ -26,9 +41,10 @@ function KitRow({ kit, selection }: { kit: ExportSourceKit; selection: ExportSel
         <PieceThumbnail imageUrl={kit.image_url} name={kit.name} size="sm" />
         <span className="text-xs font-bold text-primary shrink-0">Cód. {kit.code}</span>
         <span className="text-sm text-foreground truncate flex-1 min-w-0">{kit.name}</span>
-        <span className="text-[11px] text-muted-foreground shrink-0 flex items-center gap-1">
+        <span className="text-[11px] text-muted-foreground shrink-0 hidden sm:flex items-center gap-1">
           <Package className="h-3 w-3" /> {comps.length} peça(s)
         </span>
+        <RateioTag totals={totals} />
       </button>
       {selection.autoKitIds.has(kit.id) && (
         <p className="ml-6 mt-0.5 text-[11px] text-warning">Incluído porque uma peça deste kit foi selecionada.</p>
@@ -40,7 +56,7 @@ function KitRow({ kit, selection }: { kit: ExportSourceKit; selection: ExportSel
               <PieceThumbnail imageUrl={c.piece.image_thumb_url || c.piece.image_url} name={c.piece.name} size="sm" />
               <span className="text-xs font-semibold text-muted-foreground shrink-0">Cód. {c.piece.code}</span>
               <span className="text-xs text-foreground truncate flex-1 min-w-0">{c.piece.name}</span>
-              <span className="text-xs font-semibold text-foreground shrink-0">{c.quantity}×</span>
+              <span className="text-xs font-semibold text-foreground shrink-0" title="Quantidade no kit">{c.quantity}× no kit</span>
             </li>
           ))}
         </ul>
@@ -50,7 +66,7 @@ function KitRow({ kit, selection }: { kit: ExportSourceKit; selection: ExportSel
 }
 
 /** Lista do que será exportado (peças avulsas e kits com suas peças). */
-export function ExportItemsPreview({ selection }: ExportItemsPreviewProps) {
+export function ExportItemsPreview({ selection, rateio }: ExportItemsPreviewProps) {
   return (
     <ul
       {...stopScroll}
@@ -63,9 +79,10 @@ export function ExportItemsPreview({ selection }: ExportItemsPreviewProps) {
           <PieceThumbnail imageUrl={p.image_thumb_url || p.image_url} name={p.name} size="sm" />
           <span className="text-xs font-bold text-primary shrink-0">Cód. {p.code}</span>
           <span className="text-sm text-foreground truncate flex-1 min-w-0">{p.name}</span>
+          <RateioTag totals={rateio ? pieceRateioTotals(rateio, p.id) : null} />
         </li>
       ))}
-      {selection.kits.map((k) => <KitRow key={k.id} kit={k} selection={selection} />)}
+      {selection.kits.map((k) => <KitRow key={k.id} kit={k} selection={selection} rateio={rateio} />)}
     </ul>
   );
 }

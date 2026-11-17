@@ -114,3 +114,56 @@ describe("copyPieceImage helpers", () => {
     expect(buildExportImagePath("a/b.webp", 3, 100, "zz")).toBe("piece-export-100-3-zz.webp");
   });
 });
+
+import {
+  pieceRateioTotals, kitRateioTotals, rateioSummary, buildDestinationRateioRows, disabledStoresWithQuantity,
+  compareExportedRateio, exportSummaryWithRateio, exportedRateioRows,
+} from "./exportToCampaign";
+
+describe("rateio exportado", () => {
+  const rows = [
+    { store_id: "s1", piece_id: "c1", quantity: 4 },
+    { store_id: "s1", piece_id: "c2", quantity: 3 },
+    { store_id: "s2", piece_id: "c1", quantity: 2 },
+    { store_id: "s2", piece_id: "c2", quantity: 9 },
+    { store_id: "s3", piece_id: "c1", quantity: 0 },
+    { store_id: "s3", piece_id: "a", quantity: 5 },
+    { store_id: "s9", piece_id: "z", quantity: 7 },
+  ];
+
+  it("copia as mesmas lojas e quantidades (inclusive 0) apontando para as peças novas", () => {
+    const sel = resolveExportSelection({ pieceIds: ["a"], kitIds: ["k1"], pieces, kits, kitPieces });
+    const src = exportedRateioRows(rows, sel);
+    expect(src).toHaveLength(6); // a linha da peça "z" não vai
+    const map = new Map([["a", "A"], ["c1", "C1"], ["c2", "C2"]]);
+    const dest = buildDestinationRateioRows(src, map, "dest");
+    expect(dest).toContainEqual({ campaign_id: "dest", store_id: "s3", piece_id: "C1", quantity: 0 });
+    expect(dest).toContainEqual({ campaign_id: "dest", store_id: "s1", piece_id: "C2", quantity: 3 });
+    expect(rateioSummary(src)).toEqual({ quantities: 6, stores: 3, units: 23 });
+    expect(exportSummaryWithRateio(sel, src)).toBe("1 peça(s) avulsa(s) e 1 kit(s) (com 2 peças) · rateio: 6 quantidades em 3 lojas");
+  });
+
+  it("totais por peça e por kit (kit = menor quociente entre as peças)", () => {
+    expect(pieceRateioTotals(rows, "c1")).toEqual({ stores: 2, units: 6 });
+    const sel = resolveExportSelection({ pieceIds: [], kitIds: ["k1"], pieces, kits, kitPieces });
+    // k1: c1×2, c2×3 → s1: min(4/2, 3/3)=1; s2: min(2/2, 9/3)=1; s3: 0
+    expect(kitRateioTotals(rows, sel.componentsByKit.get("k1")!)).toEqual({ stores: 2, units: 2 });
+  });
+
+  it("avisa lojas desativadas no destino só quando recebem quantidade", () => {
+    expect(disabledStoresWithQuantity(rows, new Set(["s3", "s2"])).sort()).toEqual(["s2", "s3"]);
+    expect(disabledStoresWithQuantity([{ store_id: "s3", piece_id: "c1", quantity: 0 }], new Set(["s3"]))).toEqual([]);
+  });
+
+  it("conferência: idêntico ou lista as diferenças por peça e loja", () => {
+    const src = rows.filter((r) => r.piece_id !== "z");
+    const map = new Map([["a", "A"], ["c1", "C1"], ["c2", "C2"]]);
+    const dest = buildDestinationRateioRows(src, map, "d");
+    expect(compareExportedRateio(src, dest, map)).toMatchObject({ identical: true, quantities: 6, units: 23, diffs: [] });
+    const broken = dest.filter((r) => !(r.piece_id === "C2" && r.store_id === "s1")).map((r) => (r.piece_id === "A" ? { ...r, quantity: 4 } : r));
+    const check = compareExportedRateio(src, broken, map);
+    expect(check.identical).toBe(false);
+    expect(check.diffs.find((d) => d.sourcePieceId === "c2")).toMatchObject({ sourceStores: 2, destStores: 1, sourceUnits: 12, destUnits: 9, stores: [{ storeId: "s1", expected: 3, actual: null }] });
+    expect(check.diffs.find((d) => d.sourcePieceId === "a")!.stores).toEqual([{ storeId: "s3", expected: 5, actual: 4 }]);
+  });
+});

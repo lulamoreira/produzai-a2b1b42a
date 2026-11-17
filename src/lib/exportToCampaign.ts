@@ -350,3 +350,170 @@ export function exportSummaryText(selection: ExportSelection): string {
 export function exportItemCount(selection: ExportSelection): number {
   return selection.standalonePieces.length + selection.kits.length;
 }
+
+// ─── Rateio (campaign_store_pieces) ───────────────────────────────────────────
+
+export interface StorePieceRow {
+  store_id: string;
+  piece_id: string;
+  quantity: number;
+}
+
+export interface RateioTotals {
+  /** Lojas com quantidade > 0. */
+  stores: number;
+  /** Soma das unidades. */
+  units: number;
+}
+
+/** Totais do rateio de uma peça na origem ("em L lojas, T un."). */
+export function pieceRateioTotals(rows: StorePieceRow[], pieceId: string): RateioTotals {
+  let stores = 0;
+  let units = 0;
+  for (const r of rows) {
+    if (r.piece_id !== pieceId) continue;
+    const q = Number(r.quantity) || 0;
+    if (q > 0) stores++;
+    units += q;
+  }
+  return { stores, units };
+}
+
+/**
+ * Totais de um kit: em cada loja, nº de kits = menor quociente
+ * floor(qtd da peça ÷ qtd no kit) entre as peças do kit (mesma regra do Rateio).
+ */
+export function kitRateioTotals(rows: StorePieceRow[], components: ExportKitComponent[]): RateioTotals {
+  const links = components.filter((c) => c.quantity > 0);
+  if (links.length === 0) return { stores: 0, units: 0 };
+  const qty = new Map(rows.map((r) => [`${r.store_id}|${r.piece_id}`, Number(r.quantity) || 0]));
+  const storeIds = new Set(rows.filter((r) => links.some((l) => l.piece.id === r.piece_id)).map((r) => r.store_id));
+  let stores = 0;
+  let units = 0;
+  for (const storeId of storeIds) {
+    const kits = Math.min(...links.map((l) => Math.floor(Math.max(0, qty.get(`${storeId}|${l.piece.id}`) ?? 0) / l.quantity)));
+    if (kits > 0) { stores++; units += kits; }
+  }
+  return { stores, units };
+}
+
+export interface RateioSummary {
+  /** Linhas do rateio que serão copiadas (inclui quantidade 0). */
+  quantities: number;
+  /** Lojas distintas com alguma quantidade > 0. */
+  stores: number;
+  /** Soma de unidades. */
+  units: number;
+}
+
+export function rateioSummary(rows: StorePieceRow[]): RateioSummary {
+  const stores = new Set<string>();
+  let units = 0;
+  for (const r of rows) {
+    const q = Number(r.quantity) || 0;
+    if (q > 0) stores.add(r.store_id);
+    units += q;
+  }
+  return { quantities: rows.length, stores: stores.size, units };
+}
+
+/** Só as linhas do rateio das peças exportadas (avulsas e de kit). */
+export function exportedRateioRows(rows: StorePieceRow[], selection: ExportSelection): StorePieceRow[] {
+  const ids = new Set(selection.allPieces.map((p) => p.id));
+  return rows.filter((r) => ids.has(r.piece_id));
+}
+
+/** Linhas novas do rateio no destino: mesma loja, mesma quantidade, peça nova. */
+export function buildDestinationRateioRows(
+  sourceRows: StorePieceRow[],
+  newPieceIdBySource: Map<string, string>,
+  destCampaignId: string,
+): Array<StorePieceRow & { campaign_id: string }> {
+  const out: Array<StorePieceRow & { campaign_id: string }> = [];
+  for (const r of sourceRows) {
+    const pieceId = newPieceIdBySource.get(r.piece_id);
+    if (!pieceId) continue;
+    out.push({ campaign_id: destCampaignId, store_id: r.store_id, piece_id: pieceId, quantity: Number(r.quantity) || 0 });
+  }
+  return out;
+}
+
+/** Lojas desativadas no destino que receberiam alguma quantidade > 0. */
+export function disabledStoresWithQuantity(rows: StorePieceRow[], disabledStoreIds: Set<string>): string[] {
+  const out = new Set<string>();
+  for (const r of rows) if ((Number(r.quantity) || 0) > 0 && disabledStoreIds.has(r.store_id)) out.add(r.store_id);
+  return [...out];
+}
+
+export interface RateioPieceDiff {
+  sourcePieceId: string;
+  sourceStores: number;
+  destStores: number;
+  sourceUnits: number;
+  destUnits: number;
+  /** Lojas com quantidade diferente (null = linha ausente). */
+  stores: Array<{ storeId: string; expected: number | null; actual: number | null }>;
+}
+
+export interface RateioCheck {
+  identical: boolean;
+  quantities: number;
+  units: number;
+  diffs: RateioPieceDiff[];
+}
+
+/**
+ * Conferência: compara, peça a peça, o rateio relido do destino com o da
+ * origem (nº de lojas, soma de unidades e a quantidade de cada loja).
+ */
+export function compareExportedRateio(
+  sourceRows: StorePieceRow[],
+  destRows: StorePieceRow[],
+  newPieceIdBySource: Map<string, string>,
+): RateioCheck {
+  const sourceIdByNew = new Map([...newPieceIdBySource].map(([src, dst]) => [dst, src]));
+  const bySource = new Map<string, Map<string, number>>();
+  const byDest = new Map<string, Map<string, number>>();
+  const add = (m: Map<string, Map<string, number>>, piece: string, store: string, q: number) => {
+    const inner = m.get(piece) ?? new Map<string, number>();
+    inner.set(store, q);
+    m.set(piece, inner);
+  };
+  for (const r of sourceRows) if (newPieceIdBySource.has(r.piece_id)) add(bySource, r.piece_id, r.store_id, Number(r.quantity) || 0);
+  for (const r of destRows) {
+    const src = sourceIdByNew.get(r.piece_id);
+    if (src) add(byDest, src, r.store_id, Number(r.quantity) || 0);
+  }
+
+  const totals = (m?: Map<string, number>) => {
+    let stores = 0; let units = 0;
+    for (const q of m?.values() ?? []) { if (q > 0) stores++; units += q; }
+    return { stores, units };
+  };
+
+  const diffs: RateioPieceDiff[] = [];
+  for (const pieceId of new Set([...bySource.keys(), ...byDest.keys()])) {
+    const s = bySource.get(pieceId) ?? new Map<string, number>();
+    const d = byDest.get(pieceId) ?? new Map<string, number>();
+    const stores: RateioPieceDiff["stores"] = [];
+    for (const storeId of new Set([...s.keys(), ...d.keys()])) {
+      const expected = s.has(storeId) ? s.get(storeId)! : null;
+      const actual = d.has(storeId) ? d.get(storeId)! : null;
+      if (expected !== actual) stores.push({ storeId, expected, actual });
+    }
+    if (stores.length > 0) {
+      const st = totals(s); const dt = totals(d);
+      diffs.push({ sourcePieceId: pieceId, sourceStores: st.stores, destStores: dt.stores, sourceUnits: st.units, destUnits: dt.units, stores });
+    }
+  }
+  const summary = rateioSummary(sourceRows.filter((r) => newPieceIdBySource.has(r.piece_id)));
+  return { identical: diffs.length === 0, quantities: summary.quantities, units: summary.units, diffs };
+}
+
+/** "N peça(s) avulsa(s) e K kit(s) (com X peças) · rateio: C quantidades em L lojas". */
+export function exportSummaryWithRateio(selection: ExportSelection, rows: StorePieceRow[] | null): string {
+  const base = exportSummaryText(selection);
+  if (!rows) return base;
+  const s = rateioSummary(rows);
+  return `${base} · rateio: ${s.quantities} quantidades em ${s.stores} lojas`;
+}

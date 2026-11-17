@@ -1,24 +1,32 @@
 /**
  * Execução do "Exportar para campanha".
  *
- * REGRA ABSOLUTA: a campanha de origem é somente LIDA (os dados chegam já
- * carregados da aba Peças). Toda escrita aqui acontece no DESTINO, e o
- * desfazer apaga apenas o que esta operação criou no destino.
+ * REGRA ABSOLUTA: a campanha de origem é somente LIDA (peças/kits chegam já
+ * carregados da aba Peças; rateio e status de lojas são lidos aqui, só com
+ * SELECT). Toda escrita acontece no DESTINO, e o desfazer apaga apenas o que
+ * esta operação criou no destino.
  *
  * Ordem: (1) campanha nova, se for o caso; (2) cópia das imagens;
- * (3) locais que faltam no destino; (4) peças; (5) kits e kit_pieces.
+ * (3) locais que faltam no destino; (4) peças; (5) kits e kit_pieces;
+ * (6) rateio em lotes de até 500; (7) em campanha nova, lojas desativadas.
+ * Ao fim, o rateio do destino é relido e conferido com o da origem.
  */
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { copyPieceImage, removeCopiedPieceImages, type PieceImageCopyResult } from "@/lib/copyPieceImage";
 import {
+  buildDestinationRateioRows,
   buildExportPlan,
+  compareExportedRateio,
+  exportedRateioRows,
   labelsForNewCampaign,
   missingDestinationLocations,
   usedCustomFields,
   type ExportCodeRow,
   type ExportSelection,
   type LocationRow,
+  type RateioCheck,
+  type StorePieceRow,
   type SubLocationRow,
 } from "@/lib/exportToCampaign";
 
@@ -50,6 +58,11 @@ export interface ExportRunResult {
   codeRows: ExportCodeRow[];
   sharedImages: number;
   itemCount: number;
+  /** Conferência do rateio relido do destino contra a origem. */
+  rateioCheck: RateioCheck;
+  /** Peça de origem → peça nova (para mostrar códigos nas diferenças). */
+  newPieceIdBySource: Map<string, string>;
+  disabledStoresCopied: number;
 }
 
 export class ExportToCampaignError extends Error {
@@ -60,6 +73,8 @@ export class ExportToCampaignError extends Error {
 }
 
 const CHUNK = 200;
+const RATEIO_CHUNK = 500;
+const PIECE_ID_CHUNK = 50;
 const DELETE_CHUNK = 100;
 const IMAGE_CONCURRENCY = 4;
 
@@ -72,7 +87,7 @@ function chunks<T>(list: T[], size: number): T[][] {
 function friendlyError(e: unknown): string {
   const msg = e instanceof Error ? e.message : typeof e === "object" && e && "message" in e ? String((e as { message: unknown }).message) : String(e);
   if (/row-level security|permission denied|violates row-level/i.test(msg)) {
-    return "Você não tem permissão para incluir peças, kits ou locais na campanha de destino.";
+    return "Você não tem permissão para incluir peças, kits, rateio, locais ou status de lojas na campanha de destino.";
   }
   return msg;
 }
@@ -90,6 +105,44 @@ async function readAll<T>(table: "campaign_pieces" | "campaign_kits" | "campaign
   });
 }
 
+/**
+ * Rateio (campaign_store_pieces) de uma lista de peças de uma campanha.
+ * Somente leitura; paginado com count exact + ordem por id, em blocos de peças.
+ */
+export async function readStorePieces(campaignId: string, pieceIds: string[]): Promise<StorePieceRow[]> {
+  const out: StorePieceRow[] = [];
+  const parts = chunks([...new Set(pieceIds)], PIECE_ID_CHUNK);
+  for (let i = 0; i < parts.length; i += 4) {
+    const pages = await Promise.all(parts.slice(i, i + 4).map((ids) =>
+      supabasePaginate<StorePieceRow & { id: string }>((from, to) =>
+        supabase
+          .from("campaign_store_pieces")
+          .select("id, store_id, piece_id, quantity", { count: "exact" })
+          .eq("campaign_id", campaignId)
+          .in("piece_id", ids)
+          .order("id")
+          .range(from, to),
+      ),
+    ));
+    for (const rows of pages) for (const r of rows) out.push({ store_id: r.store_id, piece_id: r.piece_id, quantity: r.quantity });
+  }
+  return out;
+}
+
+/** Lojas desativadas (campaign_store_status.enabled = false) de uma campanha. Somente leitura. */
+export async function readDisabledStoreIds(campaignId: string): Promise<string[]> {
+  const rows = await supabasePaginate<{ id: string; store_id: string }>((from, to) =>
+    supabase
+      .from("campaign_store_status")
+      .select("id, store_id", { count: "exact" })
+      .eq("campaign_id", campaignId)
+      .eq("enabled", false)
+      .order("id")
+      .range(from, to),
+  );
+  return rows.map((r) => r.store_id);
+}
+
 export async function runExportToCampaign(input: ExportRunInput): Promise<ExportRunResult> {
   const { selection, destination, onProgress } = input;
   if (destination.kind === "existing" && destination.campaignId === input.sourceCampaignId) {
@@ -105,6 +158,9 @@ export async function runExportToCampaign(input: ExportRunInput): Promise<Export
     pieceIds: [] as string[],
     kitIds: [] as string[],
     kitPieceIds: [] as string[],
+    rateioInserted: false,
+    storeStatusIds: [] as string[],
+    destId: "",
   };
 
   let destId = destination.kind === "existing" ? destination.campaignId : "";
@@ -126,6 +182,7 @@ export async function runExportToCampaign(input: ExportRunInput): Promise<Export
       destName = data.name;
     }
 
+    created.destId = destId;
     // Leitura do destino (códigos, posições e locais já existentes).
     onProgress?.({ label: "Lendo a campanha de destino…" });
     const [destPieces, destKits, destLocations, destSubs] = await Promise.all([
@@ -301,6 +358,45 @@ export async function runExportToCampaign(input: ExportRunInput): Promise<Export
       }
     }
 
+    // (6) Rateio exatamente igual: mesmas lojas e quantidades (inclusive 0), peças novas.
+    onProgress?.({ label: "Lendo o rateio da origem…" });
+    const sourceRateio = exportedRateioRows(
+      await readStorePieces(input.sourceCampaignId, selection.allPieces.map((p) => p.id)),
+      selection,
+    );
+    const rateioRows = buildDestinationRateioRows(sourceRateio, newPieceIdBySource, destId);
+    let insertedRateio = 0;
+    for (const part of chunks(rateioRows, RATEIO_CHUNK)) {
+      onProgress?.({ label: "Copiando o rateio…", done: insertedRateio, total: rateioRows.length });
+      created.rateioInserted = true;
+      const { error } = await supabase.from("campaign_store_pieces").insert(part);
+      if (error) throw error;
+      insertedRateio += part.length;
+    }
+
+    // (7) Campanha nova: leva as lojas desativadas na origem, para o rateio ficar igual.
+    let disabledStoresCopied = 0;
+    if (destination.kind === "new") {
+      const disabled = await readDisabledStoreIds(input.sourceCampaignId);
+      if (disabled.length > 0) {
+        onProgress?.({ label: "Copiando lojas desativadas…" });
+        for (const part of chunks(disabled, CHUNK)) {
+          const { data, error } = await supabase
+            .from("campaign_store_status")
+            .insert(part.map((store_id) => ({ campaign_id: destId, store_id, enabled: false })))
+            .select("id");
+          if (error) throw error;
+          for (const row of data ?? []) created.storeStatusIds.push(row.id);
+        }
+        disabledStoresCopied = disabled.length;
+      }
+    }
+
+    // Conferência: relê do banco o rateio das peças novas e compara com a origem.
+    onProgress?.({ label: "Conferindo o rateio…" });
+    const destRateio = await readStorePieces(destId, [...newPieceIdBySource.values()]);
+    const rateioCheck = compareExportedRateio(sourceRateio, destRateio, newPieceIdBySource);
+
     return {
       campaignId: destId,
       campaignName: destName,
@@ -308,6 +404,9 @@ export async function runExportToCampaign(input: ExportRunInput): Promise<Export
       codeRows: plan.codeRows,
       sharedImages,
       itemCount: selection.standalonePieces.length + selection.kits.length,
+      rateioCheck,
+      newPieceIdBySource,
+      disabledStoresCopied,
     };
   } catch (e) {
     onProgress?.({ label: "Desfazendo o que foi criado no destino…" });
@@ -329,10 +428,13 @@ async function rollbackDestination(created: {
   pieceIds: string[];
   kitIds: string[];
   kitPieceIds: string[];
+  rateioInserted: boolean;
+  storeStatusIds: string[];
+  destId: string;
 }): Promise<string[]> {
   const problems: string[] = [];
   const del = async (
-    table: "campaign_kit_pieces" | "campaign_kits" | "campaign_pieces" | "campaign_piece_sub_locations" | "campaign_piece_locations" | "campaigns",
+    table: "campaign_store_status" | "campaign_kit_pieces" | "campaign_kits" | "campaign_pieces" | "campaign_piece_sub_locations" | "campaign_piece_locations" | "campaigns",
     ids: string[],
     label: string,
   ) => {
@@ -345,6 +447,14 @@ async function rollbackDestination(created: {
     if (removed < ids.length) problems.push(`${ids.length - removed} ${label} sem permissão para apagar`);
   };
 
+  // Rateio inserido: só linhas do DESTINO que apontam para as peças novas.
+  if (created.rateioInserted && created.destId && created.pieceIds.length > 0) {
+    for (const part of chunks(created.pieceIds, DELETE_CHUNK)) {
+      const { error } = await supabase.from("campaign_store_pieces").delete().eq("campaign_id", created.destId).in("piece_id", part);
+      if (error) { problems.push(`rateio copiado (${error.message})`); break; }
+    }
+  }
+  await del("campaign_store_status", created.storeStatusIds, "status de loja");
   await del("campaign_kit_pieces", created.kitPieceIds, "vínculo(s) de kit");
   await del("campaign_kits", created.kitIds, "kit(s)");
   await del("campaign_pieces", created.pieceIds, "peça(s)");
