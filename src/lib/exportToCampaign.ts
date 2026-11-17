@@ -153,18 +153,38 @@ export function resolveExportSelection(input: {
   };
 }
 
-/** Próximos códigos livres (começando em 1), na quantidade pedida. */
+/**
+ * Próximos códigos da numeração compartilhada (peças + kits), sempre DEPOIS
+ * do maior código já usado — nunca preenche buracos no meio. Destino vazio
+ * começa em 1.
+ */
 export function nextFreeCodes(used: Iterable<number>, count: number): number[] {
-  const taken = new Set<number>();
-  for (const c of used) if (Number.isFinite(c)) taken.add(Number(c));
-  const out: number[] = [];
-  let next = 1;
-  while (out.length < count) {
-    while (taken.has(next)) next++;
-    out.push(next);
-    taken.add(next);
+  let max = 0;
+  for (const c of used) {
+    const n = Number(c);
+    if (Number.isFinite(n) && n > max) max = n;
   }
-  return out;
+  return Array.from({ length: Math.max(0, count) }, (_, i) => max + 1 + i);
+}
+
+/** Códigos novos que já existem em peças OU kits do destino (deve ser vazio). */
+export function codeCollisions(
+  plan: Pick<ExportPlan, "pieceCode" | "kitCode">,
+  destCodes: Iterable<number>,
+): number[] {
+  const taken = new Set<number>();
+  for (const c of destCodes) if (Number.isFinite(Number(c))) taken.add(Number(c));
+  const out = new Set<number>();
+  const seen = new Set<number>();
+  for (const c of [...plan.pieceCode.values(), ...plan.kitCode.values()]) {
+    if (taken.has(c) || seen.has(c)) out.add(c);
+    seen.add(c);
+  }
+  return [...out].sort((a, b) => a - b);
+}
+
+export function codeCollisionMessage(codes: number[]): string {
+  return `Os código(s) ${codes.join(", ")} já existem em peças ou kits da campanha de destino. A exportação foi cancelada; tente de novo`;
 }
 
 export interface ExportCodeRow {
@@ -184,10 +204,15 @@ export interface ExportPlan {
 }
 
 /**
- * Códigos: próximo livre do destino (peças e kits separados), na ordem de
- * código da origem. Posição: sempre no fim — peças depois do maior
- * display_order (< 10000) do destino, kits depois do maior display_order dos
- * kits do destino, mantendo a ordem relativa da origem.
+ * Códigos: UMA sequência compartilhada por peças e kits (como no AddPieceDialog),
+ * começando em (maior código entre peças e kits não excluídos do destino) + 1.
+ * Itens na ordem da origem (código compartilhado da origem): peça avulsa
+ * recebe o próximo código; kit recebe o próximo e, logo em seguida, as peças
+ * dele na ordem de campaign_kit_pieces.display_order. Uma peça em dois kits
+ * recebe código só uma vez (no primeiro kit).
+ * Posição: sempre no fim — peças depois do maior display_order (< 10000) do
+ * destino, kits depois do maior display_order dos kits do destino, mantendo a
+ * ordem relativa da origem.
  */
 export function buildExportPlan(input: {
   selection: ExportSelection;
@@ -195,13 +220,36 @@ export function buildExportPlan(input: {
   destKits: Array<{ code: number; display_order: number }>;
 }): ExportPlan {
   const { selection } = input;
-  const piecesByCode = selection.allPieces.slice().sort(byCodeThenOrder);
-  const kitsByCode = selection.kits.slice().sort(byCodeThenOrder);
 
-  const pieceCodes = nextFreeCodes(input.destPieces.map((p) => p.code), piecesByCode.length);
-  const kitCodes = nextFreeCodes(input.destKits.map((k) => k.code), kitsByCode.length);
-  const pieceCode = new Map(piecesByCode.map((p, i) => [p.id, pieceCodes[i]]));
-  const kitCode = new Map(kitsByCode.map((k, i) => [k.id, kitCodes[i]]));
+  type Top = { kind: "piece"; item: ExportSourcePiece } | { kind: "kit"; item: ExportSourceKit };
+  const top: Top[] = [
+    ...selection.standalonePieces.map((item) => ({ kind: "piece" as const, item })),
+    ...selection.kits.map((item) => ({ kind: "kit" as const, item })),
+  ].sort((a, b) => byCodeThenOrder(a.item, b.item) || (a.kind === b.kind ? 0 : a.kind === "kit" ? -1 : 1));
+
+  const codes = nextFreeCodes(
+    [...input.destPieces.map((p) => p.code), ...input.destKits.map((k) => k.code)],
+    selection.allPieces.length + selection.kits.length,
+  );
+  let cursor = 0;
+  const pieceCode = new Map<string, number>();
+  const kitCode = new Map<string, number>();
+  const codeRows: ExportCodeRow[] = [];
+  const givePiece = (p: ExportSourcePiece) => {
+    if (pieceCode.has(p.id)) return;
+    const c = codes[cursor++];
+    pieceCode.set(p.id, c);
+    codeRows.push({ kind: "piece", name: p.name, sourceCode: p.code, destCode: c, kitOnly: !!p.kit_only });
+  };
+  for (const t of top) {
+    if (t.kind === "piece") { givePiece(t.item); continue; }
+    const c = codes[cursor++];
+    kitCode.set(t.item.id, c);
+    codeRows.push({ kind: "kit", name: t.item.name, sourceCode: t.item.code, destCode: c, kitOnly: false });
+    for (const comp of selection.componentsByKit.get(t.item.id) ?? []) givePiece(comp.piece);
+  }
+  // Segurança: qualquer peça que não passou acima (não deveria acontecer).
+  for (const p of selection.allPieces) givePiece(p);
 
   const pieceOrders = input.destPieces.map((p) => Number(p.display_order ?? 0)).filter((o) => o < PIECE_ORDER_LIMIT);
   const maxPiece = pieceOrders.length ? Math.max(...pieceOrders) : -1;
@@ -210,15 +258,6 @@ export function buildExportPlan(input: {
 
   const pieceOrder = new Map(selection.allPieces.map((p, i) => [p.id, maxPiece + 1 + i]));
   const kitOrder = new Map(selection.kits.map((k, i) => [k.id, maxKit + 1 + i]));
-
-  const codeRows: ExportCodeRow[] = [
-    ...selection.allPieces.slice().sort(byCodeThenOrder).map((p) => ({
-      kind: "piece" as const, name: p.name, sourceCode: p.code, destCode: pieceCode.get(p.id)!, kitOnly: !!p.kit_only,
-    })),
-    ...kitsByCode.map((k) => ({
-      kind: "kit" as const, name: k.name, sourceCode: k.code, destCode: kitCode.get(k.id)!, kitOnly: false,
-    })),
-  ];
 
   return { pieceCode, pieceOrder, kitCode, kitOrder, codeRows };
 }

@@ -17,6 +17,8 @@ import { copyPieceImage, removeCopiedPieceImages, type PieceImageCopyResult } fr
 import {
   buildDestinationRateioRows,
   buildExportPlan,
+  codeCollisions,
+  codeCollisionMessage,
   compareExportedRateio,
   exportedRateioRows,
   labelsForNewCampaign,
@@ -192,6 +194,8 @@ export async function runExportToCampaign(input: ExportRunInput): Promise<Export
       readAll<SubLocationRow>("campaign_piece_sub_locations", "id, location_id, name", destId, false),
     ]);
     const plan = buildExportPlan({ selection, destPieces, destKits });
+    const collisions = codeCollisions(plan, [...destPieces.map((p) => p.code), ...destKits.map((k) => k.code)]);
+    if (collisions.length > 0) throw new Error(codeCollisionMessage(collisions));
 
     // (2) Imagens: uma cópia por URL distinta dentro do mesmo item.
     type ImageJob = { key: string; url: string };
@@ -296,6 +300,15 @@ export async function runExportToCampaign(input: ExportRunInput): Promise<Export
         image_report_url: newUrl(key, p.image_report_url),
       };
     });
+    // Conferência final antes de inserir: códigos do destino relidos agora.
+    {
+      const [freshPieces, freshKits] = await Promise.all([
+        readAll<{ id: string; code: number }>("campaign_pieces", "id, code", destId, true),
+        readAll<{ id: string; code: number }>("campaign_kits", "id, code", destId, true),
+      ]);
+      const fresh = codeCollisions(plan, [...freshPieces.map((p) => p.code), ...freshKits.map((k) => k.code)]);
+      if (fresh.length > 0) throw new Error(codeCollisionMessage(fresh));
+    }
     const sourceIdByCode = new Map(selection.allPieces.map((p) => [plan.pieceCode.get(p.id)!, p.id]));
     const newPieceIdBySource = new Map<string, string>();
     let insertedPieces = 0;

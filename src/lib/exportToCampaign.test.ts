@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
-  resolveExportSelection, buildExportPlan, nextFreeCodes, usedCustomFields, labelsForNewCampaign,
+  resolveExportSelection, buildExportPlan, nextFreeCodes, codeCollisions, usedCustomFields, labelsForNewCampaign,
   customFieldWarnings, customFieldWarningText, missingDestinationLocations, exportSummaryText, exportItemCount,
   type ExportSourcePiece, type ExportSourceKit, type ExportSourceKitPiece,
 } from "./exportToCampaign";
@@ -42,34 +42,46 @@ describe("resolveExportSelection", () => {
 });
 
 describe("buildExportPlan", () => {
-  it("códigos livres do destino na ordem de código e posição no fim", () => {
+  it("uma numeração só para peças e kits, depois do maior código do destino", () => {
     const sel = resolveExportSelection({ pieceIds: ["d", "b", "a"], kitIds: ["k1"], pieces, kits, kitPieces });
     const plan = buildExportPlan({
       selection: sel,
       destPieces: [{ code: 1, display_order: 0 }, { code: 3, display_order: 40 }, { code: 9, display_order: 12000 }],
-      destKits: [{ code: 1, display_order: 41 }],
+      destKits: [{ code: 12, display_order: 41 }],
     });
-    // códigos livres: 2, 4, 5, 6, 7 — atribuídos por código de origem (a=1, b=2, d=3, c1=7, c2=8)
-    expect(plan.pieceCode.get("a")).toBe(2);
-    expect(plan.pieceCode.get("b")).toBe(4);
-    expect(plan.pieceCode.get("d")).toBe(5);
-    expect(plan.pieceCode.get("c1")).toBe(6);
-    expect(plan.pieceCode.get("c2")).toBe(7);
-    // posições: depois do maior display_order < 10000 (40), na ordem da origem
+    // maior código entre peças E kits = 12; ordem da origem: a(1), b(2), d(3), k1(4) → c1, c2
+    expect(plan.pieceCode.get("a")).toBe(13);
+    expect(plan.pieceCode.get("b")).toBe(14);
+    expect(plan.pieceCode.get("d")).toBe(15);
+    expect(plan.kitCode.get("k1")).toBe(16);
+    expect(plan.pieceCode.get("c1")).toBe(17);
+    expect(plan.pieceCode.get("c2")).toBe(18);
+    expect(plan.codeRows.map((r) => [r.sourceCode, r.destCode])).toEqual([[1, 13], [2, 14], [3, 15], [4, 16], [7, 17], [8, 18]]);
     expect(["a", "b", "d", "c1", "c2"].map((id) => plan.pieceOrder.get(id))).toEqual([41, 42, 43, 44, 45]);
-    expect(plan.kitCode.get("k1")).toBe(2);
     expect(plan.kitOrder.get("k1")).toBe(42);
-    expect(plan.codeRows.find((r) => r.kind === "kit")).toMatchObject({ sourceCode: 4, destCode: 2 });
   });
 
-  it("campanha nova começa do início", () => {
-    const sel = resolveExportSelection({ pieceIds: ["b"], kitIds: ["k1"], pieces, kits, kitPieces });
+  it("não preenche buracos no meio", () => {
+    const sel = resolveExportSelection({ pieceIds: ["a"], kitIds: [], pieces, kits, kitPieces });
+    const plan = buildExportPlan({ selection: sel, destPieces: [{ code: 1, display_order: 0 }, { code: 10, display_order: 1 }], destKits: [{ code: 4, display_order: 0 }] });
+    expect(plan.pieceCode.get("a")).toBe(11);
+    expect(nextFreeCodes([1, 2, 4], 3)).toEqual([5, 6, 7]);
+  });
+
+  it("kit recebe o código e logo depois as peças dele na ordem do kit", () => {
+    const sel = resolveExportSelection({ pieceIds: [], kitIds: ["k1"], pieces, kits, kitPieces });
     const plan = buildExportPlan({ selection: sel, destPieces: [], destKits: [] });
-    expect(plan.pieceCode.get("b")).toBe(1);
-    expect(plan.pieceOrder.get("b")).toBe(0);
     expect(plan.kitCode.get("k1")).toBe(1);
+    expect(plan.pieceCode.get("c1")).toBe(2);
+    expect(plan.pieceCode.get("c2")).toBe(3);
     expect(plan.kitOrder.get("k1")).toBe(0);
-    expect(nextFreeCodes([1, 2, 4], 3)).toEqual([3, 5, 6]);
+  });
+
+  it("detecta código novo que já existe em peça ou kit do destino", () => {
+    const sel = resolveExportSelection({ pieceIds: ["b"], kitIds: [], pieces, kits, kitPieces });
+    const plan = buildExportPlan({ selection: sel, destPieces: [], destKits: [] });
+    expect(codeCollisions(plan, [5])).toEqual([]);
+    expect(codeCollisions(plan, [1])).toEqual([1]);
   });
 });
 
