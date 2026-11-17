@@ -75,6 +75,7 @@ import { DeadlineCountdown } from "./DeadlineCountdown";
 import BudgetTimelineSection from "@/components/Budget/BudgetTimelineSection";
 import { exportBudgetComparison } from "@/lib/exportBudgetComparison";
 import { exportSupplierBudget, type SupplierExportRow } from "@/lib/exportSupplierBudget";
+import { mergeSupplierSheetStores, SUPPLIER_SHEET_STORE_COLUMNS } from "@/lib/supplierSheetStores";
 import BudgetSendClientDialog from "@/components/Budget/BudgetSendClientDialog";
 import BudgetSendNegotiatedDialog from "@/components/Budget/BudgetSendNegotiatedDialog";
 import BudgetWinnerDialog from "@/components/Budget/BudgetWinnerDialog";
@@ -85,7 +86,7 @@ import CostAnalysisDialog from "@/components/Budget/CostAnalysisDialog";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 import { useCampaignDeliveryOverrides } from "@/hooks/useMultiClientData";
-import { effectiveDeliveryType, hasFreight, hasInstallation } from "@/lib/deliveryType";
+import { effectiveDeliveryType, hasFreight, hasInstallation, type DeliveryOverrideMap } from "@/lib/deliveryType";
 import { useSupplierChangeMarkers } from "@/hooks/useSupplierChangeMarkers";
 import { buildSupplierChangeMessage, summarizeSupplierChanges } from "@/lib/supplierChangeMarkers";
 
@@ -221,6 +222,31 @@ function AdminInlineNumberInput({
 }
 
 // ─── Main Component ──────────────────────────────────────
+
+/**
+ * Relê client_stores das lojas da campanha (em lotes, por id) e junta com as lojas
+ * completas já carregadas, sem perder modelo/vitrines, aplicando o tipo efetivo.
+ * Lotes de 500 ids: cada resposta fica bem abaixo do limite de 1000 linhas.
+ */
+async function loadSupplierSheetStores(
+  stores: Array<{ id: string; name?: string | null; tipo_entrega?: string | null }>,
+  overrides: DeliveryOverrideMap | null | undefined,
+) {
+  const ids = stores.map((s) => s.id);
+  const fresh: Array<{ id: string } & Record<string, unknown>> = [];
+  const CHUNK = 500;
+  for (let i = 0; i < ids.length; i += CHUNK) {
+    const { data, error } = await supabase
+      .from("client_stores")
+      .select(SUPPLIER_SHEET_STORE_COLUMNS)
+      .in("id", ids.slice(i, i + CHUNK))
+      .order("id");
+    if (error) console.warn("Planilha do fornecedor: usando lojas já carregadas.", error.message);
+    if (data) fresh.push(...(data as Array<{ id: string } & Record<string, unknown>>));
+  }
+  return mergeSupplierSheetStores(stores, fresh, overrides);
+}
+
 export default function BudgetTab({ campaignId, clientId, agencyId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio, onNavigateToSection, activeAdjustment, campaign }: BudgetTabProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -1202,26 +1228,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       const itemsTotal = rows.reduce((s, r) => s + (r.type === "kit_header" ? 0 : r.lineTotal), 0);
       const grandTotal = itemsTotal + (installation || 0) + (freight || 0);
 
-      // Fetch full store data (city/state/store_code) for the Rateio sheet
-      const storeIds = stores.map((s) => s.id);
-      let fullStores: any[] = [];
-      if (storeIds.length > 0) {
-        // Chunk .in() to stay under URL limits and the 1000-row response cap
-        const CHUNK = 500;
-        for (let i = 0; i < storeIds.length; i += CHUNK) {
-          const chunk = storeIds.slice(i, i + CHUNK);
-          const { data: storeRows } = await supabase
-            .from("client_stores")
-            .select("id, name, city, state, store_code")
-            .in("id", chunk);
-          if (storeRows) fullStores.push(...storeRows);
-        }
-      }
-      // Preserve the order of the stores prop
-      const storeMap = new Map(fullStores.map((s) => [s.id, s]));
-      const orderedStores = stores
-        .map((s) => storeMap.get(s.id) ?? { id: s.id, name: s.name, city: null, state: null, store_code: null })
-        .filter(Boolean);
+      // Lojas completas (modelo, vitrines, tipo efetivo) para a aba "Matriz Lojas x Peças".
+      const orderedStores = await loadSupplierSheetStores(stores, deliveryOverrides);
 
       await exportSupplierBudget({
         campaignName,
@@ -1390,23 +1398,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       const itemsTotal = rows.reduce((s, r) => s + (r.type === "kit_header" ? 0 : r.lineTotal), 0);
       const grandTotal = itemsTotal + (installation || 0) + (freight || 0);
 
-      const storeIds = stores.map((s) => s.id);
-      let fullStores: any[] = [];
-      if (storeIds.length > 0) {
-        const CHUNK = 500;
-        for (let i = 0; i < storeIds.length; i += CHUNK) {
-          const chunk = storeIds.slice(i, i + CHUNK);
-          const { data: storeRows } = await supabase
-            .from("client_stores")
-            .select("id, name, city, state, store_code")
-            .in("id", chunk);
-          if (storeRows) fullStores.push(...storeRows);
-        }
-      }
-      const storeMap = new Map(fullStores.map((s) => [s.id, s]));
-      const orderedStores = stores
-        .map((s) => storeMap.get(s.id) ?? { id: s.id, name: s.name, city: null, state: null, store_code: null })
-        .filter(Boolean);
+      // Lojas completas (modelo, vitrines, tipo efetivo) para a aba "Matriz Lojas x Peças".
+      const orderedStores = await loadSupplierSheetStores(stores, deliveryOverrides);
 
       await exportSupplierBudget({
         campaignName,
