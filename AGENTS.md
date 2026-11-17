@@ -46,4 +46,4 @@
 - Rateio review store notes are display-only, derived only in the pure storeNotes module (shared by StoreNameLink showNote and the PDF) and never feed detection, fingerprints or justifications.
 - Rateio TÁ CERTO saves a 'caso' justification (buildJustRow); TÁ ERRADO lists stores (pure rateioFixFinding) and edits via the ficha.
 - "Exportar para campanha" plans/verifies in pure exportToCampaign and writes only in exportToCampaignRun; the origin is only read and rollback deletes only destination rows/files it created.
-- Store logistics type resolves only via deliveryType: campaign screens use the campaign_store_status override over the client_stores default (edited only in client registration); the supplier portal reads them via its token RPC.
+- Store logistics type resolves only via deliveryType: campaign screens use the campaign_store_status override over the client_stores default (edited only in client setup); the supplier portal reads them via its token RPC.
