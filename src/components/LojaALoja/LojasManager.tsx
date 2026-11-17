@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { useLojaALojaTipos, useLojaALojaLojas, useToggleLojaAssignment, saveLojaAssignments, type LojaALojaTipo } from "@/hooks/useLojaALoja";
-import { useClientStores } from "@/hooks/useMultiClientData";
+import { useClientStores, useCampaignDeliveryOverrides } from "@/hooks/useMultiClientData";
+import { effectiveDeliveryType } from "@/lib/deliveryType";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -36,6 +37,7 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
   const isAdmin = canEdit;
   const { data: tipos = [], isLoading: loadingTipos } = useLojaALojaTipos(campaignId);
   const { data: lojas = [], isLoading: loadingLojas } = useLojaALojaLojas(campaignId);
+  const { overrides: deliveryOverrides } = useCampaignDeliveryOverrides(campaignId);
   const { data: stores = [], isLoading: loadingStores } = useClientStores(clientId);
   const toggle = useToggleLojaAssignment();
   const qc = useQueryClient();
@@ -97,11 +99,11 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
   const sortedStores = useMemo(() => {
     const getVal = (s: any) => (s?.[sortField] ?? "").toString();
     return [...stores]
-      .filter((s) => isClassifiableStore(s.tipo_entrega))
+      .filter((s) => isClassifiableStore(effectiveDeliveryType(s, deliveryOverrides)))
       .sort((a, b) =>
         getVal(a).localeCompare(getVal(b), "pt-BR", { numeric: true, sensitivity: "base" })
       );
-  }, [stores, sortField]);
+  }, [stores, sortField, deliveryOverrides]);
 
   // Filter stores by search
   const filteredStores = useMemo(() => {
@@ -157,8 +159,8 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
   }, [lojas]);
   const isUnclassified = (storeId: string) => !storesWithAnyAssignment.has(storeId);
   const unclassifiedCount = useMemo(
-    () => stores.filter((s) => isClassifiableStore(s.tipo_entrega) && isUnclassified(s.id)).length,
-    [stores, storesWithAnyAssignment]
+    () => stores.filter((s) => isClassifiableStore(effectiveDeliveryType(s, deliveryOverrides)) && isUnclassified(s.id)).length,
+    [stores, storesWithAnyAssignment, deliveryOverrides]
   );
 
   // For INTERNO tipos (tem_subdivisao), default is TRUE when no row exists
@@ -476,9 +478,14 @@ export default function LojasManager({ campaignId, clientId, permissions }: Prop
                 <td className="px-3 py-1.5">
                   <div className="flex items-center gap-1.5">
                     <span className="text-sm font-medium truncate max-w-[240px] text-foreground">{store.name}</span>
-                    {store.tipo_entrega === "frete_apenas" && (
-                      <span title="Loja recebe só frete, sem instalação" className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground shrink-0">
+                    {effectiveDeliveryType(store, deliveryOverrides) === "frete_apenas" && (
+                      <span title="Loja recebe só frete, sem instalação (nesta campanha)" className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground shrink-0">
                         Só frete
+                      </span>
+                    )}
+                    {effectiveDeliveryType(store, deliveryOverrides) === "instalacao_apenas" && (
+                      <span title="Loja recebe só instalação, sem frete (nesta campanha)" className="inline-flex items-center rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground shrink-0">
+                        Só instalação
                       </span>
                     )}
                     {unclassified && (

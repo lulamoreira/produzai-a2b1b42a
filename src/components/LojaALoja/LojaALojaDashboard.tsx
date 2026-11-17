@@ -13,7 +13,8 @@ import {
   type LojaALojaTipo,
   type LojaALojaLoja,
 } from "@/hooks/useLojaALoja";
-import { useClientStores } from "@/hooks/useMultiClientData";
+import { useClientStores, useCampaignDeliveryOverrides } from "@/hooks/useMultiClientData";
+import { effectiveDeliveryType, hasInstallation } from "@/lib/deliveryType";
 import { useTableSort } from "@/hooks/useTableSort";
 import SortableHeader from "./SortableHeader";
 import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
@@ -50,6 +51,7 @@ function isStoreActiveForTipo(
 
 export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
   useRealtimeStoreOccurrences(campaignId);
+  const { overrides: deliveryOverrides } = useCampaignDeliveryOverrides(campaignId);
   const { t } = useTranslation();
   const { data: tipos, isLoading: loadingTipos } = useLojaALojaTipos(campaignId);
   const { data: allPecas, isLoading: loadingPecas } = useAllLojaALojaPecas(campaignId);
@@ -75,8 +77,9 @@ export default function LojaALojaDashboard({ campaignId, clientId }: Props) {
   }, [stores]);
 
   const allStoreIds = useMemo(() => (stores ?? [])
-    .filter((s: any) => (s.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao')
-    .map((s: any) => s.id as string), [stores]);
+    // Só lojas com instalação NESTA campanha (Frete + Instalação ou Só instalação).
+    .filter((s: any) => hasInstallation(effectiveDeliveryType(s, deliveryOverrides)))
+    .map((s: any) => s.id as string), [stores, deliveryOverrides]);
 
   /* Count unique stores active per tipo */
   const activeStoresPerTipo = useMemo(() => {

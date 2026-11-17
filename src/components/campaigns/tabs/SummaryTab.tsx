@@ -11,6 +11,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchPendingInstallationsCount } from "@/lib/pendingInstallations";
 import { Card } from "@/components/ui/card";
+import { useCampaignDeliveryOverrides } from "@/hooks/useMultiClientData";
+import { countByDeliveryType, DELIVERY_LABELS, DELIVERY_TYPES } from "@/lib/deliveryType";
+import { cn } from "@/lib/utils";
 
 interface SummaryTabProps {
   campaignId: string;
@@ -107,6 +110,14 @@ export default function SummaryTab({
     enabled: !!campaignId && !externalKpis && !loadingLatestCampaign
   });
 
+  // Contagem por tipo de logística EFETIVO nesta campanha (ajuste ?? padrão da loja),
+  // sobre as lojas ativas da campanha.
+  const { overrides: deliveryOverrides } = useCampaignDeliveryOverrides(campaignId);
+  const deliveryCounts = React.useMemo(
+    () => countByDeliveryType(Array.isArray(stores) ? stores : [], deliveryOverrides),
+    [stores, deliveryOverrides],
+  );
+
   const baseKpis = externalKpis || internalKpis;
   const campaignKpis = {
     stores: stores?.length || baseKpis?.stores || 0,
@@ -199,6 +210,25 @@ export default function SummaryTab({
           <span className="text-[13px] text-muted-foreground group-hover:underline">{t("pieces.registered")}</span>
 
         </button>
+      </div>
+      <div className="flex flex-wrap gap-1.5 -mt-3" aria-label="Lojas por tipo de logística nesta campanha">
+        {DELIVERY_TYPES.map((tipo) => (
+          <button
+            key={tipo}
+            type="button"
+            onClick={() => onNavigate("stores")}
+            title={`${DELIVERY_LABELS[tipo].text}: ${deliveryCounts[tipo]} loja(s) nesta campanha`}
+            className={cn(
+              "inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] font-semibold hover:opacity-80",
+              DELIVERY_LABELS[tipo].badgeClass,
+              deliveryCounts[tipo] === 0 && "opacity-50",
+            )}
+          >
+            <span aria-hidden>{DELIVERY_LABELS[tipo].emoji}</span>
+            <span>{DELIVERY_LABELS[tipo].text}</span>
+            <span className="tabular-nums">{deliveryCounts[tipo]}</span>
+          </button>
+        ))}
       </div>
 
       {!loadingLatestCampaign && (

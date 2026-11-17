@@ -7,6 +7,8 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { isVisiblePendingInstallation, latestCampaignIdsByChain } from "@/lib/installationSchedule";
+import { effectiveDeliveryTypeMulti } from "@/lib/deliveryType";
+import { fetchDeliveryOverridesForCampaigns } from "@/lib/deliveryOverridesFetch";
 import { useNavigate } from "react-router-dom";
 import { 
   Megaphone, 
@@ -156,16 +158,27 @@ export function HomeV2() {
                 const campRows = (await (supabase.from("campaigns") as any).select("id, root_campaign_id, created_at").in("client_id", agencyClientIds)).data || [];
                 const campIds = [...latestCampaignIdsByChain(campRows)];
                 if (!campIds.length) return { data: [] };
-                const rows = await supabasePaginate<any>((from, to) =>
-                  (supabase.from("campaign_schedules") as any)
-                    .select("id, scheduled_date, scheduled_time, reschedule_enabled, reschedule_date, reschedule_time, completed_at, campaign_id, store_id, client_stores(name, tipo_entrega), campaigns(name, client_id, clients(name)), installation_teams(name)", { count: "exact" })
-                    .is("completed_at", null)
-                    .in("campaign_id", campIds)
-                    .order("id")
-                    .range(from, to)
-                );
-                // Same rule as the campaign status panel "Pendentes".
-                return { data: rows.filter(isVisiblePendingInstallation) };
+                const [rows, overrides] = await Promise.all([
+                  supabasePaginate<any>((from, to) =>
+                    (supabase.from("campaign_schedules") as any)
+                      .select("id, scheduled_date, scheduled_time, reschedule_enabled, reschedule_date, reschedule_time, completed_at, campaign_id, store_id, client_stores(name, tipo_entrega), campaigns(name, client_id, clients(name)), installation_teams(name)", { count: "exact" })
+                      .is("completed_at", null)
+                      .in("campaign_id", campIds)
+                      .order("id")
+                      .range(from, to)
+                  ),
+                  fetchDeliveryOverridesForCampaigns(campIds),
+                ]);
+                // Same rule as the campaign status panel "Pendentes", using each
+                // campaign's effective delivery type (campaign override ?? store default).
+                return {
+                  data: rows.filter((r: any) =>
+                    isVisiblePendingInstallation(
+                      r,
+                      effectiveDeliveryTypeMulti(r.campaign_id, r.store_id, r.client_stores?.tipo_entrega, overrides),
+                    ),
+                  ),
+                };
               })()
             : Promise.resolve({ data: [] })
         ]);

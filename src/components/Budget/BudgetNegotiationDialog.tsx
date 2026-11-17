@@ -101,7 +101,7 @@ interface Props {
   pieces: Piece[];
   prices: Price[];
   extraCosts: ExtraCost[];
-  pieceTotals: { map: Record<string, number>; installationMap: Record<string, number>; freightMap: Record<string, number>; noLogisticsMap: Record<string, number> };
+  pieceTotals: { map: Record<string, number>; installationMap: Record<string, number>; freightMap: Record<string, number>; installOnlyMap?: Record<string, number>; noLogisticsMap: Record<string, number> };
   kitPieceTotals: Record<string, KitComponentRow[]>;
   settings: any;
   currencyCode: string;
@@ -656,9 +656,10 @@ export default function BudgetNegotiationDialog({
                     <TableHeader>
                       <TableRow>
                         <TableHead>Peça</TableHead>
-                        <TableHead className="text-right">F+I</TableHead>
-                        <TableHead className="text-right">FA</TableHead>
-                        <TableHead className="text-right">SL</TableHead>
+                        <TableHead className="text-right" title="Frete + Instalação">F+I</TableHead>
+                        <TableHead className="text-right" title="Só frete">SF</TableHead>
+                        <TableHead className="text-right" title="Só instalação">SI</TableHead>
+                        <TableHead className="text-right" title="Sem logística">SL</TableHead>
                         <TableHead className="text-right">Qtd</TableHead>
                         <TableHead className="text-right">Original</TableHead>
                         <TableHead className="text-right">Ajustado</TableHead>
@@ -672,6 +673,7 @@ export default function BudgetNegotiationDialog({
                           <TableCell className="truncate max-w-[200px]" title={row.name}>{row.code} — {row.name}</TableCell>
                           <TableCell className="text-right font-mono text-[10px]">{pieceTotals.installationMap[row.pieceId] || 0}</TableCell>
                           <TableCell className="text-right font-mono text-[10px]">{pieceTotals.freightMap[row.pieceId] || 0}</TableCell>
+                          <TableCell className="text-right font-mono text-[10px]">{pieceTotals.installOnlyMap?.[row.pieceId] || 0}</TableCell>
                           <TableCell className="text-right font-mono text-[10px] text-muted-foreground">{pieceTotals.noLogisticsMap[row.pieceId] || 0}</TableCell>
                           <TableCell className="text-right font-mono font-semibold">{row.qty}</TableCell>
                           <TableCell className="text-right font-mono">{fmtCurrency(row.original)}</TableCell>
@@ -686,7 +688,7 @@ export default function BudgetNegotiationDialog({
                         <>
                           <TableRow>
                             <TableCell>Instalação</TableCell>
-                            <TableCell className="text-right text-muted-foreground" colSpan={4}>—</TableCell>
+                            <TableCell className="text-right text-muted-foreground" colSpan={5}>—</TableCell>
                             <TableCell className="text-right font-mono">{fmtCurrency(toNum(supplierEC.installation_value))}</TableCell>
                             <TableCell className="text-right font-mono font-semibold text-primary">{fmtCurrency(adjustedInstallation || 0)}</TableCell>
                             <TableCell className="text-right font-mono">
@@ -695,7 +697,7 @@ export default function BudgetNegotiationDialog({
                           </TableRow>
                           <TableRow>
                             <TableCell>Embalagem / Frete</TableCell>
-                            <TableCell className="text-right text-muted-foreground" colSpan={4}>—</TableCell>
+                            <TableCell className="text-right text-muted-foreground" colSpan={5}>—</TableCell>
                             <TableCell className="text-right font-mono">{fmtCurrency(toNum(supplierEC.freight_value))}</TableCell>
                             <TableCell className={`text-right font-mono font-semibold ${applyResidualToFreight ? "text-amber-700" : "text-primary"}`}>
                               {fmtCurrency((applyResidualToFreight ? adjustedFreightFinal : adjustedFreight) || 0)}

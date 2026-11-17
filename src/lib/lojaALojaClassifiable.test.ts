@@ -9,6 +9,9 @@ describe("lojas na Classificação do Loja a Loja", () => {
   it("mostra lojas só com frete, como os quiosques", () => {
     expect(isClassifiableStore("frete_apenas")).toBe(true);
   });
+  it("mostra lojas só com instalação", () => {
+    expect(isClassifiableStore("instalacao_apenas")).toBe(true);
+  });
   it("não mostra lojas sem logística", () => {
     expect(isClassifiableStore("sem_logistica")).toBe(false);
   });

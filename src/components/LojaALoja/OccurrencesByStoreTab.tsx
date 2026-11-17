@@ -13,6 +13,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { CalendarIcon, ChevronDown, ChevronRight, Download, Search, Store as StoreIcon, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useCampaignDeliveryOverrides } from "@/hooks/useMultiClientData";
+import { effectiveDeliveryTypeFor, hasInstallation } from "@/lib/deliveryType";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import * as XLSX from "xlsx";
@@ -77,6 +79,7 @@ function formatDate(d: string | null) {
 }
 
 export default function OccurrencesByStoreTab({ campaignId, clientId, permissions }: Props) {
+  const { overrides: deliveryOverrides } = useCampaignDeliveryOverrides(campaignId);
   const { data, isLoading } = useOccurrencesByStore(campaignId);
   useRealtimeStoreOccurrences(campaignId);
   const { statuses: tratativaStatuses } = useEffectiveTratativaStatuses(clientId);
@@ -120,8 +123,8 @@ export default function OccurrencesByStoreTab({ campaignId, clientId, permission
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     const result = occList.filter((o) => {
-      const storeTipo = (o.client_stores as any)?.tipo_entrega ?? 'frete_instalacao';
-      if (storeTipo !== 'frete_instalacao') return false;
+      // Só lojas com instalação NESTA campanha (ajuste da campanha ?? padrão da loja).
+      if (!hasInstallation(effectiveDeliveryTypeFor(o.store_id, (o.client_stores as any)?.tipo_entrega, deliveryOverrides))) return false;
       if (filterStore !== "__all__" && o.store_id !== filterStore) return false;
       if (filterMotive !== "__all__" && o.motive_id !== filterMotive) return false;
       const st = o.tratativa_status ?? "aberta";
@@ -150,7 +153,7 @@ export default function OccurrencesByStoreTab({ campaignId, clientId, permission
       return sortOrder === "desc" ? tb - ta : ta - tb;
     });
     return result;
-  }, [occList, filterStore, filterMotive, filterStatus, filterPieceIds, dateFrom, dateTo, search, sortOrder]);
+  }, [occList, filterStore, filterMotive, filterStatus, filterPieceIds, dateFrom, dateTo, search, sortOrder, deliveryOverrides]);
 
   const grouped = useMemo(() => {
     const map = new Map<string, { storeId: string; storeName: string; city: string; state: string; items: any[] }>();

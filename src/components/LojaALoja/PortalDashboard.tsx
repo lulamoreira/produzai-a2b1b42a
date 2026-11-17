@@ -36,6 +36,8 @@ import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences
 import { useEffectiveTratativaStatuses } from "@/hooks/useLalTratativaStatuses";
 import { isLalOccurrenceOverdue, type LalOverdueOccurrence } from "@/lib/lalOccurrenceOverdue";
 import { useUserRole } from "@/hooks/useUserRole";
+import { useCampaignDeliveryOverrides } from "@/hooks/useMultiClientData";
+import { effectiveDeliveryTypeFor, hasInstallation } from "@/lib/deliveryType";
 import { Checkbox } from "@/components/ui/checkbox";
 import BulkOccurrenceStatusBar from "./BulkOccurrenceStatusBar";
 import { canBulkChangeOccurrenceStatus, visibleSelection, headerCheckState, countDistinctStores } from "@/lib/occurrenceBulkStatus";
@@ -210,6 +212,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
   const isAdmin = canDelete; // delete buttons gate
 
   const { data: occurrences, isLoading: l1 } = usePortalOccurrences(campaignId);
+  const { overrides: deliveryOverrides } = useCampaignDeliveryOverrides(campaignId);
   const { data: maintenance, isLoading: l2 } = usePortalMaintenance(campaignId);
   const { data: replacements, isLoading: l3 } = usePortalReplacements(campaignId);
   const { data: compliance, isLoading: l4 } = usePortalCompliance(campaignId);
@@ -283,12 +286,11 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
 
   const isLoading = l1 || l2 || l3 || l4;
 
-  /* Occurrence KPIs — restritos a lojas com frete_instalacao (mesmo escopo da lista) */
+  /* Occurrence KPIs — restritos a lojas com instalação NESTA campanha (mesmo escopo da lista) */
   const occListAll = (occurrences ?? []) as any[];
-  const occList = occListAll.filter((o) => {
-    const storeTipo = (o.client_stores as any)?.tipo_entrega ?? 'frete_instalacao';
-    return storeTipo === 'frete_instalacao';
-  });
+  const occList = occListAll.filter((o) =>
+    hasInstallation(effectiveDeliveryTypeFor(o.store_id, (o.client_stores as any)?.tipo_entrega, deliveryOverrides)),
+  );
   const countsAsOccurrence = (status: string | null | undefined) =>
     tratativaStatuses.find((s) => s.value === (status ?? "aberta"))?.conta_como_ocorrencia !== false;
 

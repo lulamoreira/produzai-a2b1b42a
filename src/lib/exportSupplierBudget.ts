@@ -1,3 +1,4 @@
+import { hasInstallation, normalizeDeliveryType } from "@/lib/deliveryType";
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { buildExportFileName } from "@/lib/exportFileName";
 import {
@@ -157,7 +158,9 @@ export async function buildSupplierBudgetWorkbook(
   ws.getRow(3).height = 22;
 
   // Add "Only Delivery" warning if any
-  const somenteEntrega = params.rateio?.stores.filter((s: any) => !params.rateio?.disabledStoreIds?.has(s.id) && (s.tipo_entrega ?? 'frete_instalacao') !== 'frete_instalacao').length || 0;
+  // Lojas sem instalação (Só frete / Sem logística). `tipo_entrega` deve chegar já
+  // como tipo EFETIVO da campanha (ajuste ?? padrão); "Só instalação" não entra aqui.
+  const somenteEntrega = params.rateio?.stores.filter((s: any) => !params.rateio?.disabledStoreIds?.has(s.id) && !hasInstallation(normalizeDeliveryType(s.tipo_entrega))).length || 0;
   if (somenteEntrega > 0) {
     const note = labels.onlyDeliveryNote(somenteEntrega);
     ws.mergeCells("A4:G4");

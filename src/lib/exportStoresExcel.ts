@@ -1,12 +1,13 @@
+import { normalizeDeliveryType } from "@/lib/deliveryType";
 import { saveBlobAs } from "@/lib/saveBlobAs";
 import { getSupplierPortalLabels } from "@/utils/currencyLocale";
 
 const XLSX_MIME = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 const VERDE = "FF16A34A"; const AZUL = "FF2563EB"; const CINZA = "FF6B7280";
-const LARANJA = "FFF97316"; const BRANCO = "FFFFFFFF"; const ESCURO = "FF111827";
+const ROXO = "FF9333EA"; const LARANJA = "FFF97316"; const BRANCO = "FFFFFFFF"; const ESCURO = "FF111827";
 const MARROM = "FF8C6F4E"; const BEGE = "FFF7F3EC"; const BORDER = "FFE5E7EB";
 
-interface Store { id: string; name: string; code?: string; nickname?: string; city?: string; state?: string; street?: string; number?: string; neighborhood?: string; zip_code?: string; tipo_entrega: 'frete_instalacao' | 'frete_apenas' | 'sem_logistica' | null; }
+interface Store { id: string; name: string; code?: string; nickname?: string; city?: string; state?: string; street?: string; number?: string; neighborhood?: string; zip_code?: string; tipo_entrega: string | null; }
 interface Params { stores: Store[]; campaignName: string; supplierName: string; currency: string; }
 
 export async function exportStoresExcel({ stores, campaignName, supplierName, currency }: Params) {
@@ -20,9 +21,12 @@ export async function exportStoresExcel({ stores, campaignName, supplierName, cu
   ws.columns = [ { width: 14 }, { width: 30 }, { width: 18 }, { width: 22 }, { width: 8 }, { width: 35 }, { width: 8 }, { width: 12 }, { width: 24 } ];
 
   const total = stores.length;
-  const comInstalacao = stores.filter(s => (s.tipo_entrega || 'frete_instalacao') === 'frete_instalacao').length;
-  const freteApenas = stores.filter(s => s.tipo_entrega === 'frete_apenas').length;
-  const semLogistica = stores.filter(s => s.tipo_entrega === 'sem_logistica').length;
+  // `tipo_entrega` deve chegar como tipo EFETIVO da campanha (ajuste ?? padrão da loja).
+  const tipoOf = (s: Store) => normalizeDeliveryType(s.tipo_entrega);
+  const comInstalacao = stores.filter(s => tipoOf(s) === 'frete_instalacao').length;
+  const freteApenas = stores.filter(s => tipoOf(s) === 'frete_apenas').length;
+  const soInstalacao = stores.filter(s => tipoOf(s) === 'instalacao_apenas').length;
+  const semLogistica = stores.filter(s => tipoOf(s) === 'sem_logistica').length;
 
   ws.mergeCells("A1:I2");
   const t = ws.getCell("A1");
@@ -32,7 +36,14 @@ export async function exportStoresExcel({ stores, campaignName, supplierName, cu
   t.alignment = { horizontal: "center", vertical: "middle" };
   ws.getRow(1).height = 22; ws.getRow(2).height = 22;
 
-  const kpis = [
+  // Sem lojas "Só instalação" o layout fica exatamente como antes (4 blocos).
+  const kpis = soInstalacao > 0 ? [
+    { range: "A4:B5", value: total, label: isCLP ? "Total de Tiendas" : "Total de Lojas", color: LARANJA },
+    { range: "C4:D5", value: comInstalacao, label: portal.typeFreteInstalacao, color: VERDE },
+    { range: "E4:F5", value: freteApenas, label: portal.typeFreteApenas, color: AZUL },
+    { range: "G4:H5", value: soInstalacao, label: portal.typeInstalacaoApenas, color: ROXO },
+    { range: "I4:I5", value: semLogistica, label: portal.typeSemLogistica, color: CINZA },
+  ] : [
     { range: "A4:B5", value: total, label: isCLP ? "Total de Tiendas" : "Total de Lojas", color: LARANJA },
     { range: "C4:D5", value: comInstalacao, label: portal.typeFreteInstalacao, color: VERDE },
     { range: "E4:F5", value: freteApenas, label: portal.typeFreteApenas, color: AZUL },
@@ -77,10 +88,11 @@ export async function exportStoresExcel({ stores, campaignName, supplierName, cu
   r++;
 
   stores.forEach((s, idx) => {
-    const tipo = s.tipo_entrega || 'frete_instalacao';
+    const tipo = tipoOf(s);
     let tipoText, tipoColor, baseFill, altFill;
     if (tipo === 'frete_instalacao') { tipoText = `📦🔧 ${portal.typeFreteInstalacao}`; tipoColor = VERDE; baseFill = "FFECFDF5"; altFill = "FFD1FAE5"; }
     else if (tipo === 'frete_apenas') { tipoText = `📦 ${portal.typeFreteApenas}`; tipoColor = AZUL; baseFill = "FFEFF6FF"; altFill = "FFDBEAFE"; }
+    else if (tipo === 'instalacao_apenas') { tipoText = `🔧 ${portal.typeInstalacaoApenas}`; tipoColor = ROXO; baseFill = "FFFAF5FF"; altFill = "FFF3E8FF"; }
     else { tipoText = `🏪 ${portal.typeSemLogistica}`; tipoColor = CINZA; baseFill = "FFF3F4F6"; altFill = "FFE5E7EB"; }
     const vals = [ s.code || '', s.name || '', s.nickname || '', s.city || '', s.state || '', s.street || '', s.number || '', s.zip_code || '', tipoText ];
     const row = ws.getRow(r);

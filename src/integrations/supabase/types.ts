@@ -2387,6 +2387,7 @@ export type Database = {
           enabled: boolean
           id: string
           store_id: string
+          tipo_entrega: string | null
         }
         Insert: {
           campaign_id: string
@@ -2394,6 +2395,7 @@ export type Database = {
           enabled?: boolean
           id?: string
           store_id: string
+          tipo_entrega?: string | null
         }
         Update: {
           campaign_id?: string
@@ -2401,6 +2403,7 @@ export type Database = {
           enabled?: boolean
           id?: string
           store_id?: string
+          tipo_entrega?: string | null
         }
         Relationships: [
           {

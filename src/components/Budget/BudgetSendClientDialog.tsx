@@ -54,7 +54,7 @@ interface BudgetSendClientDialogProps {
   kitPieces: { id: string; kit_id: string; piece_id: string; quantity: number }[];
   qtyMap: Record<string, number>;
   stores: any[];
-  pieceTotals: { map: Record<string, number>; installationMap: Record<string, number>; freightMap: Record<string, number>; noLogisticsMap: Record<string, number> };
+  pieceTotals: { map: Record<string, number>; installationMap: Record<string, number>; freightMap: Record<string, number>; installOnlyMap?: Record<string, number>; noLogisticsMap: Record<string, number> };
   prices: any[];
   extraCosts: any[];
   currencyCode: string;

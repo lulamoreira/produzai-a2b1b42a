@@ -1,9 +1,10 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { toast } from "sonner";
 import { isPersistedId } from "@/lib/utils";
+import { buildDeliveryOverrideMap, isDeliveryType, type DeliveryType } from "@/lib/deliveryType";
 
 // ─── Types ───────────────────────────────────────────────
 
@@ -95,7 +96,7 @@ export type ClientStore = {
   observations: string | null;
   auto_distribute: boolean;
   show_in_scheduling: boolean;
-  tipo_entrega: 'frete_instalacao' | 'frete_apenas' | 'sem_logistica';
+  tipo_entrega: DeliveryType;
   active: boolean | null;
   created_at: string;
 };
@@ -1245,14 +1246,16 @@ export type CampaignStoreStatus = {
   campaign_id: string;
   store_id: string;
   enabled: boolean;
+  /** Ajuste de logística só nesta campanha (NULL = segue o padrão da loja). */
+  tipo_entrega: DeliveryType | null;
   created_at: string;
 };
 
-export function useCampaignStoreStatus(campaignId: string | undefined) {
-  const qc = useQueryClient();
-  const query = useQuery({
-    queryKey: ["campaign_store_status", campaignId],
-    queryFn: async () => {
+/** Consulta única (paginada) de campaign_store_status — compartilhada pelo cache. */
+function campaignStoreStatusQuery(campaignId: string | undefined) {
+  return {
+    queryKey: ["campaign_store_status", campaignId] as const,
+    queryFn: async (): Promise<CampaignStoreStatus[]> => {
       if (!campaignId) return [];
       return await supabasePaginate<CampaignStoreStatus>((from, to) =>
         supabase
@@ -1263,7 +1266,22 @@ export function useCampaignStoreStatus(campaignId: string | undefined) {
       );
     },
     enabled: !!campaignId,
-  });
+  };
+}
+
+/**
+ * Ajustes de logística da campanha (store_id → tipo). Reaproveita a mesma
+ * consulta/cache de useCampaignStoreStatus (o realtime fica nela).
+ */
+export function useCampaignDeliveryOverrides(campaignId: string | undefined) {
+  const query = useQuery(campaignStoreStatusQuery(campaignId));
+  const overrides = useMemo(() => buildDeliveryOverrideMap(query.data ?? []), [query.data]);
+  return { overrides, isLoading: query.isLoading, isFetched: query.isFetched, error: query.error };
+}
+
+export function useCampaignStoreStatus(campaignId: string | undefined) {
+  const qc = useQueryClient();
+  const query = useQuery(campaignStoreStatusQuery(campaignId));
 
   // Realtime: refresh when status changes from any tab/user
   useEffect(() => {
@@ -1305,6 +1323,31 @@ export function useUpsertCampaignStoreStatus() {
     },
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["campaign_store_status"] }); },
     onError: (e) => toast.error("Erro: " + e.message),
+  });
+}
+
+/**
+ * Grava o tipo de logística SÓ nesta campanha (campaign_store_status), por
+ * campaign_id+store_id, sem mexer em enabled (linha nova nasce enabled=true
+ * pelo default). tipo = null volta ao padrão da loja. Nunca grava client_stores.
+ */
+export function useSetCampaignDeliveryTypes() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ campaignId, changes }: { campaignId: string; changes: Array<{ storeId: string; tipo: DeliveryType | null }> }) => {
+      if (!campaignId) throw new Error("Campanha não informada.");
+      const rows = changes
+        .filter((c) => !!c.storeId && (c.tipo === null || isDeliveryType(c.tipo)))
+        .map((c) => ({ campaign_id: campaignId, store_id: c.storeId, tipo_entrega: c.tipo }));
+      for (let i = 0; i < rows.length; i += 500) {
+        const { error } = await supabase
+          .from("campaign_store_status")
+          .upsert(rows.slice(i, i + 500), { onConflict: "campaign_id,store_id" });
+        if (error) throw error;
+      }
+      return rows.length;
+    },
+    onSettled: (_d, _e, vars) => { qc.invalidateQueries({ queryKey: ["campaign_store_status", vars.campaignId] }); },
   });
 }
 

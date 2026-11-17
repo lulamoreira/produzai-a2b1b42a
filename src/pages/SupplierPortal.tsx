@@ -28,6 +28,7 @@ import { exportSupplierBudget } from "@/lib/exportSupplierBudget";
 import { SupplierPortalChangesBanner, SupplierPortalChangeInline } from "@/components/supplierChanges/SupplierPortalChanges";
 import { filterRowsWithChanges, type ResolvedSupplierChange } from "@/lib/supplierChangeMarkers";
 import { exportStoresExcel } from "@/lib/exportStoresExcel";
+import { buildDeliveryOverrideMap, effectiveDeliveryType, hasFreight, hasInstallation, normalizeDeliveryType, type DeliveryType } from "@/lib/deliveryType";
 import { formatCurrencyByCode } from "@/lib/countryConfig";
 import type { CampaignPiece, CampaignKit, CampaignKitPiece, CampaignPieceLocation, CampaignPieceSubLocation } from "@/hooks/useMultiClientData";
 
@@ -205,7 +206,7 @@ const SupplierPortal = () => {
   const [savingSuggestion, setSavingSuggestion] = useState(false);
 
   // Store data for Excel export
-  const [storeData, setStoreData] = useState<{ id: string; name: string; city?: string; state?: string; address?: string; street?: string; number?: string; neighborhood?: string; code?: string; zip_code?: string; nickname?: string; showcase_count?: number; tipo_entrega: 'frete_instalacao' | 'frete_apenas' | 'sem_logistica' | null }[]>([]);
+  const [storeData, setStoreData] = useState<{ id: string; name: string; city?: string; state?: string; address?: string; street?: string; number?: string; neighborhood?: string; code?: string; zip_code?: string; nickname?: string; showcase_count?: number; tipo_entrega: DeliveryType | null }[]>([]);
   const [downloadingStores, setDownloadingStores] = useState(false);
   const [fullQtyMap, setFullQtyMap] = useState<Record<string, number>>({});
   // Manual change markers (renegotiation): what changed vs the spreadsheet the supplier quoted.
@@ -298,8 +299,11 @@ const SupplierPortal = () => {
           extra_costs: any[] | null;
           is_renegotiation: boolean;
           disabled_store_ids?: string[];
+          /** Ajustes de logística SÓ desta campanha (via RPC por token; sem abrir RLS). */
+          delivery_overrides?: Array<{ store_id: string; tipo_entrega: string | null }> | null;
         };
         const sup = portalPayload.supplier;
+        const deliveryOverrides = buildDeliveryOverrideMap(portalPayload.delivery_overrides ?? []);
         if (!sup) { setError(portal.errorTitle); setLoading(false); return; }
         const portalPrices = portalPayload.prices ?? [];
         const portalExtraCosts = portalPayload.extra_costs ?? [];
@@ -496,7 +500,9 @@ const SupplierPortal = () => {
             if (storesRaw) allStores.push(...storesRaw);
           }
           
-          setStoreData(allStores as any);
+          // tipo_entrega passa a ser o tipo EFETIVO nesta campanha (ajuste ?? padrão da loja);
+          // todos os contadores, listas e planilhas do portal leem daqui.
+          setStoreData(allStores.map((st) => ({ ...st, tipo_entrega: effectiveDeliveryType(st, deliveryOverrides) })) as any);
         }
 
         // 8) Existing prices (from RPC payload)
@@ -1093,15 +1099,10 @@ const SupplierPortal = () => {
       <div className="max-w-4xl mx-auto px-4 py-6 sm:px-6 space-y-6">
         {/* Resumo visual no portal */}
         {(() => {
-          const comFrete = storeData.filter(s => {
-            const tipo = s.tipo_entrega || 'frete_instalacao';
-            return tipo === 'frete_instalacao' || tipo === 'frete_apenas';
-          }).length;
+          // tipo_entrega já é o tipo EFETIVO nesta campanha (ver carregamento).
+          const comFrete = storeData.filter(s => hasFreight(normalizeDeliveryType(s.tipo_entrega))).length;
           
-          const comInstalacao = storeData.filter(s => {
-            const tipo = s.tipo_entrega || 'frete_instalacao';
-            return tipo === 'frete_instalacao';
-          }).length;
+          const comInstalacao = storeData.filter(s => hasInstallation(normalizeDeliveryType(s.tipo_entrega))).length;
           
           const semLogistica = storeData.filter(s => s.tipo_entrega === 'sem_logistica').length;
           
@@ -1139,7 +1140,7 @@ const SupplierPortal = () => {
                     </SheetTitle>
                   </SheetHeader>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                     <Card className="bg-green-50 border-green-100">
                       <CardContent className="p-3 text-center">
                         <div className="text-xl font-bold text-green-700">
@@ -1157,6 +1158,16 @@ const SupplierPortal = () => {
                         </div>
                         <div className="text-[10px] text-blue-600 font-medium uppercase leading-tight mt-1">
                           {portal.storesSummaryFreteOnly}
+                        </div>
+                      </CardContent>
+                    </Card>
+                    <Card className="bg-purple-50 border-purple-100">
+                      <CardContent className="p-3 text-center">
+                        <div className="text-xl font-bold text-purple-700">
+                          {storeData.filter(s => s.tipo_entrega === 'instalacao_apenas').length}
+                        </div>
+                        <div className="text-[10px] text-purple-600 font-medium uppercase leading-tight mt-1">
+                          {portal.storesSummaryInstallOnly}
                         </div>
                       </CardContent>
                     </Card>
@@ -1206,6 +1217,10 @@ const SupplierPortal = () => {
                                   ) : tipo === 'frete_apenas' ? (
                                     <Badge className="bg-blue-100 text-blue-700 border-blue-200 text-[9px] whitespace-nowrap">
                                       📦 {portal.typeFreteApenas}
+                                    </Badge>
+                                  ) : tipo === 'instalacao_apenas' ? (
+                                    <Badge className="bg-purple-100 text-purple-700 border-purple-200 text-[9px] whitespace-nowrap">
+                                      🔧 {portal.typeInstalacaoApenas}
                                     </Badge>
                                   ) : (
                                     <Badge className="bg-gray-100 text-gray-600 border-gray-200 text-[9px] whitespace-nowrap">
@@ -1518,6 +1533,11 @@ const SupplierPortal = () => {
                                         {portal.onlyDeliveryBadge}
                                       </Badge>
                                     );
+                                    if (tipo === "instalacao_apenas") return (
+                                      <Badge className="ml-2 bg-purple-100 text-purple-700 border-purple-200 text-[10px] font-bold uppercase">
+                                        {portal.typeInstalacaoApenas}
+                                      </Badge>
+                                    );
                                     if (tipo === "sem_logistica") return (
                                       <Badge className="ml-2 bg-gray-100 text-gray-600 border-gray-200 text-[10px] font-bold uppercase">
                                         {portal.typeSemLogistica}
@@ -1764,6 +1784,15 @@ const SupplierPortal = () => {
                             {storeData.filter(s => s.tipo_entrega === 'frete_apenas').length}
                           </span>
                         </div>
+                        <div className="flex items-center justify-between p-3 rounded-lg border border-purple-100 bg-purple-50/50">
+                          <span className="text-sm font-medium text-purple-700 flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-purple-500" />
+                            {portal.storesSummaryInstallOnly}
+                          </span>
+                          <span className="text-lg font-bold text-purple-700">
+                            {storeData.filter(s => s.tipo_entrega === 'instalacao_apenas').length}
+                          </span>
+                        </div>
                         <div className="flex items-center justify-between p-3 rounded-lg border border-gray-200 bg-gray-50/50">
                           <span className="text-sm font-medium text-gray-600 flex items-center gap-2">
                             <div className="w-2 h-2 rounded-full bg-gray-400" />
@@ -1809,6 +1838,11 @@ const SupplierPortal = () => {
                                         {portal.typeFreteApenas}
                                       </Badge>
                                     );
+                                    if (tipo === 'instalacao_apenas') return (
+                                      <Badge variant="outline" className="text-[10px] font-semibold border-purple-200 text-purple-700 bg-purple-50 px-1.5 py-0 leading-tight">
+                                        {portal.typeInstalacaoApenas}
+                                      </Badge>
+                                    );
                                     return (
                                       <Badge variant="outline" className="text-[10px] font-semibold border-gray-200 text-gray-500 bg-gray-50 px-1.5 py-0 leading-tight">
                                         {portal.typeSemLogistica}
@@ -1835,7 +1869,7 @@ const SupplierPortal = () => {
                     <span className="text-[11px] font-normal text-muted-foreground">({currencyCode})</span>
                   </label>
                   <div className="flex items-center gap-1 text-[11px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
-                    {storeData.filter(s => !disabledStoreIds.has(s.id) && (s.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length} {portal.summaryInstallations}
+                    {storeData.filter(s => !disabledStoreIds.has(s.id) && hasInstallation(normalizeDeliveryType(s.tipo_entrega))).length} {portal.summaryInstallations}
                   </div>
                 </div>
                 <div className="relative group">
@@ -1867,7 +1901,7 @@ const SupplierPortal = () => {
                     <span className="text-[11px] font-normal text-muted-foreground">({currencyCode})</span>
                   </label>
                   <div className="flex items-center gap-1 text-[11px] font-semibold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100">
-                    {storeData.filter(s => !disabledStoreIds.has(s.id) && (s.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica').length} {portal.summaryFrete}
+                    {storeData.filter(s => !disabledStoreIds.has(s.id) && hasFreight(normalizeDeliveryType(s.tipo_entrega))).length} {portal.summaryFrete}
                   </div>
                 </div>
                 <div className="relative group">

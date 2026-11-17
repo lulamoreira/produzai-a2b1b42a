@@ -1,3 +1,5 @@
+import { hasLogistics, normalizeDeliveryType, type DeliveryType } from "@/lib/deliveryType";
+
 /**
  * A campaign schedule only becomes an installation the user can actually see
  * when it has BOTH a date and a time. When `reschedule_enabled` is on, the
@@ -32,9 +34,14 @@ export interface PendingInstallationLike extends InstallationScheduleLike {
   client_stores?: { tipo_entrega?: string | null } | null;
 }
 
-export function isVisiblePendingInstallation(s: PendingInstallationLike): boolean {
+/**
+ * `effectiveType` is the store's delivery type IN THIS CAMPAIGN (campaign
+ * override ?? store default). When omitted, the store default is used.
+ */
+export function isVisiblePendingInstallation(s: PendingInstallationLike, effectiveType?: DeliveryType): boolean {
   if (s.completed_at) return false;
-  if ((s.client_stores?.tipo_entrega ?? "frete_instalacao") === "sem_logistica") return false;
+  const tipo = effectiveType ?? normalizeDeliveryType(s.client_stores?.tipo_entrega);
+  if (!hasLogistics(tipo)) return false;
   return hasScheduledDateAndTime(s);
 }
 

@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import { useLojaALojaLojas } from "@/hooks/useLojaALoja";
+import { useCampaignDeliveryOverrides } from "@/hooks/useMultiClientData";
+import { effectiveDeliveryType, hasInstallation } from "@/lib/deliveryType";
 import {
   useStorePortalTokens,
   useGenerateStoreToken,
@@ -26,6 +28,7 @@ type SortField = "name" | "city" | "state" | "status";
 type SortDir = "asc" | "desc" | null;
 
 export default function PortaisManager({ campaignId, clientId, permissions }: Props) {
+  const { overrides: deliveryOverrides } = useCampaignDeliveryOverrides(campaignId);
   const canEdit = permissions.canEdit;
   const canDelete = permissions.canDelete;
   const { data: lojas = [] } = useLojaALojaLojas(campaignId);
@@ -59,7 +62,9 @@ export default function PortaisManager({ campaignId, clientId, permissions }: Pr
   }, [tokens]);
 
   const sortedStores = useMemo(() => {
-    const baseStores = stores.filter((s: any) => (s.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao');
+    // Tipo efetivo nesta campanha. Obs.: a consulta acima não traz o padrão da loja
+    // (comportamento de hoje), então só os ajustes da campanha tiram lojas desta lista.
+    const baseStores = stores.filter((s: any) => hasInstallation(effectiveDeliveryType(s, deliveryOverrides)));
     if (!sortField || !sortDir) return baseStores;
     return [...baseStores].sort((a, b) => {
       let va: string | number = "";
@@ -84,7 +89,7 @@ export default function PortaisManager({ campaignId, clientId, permissions }: Pr
           : String(va).localeCompare(String(vb), "pt-BR");
       return sortDir === "asc" ? cmp : -cmp;
     });
-  }, [stores, sortField, sortDir, tokenMap]);
+  }, [stores, sortField, sortDir, tokenMap, deliveryOverrides]);
 
   const handleSort = (field: SortField) => {
     if (sortField !== field) {

@@ -84,6 +84,8 @@ import StartAdjustmentDialog from "@/components/Adjustments/StartAdjustmentDialo
 import CostAnalysisDialog from "@/components/Budget/CostAnalysisDialog";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
+import { useCampaignDeliveryOverrides } from "@/hooks/useMultiClientData";
+import { effectiveDeliveryType, hasFreight, hasInstallation } from "@/lib/deliveryType";
 import { useSupplierChangeMarkers } from "@/hooks/useSupplierChangeMarkers";
 import { buildSupplierChangeMessage, summarizeSupplierChanges } from "@/lib/supplierChangeMarkers";
 
@@ -222,6 +224,9 @@ function AdminInlineNumberInput({
 export default function BudgetTab({ campaignId, clientId, agencyId, campaignName, agencyName, pieces, kits, kitPieces, qtyMap, stores, onNavigateToRateio, onNavigateToSection, activeAdjustment, campaign }: BudgetTabProps) {
   const { t } = useTranslation();
   const queryClient = useQueryClient();
+
+  // Ajustes de logística desta campanha (tipo efetivo = ajuste ?? padrão da loja).
+  const { overrides: deliveryOverrides } = useCampaignDeliveryOverrides(campaignId);
 
   // Data hooks
   const { data: settings } = useBudgetSettings(campaignId);
@@ -515,20 +520,25 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
     const map: Record<string, number> = {};
     const installationMap: Record<string, number> = {};
     const freightMap: Record<string, number> = {};
+    const installOnlyMap: Record<string, number> = {};
     const noLogisticsMap: Record<string, number> = {};
+
+    // Tipo EFETIVO de cada loja nesta campanha (ajuste da campanha ?? padrão da loja).
+    const storeTypes = stores.map((s) => ({ id: s.id, tipo: effectiveDeliveryType(s, deliveryOverrides) }));
 
     pieces.forEach((p) => {
       let total = 0;
       let inst = 0;
       let freight = 0;
+      let instOnly = 0;
       let none = 0;
 
-      stores.forEach((s) => {
-        const qty = qtyMap[`${s.id}-${p.id}`] || 0;
-        const tipo = (s as any).tipo_entrega ?? 'frete_instalacao';
-        
+      storeTypes.forEach(({ id, tipo }) => {
+        const qty = qtyMap[`${id}-${p.id}`] || 0;
+
         if (tipo === 'frete_instalacao') inst += qty;
         else if (tipo === 'frete_apenas') freight += qty;
+        else if (tipo === 'instalacao_apenas') instOnly += qty;
         else none += qty;
 
         total += qty;
@@ -537,11 +547,12 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
       map[p.id] = total;
       installationMap[p.id] = inst;
       freightMap[p.id] = freight;
+      installOnlyMap[p.id] = instOnly;
       noLogisticsMap[p.id] = none;
     });
 
-    return { map, installationMap, freightMap, noLogisticsMap };
-  }, [pieces, stores, qtyMap]);
+    return { map, installationMap, freightMap, installOnlyMap, noLogisticsMap };
+  }, [pieces, stores, qtyMap, deliveryOverrides]);
 
   const pieceTotals = pieceTotalsFull.map;
 
@@ -1597,7 +1608,8 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
           pieces,
           kits,
           kitPieces: kitPieces as any,
-          stores,
+          // tipo_entrega já resolvido para o tipo efetivo nesta campanha
+          stores: stores.map((st) => ({ ...st, tipo_entrega: effectiveDeliveryType(st, deliveryOverrides) })),
           qtyMap: rateioQtyMap,
           unitPriceByPieceId,
           installation,
@@ -1694,12 +1706,11 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       )}
 
       {(() => {
-        const comFrete = stores.filter(s => {
-          const tipo = (s as any).tipo_entrega ?? 'frete_instalacao';
-          return tipo === 'frete_instalacao' || tipo === 'frete_apenas';
-        }).length;
-        const comInstalacao = stores.filter(s => ((s as any).tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao').length;
-        const semLogistica = stores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
+        // Tipo EFETIVO nesta campanha (ajuste da campanha ?? padrão da loja).
+        const tipos = stores.map(s => effectiveDeliveryType(s, deliveryOverrides));
+        const comFrete = tipos.filter(hasFreight).length;
+        const comInstalacao = tipos.filter(hasInstallation).length;
+        const semLogistica = tipos.filter(t => t === 'sem_logistica').length;
         const totalLojas = stores.length;
         return (
           <div className="space-y-2">
@@ -1739,7 +1750,7 @@ ${deadlineBlock}${timelineBlock}${materialsBlock}
       })()}
 
       {(() => {
-        const semLogistica = stores.filter(s => (s as any).tipo_entrega === 'sem_logistica').length;
+        const semLogistica = stores.filter(s => effectiveDeliveryType(s, deliveryOverrides) === 'sem_logistica').length;
         if (semLogistica === 0) return null;
         const pLabels = getSupplierPortalLabels(currencyCode);
         return (
@@ -3463,12 +3474,13 @@ ${msgLabels.winnerWaFooter}
                 <div className="mt-6 space-y-4">
                   {/* Pieces table */}
                   <div className="border rounded-md overflow-x-auto">
-                    <Table className="w-full min-w-[560px]">
+                    <Table className="w-full min-w-[620px]">
                       <TableHeader>
                         <TableRow>
                           <TableHead className="text-xs">{labels.columnItem}</TableHead>
                           <TableHead className="text-xs text-right">Frete + Inst.</TableHead>
-                          <TableHead className="text-xs text-right">Frete Apenas</TableHead>
+                          <TableHead className="text-xs text-right">Só frete</TableHead>
+                          <TableHead className="text-xs text-right">Só inst.</TableHead>
                           <TableHead className="text-xs text-right">Sem Log.</TableHead>
                           <TableHead className="text-xs text-right w-20">{labels.columnQty}</TableHead>
                           <TableHead className="text-xs text-right w-28">{labels.columnUnitPrice}</TableHead>
@@ -3535,6 +3547,7 @@ ${msgLabels.winnerWaFooter}
                               </TableCell>
                               <TableCell className="text-xs text-right font-mono">{pieceTotalsFull.installationMap[piece.id] || 0}</TableCell>
                               <TableCell className="text-xs text-right font-mono">{pieceTotalsFull.freightMap[piece.id] || 0}</TableCell>
+                              <TableCell className="text-xs text-right font-mono">{pieceTotalsFull.installOnlyMap[piece.id] || 0}</TableCell>
                               <TableCell className="text-xs text-right font-mono text-muted-foreground">{pieceTotalsFull.noLogisticsMap[piece.id] || 0}</TableCell>
                               <TableCell className="text-xs text-right font-bold">{qty}</TableCell>
                               <TableCell className="text-xs text-right">
@@ -3586,7 +3599,7 @@ ${msgLabels.winnerWaFooter}
                       return (
                         <React.Fragment key={`kit-${kit.id}`}>
                           <TableRow className="bg-muted/40 border-t-2">
-                            <TableCell colSpan={5} className="text-xs font-semibold">
+                            <TableCell colSpan={6} className="text-xs font-semibold">
                               🧩 Kit {kit.code} - {kit.name} <span className="font-normal text-muted-foreground">(Qtd kit: {kitQty})</span>
                             </TableCell>
                             <TableCell className="text-xs text-right font-semibold">
@@ -3626,6 +3639,7 @@ ${msgLabels.winnerWaFooter}
                                   </TableCell>
                                   <TableCell className="text-xs text-right font-mono">{pieceTotalsFull.installationMap[kp.piece_id] || 0}</TableCell>
                                   <TableCell className="text-xs text-right font-mono">{pieceTotalsFull.freightMap[kp.piece_id] || 0}</TableCell>
+                                  <TableCell className="text-xs text-right font-mono">{pieceTotalsFull.installOnlyMap[kp.piece_id] || 0}</TableCell>
                                   <TableCell className="text-xs text-right font-mono text-muted-foreground">{pieceTotalsFull.noLogisticsMap[kp.piece_id] || 0}</TableCell>
                                   <TableCell className="text-xs text-right font-bold">{qty}</TableCell>
                                   <TableCell className="text-xs text-right">

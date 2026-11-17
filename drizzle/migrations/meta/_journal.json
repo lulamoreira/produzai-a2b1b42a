@@ -176,6 +176,13 @@
       "when": 1794798696636,
       "tag": "0024_renegotiation_moves_field_modules",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1794937418062,
+      "tag": "0025_campaign_delivery_type_overrides",
+      "breakpoints": true
     }
   ]
 }

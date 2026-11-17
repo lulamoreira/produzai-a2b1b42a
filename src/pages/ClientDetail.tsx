@@ -99,6 +99,7 @@ import { useTranslation } from "react-i18next";
 
 import * as XLSX from "xlsx";
 import { capitalizeName, cn } from "@/lib/utils";
+import { parseDeliveryTypeInput } from "@/lib/deliveryType";
 
 
 /** Auto-capitalize text fields of a store form (excludes state, store_model, email, cnpj, codes) */
@@ -935,7 +936,7 @@ const ClientDetail = () => {
         store_code: row.store_code || null,
         email: row.email || null,
         observations: row.observations || null,
-        tipo_entrega: (row.tipo_entrega as any) || 'frete_instalacao',
+        tipo_entrega: parseDeliveryTypeInput(row.tipo_entrega),
         showcase_count: parseInt(showcaseRaw, 10) || 0,
         active: true,
       });
@@ -1226,6 +1227,18 @@ const ClientDetail = () => {
                 <span>📦 Frete Apenas</span>
               </div>
               <span className="text-[10px] opacity-70 font-normal">Quiosques, stands e pontos sem instalação</span>
+            </ToggleGroupItem>
+            <ToggleGroupItem
+              value="instalacao_apenas"
+              className={cn(
+                "flex-1 flex-col items-center justify-center gap-1 h-auto py-3 border rounded-md transition-all text-center",
+                (form.tipo_entrega as string) === "instalacao_apenas" && "bg-purple-50 border-purple-500 text-purple-700 shadow-sm"
+              )}
+            >
+              <div className="flex items-center gap-2 font-bold">
+                <span>🔧 Só instalação</span>
+              </div>
+              <span className="text-[10px] opacity-70 font-normal">Material chega por outro meio; só a equipe instala</span>
             </ToggleGroupItem>
             <ToggleGroupItem
               value="sem_logistica"

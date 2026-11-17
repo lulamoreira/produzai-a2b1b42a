@@ -10,7 +10,8 @@ import { useOccurrenceStatusSync } from "@/hooks/useOccurrenceStatusSync";
 import { useScheduleInheritance } from "@/hooks/useScheduleInheritance";
 import { buildContactsByStoreMap } from "@/lib/storeHelpers";
 import { isResolvedStatus } from "@/lib/occurrenceHelpers";
-import { type ClientStore } from "@/hooks/useMultiClientData";
+import { type ClientStore, useCampaignDeliveryOverrides } from "@/hooks/useMultiClientData";
+import { effectiveDeliveryType, hasInstallation } from "@/lib/deliveryType";
 import { getStateColor } from "@/lib/stateColors";
 import { useStoreContactsByClient, useStoreContactRoles, type StoreContact, type StoreContactRole } from "@/hooks/useStoreContacts";
 import { useClientPermission } from "@/hooks/useClientPermission";
@@ -200,6 +201,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
 
   // Fetch teams
   const { data: teams = [] } = useInstallationTeams(campaignId);
+  const { overrides: deliveryOverrides } = useCampaignDeliveryOverrides(campaignId);
   const { data: allMembersMap = {} } = useAllTeamMembers(campaignId);
   const { data: allVehiclesMap = {} } = useAllTeamVehicles(campaignId);
 
@@ -316,7 +318,8 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
   }, [stores]);
 
   const filteredStores = useMemo(() => {
-    let result = stores.filter((s) => (s.tipo_entrega ?? 'frete_instalacao') === 'frete_instalacao');
+    // Só lojas com instalação NESTA campanha (Frete + Instalação ou Só instalação).
+    let result = stores.filter((s) => hasInstallation(effectiveDeliveryType(s, deliveryOverrides)));
     if (filterState) result = result.filter((s) => s.state === filterState);
     if (filterCity) result = result.filter((s) => s.city === filterCity);
     if (filterModel) result = result.filter((s) => s.store_model === filterModel);
@@ -392,7 +395,7 @@ const SchedulingTab = ({ campaignId, stores, canEdit, agencyName, clientName, ca
       result = result.filter((s) => !scheduleMap[s.id]?.reschedule_enabled);
     }
     return result.sort((a, b) => (a.state || "").localeCompare(b.state || "") || a.name.localeCompare(b.name));
-  }, [stores, filterState, filterCity, filterModel, searchTerm, filterApproval, filterDate, filterPeriod, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, scheduleMap]);
+  }, [stores, filterState, filterCity, filterModel, searchTerm, filterApproval, filterDate, filterPeriod, filterTeam, filterPreference, filterResponsibility, filterLocked, filterReschedule, scheduleMap, deliveryOverrides]);
 
   // Apply summary filter on top of filteredStores
   const displayedStores = useMemo(() => {

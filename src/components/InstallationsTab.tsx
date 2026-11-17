@@ -13,7 +13,8 @@ import ReinstallCard from "@/components/ReinstallCard";
 import NewReinstallDialog from "@/components/NewReinstallDialog";
 import { useOccurrenceStatusSync } from "@/hooks/useOccurrenceStatusSync";
 import { buildAddress, buildContactsByStoreMap } from "@/lib/storeHelpers";
-import { type ClientStore } from "@/hooks/useMultiClientData";
+import { type ClientStore, useCampaignDeliveryOverrides } from "@/hooks/useMultiClientData";
+import { effectiveDeliveryType, hasInstallation } from "@/lib/deliveryType";
 import { getStateColor } from "@/lib/stateColors";
 import { useStoreContactsByClient, useStoreContactRoles, type StoreContact } from "@/hooks/useStoreContacts";
 import { useInstallationPhotos, useAddInstallationPhoto, type InstallationPhoto } from "@/hooks/useInstallationPhotos";
@@ -222,6 +223,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
   }), [stores, scheduleMap]);
 
   const { data: teams = [] } = useInstallationTeams(campaignId);
+  const { overrides: deliveryOverrides } = useCampaignDeliveryOverrides(campaignId);
   const { data: allMembersMap = {} } = useAllTeamMembers(campaignId);
   const { data: allVehiclesMap = {} } = useAllTeamVehicles(campaignId);
   const { data: photos = [] } = useInstallationPhotos(campaignId);
@@ -258,7 +260,8 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
 
   const filteredStores = useMemo(() => {
     return scheduledStores.filter((s) => {
-      if ((s.tipo_entrega ?? 'frete_instalacao') !== 'frete_instalacao') return false;
+      // Só lojas com instalação NESTA campanha (Frete + Instalação ou Só instalação).
+      if (!hasInstallation(effectiveDeliveryType(s, deliveryOverrides))) return false;
       const q = searchTerm.toLowerCase().trim();
       const matchesSearch = !q || Object.values(s).some(val => 
         (typeof val === 'string' || typeof val === 'number') && 
@@ -380,7 +383,7 @@ const InstallationsTab = ({ campaignId, campaignName, stores, canEdit, clientId,
         }
       }
     });
-  }, [scheduledStores, searchTerm, filterState, filterCity, filterStatus, filterDate, filterPeriod, filterTeam, filterLocked, filterReschedule, filterModel, filterCheckin, scheduleMap, photosByStore, storeOccurrenceStatus, sortBy]);
+  }, [scheduledStores, searchTerm, filterState, filterCity, filterStatus, filterDate, filterPeriod, filterTeam, filterLocked, filterReschedule, filterModel, filterCheckin, scheduleMap, photosByStore, storeOccurrenceStatus, sortBy, deliveryOverrides]);
 
   // Apply summary filter on top of filteredStores
   const displayedStores = useMemo(() => {

@@ -3,6 +3,8 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
 import { hasScheduledDateAndTime } from "@/lib/installationSchedule";
+import { effectiveDeliveryTypeFor, hasLogistics } from "@/lib/deliveryType";
+import { fetchDeliveryOverridesForCampaign } from "@/lib/deliveryOverridesFetch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
 
@@ -23,7 +25,7 @@ function useCampaignStats(campaignId: string) {
       // Each list can exceed PostgREST's 1000-row cap (e.g. 1.618 photos), so
       // every read is paginated with an exact count and a stable id order.
       // supabasePaginate throws on error, so a failed read never counts as zero.
-      const [schedulesRows, lalOccurrencesRows, photosRows] = await Promise.all([
+      const [schedulesRows, lalOccurrencesRows, photosRows, overrides] = await Promise.all([
         supabasePaginate<any>((from, to) =>
           supabase
             .from("campaign_schedules")
@@ -48,24 +50,22 @@ function useCampaignStats(campaignId: string) {
             .order("id")
             .range(from, to)
         ),
+        // Ajustes de logística desta campanha (tipo efetivo = ajuste ?? padrão da loja).
+        fetchDeliveryOverridesForCampaign(campaignId),
       ]);
+      const withLogistics = (r: any) =>
+        hasLogistics(effectiveDeliveryTypeFor(r.store_id, r.client_stores?.tipo_entrega, overrides));
 
-      // Filter all by tipo_entrega !== 'sem_logistica'
+      // Filter all by effective delivery type !== 'sem_logistica'
       // Same rule as the Installations screen ("scheduledStores"): a store only
       // exists there when its schedule has BOTH a date and a time, and the
       // reschedule pair wins when reschedule_enabled is on. Schedules without
       // them (e.g. copied from a previous campaign) must not be counted here.
       const schedules = schedulesRows
-        .filter(
-          (s: any) => (s.client_stores?.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica'
-        )
+        .filter(withLogistics)
         .filter(hasScheduledDateAndTime);
-      const lalOccurrences = lalOccurrencesRows.filter(
-        (o: any) => (o.client_stores?.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica'
-      );
-      const photos = photosRows.filter(
-        (p: any) => (p.client_stores?.tipo_entrega ?? 'frete_instalacao') !== 'sem_logistica'
-      );
+      const lalOccurrences = lalOccurrencesRows.filter(withLogistics);
+      const photos = photosRows.filter(withLogistics);
 
       const photosCount = photos.length;
 
