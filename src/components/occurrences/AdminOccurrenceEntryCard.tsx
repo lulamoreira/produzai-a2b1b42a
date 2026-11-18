@@ -3,14 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import StorePortalPhotoUpload from "@/components/StorePortal/StorePortalPhotoUpload";
-import { AdminPecaPicker } from "./AdminPecaPicker";
+import { AdminRateioItemPicker } from "./AdminRateioItemPicker";
 import type { AdminOccurrenceEntry } from "./adminOccurrenceSubmit";
-import type { PecaOption } from "@/lib/adminOccurrence";
+import type { RateioItemOption } from "@/lib/occurrenceRateioItem";
 
 export interface AdminOccurrenceEntryCardProps {
   index: number;
   entry: AdminOccurrenceEntry;
-  options: PecaOption[];
+  options: RateioItemOption[];
   motivos: Array<{ id: string; descricao: string }>;
   showPriority: boolean;
   canRemove: boolean;
@@ -40,10 +40,10 @@ export function AdminOccurrenceEntryCard(p: AdminOccurrenceEntryCardProps) {
         <label className="text-xs font-medium text-foreground mb-1 block">Peça *</label>
         {p.options.length === 0 ? (
           <p className="text-xs text-muted-foreground rounded-md border border-dashed border-border p-2">
-            Esta campanha ainda não tem peças cadastradas no Loja a Loja.
+            Esta campanha ainda não tem peças cadastradas no rateio.
           </p>
         ) : (
-          <AdminPecaPicker options={p.options} value={entry.pecaId} onChange={(pecaId) => p.onChange({ pecaId })} disabled={p.disabled} />
+          <AdminRateioItemPicker options={p.options} value={entry.itemKey} onChange={(itemKey) => p.onChange({ itemKey })} disabled={p.disabled} />
         )}
       </div>
 

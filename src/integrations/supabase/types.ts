@@ -5357,6 +5357,10 @@ export type Database = {
         Row: {
           agency_notes: string | null
           campaign_id: string
+          campaign_item_code: number | null
+          campaign_item_name: string | null
+          campaign_kit_id: string | null
+          campaign_piece_id: string | null
           created_at: string | null
           description: string | null
           expected_resolution_date: string | null
@@ -5394,6 +5398,10 @@ export type Database = {
         Insert: {
           agency_notes?: string | null
           campaign_id: string
+          campaign_item_code?: number | null
+          campaign_item_name?: string | null
+          campaign_kit_id?: string | null
+          campaign_piece_id?: string | null
           created_at?: string | null
           description?: string | null
           expected_resolution_date?: string | null
@@ -5431,6 +5439,10 @@ export type Database = {
         Update: {
           agency_notes?: string | null
           campaign_id?: string
+          campaign_item_code?: number | null
+          campaign_item_name?: string | null
+          campaign_kit_id?: string | null
+          campaign_piece_id?: string | null
           created_at?: string | null
           description?: string | null
           expected_resolution_date?: string | null
@@ -5471,6 +5483,20 @@ export type Database = {
             columns: ["campaign_id"]
             isOneToOne: false
             referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_occurrence_reports_campaign_kit_id_fkey"
+            columns: ["campaign_kit_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_kits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "store_occurrence_reports_campaign_piece_id_fkey"
+            columns: ["campaign_piece_id"]
+            isOneToOne: false
+            referencedRelation: "campaign_pieces"
             referencedColumns: ["id"]
           },
           {

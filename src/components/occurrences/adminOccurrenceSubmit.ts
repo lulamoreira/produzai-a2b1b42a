@@ -1,9 +1,10 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { LalPeca } from "@/lib/adminOccurrence";
+import { rateioItemInsertFields, type RateioItemOption } from "@/lib/occurrenceRateioItem";
 
 export interface AdminOccurrenceEntry {
   key: string;
-  pecaId: string;
+  /** Peça/kit do rateio escolhido ("piece:<id>" | "kit:<id>"). */
+  itemKey: string;
   motiveId: string;
   description: string;
   priority: string;
@@ -47,22 +48,22 @@ export async function submitAdminOccurrences(input: {
   reporterType: string;
   internalNote: string;
   entries: AdminOccurrenceEntry[];
-  pecaById: Map<string, LalPeca>;
+  itemByKey: Map<string, RateioItemOption>;
 }): Promise<{ saved: number; failed: Array<{ index: number; message: string }> }> {
   let saved = 0;
   const failed: Array<{ index: number; message: string }> = [];
   for (let i = 0; i < input.entries.length; i++) {
     const e = input.entries[i];
-    const peca = input.pecaById.get(e.pecaId);
+    const item = input.itemByKey.get(e.itemKey);
     try {
-      if (!peca) throw new Error("peça não encontrada");
+      if (!item) throw new Error("peça não encontrada");
       const { error } = await supabase.from("store_occurrence_reports").insert({
         token_id: input.tokenId,
         campaign_id: input.campaignId,
         store_id: input.storeId,
-        loja_a_loja_peca_id: peca.id,
-        tipo_id: peca.tipo_id,
-        subdivisao_id: peca.subdivisao_id,
+        // Registro interno cita a peça/kit do RATEIO (código + nome gravados);
+        // não há peça do Loja a Loja correspondente.
+        ...rateioItemInsertFields(item),
         description: e.description.trim() || null,
         priority: e.priority,
         photo_urls: e.photos.length > 0 ? e.photos : null,

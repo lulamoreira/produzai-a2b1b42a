@@ -9,10 +9,11 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
-  activeCampaignStores, assignedPecaIds, internalNoteText, occurrenceWindow, occurrenceWindowWarning,
-  pecaOptions, reporterTypeValue, showcaseCountLabel, storeCapacityInfo, type ReporterKind,
+  activeCampaignStores, internalNoteText, occurrenceWindow, occurrenceWindowWarning,
+  reporterTypeValue, showcaseCountLabel, storeCapacityInfo, type ReporterKind,
 } from "@/lib/adminOccurrence";
-import { useAdminOccurrenceData, useStoreLalAssignments } from "./useAdminOccurrenceData";
+import { rateioItemOptions } from "@/lib/occurrenceRateioItem";
+import { useAdminOccurrenceData, useStoreRateioQty } from "./useAdminOccurrenceData";
 import { ensureStoreToken, submitAdminOccurrences, type AdminOccurrenceEntry } from "./adminOccurrenceSubmit";
 import { AdminStorePicker } from "./AdminStorePicker";
 import { AdminOccurrenceEntryCard } from "./AdminOccurrenceEntryCard";
@@ -25,7 +26,7 @@ export interface AdminOccurrenceDialogProps {
 }
 
 const newEntry = (): AdminOccurrenceEntry => ({
-  key: Math.random().toString(36).slice(2), pecaId: "", motiveId: "", description: "", priority: "media", photos: [],
+  key: Math.random().toString(36).slice(2), itemKey: "", motiveId: "", description: "", priority: "media", photos: [],
 });
 
 /**
@@ -35,14 +36,14 @@ const newEntry = (): AdminOccurrenceEntry => ({
 export default function AdminOccurrenceDialog({ open, onOpenChange, campaignId, clientId }: AdminOccurrenceDialogProps) {
   const qc = useQueryClient();
   const { user } = useAuth();
-  const { stores, disabled, lal, meta } = useAdminOccurrenceData(campaignId, clientId, open);
+  const { stores, disabled, rateio, meta } = useAdminOccurrenceData(campaignId, clientId, open);
   const [storeId, setStoreId] = useState("");
   const [reporter, setReporter] = useState<ReporterKind>("agencia");
   const [contact, setContact] = useState({ name: "", phone: "", email: "" });
   const [entries, setEntries] = useState<AdminOccurrenceEntry[]>([newEntry()]);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const assignments = useStoreLalAssignments(campaignId, storeId);
+  const storeQty = useStoreRateioQty(campaignId, storeId);
 
   const { data: userName = "" } = useQuery({
     queryKey: ["admin-occ-user-name", user?.id],
@@ -56,21 +57,18 @@ export default function AdminOccurrenceDialog({ open, onOpenChange, campaignId, 
   const storeList = useMemo(() => activeCampaignStores(stores.data ?? [], disabled.data ?? []), [stores.data, disabled.data]);
   const selectedStore = storeList.find((s) => s.id === storeId);
   const capacity = useMemo(() => storeCapacityInfo(selectedStore), [selectedStore]);
-  const lalData = lal.data;
+  const rateioData = rateio.data;
   const options = useMemo(() => {
-    if (!lalData) return [];
-    const assigned = storeId && assignments.data
-      ? assignedPecaIds({ ...lalData, lojas: assignments.data })
-      : new Set<string>();
-    return pecaOptions({ ...lalData, assigned });
-  }, [lalData, storeId, assignments.data]);
-  const pecaById = useMemo(() => new Map((lalData?.pecas ?? []).map((p) => [p.id, p])), [lalData]);
+    if (!rateioData) return [];
+    return rateioItemOptions({ ...rateioData, storeId, storeQty: storeId ? storeQty.data ?? [] : [] });
+  }, [rateioData, storeId, storeQty.data]);
+  const itemByKey = useMemo(() => new Map(options.map((o) => [o.key, o])), [options]);
   const occWindow = useMemo(() => occurrenceWindow(meta.data?.deadline ?? null), [meta.data?.deadline]);
   const warning = meta.data ? occurrenceWindowWarning(occWindow) : null;
 
-  const loading = stores.isLoading || disabled.isLoading || lal.isLoading || meta.isLoading;
-  const loadError = stores.error || disabled.error || lal.error || meta.error;
-  const valid = !!storeId && entries.every((e) => e.pecaId && e.motiveId);
+  const loading = stores.isLoading || disabled.isLoading || rateio.isLoading || meta.isLoading;
+  const loadError = stores.error || disabled.error || rateio.error || meta.error;
+  const valid = !!storeId && entries.every((e) => e.itemKey && itemByKey.has(e.itemKey) && e.motiveId);
   const busy = submitting || uploadingKey !== null;
 
   const reset = () => {
@@ -90,7 +88,7 @@ export default function AdminOccurrenceDialog({ open, onOpenChange, campaignId, 
         storeContact: reporter === "lojista" ? contact : null,
       });
       const { saved, failed } = await submitAdminOccurrences({
-        campaignId, storeId, tokenId, internalNote: note, entries, pecaById,
+        campaignId, storeId, tokenId, internalNote: note, entries, itemByKey,
         reporterType: reporterTypeValue(reporter, meta.data.agencyName, meta.data.clientName),
       });
       ["portal-occurrences-v2", "portal-occurrences-by-store", "loja-a-loja-dashboard", "campaign_stats",

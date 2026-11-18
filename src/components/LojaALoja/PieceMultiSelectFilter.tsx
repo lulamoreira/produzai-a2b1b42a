@@ -6,11 +6,9 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { occurrencePieceDisplay, occurrencePieceFilterKey, type OccurrencePieceSource } from "@/lib/occurrenceRateioItem";
 
-interface OccurrenceLike {
-  loja_a_loja_peca_id?: string | null;
-  loja_a_loja_pecas?: any;
-}
+type OccurrenceLike = OccurrencePieceSource & { loja_a_loja_pecas?: any };
 
 interface PieceOption {
   id: string;
@@ -49,11 +47,12 @@ export default function PieceMultiSelectFilter({
   const options = useMemo<PieceOption[]>(() => {
     const map = new Map<string, PieceOption>();
     occurrences.forEach((o) => {
-      const id = o.loja_a_loja_peca_id;
+      // Rateio (registro interno) ou peça do Loja a Loja (portal).
+      const id = occurrencePieceFilterKey(o);
       if (!id) return;
-      const peca = o.loja_a_loja_pecas;
-      const nome = peca?.nome ?? "—";
-      const local = buildLocal(peca);
+      const display = occurrencePieceDisplay(o);
+      const nome = display.label ?? "—";
+      const local = display.isRateio ? (display.isKit ? "Kit do rateio" : "Peça do rateio") : buildLocal(o.loja_a_loja_pecas);
       const existing = map.get(id);
       if (existing) {
         existing.count += 1;

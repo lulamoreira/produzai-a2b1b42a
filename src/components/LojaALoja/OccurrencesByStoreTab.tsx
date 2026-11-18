@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import OccurrenceDetailSheet from "./OccurrenceDetailSheet";
 import PieceMultiSelectFilter from "./PieceMultiSelectFilter";
 import { useRealtimeStoreOccurrences } from "@/hooks/useRealtimeStoreOccurrences";
+import { occurrencePieceDisplay, occurrencePieceFilterKey } from "@/lib/occurrenceRateioItem";
 import { useEffectiveTratativaStatuses } from "@/hooks/useLalTratativaStatuses";
 
 interface SubAreaPermission { canView: boolean; canEdit: boolean; canDelete: boolean }
@@ -39,6 +40,7 @@ function useOccurrencesByStore(campaignId: string) {
         .from("store_occurrence_reports")
         .select(`
           id, store_id, loja_a_loja_peca_id, motive_id, reporter_type,
+          campaign_piece_id, campaign_kit_id, campaign_item_code, campaign_item_name,
           description, priority, status, photo_urls, created_at, resolved_at,
           expected_resolution_date, needs_reinstallation, resolution_photo_urls,
           reinstallation_scheduled_at, reinstallation_os,
@@ -129,7 +131,7 @@ export default function OccurrencesByStoreTab({ campaignId, clientId, permission
       if (filterMotive !== "__all__" && o.motive_id !== filterMotive) return false;
       const st = o.tratativa_status ?? "aberta";
       if (filterStatus !== "__all__" && st !== filterStatus) return false;
-      if (filterPieceIds.length > 0 && !filterPieceIds.includes(o.loja_a_loja_peca_id)) return false;
+      if (filterPieceIds.length > 0 && !filterPieceIds.includes(occurrencePieceFilterKey(o) ?? "")) return false;
       if (dateFrom && new Date(o.created_at) < dateFrom) return false;
       if (dateTo) {
         const end = new Date(dateTo);
@@ -139,7 +141,7 @@ export default function OccurrencesByStoreTab({ campaignId, clientId, permission
       if (q) {
         const hay = [
           (o.client_stores as any)?.name,
-          (o.loja_a_loja_pecas as any)?.nome,
+          occurrencePieceDisplay(o).label,
           (o.store_portal_motivos as any)?.descricao,
           o.description,
         ].filter(Boolean).join(" ").toLowerCase();
@@ -215,7 +217,7 @@ export default function OccurrencesByStoreTab({ campaignId, clientId, permission
         Loja: (o.client_stores as any)?.name ?? "—",
         Cidade: (o.client_stores as any)?.city ?? "",
         UF: (o.client_stores as any)?.state ?? "",
-        Peça: (o.loja_a_loja_pecas as any)?.nome ?? "—",
+        Peça: occurrencePieceDisplay(o).label ?? "—",
         Motivo: (o.store_portal_motivos as any)?.descricao ?? "—",
         Status: getTratativaDisplay(o.tratativa_status ?? "aberta", tratativaStatuses).label,
         Prioridade: o.priority ?? "",
@@ -446,7 +448,7 @@ export default function OccurrencesByStoreTab({ campaignId, clientId, permission
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                               <span className="text-sm font-medium truncate">
-                                {(o.loja_a_loja_pecas as any)?.nome ?? "Peça —"}
+                                {occurrencePieceDisplay(o).label ?? "Peça —"}
                               </span>
                               <Badge className={cn("text-xs", getTratativaDisplay(o.tratativa_status ?? "aberta", tratativaStatuses).className)} style={getTratativaDisplay(o.tratativa_status ?? "aberta", tratativaStatuses).style}>
                                 {getTratativaDisplay(o.tratativa_status ?? "aberta", tratativaStatuses).label}

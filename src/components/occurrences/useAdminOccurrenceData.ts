@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { supabasePaginate } from "@/lib/supabasePaginate";
-import type { LalLoja, LalPeca, LalSub, LalTipo, SearchableStore } from "@/lib/adminOccurrence";
+import type { SearchableStore } from "@/lib/adminOccurrence";
+import type { RateioKit, RateioPiece, RateioStoreQty } from "@/lib/occurrenceRateioItem";
+import type { MatrixKitLink } from "@/lib/matrixImportPrefill";
 
 /**
  * Leituras do diálogo "NOVA OCORRÊNCIA" interno. Somente leitura.
@@ -39,36 +41,47 @@ export function useAdminOccurrenceData(campaignId: string, clientId: string, ena
     },
   });
 
-  const lal = useQuery({
-    queryKey: ["admin-occ-lal", campaignId],
+  /** Peças e kits do rateio desta campanha (não excluídos) e a composição dos kits. */
+  const rateio = useQuery({
+    queryKey: ["admin-occ-rateio", campaignId],
     enabled,
     queryFn: async () => {
-      const { data: tipos, error: tErr } = await supabase
-        .from("loja_a_loja_tipos")
-        .select("id, nome, letra, tem_subdivisao, display_order, is_deleted")
-        .eq("campaign_id", campaignId)
-        .order("display_order");
-      if (tErr) throw tErr;
-      const tipoIds = (tipos ?? []).map((t) => t.id);
-      let subdivisoes: LalSub[] = [];
-      if (tipoIds.length > 0) {
-        const { data, error } = await supabase
-          .from("loja_a_loja_subdivisoes")
-          .select("id, tipo_id, nome, display_order")
-          .in("tipo_id", tipoIds)
-          .order("display_order");
-        if (error) throw error;
-        subdivisoes = data ?? [];
+      const [pieces, kits] = await Promise.all([
+        supabasePaginate<RateioPiece>((from, to) =>
+          supabase
+            .from("campaign_pieces")
+            .select("id, code, name, category, sub_location, image_url", { count: "exact" })
+            .eq("campaign_id", campaignId)
+            .or("is_deleted.is.null,is_deleted.eq.false")
+            .order("id")
+            .range(from, to),
+        ),
+        supabasePaginate<RateioKit>((from, to) =>
+          supabase
+            .from("campaign_kits")
+            .select("id, code, name, category, sub_location, image_url", { count: "exact" })
+            .eq("campaign_id", campaignId)
+            .or("is_deleted.is.null,is_deleted.eq.false")
+            .order("id")
+            .range(from, to),
+        ),
+      ]);
+      const kitIds = kits.map((k) => k.id);
+      const pieceIds = new Set(pieces.map((p) => p.id));
+      const links: MatrixKitLink[] = [];
+      for (let i = 0; i < kitIds.length; i += 200) {
+        const chunk = kitIds.slice(i, i + 200);
+        const rows = await supabasePaginate<{ id: string; kit_id: string; piece_id: string; quantity: number | null }>((from, to) =>
+          supabase
+            .from("campaign_kit_pieces")
+            .select("id, kit_id, piece_id, quantity", { count: "exact" })
+            .in("kit_id", chunk)
+            .order("id")
+            .range(from, to),
+        );
+        for (const r of rows) if (pieceIds.has(r.piece_id)) links.push({ kit_id: r.kit_id, piece_id: r.piece_id, quantity: Math.max(1, Number(r.quantity) || 1) });
       }
-      const pecas = await supabasePaginate<LalPeca & { id: string }>((from, to) =>
-        supabase
-          .from("loja_a_loja_pecas")
-          .select("id, nome, image_url, tipo_id, subdivisao_id, display_order", { count: "exact" })
-          .eq("campaign_id", campaignId)
-          .order("id")
-          .range(from, to),
-      );
-      return { tipos: (tipos ?? []) as LalTipo[], subdivisoes, pecas };
+      return { pieces, kits, links };
     },
   });
 
@@ -94,22 +107,23 @@ export function useAdminOccurrenceData(campaignId: string, clientId: string, ena
     },
   });
 
-  return { stores, disabled, lal, meta };
+  return { stores, disabled, rateio, meta };
 }
 
-/** Linhas de loja_a_loja_lojas de uma loja (ativas e inativas). */
-export function useStoreLalAssignments(campaignId: string, storeId: string) {
+/** Quantidades do rateio de uma loja nesta campanha. */
+export function useStoreRateioQty(campaignId: string, storeId: string) {
   return useQuery({
-    queryKey: ["admin-occ-store-lal", campaignId, storeId],
+    queryKey: ["admin-occ-store-rateio", campaignId, storeId],
     enabled: !!storeId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("loja_a_loja_lojas")
-        .select("tipo_id, subdivisao_id, ativo")
-        .eq("campaign_id", campaignId)
-        .eq("store_id", storeId);
-      if (error) throw error;
-      return (data ?? []) as LalLoja[];
-    },
+    queryFn: () =>
+      supabasePaginate<RateioStoreQty & { id: string }>((from, to) =>
+        supabase
+          .from("campaign_store_pieces")
+          .select("id, piece_id, quantity", { count: "exact" })
+          .eq("campaign_id", campaignId)
+          .eq("store_id", storeId)
+          .order("id")
+          .range(from, to),
+      ),
   });
 }

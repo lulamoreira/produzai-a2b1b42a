@@ -36,6 +36,7 @@ import {
 import { TONE_PILL_CLASS } from "@/components/tratativa/timelineStyles";
 import { TratativaTimelineEditor } from "./TratativaTimelineEditor";
 import { cn } from "@/lib/utils";
+import { occurrencePieceDisplay } from "@/lib/occurrenceRateioItem";
 
 interface Props {
   open: boolean;
@@ -288,8 +289,9 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   };
   const timeline = tratativaTimeline(draftTimelineOcc, today);
   const storeName = occurrence.client_stores?.name ?? "—";
-  const pieceName = occurrence.loja_a_loja_pecas?.nome ?? "—";
-  const pieceImageUrl: string | null = occurrence.loja_a_loja_pecas?.image_url ?? null;
+  const pieceDisplay = occurrencePieceDisplay(occurrence);
+  const pieceName = pieceDisplay.label ?? "—";
+  const pieceImageUrl: string | null = pieceDisplay.image_url;
   const motivoDesc = occurrence.store_portal_motivos?.descricao ?? "—";
 
   const tipo = occurrence.loja_a_loja_pecas?.loja_a_loja_tipos;
@@ -302,7 +304,7 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
   const whatsMessage = whatsOpen
     ? buildOccurrenceWhatsappMessage({
         storeName: occurrence.client_stores?.name,
-        pieceName: occurrence.loja_a_loja_pecas?.nome,
+        pieceName: pieceDisplay.label ?? undefined,
         local: local === "—" ? "" : local,
         openedAtIso: occurrence.created_at,
         descricao: occurrence.description,

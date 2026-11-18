@@ -40,6 +40,7 @@ import { useCampaignDeliveryOverrides } from "@/hooks/useMultiClientData";
 import { effectiveDeliveryTypeFor, hasInstallation } from "@/lib/deliveryType";
 import { Checkbox } from "@/components/ui/checkbox";
 import BulkOccurrenceStatusBar from "./BulkOccurrenceStatusBar";
+import { occurrencePieceDisplay, occurrencePieceFilterKey } from "@/lib/occurrenceRateioItem";
 import { canBulkChangeOccurrenceStatus, visibleSelection, headerCheckState, countDistinctStores } from "@/lib/occurrenceBulkStatus";
 
 interface CollapsibleCardProps {
@@ -85,6 +86,7 @@ function usePortalOccurrences(campaignId: string) {
         .from("store_occurrence_reports")
         .select(`
           id, store_id, loja_a_loja_peca_id, motive_id, reporter_type,
+          campaign_piece_id, campaign_kit_id, campaign_item_code, campaign_item_name,
           description, priority, status, photo_urls, created_at, resolved_at,
           expected_resolution_date, needs_reinstallation, resolution_photo_urls,
           reinstallation_scheduled_at, reinstallation_os,
@@ -334,7 +336,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
       if (filterPriority !== "all" && o.priority !== filterPriority) return false;
       if (filterStore !== "all" && o.store_id !== filterStore) return false;
       if (!matchesOccurrenceStoreName(o, filterStoreSearch)) return false;
-      if (filterPieceIds.length > 0 && !filterPieceIds.includes(o.loja_a_loja_peca_id)) return false;
+      if (filterPieceIds.length > 0 && !filterPieceIds.includes(occurrencePieceFilterKey(o) ?? "")) return false;
       if (!isOpenedWithinRange(o.created_at, filterOpenedFrom, filterOpenedTo)) return false;
       
       if (kpiFilter === "valid" && !countsAsOccurrence(o.tratativa_status)) return false;
@@ -434,7 +436,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
   const occSort = useTableSort(filteredOccurrences as any[], {
     getValue: {
       store: (o: any) => (o.client_stores as any)?.name?.toLowerCase() ?? "",
-      piece: (o: any) => (o.loja_a_loja_pecas as any)?.nome?.toLowerCase() ?? "",
+      piece: (o: any) => occurrencePieceDisplay(o).label?.toLowerCase() ?? "",
       motive: (o: any) => (o.store_portal_motivos as any)?.descricao?.toLowerCase() ?? "",
       reporter: (o: any) => reporterLabel(o.reporter_type).toLowerCase(),
       priority: (o: any) => priorityWeight[o.priority] ?? 0,
@@ -887,7 +889,7 @@ _Relatório gerado pelo ProduzAI_ 🚀`;
                           </TableCell>
                         )}
                         <TableCell className="font-medium">{(o.client_stores as any)?.name ?? "—"}</TableCell>
-                        <TableCell>{(o.loja_a_loja_pecas as any)?.nome ?? "—"}</TableCell>
+                        <TableCell>{occurrencePieceDisplay(o).label ?? "—"}</TableCell>
                         <TableCell><span className="line-clamp-1 max-w-[160px]">{(o.store_portal_motivos as any)?.descricao ?? "—"}</span></TableCell>
                         <TableCell className="text-xs">{reporterLabel(o.reporter_type)}</TableCell>
                         {showPriority && <TableCell><Badge className={priorityColor[o.priority] ?? "bg-muted"}>{o.priority}</Badge></TableCell>}
@@ -1003,14 +1005,14 @@ _Relatório gerado pelo ProduzAI_ 🚀`;
                       })()}
                       <div className="flex gap-1.5 items-center">
                         <span className="text-muted-foreground shrink-0">Peça:</span>
-                        {(o.loja_a_loja_pecas as any)?.image_url && (
+                        {occurrencePieceDisplay(o).image_url && (
                           <img
-                            src={(o.loja_a_loja_pecas as any).image_url}
+                            src={occurrencePieceDisplay(o).image_url!}
                             alt=""
                             className="h-8 w-8 object-cover rounded border shrink-0"
                           />
                         )}
-                        <span className="text-foreground truncate">{(o.loja_a_loja_pecas as any)?.nome ?? "—"}</span>
+                        <span className="text-foreground truncate">{occurrencePieceDisplay(o).label ?? "—"}</span>
                       </div>
                       <div className="flex gap-1">
                         <span className="text-muted-foreground shrink-0">Motivo:</span>
