@@ -154,3 +154,20 @@ export function occurrencePieceFilterKey(o: OccurrencePieceSource | null | undef
   if (o && name) return `rateio:${o.campaign_kit_id ? "kit" : "piece"}:${o.campaign_item_code ?? ""}:${name}`;
   return o?.loja_a_loja_peca_id ?? null;
 }
+
+/** Minúsculas, sem acentos — "Testeira" e "TESTÉIRA" batem igual. */
+const normalizeSearch = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+
+/**
+ * Busca do seletor de peça do rateio. Cada palavra digitada precisa aparecer
+ * INTEIRA e em sequência (não letras soltas espalhadas) no nome, no local ou
+ * no selo "KIT". Número também vale como início do código da peça/kit ou do
+ * código de um kit que leva a peça (ex.: "15" acha 15, 150, 157).
+ */
+export function matchesRateioItemQuery(o: RateioItemOption, query: string): boolean {
+  const tokens = normalizeSearch(query).split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return true;
+  const text = normalizeSearch(`${o.name} ${o.local} ${o.type === "kit" ? "kit" : ""}`);
+  const codes = [o.code, ...o.kitCodes].filter((c): c is number => c != null).map(String);
+  return tokens.every((t) => text.includes(t) || (/^\d+$/.test(t) && codes.some((c) => c.startsWith(t))));
+}

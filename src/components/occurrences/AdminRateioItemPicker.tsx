@@ -2,10 +2,10 @@ import { useState } from "react";
 import { Check, ChevronsUpDown, Image as ImageIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
+import { Command, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from "@/components/ui/command";
 import { cn } from "@/lib/utils";
 import { getThumbnailUrl } from "@/lib/imageUrl";
-import type { RateioItemOption } from "@/lib/occurrenceRateioItem";
+import { matchesRateioItemQuery, type RateioItemOption } from "@/lib/occurrenceRateioItem";
 
 const stop = (e: React.SyntheticEvent) => e.stopPropagation();
 
@@ -67,15 +67,18 @@ export interface AdminRateioItemPickerProps {
 /** Seletor de peça/kit do rateio: primeiro o que a loja recebe, depois o resto da campanha. */
 export function AdminRateioItemPicker({ options, value, onChange, disabled }: AdminRateioItemPickerProps) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const selected = options.find((o) => o.key === value);
-  const mine = options.filter((o) => o.inStore);
-  const others = options.filter((o) => !o.inStore);
+  // Filtro próprio (palavra inteira), no lugar da busca "aproximada" padrão,
+  // que aceitava letras soltas espalhadas pelo nome.
+  const visible = options.filter((o) => matchesRateioItemQuery(o, query));
+  const mine = visible.filter((o) => o.inStore);
+  const others = visible.filter((o) => !o.inStore);
   const pick = (key: string) => { onChange(key); setOpen(false); };
-  const itemValue = (o: RateioItemOption) =>
-    `${o.code ?? ""} ${o.type === "kit" ? "kit" : ""} ${o.kitCodes.map((c) => `kit ${c}`).join(" ")} ${o.name} ${o.local} ${o.key}`;
+  const onOpenChange = (next: boolean) => { setOpen(next); if (!next) setQuery(""); };
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
         <Button type="button" variant="outline" role="combobox" aria-expanded={open} disabled={disabled}
           className="w-full justify-between font-normal h-auto min-h-10 text-left">
@@ -90,14 +93,14 @@ export function AdminRateioItemPicker({ options, value, onChange, disabled }: Ad
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[260px] p-0" align="start" onWheel={stop} onTouchMove={stop}>
-        <Command>
-          <CommandInput placeholder="Buscar por código ou nome..." />
+        <Command shouldFilter={false}>
+          <CommandInput placeholder="Buscar por código ou nome..." value={query} onValueChange={setQuery} />
           <CommandList className="max-h-[280px] overflow-y-auto" onWheel={stop} onTouchMove={stop}>
-            <CommandEmpty>Nenhuma peça encontrada.</CommandEmpty>
+            {visible.length === 0 && <div className="py-6 text-center text-sm text-muted-foreground">Nenhuma peça encontrada.</div>}
             {mine.length > 0 && (
               <CommandGroup heading={`No rateio desta loja (${mine.length})`}>
                 {mine.map((o) => (
-                  <CommandItem key={o.key} value={itemValue(o)} onSelect={() => pick(o.key)}>
+                  <CommandItem key={o.key} value={o.key} onSelect={() => pick(o.key)}>
                     <Row o={o} selected={value === o.key} />
                   </CommandItem>
                 ))}
@@ -107,7 +110,7 @@ export function AdminRateioItemPicker({ options, value, onChange, disabled }: Ad
             {others.length > 0 && (
               <CommandGroup heading={`Outras peças da campanha (${others.length})`}>
                 {others.map((o) => (
-                  <CommandItem key={o.key} value={itemValue(o)} onSelect={() => pick(o.key)}>
+                  <CommandItem key={o.key} value={o.key} onSelect={() => pick(o.key)}>
                     <Row o={o} selected={value === o.key} />
                   </CommandItem>
                 ))}

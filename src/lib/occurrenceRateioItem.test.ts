@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   rateioItemOptions, rateioItemInsertFields, occurrencePieceDisplay, occurrencePieceFilterKey,
+  matchesRateioItemQuery,
 } from "./occurrenceRateioItem";
 
 const pieces = [
@@ -59,5 +60,30 @@ describe("peça mostrada nas telas de ocorrências", () => {
   });
   it("sem peça nenhuma = sem rótulo", () => {
     expect(occurrencePieceDisplay({}).label).toBeNull();
+  });
+});
+
+describe("busca no seletor de peça do rateio", () => {
+  const opts = rateioItemOptions({
+    pieces: [
+      ...pieces,
+      { id: "p6", code: 92, name: "Lindor Cenográfico Embalagem - Standard G Secundária" },
+      { id: "p7", code: 157, name: "Testeira Produtos - Quiosque" },
+    ],
+    kits, links, storeId: "s1", storeQty: [],
+  });
+  const find = (q: string) => opts.filter((o) => matchesRateioItemQuery(o, q)).map((o) => o.code);
+  it("'testeira' só traz peças com a palavra, não letras soltas espalhadas", () => {
+    expect(find("testeira")).toEqual([1, 157]);
+  });
+  it("ignora maiúsculas e acentos", () => {
+    expect(find("CENOGRAFICO")).toEqual([92]);
+  });
+  it("várias palavras precisam aparecer todas", () => {
+    expect(find("testeira quiosque")).toEqual([157]);
+  });
+  it("número acha pelo início do código da peça ou do kit que a leva", () => {
+    expect(find("15")).toEqual([157]);
+    expect(find("2")).toEqual([2, 3, 4]);
   });
 });
