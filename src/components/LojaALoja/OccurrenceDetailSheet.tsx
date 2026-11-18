@@ -560,6 +560,13 @@ export default function OccurrenceDetailSheet({ open, onOpenChange, occurrence, 
                 <p className="text-sm whitespace-pre-wrap p-2 rounded-md bg-muted/40 border border-border">{occurrence.description || "—"}</p>
               </div>
 
+              {occurrence.agency_notes && (
+                <div>
+                  <label className="text-xs font-medium text-muted-foreground mb-1 block">Nota interna</label>
+                  <p className="text-xs whitespace-pre-wrap p-2 rounded-md bg-muted/40 border border-border text-muted-foreground">{occurrence.agency_notes}</p>
+                </div>
+              )}
+
               <div>
                 <label className="text-xs font-medium text-muted-foreground mb-1 block">Prioridade</label>
                 <Select value={priority} onValueChange={setPriority} disabled={!isAdmin}>
