@@ -35,8 +35,10 @@ export interface RateioItemOption {
   id: string;
   code: number | null;
   name: string;
-  /** Local da peça no rateio (categoria / sub-local) e, para componentes, "no Kit N". */
+  /** Local da peça no rateio (categoria / sub-local). */
   local: string;
+  /** Códigos dos kits que levam esta peça (vazio para peça avulsa e para kits). */
+  kitCodes: number[];
   image_url: string | null;
   /** Quantidade que a loja recebe (kits pela mesma regra do Rateio). */
   qty: number;
@@ -74,10 +76,9 @@ export function rateioItemOptions(input: {
   for (const p of input.pieces) {
     const qty = qtyByPiece.get(p.id) ?? 0;
     const kitCodes = (kitCodesByPiece.get(p.id) ?? []).sort((a, b) => a - b);
-    const inKit = kitCodes.length > 0 ? `no Kit ${kitCodes.join(", ")}` : "";
     out.push({
       key: rateioItemKey("piece", p.id), type: "piece", id: p.id, code: p.code, name: p.name,
-      local: [place(p.category, p.sub_location), inKit].filter(Boolean).join(" · "),
+      local: place(p.category, p.sub_location), kitCodes,
       image_url: p.image_url ?? null, qty, inStore: qty > 0,
     });
   }
@@ -87,7 +88,8 @@ export function rateioItemOptions(input: {
       : 0;
     out.push({
       key: rateioItemKey("kit", k.id), type: "kit", id: k.id, code: k.code, name: k.name,
-      local: place(k.category, k.sub_location), image_url: k.image_url ?? null, qty, inStore: qty > 0,
+      local: place(k.category, k.sub_location), kitCodes: [],
+      image_url: k.image_url ?? null, qty, inStore: qty > 0,
     });
   }
   return out.sort((a, b) => {

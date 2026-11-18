@@ -21,6 +21,15 @@ function CodeBadge({ o }: { o: RateioItemOption }) {
   );
 }
 
+/** Selo com o CÓDIGO DO KIT que leva a peça (peça componente). */
+function KitCodeBadge({ code }: { code: number }) {
+  return (
+    <span className="shrink-0 rounded bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-secondary-foreground tabular-nums">
+      Kit {code}
+    </span>
+  );
+}
+
 function Row({ o, selected }: { o: RateioItemOption; selected: boolean }) {
   return (
     <>
@@ -36,7 +45,12 @@ function Row({ o, selected }: { o: RateioItemOption; selected: boolean }) {
           {showKitTag(o) && <span className="mr-1 rounded bg-secondary px-1 text-[10px] font-semibold text-secondary-foreground">KIT</span>}
           {o.name}
         </p>
-        {o.local && <p className="text-[11px] text-muted-foreground truncate">{o.local}</p>}
+        {o.local || o.kitCodes.length > 0 ? (
+          <div className="mt-0.5 flex flex-wrap items-center gap-1">
+            {o.kitCodes.map((c) => <KitCodeBadge key={c} code={c} />)}
+            {o.local && <span className="text-[11px] text-muted-foreground truncate">{o.local}</span>}
+          </div>
+        ) : null}
       </div>
       {o.inStore && <span className="ml-2 shrink-0 text-[11px] font-medium text-muted-foreground tabular-nums">{o.qty} un.</span>}
     </>
@@ -57,18 +71,20 @@ export function AdminRateioItemPicker({ options, value, onChange, disabled }: Ad
   const mine = options.filter((o) => o.inStore);
   const others = options.filter((o) => !o.inStore);
   const pick = (key: string) => { onChange(key); setOpen(false); };
-  const itemValue = (o: RateioItemOption) => `${o.code ?? ""} ${o.type === "kit" ? "kit" : ""} ${o.name} ${o.local} ${o.key}`;
+  const itemValue = (o: RateioItemOption) =>
+    `${o.code ?? ""} ${o.type === "kit" ? "kit" : ""} ${o.kitCodes.map((c) => `kit ${c}`).join(" ")} ${o.name} ${o.local} ${o.key}`;
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button type="button" variant="outline" role="combobox" aria-expanded={open} disabled={disabled}
           className="w-full justify-between font-normal h-auto min-h-10 text-left">
-          <span className={cn("flex min-w-0 items-center", !selected && "text-muted-foreground")}>
+          <span className={cn("flex min-w-0 flex-wrap items-center", !selected && "text-muted-foreground")}>
             {selected && <CodeBadge o={selected} />}
             <span className="line-clamp-2 whitespace-normal break-words">
               {selected ? `${showKitTag(selected) ? "KIT " : ""}${selected.name}${selected.inStore ? ` — ${selected.qty} un. nesta loja` : ""}` : "Selecione a peça do rateio..."}
             </span>
+            {selected?.kitCodes.map((c) => <span key={c} className="ml-1"><KitCodeBadge code={c} /></span>)}
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>

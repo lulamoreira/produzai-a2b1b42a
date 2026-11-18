@@ -32,9 +32,12 @@ describe("lista de peças do rateio na nova ocorrência", () => {
     });
     expect(opts.find((o) => o.id === "k2")?.qty).toBe(1);
   });
-  it("componente mostra em qual kit está", () => {
+  it("componente traz os códigos dos kits que o levam, sem perder o local", () => {
     const opts = rateioItemOptions({ pieces, kits, links, storeId: "s1", storeQty: [] });
-    expect(opts.find((o) => o.id === "p3")?.local).toBe("Balcão · no Kit 2");
+    expect(opts.find((o) => o.id === "p3")?.kitCodes).toEqual([2]);
+    expect(opts.find((o) => o.id === "p3")?.local).toBe("Balcão");
+    expect(opts.find((o) => o.id === "p1")?.kitCodes).toEqual([]);
+    expect(opts.find((o) => o.id === "k2")?.kitCodes).toEqual([]);
   });
   it("grava peça OU kit, com código e nome do momento do registro", () => {
     const opts = rateioItemOptions({ pieces, kits, links, storeId: "s1", storeQty: [] });
