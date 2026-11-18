@@ -10,7 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import {
   activeCampaignStores, assignedPecaIds, internalNoteText, occurrenceWindow, occurrenceWindowWarning,
-  pecaOptions, reporterTypeValue, type ReporterKind,
+  pecaOptions, reporterTypeValue, showcaseCountLabel, storeCapacityInfo, type ReporterKind,
 } from "@/lib/adminOccurrence";
 import { useAdminOccurrenceData, useStoreLalAssignments } from "./useAdminOccurrenceData";
 import { ensureStoreToken, submitAdminOccurrences, type AdminOccurrenceEntry } from "./adminOccurrenceSubmit";
@@ -55,6 +55,7 @@ export default function AdminOccurrenceDialog({ open, onOpenChange, campaignId, 
 
   const storeList = useMemo(() => activeCampaignStores(stores.data ?? [], disabled.data ?? []), [stores.data, disabled.data]);
   const selectedStore = storeList.find((s) => s.id === storeId);
+  const capacity = useMemo(() => storeCapacityInfo(selectedStore), [selectedStore]);
   const lalData = lal.data;
   const options = useMemo(() => {
     if (!lalData) return [];
@@ -135,6 +136,16 @@ export default function AdminOccurrenceDialog({ open, onOpenChange, campaignId, 
             <div>
               <label className="text-xs font-medium text-foreground mb-1 block">Loja *</label>
               <AdminStorePicker stores={storeList} value={storeId} onChange={setStoreId} disabled={submitting} />
+              {selectedStore && (
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-md border border-border bg-muted/40 px-2.5 py-1.5 text-xs">
+                  <span className="text-muted-foreground">MODELO</span>
+                  <span className="font-medium text-foreground">{capacity.model ?? "—"}</span>
+                  <span className="text-muted-foreground">VITRINES</span>
+                  <span className="font-medium text-foreground">
+                    {capacity.showcases !== null ? showcaseCountLabel(capacity.showcases) : "—"}
+                  </span>
+                </div>
+              )}
             </div>
 
             <div>

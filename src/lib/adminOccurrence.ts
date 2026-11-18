@@ -82,6 +82,10 @@ export interface SearchableStore {
   city?: string | null;
   state?: string | null;
   store_code?: string | null;
+  /** MODELO cadastrado no cliente (client_stores.store_model). */
+  store_model?: string | null;
+  /** Nº de vitrines cadastrado no cliente (client_stores.showcase_count). */
+  showcase_count?: number | string | null;
 }
 
 const norm = (s: string) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLocaleLowerCase("pt-BR");
@@ -101,6 +105,30 @@ export function storeMatches(s: SearchableStore, query: string): boolean {
 export function storeLabel(s: SearchableStore): string {
   const place = [s.city, s.state].filter(Boolean).join("/");
   return place ? `${s.name} — ${place}` : s.name;
+}
+
+/** "N vitrine(s)" — mesmo plural usado na revisão do Rateio e nas planilhas. */
+export function showcaseCountLabel(n: number): string {
+  return `${n} ${n === 1 ? "vitrine" : "vitrines"}`;
+}
+
+export interface StoreCapacityInfo {
+  /** MODELO da loja; null quando não está cadastrado. */
+  model: string | null;
+  /** Nº de vitrines; null quando não está cadastrado (0 é um valor real e aparece). */
+  showcases: number | null;
+}
+
+/**
+ * Dados que o formulário mostra abaixo da loja escolhida: MODELO e nº de
+ * vitrines. Só lidos do cadastro do cliente — nada aqui grava ou altera.
+ */
+export function storeCapacityInfo(s: SearchableStore | null | undefined): StoreCapacityInfo {
+  const model = (s?.store_model ?? "").toString().trim();
+  const raw = s?.showcase_count;
+  const missing = raw === null || raw === undefined || raw === "" || (typeof raw === "string" && raw.trim() === "");
+  const n = missing ? NaN : Number(raw);
+  return { model: model || null, showcases: Number.isFinite(n) ? n : null };
 }
 
 /** Lojas ativas na campanha (sem enabled=false), em ordem alfabética. */

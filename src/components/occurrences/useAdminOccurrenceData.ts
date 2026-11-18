@@ -15,7 +15,7 @@ export function useAdminOccurrenceData(campaignId: string, clientId: string, ena
       supabasePaginate<SearchableStore>((from, to) =>
         supabase
           .from("client_stores")
-          .select("id, name, nickname, city, state, store_code", { count: "exact" })
+          .select("id, name, nickname, city, state, store_code, store_model, showcase_count", { count: "exact" })
           .eq("client_id", clientId)
           .order("id")
           .range(from, to) as unknown as PromiseLike<{ data: SearchableStore[] | null; error: unknown; count: number | null }>,

@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   occurrenceWindow, occurrenceWindowWarning, internalNoteText, reporterTypeValue,
   storeMatches, activeCampaignStores, assignedPecaIds, pecaOptions,
+  showcaseCountLabel, storeCapacityInfo,
 } from "./adminOccurrence";
 
 describe("prazo de ocorrências", () => {
@@ -56,6 +57,26 @@ describe("lojas", () => {
     expect(storeMatches(stores[0], "L12")).toBe(true);
     expect(storeMatches(stores[1], "rj")).toBe(true);
     expect(storeMatches(stores[1], "sp")).toBe(false);
+  });
+});
+
+describe("modelo e vitrines da loja selecionada", () => {
+  it("mostra o modelo cadastrado e o número de vitrines", () => {
+    expect(storeCapacityInfo({ id: "1", name: "Barra", store_model: " NOVO ", showcase_count: 2 }))
+      .toEqual({ model: "NOVO", showcases: 2 });
+  });
+  it("0 vitrines é um valor real e aparece", () => {
+    expect(storeCapacityInfo({ id: "1", name: "Anália Franco", showcase_count: 0 })).toEqual({ model: null, showcases: 0 });
+  });
+  it("sem modelo nem vitrines cadastrados = nada a mostrar", () => {
+    expect(storeCapacityInfo({ id: "1", name: "X", store_model: "   ", showcase_count: null }))
+      .toEqual({ model: null, showcases: null });
+    expect(storeCapacityInfo(null)).toEqual({ model: null, showcases: null });
+  });
+  it("plural de vitrines", () => {
+    expect(showcaseCountLabel(1)).toBe("1 vitrine");
+    expect(showcaseCountLabel(0)).toBe("0 vitrines");
+    expect(showcaseCountLabel(3)).toBe("3 vitrines");
   });
 });
 
