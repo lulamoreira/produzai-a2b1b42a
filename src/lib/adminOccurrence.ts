@@ -137,7 +137,7 @@ export function activeCampaignStores<T extends SearchableStore>(stores: T[], dis
   return stores.filter((s) => !off.has(s.id)).sort((a, b) => a.name.localeCompare(b.name, "pt-BR"));
 }
 
-export interface LalTipo { id: string; nome: string; tem_subdivisao: boolean | null; display_order: number | null; is_deleted?: boolean | null }
+export interface LalTipo { id: string; nome: string; letra?: string | null; tem_subdivisao: boolean | null; display_order: number | null; is_deleted?: boolean | null }
 export interface LalSub { id: string; tipo_id: string; nome: string; display_order: number | null }
 export interface LalPeca { id: string; nome: string; image_url: string | null; tipo_id: string | null; subdivisao_id: string | null; display_order: number | null }
 export interface LalLoja { tipo_id: string | null; subdivisao_id: string | null; ativo: boolean | null }
@@ -172,7 +172,13 @@ export function assignedPecaIds(input: {
   );
 }
 
-export interface PecaOption { peca: LalPeca; local: string; assigned: boolean }
+export interface PecaOption {
+  peca: LalPeca;
+  local: string;
+  assigned: boolean;
+  /** CÓDIGO da peça: a letra do tipo do Loja a Loja (A, B, C...); null quando o tipo não tem letra. */
+  code: string | null;
+}
 
 /** Peças ordenadas: primeiro as que a loja recebe, depois as demais; dentro de cada grupo, por local e ordem. */
 export function pecaOptions(input: { tipos: LalTipo[]; subdivisoes: LalSub[]; pecas: LalPeca[]; assigned: Set<string> }): PecaOption[] {
@@ -188,7 +194,12 @@ export function pecaOptions(input: { tipos: LalTipo[]; subdivisoes: LalSub[]; pe
     .map((peca) => {
       const t = peca.tipo_id ? tipoById.get(peca.tipo_id) : undefined;
       const s = peca.subdivisao_id ? subById.get(peca.subdivisao_id) : undefined;
-      return { peca, local: [t?.nome, s?.nome].filter(Boolean).join(" / ") || "Sem local", assigned: input.assigned.has(peca.id) };
+      return {
+        peca,
+        local: [t?.nome, s?.nome].filter(Boolean).join(" / ") || "Sem local",
+        assigned: input.assigned.has(peca.id),
+        code: (t?.letra ?? "").toString().trim() || null,
+      };
     })
     .sort((a, b) => {
       if (a.assigned !== b.assigned) return a.assigned ? -1 : 1;

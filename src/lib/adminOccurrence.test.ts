@@ -82,8 +82,8 @@ describe("modelo e vitrines da loja selecionada", () => {
 
 describe("peças que a loja recebe", () => {
   const tipos = [
-    { id: "A", nome: "Vitrine", tem_subdivisao: false, display_order: 0 },
-    { id: "I", nome: "Internos", tem_subdivisao: true, display_order: 1 },
+    { id: "A", nome: "Vitrine", letra: "A", tem_subdivisao: false, display_order: 0 },
+    { id: "I", nome: "Internos", letra: "H", tem_subdivisao: true, display_order: 1 },
   ];
   const subdivisoes = [{ id: "s1", tipo_id: "I", nome: "Caixa", display_order: 0 }, { id: "s2", tipo_id: "I", nome: "Gôndola", display_order: 1 }];
   const pecas = [
@@ -98,5 +98,31 @@ describe("peças que a loja recebe", () => {
   it("recebidas primeiro, depois as demais", () => {
     const assigned = assignedPecaIds({ tipos, subdivisoes, pecas, lojas: [{ tipo_id: "I", subdivisao_id: "s2", ativo: false }] });
     expect(pecaOptions({ tipos, subdivisoes, pecas, assigned }).map((o) => [o.peca.id, o.assigned])).toEqual([["p2", true], ["p1", false], ["p3", false]]);
+  });
+});
+
+describe("código da peça", () => {
+  const tipos = [
+    { id: "A", nome: "Vitrine", letra: "A", tem_subdivisao: false, display_order: 0 },
+    { id: "I", nome: "Internos", letra: "H", tem_subdivisao: true, display_order: 1 },
+    { id: "X", nome: "Sem letra", letra: "  ", tem_subdivisao: false, display_order: 2 },
+  ];
+  const subdivisoes = [{ id: "s1", tipo_id: "I", nome: "Caixa", display_order: 0 }];
+  const pecas = [
+    { id: "p1", nome: "Adesivo", image_url: null, tipo_id: "A", subdivisao_id: null, display_order: 0 },
+    { id: "p2", nome: "Display", image_url: null, tipo_id: "I", subdivisao_id: "s1", display_order: 0 },
+    { id: "p3", nome: "Faixa", image_url: null, tipo_id: "X", subdivisao_id: null, display_order: 0 },
+  ];
+  it("mostra a letra do tipo como código, com o local do lado", () => {
+    const opts = pecaOptions({ tipos, subdivisoes, pecas, assigned: new Set(["p2"]) });
+    expect(opts.map((o) => [o.peca.id, o.code, o.local])).toEqual([
+      ["p2", "H", "Internos / Caixa"],
+      ["p1", "A", "Vitrine"],
+      ["p3", null, "Sem letra"],
+    ]);
+  });
+  it("peça sem tipo não tem código", () => {
+    const opts = pecaOptions({ tipos, subdivisoes, pecas: [{ id: "p9", nome: "Solta", image_url: null, tipo_id: null, subdivisao_id: null, display_order: 0 }], assigned: new Set() });
+    expect(opts[0].code).toBeNull();
   });
 });

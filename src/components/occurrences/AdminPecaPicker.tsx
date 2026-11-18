@@ -9,6 +9,16 @@ import type { PecaOption } from "@/lib/adminOccurrence";
 
 const stop = (e: React.SyntheticEvent) => e.stopPropagation();
 
+/** Selo com o CÓDIGO da peça (letra do tipo do Loja a Loja), como no portal do lojista. */
+function CodeBadge({ code }: { code: string | null }) {
+  if (!code) return null;
+  return (
+    <span className="w-6 h-6 shrink-0 rounded bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold mr-2">
+      {code}
+    </span>
+  );
+}
+
 export interface AdminPecaPickerProps {
   options: PecaOption[];
   value: string;
@@ -20,6 +30,7 @@ function Row({ o, selected }: { o: PecaOption; selected: boolean }) {
   return (
     <>
       <Check className={cn("mr-2 h-4 w-4 shrink-0", selected ? "opacity-100" : "opacity-0")} />
+      <CodeBadge code={o.code} />
       <div className="w-8 h-8 rounded bg-muted overflow-hidden shrink-0 mr-2 flex items-center justify-center">
         {o.peca.image_url
           ? <img src={getThumbnailUrl(o.peca.image_url, 80)} alt="" loading="lazy" className="w-full h-full object-cover" />
@@ -46,21 +57,24 @@ export function AdminPecaPicker({ options, value, onChange, disabled }: AdminPec
       <PopoverTrigger asChild>
         <Button type="button" variant="outline" role="combobox" aria-expanded={open} disabled={disabled}
           className="w-full justify-between font-normal h-auto min-h-10 text-left">
-          <span className={cn("truncate", !selected && "text-muted-foreground")}>
-            {selected ? `${selected.peca.nome} — ${selected.local}` : "Selecione a peça..."}
+          <span className={cn("flex min-w-0 items-center", !selected && "text-muted-foreground")}>
+            {selected && <CodeBadge code={selected.code} />}
+            <span className="truncate">
+              {selected ? `${selected.peca.nome} — ${selected.local}` : "Selecione a peça..."}
+            </span>
           </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] min-w-[260px] p-0" align="start" onWheel={stop} onTouchMove={stop}>
         <Command>
-          <CommandInput placeholder="Buscar peça ou local..." />
+          <CommandInput placeholder="Buscar por código, peça ou local..." />
           <CommandList className="max-h-[280px] overflow-y-auto" onWheel={stop} onTouchMove={stop}>
             <CommandEmpty>Nenhuma peça encontrada.</CommandEmpty>
             {mine.length > 0 && (
               <CommandGroup heading={`Peças que a loja recebe (${mine.length})`}>
                 {mine.map((o) => (
-                  <CommandItem key={o.peca.id} value={`${o.peca.nome} ${o.local} ${o.peca.id}`} onSelect={() => pick(o.peca.id)}>
+                  <CommandItem key={o.peca.id} value={`${o.code ?? ""} ${o.peca.nome} ${o.local} ${o.peca.id}`} onSelect={() => pick(o.peca.id)}>
                     <Row o={o} selected={value === o.peca.id} />
                   </CommandItem>
                 ))}
@@ -70,7 +84,7 @@ export function AdminPecaPicker({ options, value, onChange, disabled }: AdminPec
             {others.length > 0 && (
               <CommandGroup heading={`Outras peças da campanha (${others.length})`}>
                 {others.map((o) => (
-                  <CommandItem key={o.peca.id} value={`${o.peca.nome} ${o.local} ${o.peca.id}`} onSelect={() => pick(o.peca.id)}>
+                  <CommandItem key={o.peca.id} value={`${o.code ?? ""} ${o.peca.nome} ${o.local} ${o.peca.id}`} onSelect={() => pick(o.peca.id)}>
                     <Row o={o} selected={value === o.peca.id} />
                   </CommandItem>
                 ))}

@@ -45,7 +45,7 @@ export function useAdminOccurrenceData(campaignId: string, clientId: string, ena
     queryFn: async () => {
       const { data: tipos, error: tErr } = await supabase
         .from("loja_a_loja_tipos")
-        .select("id, nome, tem_subdivisao, display_order, is_deleted")
+        .select("id, nome, letra, tem_subdivisao, display_order, is_deleted")
         .eq("campaign_id", campaignId)
         .order("display_order");
       if (tErr) throw tErr;
