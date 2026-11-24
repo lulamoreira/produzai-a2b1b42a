@@ -546,7 +546,7 @@ export default function AppSidebar() {
               <span className="truncate">E-mails</span>
             </button>
             <div className="ml-6 space-y-0.5 mt-0.5">
-              {clientCampaigns.map((camp) => {
+              {clientCampaigns.filter((camp) => camp.is_active !== false || camp.id === campaignId).map((camp) => {
                 const isExpanded = campaignExpanded[camp.id] ?? (camp.id === campaignId);
                 const isActiveCampaign = campaignId === camp.id;
                 const campBasePath = `/agency/${agencyId}/clients/${clientId}/campaigns/${camp.id}`;
@@ -579,6 +579,23 @@ export default function AppSidebar() {
                   />
                 );
               })}
+              {(() => {
+                // Inactive campaigns hidden from the list (the open one always stays visible)
+                const hiddenInactive = isAdminOrMaster
+                  ? clientCampaigns.filter((c) => c.is_active === false && c.id !== campaignId).length
+                  : 0;
+                if (hiddenInactive === 0 || collapsed) return null;
+                return (
+                  <button
+                    type="button"
+                    onClick={() => handleNavigate(`/agency/${agencyId}/clients/${clientId}?inativas=1`)}
+                    className="w-full text-left px-2.5 py-1 text-[11px] hover:underline"
+                    style={{ color: "var(--sidebar-text, #A89880)", opacity: 0.8 }}
+                  >
+                    Ver inativas ({hiddenInactive})
+                  </button>
+                );
+              })()}
             </div>
           </>
         )}

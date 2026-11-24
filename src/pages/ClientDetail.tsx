@@ -29,7 +29,7 @@ import {
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star, Building2, Pencil, Layers, Wrench, Package, ClipboardList, ShieldBan } from "lucide-react";
+import { ArrowLeft, ArrowRight, Plus, Trash2, Upload, Search, Megaphone, Store, Settings, Edit3, Download, Sparkles, MessageSquare, Tag, RefreshCw, Mail, GripVertical, Palette, ArrowUp, ArrowDown, ArrowUpDown, Users, Star, Building2, Pencil, Layers, Wrench, Package, ClipboardList, ShieldBan, Eye, EyeOff } from "lucide-react";
 import { useClientSuppliers, useAddClientSupplier, useUpdateClientSupplier, useDeleteClientSupplier, type ClientSupplier } from "@/hooks/useClientSuppliers";
 import { BlockedInstallersPanel } from "@/components/admin/BlockedInstallersPanel";
 import { RevertImportButton } from "@/components/RevertImportButton";
@@ -451,14 +451,39 @@ const ClientDetail = () => {
     );
   }, [campaignFamilies, favoritesFilterActive, favoriteIds]);
 
+  // Inactive campaigns: hidden by default; admins/masters can reveal them via ?inativas=1
+  const showInactive = isAdminOrMaster && searchParams.get("inativas") === "1";
+  const inactiveCount = useMemo(() => {
+    if (!isAdminOrMaster) return 0;
+    let n = 0;
+    campaignFamilies.forEach(fam => {
+      if (fam.parent.is_active === false) n++;
+      fam.children.forEach(c => { if (c.is_active === false) n++; });
+    });
+    return n;
+  }, [campaignFamilies, isAdminOrMaster]);
+  const setShowInactive = useCallback((value: boolean) => {
+    const next = new URLSearchParams(location.search);
+    if (value) next.set("inativas", "1"); else next.delete("inativas");
+    const search = next.toString();
+    navigate(`${location.pathname}${search ? `?${search}` : ""}`, { replace: true });
+  }, [location.pathname, location.search, navigate]);
+
+  const filteredFamilies = useMemo(() => {
+    if (showInactive) return visibleFamilies;
+    return visibleFamilies
+      .map(fam => ({ ...fam, children: fam.children.filter(c => c.is_active !== false) }))
+      .filter(fam => fam.parent.is_active !== false || fam.children.length > 0);
+  }, [visibleFamilies, showInactive]);
+
   const allVisibleCampaigns = useMemo(() => {
     const result: Campaign[] = [];
-    visibleFamilies.forEach(fam => {
+    filteredFamilies.forEach(fam => {
       result.push(fam.parent);
       fam.children.forEach(child => result.push(child));
     });
     return result;
-  }, [visibleFamilies]);
+  }, [filteredFamilies]);
 
 
 
@@ -1580,10 +1605,23 @@ const ClientDetail = () => {
               </div>
             )}
 
-            {canEditCampaigns && campaignFamilies.length > 0 && (
-              <div className="flex justify-end mt-4">
-                <CampaignCycleReviewDialog families={campaignFamilies} assignments={cycleAssignments}
-                  onSave={values => saveCycles.mutateAsync(values)} disabled={loadingCycles || cyclesError} />
+            {((canEditCampaigns && campaignFamilies.length > 0) || isAdminOrMaster) && (
+              <div className="flex flex-wrap justify-end items-center gap-2 mt-4">
+                {isAdminOrMaster && (
+                  <Button variant="outline" size="sm" disabled={inactiveCount === 0}
+                    onClick={() => setShowInactive(!showInactive)} aria-pressed={showInactive}>
+                    {showInactive ? <EyeOff className="w-4 h-4 mr-1.5" /> : <Eye className="w-4 h-4 mr-1.5" />}
+                    {inactiveCount === 0
+                      ? t('campaigns.noInactive', { defaultValue: 'Nenhuma inativa' })
+                      : showInactive
+                        ? t('campaigns.hideInactive', { defaultValue: 'Ocultar inativas' })
+                        : t('campaigns.showInactive', { defaultValue: 'Mostrar inativas ({{count}})', count: inactiveCount })}
+                  </Button>
+                )}
+                {canEditCampaigns && campaignFamilies.length > 0 && (
+                  <CampaignCycleReviewDialog families={campaignFamilies} assignments={cycleAssignments}
+                    onSave={values => saveCycles.mutateAsync(values)} disabled={loadingCycles || cyclesError} />
+                )}
               </div>
             )}
             {cyclesError && <p role="alert" className="text-sm text-destructive mt-3">{t('campaignCycles.loadError', { defaultValue: 'Não foi possível carregar as pastas. Atualize a página para tentar novamente.' })}</p>}
@@ -1592,6 +1630,14 @@ const ClientDetail = () => {
               <div className="flex justify-center py-12"><div className="animate-spin w-8 h-8 border-3 border-primary border-t-transparent rounded-full" /></div>
             ) : allVisibleCampaigns.length === 0 ? (
               <div className="bg-white rounded-xl border border-stone-200 border-dashed mt-6">
+                {!showInactive && inactiveCount > 0 && !favoritesFilterActive ? (
+                <EmptyStateV2
+                  icon={Megaphone}
+                  title={t('campaigns.noActiveTitle', { defaultValue: 'Nenhuma campanha ativa' })}
+                  description=""
+                  action={{ label: t('campaigns.showInactive', { defaultValue: 'Mostrar inativas ({{count}})', count: inactiveCount }), onClick: () => setShowInactive(true) }}
+                />
+                ) : (
                 <EmptyStateV2
                   icon={Megaphone}
                   title={favoritesFilterActive ? "Nenhum favorito neste cliente" : t("campaigns.emptyTitle")}
@@ -1601,11 +1647,12 @@ const ClientDetail = () => {
                     onClick: () => setCampaignDialogOpen(true) 
                   } : undefined}
                 />
+                )}
               </div>
             ) : (
               <div className="mt-6">
                 <DndContext sensors={campaignSensors} collisionDetection={closestCenter} onDragEnd={handleCampaignDragEnd}>
-                  <CampaignCycleFolders families={visibleFamilies} assignments={cycleAssignments}>
+                  <CampaignCycleFolders families={filteredFamilies} assignments={cycleAssignments}>
                     {(fam) => (
                       <React.Fragment key={fam.parent.id}>
                         <SortableContext items={[fam.parent.id]} strategy={rectSortingStrategy}>
