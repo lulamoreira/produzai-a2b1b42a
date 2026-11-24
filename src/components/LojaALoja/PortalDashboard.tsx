@@ -238,7 +238,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
   // Busca por nome de loja digitada na barra de filtros
   const [filterStoreSearch, setFilterStoreSearch] = useState("");
   // Extra KPI-driven filters: "all" | "valid" | "atrasadas" | "reinst"
-  const [kpiFilter, setKpiFilter] = useState<"all" | "valid" | "atrasadas" | "reinst">("all");
+  const [kpiFilter, setKpiFilter] = useState<"all" | "valid" | "atrasadas" | "reinst" | "abertas">("all");
   const [occViewMode, setOccViewMode] = useState<"list" | "cards">("list");
   const [selectedOccurrence, setSelectedOccurrence] = useState<any | null>(null);
   // Seleção para alteração de status em lote (somente admin/master)
@@ -302,7 +302,9 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
   const rawTotal = occList.length;
   const validOccList = occList.filter((o) => countsAsOccurrence(o.tratativa_status));
   const total = validOccList.length;
-  const abertas = validOccList.filter((o) => (o.tratativa_status ?? "aberta") === "aberta").length;
+  // Aberta = toda ocorrência válida que ainda não foi resolvida (qualquer status diferente de "resolvida").
+  const isOpenOccurrence = (o: any) => countsAsOccurrence(o.tratativa_status) && o.tratativa_status !== "resolvida";
+  const abertas = validOccList.filter(isOpenOccurrence).length;
   const emAndamento = validOccList.filter((o) => o.tratativa_status === "em_andamento").length;
   const resolvidas = validOccList.filter((o) => o.tratativa_status === "resolvida").length;
   const atrasadas = occList.filter(isOverdue).length;
@@ -341,6 +343,7 @@ export default function PortalDashboard({ campaignId, clientId, permissions }: P
       
       if (kpiFilter === "valid" && !countsAsOccurrence(o.tratativa_status)) return false;
       if (kpiFilter === "atrasadas" && !isOverdue(o)) return false;
+      if (kpiFilter === "abertas" && !isOpenOccurrence(o)) return false;
       if (kpiFilter === "reinst") {
         if (!(o.needs_reinstallation && status !== "resolvida")) return false;
       }
@@ -697,7 +700,7 @@ _Relatório gerado pelo ProduzAI_ 🚀`;
         <CardContent className="space-y-4">
           {/* Occurrence sub-KPIs */}
           {(() => {
-            const applyKpi = (status: string, kpi: "all" | "valid" | "atrasadas" | "reinst") => {
+            const applyKpi = (status: string, kpi: "all" | "valid" | "atrasadas" | "reinst" | "abertas") => {
               const sameStatus = filterStatus === status;
               const sameKpi = kpiFilter === kpi;
               if (sameStatus && sameKpi) {
@@ -708,7 +711,7 @@ _Relatório gerado pelo ProduzAI_ 🚀`;
                 setKpiFilter(kpi);
               }
             };
-            const isActive = (status: string, kpi: "all" | "valid" | "atrasadas" | "reinst") =>
+            const isActive = (status: string, kpi: "all" | "valid" | "atrasadas" | "reinst" | "abertas") =>
               filterStatus === status && kpiFilter === kpi;
             return (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
@@ -720,7 +723,7 @@ _Relatório gerado pelo ProduzAI_ 🚀`;
                   active={isActive("all", "valid")} onClick={() => applyKpi("all", "valid")} 
                 />
                 <MiniKpi label="Abertas" value={abertas} icon={AlertTriangle} color="text-destructive"
-                  active={isActive("aberta", "all")} onClick={() => applyKpi("aberta", "all")} />
+                  active={isActive("all", "abertas")} onClick={() => applyKpi("all", "abertas")} />
                 <MiniKpi label="Em andamento" value={emAndamento} icon={Clock} color="text-yellow-600"
                   active={isActive("em_andamento", "all")} onClick={() => applyKpi("em_andamento", "all")} />
                 <MiniKpi label="Resolvidas" value={resolvidas} icon={CheckCircle2} color="text-green-600"
