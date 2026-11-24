@@ -175,9 +175,15 @@ export default function OccurrencesByStoreTab({ campaignId, clientId, permission
     return Array.from(map.values()).sort((a, b) => a.storeName.localeCompare(b.storeName, "pt-BR"));
   }, [filtered]);
 
+  // Pendente = ocorrência válida (status que conta como ocorrência) ainda não resolvida — mesma regra do KPI "Abertas".
+  const isPendingOccurrence = (o: any) => {
+    const st = o.tratativa_status ?? "aberta";
+    const counts = tratativaStatuses.find((s: any) => s.value === st)?.conta_como_ocorrencia !== false;
+    return counts && st !== "resolvida";
+  };
   const totalOcorrencias = filtered.length;
   const totalLojas = grouped.length;
-  const totalPendentes = filtered.filter((o) => (o.tratativa_status ?? "aberta") === "aberta").length;
+  const totalPendentes = filtered.filter(isPendingOccurrence).length;
   const totalAndamento = filtered.filter((o) => o.tratativa_status === "em_andamento").length;
   const totalResolvidas = filtered.filter((o) => o.tratativa_status === "resolvida").length;
 
@@ -236,7 +242,7 @@ export default function OccurrencesByStoreTab({ campaignId, clientId, permission
         Cidade: g.city,
         UF: g.state,
         Total: g.items.length,
-        Pendentes: g.items.filter((o) => (o.tratativa_status ?? "aberta") === "aberta").length,
+        Pendentes: g.items.filter(isPendingOccurrence).length,
         "Em andamento": g.items.filter((o) => o.tratativa_status === "em_andamento").length,
         Resolvidas: g.items.filter((o) => o.tratativa_status === "resolvida").length,
       }));
@@ -408,7 +414,7 @@ export default function OccurrencesByStoreTab({ campaignId, clientId, permission
         <div className="space-y-2">
           {grouped.map((g) => {
             const open = !!openStores[g.storeId];
-            const pend = g.items.filter((o) => (o.tratativa_status ?? "aberta") === "aberta").length;
+            const pend = g.items.filter(isPendingOccurrence).length;
             const andamento = g.items.filter((o) => o.tratativa_status === "em_andamento").length;
             const resolv = g.items.filter((o) => o.tratativa_status === "resolvida").length;
             return (
