@@ -83,6 +83,7 @@ import BudgetNegotiationDialog from "@/components/Budget/BudgetNegotiationDialog
 import SendQtyRequoteDialog from "@/components/Budget/SendQtyRequoteDialog";
 import StartAdjustmentDialog from "@/components/Adjustments/StartAdjustmentDialog";
 import CostAnalysisDialog from "@/components/Budget/CostAnalysisDialog";
+import StoreClusterCostDialog from "@/components/Budget/StoreClusterCostDialog";
 
 import type { CampaignPiece, CampaignKit } from "@/hooks/useMultiClientData";
 import { useCampaignDeliveryOverrides } from "@/hooks/useMultiClientData";
@@ -366,6 +367,7 @@ export default function BudgetTab({ campaignId, clientId, agencyId, campaignName
   const [negotiationSupplierId, setNegotiationSupplierId] = useState<string | null>(null);
   const [sendNegotiatedOpen, setSendNegotiatedOpen] = useState(false);
   const [costAnalysisOpen, setCostAnalysisOpen] = useState(false);
+  const [clusterCostOpen, setClusterCostOpen] = useState(false);
 
   // ── Editor de "Links do Vencedor" (configuração padrão usada no e-mail de vencedor) ──
   const settingsAny = settings as any;
@@ -2513,6 +2515,16 @@ ${msgLabels.winnerWaFooter}
                         <BarChart3 className="w-3.5 h-3.5" /> Análise de Custos
                       </Button>
                     )}
+                    {isAdminOrMaster && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="gap-1 min-h-[44px] md:min-h-0 w-full md:w-auto justify-start md:justify-center"
+                        onClick={() => setClusterCostOpen(true)}
+                      >
+                        <PieChartIcon className="w-3.5 h-3.5" /> Custo por grupo de lojas
+                      </Button>
+                    )}
                   </>
                 }
               />
@@ -3788,6 +3800,15 @@ ${msgLabels.winnerWaFooter}
         deadline={settings?.deadline ?? null}
       />
 
+      {clusterCostOpen && (
+        <StoreClusterCostDialog
+          open={clusterCostOpen}
+          onOpenChange={setClusterCostOpen}
+          campaignId={campaignId}
+          clientId={clientId}
+          currencyCode={currencyCode}
+        />
+      )}
       <CostAnalysisDialog
         open={costAnalysisOpen}
         onOpenChange={setCostAnalysisOpen}

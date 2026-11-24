@@ -4978,6 +4978,47 @@ export type Database = {
           },
         ]
       }
+      store_cluster_presets: {
+        Row: {
+          client_id: string
+          created_at: string
+          created_by: string | null
+          field_key: string
+          groups: Json
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          field_key: string
+          groups?: Json
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          field_key?: string
+          groups?: Json
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_cluster_presets_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       store_compliance_checks: {
         Row: {
           campaign_id: string
