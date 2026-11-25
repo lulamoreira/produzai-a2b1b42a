@@ -65,8 +65,10 @@ import {
   Loader2,
   Share2,
   Eye,
-  ThumbsUp
+  ThumbsUp,
+  Download
 } from "lucide-react";
+import { exportSuppliersXlsx } from "@/lib/exportSuppliersXlsx";
 import SupplierDetailsSheet from "@/components/SupplierDetailsSheet";
 import SupplierFormDialog from "@/components/SupplierFormDialog";
 import SupplierRecommendDialog from "@/components/SupplierRecommendDialog";
@@ -115,6 +117,7 @@ const AgencySuppliers = () => {
   }, [agencyIdParam, isValidParam, profileAgencyId, navigate]);
 
   const { data: suppliers = [], isLoading } = useAgencySuppliers(agencyId);
+  const [exporting, setExporting] = useState(false);
   const addSupplier = useAddAgencySupplier();
   const updateSupplier = useUpdateAgencySupplier();
   const deleteSupplier = useDeleteAgencySupplier();
@@ -266,7 +269,28 @@ Qualquer dúvida, estamos à disposição!` : "";
               </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <Button
+              variant="outline"
+              className="h-10 px-4"
+              disabled={exporting || !agencyId}
+              title="Exporta todos os fornecedores cadastrados, independente da busca"
+              onClick={async () => {
+                if (!agencyId) return;
+                setExporting(true);
+                try {
+                  const n = await exportSuppliersXlsx(agencyId, agencyInfo?.name || "agencia");
+                  toast.success(`${n} fornecedores exportados`);
+                } catch (e) {
+                  toast.error(e instanceof Error ? e.message : "Erro ao exportar");
+                } finally {
+                  setExporting(false);
+                }
+              }}
+            >
+              {exporting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
+              {exporting ? "Exportando..." : "Exportar Excel"}
+            </Button>
             <Button
               variant="outline"
               onClick={() => setRecommendDialogOpen(true)}
