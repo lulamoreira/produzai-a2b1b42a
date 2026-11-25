@@ -19,6 +19,7 @@ import { template as adjustmentQuoteRequestToSupplier } from './adjustment-quote
 import { template as adjustmentFinalToClient } from './adjustment-final-to-client.tsx'
 import { template as adjustmentFinalToSupplier } from './adjustment-final-to-supplier.tsx'
 import { template as supplierDataConfirmation } from './supplier-data-confirmation.tsx'
+import { template as supplierQuoteSubmitted } from './supplier-quote-submitted.tsx'
 
 export const TEMPLATES: Record<string, TemplateEntry> = {
   'occurrence-notification': occurrenceNotification,
@@ -31,4 +32,5 @@ export const TEMPLATES: Record<string, TemplateEntry> = {
   'adjustment-final-to-client': adjustmentFinalToClient,
   'adjustment-final-to-supplier': adjustmentFinalToSupplier,
   'supplier-data-confirmation': supplierDataConfirmation,
+  'supplier-quote-submitted': supplierQuoteSubmitted,
 }

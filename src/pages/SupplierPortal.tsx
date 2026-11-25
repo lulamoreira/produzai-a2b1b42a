@@ -890,8 +890,40 @@ const SupplierPortal = () => {
         console.warn("Snapshot history failed (non-blocking):", snapErr);
       }
 
-      // Notification dispatched by DB trigger trg_budget_supplier_notify.
-
+      // Aviso interno por e-mail para a produção (não bloqueia o envio).
+      try {
+        const inst = installationBlocked ? 0 : (extraCosts.installation_value || 0);
+        const frt = freightBlocked ? 0 : (extraCosts.freight_value || 0);
+        const disc = extraCosts.discount_value || 0;
+        const origin = window.location.origin;
+        const internalUrl = headerIds.agency_id
+          ? `${origin}/agency/${headerIds.agency_id}/clients/${headerIds.client_id ?? ""}/campaigns/${supplier.campaign_id}?section=budgets`
+          : undefined;
+        void supabase.functions.invoke("send-transactional-email", {
+          body: {
+            templateName: "supplier-quote-submitted",
+            recipientEmail: "producao@vimer.com.br",
+            idempotencyKey: `supplier-quote-submitted-${supplier.id}-${isNeg ? "neg" : "quote"}-${Date.now()}`,
+            templateData: {
+              supplierName: supplier.company_name,
+              contactName: supplier.contact_name,
+              agencyName, clientName, campaignName,
+              isNegotiation: isNeg,
+              submittedAt: new Date().toLocaleString("pt-BR"),
+              itemsCount: displayRows.length,
+              production: fmt(grandTotal - inst - frt + disc),
+              installation: fmt(inst),
+              freight: fmt(frt),
+              discount: fmt(disc),
+              total: fmt(grandTotal),
+              internalUrl,
+              portalUrl: window.location.href,
+            },
+          },
+        });
+      } catch (mailErr) {
+        console.warn("Supplier submit email failed (non-blocking):", mailErr);
+      }
 
       setSupplier((s) => s ? {
         ...s,
